@@ -1,8 +1,6 @@
 # Avana
 
-Avana is an LP-collateral protocol built on Aave v4. It enables liquidity providers to borrow against active LP positions without withdrawing liquidity from the underlying AMM.
-
-This repository contains the Avana web application, built with Next.js 15, React 19, TypeScript, and Tailwind CSS.
+Avana enables liquidity providers to borrow against active LP positions without withdrawing liquidity from the underlying AMM.
 
 ## Overview
 
@@ -13,7 +11,7 @@ With Avana, users can:
 - Borrow against active LP positions
 - Keep liquidity deployed in the AMM
 - Continue earning trading fees while accessing liquidity
-- Benefit from venue-specific valuation, risk controls, and liquidation logic
+- Benefit from dexes-specific valuation, risk controls, and liquidation logic
 
 Built on Aave v4’s hub-and-spoke architecture, Avana combines shared liquidity with isolated, LP-specific risk management.
 
