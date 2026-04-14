@@ -1,56 +1,70 @@
-# Avana
+# avana-webapp
 
-Avana enables liquidity providers to borrow against active LP positions without withdrawing liquidity from the underlying AMM.
+Avana is an LP-collateral protocol built around Aave v4. The product is designed to help liquidity providers unlock credit from active LP positions without exiting the underlying pool or interrupting fee generation.
+
+This repository contains the Avana web app built with Next.js 15, React 19, TypeScript, and Tailwind CSS.
 
 ## Overview
 
-In DeFi, LP capital is often productive but not credit-accessible unless users first exit their positions. Avana is designed to solve that inefficiency by turning active LP positions into usable collateral.
+The app reflects Avana's core protocol story:
 
-With Avana, users can:
+- active LP positions can be used as collateral
+- liquidity can stay deployed while capital becomes more flexible
+- risk management is tailored to venue-specific liquidity structures
+- Aave v4's hub-and-spoke design supports isolated market logic with shared liquidity rails
 
-- Borrow against active LP positions
-- Keep liquidity deployed in the AMM
-- Continue earning trading fees while accessing liquidity
-- Benefit from dexes-specific valuation, risk controls, and liquidation logic
+The public Avana materials position the protocol around LP collateral across ecosystems such as Uniswap, Curve, Balancer, and Aerodrome.
 
-Built on Aave v4’s hub-and-spoke architecture, Avana combines shared liquidity with isolated, LP-specific risk management.
+## Current Pages
 
-## Core Thesis
+- `/`
+- `/explore`
+- `/invest`
+- `/perps`
+- `/manage`
+- `/incentivize`
+- `/risk-warning`
 
-Avana is built around three core principles:
+## Local Development
 
-- **Active LP positions should remain productive while serving as collateral**
-- **Valuation and liquidation must reflect venue-specific liquidity mechanics**
-- **Risk should be isolated at the market level, not generalized across all collateral types**
+Install dependencies:
 
-## How It Works
+```bash
+npm install
+```
 
-At a high level, the protocol works in three steps:
+Run the development server:
 
-1. A user deposits a supported LP position
-2. Avana evaluates the position using LP-specific pricing and risk logic
-3. The user borrows against that position while the liquidity remains active in the AMM
+```bash
+npm run dev
+```
 
-## Protocol Roadmap
+Create a production build:
 
-The Avana lightpaper outlines the following phased roadmap:
+```bash
+npm run build
+```
 
-- **Phase 1:** Token Markets
-- **Phase 2:** Leverage / Perps Markets
-- **Phase 3:** Pool Markets
+Start the production server:
 
-## Supported Design Scope
+```bash
+npm run start
+```
 
-Avana’s current public design centers on LP collateral across AMMs and liquidity venues such as:
+## Stack
 
-- Uniswap
-- Curve
-- Balancer
-- Aerodrome
+- Next.js 15
+- React 19
+- TypeScript
+- Tailwind CSS
+- Framer Motion
+- Radix UI
 
-Its public risk framework includes:
+## Reference Links
 
-- LP-specific collateral factors
-- Dual-oracle validation
-- Market-specific spoke configuration
-- Controlled liquidation execution
+- Site: https://avana-ashen.vercel.app/
+- Lightpaper: https://avana-ashen.vercel.app/lightpaper
+
+## Note
+
+This project is a frontend application for a DeFi protocol concept. LP-backed borrowing carries market, liquidation, and smart contract risk, so public protocol materials should be reviewed before any real usage or deployment.

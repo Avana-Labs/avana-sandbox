@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+  :root {
+    --background: 0 0% 99%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 0 0% 96.5%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 215 12% 44%;
+
+    --accent: 0 0% 97%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Tighter default spacing */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply mb-2; /* Reduced from mb-4 */
+  }
+  p {
+    @apply mb-2; /* Reduced from mb-4 */
+  }
+}
+
+/* Tighter utility classes */
+.container {
+  @apply px-3; /* Reduced from px-4 */
+}
+
+.card-grid {
+  @apply grid gap-3; /* Reduced from gap-4 */
+}
+
+.section-spacing {
+  @apply py-4; /* Reduced from py-6 */
+}
+
+/* Tighter form elements */
+.form-group {
+  @apply space-y-2; /* Reduced from space-y-4 */
+}
+
+/* Tighter table styles */
+.table-compact {
+  @apply [&_td]:py-2 [&_th]:py-2; /* Reduced from py-3 */
+}
+
+@keyframes loading-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
