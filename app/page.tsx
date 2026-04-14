@@ -22,7 +22,7 @@ export default async function HomePage() {
           >
             <Button variant="outline" size="sm" className="gap-2">
               <Trophy className="h-3.5 w-3.5 text-primary" />
-              {totalPoints.toLocaleString()} points
+              <span className="font-data">{totalPoints.toLocaleString()}</span> points
             </Button>
             <HomeHowItWorksDialog steps={howItWorksSteps} />
           </PageIntro>
@@ -36,7 +36,7 @@ export default async function HomePage() {
                     <p className="text-sm text-muted-foreground">{metric.label}</p>
                     <div className="flex items-baseline gap-2">
                       <p
-                        className={`text-3xl font-bold ${
+                        className={`font-data text-3xl font-bold ${
                           metric.label === "Borrowing Power" || metric.label === "Fees Preserved" ? "text-emerald-600" : ""
                         }`}
                       >
@@ -46,7 +46,7 @@ export default async function HomePage() {
                         <p className="text-sm text-muted-foreground">{metric.secondary}</p>
                       )}
                       {metric.secondary === "Live" && (
-                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
+                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 font-compact text-xs font-medium text-emerald-700">
                           Live
                         </span>
                       )}

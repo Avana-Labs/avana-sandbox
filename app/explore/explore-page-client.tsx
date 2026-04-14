@@ -50,9 +50,9 @@ const PoolCard = memo(function PoolCard({
                   }}
                 />
               </div>
-              <span className="text-xs font-medium text-muted-foreground">{protocolLabel}</span>
+              <span className="font-compact text-xs font-medium text-muted-foreground">{protocolLabel}</span>
             </div>
-            <div className={`flex items-center gap-1 text-xs font-medium ${pool.isUp ? "text-emerald-600" : "text-rose-600"}`}>
+            <div className={`font-data flex items-center gap-1 text-xs font-medium ${pool.isUp ? "text-emerald-600" : "text-rose-600"}`}>
               {pool.isUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
               {pool.change.toFixed(1)}%
             </div>
@@ -61,7 +61,7 @@ const PoolCard = memo(function PoolCard({
           <h3 className="mb-3 text-sm font-medium text-foreground">{pool.name}</h3>
 
           <div className="relative mb-3">
-            <div className="mb-1 text-2xl font-bold text-foreground">{pool.apy.toFixed(1)}%</div>
+            <div className="font-data mb-1 text-2xl font-bold text-foreground">{pool.apy.toFixed(1)}%</div>
             <div className="h-[32px] -mx-1">
               <EnhancedGraph
                 isPositive={pool.isUp}
@@ -76,11 +76,11 @@ const PoolCard = memo(function PoolCard({
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="space-y-1">
               <span className="text-muted-foreground">TVL</span>
-              <div className="font-medium text-foreground">${(pool.tvl / 1000000).toFixed(1)}M</div>
+              <div className="font-data font-medium text-foreground">${(pool.tvl / 1000000).toFixed(1)}M</div>
             </div>
             <div className="space-y-1">
               <span className="text-muted-foreground">24h Vol</span>
-              <div className="font-medium text-foreground">${(pool.volume24h / 1000000).toFixed(1)}M</div>
+              <div className="font-data font-medium text-foreground">${(pool.volume24h / 1000000).toFixed(1)}M</div>
             </div>
           </div>
         </CardContent>
@@ -236,8 +236,8 @@ export function ExplorePageClient({ protocols, allPools, protocolLogos, itemsPer
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-sm font-medium text-muted-foreground">Total TVL</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold">${metricsData.tvl.value}B</span>
-                    <span className={`text-sm font-medium ${metricsData.tvl.isPositive ? "text-emerald-600" : "text-red-600"}`}>
+                    <span className="font-data text-2xl font-bold">${metricsData.tvl.value}B</span>
+                    <span className={`font-data text-sm font-medium ${metricsData.tvl.isPositive ? "text-emerald-600" : "text-red-600"}`}>
                       {metricsData.tvl.change > 0 ? "+" : ""}
                       {metricsData.tvl.change.toFixed(1)}%
                     </span>
@@ -254,9 +254,9 @@ export function ExplorePageClient({ protocols, allPools, protocolLogos, itemsPer
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-sm font-medium text-muted-foreground">Total Volume</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold">${metricsData.volume.value}B</span>
+                    <span className="font-data text-2xl font-bold">${metricsData.volume.value}B</span>
                     <span
-                      className={`text-sm font-medium ${metricsData.volume.isPositive ? "text-emerald-600" : "text-red-600"}`}
+                      className={`font-data text-sm font-medium ${metricsData.volume.isPositive ? "text-emerald-600" : "text-red-600"}`}
                     >
                       {metricsData.volume.change > 0 ? "+" : ""}
                       {metricsData.volume.change.toFixed(1)}%
@@ -274,8 +274,8 @@ export function ExplorePageClient({ protocols, allPools, protocolLogos, itemsPer
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-sm font-medium text-muted-foreground">Average APY</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold">{metricsData.apy.value}%</span>
-                    <span className={`text-sm font-medium ${metricsData.apy.isPositive ? "text-emerald-600" : "text-red-600"}`}>
+                    <span className="font-data text-2xl font-bold">{metricsData.apy.value}%</span>
+                    <span className={`font-data text-sm font-medium ${metricsData.apy.isPositive ? "text-emerald-600" : "text-red-600"}`}>
                       {metricsData.apy.change > 0 ? "+" : ""}
                       {metricsData.apy.change.toFixed(1)}%
                     </span>

@@ -16,7 +16,7 @@ export function HomeResourcesTab() {
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1 space-y-4">
             <div className="space-y-2">
-              <h3 className="text-2xl font-bold">Explore the Avana Sandbox</h3>
+              <h3 className="text-2xl font-semibold">Explore the Avana Sandbox</h3>
               <p className="text-muted-foreground">
                 Use the latest Avana preview to test LP-backed borrowing flows and review the current protocol
                 experience.
@@ -41,7 +41,7 @@ export function HomeResourcesTab() {
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold">12</div>
+                    <div className="font-data text-2xl font-bold">12</div>
                     <p className="text-sm text-muted-foreground">Supported Venues</p>
                   </div>
                 </CardContent>
@@ -49,7 +49,7 @@ export function HomeResourcesTab() {
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold">$85.00</div>
+                    <div className="font-data text-2xl font-bold">$85.00</div>
                     <p className="text-sm text-muted-foreground">Design Foundation</p>
                   </div>
                 </CardContent>
@@ -82,7 +82,7 @@ export function HomeResourcesTab() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg font-medium">Key Resources</CardTitle>
+                <CardTitle className="text-lg">Key Resources</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -116,7 +116,7 @@ export function HomeResourcesTab() {
                         <TableCell>{resource.earned}</TableCell>
                         <TableCell>{resource.date}</TableCell>
                         <TableCell>
-                          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700">
+                          <span className="inline-flex items-center rounded-full px-2 py-1 font-compact text-xs font-medium bg-emerald-50 text-emerald-700">
                             {resource.status}
                           </span>
                         </TableCell>

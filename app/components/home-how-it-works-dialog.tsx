@@ -21,7 +21,7 @@ export function HomeHowItWorksDialog({ steps }: HomeHowItWorksDialogProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">How Avana Works</DialogTitle>
+          <DialogTitle className="text-2xl font-semibold">How Avana Works</DialogTitle>
         </DialogHeader>
         <div className="mt-6 space-y-8">
           <p className="text-muted-foreground">
@@ -31,7 +31,7 @@ export function HomeHowItWorksDialog({ steps }: HomeHowItWorksDialogProps) {
           <div className="space-y-6">
             {steps.map((step) => (
               <div key={step.number} className="flex gap-4">
-                <div className="text-xl font-bold text-primary/50">{step.number}</div>
+                <div className="font-data text-xl font-bold text-primary/50">{step.number}</div>
                 <div className="space-y-1">
                   <h3 className="font-semibold">{step.title}</h3>
                   <p className="text-sm text-muted-foreground">{step.description}</p>

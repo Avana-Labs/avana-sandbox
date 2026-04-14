@@ -28,7 +28,7 @@ export function MobileMenu() {
         </SheetHeader>
         <div className="flex flex-col h-full">
           <div className="p-4 border-b">
-            <Link href="/" className="text-xl font-semibold flex items-center gap-2" onClick={() => setOpen(false)}>
+            <Link href="/" className="font-brand text-xl font-medium flex items-center gap-2" onClick={() => setOpen(false)}>
               Avana
             </Link>
           </div>
@@ -41,7 +41,7 @@ export function MobileMenu() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="flex items-center gap-3 text-lg font-medium"
+                    className="flex items-center gap-3 font-compact text-lg font-medium"
                     onClick={() => setOpen(false)}
                   >
                     <Icon className="h-4 w-4 text-muted-foreground" />
