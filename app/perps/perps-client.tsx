@@ -40,7 +40,12 @@ export function PerpsClient() {
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
-          <PageIntro title="Perps" description="LP-backed leverage and directional overlays.">
+          <PageIntro
+            title="Perps"
+            titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
+            description="Trade LP-backed perps."
+            descriptionClassName="text-sm"
+          >
             <Badge variant="secondary">Phase 2</Badge>
           </PageIntro>
 
