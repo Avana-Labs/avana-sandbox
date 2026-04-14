@@ -14,13 +14,7 @@ const nextConfig = {
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
     ],
   },
-  // Windows dev: webpack disk cache (.next/cache/webpack/*.pack.gz) can go missing mid-compile.
-  webpack: (config, { dev }) => {
-    if (dev) {
-      config.cache = false
-    }
-    return config
-  },
+  turbopack: {},
 }
 
 export default nextConfig
