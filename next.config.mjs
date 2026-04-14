@@ -14,7 +14,9 @@ const nextConfig = {
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
     ],
   },
-  turbopack: {},
+  turbopack: {
+    root: process.cwd(),
+  },
 }
 
 export default nextConfig
