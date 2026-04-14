@@ -1,49 +1,90 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
   AlertTriangle,
   ChevronDown,
-  CircleDollarSign,
   Code2,
   ExternalLink,
   FileText,
-  Globe2,
+  FlaskConical,
   Info,
   LifeBuoy,
   Mail,
   Newspaper,
   Palette,
-  Scale,
   Shield,
   Wallet,
 } from "lucide-react"
 import Link from "next/link"
 
-export function WalletConnect() {
-  const [currency, setCurrency] = useState("USD")
-  const [language, setLanguage] = useState("EN")
+function AppsGridIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 18 18" fill="none" aria-hidden className={className}>
+      {[3, 9, 15].flatMap((cx) =>
+        [3, 9, 15].map((cy) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={1.7} fill="currentColor" />),
+      )}
+    </svg>
+  )
+}
 
-  const iconButtonClass =
-    "h-9 w-9 rounded-full border border-border !bg-transparent text-muted-foreground shadow-none hover:!bg-transparent hover:text-foreground"
+type MenuLinkItem = {
+  href: string
+  label: string
+  icon: typeof AlertTriangle
+  newTab?: boolean
+  internal?: boolean
+}
+
+function MenuLink({ href, label, icon: Icon, newTab, internal }: MenuLinkItem) {
+  if (internal) {
+    return (
+      <DropdownMenuItem asChild>
+        <Link href={href} className="cursor-pointer gap-2">
+          <Icon className="h-4 w-4" />
+          {label}
+        </Link>
+      </DropdownMenuItem>
+    )
+  }
+
+  return (
+    <DropdownMenuItem asChild>
+      <a href={href} target={newTab ? "_blank" : undefined} rel={newTab ? "noopener noreferrer" : undefined} className="cursor-pointer gap-2">
+        <Icon className="h-4 w-4" />
+        {label}
+      </a>
+    </DropdownMenuItem>
+  )
+}
+
+export function WalletConnect({ isResourcesActive = false }: { isResourcesActive?: boolean }) {
   const menuContentClass = "rounded-xl border border-border bg-popover p-1 shadow-md"
-  const menuItemClass = "cursor-pointer gap-2"
 
-  const supportLinks = [
+  const toolLinks: MenuLinkItem[] = [
+    {
+      href: "/incentivize",
+      label: "Simulate",
+      icon: FlaskConical,
+      internal: true,
+    },
+    {
+      href: "/risk-warning",
+      label: "Risk warning",
+      icon: AlertTriangle,
+      internal: true,
+    },
+  ]
+
+  const learnLinks: MenuLinkItem[] = [
     {
       href: "mailto:support@avana.cc?subject=Avana%20Feedback",
       label: "Give feedback",
@@ -55,40 +96,39 @@ export function WalletConnect() {
       icon: LifeBuoy,
       newTab: true,
     },
-  ]
-
-  const documentationLinks = [
     {
       href: "https://avana-ashen.vercel.app/lightpaper",
       label: "Lightpaper",
       icon: FileText,
+      newTab: true,
     },
     {
       href: "https://avana-ashen.vercel.app/developers",
       label: "Developer docs",
       icon: Code2,
+      newTab: true,
     },
   ]
 
-  const resourceLinks = [
+  const companyLinks: MenuLinkItem[] = [
     {
       href: "https://avana-ashen.vercel.app/about",
       label: "About",
       icon: Info,
+      newTab: true,
     },
     {
       href: "https://avana-ashen.vercel.app/blog",
       label: "Blog",
       icon: Newspaper,
+      newTab: true,
     },
     {
       href: "https://avana-ashen.vercel.app/brand",
       label: "Brand",
       icon: Palette,
+      newTab: true,
     },
-  ]
-
-  const legalLinks = [
     {
       href: "https://avana-ashen.vercel.app/privacy",
       label: "Privacy",
@@ -106,59 +146,17 @@ export function WalletConnect() {
       label: "Contact legal",
       icon: Mail,
     },
+    {
+      href: "https://avana-ashen.vercel.app/",
+      label: "Visit Avana",
+      icon: ExternalLink,
+      newTab: true,
+    },
   ]
 
   return (
-    <div className="flex items-center gap-2">
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={`Change currency. Current currency: ${currency}`}
-            title={`Currency: ${currency}`}
-            className={iconButtonClass}
-          >
-            <CircleDollarSign className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" sideOffset={10} className={`w-44 ${menuContentClass}`}>
-          <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Currency
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="my-0" />
-          <DropdownMenuRadioGroup value={currency} onValueChange={setCurrency}>
-            <DropdownMenuRadioItem value="USD">USD</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="EUR">EUR</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="GBP">GBP</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={`Change language. Current language: ${language}`}
-            title={`Language: ${language}`}
-            className={iconButtonClass}
-          >
-            <Globe2 className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" sideOffset={10} className={`w-44 ${menuContentClass}`}>
-          <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Language
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="my-0" />
-          <DropdownMenuRadioGroup value={language} onValueChange={setLanguage}>
-            <DropdownMenuRadioItem value="EN">English</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="ES">Spanish</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="FR">French</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <div className="flex items-center gap-3 pl-2">
+      <div className="h-9 w-px bg-border/80" />
 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
@@ -167,9 +165,11 @@ export function WalletConnect() {
             size="icon"
             aria-label="Open resources and support"
             title="Resources and support"
-            className={iconButtonClass}
+            className={`h-10 w-10 rounded-none border-transparent bg-transparent shadow-none hover:bg-transparent ${
+              isResourcesActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            <LifeBuoy className="h-4 w-4" />
+            <AppsGridIcon className="h-5 w-5" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={10} className={`w-64 ${menuContentClass}`}>
@@ -177,82 +177,27 @@ export function WalletConnect() {
             Resources
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="my-0" />
-          {supportLinks.map(({ href, icon: Icon, label, newTab }) => (
-            <DropdownMenuItem asChild key={label}>
-              <a
-                href={href}
-                target={newTab ? "_blank" : undefined}
-                rel={newTab ? "noopener noreferrer" : undefined}
-                className={menuItemClass}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </a>
-            </DropdownMenuItem>
-          ))}
-          <DropdownMenuItem asChild>
-            <Link href="/risk-warning" className="cursor-pointer gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Risk warning
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator className="my-0" />
-          {documentationLinks.map(({ href, icon: Icon, label }) => (
-            <DropdownMenuItem asChild key={label}>
-              <a href={href} target="_blank" rel="noopener noreferrer" className={menuItemClass}>
-                <Icon className="h-4 w-4" />
-                {label}
-              </a>
-            </DropdownMenuItem>
+          {toolLinks.map((item) => (
+            <MenuLink key={item.label} {...item} />
           ))}
           <DropdownMenuSeparator className="my-0" />
-          {resourceLinks.map(({ href, icon: Icon, label }) => (
-            <DropdownMenuItem asChild key={label}>
-              <a href={href} target="_blank" rel="noopener noreferrer" className={menuItemClass}>
-                <Icon className="h-4 w-4" />
-                {label}
-              </a>
-            </DropdownMenuItem>
+          {learnLinks.map((item) => (
+            <MenuLink key={item.label} {...item} />
           ))}
           <DropdownMenuSeparator className="my-0" />
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="rounded-lg">
-              <Scale className="h-4 w-4" />
-              Legal
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className={`w-56 ${menuContentClass}`}>
-              {legalLinks.map(({ href, icon: Icon, label, newTab }) => (
-                <DropdownMenuItem asChild key={label}>
-                  <a
-                    href={href}
-                    target={newTab ? "_blank" : undefined}
-                    rel={newTab ? "noopener noreferrer" : undefined}
-                    className={menuItemClass}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </a>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-          <DropdownMenuItem asChild>
-            <a href="https://avana-ashen.vercel.app/" target="_blank" rel="noopener noreferrer" className={menuItemClass}>
-              <ExternalLink className="h-4 w-4" />
-              Visit Avana
-            </a>
-          </DropdownMenuItem>
+          {companyLinks.map((item) => (
+            <MenuLink key={item.label} {...item} />
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="outline"
             size="sm"
-            className="h-9 rounded-full border border-border !bg-transparent px-3 text-xs text-foreground shadow-none hover:!bg-transparent"
+            className="h-11 rounded-full border border-border/80 bg-card px-6 text-[14px] font-medium text-foreground shadow-none hover:bg-muted/35"
           >
-            <span className="font-bold">Sign in</span>
+            <span className="font-medium">Connect</span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
