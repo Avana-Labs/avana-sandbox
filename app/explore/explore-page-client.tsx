@@ -216,7 +216,12 @@ export function ExplorePageClient({ protocols, allPools, protocolLogos, itemsPer
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
-          <PageIntro title="Borrow" description="Review LP-backed borrowing markets across supported venues and chains.">
+          <PageIntro
+            title="Borrow"
+            titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
+            description="Borrow against LP positions."
+            descriptionClassName="text-sm"
+          >
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant={timeframe === "24h" ? "default" : "outline"} onClick={() => setTimeframe("24h")}>
                 24h Change

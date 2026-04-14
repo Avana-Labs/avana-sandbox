@@ -162,7 +162,9 @@ export default function IncentivePage() {
         <div className="max-w-5xl mx-auto">
           <PageIntro
             title="Simulate"
-            description="Run incentive and liquidity scenarios before committing capital to a pool."
+            titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
+            description="Model incentives before committing capital."
+            descriptionClassName="text-sm"
           >
             <Button variant="outline" size="sm" onClick={() => setShowCopilot(!showCopilot)} className="gap-2">
               <Bot className="h-3.5 w-3.5" />

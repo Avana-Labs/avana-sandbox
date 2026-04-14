@@ -88,7 +88,12 @@ export function InvestClient() {
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
-          <PageIntro title="Invest" description="Supply capital across LP-backed sleeves and earn yield." />
+          <PageIntro
+            title="Invest"
+            titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
+            description="Supply capital and earn yield."
+            descriptionClassName="text-sm"
+          />
 
           {/* Portfolio strip — matches homepage metric cards */}
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">

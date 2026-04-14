@@ -156,7 +156,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
 
   return (
     <div className="flex items-center gap-3 pl-2">
-      <div className="h-9 w-px bg-border/80" />
+      <div className="h-10 w-px bg-foreground/20" />
 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
