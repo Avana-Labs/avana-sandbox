@@ -22,7 +22,7 @@ export function Header() {
               className="hidden h-6 w-auto object-contain md:block"
               priority
             />
-            <span className="text-lg font-semibold tracking-tight text-foreground md:hidden">Avana</span>
+            <span className="font-brand text-lg font-medium tracking-tight text-foreground md:hidden">Avana</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
@@ -34,7 +34,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`group inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-[12px] font-medium leading-none transition-colors ${
+                  className={`group inline-flex h-8 items-center gap-1.5 rounded-full px-2 font-compact text-[12px] font-medium leading-none transition-colors ${
                     isActive
                       ? "border border-border bg-transparent text-foreground"
                       : "border border-transparent text-muted-foreground hover:bg-transparent hover:text-foreground"

@@ -57,7 +57,10 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)"],
+        sans: ["var(--font-diatype-sans)", "var(--font-outfit)", "sans-serif"],
+        data: ["var(--font-diatype-data)", "var(--font-outfit)", "sans-serif"],
+        compact: ["var(--font-diatype-sans)", "var(--font-outfit)", "sans-serif"],
+        brand: ["var(--font-diatype-brand)", "var(--font-outfit)", "sans-serif"],
       },
       fontSize: {
         "2xs": ["0.625rem", { lineHeight: "0.75rem" }],
@@ -89,4 +92,3 @@ module.exports = {
   },
   plugins: [require("tailwindcss-animate")],
 }
-

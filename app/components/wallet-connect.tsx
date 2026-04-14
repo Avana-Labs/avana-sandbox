@@ -252,7 +252,7 @@ export function WalletConnect() {
             size="sm"
             className="h-9 rounded-full border border-border !bg-transparent px-3 text-xs text-foreground shadow-none hover:!bg-transparent"
           >
-            <span className="font-semibold">Sign in</span>
+            <span className="font-bold">Sign in</span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden />
           </Button>
         </DropdownMenuTrigger>

@@ -1,12 +1,69 @@
 import "./globals.css"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import localFont from "next/font/local"
 import type React from "react"
 import { Header } from "./components/header"
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+const diatypeSans = localFont({
+  src: [
+    {
+      path: "../public/fonts/diatype/core/ABCDiatype-Regular-Trial.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/diatype/core/ABCDiatype-Medium-Trial.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/diatype/core/ABCDiatypeVariable-Trial.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/diatype/core/ABCDiatype-Bold-Trial.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-diatype-sans",
+  display: "swap",
+})
+
+const diatypeData = localFont({
+  src: [
+    {
+      path: "../public/fonts/diatype/data/ABCDiatypeSemi-MonoVariable-Trial.woff2",
+      weight: "400 700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-diatype-data",
+  display: "swap",
+})
+
+const diatypeBrand = localFont({
+  src: [
+    {
+      path: "../public/fonts/diatype/brand/ABCDiatypeExtended-Medium-Trial.woff2",
+      weight: "500",
+      style: "normal",
+    },
+  ],
+  variable: "--font-diatype-brand",
+  display: "swap",
+})
+
+const outfitFallback = localFont({
+  src: [
+    {
+      path: "../public/fonts/outfit/Outfit-VariableFont_wght.ttf",
+      weight: "400 700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-outfit",
   display: "swap",
 })
 
@@ -78,9 +135,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable}`}>
+    <html
+      lang="en"
+      className={`${diatypeSans.variable} ${diatypeData.variable} ${diatypeBrand.variable} ${outfitFallback.variable}`}
+    >
       <head />
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className="min-h-screen bg-background font-sans">
         <div className="flex min-h-screen flex-col">
           <Header />
           <div className="flex-1">{children}</div>

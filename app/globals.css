@@ -5,6 +5,8 @@
 @layer base {
   html {
     scrollbar-gutter: stable;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   :root {
     --background: 0 0% 99%;
@@ -42,6 +44,7 @@
 @layer base {
   * {
     @apply border-border;
+    font-synthesis: none;
   }
   body {
     @apply bg-background text-foreground;

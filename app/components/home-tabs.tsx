@@ -46,7 +46,7 @@ export function HomeTabs({ chains }: HomeTabsProps) {
               aria-selected={isActive}
               aria-controls={`home-tab-panel-${tab.id}`}
               id={`home-tab-${tab.id}`}
-              className={`inline-flex w-full items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+              className={`inline-flex w-full items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 font-compact text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                 isActive ? "bg-background text-foreground shadow-sm" : ""
               }`}
               onClick={() => setActiveTab(tab.id)}
