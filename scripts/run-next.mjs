@@ -12,23 +12,31 @@ if (!supportedModes.has(mode)) {
   process.exit(1)
 }
 
-const modeConfig = {
-  dev: {
-    distDir: ".next-dev",
-    lockFile: ".next-dev.lock.json",
-    cleanTargets: [".next-dev", ".next"],
-  },
-  build: {
-    distDir: ".next-prod",
-    guardLockFile: ".next-prod.lock.json",
-    cleanTargets: [".next-prod", ".next"],
-  },
-  start: {
-    distDir: ".next-prod",
-    lockFile: ".next-prod.lock.json",
-    cleanTargets: [],
-  },
-}
+const isCI = !!(process.env.VERCEL || process.env.CI)
+
+const modeConfig = isCI
+  ? {
+      dev:   { distDir: ".next", cleanTargets: [] },
+      build: { distDir: ".next", cleanTargets: [] },
+      start: { distDir: ".next", cleanTargets: [] },
+    }
+  : {
+      dev: {
+        distDir: ".next-dev",
+        lockFile: ".next-dev.lock.json",
+        cleanTargets: [".next-dev", ".next"],
+      },
+      build: {
+        distDir: ".next-prod",
+        guardLockFile: ".next-prod.lock.json",
+        cleanTargets: [".next-prod", ".next"],
+      },
+      start: {
+        distDir: ".next-prod",
+        lockFile: ".next-prod.lock.json",
+        cleanTargets: [],
+      },
+    }
 
 const config = modeConfig[mode]
 const nextBin = path.join(root, "node_modules", "next", "dist", "bin", "next")
