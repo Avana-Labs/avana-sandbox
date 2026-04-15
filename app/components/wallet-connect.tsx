@@ -1,6 +1,5 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,9 +8,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import Link from "next/link"
 import {
   AlertTriangle,
   ArrowUpRight,
+  CircleUserRound,
   Code2,
   FileText,
   FlaskConical,
@@ -21,7 +22,6 @@ import {
   Trophy,
   type LucideIcon,
 } from "lucide-react"
-import Link from "next/link"
 
 function AppsGridIcon({ className }: { className?: string }) {
   return (
@@ -150,8 +150,8 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
   ]
 
   return (
-    <div className="flex items-center gap-3 pl-2">
-      <div className="h-10 w-px bg-foreground/20" />
+    <div className="flex items-center gap-3 2xl:gap-2 pl-2">
+      <div className="h-8 2xl:h-6 w-px bg-foreground/20" />
 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
@@ -159,11 +159,11 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
             type="button"
             aria-label="Open resources and support"
             title="Resources and support"
-            className={`flex h-10 w-10 appearance-none select-none items-center justify-center rounded-none border-transparent bg-transparent shadow-none outline-none ring-0 [-webkit-tap-highlight-color:transparent] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:bg-transparent active:ring-0 hover:bg-transparent ${
+            className={`flex h-9 w-9 2xl:h-7 2xl:w-7 appearance-none select-none items-center justify-center rounded-none border-transparent bg-transparent shadow-none outline-none ring-0 [-webkit-tap-highlight-color:transparent] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:bg-transparent active:ring-0 hover:bg-transparent ${
               isResourcesActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <AppsGridIcon className="h-6 w-6" />
+            <AppsGridIcon className="h-5 w-5 2xl:h-4 2xl:w-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={10} className={`w-64 ${menuContentClass}`}>
@@ -188,12 +188,14 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button
-        size="sm"
-        className="h-11 rounded-full border border-border/80 bg-card px-6 text-[14px] font-medium text-foreground shadow-none hover:bg-muted/35"
+      <button
+        type="button"
+        aria-label="Sign in"
+        title="Sign in"
+        className="flex h-10 w-10 2xl:h-8 2xl:w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
       >
-        <span className="font-medium">Sign In</span>
-      </Button>
+        <CircleUserRound className="h-6 w-6 2xl:h-5 2xl:w-5" strokeWidth={1.5} />
+      </button>
     </div>
   )
 }
