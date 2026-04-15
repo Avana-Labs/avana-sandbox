@@ -10,19 +10,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  AlertTriangle,
-  ChevronDown,
+  ArrowUpRight,
   Code2,
-  ExternalLink,
   FileText,
   FlaskConical,
-  Info,
   LifeBuoy,
   Mail,
-  Newspaper,
-  Palette,
   Shield,
-  Wallet,
+  type LucideIcon,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -39,18 +34,29 @@ function AppsGridIcon({ className }: { className?: string }) {
 type MenuLinkItem = {
   href: string
   label: string
-  icon: typeof AlertTriangle
+  icon: LucideIcon
   newTab?: boolean
   internal?: boolean
 }
 
 function MenuLink({ href, label, icon: Icon, newTab, internal }: MenuLinkItem) {
+  const outbound = !internal
+
+  const itemContent = (
+    <>
+      <span className="inline-flex items-center gap-2">
+        <Icon className="h-4 w-4" />
+        {label}
+      </span>
+      {outbound ? <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/80" aria-hidden /> : null}
+    </>
+  )
+
   if (internal) {
     return (
       <DropdownMenuItem asChild>
-        <Link href={href} className="cursor-pointer gap-2">
-          <Icon className="h-4 w-4" />
-          {label}
+        <Link href={href} className="cursor-pointer justify-between gap-2">
+          {itemContent}
         </Link>
       </DropdownMenuItem>
     )
@@ -58,9 +64,13 @@ function MenuLink({ href, label, icon: Icon, newTab, internal }: MenuLinkItem) {
 
   return (
     <DropdownMenuItem asChild>
-      <a href={href} target={newTab ? "_blank" : undefined} rel={newTab ? "noopener noreferrer" : undefined} className="cursor-pointer gap-2">
-        <Icon className="h-4 w-4" />
-        {label}
+      <a
+        href={href}
+        target={newTab ? "_blank" : undefined}
+        rel={newTab ? "noopener noreferrer" : undefined}
+        className="cursor-pointer justify-between gap-2"
+      >
+        {itemContent}
       </a>
     </DropdownMenuItem>
   )
@@ -69,7 +79,7 @@ function MenuLink({ href, label, icon: Icon, newTab, internal }: MenuLinkItem) {
 export function WalletConnect({ isResourcesActive = false }: { isResourcesActive?: boolean }) {
   const menuContentClass = "rounded-xl border border-border bg-popover p-1 shadow-md"
 
-  const toolLinks: MenuLinkItem[] = [
+  const topLinks: MenuLinkItem[] = [
     {
       href: "/incentivize",
       label: "Simulate",
@@ -77,25 +87,14 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
       internal: true,
     },
     {
-      href: "/risk-warning",
-      label: "Risk warning",
-      icon: AlertTriangle,
-      internal: true,
-    },
-  ]
-
-  const learnLinks: MenuLinkItem[] = [
-    {
-      href: "mailto:support@avana.cc?subject=Avana%20Feedback",
-      label: "Give feedback",
-      icon: Mail,
-    },
-    {
       href: "https://avana-ashen.vercel.app/faq",
       label: "Support center",
       icon: LifeBuoy,
       newTab: true,
     },
+  ]
+
+  const docsLinks: MenuLinkItem[] = [
     {
       href: "https://avana-ashen.vercel.app/lightpaper",
       label: "Lightpaper",
@@ -106,27 +105,6 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
       href: "https://avana-ashen.vercel.app/developers",
       label: "Developer docs",
       icon: Code2,
-      newTab: true,
-    },
-  ]
-
-  const companyLinks: MenuLinkItem[] = [
-    {
-      href: "https://avana-ashen.vercel.app/about",
-      label: "About",
-      icon: Info,
-      newTab: true,
-    },
-    {
-      href: "https://avana-ashen.vercel.app/blog",
-      label: "Blog",
-      icon: Newspaper,
-      newTab: true,
-    },
-    {
-      href: "https://avana-ashen.vercel.app/brand",
-      label: "Brand",
-      icon: Palette,
       newTab: true,
     },
     {
@@ -141,15 +119,18 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
       icon: FileText,
       newTab: true,
     },
+  ]
+
+  const moreLinks: MenuLinkItem[] = [
     {
-      href: "mailto:legal@avana.cc?subject=Avana%20Legal%20Inquiry",
-      label: "Contact legal",
+      href: "mailto:support@avana.cc?subject=Avana%20Feedback",
+      label: "Give feedback",
       icon: Mail,
     },
     {
       href: "https://avana-ashen.vercel.app/",
-      label: "Visit Avana",
-      icon: ExternalLink,
+      label: "About Avana",
+      icon: FileText,
       newTab: true,
     },
   ]
@@ -160,69 +141,45 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
+          <button
+            type="button"
             aria-label="Open resources and support"
             title="Resources and support"
-            className={`h-10 w-10 rounded-none border-transparent bg-transparent shadow-none hover:bg-transparent ${
+            className={`flex h-10 w-10 items-center justify-center rounded-none border-transparent bg-transparent shadow-none hover:bg-transparent ${
               isResourcesActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <AppsGridIcon className="h-5 w-5" />
-          </Button>
+            <AppsGridIcon className="h-6 w-6" />
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={10} className={`w-64 ${menuContentClass}`}>
           <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             Resources
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="my-0" />
-          {toolLinks.map((item) => (
+          {topLinks.map((item) => (
             <MenuLink key={item.label} {...item} />
           ))}
           <DropdownMenuSeparator className="my-0" />
-          {learnLinks.map((item) => (
+          <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Docs
+          </DropdownMenuLabel>
+          {docsLinks.map((item) => (
             <MenuLink key={item.label} {...item} />
           ))}
           <DropdownMenuSeparator className="my-0" />
-          {companyLinks.map((item) => (
+          {moreLinks.map((item) => (
             <MenuLink key={item.label} {...item} />
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            size="sm"
-            className="h-11 rounded-full border border-border/80 bg-card px-6 text-[14px] font-medium text-foreground shadow-none hover:bg-muted/35"
-          >
-            <span className="font-medium">Connect</span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" sideOffset={10} className={`w-56 ${menuContentClass}`}>
-          <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Access Avana
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="my-0" />
-          <DropdownMenuItem className="gap-2">
-            <Wallet className="h-4 w-4" />
-            Connect wallet
-          </DropdownMenuItem>
-          <DropdownMenuItem className="gap-2">
-            <Mail className="h-4 w-4" />
-            Continue with email
-          </DropdownMenuItem>
-          <DropdownMenuSeparator className="my-0" />
-          <DropdownMenuItem asChild>
-            <Link href="/risk-warning" className="cursor-pointer gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Review risk warning
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button
+        size="sm"
+        className="h-11 rounded-full border border-border/80 bg-card px-6 text-[14px] font-medium text-foreground shadow-none hover:bg-muted/35"
+      >
+        <span className="font-medium">Sign In</span>
+      </Button>
     </div>
   )
 }
