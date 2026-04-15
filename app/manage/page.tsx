@@ -151,7 +151,7 @@ export default function PortfolioPage() {
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-muted-foreground">Total Value</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">${totalValue.toLocaleString()}</span>
+                    <span className="font-data text-2xl font-bold">${totalValue.toLocaleString()}</span>
                     <span className="text-sm text-emerald-600 flex items-center">
                       <ArrowUpRight className="h-4 w-4" />
                       2.5%
@@ -169,7 +169,7 @@ export default function PortfolioPage() {
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-muted-foreground">Total APR</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">{averageAPR.toFixed(1)}%</span>
+                    <span className="font-data text-2xl font-bold">{averageAPR.toFixed(1)}%</span>
                     <span className="text-sm text-rose-600 flex items-center">
                       <ArrowDownRight className="h-4 w-4" />
                       0.8%
@@ -187,7 +187,7 @@ export default function PortfolioPage() {
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-muted-foreground">Total Earned</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">${totalEarned.toLocaleString()}</span>
+                    <span className="font-data text-2xl font-bold">${totalEarned.toLocaleString()}</span>
                     <Button variant="outline" size="sm" className="h-6">
                       Claim
                     </Button>
@@ -220,7 +220,7 @@ export default function PortfolioPage() {
             {/* Positions Tab */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <CardTitle className="text-lg font-medium">Active Positions</CardTitle>
+                <CardTitle className="text-lg">Active Positions</CardTitle>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Show Claimable</span>
                   <Switch checked={showClaimable} onCheckedChange={setShowClaimable} />
@@ -249,9 +249,9 @@ export default function PortfolioPage() {
                           </div>
                         </TableCell>
                         <TableCell>{position.chain}</TableCell>
-                        <TableCell className="text-right">${position.value.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">{position.apr}%</TableCell>
-                        <TableCell className="text-right">${position.earned}</TableCell>
+                        <TableCell className="font-data text-right">${position.value.toLocaleString()}</TableCell>
+                        <TableCell className="font-data text-right">{position.apr}%</TableCell>
+                        <TableCell className="font-data text-right">${position.earned}</TableCell>
                         <TableCell className="text-right">
                           <span className={position.isUp ? "text-emerald-600" : "text-rose-600"}>
                             {position.isUp ? "+" : "-"}
@@ -273,7 +273,7 @@ export default function PortfolioPage() {
             {/* Activity Tab */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg font-medium">Recent Activity</CardTitle>
+                <CardTitle className="text-lg">Recent Activity</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -294,7 +294,7 @@ export default function PortfolioPage() {
                         <TableCell>{tx.value}</TableCell>
                         <TableCell>{tx.timestamp}</TableCell>
                         <TableCell>
-                          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700">
+                          <span className="inline-flex items-center rounded-full px-2 py-1 font-compact text-xs font-medium bg-emerald-50 text-emerald-700">
                             {tx.status}
                           </span>
                         </TableCell>
@@ -309,7 +309,7 @@ export default function PortfolioPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium">Available Rewards</CardTitle>
+                  <CardTitle className="text-lg">Available Rewards</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-8">
                   <div className="flex items-center justify-between">
@@ -318,7 +318,7 @@ export default function PortfolioPage() {
                       <p className="text-sm text-muted-foreground">From your liquidity positions</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <p className="text-2xl font-bold">$89.50</p>
+                      <p className="font-data text-2xl font-bold">$89.50</p>
                       <Button size="sm">Claim</Button>
                     </div>
                   </div>
@@ -328,7 +328,7 @@ export default function PortfolioPage() {
                       <p className="text-sm text-muted-foreground">Protocol incentives</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <p className="text-2xl font-bold">$45.20</p>
+                      <p className="font-data text-2xl font-bold">$45.20</p>
                       <Button size="sm">Claim</Button>
                     </div>
                   </div>
@@ -337,7 +337,7 @@ export default function PortfolioPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium">Reward History</CardTitle>
+                  <CardTitle className="text-lg">Reward History</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-8">
@@ -347,7 +347,7 @@ export default function PortfolioPage() {
                         <p className="text-sm font-medium leading-none">Trading Fees Claimed</p>
                         <p className="text-sm text-muted-foreground">Jan 15, 2024</p>
                       </div>
-                      <div className="ml-auto font-medium">+$250.00</div>
+                      <div className="font-data ml-auto font-medium">+$250.00</div>
                     </div>
                     <div className="flex items-center">
                       <Gift className="h-9 w-9 text-primary" />
@@ -355,7 +355,7 @@ export default function PortfolioPage() {
                         <p className="text-sm font-medium leading-none">Referral Bonus</p>
                         <p className="text-sm text-muted-foreground">Jan 12, 2024</p>
                       </div>
-                      <div className="ml-auto font-medium">+$50.00</div>
+                      <div className="font-data ml-auto font-medium">+$50.00</div>
                     </div>
                   </div>
                 </CardContent>
@@ -402,7 +402,7 @@ export default function PortfolioPage() {
                                   {item.category}
                                 </span>
                                 {item.isImportant && (
-                                  <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
+                                  <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-compact text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
                                     Important
                                   </span>
                                 )}

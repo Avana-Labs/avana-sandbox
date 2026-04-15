@@ -88,7 +88,12 @@ export function InvestClient() {
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
-          <PageIntro title="Invest" description="Supply capital across LP-backed sleeves and earn yield." />
+          <PageIntro
+            title="Invest"
+            titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
+            description="Supply capital and earn yield."
+            descriptionClassName="text-sm"
+          />
 
           {/* Portfolio strip — matches homepage metric cards */}
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -101,7 +106,7 @@ export function InvestClient() {
               <Card key={stat.label} className="overflow-hidden border-border/60 bg-card">
                 <CardContent className="pt-6">
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className={`text-2xl font-bold ${stat.highlight ? "text-emerald-600" : ""}`}>{stat.value}</p>
+                  <p className={`font-data text-2xl font-bold ${stat.highlight ? "text-emerald-600" : ""}`}>{stat.value}</p>
                 </CardContent>
               </Card>
             ))}
@@ -133,7 +138,7 @@ export function InvestClient() {
                           </SelectContent>
                         </Select>
                         <div className="text-right">
-                          <p className="text-2xl font-bold">
+                          <p className="font-data text-2xl font-bold">
                             {selectedToken.symbol === "ETH"
                               ? (amount / selectedToken.price).toFixed(4)
                               : amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}
@@ -192,7 +197,7 @@ export function InvestClient() {
                                 <span className="text-sm font-medium">{s.name}</span>
                               </div>
                               <div className="mt-2 flex items-center justify-between">
-                                <span className="text-lg font-bold text-emerald-600">{s.apy}%</span>
+                                <span className="font-data text-lg font-bold text-emerald-600">{s.apy}%</span>
                                 <Badge variant="outline" className="text-[10px]">{s.risk}</Badge>
                               </div>
                             </button>
@@ -208,15 +213,15 @@ export function InvestClient() {
                       <div className="grid grid-cols-3 gap-3">
                         <div>
                           <p className="text-xs text-muted-foreground">Daily</p>
-                          <p className="font-bold">${projectedYield.daily.toFixed(2)}</p>
+                          <p className="font-data font-bold">${projectedYield.daily.toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Monthly</p>
-                          <p className="font-bold">${projectedYield.monthly.toFixed(0)}</p>
+                          <p className="font-data font-bold">${projectedYield.monthly.toFixed(0)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Yearly</p>
-                          <p className="font-bold">${projectedYield.yearly.toLocaleString("en-US", { maximumFractionDigits: 0 })}</p>
+                          <p className="font-data font-bold">${projectedYield.yearly.toLocaleString("en-US", { maximumFractionDigits: 0 })}</p>
                         </div>
                       </div>
                     </div>
@@ -224,15 +229,15 @@ export function InvestClient() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Sleeve APY</span>
-                        <span className="font-medium text-emerald-600">{sleeve.apy}%</span>
+                        <span className="font-data font-medium text-emerald-600">{sleeve.apy}%</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Utilization</span>
-                        <span className="font-medium">{sleeve.utilization}%</span>
+                        <span className="font-data font-medium">{sleeve.utilization}%</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">TVL</span>
-                        <span className="font-medium">{sleeve.tvl}</span>
+                        <span className="font-data font-medium">{sleeve.tvl}</span>
                       </div>
                     </div>
 
@@ -257,7 +262,7 @@ export function InvestClient() {
                           </SelectContent>
                         </Select>
                         <div className="text-right">
-                          <p className="text-2xl font-bold">
+                          <p className="font-data text-2xl font-bold">
                             {amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -295,21 +300,21 @@ export function InvestClient() {
                   <div className="grid grid-cols-3 gap-3 text-sm">
                     <div>
                       <p className="text-muted-foreground">APY</p>
-                      <p className="font-bold text-emerald-600">{sleeve.apy}%</p>
+                      <p className="font-data font-bold text-emerald-600">{sleeve.apy}%</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">TVL</p>
-                      <p className="font-bold">{sleeve.tvl}</p>
+                      <p className="font-data font-bold">{sleeve.tvl}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Util.</p>
-                      <p className="font-bold">{sleeve.utilization}%</p>
+                      <p className="font-data font-bold">{sleeve.utilization}%</p>
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Utilization</span>
-                      <span className="font-medium">{sleeve.utilization}%</span>
+                      <span className="font-data font-medium">{sleeve.utilization}%</span>
                     </div>
                     <Progress value={sleeve.utilization} className="h-1.5" />
                   </div>
@@ -322,15 +327,15 @@ export function InvestClient() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Supplied</span>
-                      <span className="font-medium">${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                      <span className="font-data font-medium">${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Earned (all time)</span>
-                      <span className="font-medium text-emerald-600">$1,240</span>
+                      <span className="font-data font-medium text-emerald-600">$1,240</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Pending rewards</span>
-                      <span className="font-medium">$84.20</span>
+                      <span className="font-data font-medium">$84.20</span>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="w-full">
@@ -345,7 +350,7 @@ export function InvestClient() {
           <Card className="overflow-hidden border-border/60 bg-card">
             <CardContent className="p-4 pt-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-medium">Markets</h2>
+                <h2 className="text-sm font-semibold">Markets</h2>
                 <button onClick={toggleSort} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                   <ArrowDownUp className="h-3.5 w-3.5" />
                   {sortApy ? "Default order" : "Sort by APY"}
@@ -354,7 +359,7 @@ export function InvestClient() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b text-left text-xs text-muted-foreground">
+                    <tr className="border-b text-left font-compact text-xs text-muted-foreground">
                       <th className="pb-3 font-medium">Pool</th>
                       <th className="pb-3 font-medium">Protocol</th>
                       <th className="pb-3 font-medium">Chain</th>
@@ -372,9 +377,9 @@ export function InvestClient() {
                         <td className="py-3">
                           <Badge variant="outline" className="text-[10px]">{m.chain}</Badge>
                         </td>
-                        <td className="py-3 text-right font-medium text-emerald-600">{m.apy}%</td>
-                        <td className="py-3 text-right">{m.tvl}</td>
-                        <td className="py-3 text-right">{m.utilization}%</td>
+                        <td className="font-data py-3 text-right font-medium text-emerald-600">{m.apy}%</td>
+                        <td className="font-data py-3 text-right">{m.tvl}</td>
+                        <td className="font-data py-3 text-right">{m.utilization}%</td>
                         <td className="py-3 text-right">
                           <Button size="sm" variant="outline" className="h-7 text-xs">
                             Supply

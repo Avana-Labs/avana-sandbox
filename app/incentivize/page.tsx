@@ -85,10 +85,10 @@ function PoolCard({
         {/* Protocol Header */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">{pool.protocol}</span>
+            <span className="font-compact text-xs font-medium text-muted-foreground">{pool.protocol}</span>
           </div>
           <div
-            className={`flex items-center gap-1 text-xs font-medium ${pool.isUp ? "text-emerald-600" : "text-rose-600"}`}
+            className={`font-data flex items-center gap-1 text-xs font-medium ${pool.isUp ? "text-emerald-600" : "text-rose-600"}`}
           >
             {pool.isUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {pool.change.toFixed(1)}%
@@ -100,7 +100,7 @@ function PoolCard({
 
         {/* APY and Graph */}
         <div className="relative mb-3">
-          <div className="text-2xl font-bold text-foreground mb-1">{pool.currentApy.toFixed(1)}%</div>
+          <div className="font-data text-2xl font-bold text-foreground mb-1">{pool.currentApy.toFixed(1)}%</div>
           <div className="h-[32px] -mx-1">
             <EnhancedGraph isPositive={pool.isUp} points={12} height={32} className="scale-110 origin-bottom" />
           </div>
@@ -110,11 +110,11 @@ function PoolCard({
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div className="space-y-1">
             <span className="text-muted-foreground">TVL</span>
-            <div className="font-medium text-foreground">${(pool.tvl / 1000000).toFixed(1)}M</div>
+            <div className="font-data font-medium text-foreground">${(pool.tvl / 1000000).toFixed(1)}M</div>
           </div>
           <div className="space-y-1">
             <span className="text-muted-foreground">Your Position</span>
-            <div className="font-medium text-foreground">${(pool.userPosition / 1000).toFixed(1)}K</div>
+            <div className="font-data font-medium text-foreground">${(pool.userPosition / 1000).toFixed(1)}K</div>
           </div>
         </div>
 
@@ -162,7 +162,9 @@ export default function IncentivePage() {
         <div className="max-w-5xl mx-auto">
           <PageIntro
             title="Simulate"
-            description="Run incentive and liquidity scenarios before committing capital to a pool."
+            titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
+            description="Model incentives before committing capital."
+            descriptionClassName="text-sm"
           >
             <Button variant="outline" size="sm" onClick={() => setShowCopilot(!showCopilot)} className="gap-2">
               <Bot className="h-3.5 w-3.5" />
@@ -316,19 +318,19 @@ export default function IncentivePage() {
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-muted-foreground">Amount</span>
-                              <span className="font-semibold">
+                              <span className="font-data font-semibold">
                                 {amount} {getSelectedToken()?.name}
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-muted-foreground">Duration</span>
-                              <span className="font-semibold">{duration} days</span>
+                              <span className="font-data font-semibold">{duration} days</span>
                             </div>
                           </div>
                           <div className="pt-4 border-t">
                             <div className="flex items-center justify-between text-lg font-semibold">
                               <span>Estimated APR Boost</span>
-                              <span className="text-emerald-600">+{(Number(amount) * 0.1).toFixed(1)}%</span>
+                              <span className="font-data text-emerald-600">+{(Number(amount) * 0.1).toFixed(1)}%</span>
                             </div>
                           </div>
                         </div>

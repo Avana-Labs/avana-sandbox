@@ -5,6 +5,8 @@ type PageIntroProps = {
   title: ReactNode
   description?: ReactNode
   className?: string
+  titleClassName?: string
+  descriptionClassName?: string
   /** Right-side actions (buttons, toggles) */
   children?: ReactNode
 }
@@ -12,7 +14,12 @@ type PageIntroProps = {
 /**
  * Compact page title row: sits below the global header without competing with the logo.
  */
-export function PageIntro({ title, description, className, children }: PageIntroProps) {
+export function PageIntro({
+  title,
+  className,
+  titleClassName,
+  children,
+}: PageIntroProps) {
   return (
     <div
       className={cn(
@@ -21,10 +28,7 @@ export function PageIntro({ title, description, className, children }: PageIntro
       )}
     >
       <div className="min-w-0 space-y-1">
-        <h1 className="text-base font-semibold leading-snug tracking-tight text-foreground">{title}</h1>
-        {description != null ? (
-          <div className="max-w-md text-xs leading-relaxed text-muted-foreground [&_p]:m-0">{description}</div>
-        ) : null}
+        <h1 className={cn("text-base font-semibold leading-snug tracking-tight text-foreground", titleClassName)}>{title}</h1>
       </div>
       {children ? (
         <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center">{children}</div>

@@ -4,58 +4,59 @@ import { MobileMenu } from "./mobile-menu"
 import { WalletConnect } from "./wallet-connect"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { siteNavLinks } from "./site-nav"
+import { cn } from "@/lib/utils"
+import { getActiveSiteNav, siteNavLinks } from "./site-nav"
 
 export function Header() {
   const pathname = usePathname()
+  const activeNav = getActiveSiteNav(pathname)
+  const mainNavLinks = siteNavLinks.filter((link) => link.href !== "/incentivize")
+  const isResourcesActive =
+    pathname.startsWith("/rewards-hub") || pathname.startsWith("/incentivize") || pathname.startsWith("/risk-warning")
 
   return (
-    <header className="container mx-auto bg-transparent px-4 pb-3 pt-4">
-      <div className="mx-auto flex max-w-5xl items-center gap-4">
-        <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
-          <Link href="/" aria-label="Home" title="Home" className="flex items-center rounded-full">
-            <Image
-              src="/Try.png"
-              alt="Avana"
-              width={150}
-              height={32}
-              className="hidden h-6 w-auto object-contain md:block"
-              priority
-            />
-            <span className="text-lg font-semibold tracking-tight text-foreground md:hidden">Avana</span>
-          </Link>
+    <header className="sticky top-0 z-40 border-b border-foreground/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90">
+      <div className="flex h-[62px] w-full items-center gap-4 px-4 md:px-6 lg:px-8">
+        <Link href="/" aria-label="Home" title="Home" className="shrink-0 flex items-center">
+          <Image
+            src="/Try.png"
+            alt="Avana"
+            width={142}
+            height={30}
+            className="h-6 w-auto object-contain md:h-6"
+            priority
+          />
+        </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
-            {siteNavLinks.map((link) => {
-              const Icon = link.icon
-              const isActive = pathname === link.href
+        <nav className="ml-auto hidden items-stretch gap-0.5 md:flex">
+          {mainNavLinks.map((link) => {
+            const Icon = link.icon
+            const isActive = activeNav.href === link.href
 
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`group inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-[12px] font-medium leading-none transition-colors ${
-                    isActive
-                      ? "border border-border bg-transparent text-foreground"
-                      : "border border-transparent text-muted-foreground hover:bg-transparent hover:text-foreground"
-                  }`}
-                >
-                  <Icon
-                    className={`h-3.5 w-3.5 shrink-0 transition-colors ${
-                      isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
-                    }`}
-                  />
-                  <span>{link.label}</span>
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "group relative flex min-w-[72px] flex-col items-center justify-center gap-1 px-2 py-2 text-[13px] font-normal leading-none transition-colors",
+                  isActive ? "text-foreground" : "text-muted-foreground/80 hover:text-foreground",
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-5 w-5 shrink-0 transition-colors",
+                    isActive ? "text-foreground" : "text-muted-foreground/80 group-hover:text-foreground",
+                  )}
+                />
+                <span className="whitespace-nowrap">{link.label}</span>
+              </Link>
+            )
+          })}
 
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="hidden md:block">
-            <WalletConnect />
-          </div>
+          <WalletConnect isResourcesActive={isResourcesActive} />
+        </nav>
+
+        <div className="ml-auto md:hidden">
           <MobileMenu />
         </div>
       </div>

@@ -40,7 +40,12 @@ export function PerpsClient() {
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
-          <PageIntro title="Perps" description="LP-backed leverage and directional overlays.">
+          <PageIntro
+            title="Perps"
+            titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
+            description="Trade LP-backed perps."
+            descriptionClassName="text-sm"
+          >
             <Badge variant="secondary">Phase 2</Badge>
           </PageIntro>
 
@@ -71,10 +76,10 @@ export function PerpsClient() {
                   <div className="flex items-end justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">{market.name} Perpetual</p>
-                      <p className="text-3xl font-bold">${market.price.toLocaleString("en-US")}</p>
+                      <p className="font-data text-3xl font-bold">${market.price.toLocaleString("en-US")}</p>
                     </div>
                     <div className="text-right">
-                      <span className={`text-sm font-medium ${market.change >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                      <span className={`font-data text-sm font-medium ${market.change >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                         {market.change >= 0 ? "+" : ""}{market.change}%
                       </span>
                       <p className="text-xs text-muted-foreground">
@@ -111,7 +116,7 @@ export function PerpsClient() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className={`font-bold ${pos.pnl >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                          <p className={`font-data font-bold ${pos.pnl >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                             {pos.pnl >= 0 ? "+" : ""}${pos.pnl.toFixed(2)}
                           </p>
                           <p className={`text-xs ${pos.pnl >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
@@ -158,7 +163,7 @@ export function PerpsClient() {
                       inputMode="decimal"
                       value={sizeInput}
                       onChange={(e) => setSizeInput(e.target.value.replace(/[^0-9.]/g, ""))}
-                      className="w-full bg-transparent text-2xl font-bold outline-none placeholder:text-muted-foreground/40"
+                      className="font-data w-full bg-transparent text-2xl font-bold outline-none placeholder:text-muted-foreground/40"
                       placeholder="0"
                     />
                     <span className="shrink-0 text-sm font-medium text-muted-foreground">USDC</span>
@@ -182,7 +187,7 @@ export function PerpsClient() {
                 <div className="rounded-md border border-border/60 bg-muted/50 p-4">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Leverage</span>
-                    <span className="text-sm font-bold text-foreground">{leverage}x</span>
+                    <span className="font-data text-sm font-bold text-foreground">{leverage}x</span>
                   </div>
                   <div className="mt-3 flex gap-1.5">
                     {LEVERAGE_OPTIONS.map((lv) => (
@@ -203,21 +208,21 @@ export function PerpsClient() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Notional</span>
-                    <span className="font-medium">${notional.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                    <span className="font-data font-medium">${notional.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Liq. price</span>
-                    <span className="font-medium">${liqPrice.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+                    <span className="font-data font-medium">${liqPrice.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Funding / 8h</span>
-                    <span className={`font-medium ${market.funding >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                    <span className={`font-data font-medium ${market.funding >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                       ${fundingCost.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Fee</span>
-                    <span className="font-medium">${(notional * 0.0006).toFixed(2)}</span>
+                    <span className="font-data font-medium">${(notional * 0.0006).toFixed(2)}</span>
                   </div>
                 </div>
 
