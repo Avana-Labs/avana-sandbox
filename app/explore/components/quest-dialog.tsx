@@ -35,7 +35,7 @@ export function QuestDialog({ quest, isOpen, onClose, onComplete }: QuestDialogP
         {/* Header with gradient background */}
         <div className="relative p-6 bg-gradient-to-b from-primary/10 via-primary/5 to-background">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">{quest.title}</DialogTitle>
+            <DialogTitle className="text-2xl font-semibold">{quest.title}</DialogTitle>
           </DialogHeader>
           <div className="mt-2 text-muted-foreground">{quest.description}</div>
         </div>
@@ -62,11 +62,11 @@ export function QuestDialog({ quest, isOpen, onClose, onComplete }: QuestDialogP
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">TVL</p>
-              <p className="font-medium">{quest.tvl}</p>
+              <p className="font-data font-medium">{quest.tvl}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Users</p>
-              <p className="font-medium flex items-center justify-center gap-1">
+              <p className="font-data font-medium flex items-center justify-center gap-1">
                 <Users className="h-3 w-3" />
                 {quest.usersCount?.toLocaleString() || "1,530"}
               </p>
@@ -81,7 +81,7 @@ export function QuestDialog({ quest, isOpen, onClose, onComplete }: QuestDialogP
               <Trophy className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Reward</p>
-                <p className="font-medium">{quest.points} points</p>
+                <p className="font-data font-medium">{quest.points} points</p>
               </div>
             </div>
             <div className="text-center">
@@ -90,7 +90,7 @@ export function QuestDialog({ quest, isOpen, onClose, onComplete }: QuestDialogP
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Min Investment</p>
-              <p className="font-medium">{quest.minInvestment || "$500"}</p>
+              <p className="font-data font-medium">{quest.minInvestment || "$500"}</p>
             </div>
           </div>
 
@@ -112,4 +112,3 @@ export function QuestDialog({ quest, isOpen, onClose, onComplete }: QuestDialogP
 }
 
 export default QuestDialog
-

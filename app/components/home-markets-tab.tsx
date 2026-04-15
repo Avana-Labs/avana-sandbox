@@ -116,7 +116,7 @@ export function HomeMarketsTab() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Your Investment</span>
-                      <span className="font-medium text-primary">
+                      <span className="font-data font-medium text-primary">
                         $
                         {getDeterministicAmount(
                           `${pool.name}-${strategy.title}-investment`,
@@ -135,18 +135,18 @@ export function HomeMarketsTab() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">APY</span>
-                      <span className="font-medium">{pool.apy}</span>
+                      <span className="font-data font-medium">{pool.apy}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">TVL</span>
-                      <span>{pool.tvl}</span>
+                      <span className="font-data">{pool.tvl}</span>
                     </div>
                     <div className="h-[60px] -mx-2">
                       <EnhancedGraph isPositive={pool.isUp} points={12} height={60} />
                     </div>
                     <div className="flex items-center justify-between text-sm pt-2 border-t">
                       <span className="text-muted-foreground">Earned</span>
-                      <span className="font-medium text-emerald-600">
+                      <span className="font-data font-medium text-emerald-600">
                         +
                         $
                         {getDeterministicAmount(
