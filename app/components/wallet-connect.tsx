@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  AlertTriangle,
   ArrowUpRight,
   Code2,
   FileText,
@@ -17,6 +18,7 @@ import {
   LifeBuoy,
   Mail,
   Shield,
+  Trophy,
   type LucideIcon,
 } from "lucide-react"
 import Link from "next/link"
@@ -81,6 +83,12 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
 
   const topLinks: MenuLinkItem[] = [
     {
+      href: "/rewards-hub",
+      label: "Rewards Hub",
+      icon: Trophy,
+      internal: true,
+    },
+    {
       href: "/incentivize",
       label: "Simulate",
       icon: FlaskConical,
@@ -95,6 +103,12 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
   ]
 
   const docsLinks: MenuLinkItem[] = [
+    {
+      href: "/risk-warning",
+      label: "Risk warning",
+      icon: AlertTriangle,
+      internal: true,
+    },
     {
       href: "https://avana-ashen.vercel.app/lightpaper",
       label: "Lightpaper",
@@ -145,7 +159,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
             type="button"
             aria-label="Open resources and support"
             title="Resources and support"
-            className={`flex h-10 w-10 items-center justify-center rounded-none border-transparent bg-transparent shadow-none hover:bg-transparent ${
+            className={`flex h-10 w-10 appearance-none select-none items-center justify-center rounded-none border-transparent bg-transparent shadow-none outline-none ring-0 [-webkit-tap-highlight-color:transparent] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:bg-transparent active:ring-0 hover:bg-transparent ${
               isResourcesActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
