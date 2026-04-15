@@ -16,14 +16,14 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-foreground/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90">
-      <div className="flex h-[62px] w-full items-center gap-4 px-4 md:px-6 lg:px-8">
+      <div className="flex h-[62px] 2xl:h-[48px] w-full items-center gap-4 2xl:gap-3 px-4 md:px-6 lg:px-8">
         <Link href="/" aria-label="Home" title="Home" className="shrink-0 flex items-center">
           <Image
             src="/Try.png"
             alt="Avana"
             width={142}
             height={30}
-            className="h-6 w-auto object-contain md:h-6"
+            className="h-6 w-auto object-contain md:h-6 2xl:h-5"
             priority
           />
         </Link>
@@ -38,13 +38,13 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "group relative flex min-w-[72px] flex-col items-center justify-center gap-1 px-2 py-2 text-[13px] font-normal leading-none transition-colors",
+                  "group relative flex min-w-[72px] 2xl:min-w-[60px] flex-col items-center justify-center gap-1 2xl:gap-0.5 px-2 py-2 2xl:px-1.5 2xl:py-1 text-[13px] 2xl:text-[11px] font-normal leading-none transition-colors",
                   isActive ? "text-foreground" : "text-muted-foreground/80 hover:text-foreground",
                 )}
               >
                 <Icon
                   className={cn(
-                    "h-5 w-5 shrink-0 transition-colors",
+                    "h-5 w-5 2xl:h-4 2xl:w-4 shrink-0 transition-colors",
                     isActive ? "text-foreground" : "text-muted-foreground/80 group-hover:text-foreground",
                   )}
                 />
