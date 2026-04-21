@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { PageIntro } from "../components/page-intro"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -20,6 +19,10 @@ import {
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
+  Eye,
+  EyeOff,
+  X,
+  CirclePlus,
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { EnhancedGraph } from "../components/enhanced-graph"
@@ -63,6 +66,11 @@ const stakeAssets = [
 ]
 
 const steps = ["Select pool", "Choose asset", "Stake amount & lock", "Review & confirm"]
+
+/** Mock hero totals — same shape as lend / perps balance row */
+const STAKING_BALANCE_TOTAL = 14_400
+const STAKING_GAIN_USD = 12.46
+const STAKING_GAIN_PCT = 4.52
 
 // Pool Card Component
 function PoolCard({
@@ -139,7 +147,7 @@ export default function StakePage() {
   const [selectedToken, setSelectedToken] = useState<string | null>(null)
   const [amount, setAmount] = useState("")
   const [duration, setDuration] = useState("")
-  const [showCopilot, setShowCopilot] = useState(true)
+  const [showBalance, setShowBalance] = useState(true)
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -160,17 +168,44 @@ export default function StakePage() {
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
-          <PageIntro
-            title="Stake"
-            titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
-            description="Pick a pool, choose what to stake, and preview rewards and lock terms before you confirm."
-            descriptionClassName="text-sm"
-          >
-            <Button variant="outline" size="sm" onClick={() => setShowCopilot(!showCopilot)} className="gap-2">
-              <Bot className="h-3.5 w-3.5" />
-              {showCopilot ? "Hide" : "Show"} Copilot
-            </Button>
-          </PageIntro>
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <h2>My Staking Balance</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowBalance(!showBalance)}
+                  className="hover:text-foreground"
+                  aria-label={showBalance ? "Hide balance" : "Show balance"}
+                >
+                  {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              </div>
+              <div className="flex flex-wrap items-baseline gap-3">
+                <span className="font-data text-4xl font-semibold tracking-tight">
+                  {showBalance
+                    ? `$${STAKING_BALANCE_TOTAL.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`
+                    : "••••••••"}
+                </span>
+                <span className="text-sm font-medium text-emerald-500">
+                  +${STAKING_GAIN_USD.toFixed(2)} ({STAKING_GAIN_PCT.toFixed(2)}%)
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" className="gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
+                <CirclePlus className="h-4 w-4" />
+                Stake More
+              </Button>
+              <Button type="button" variant="secondary" className="gap-2 rounded-full">
+                <X className="h-4 w-4" />
+                Unstake
+              </Button>
+            </div>
+          </div>
 
           {/* Warning Card */}
           <Card className="mb-8 border-yellow-500/50 bg-yellow-500/5">
@@ -361,14 +396,11 @@ export default function StakePage() {
 
             {/* Right Column - Copilot & Info */}
             <div className="md:col-span-2">
-              <AnimatePresence>
-                {showCopilot && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    className="space-y-4"
-                  >
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-4"
+              >
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
@@ -481,9 +513,7 @@ export default function StakePage() {
                         </CardContent>
                       </Card>
                     </TooltipProvider>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              </motion.div>
             </div>
           </div>
         </div>
