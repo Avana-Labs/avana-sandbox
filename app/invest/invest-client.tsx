@@ -126,7 +126,7 @@ export function InvestClient() {
                     <div className="rounded-md border border-border/60 bg-muted/50 p-4">
                       <div className="flex items-center justify-between">
                         <Select value={token} onValueChange={setToken}>
-                          <SelectTrigger className="w-[160px] border-border/60 bg-background">
+                          <SelectTrigger className="w-[160px] border-border/60 bg-card">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -250,7 +250,7 @@ export function InvestClient() {
                     <div className="rounded-md border border-border/60 bg-muted/50 p-4">
                       <div className="flex items-center justify-between">
                         <Select value={token} onValueChange={setToken}>
-                          <SelectTrigger className="w-[160px] border-border/60 bg-background">
+                          <SelectTrigger className="w-[160px] border-border/60 bg-card">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
