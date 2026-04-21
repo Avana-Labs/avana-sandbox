@@ -12,7 +12,7 @@ export function Header() {
   const activeNav = getActiveSiteNav(pathname)
   const mainNavLinks = siteNavLinks
   const isResourcesActive =
-    pathname === "/rewards" || pathname.startsWith("/rewards/") || pathname.startsWith("/risk-warning")
+    pathname === "/risk-warning" || pathname.startsWith("/risk-warning/")
   const isDarkCanvas = pathname.startsWith("/perpv2") || pathname.startsWith("/perps")
 
   return (

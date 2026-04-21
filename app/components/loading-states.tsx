@@ -298,21 +298,6 @@ export function BorrowPageSkeleton() {
   )
 }
 
-export function ManagePageSkeleton() {
-  return (
-    <LoadingPageShell>
-      <LoadingPageIntro actionCount={1} />
-      <LoadingMetricStrip />
-      <LoadingSurface>
-        <div className="space-y-5">
-          <LoadingPills count={3} />
-          <LoadingRowList rows={4} withAction />
-        </div>
-      </LoadingSurface>
-    </LoadingPageShell>
-  )
-}
-
 export function StakePageSkeleton() {
   return (
     <LoadingPageShell>

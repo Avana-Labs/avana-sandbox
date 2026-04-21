@@ -18,7 +18,6 @@ import {
   LifeBuoy,
   Mail,
   Shield,
-  Trophy,
   type LucideIcon,
 } from "lucide-react"
 
@@ -81,12 +80,6 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
   const menuContentClass = "rounded-xl border border-border bg-popover p-1 shadow-md"
 
   const topLinks: MenuLinkItem[] = [
-    {
-      href: "/rewards",
-      label: "Rewards",
-      icon: Trophy,
-      internal: true,
-    },
     {
       href: "/risk-warning",
       label: "Risk warning",
