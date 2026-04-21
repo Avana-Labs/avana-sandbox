@@ -1,5 +1,12 @@
 import type { LucideIcon } from "lucide-react"
-import { ChartCandlestick, ChartNoAxesColumnIncreasing, FlaskConical, HandCoins, House } from "lucide-react"
+import {
+  ChartCandlestick,
+  ChartNoAxesColumnIncreasing,
+  HandCoins,
+  House,
+  LayoutDashboard,
+  Sprout,
+} from "lucide-react"
 
 export type SiteNavLink = {
   href: string
@@ -26,7 +33,7 @@ export const siteNavLinks: SiteNavLink[] = [
     actionExternal: true,
   },
   {
-    href: "/explore",
+    href: "/borrow",
     label: "Borrow",
     icon: HandCoins,
     section: "Market scanner",
@@ -57,15 +64,25 @@ export const siteNavLinks: SiteNavLink[] = [
     actionHref: "/risk-warning",
   },
   {
-    href: "/incentivize",
-    label: "Simulate",
-    icon: FlaskConical,
-    section: "Incentive modeling",
-    description: "Preview incentive scenarios, APR changes, and pool-level tradeoffs before capital is committed.",
-    highlights: ["APR modeling", "Pool scenarios"],
+    href: "/stake",
+    label: "Stake",
+    icon: Sprout,
+    section: "LP staking",
+    description: "Choose a pool, lock assets, and preview rewards and APR before you stake LP collateral.",
+    highlights: ["Reward preview", "Lock terms"],
     actionLabel: "How it works",
     actionHref: "https://avana-ashen.vercel.app/about",
     actionExternal: true,
+  },
+  {
+    href: "/manage",
+    label: "Manage",
+    icon: LayoutDashboard,
+    section: "Portfolio",
+    description: "Track positions, rewards, alerts, and activity from one place while you rebalance LP-backed exposure.",
+    highlights: ["Open positions", "Rewards & history"],
+    actionLabel: "Risk warning",
+    actionHref: "/risk-warning",
   },
 ]
 

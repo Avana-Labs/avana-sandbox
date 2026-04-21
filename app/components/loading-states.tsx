@@ -288,7 +288,7 @@ export function HomePageSkeleton() {
   )
 }
 
-export function ExplorePageSkeleton() {
+export function BorrowPageSkeleton() {
   return (
     <LoadingPageShell>
       <LoadingPageIntro actionCount={3} />
@@ -313,7 +313,7 @@ export function ManagePageSkeleton() {
   )
 }
 
-export function IncentivizePageSkeleton() {
+export function StakePageSkeleton() {
   return (
     <LoadingPageShell>
       <LoadingPageIntro actionCount={1} />

@@ -56,13 +56,13 @@ const userPools = [
   },
 ]
 
-const incentiveTokens = [
+const stakeAssets = [
   { id: "usdc", name: "USDC", balance: "50,000" },
   { id: "eth", name: "ETH", balance: "25.5" },
   { id: "wbtc", name: "WBTC", balance: "1.8" },
 ]
 
-const steps = ["Select Pool", "Choose Token", "Set Amount & Duration", "Review & Confirm"]
+const steps = ["Select pool", "Choose asset", "Stake amount & lock", "Review & confirm"]
 
 // Pool Card Component
 function PoolCard({
@@ -133,7 +133,7 @@ function PoolCard({
   )
 }
 
-export default function IncentivePage() {
+export default function StakePage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedPool, setSelectedPool] = useState<string | null>(null)
   const [selectedToken, setSelectedToken] = useState<string | null>(null)
@@ -154,16 +154,16 @@ export default function IncentivePage() {
   }
 
   const getSelectedPool = () => userPools.find((pool) => pool.id === selectedPool)
-  const getSelectedToken = () => incentiveTokens.find((token) => token.id === selectedToken)
+  const getSelectedAsset = () => stakeAssets.find((asset) => asset.id === selectedToken)
 
   return (
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
           <PageIntro
-            title="Simulate"
+            title="Stake"
             titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
-            description="Model incentives before committing capital."
+            description="Pick a pool, choose what to stake, and preview rewards and lock terms before you confirm."
             descriptionClassName="text-sm"
           >
             <Button variant="outline" size="sm" onClick={() => setShowCopilot(!showCopilot)} className="gap-2">
@@ -178,11 +178,10 @@ export default function IncentivePage() {
               <div className="flex items-start gap-4">
                 <AlertTriangle className="h-6 w-6 text-yellow-500 shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold mb-2 text-yellow-500">Important Notice</h3>
+                  <h3 className="font-semibold mb-2 text-yellow-500">Important notice</h3>
                   <p className="text-sm text-muted-foreground">
-                    Incentives are usually provided by protocols. By continuing, you acknowledge that you understand the
-                    mechanics of the protocol and that after depositing any rewards as incentives, you will not be able
-                    to withdraw them.
+                    Staked assets may be subject to lockups, slashing risk, or protocol-specific rules. By continuing,
+                    you confirm you understand how this venue handles deposits, withdrawals, and reward distribution.
                   </p>
                 </div>
               </div>
@@ -213,7 +212,7 @@ export default function IncentivePage() {
                     exit={{ opacity: 0, x: 20 }}
                     className="space-y-4"
                   >
-                    <h2 className="text-lg font-semibold mb-4">Select pool to incentivize</h2>
+                    <h2 className="text-lg font-semibold mb-4">Select pool to stake into</h2>
                     <div className="grid sm:grid-cols-2 gap-4">
                       {userPools.map((pool) => (
                         <PoolCard
@@ -235,7 +234,7 @@ export default function IncentivePage() {
                     exit={{ opacity: 0, x: 20 }}
                     className="space-y-6"
                   >
-                    <h2 className="text-lg font-semibold mb-4">Choose incentive token</h2>
+                    <h2 className="text-lg font-semibold mb-4">Choose asset to stake</h2>
                     <Card>
                       <CardContent className="p-6 space-y-4">
                         <Select value={selectedToken || ""} onValueChange={setSelectedToken}>
@@ -243,11 +242,11 @@ export default function IncentivePage() {
                             <SelectValue placeholder="Select a token" />
                           </SelectTrigger>
                           <SelectContent>
-                            {incentiveTokens.map((token) => (
-                              <SelectItem key={token.id} value={token.id}>
+                            {stakeAssets.map((asset) => (
+                              <SelectItem key={asset.id} value={asset.id}>
                                 <div className="flex items-center justify-between w-full">
-                                  <span>{token.name}</span>
-                                  <span className="text-muted-foreground">Balance: {token.balance}</span>
+                                  <span>{asset.name}</span>
+                                  <span className="text-muted-foreground">Balance: {asset.balance}</span>
                                 </div>
                               </SelectItem>
                             ))}
@@ -266,26 +265,26 @@ export default function IncentivePage() {
                     exit={{ opacity: 0, x: 20 }}
                     className="space-y-6"
                   >
-                    <h2 className="text-lg font-semibold mb-4">Set amount & duration</h2>
+                    <h2 className="text-lg font-semibold mb-4">Set stake amount & lock period</h2>
                     <Card>
                       <CardContent className="p-6 space-y-6">
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <label className="text-sm text-muted-foreground">Incentive Amount</label>
+                            <label className="text-sm text-muted-foreground">Stake amount</label>
                             <Input
                               type="text"
                               value={amount}
                               onChange={(e) => setAmount(e.target.value)}
-                              placeholder={`Enter amount in ${getSelectedToken()?.name || "tokens"}`}
+                              placeholder={`Enter amount in ${getSelectedAsset()?.name || "tokens"}`}
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-sm text-muted-foreground">Duration (days)</label>
+                            <label className="text-sm text-muted-foreground">Lock period (days)</label>
                             <Input
                               type="number"
                               value={duration}
                               onChange={(e) => setDuration(e.target.value)}
-                              placeholder="Enter duration in days"
+                              placeholder="How long assets stay staked"
                               min="1"
                             />
                           </div>
@@ -313,23 +312,23 @@ export default function IncentivePage() {
                               <span className="font-semibold">{getSelectedPool()?.name}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-muted-foreground">Incentive Token</span>
-                              <span className="font-semibold">{getSelectedToken()?.name}</span>
+                              <span className="text-muted-foreground">Staking asset</span>
+                              <span className="font-semibold">{getSelectedAsset()?.name}</span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-muted-foreground">Amount</span>
                               <span className="font-data font-semibold">
-                                {amount} {getSelectedToken()?.name}
+                                {amount} {getSelectedAsset()?.name}
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-muted-foreground">Duration</span>
+                              <span className="text-muted-foreground">Lock period</span>
                               <span className="font-data font-semibold">{duration} days</span>
                             </div>
                           </div>
                           <div className="pt-4 border-t">
                             <div className="flex items-center justify-between text-lg font-semibold">
-                              <span>Estimated APR Boost</span>
+                              <span>Estimated staking APR</span>
                               <span className="font-data text-emerald-600">+{(Number(amount) * 0.1).toFixed(1)}%</span>
                             </div>
                           </div>
@@ -380,49 +379,49 @@ export default function IncentivePage() {
                       <CardContent className="text-sm space-y-4">
                         {currentStep === 0 && (
                           <>
-                            <p>Choose the pool you want to incentivize. Consider:</p>
+                            <p>Pick the pool where you want staking exposure. Consider:</p>
                             <ul className="space-y-2">
                               <li className="flex items-center gap-2">
                                 <Shield className="h-4 w-4 text-primary" />
-                                Current utilization rate
+                                Utilization and risk profile
                               </li>
                               <li className="flex items-center gap-2">
                                 <Zap className="h-4 w-4 text-primary" />
-                                Existing APY performance
+                                Base yield and fee history
                               </li>
                               <li className="flex items-center gap-2">
                                 <Coins className="h-4 w-4 text-primary" />
-                                Your position size
+                                How much you already have deployed
                               </li>
                             </ul>
                           </>
                         )}
                         {currentStep === 1 && (
                           <>
-                            <p>Select a token for incentives:</p>
+                            <p>Choose what you are staking into the pool:</p>
                             <ul className="space-y-2">
                               <li className="flex items-center gap-2">
                                 <Shield className="h-4 w-4 text-primary" />
-                                Choose tokens that align with your pool
+                                Match the asset to the pool’s quoted pairs
                               </li>
                               <li className="flex items-center gap-2">
                                 <Coins className="h-4 w-4 text-primary" />
-                                Consider market demand
+                                Watch minimums and withdrawal cooldowns
                               </li>
                             </ul>
                           </>
                         )}
                         {currentStep === 2 && (
                           <>
-                            <p>Set your incentive parameters:</p>
+                            <p>Set how much you stake and for how long:</p>
                             <ul className="space-y-2">
                               <li className="flex items-center gap-2">
                                 <Coins className="h-4 w-4 text-primary" />
-                                Higher amounts attract more liquidity
+                                Larger stakes can change reward share and slippage
                               </li>
                               <li className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-primary" />
-                                Longer durations show commitment
+                                Longer locks often earn higher reward multipliers
                               </li>
                             </ul>
                           </>
@@ -433,7 +432,7 @@ export default function IncentivePage() {
                               <AlertTriangle className="h-4 w-4" />
                               <p>Final confirmation required</p>
                             </div>
-                            <p>Review all details carefully. This action cannot be reversed.</p>
+                            <p>Review all details carefully. Staking may lock funds for the full period.</p>
                           </div>
                         )}
                       </CardContent>
@@ -452,13 +451,14 @@ export default function IncentivePage() {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="p-2 rounded-lg bg-muted cursor-help">
-                                  <p className="text-sm font-medium">APR Boost</p>
-                                  <p className="text-xs text-muted-foreground">Estimated yield increase</p>
+                                  <p className="text-sm font-medium">Staking APR</p>
+                                  <p className="text-xs text-muted-foreground">Estimated reward rate</p>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="max-w-xs">
-                                  The estimated increase in APR based on your incentive amount and pool TVL.
+                                  Illustrative APR from your stake size, lock length, and pool TVL—actual rewards depend
+                                  on the live program.
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -466,14 +466,14 @@ export default function IncentivePage() {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="p-2 rounded-lg bg-muted cursor-help">
-                                  <p className="text-sm font-medium">Lock Period</p>
-                                  <p className="text-xs text-muted-foreground">Incentives are locked</p>
+                                  <p className="text-sm font-medium">Lock period</p>
+                                  <p className="text-xs text-muted-foreground">Funds committed for the term</p>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="max-w-xs">
-                                  Once deposited, incentives cannot be withdrawn and will be distributed over the
-                                  specified duration.
+                                  While staked, principal may be unusable until the lock ends or you pay any early exit
+                                  penalty the protocol defines.
                                 </p>
                               </TooltipContent>
                             </Tooltip>

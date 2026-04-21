@@ -1,10 +1,16 @@
+import type { Metadata } from "next"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { HomeTabs } from "@/app/components/home-tabs"
 import { StaticSparkline } from "@/app/components/static-sparkline"
 import { getCachedHomeSnapshot } from "@/app/lib/home-data"
 
-export default async function RewardsHubPage() {
+export const metadata: Metadata = {
+  title: "Rewards",
+  description: "Track quest progress, points, and protocol metrics across Avana rewards.",
+}
+
+export default async function RewardsPage() {
   const { chains, metricCards, totalPools, completedPools, progressPercentage } = await getCachedHomeSnapshot()
 
   return (

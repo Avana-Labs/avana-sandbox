@@ -80,7 +80,7 @@ export function MobileMenu() {
               className="w-full rounded-xl"
               variant="outline"
               onClick={() => {
-                router.push("/explore")
+                router.push("/borrow")
                 setOpen(false)
               }}
             >

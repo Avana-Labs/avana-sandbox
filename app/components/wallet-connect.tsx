@@ -15,7 +15,6 @@ import {
   CircleUserRound,
   Code2,
   FileText,
-  FlaskConical,
   LifeBuoy,
   Mail,
   Shield,
@@ -83,15 +82,9 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
 
   const topLinks: MenuLinkItem[] = [
     {
-      href: "/rewards-hub",
-      label: "Rewards Hub",
+      href: "/rewards",
+      label: "Rewards",
       icon: Trophy,
-      internal: true,
-    },
-    {
-      href: "/incentivize",
-      label: "Simulate",
-      icon: FlaskConical,
       internal: true,
     },
     {
