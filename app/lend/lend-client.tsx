@@ -21,9 +21,9 @@ const TOKENS = [
 ] as const
 
 const SLEEVES = [
-  { id: "core", name: "Core Yield", apy: 7.2, tvl: "$14.8M", utilization: 72, risk: "Low", icon: Shield, seed: "invest-core", positive: true },
-  { id: "growth", name: "Growth", apy: 12.8, tvl: "$6.2M", utilization: 58, risk: "Medium", icon: TrendingUp, seed: "invest-growth", positive: true },
-  { id: "reserve", name: "Reserve", apy: 4.4, tvl: "$3.6M", utilization: 34, risk: "Low", icon: Wallet, seed: "invest-reserve", positive: false },
+  { id: "core", name: "Core Yield", apy: 7.2, tvl: "$14.8M", utilization: 72, risk: "Low", icon: Shield, seed: "lend-core", positive: true },
+  { id: "growth", name: "Growth", apy: 12.8, tvl: "$6.2M", utilization: 58, risk: "Medium", icon: TrendingUp, seed: "lend-growth", positive: true },
+  { id: "reserve", name: "Reserve", apy: 4.4, tvl: "$3.6M", utilization: 34, risk: "Low", icon: Wallet, seed: "lend-reserve", positive: false },
 ] as const
 
 const MARKETS = [
@@ -50,7 +50,7 @@ function InfoTip({ text }: { text: string }) {
   )
 }
 
-export function InvestClient() {
+export function LendClient() {
   const [token, setToken] = useState<string>("USDC")
   const [sleeveId, setSleeveId] = useState<SleeveId>("core")
   const [pct, setPct] = useState([25])
@@ -89,9 +89,9 @@ export function InvestClient() {
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
           <PageIntro
-            title="Invest"
+            title="Lend"
             titleClassName="text-2xl font-semibold leading-tight tracking-tight md:text-3xl"
-            description="Supply capital and earn yield."
+            description="Supply assets to the protocol and earn yield."
             descriptionClassName="text-sm"
           />
 

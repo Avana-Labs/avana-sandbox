@@ -19,7 +19,7 @@ The public Avana materials position the protocol around LP collateral across eco
 
 - `/`
 - `/borrow`
-- `/invest`
+- `/lend` (legacy `/invest` redirects here)
 - `/perps`
 - `/manage`
 - `/stake`
