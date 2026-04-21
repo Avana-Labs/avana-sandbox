@@ -9,8 +9,8 @@
     text-size-adjust: 100%;
   }
   :root {
-    /* Page chrome: pale cool blue-grey (Google Docs–style canvas); cards stay --card white */
-    --background: 220 38% 97%;
+    /* Page chrome: pure white for Uniswap style */
+    --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
