@@ -1,8 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { Eye, EyeOff } from "lucide-react"
 import type { BorrowPool, BorrowProtocolMap } from "@/app/lib/borrow-data"
-import { BorrowWorkspace } from "./components/borrow-workspace"
+import {
+  BorrowWorkspace,
+  type BorrowDebtsHeroStats,
+  type BorrowSupplyHeroStats,
+} from "./components/borrow-workspace"
+import type { BorrowTabId } from "./components/tabs-bar"
 
 type BorrowPageClientProps = {
   protocols: BorrowProtocolMap
@@ -19,6 +25,14 @@ function formatUsd(value: number) {
     return `$${(value / 1_000).toFixed(1)}K`
   }
   return `$${Math.round(value)}`
+}
+
+function formatUsdWhole(value: number) {
+  return `$${Math.round(value).toLocaleString("en-US")}`
+}
+
+function formatUsdCents(value: number) {
+  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 /** Borrow markets UI: hero-level metrics (from server-prepared data) + the 4-tab Borrow workspace. */
@@ -91,41 +105,182 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
   const [selectedHistoryIndex, setSelectedHistoryIndex] = useState(historyGraph.series.length - 1)
   const selectedHistoryPoint = historyGraph.series[selectedHistoryIndex] ?? historyGraph.series[historyGraph.series.length - 1]
 
+  const [currentTab, setCurrentTab] = useState<BorrowTabId>("pools")
+  const [supplyStats, setSupplyStats] = useState<BorrowSupplyHeroStats | null>(null)
+  const [debtsStats, setDebtsStats] = useState<BorrowDebtsHeroStats | null>(null)
+  const handleTabChange = useCallback((tab: BorrowTabId) => setCurrentTab(tab), [])
+  const handleSupplyStatsChange = useCallback((stats: BorrowSupplyHeroStats) => setSupplyStats(stats), [])
+  const handleDebtsStatsChange = useCallback((stats: BorrowDebtsHeroStats) => setDebtsStats(stats), [])
+
+  const suppliesHeroStats = currentTab === "supplies" && supplyStats ? supplyStats : null
+  const debtsHeroStats = currentTab === "debts" && debtsStats ? debtsStats : null
+  const [showBalance, setShowBalance] = useState(true)
+  const mask = "••••••••"
+
   return (
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
+          {suppliesHeroStats ? (
+            <section className="mb-10 px-1 md:px-2">
+              <div className="flex flex-col gap-4 pb-6 md:flex-row md:items-end md:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[12px] font-medium tracking-tight text-slate-500">Total Collateral</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowBalance((prev) => !prev)}
+                      aria-label={showBalance ? "Hide balance" : "Show balance"}
+                      className="text-slate-400 transition-colors hover:text-slate-600"
+                    >
+                      {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                  <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-slate-900 md:text-[1.8rem]">
+                    {showBalance ? formatUsdWhole(suppliesHeroStats.collateral) : mask}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5 md:ml-auto md:text-right">
+                  <HeroStat label="Borrowed" value={showBalance ? formatUsdWhole(suppliesHeroStats.borrowed) : mask} dotClass="bg-rose-400" labelClass="text-rose-500" />
+                  <HeroStat label="Available" value={showBalance ? formatUsdWhole(suppliesHeroStats.available) : mask} dotClass="bg-[#7ec39f]" labelClass="text-[#6ca98b]" />
+                  <HeroStat label="Fees Earned" value={showBalance ? formatUsdWhole(suppliesHeroStats.fees) : mask} dotClass="bg-emerald-500" labelClass="text-emerald-600" />
+                  <HeroStat
+                    label="Avg HF"
+                    value={
+                      !showBalance
+                        ? mask
+                        : suppliesHeroStats.averageHf === null || !Number.isFinite(suppliesHeroStats.averageHf)
+                          ? "—"
+                          : suppliesHeroStats.averageHf.toFixed(2)
+                    }
+                    dotClass="bg-[#a092ef]"
+                    labelClass="text-[#7d72cc]"
+                  />
+                </div>
+              </div>
+            </section>
+          ) : debtsHeroStats ? (
+            <section className="mb-10 px-1 md:px-2">
+              <div className="flex flex-col gap-4 pb-6 md:flex-row md:items-end md:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[12px] font-medium tracking-tight text-slate-500">Total Borrowed</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowBalance((prev) => !prev)}
+                      aria-label={showBalance ? "Hide balance" : "Show balance"}
+                      className="text-slate-400 transition-colors hover:text-slate-600"
+                    >
+                      {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                  <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-slate-900 md:text-[1.8rem]">
+                    {showBalance ? formatUsdWhole(debtsHeroStats.totalBorrowed) : mask}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5 md:ml-auto md:text-right">
+                  <HeroStat
+                    label="LP Collateral"
+                    value={showBalance ? formatUsdWhole(debtsHeroStats.totalCollateral) : mask}
+                    dotClass="bg-[#7ec39f]"
+                    labelClass="text-[#6ca98b]"
+                  />
+                  <HeroStat
+                    label="Avg HF"
+                    value={
+                      !showBalance
+                        ? mask
+                        : debtsHeroStats.averageHf === null || !Number.isFinite(debtsHeroStats.averageHf)
+                          ? "—"
+                          : debtsHeroStats.averageHf.toFixed(2)
+                    }
+                    dotClass="bg-[#a092ef]"
+                    labelClass="text-[#7d72cc]"
+                  />
+                  <HeroStat
+                    label="Accrued Interest"
+                    value={showBalance ? formatUsdCents(debtsHeroStats.accruedInterest) : mask}
+                    dotClass="bg-rose-400"
+                    labelClass="text-rose-500"
+                  />
+                  <HeroStat
+                    label="Daily Interest"
+                    value={showBalance ? `+${formatUsdCents(debtsHeroStats.dailyInterest)}` : mask}
+                    dotClass="bg-rose-400"
+                    labelClass="text-rose-500"
+                  />
+                </div>
+              </div>
+            </section>
+          ) : (
           <section className="mb-10 px-1 md:px-2">
-            <div className="flex flex-col gap-4 border-b border-slate-200/70 pb-4 md:flex-row md:items-end md:justify-between">
+            <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
               <div className="min-w-0">
                 <div className="min-w-0">
-                  <p className="text-[12px] font-medium tracking-tight text-slate-500">Total TVL</p>
-                  <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-slate-900 md:text-[1.8rem]">
-                    {formatUsd(selectedHistoryPoint?.totalTvl ?? metricsData.totalTvl)}
-                  </p>
+                  {currentTab === "assets" ? (
+                    <>
+                      <p className="text-[12px] font-medium tracking-tight text-[#7d72cc]">Available Credit</p>
+                      <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-slate-900 md:text-[1.8rem]">
+                        {formatUsd(selectedHistoryPoint?.availableCredit ?? metricsData.availableCredit)}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[12px] font-medium tracking-tight text-slate-500">Total TVL</p>
+                      <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-slate-900 md:text-[1.8rem]">
+                        {formatUsd(selectedHistoryPoint?.totalTvl ?? metricsData.totalTvl)}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 md:ml-auto md:text-right">
-                <div>
-                  <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-[#6ca98b] md:justify-end">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#7ec39f]" />
-                    Total Collateral
+                {currentTab === "assets" ? (
+                  <div>
+                    <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-slate-500 md:justify-end">
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                      Total TVL
+                    </div>
+                    <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
+                      {formatUsd(selectedHistoryPoint?.totalTvl ?? metricsData.totalTvl)}
+                    </p>
                   </div>
-                  <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
-                    {formatUsd(selectedHistoryPoint?.collaterals ?? metricsData.collaterals)}
-                  </p>
-                </div>
+                ) : (
+                  <div>
+                    <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-[#6ca98b] md:justify-end">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#7ec39f]" />
+                      Total Collateral
+                    </div>
+                    <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
+                      {formatUsd(selectedHistoryPoint?.collaterals ?? metricsData.collaterals)}
+                    </p>
+                  </div>
+                )}
 
-                <div>
-                  <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-[#7d72cc] md:justify-end">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#a092ef]" />
-                    Available Credit
+                {currentTab === "assets" ? (
+                  <div>
+                    <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-[#6ca98b] md:justify-end">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#7ec39f]" />
+                      Total Collateral
+                    </div>
+                    <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
+                      {formatUsd(selectedHistoryPoint?.collaterals ?? metricsData.collaterals)}
+                    </p>
                   </div>
-                  <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
-                    {formatUsd(selectedHistoryPoint?.availableCredit ?? metricsData.availableCredit)}
-                  </p>
-                </div>
+                ) : (
+                  <div>
+                    <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-[#7d72cc] md:justify-end">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#a092ef]" />
+                      Available Credit
+                    </div>
+                    <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
+                      {formatUsd(selectedHistoryPoint?.availableCredit ?? metricsData.availableCredit)}
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-[#b1835f] md:justify-end">
@@ -178,10 +333,38 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
               </div>
             </div>
           </section>
+          )}
 
-          <BorrowWorkspace />
+          <BorrowWorkspace
+            onTabChange={handleTabChange}
+            onSupplyStatsChange={handleSupplyStatsChange}
+            onDebtsStatsChange={handleDebtsStatsChange}
+            showBalance={showBalance}
+          />
         </div>
       </main>
+    </div>
+  )
+}
+
+function HeroStat({
+  label,
+  value,
+  dotClass,
+  labelClass,
+}: {
+  label: string
+  value: string
+  dotClass: string
+  labelClass: string
+}) {
+  return (
+    <div>
+      <div className={`mb-1 flex items-center gap-1.5 text-[11px] font-medium md:justify-end ${labelClass}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+        {label}
+      </div>
+      <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">{value}</p>
     </div>
   )
 }

@@ -131,7 +131,7 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
                 <TokenPairCell visuals={visuals} name={pool.name} subtitle={pool.venue} size="md" />
                 <SpokeDot spoke={spoke} />
               </div>
-              <dl className="mt-3 grid grid-cols-3 gap-x-3 gap-y-2 text-[11px]">
+              <dl className="mt-3 grid grid-cols-3 gap-x-3 gap-y-2 text-xs">
                 <MetricCell label="Collateral" value={formatUsdExact(pool.collateralUsd)} />
                 <MetricCell label="Debt" value={formatUsdExact(currentDebtUsd)} />
                 <MetricCell label="Max LTV" value={`${pool.maxLtv}%`} />
@@ -141,8 +141,8 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
             {isRemove ? (
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.07em] text-slate-500">Remove %</span>
-                  <span className="font-data text-[13px] font-semibold tabular-nums text-slate-900">{percent}%</span>
+                  <span className="text-xs font-medium uppercase tracking-[0.07em] text-slate-500">Remove %</span>
+                  <span className="font-data text-sm font-semibold tabular-nums text-slate-900">{percent}%</span>
                 </div>
                 <input
                   type="range"
@@ -153,7 +153,7 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
                   onChange={(event) => setPercent(Number(event.target.value))}
                   className="mt-2 w-full accent-slate-900"
                 />
-                <div className="mt-1 flex justify-between text-[11px] text-slate-400">
+                <div className="mt-1 flex justify-between text-xs text-slate-400">
                   <span>0%</span>
                   <span>25%</span>
                   <span>50%</span>
@@ -167,13 +167,13 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
             ) : (
               <div>
                 <div className="flex items-center justify-between">
-                  <label htmlFor="repay-amount" className="text-[11px] font-medium uppercase tracking-[0.07em] text-slate-500">
+                  <label htmlFor="repay-amount" className="text-xs font-medium uppercase tracking-[0.07em] text-slate-500">
                     You repay
                   </label>
                   <button
                     type="button"
                     onClick={() => setAmountInput(currentDebtUsd.toFixed(0))}
-                    className="text-[11.5px] font-semibold text-slate-500 hover:text-slate-900"
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-900"
                   >
                     Max
                   </button>
@@ -193,7 +193,7 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
             )}
 
             {isRemove && removePreview?.isUnsafe ? (
-              <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-[12px] text-rose-700">
+              <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs text-rose-700">
                 <div className="font-semibold">Health factor too low</div>
                 <div className="mt-0.5">Removing {percent}% would push HF to {formatHealthFactor(removePreview.hf)}. Repay debt first or remove less.</div>
               </div>
@@ -275,15 +275,15 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
 function MetricCell({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[10.5px] uppercase tracking-[0.07em] text-slate-400">{label}</dt>
-      <dd className="mt-0.5 font-data text-[13px] font-semibold tabular-nums text-slate-900">{value}</dd>
+      <dt className="text-xs uppercase tracking-[0.07em] text-slate-400">{label}</dt>
+      <dd className="mt-0.5 font-data text-sm font-semibold tabular-nums text-slate-900">{value}</dd>
     </div>
   )
 }
 
 function StatLine({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between px-3.5 py-2.5 text-[12.5px]">
+    <div className="flex items-center justify-between px-3.5 py-2.5 text-sm">
       <span className="text-slate-500">{label}</span>
       <span className={cn("text-right font-medium text-slate-900")}>{value}</span>
     </div>

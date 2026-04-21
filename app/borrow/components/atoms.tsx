@@ -48,7 +48,7 @@ export function TokenPairCell({
   size?: "sm" | "md"
 }) {
   const offset = size === "md" ? "-ml-2" : "-ml-1.5"
-  const nameCls = size === "md" ? "text-[14px]" : "text-[13px]"
+  const nameCls = size === "md" ? "text-[14px]" : "text-sm"
   return (
     <div className="flex items-center gap-2.5">
       <div className="flex items-center">
@@ -57,7 +57,7 @@ export function TokenPairCell({
       </div>
       <div className="min-w-0">
         <div className={cn("font-semibold text-slate-900", nameCls)}>{name}</div>
-        {subtitle ? <div className="truncate text-[11px] text-slate-500">{subtitle}</div> : null}
+        {subtitle ? <div className="truncate text-xs text-slate-500">{subtitle}</div> : null}
       </div>
     </div>
   )
@@ -77,7 +77,7 @@ export function TokenSingleCell({
       <TokenBubble visual={visual} size="md" />
       <div className="min-w-0">
         <div className="text-[14px] font-semibold text-slate-900">{name}</div>
-        {subtitle ? <div className="truncate text-[11px] text-slate-500">{subtitle}</div> : null}
+        {subtitle ? <div className="truncate text-xs text-slate-500">{subtitle}</div> : null}
       </div>
     </div>
   )
@@ -87,14 +87,14 @@ export function SpokeDot({ spoke, label, withLabel = true, className }: { spoke:
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       <span className={cn("size-1.5 shrink-0 rounded-full", spoke.dotClass)} aria-hidden />
-      {withLabel ? <span className="text-[12px] font-medium text-slate-600">{label ?? spoke.label.replace(" Spoke", "")}</span> : null}
+      {withLabel ? <span className="text-xs font-medium text-slate-600">{label ?? spoke.label.replace(" Spoke", "")}</span> : null}
     </span>
   )
 }
 
 export function DexPill({ dex }: { dex: DexChip }) {
   return (
-    <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[10.5px] font-medium text-slate-600">
+    <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
       {dex.label}
       {dex.starred ? <span className="ml-0.5 text-amber-500">★</span> : null}
     </span>
@@ -148,7 +148,7 @@ export function DeltaPill({ isPositive, value }: { isPositive: boolean; value: s
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-0.5 text-[12px] font-medium tabular-nums",
+        "inline-flex items-center gap-0.5 text-xs font-medium tabular-nums",
         isPositive ? "text-emerald-600" : "text-rose-600",
       )}
     >
@@ -161,7 +161,7 @@ export function DeltaPill({ isPositive, value }: { isPositive: boolean; value: s
 }
 
 export function HfNumber({ value, tone, size = "md" }: { value: string; tone: string; size?: "sm" | "md" | "lg" }) {
-  const textSize = size === "lg" ? "text-[22px]" : size === "sm" ? "text-[12px]" : "text-[14px]"
+  const textSize = size === "lg" ? "text-[22px]" : size === "sm" ? "text-xs" : "text-[14px]"
   return <span className={cn("font-data font-semibold tabular-nums", textSize, tone)}>{value}</span>
 }
 
@@ -176,7 +176,7 @@ export function PillButton({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: PillVariant; size?: "sm" | "md" }) {
   const base =
     "inline-flex items-center justify-center rounded-full font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-  const sizeCls = size === "md" ? "h-10 px-5 text-[14px]" : "h-8 px-3.5 text-[12.5px]"
+  const sizeCls = size === "md" ? "h-10 px-5 text-[14px]" : "h-8 px-3.5 text-sm"
   const variantCls = {
     primary: "bg-slate-950 text-white hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400",
     ghost: "bg-slate-100 text-slate-900 hover:bg-slate-200",
@@ -206,7 +206,7 @@ export function DropdownChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-medium transition-colors",
+        "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
         active
           ? "bg-slate-900 text-white hover:bg-slate-800"
           : "bg-slate-100 text-slate-700 hover:bg-slate-200",
@@ -221,7 +221,7 @@ export function DropdownChip({
 export function StatItem({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.07em] text-slate-500">{label}</div>
+      <div className="text-xs font-medium uppercase tracking-[0.07em] text-slate-500">{label}</div>
       <div className={cn("mt-1 font-data text-[17px] font-semibold tabular-nums text-slate-900", tone)}>{value}</div>
     </div>
   )
@@ -239,7 +239,7 @@ export function StatsStrip({ items }: { items: Array<{ label: string; value: str
 
 export function SpokeTag({ spoke }: { spoke: BorrowSpoke }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium", spoke.pillBgClass, spoke.pillTextClass)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium", spoke.pillBgClass, spoke.pillTextClass)}>
       <span className={cn("size-1.5 rounded-full", spoke.dotClass)} aria-hidden />
       {spoke.label.replace(" Spoke", "")}
     </span>

@@ -75,12 +75,12 @@ export function SuccessOverlay({
               {ringEmoji}
             </div>
             <h2 className="mt-4 text-[17px] font-semibold text-slate-900">{title}</h2>
-            {subtitle ? <p className="mt-1 text-[12.5px] text-slate-500">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
             <div className="mt-4 font-data text-[34px] font-semibold text-slate-900">{amountLabel}</div>
 
             <dl className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-100 text-left">
               {rows.map((row) => (
-                <div key={row.label} className="flex items-center justify-between px-3.5 py-2.5 text-[12.5px]">
+                <div key={row.label} className="flex items-center justify-between px-3.5 py-2.5 text-sm">
                   <dt className="text-slate-500">{row.label}</dt>
                   <dd className={row.tone ? `font-data font-semibold tabular-nums ${row.tone}` : "font-data font-medium tabular-nums text-slate-900"}>
                     {row.value}

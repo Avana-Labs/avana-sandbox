@@ -50,14 +50,14 @@ export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }:
   return (
     <>
       <div className="mb-6 space-y-1">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-[12px] font-medium tracking-tight text-muted-foreground">
           <h2>My Lending Balance</h2>
           <button onClick={() => setShowBalance(!showBalance)} className="hover:text-foreground">
             {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>
         </div>
         <div className="flex items-baseline gap-3">
-          <span className="font-data text-4xl font-semibold tracking-tight">
+          <span className="font-data text-[1.45rem] font-semibold tracking-tight md:text-[1.8rem]">
             {showBalance ? `$${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "••••••••"}
           </span>
           <span className="text-sm font-medium text-emerald-500">

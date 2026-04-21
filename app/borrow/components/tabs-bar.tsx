@@ -83,7 +83,7 @@ export function TabsBar({
                 type="button"
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "whitespace-nowrap rounded-lg px-3 py-1.5 text-[14px] transition-colors",
+                  "whitespace-nowrap rounded-lg px-3 py-1.5 text-[15px] transition-colors",
                   isActive
                     ? "text-slate-900 font-semibold"
                     : "text-slate-500 font-medium hover:text-slate-900",
@@ -91,7 +91,7 @@ export function TabsBar({
                 aria-current={isActive ? "page" : undefined}
               >
                 {tab.label}
-                <span className={cn("ml-1.5 text-[12px] font-normal", isActive ? "text-slate-400" : "text-slate-400")}>
+                <span className={cn("ml-1.5 text-sm font-normal", isActive ? "text-slate-400" : "text-slate-400")}>
                   {counts[tab.id]}
                 </span>
               </button>
@@ -108,7 +108,7 @@ export function TabsBar({
                 value={filterText}
                 onChange={(event) => onFilterChange(event.target.value)}
                 placeholder={currentTab === "assets" ? "Filter tokens" : currentTab === "pools" ? "Filter pools" : "Filter"}
-                className="h-5 w-36 border-none bg-transparent text-[12.5px] text-slate-900 outline-none placeholder:text-slate-400"
+                className="h-5 w-36 border-none bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
               />
               <button
                 type="button"
@@ -139,7 +139,7 @@ export function TabsBar({
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-medium transition-colors",
+                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
                     selectedSpokes.size === 0 || selectedSpokes.size === BORROW_SPOKES.length
                       ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       : "bg-slate-900 text-white hover:bg-slate-800",
@@ -172,7 +172,7 @@ export function TabsBar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full bg-slate-100 px-3 text-[12.5px] font-medium text-slate-700 hover:bg-slate-200"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full bg-slate-100 px-3 text-sm font-medium text-slate-700 hover:bg-slate-200"
                 >
                   {activeSortLabel}
                   <ChevronDown className="size-3.5 opacity-60" aria-hidden />
@@ -189,7 +189,7 @@ export function TabsBar({
                   ))}
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-slate-400">
+                <DropdownMenuLabel className="text-xs uppercase tracking-wide text-slate-400">
                   Order
                 </DropdownMenuLabel>
                 <DropdownMenuRadioGroup

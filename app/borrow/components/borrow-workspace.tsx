@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   BORROWABLE_ASSETS,
   BORROW_PENDING_ROWS,
@@ -10,9 +10,12 @@ import {
   filterPools,
   formatUsdExact,
   groupBySpoke,
+  homePoolSpoke,
+  homeVisualToBorrowVisual,
   sortAssets,
   sortPools,
   type AssetSortKey,
+  type BorrowPoolRow,
   type BorrowSpokeId,
   type BorrowableAsset,
   type PoolSortKey,
@@ -32,12 +35,13 @@ import { AssetsPanel } from "./assets-table"
 import { DebtsPanel, type DebtRowContext } from "./debts-table"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./borrow-modal"
 import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "./repay-remove-modal"
+import { SupplyCollateralModal, type SupplyCollateralContext, type SupplyCollateralResult } from "./supply-collateral-modal"
 import { SuccessOverlay, type SuccessOverlayProps } from "./success-overlay"
 
 type DebtsState = Record<string, number>
 
 const POOL_SORT_OPTIONS: SortOption[] = [
-  { key: "apr", label: "APR" },
+  { key: "apr", label: "Fees APY" },
   { key: "ltv", label: "Max LTV" },
   { key: "available", label: "Available" },
   { key: "riskPremium", label: "Risk premium" },
@@ -80,7 +84,30 @@ function getUsdcToken(): HomeBorrowToken {
   return HOME_BORROW_TOKENS.find((token) => token.id === "usdc") ?? HOME_BORROW_TOKENS[1]
 }
 
-export function BorrowWorkspace() {
+export type BorrowSupplyHeroStats = {
+  collateral: number
+  borrowed: number
+  available: number
+  fees: number
+  averageHf: number | null
+}
+
+export type BorrowDebtsHeroStats = {
+  totalBorrowed: number
+  totalCollateral: number
+  accruedInterest: number
+  averageHf: number | null
+  dailyInterest: number
+}
+
+export type BorrowWorkspaceProps = {
+  onTabChange?: (tab: BorrowTabId) => void
+  onSupplyStatsChange?: (stats: BorrowSupplyHeroStats) => void
+  onDebtsStatsChange?: (stats: BorrowDebtsHeroStats) => void
+  showBalance?: boolean
+}
+
+export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStatsChange, showBalance = true }: BorrowWorkspaceProps = {}) {
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("pools")
   const [filterText, setFilterText] = useState("")
   const [selectedSpokes, setSelectedSpokes] = useState<Set<BorrowSpokeId>>(() => new Set())
@@ -96,6 +123,10 @@ export function BorrowWorkspace() {
   const [debtSortDirection, setDebtSortDirection] = useState<"asc" | "desc">("desc")
 
   const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
+  const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
+    open: false,
+    context: null,
+  })
   const [repayRemoveModal, setRepayRemoveModal] = useState<{ open: boolean; context: RepayRemoveContext | null }>({
     open: false,
     context: null,
@@ -208,64 +239,21 @@ export function BorrowWorkspace() {
     return { totalBorrowed, totalCollateral, accruedInterest, averageHf, dailyInterest }
   }, [debtsRows])
 
-  const handlePoolsBorrow = useCallback(
-    (poolId: string) => {
-      const matchingHomePool = HOME_COLLATERAL_POOLS.find((pool) => pool.id === poolId)
-      if (matchingHomePool) {
-        setBorrowModal({
-          open: true,
-          context: {
-            pool: matchingHomePool,
-            currentDebtUsd: debts[matchingHomePool.id] ?? 0,
-            defaultTokenId: "usdc",
-          },
-        })
-        return
-      }
+  useEffect(() => {
+    onTabChange?.(currentTab)
+  }, [currentTab, onTabChange])
 
-      const catalogRow = BORROW_POOL_CATALOG.find((row) => row.id === poolId)
-      if (!catalogRow) return
+  useEffect(() => {
+    onSupplyStatsChange?.(supplyTotals)
+  }, [supplyTotals, onSupplyStatsChange])
 
-      const collateralUsd = catalogRow.collateralExampleUsd
-      const borrowPower = collateralUsd * (catalogRow.ltv / 100)
-      const spokeCategory =
-        catalogRow.spoke === "stable" ? "Stable Spoke" : catalogRow.spoke === "bluechip" ? "Bluechip Spoke" : "Open Spoke"
-      const syntheticPool: HomeCollateralPool = {
-        id: `catalog-${catalogRow.id}`,
-        name: catalogRow.name,
-        venue: catalogRow.venue,
-        category: spokeCategory,
-        collateralUsd,
-        maxLtv: catalogRow.ltv,
-        borrowPowerUsd: borrowPower,
-        liquidationUsd: collateralUsd * 0.85,
-        pairApr: (catalogRow.aprMin + catalogRow.aprMax) / 2,
-        visuals: [
-          {
-            symbol: catalogRow.visuals[0].symbol,
-            shortLabel: catalogRow.visuals[0].shortLabel,
-            bgClassName: catalogRow.visuals[0].bgClass,
-            textClassName: catalogRow.visuals[0].textClass,
-          },
-          {
-            symbol: catalogRow.visuals[1].symbol,
-            shortLabel: catalogRow.visuals[1].shortLabel,
-            bgClassName: catalogRow.visuals[1].bgClass,
-            textClassName: catalogRow.visuals[1].textClass,
-          },
-        ],
-      }
-      setBorrowModal({
-        open: true,
-        context: {
-          pool: syntheticPool,
-          currentDebtUsd: 0,
-          defaultTokenId: catalogRow.borrowableTokens[0]?.symbol.toLowerCase() ?? "usdc",
-        },
-      })
-    },
-    [debts],
-  )
+  useEffect(() => {
+    onDebtsStatsChange?.(debtTotals)
+  }, [debtTotals, onDebtsStatsChange])
+
+  const handlePoolsSupply = useCallback((pool: BorrowPoolRow) => {
+    setSupplyModal({ open: true, context: { pool } })
+  }, [])
 
   const handleAssetBorrow = useCallback(
     (asset: BorrowableAsset) => {
@@ -303,6 +291,29 @@ export function BorrowWorkspace() {
     })
   }, [])
 
+  const handleSupplyAddCollateral = useCallback((context: SupplyRowContext) => {
+    const { pool } = context
+    const spokeId = homePoolSpoke(pool.category)
+    const feesApy = pool.pairApr
+    const borrowPoolRow: BorrowPoolRow = {
+      id: pool.id,
+      name: pool.name,
+      venue: pool.venue,
+      spoke: spokeId,
+      ltv: pool.maxLtv,
+      dexes: [],
+      borrowableTokens: [],
+      aprMin: feesApy,
+      aprMax: feesApy,
+      availableUsd: Math.max(0, pool.borrowPowerUsd - context.borrowedUsd),
+      riskPremiumBps: 0,
+      visuals: pool.visuals.map(homeVisualToBorrowVisual) as BorrowPoolRow["visuals"],
+      collateralExampleUsd: pool.collateralUsd,
+      trendUp: true,
+    }
+    setSupplyModal({ open: true, context: { pool: borrowPoolRow } })
+  }, [])
+
   const handleSupplyRemove = useCallback((context: SupplyRowContext) => {
     setRepayRemoveModal({
       open: true,
@@ -321,6 +332,27 @@ export function BorrowWorkspace() {
     setBorrowModal({
       open: true,
       context: { pool: context.pool, currentDebtUsd: context.borrowedUsd, defaultTokenId: "usdc" },
+    })
+  }, [])
+
+  const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
+    setSupplyModal({ open: false, context: null })
+    setSuccessState({
+      open: true,
+      payload: {
+        title: "Posted as collateral",
+        subtitle: `${result.pool.name} LP · ${result.pool.venue}`,
+        amountLabel: formatUsdExact(result.amountUsd),
+        ringEmoji: "✓",
+        ringBgClass: "bg-emerald-100 text-emerald-700",
+        rows: [
+          { label: "Position", value: `${result.pool.name} LP · ${result.pool.venue}` },
+          { label: "Max LTV", value: `${result.pool.ltv}%`, tone: "text-emerald-600" },
+          { label: "Borrow power", value: formatUsdExact(result.borrowPowerUsd), tone: "text-emerald-600" },
+          { label: "Fees APY", value: `${result.feesApy.toFixed(1)}% · LP keeps earning`, tone: "text-emerald-600" },
+        ],
+        primaryLabel: "Done",
+      },
     })
   }, [])
 
@@ -449,12 +481,12 @@ export function BorrowWorkspace() {
             <PoolsTable
               groups={poolGroups}
               pending={BORROW_PENDING_ROWS}
-              onUseAsCollateral={(pool) => handlePoolsBorrow(pool.id)}
+              onUseAsCollateral={handlePoolsSupply}
             />
             <PoolsList
               groups={poolGroups}
               pending={BORROW_PENDING_ROWS}
-              onUseAsCollateral={(pool) => handlePoolsBorrow(pool.id)}
+              onUseAsCollateral={handlePoolsSupply}
             />
           </>
         ) : null}
@@ -464,14 +496,25 @@ export function BorrowWorkspace() {
             rows={sortedSupplies}
             totals={supplyTotals}
             onBorrowMore={handleSupplyBorrowMore}
+            onAddCollateral={handleSupplyAddCollateral}
             onRemove={handleSupplyRemove}
+            showBalance={showBalance}
           />
         ) : null}
 
-        {currentTab === "assets" ? <AssetsPanel rows={sortedAssets} onBorrow={handleAssetBorrow} /> : null}
+        {currentTab === "assets" ? (
+          <AssetsPanel
+            rows={sortedAssets}
+            onBorrow={handleAssetBorrow}
+            onViewMarket={(asset) => {
+              setFilterText(asset.symbol)
+              setCurrentTab("pools")
+            }}
+          />
+        ) : null}
 
         {currentTab === "debts" ? (
-          <DebtsPanel rows={sortedDebts} totals={debtTotals} onRepay={handleDebtRepay} onManage={handleDebtManage} />
+          <DebtsPanel rows={sortedDebts} totals={debtTotals} onRepay={handleDebtRepay} onManage={handleDebtManage} showBalance={showBalance} />
         ) : null}
       </div>
 
@@ -480,6 +523,13 @@ export function BorrowWorkspace() {
         context={borrowModal.context}
         onClose={() => setBorrowModal({ open: false, context: null })}
         onConfirm={handleBorrowConfirm}
+      />
+
+      <SupplyCollateralModal
+        open={supplyModal.open}
+        context={supplyModal.context}
+        onClose={() => setSupplyModal({ open: false, context: null })}
+        onConfirm={handleSupplyConfirm}
       />
 
       <RepayRemoveModal

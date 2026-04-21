@@ -110,7 +110,7 @@ export function BorrowModal({ open, context, onClose, onConfirm }: BorrowModalPr
                 <TokenPairCell visuals={visuals} name={pool.name} subtitle={pool.venue} size="md" />
                 <SpokeDot spoke={spoke} />
               </div>
-              <dl className="mt-3 grid grid-cols-3 gap-x-3 gap-y-2 text-[11px]">
+              <dl className="mt-3 grid grid-cols-3 gap-x-3 gap-y-2 text-xs">
                 <MetricCell label="Collateral" value={formatUsdExact(pool.collateralUsd)} />
                 <MetricCell label="Borrow power" value={formatUsdExact(pool.borrowPowerUsd)} />
                 <MetricCell label="Max LTV" value={`${pool.maxLtv}%`} />
@@ -119,13 +119,13 @@ export function BorrowModal({ open, context, onClose, onConfirm }: BorrowModalPr
 
             <div>
               <div className="flex items-center justify-between">
-                <label htmlFor="borrow-amount" className="text-[11px] font-medium uppercase tracking-[0.07em] text-slate-500">
+                <label htmlFor="borrow-amount" className="text-xs font-medium uppercase tracking-[0.07em] text-slate-500">
                   You borrow
                 </label>
                 <button
                   type="button"
                   onClick={() => setAmountInput(Math.max(0, pool.borrowPowerUsd - currentDebtUsd).toFixed(0))}
-                  className="text-[11.5px] font-semibold text-slate-500 hover:text-slate-900"
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-900"
                 >
                   Max
                 </button>
@@ -146,7 +146,7 @@ export function BorrowModal({ open, context, onClose, onConfirm }: BorrowModalPr
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-[13px] font-semibold text-slate-900 hover:bg-slate-200"
+                      className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-900 hover:bg-slate-200"
                     >
                       <TokenBubble visual={homeVisualToBorrowVisual(token.visual)} size="sm" />
                       {token.symbol}
@@ -158,17 +158,17 @@ export function BorrowModal({ open, context, onClose, onConfirm }: BorrowModalPr
                       <DropdownMenuItem key={option.id} onSelect={() => setTokenId(option.id)}>
                         <TokenBubble visual={homeVisualToBorrowVisual(option.visual)} size="xs" className="mr-2" />
                         <span className="flex-1">{option.symbol}</span>
-                        <span className="text-[11px] text-slate-400">{option.borrowApr.toFixed(1)}%</span>
+                        <span className="text-xs text-slate-400">{option.borrowApr.toFixed(1)}%</span>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className="mt-1 text-[11.5px] text-slate-400">~ {formatUsdExact(safeAmountUsd)}</div>
+              <div className="mt-1 text-xs text-slate-400">~ {formatUsdExact(safeAmountUsd)}</div>
             </div>
 
             {preview.warningTitle ? (
-              <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+              <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 <div className="font-semibold">{preview.warningTitle}</div>
                 <div className="mt-0.5">{preview.warningMessage}</div>
               </div>
@@ -228,15 +228,15 @@ export function BorrowModal({ open, context, onClose, onConfirm }: BorrowModalPr
 function MetricCell({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[10.5px] uppercase tracking-[0.07em] text-slate-400">{label}</dt>
-      <dd className="mt-0.5 font-data text-[13px] font-semibold tabular-nums text-slate-900">{value}</dd>
+      <dt className="text-xs uppercase tracking-[0.07em] text-slate-400">{label}</dt>
+      <dd className="mt-0.5 font-data text-sm font-semibold tabular-nums text-slate-900">{value}</dd>
     </div>
   )
 }
 
 function StatLine({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between px-3.5 py-2.5 text-[12.5px]">
+    <div className="flex items-center justify-between px-3.5 py-2.5 text-sm">
       <span className="text-slate-500">{label}</span>
       <span className={cn("text-right font-medium text-slate-900")}>{value}</span>
     </div>
