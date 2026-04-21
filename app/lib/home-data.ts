@@ -11,14 +11,6 @@ export type HomeChain = {
   }
 }
 
-export type HomeMetricCard = {
-  label: string
-  value: string
-  secondary: string | null
-  positive: boolean
-  sparklineSeed: string
-}
-
 export type HomeHowItWorksStep = {
   number: string
   title: string
@@ -129,37 +121,6 @@ const HOME_HOW_IT_WORKS_STEPS: HomeHowItWorksStep[] = [
   },
 ]
 
-const HOME_METRIC_CARDS: HomeMetricCard[] = [
-  {
-    label: "Live LP Collateral",
-    value: "$48,234.56",
-    secondary: null,
-    positive: true,
-    sparklineSeed: "home-live-lp-collateral",
-  },
-  {
-    label: "Borrowing Power",
-    value: "+2.3%",
-    secondary: "($1,108.39)",
-    positive: true,
-    sparklineSeed: "home-borrowing-power",
-  },
-  {
-    label: "Fees Preserved",
-    value: "+15.4%",
-    secondary: "($7,428.12)",
-    positive: true,
-    sparklineSeed: "home-fees-preserved",
-  },
-  {
-    label: "Indicative Collateral Efficiency",
-    value: "8.2%",
-    secondary: "Live",
-    positive: true,
-    sparklineSeed: "home-collateral-efficiency",
-  },
-]
-
 /** Computes the static homepage snapshot once so the route can stream server HTML without client recomputation. */
 export function buildHomeSnapshot() {
   const totalPools = HOME_CHAINS.reduce((sum, chain) => sum + chain.pools, 0)
@@ -170,7 +131,6 @@ export function buildHomeSnapshot() {
   return {
     chains: HOME_CHAINS,
     howItWorksSteps: HOME_HOW_IT_WORKS_STEPS,
-    metricCards: HOME_METRIC_CARDS,
     totalPools,
     completedPools,
     progressPercentage,
