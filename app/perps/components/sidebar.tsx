@@ -32,28 +32,31 @@ const TX_HISTORY = [
   }
 ]
 
-export function Sidebar() {
+export function PromoCard() {
   return (
-    <>
-      <Card className="relative overflow-hidden border-emerald-500/20 bg-emerald-500/5 shadow-none">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent" />
-        <CardContent className="relative z-10 p-6">
-          <h3 className="mb-2 font-semibold text-emerald-50">Trade LP-backed Perps</h3>
-          <p className="mb-4 text-sm text-emerald-100/70">
-            Use your active LP positions across Uniswap and Aerodrome as collateral to trade directionally without unstaking.
-          </p>
-          <Button variant="secondary" className="w-full border border-emerald-500/30 bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/30">
-            Learn more
-          </Button>
-        </CardContent>
-      </Card>
+    <Card className="relative overflow-hidden border-emerald-500/20 bg-emerald-500/5 shadow-none">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent" />
+      <CardContent className="relative z-10 p-6">
+        <h3 className="mb-2 font-semibold text-emerald-50">Trade LP-backed Perps</h3>
+        <p className="mb-4 text-sm text-emerald-100/70">
+          Use your active LP positions across Uniswap and Aerodrome as collateral to trade directionally without unstaking.
+        </p>
+        <Button variant="secondary" className="w-full border border-emerald-500/30 bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/30">
+          Learn more
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
 
+export function TransactionHistory() {
+  return (
+    <div>
+      <div className="mb-4">
+        <h2 className="text-lg font-medium">Transaction history</h2>
+      </div>
       <Card className="border-border/40 bg-card/50 shadow-none">
-        <CardHeader className="pb-3 pt-6">
-          <CardTitle className="text-base font-medium">Transaction history</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">All activity across perps and collateral.</p>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-4">
             {TX_HISTORY.map((tx, i) => (
               <div key={i} className="flex items-center justify-between text-sm">
@@ -82,6 +85,6 @@ export function Sidebar() {
           </Button>
         </CardContent>
       </Card>
-    </>
+    </div>
   )
 }

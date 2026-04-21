@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Plus, ArrowRightLeft } from "lucide-react"
+import { Eye, EyeOff, Plus, Minus, X } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
@@ -9,7 +9,7 @@ export function PerpBalanceRow() {
     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div className="space-y-1">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <h2>Total Portfolio</h2>
+          <h2>My Perp Balance</h2>
           <button onClick={() => setShowBalance(!showBalance)} className="hover:text-foreground">
             {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>
@@ -26,15 +26,15 @@ export function PerpBalanceRow() {
       <div className="flex gap-2">
         <Button className="gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4" />
-          Deposit
+          Add Funds
         </Button>
         <Button variant="secondary" className="gap-2 rounded-full">
-          <ArrowRightLeft className="h-4 w-4" />
-          Transfer
+          <X className="h-4 w-4" />
+          Close Positions
         </Button>
         <Button variant="secondary" className="gap-2 rounded-full">
-          <ArrowRightLeft className="h-4 w-4" />
-          Withdraw
+          <Minus className="h-4 w-4" />
+          Remove Funds
         </Button>
       </div>
     </div>

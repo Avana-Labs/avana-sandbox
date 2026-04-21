@@ -4,7 +4,7 @@ import { PerpBalanceRow } from "./components/perp-balance-row"
 import { BalanceChart } from "./components/balance-chart"
 import { MarketsTable } from "./components/markets-table"
 import { AccountTabs } from "./components/account-tabs"
-import { Sidebar } from "./components/sidebar"
+import { PromoCard, TransactionHistory } from "./components/sidebar"
 
 export const MOCK_MARKETS = [
   { symbol: "ETH", name: "Ethereum", price: 3482, funding: 0.012, change: 2.4, volume: 1520000000, maxLeverage: 25 },
@@ -21,17 +21,24 @@ export function PerpsClient() {
         {/* Top Balance Row */}
         <PerpBalanceRow />
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
-          {/* Main Column */}
+        {/* HERO SECTION */}
+        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start mb-8">
           <div className="space-y-6 overflow-hidden">
             <BalanceChart />
+          </div>
+          <div className="flex flex-col gap-6 mt-8 lg:mt-12">
+            <PromoCard />
+          </div>
+        </div>
+
+        {/* BOTTOM GRID */}
+        <div className="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start mt-12">
+          <div className="space-y-6 overflow-hidden">
             <MarketsTable markets={MOCK_MARKETS} />
             <AccountTabs />
           </div>
-
-          {/* Sidebar Column */}
-          <div className="space-y-6">
-            <Sidebar />
+          <div>
+            <TransactionHistory />
           </div>
         </div>
       </div>
