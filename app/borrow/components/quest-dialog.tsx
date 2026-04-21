@@ -15,7 +15,7 @@ export interface Quest {
   tvl: string
   isCompleted?: boolean
   usersCount?: number
-  minInvestment?: string
+  minLend?: string
   isUp?: boolean
   change?: number
   protocol?: string
@@ -89,8 +89,8 @@ export function QuestDialog({ quest, isOpen, onClose, onComplete }: QuestDialogP
               <p className="font-medium">{quest.pool}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-muted-foreground">Min Investment</p>
-              <p className="font-data font-medium">{quest.minInvestment || "$500"}</p>
+              <p className="text-sm text-muted-foreground">Min. lend</p>
+              <p className="font-data font-medium">{quest.minLend || "$500"}</p>
             </div>
           </div>
 
@@ -101,7 +101,7 @@ export function QuestDialog({ quest, isOpen, onClose, onComplete }: QuestDialogP
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button className="flex-1 h-12" onClick={() => onComplete(quest.id)}>
-              Invest
+              Lend
               <Wallet className="ml-2 h-4 w-4" />
             </Button>
           </div>

@@ -115,11 +115,11 @@ export function HomeMarketsTab() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Your Investment</span>
+                      <span className="text-muted-foreground">Your lending</span>
                       <span className="font-data font-medium text-primary">
                         $
                         {getDeterministicAmount(
-                          `${pool.name}-${strategy.title}-investment`,
+                          `${pool.name}-${strategy.title}-lending`,
                           strategy.title.includes("Conservative")
                             ? 5000
                             : strategy.title.includes("Moderate")

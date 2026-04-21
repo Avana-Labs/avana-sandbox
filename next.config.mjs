@@ -9,6 +9,7 @@ const nextConfig = {
       { source: "/explore", destination: "/borrow", permanent: true },
       { source: "/leverage", destination: "/perps", permanent: true },
       { source: "/rewards-hub", destination: "/rewards", permanent: true },
+      { source: "/invest", destination: "/lend", permanent: true },
     ]
   },
   distDir: process.env.AVANA_NEXT_DIST_DIR || ".next",
