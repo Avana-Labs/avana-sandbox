@@ -88,6 +88,12 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
       internal: true,
     },
     {
+      href: "/risk-warning",
+      label: "Risk warning",
+      icon: AlertTriangle,
+      internal: true,
+    },
+    {
       href: "https://avana-ashen.vercel.app/faq",
       label: "Support center",
       icon: LifeBuoy,
@@ -96,12 +102,6 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
   ]
 
   const docsLinks: MenuLinkItem[] = [
-    {
-      href: "/risk-warning",
-      label: "Risk warning",
-      icon: AlertTriangle,
-      internal: true,
-    },
     {
       href: "https://avana-ashen.vercel.app/lightpaper",
       label: "Lightpaper",
