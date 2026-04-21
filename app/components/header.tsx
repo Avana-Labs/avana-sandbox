@@ -10,9 +10,9 @@ import { getActiveSiteNav, siteNavLinks } from "./site-nav"
 export function Header() {
   const pathname = usePathname()
   const activeNav = getActiveSiteNav(pathname)
-  const mainNavLinks = siteNavLinks.filter((link) => link.href !== "/incentivize")
+  const mainNavLinks = siteNavLinks
   const isResourcesActive =
-    pathname.startsWith("/rewards-hub") || pathname.startsWith("/incentivize") || pathname.startsWith("/risk-warning")
+    pathname === "/rewards" || pathname.startsWith("/rewards/") || pathname.startsWith("/risk-warning")
 
   return (
     <header className="sticky top-0 z-40 border-b border-foreground/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90">

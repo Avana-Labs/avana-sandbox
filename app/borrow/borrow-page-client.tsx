@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { ExplorePool, ExploreProtocolMap } from "@/app/lib/explore-data"
+import type { BorrowPool, BorrowProtocolMap } from "@/app/lib/borrow-data"
 
-type ExplorePageClientProps = {
-  protocols: ExploreProtocolMap
-  allPools: ExplorePool[]
+type BorrowPageClientProps = {
+  protocols: BorrowProtocolMap
+  allPools: BorrowPool[]
   protocolLogos: Record<string, string>
   itemsPerPage: number
 }
@@ -32,7 +32,7 @@ const PoolCard = memo(function PoolCard({
   activeProtocol,
   protocolLogos,
 }: {
-  pool: ExplorePool
+  pool: BorrowPool
   activeProtocol: string
   protocolLogos: Record<string, string>
 }) {
@@ -77,7 +77,7 @@ const PoolCard = memo(function PoolCard({
                 points={12}
                 height={32}
                 className="origin-bottom scale-110"
-                seed={`explore-${protocolLabel}-${pool.name}`}
+                seed={`borrow-${protocolLabel}-${pool.name}`}
               />
             </div>
           </div>
@@ -141,8 +141,8 @@ const Pagination = memo(function Pagination({
   )
 })
 
-/** Interactive borrow explorer with server-prepared data so the client only handles filtering and pagination. */
-export function ExplorePageClient({ protocols, allPools, protocolLogos, itemsPerPage }: ExplorePageClientProps) {
+/** Borrow markets UI with server-prepared data so the client only handles filtering and pagination. */
+export function BorrowPageClient({ protocols, allPools, protocolLogos, itemsPerPage }: BorrowPageClientProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeProtocol, setActiveProtocol] = useState("All Pools")
   const [currentPage, setCurrentPage] = useState(1)

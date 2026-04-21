@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache"
 import { createSeededRandom } from "@/app/lib/deterministic"
 
-export type ExplorePoolSeed = {
+export type BorrowPoolSeed = {
   name: string
   apy: number
   tvl: number
@@ -11,13 +11,13 @@ export type ExplorePoolSeed = {
   change: number
 }
 
-export type ExplorePool = ExplorePoolSeed & {
+export type BorrowPool = BorrowPoolSeed & {
   protocol: string
 }
 
-export type ExploreProtocolMap = Record<string, ExplorePoolSeed[]>
+export type BorrowProtocolMap = Record<string, BorrowPoolSeed[]>
 
-export const EXPLORE_PROTOCOL_LOGOS = {
+export const BORROW_PROTOCOL_LOGOS = {
   Lido: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
   PancakeSwap: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
   "Convex Finance": "https://cryptologos.cc/logos/convex-finance-cvx-logo.png",
@@ -29,9 +29,9 @@ export const EXPLORE_PROTOCOL_LOGOS = {
   Compound: "https://cryptologos.cc/logos/compound-comp-logo.png",
 } as const
 
-export const EXPLORE_ITEMS_PER_PAGE = 24
+export const BORROW_ITEMS_PER_PAGE = 24
 
-const BASE_PROTOCOLS: Record<string, ExplorePoolSeed[]> = {
+const BASE_PROTOCOLS: Record<string, BorrowPoolSeed[]> = {
   Lido: [
     { name: "stETH Pool", apy: 3.8, tvl: 21500000, volume24h: 5800000, chain: "Ethereum", isUp: true, change: 1.2 },
     { name: "wstETH-ETH", apy: 4.2, tvl: 18200000, volume24h: 4200000, chain: "Ethereum", isUp: true, change: 0.8 },
@@ -76,8 +76,8 @@ const BASE_PROTOCOLS: Record<string, ExplorePoolSeed[]> = {
 }
 
 /** Builds and caches mock market data once so the client route only hydrates interaction state. */
-export function buildExploreSnapshot() {
-  const protocols: ExploreProtocolMap = {
+export function buildBorrowSnapshot() {
+  const protocols: BorrowProtocolMap = {
     "All Pools": [],
     ...Object.fromEntries(
       Object.entries(BASE_PROTOCOLS).map(([protocol, pools]) => [protocol, pools.map((pool) => ({ ...pool }))]),
@@ -112,7 +112,7 @@ export function buildExploreSnapshot() {
     }
   })
 
-  const allPools: ExplorePool[] = Object.entries(protocols)
+  const allPools: BorrowPool[] = Object.entries(protocols)
     .filter(([protocol]) => protocol !== "All Pools")
     .flatMap(([protocol, pools]) => pools.map((pool) => ({ ...pool, protocol })))
 
@@ -129,12 +129,12 @@ export function buildExploreSnapshot() {
   return {
     protocols,
     allPools,
-    protocolLogos: EXPLORE_PROTOCOL_LOGOS,
-    itemsPerPage: EXPLORE_ITEMS_PER_PAGE,
+    protocolLogos: BORROW_PROTOCOL_LOGOS,
+    itemsPerPage: BORROW_ITEMS_PER_PAGE,
   }
 }
 
-export const getCachedExploreSnapshot = unstable_cache(async () => buildExploreSnapshot(), ["explore-snapshot"], {
+export const getCachedBorrowSnapshot = unstable_cache(async () => buildBorrowSnapshot(), ["borrow-snapshot"], {
   revalidate: 3600,
-  tags: ["explore-snapshot"],
+  tags: ["borrow-snapshot"],
 })
