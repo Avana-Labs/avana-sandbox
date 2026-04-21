@@ -2,9 +2,9 @@ import type { LucideIcon } from "lucide-react"
 import {
   ChartCandlestick,
   ChartNoAxesColumnIncreasing,
+  Gift,
   HandCoins,
   House,
-  LayoutDashboard,
   Sprout,
 } from "lucide-react"
 
@@ -75,12 +75,12 @@ export const siteNavLinks: SiteNavLink[] = [
     actionExternal: true,
   },
   {
-    href: "/manage",
-    label: "Manage",
-    icon: LayoutDashboard,
-    section: "Portfolio",
-    description: "Track positions, rewards, alerts, and activity from one place while you rebalance LP-backed exposure.",
-    highlights: ["Open positions", "Rewards & history"],
+    href: "/rewards",
+    label: "Rewards",
+    icon: Gift,
+    section: "Incentives",
+    description: "Track quest progress, points, and protocol metrics across Avana rewards programs.",
+    highlights: ["Quest progress", "Points & tiers"],
     actionLabel: "Risk warning",
     actionHref: "/risk-warning",
   },

@@ -12,7 +12,6 @@ const STATIC_ROUTES: SiteRoute[] = [
   { route: "/borrow", priority: 0.9 },
   { route: "/lend", priority: 0.85 },
   { route: "/perps", priority: 0.85 },
-  { route: "/manage", priority: 0.8 },
   { route: "/stake", priority: 0.7 },
   { route: "/rewards", priority: 0.72 },
   { route: "/risk-warning", priority: 0.5 },
