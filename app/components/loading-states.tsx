@@ -95,7 +95,7 @@ function LoadingRowList({
   return (
     <div className="space-y-3">
       {Array.from({ length: rows }).map((_, index) => (
-        <div key={`loading-row-${index}`} className="flex items-center gap-4 rounded-2xl border border-border/60 bg-background/50 px-4 py-4">
+        <div key={`loading-row-${index}`} className="flex items-center gap-4 rounded-2xl border border-border/60 bg-card/50 px-4 py-4">
           {withLeadingIcon ? <Skeleton className="h-9 w-9 rounded-full" /> : null}
           <div className="min-w-0 flex-1 space-y-2">
             <Skeleton className="h-4 w-32 max-w-full" />
@@ -175,7 +175,7 @@ function LoadingFormWorkspace({ sidebarRows = 3 }: { sidebarRows?: number }) {
             <Skeleton className="h-6 w-52 max-w-full" />
             <Skeleton className="h-4 w-80 max-w-full" />
           </div>
-          <div className="space-y-4 rounded-[24px] border border-border/60 bg-background/50 p-5">
+          <div className="space-y-4 rounded-[24px] border border-border/60 bg-card/50 p-5">
             <Skeleton className="h-11 w-full rounded-xl" />
             <Skeleton className="h-11 w-full rounded-xl" />
             <Skeleton className="h-44 w-full rounded-[22px]" />
@@ -236,11 +236,11 @@ export function HomeResourcesTabSkeleton() {
             <Skeleton className="h-10 w-20 rounded-xl" />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2 rounded-2xl border border-border/60 bg-background/50 p-4">
+            <div className="space-y-2 rounded-2xl border border-border/60 bg-card/50 p-4">
               <Skeleton className="h-7 w-16" />
               <Skeleton className="h-3.5 w-24" />
             </div>
-            <div className="space-y-2 rounded-2xl border border-border/60 bg-background/50 p-4">
+            <div className="space-y-2 rounded-2xl border border-border/60 bg-card/50 p-4">
               <Skeleton className="h-7 w-16" />
               <Skeleton className="h-3.5 w-24" />
             </div>
@@ -265,7 +265,7 @@ export function HomePageSkeleton() {
           <LoadingPills count={3} />
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={`home-card-${index}`} className="space-y-4 rounded-[24px] border border-border/60 bg-background/50 p-5">
+              <div key={`home-card-${index}`} className="space-y-4 rounded-[24px] border border-border/60 bg-card/50 p-5">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-8 w-8 rounded-full" />
                   <div className="space-y-2">

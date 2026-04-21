@@ -366,7 +366,7 @@ export function BorrowPageClient({ protocols, allPools, protocolLogos, itemsPerP
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search pools..."
-                className="bg-background pl-9"
+                className="bg-card pl-9"
                 value={searchQuery}
                 onChange={(event) => {
                   setCurrentPage(1)

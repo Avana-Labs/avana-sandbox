@@ -9,7 +9,8 @@
     text-size-adjust: 100%;
   }
   :root {
-    --background: 0 0% 100%;
+    /* Page chrome: pale cool blue-grey (Google Docs–style canvas); cards stay --card white */
+    --background: 220 38% 97%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
