@@ -44,6 +44,8 @@ export type BorrowPoolRow = {
   trendUp: boolean
 }
 
+export type BorrowableAssetCategory = "stable" | "crypto"
+
 export type BorrowableAsset = {
   id: string
   symbol: string
@@ -57,7 +59,13 @@ export type BorrowableAsset = {
   hasWalletBalance: boolean
   visual: BorrowAssetVisual
   trendUp: boolean
+  category: BorrowableAssetCategory
 }
+
+export const BORROWABLE_CATEGORIES: { id: BorrowableAssetCategory; label: string; dotClass: string }[] = [
+  { id: "stable", label: "Stablecoins", dotClass: "bg-emerald-500" },
+  { id: "crypto", label: "Crypto", dotClass: "bg-blue-500" },
+]
 
 export type PendingMarketRow = {
   id: string
@@ -72,7 +80,7 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
   {
     id: "stable",
     label: "Stable Spoke",
-    description: "Both assets stablecoin / GHO · Lowest risk · Oracle: virtual price + $1 peg",
+    description: "Stablecoin pairs · Lowest risk",
     maxLtv: 78,
     liquidityUsd: 48_200_000,
     dotClass: "bg-emerald-500",
@@ -85,7 +93,7 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
   {
     id: "bluechip",
     label: "Bluechip Spoke",
-    description: "Deep-liquid pairs with Chainlink support · Medium risk · Oracle: Chainlink + TWAP",
+    description: "Blue-chip pairs · Medium risk",
     maxLtv: 70,
     liquidityUsd: 76_400_000,
     dotClass: "bg-blue-500",
@@ -98,7 +106,7 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
   {
     id: "open",
     label: "Open Spoke",
-    description: "Governance-whitelisted volatile pairs · Higher risk · 90-day trial · Auto-sunset below $20M",
+    description: "Volatile pairs · Higher risk",
     maxLtv: 55,
     liquidityUsd: 17_800_000,
     dotClass: "bg-amber-500",
@@ -276,14 +284,7 @@ export const BORROW_POOL_CATALOG: BorrowPoolRow[] = [
   },
 ]
 
-export const BORROW_PENDING_ROWS: PendingMarketRow[] = [
-  {
-    id: "pending-phase3",
-    spoke: "open",
-    label: "New market — governance vote pending",
-    subLabel: "Phase 3",
-  },
-]
+export const BORROW_PENDING_ROWS: PendingMarketRow[] = []
 
 export const BORROWABLE_ASSETS: BorrowableAsset[] = [
   {
@@ -299,6 +300,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: true,
     visual: VISUALS.USDC,
     trendUp: true,
+    category: "stable",
   },
   {
     id: "gho",
@@ -313,6 +315,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: false,
     visual: VISUALS.GHO,
     trendUp: true,
+    category: "stable",
   },
   {
     id: "dai",
@@ -327,6 +330,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: true,
     visual: VISUALS.DAI,
     trendUp: false,
+    category: "stable",
   },
   {
     id: "eth",
@@ -341,6 +345,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: true,
     visual: VISUALS.ETH,
     trendUp: true,
+    category: "crypto",
   },
   {
     id: "usdt",
@@ -355,6 +360,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: true,
     visual: VISUALS.USDT,
     trendUp: true,
+    category: "stable",
   },
 ]
 
