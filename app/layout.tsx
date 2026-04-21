@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import localFont from "next/font/local"
 import type React from "react"
 import { Header } from "./components/header"
+import { Toaster } from "sonner"
 
 const diatypeSans = localFont({
   src: [
@@ -144,6 +145,7 @@ export default function RootLayout({
         <div className="flex min-h-screen flex-col">
           <Header />
           <div className="flex-1">{children}</div>
+          <Toaster />
         </div>
       </body>
     </html>

@@ -1,7 +1,6 @@
 "use client"
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 
 const TABS = ["LP Collaterals", "Positions", "Open Orders", "TWAP", "History"] as const
@@ -9,10 +8,13 @@ type Tab = typeof TABS[number]
 
 export function AccountTabs() {
   const [activeTab, setActiveTab] = useState<Tab>("Positions")
-  const [hideSmall, setHideSmall] = useState(false)
 
   return (
-    <Card className="border-border/40 bg-card/50 shadow-none">
+    <div>
+      <div className="mb-4">
+        <h2 className="text-lg font-medium">My Positions</h2>
+      </div>
+      <Card className="border-border/40 bg-card/50 shadow-none">
       <div className="flex flex-col gap-4 border-b border-border/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="no-scrollbar flex space-x-1 overflow-x-auto">
           {TABS.map(tab => (
@@ -30,14 +32,6 @@ export function AccountTabs() {
               {tab}
             </Button>
           ))}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Checkbox 
-            id="hide-small" 
-            checked={hideSmall} 
-            onCheckedChange={(c) => setHideSmall(c as boolean)} 
-          />
-          <label htmlFor="hide-small" className="cursor-pointer">Hide small balances</label>
         </div>
       </div>
       <CardContent className="p-6">
@@ -105,5 +99,6 @@ export function AccountTabs() {
         )}
       </CardContent>
     </Card>
+    </div>
   )
 }
