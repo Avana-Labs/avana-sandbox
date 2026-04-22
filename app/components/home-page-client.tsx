@@ -79,23 +79,21 @@ function PickerSurface({
   label,
   children,
   footer,
-  type = "default",
+  tier = "top",
 }: {
   label: string
   children: React.ReactNode
   footer?: React.ReactNode
-  type?: "top" | "bottom" | "default"
+  tier?: "top" | "bottom"
 }) {
   return (
     <div
       className={cn(
-        "surface-elevated rounded-[20px] border px-4 py-[18px] transition-[background-color,border-color,box-shadow]",
-        type === "top" && "border-border/70 bg-card hover:border-border focus-within:border-foreground/20 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset]",
-        type === "bottom" && "border-border/60 bg-card/78 hover:border-border/80 hover:bg-card/88 focus-within:border-foreground/15 focus-within:bg-card",
-        type === "default" && "border-border/60 bg-card/78",
+        "rounded-[20px] border px-4 py-[18px] transition-colors",
+        tier === "top" ? "border-border/70 bg-card" : "border-border/60 bg-muted/40",
       )}
     >
-      <div className="mb-1 text-[13px] text-muted-foreground">{label}</div>
+      <div className="mb-1 text-[13px] font-medium text-muted-foreground">{label}</div>
       {children}
       {footer ? <div className="mt-3 text-xs text-muted-foreground">{footer}</div> : null}
     </div>
@@ -118,7 +116,7 @@ function PrimaryCardButton({
       onClick={onClick}
       className={cn(
         "mt-1 h-[52px] w-full rounded-[20px] text-[19px] font-semibold shadow-none transition-colors",
-        disabled ? "bg-brand-soft text-brand opacity-100 hover:bg-brand-soft" : "bg-brand text-white hover:bg-brand/90",
+        disabled ? "bg-brand-soft text-brand-soft-foreground opacity-100 hover:bg-brand-soft" : "bg-brand text-white hover:bg-brand/90",
       )}
     >
       {children}
@@ -327,7 +325,7 @@ function TokenPickerDialog({
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedTokenId: string
+  selectedTokenId: string | null
   onSelect: (tokenId: string) => void
 }) {
   const [query, setQuery] = useState("")
@@ -450,7 +448,7 @@ function CompactBorrowCard({
   onSubmit,
 }: {
   pool: HomeCollateralPool
-  token: HomeBorrowToken
+  token: HomeBorrowToken | null
   amount: string
   preview: ReturnType<typeof calculateBorrowPreview>
   onAmountChange: (value: string) => void
@@ -460,32 +458,31 @@ function CompactBorrowCard({
   onSetMax: () => void
   onSubmit: () => void
 }) {
+  const hasAmount = Number.parseFloat(amount) > 0
+
   return (
     <div className="flex flex-col gap-2">
       <div className="relative flex flex-col gap-1">
-        <PickerSurface
-          label="Collateral"
-          type="top"
-        >
+        <PickerSurface label="Collateral" tier="top">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="font-data text-4xl font-semibold tracking-tight text-foreground">{formatCompactUsd(pool.collateralUsd)}</div>
+              <div className="font-data text-[28px] font-semibold tracking-tight text-foreground">{formatCompactUsd(pool.collateralUsd)}</div>
               <div className="mt-1 text-xs text-muted-foreground">{pool.name}</div>
             </div>
             <button
               type="button"
               onClick={onOpenPoolDialog}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/40 bg-card px-2 py-1 text-foreground shadow-sm transition-colors hover:bg-muted"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-2 py-1 text-foreground transition-colors hover:bg-muted/80"
             >
               <PairVisual visuals={pool.visuals} className="w-10" />
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           </div>
         </PickerSurface>
 
         <PickerSurface
           label="Borrow"
-          type="bottom"
+          tier="bottom"
           footer={
             <div className="flex items-center justify-between gap-3">
               <span>{formatCompactUsd(pool.borrowPowerUsd)} Available to borrow</span>
@@ -495,7 +492,7 @@ function CompactBorrowCard({
             </div>
           }
         >
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <label className="flex min-w-0 flex-1 flex-col">
               <span className="sr-only">Borrow amount</span>
               <input
@@ -507,17 +504,28 @@ function CompactBorrowCard({
                 placeholder="0"
                 className="no-number-spinner w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
               />
-              <span className="text-xs text-muted-foreground">$0</span>
+              <span className="text-xs text-muted-foreground">{amount ? `$${amount}` : "$0"}</span>
             </label>
-            <button
-              type="button"
-              onClick={onOpenTokenDialog}
-              className="inline-flex h-9 items-center gap-2 rounded-full border border-border/40 bg-card px-3 py-1 text-[17px] font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
-            >
-              <TokenBubble visual={token.visual} className="size-6" />
-              {token.symbol}
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </button>
+            {token ? (
+              <button
+                type="button"
+                onClick={onOpenTokenDialog}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[15px] font-semibold text-foreground transition-colors hover:bg-muted/80"
+              >
+                <TokenBubble visual={token.visual} className="size-5" />
+                {token.symbol}
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenTokenDialog}
+                className="inline-flex h-8 items-center gap-1 rounded-full bg-brand px-3 text-[13px] font-semibold text-white transition-colors hover:bg-brand/90"
+              >
+                Select token
+                <ChevronDown className="h-3.5 w-3.5 text-white/85" />
+              </button>
+            )}
           </div>
         </PickerSurface>
       </div>
@@ -539,20 +547,22 @@ function CompactBorrowCard({
         {preview.ctaLabel}
       </PrimaryCardButton>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
-          <div className="text-[11px] text-muted-foreground">HF</div>
-          <div className="mt-1 font-data text-sm font-semibold">{preview.healthFactorLabel}</div>
+      {hasAmount ? (
+        <div className="mt-1 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
+            <div className="text-[11px] text-muted-foreground">HF</div>
+            <div className="mt-1 font-data text-sm font-semibold">{preview.healthFactorLabel}</div>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
+            <div className="text-[11px] text-muted-foreground">Remaining</div>
+            <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{formatCompactUsd(preview.remainingBorrowPowerUsd)}</div>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
+            <div className="text-[11px] text-muted-foreground">Liq. at</div>
+            <div className="mt-1 font-data text-sm font-semibold text-amber-600">{formatCompactUsd(pool.liquidationUsd)}</div>
+          </div>
         </div>
-        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
-          <div className="text-[11px] text-muted-foreground">Remaining</div>
-          <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{formatCompactUsd(preview.remainingBorrowPowerUsd)}</div>
-        </div>
-        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
-          <div className="text-[11px] text-muted-foreground">Liq. at</div>
-          <div className="mt-1 font-data text-sm font-semibold text-amber-600">{formatCompactUsd(pool.liquidationUsd)}</div>
-        </div>
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -576,29 +586,31 @@ function CompactRepayCard({
   onSetMax: () => void
   onSubmit: () => void
 }) {
+  const hasAmount = Number.parseFloat(amount) > 0
+
   return (
     <div className="flex flex-col gap-2">
       <div className="relative flex flex-col gap-1">
-        <PickerSurface label="Loan position" type="top">
+        <PickerSurface label="Loan position" tier="top">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="font-data text-2xl font-semibold tracking-tight text-rose-600">{formatCompactUsd(debtUsd)}</div>
+              <div className="font-data text-2xl font-semibold tracking-tight text-foreground">{formatCompactUsd(debtUsd)}</div>
               <div className="mt-1 text-xs text-muted-foreground">{pool.name}</div>
             </div>
             <button
               type="button"
               onClick={onOpenPoolDialog}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/40 bg-card px-2 py-1 text-foreground shadow-sm transition-colors hover:bg-muted"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-2 py-1 text-foreground transition-colors hover:bg-muted/80"
             >
               <PairVisual visuals={pool.visuals} className="w-10" />
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           </div>
         </PickerSurface>
 
         <PickerSurface
           label="Repay"
-          type="bottom"
+          tier="bottom"
           footer={
             <div className="flex items-center justify-between gap-3">
               <span>{preview.amountUsd > 0 ? `Interest saved ~${formatCompactUsd(preview.yearlyInterestSavedUsd)} / yr` : "Repay in USDC."}</span>
@@ -608,7 +620,7 @@ function CompactRepayCard({
             </div>
           }
         >
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <label className="flex min-w-0 flex-1 flex-col">
               <span className="sr-only">Repay amount</span>
               <input
@@ -620,10 +632,10 @@ function CompactRepayCard({
                 placeholder="0"
                 className="no-number-spinner w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
               />
-              <span className="text-xs text-muted-foreground">$0</span>
+              <span className="text-xs text-muted-foreground">{amount ? `$${amount}` : "$0"}</span>
             </label>
-            <div className="inline-flex h-9 items-center gap-2 rounded-full border border-border/40 bg-card px-3 py-1 text-[17px] font-semibold text-foreground shadow-sm">
-              <TokenBubble visual={HOME_BORROW_TOKENS[0].visual} className="size-6" />
+            <div className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[15px] font-semibold text-foreground">
+              <TokenBubble visual={HOME_BORROW_TOKENS[0].visual} className="size-5" />
               USDC
             </div>
           </div>
@@ -634,20 +646,22 @@ function CompactRepayCard({
         {preview.ctaLabel}
       </PrimaryCardButton>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
-          <div className="text-[11px] text-muted-foreground">Remaining</div>
-          <div className="mt-1 font-data text-sm font-semibold">{preview.remainingDebtLabel}</div>
+      {hasAmount ? (
+        <div className="mt-1 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
+            <div className="text-[11px] text-muted-foreground">Remaining</div>
+            <div className="mt-1 font-data text-sm font-semibold">{preview.remainingDebtLabel}</div>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
+            <div className="text-[11px] text-muted-foreground">HF after</div>
+            <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{preview.healthFactorAfterLabel}</div>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
+            <div className="text-[11px] text-muted-foreground">Fee</div>
+            <div className="mt-1 font-data text-sm font-semibold">~$0.80</div>
+          </div>
         </div>
-        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
-          <div className="text-[11px] text-muted-foreground">HF after</div>
-          <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{preview.healthFactorAfterLabel}</div>
-        </div>
-        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
-          <div className="text-[11px] text-muted-foreground">Fee</div>
-          <div className="mt-1 font-data text-sm font-semibold">~$0.80</div>
-        </div>
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -673,9 +687,9 @@ function CompactClaimCard({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="surface-elevated rounded-2xl border border-border/60 bg-card/80 px-5 py-5 text-foreground">
-        <div className="text-sm text-muted-foreground">Total claimable</div>
-        <div className="mt-1 font-data text-4xl font-semibold tracking-tight">{formatUsd(preview.selectedTotalUsd)}</div>
+      <div className="rounded-[20px] border border-border/70 bg-card px-5 py-5 text-foreground">
+        <div className="text-[13px] font-medium text-muted-foreground">Total claimable</div>
+        <div className="mt-1 font-data text-[28px] font-semibold tracking-tight">{formatUsd(preview.selectedTotalUsd)}</div>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -688,10 +702,10 @@ function CompactClaimCard({
               type="button"
               onClick={() => onToggleSelection(position.id)}
               className={cn(
-                "flex items-center gap-4 rounded-2xl border px-4 py-3 text-left transition-colors",
+                "flex items-center gap-4 rounded-[20px] border px-4 py-3 text-left transition-colors",
                 isSelected
-                  ? "border-brand bg-brand-soft shadow-[0_8px_20px_rgba(252,38,114,0.12)]"
-                  : "border-border/50 bg-card/72 shadow-[0_4px_14px_rgba(15,23,42,0.03)] hover:border-border/70 hover:bg-card/85",
+                  ? "border-brand bg-brand-soft"
+                  : "border-border/60 bg-muted/40 hover:bg-muted/60",
               )}
             >
               <PairVisual visuals={[position.breakdown[0].visual, position.breakdown[1]?.visual ?? position.breakdown[0].visual]} />
@@ -707,16 +721,17 @@ function CompactClaimCard({
 
       <PickerSurface
         label="Claim amount"
+        tier="bottom"
         footer={
           <div className="flex items-center justify-between gap-3">
             <span>{preview.helperLabel}</span>
-            <button type="button" onClick={onSetAll} className="font-semibold text-primary transition-opacity hover:opacity-80">
+            <button type="button" onClick={onSetAll} className="font-semibold text-brand transition-opacity hover:opacity-80">
               All
             </button>
           </div>
         }
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
           <label className="flex min-w-0 flex-1 flex-col">
             <span className="sr-only">Claim amount</span>
             <input
@@ -729,7 +744,7 @@ function CompactClaimCard({
                 className="no-number-spinner w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
             />
           </label>
-          <div className="inline-flex h-9 items-center justify-center rounded-full bg-card px-4 py-1 text-[17px] font-semibold text-foreground shadow-sm">
+          <div className="inline-flex h-8 items-center justify-center rounded-full bg-muted px-3 py-1 text-[15px] font-semibold text-foreground">
             USD
           </div>
         </div>
@@ -757,10 +772,12 @@ function CompactRemoveCard({
   onPercentChange: (value: number) => void
   onSubmit: () => void
 }) {
+  const hasAmount = percent > 0
+
   return (
     <div className="flex flex-col gap-2">
       <div className="relative flex flex-col gap-1">
-        <PickerSurface label="Remove from" type="top">
+        <PickerSurface label="Remove from" tier="top">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="font-data text-2xl font-semibold tracking-tight text-foreground">{pool.name}</div>
@@ -769,15 +786,15 @@ function CompactRemoveCard({
             <button
               type="button"
               onClick={onOpenPoolDialog}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/40 bg-card px-2 py-1 text-foreground shadow-sm transition-colors hover:bg-muted"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-2 py-1 text-foreground transition-colors hover:bg-muted/80"
             >
               <PairVisual visuals={pool.visuals} className="w-10" />
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           </div>
         </PickerSurface>
 
-        <PickerSurface label="Remove amount" type="bottom" footer={`Health factor after ${preview.healthFactorAfterLabel}`}>
+        <PickerSurface label="Remove amount" tier="bottom" footer={`Health factor after ${preview.healthFactorAfterLabel}`}>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm text-muted-foreground">Percentage</span>
@@ -798,7 +815,7 @@ function CompactRemoveCard({
                   onClick={() => onPercentChange(preset)}
                   className={cn(
                     "rounded-xl border px-2 py-2 text-sm font-semibold transition-colors",
-                    percent === preset ? "border-transparent bg-card text-foreground shadow-sm" : "border-transparent bg-transparent text-muted-foreground hover:bg-card/50",
+                    percent === preset ? "border-border/60 bg-card text-foreground" : "border-transparent bg-transparent text-muted-foreground hover:bg-card/60",
                   )}
                 >
                   {preset}%
@@ -809,22 +826,24 @@ function CompactRemoveCard({
         </PickerSurface>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
-          <div className="text-[11px] text-muted-foreground">Receive</div>
-          <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{formatCompactUsd(preview.removeUsd)}</div>
-        </div>
-        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
-          <div className="text-[11px] text-muted-foreground">After</div>
-          <div className="mt-1 font-data text-sm font-semibold">{formatCompactUsd(preview.afterCollateralUsd)}</div>
-        </div>
-        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
-          <div className="text-[11px] text-muted-foreground">HF</div>
-          <div className={cn("mt-1 font-data text-sm font-semibold", preview.isUnsafe ? "text-rose-600" : "text-amber-600")}>
-            {preview.healthFactorAfterLabel}
+      {hasAmount ? (
+        <div className="mt-1 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
+            <div className="text-[11px] text-muted-foreground">Receive</div>
+            <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{formatCompactUsd(preview.removeUsd)}</div>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
+            <div className="text-[11px] text-muted-foreground">After</div>
+            <div className="mt-1 font-data text-sm font-semibold">{formatCompactUsd(preview.afterCollateralUsd)}</div>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
+            <div className="text-[11px] text-muted-foreground">HF</div>
+            <div className={cn("mt-1 font-data text-sm font-semibold", preview.isUnsafe ? "text-rose-600" : "text-amber-600")}>
+              {preview.healthFactorAfterLabel}
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       {preview.isUnsafe ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-500/10 px-4 py-3 text-sm text-rose-700">
@@ -912,7 +931,7 @@ function ActionSuccessDialog({
 export function HomePageClient(_props: HomePageClientProps) {
   const [mode, setMode] = useState<HomeMode>("borrow")
   const [borrowPoolId, setBorrowPoolId] = useState(HOME_DEFAULT_SELECTIONS.borrowPoolId)
-  const [borrowTokenId, setBorrowTokenId] = useState(HOME_DEFAULT_SELECTIONS.borrowTokenId)
+  const [borrowTokenId, setBorrowTokenId] = useState<string | null>(null)
   const [borrowAmount, setBorrowAmount] = useState("")
   const [repayPoolId, setRepayPoolId] = useState(HOME_DEFAULT_SELECTIONS.repayPoolId)
   const [repayAmount, setRepayAmount] = useState("")
@@ -927,10 +946,17 @@ export function HomePageClient(_props: HomePageClientProps) {
   const [successState, setSuccessState] = useState<HomeSuccessState | null>(null)
 
   const borrowPool = useMemo(() => getPoolById(borrowPoolId), [borrowPoolId])
-  const borrowToken = useMemo(() => getBorrowTokenById(borrowTokenId), [borrowTokenId])
+  const borrowToken = useMemo(() => borrowTokenId ? getBorrowTokenById(borrowTokenId) : null, [borrowTokenId])
   const borrowPreview = useMemo(
-    () => calculateBorrowPreview(borrowPool, Number.parseFloat(borrowAmount) || 0, borrowToken.symbol),
-    [borrowAmount, borrowPool, borrowToken.symbol],
+    () => {
+      const p = calculateBorrowPreview(borrowPool, Number.parseFloat(borrowAmount) || 0, borrowToken?.symbol ?? "Tokens")
+      if (!borrowToken) {
+        p.isValid = false
+        p.ctaLabel = "Select token"
+      }
+      return p
+    },
+    [borrowAmount, borrowPool, borrowToken],
   )
 
   const repayPool = useMemo(() => getPoolById(repayPoolId), [repayPoolId])
@@ -957,7 +983,7 @@ export function HomePageClient(_props: HomePageClientProps) {
   )
 
   const handleBorrowConfirm = () => {
-    if (!borrowPreview.isValid || borrowPreview.isEmpty) {
+    if (!borrowPreview.isValid || borrowPreview.isEmpty || !borrowToken) {
       return
     }
 
@@ -1090,18 +1116,18 @@ export function HomePageClient(_props: HomePageClientProps) {
     <div className="bg-background">
       <main className="px-4">
         <section className="flex min-h-[calc(100vh-64px)] items-start justify-center pt-[5vh] md:pt-[6vh]">
-          <div className="w-full max-w-[420px] rounded-[24px] p-2">
+          <div className="w-full max-w-[420px] rounded-[24px] p-2 md:max-w-[480px]">
             <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
               <div className="mb-3 flex items-center justify-between px-1 pt-1">
-                <TabsList className="w-fit gap-1.5">
+                <TabsList className="w-fit gap-0.5">
                   {HOME_MODE_ITEMS.map((item) => (
-                    <TabsTrigger key={item.value} value={item.value} className="min-h-10 px-4.5 text-sm md:min-h-11 md:px-5 md:text-[15px]">
+                    <TabsTrigger key={item.value} value={item.value} className="h-8 px-3 text-[15px] font-medium">
                       {item.label}
                     </TabsTrigger>
                   ))}
                 </TabsList>
                 <button type="button" className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground" aria-label="Settings">
-                  <Settings className="h-[20px] w-[20px]" />
+                  <Settings className="h-[18px] w-[18px]" />
                 </button>
               </div>
 

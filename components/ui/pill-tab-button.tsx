@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils"
 export const pillTabTriggerClassName = cn(
   "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-xs font-medium",
   "text-muted-foreground transition-colors hover:text-foreground",
-  "data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground",
-  "data-[state=active]:hover:bg-secondary data-[state=active]:hover:text-secondary-foreground",
+  "data-[state=active]:bg-black/5 data-[state=active]:text-foreground dark:data-[state=active]:bg-secondary dark:data-[state=active]:text-secondary-foreground",
+  "data-[state=active]:hover:bg-black/10 dark:data-[state=active]:hover:bg-secondary dark:data-[state=active]:hover:text-secondary-foreground",
   "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
   "disabled:pointer-events-none disabled:opacity-50",
 )
@@ -32,7 +32,7 @@ export const PillTabButton = React.forwardRef<HTMLButtonElement, PillTabButtonPr
       className={cn(
         "rounded-full px-4 text-xs font-medium",
         active
-          ? "bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground"
+          ? "bg-black/5 text-foreground hover:bg-black/10 dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary dark:hover:text-secondary-foreground"
           : "text-muted-foreground hover:text-foreground",
         className,
       )}
