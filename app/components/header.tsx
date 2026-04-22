@@ -10,12 +10,12 @@ import { getActiveSiteNav, siteNavLinks } from "./site-nav"
 export function Header() {
   const pathname = usePathname()
   const activeNav = getActiveSiteNav(pathname)
-  const mainNavLinks = siteNavLinks.filter((link) => link.href !== "/incentivize")
+  const mainNavLinks = siteNavLinks
   const isResourcesActive =
-    pathname.startsWith("/rewards-hub") || pathname.startsWith("/incentivize") || pathname.startsWith("/risk-warning")
+    pathname === "/risk-warning" || pathname.startsWith("/risk-warning/")
 
   return (
-    <header className="sticky top-0 z-40 border-b border-foreground/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90">
+    <header className="sticky top-0 z-40 backdrop-blur bg-background/95 supports-[backdrop-filter]:bg-background/80">
       <div className="flex h-[62px] 2xl:h-[52px] w-full items-center gap-4 2xl:gap-3 px-4 md:px-6 lg:px-8">
         <Link href="/" aria-label="Home" title="Home" className="shrink-0 flex items-center">
           <Image
@@ -23,7 +23,7 @@ export function Header() {
             alt="Avana"
             width={142}
             height={30}
-            className="h-6 w-auto object-contain md:h-6 2xl:h-5"
+            className="h-6 w-auto object-contain md:h-6 2xl:h-5 dark:invert"
             priority
           />
         </Link>
@@ -39,13 +39,17 @@ export function Header() {
                 href={link.href}
                 className={cn(
                   "group relative flex flex-row items-center justify-center gap-1.5 2xl:gap-1 px-3 py-2 2xl:px-2 2xl:py-1.5 text-[13px] 2xl:text-[12px] font-normal leading-none transition-colors",
-                  isActive ? "text-foreground" : "text-muted-foreground/80 hover:text-foreground",
+                  isActive
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <Icon
                   className={cn(
                     "h-5 w-5 2xl:h-[18px] 2xl:w-[18px] shrink-0 transition-colors",
-                    isActive ? "text-foreground" : "text-muted-foreground/80 group-hover:text-foreground",
+                    isActive
+                      ? "text-foreground"
+                      : "text-muted-foreground group-hover:text-foreground",
                   )}
                 />
                 <span className="whitespace-nowrap">{link.label}</span>

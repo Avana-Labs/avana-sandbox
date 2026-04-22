@@ -22,7 +22,7 @@ export function MobileMenu() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative h-10 w-10 rounded-xl border border-border/70 bg-background text-foreground shadow-sm hover:bg-muted/40 md:hidden"
+          className="relative h-10 w-10 rounded-xl border border-border/70 bg-card text-foreground shadow-sm hover:bg-muted/40 md:hidden"
         >
           <Menu className="h-5 w-5 transition-transform duration-200" />
           <span className="sr-only">Toggle menu</span>
@@ -80,7 +80,7 @@ export function MobileMenu() {
               className="w-full rounded-xl"
               variant="outline"
               onClick={() => {
-                router.push("/explore")
+                router.push("/borrow")
                 setOpen(false)
               }}
             >

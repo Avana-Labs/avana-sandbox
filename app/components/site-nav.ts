@@ -1,5 +1,12 @@
 import type { LucideIcon } from "lucide-react"
-import { ChartCandlestick, ChartNoAxesColumnIncreasing, FlaskConical, HandCoins, House } from "lucide-react"
+import {
+  ChartCandlestick,
+  ChartNoAxesColumnIncreasing,
+  Gift,
+  HandCoins,
+  House,
+  Sprout,
+} from "lucide-react"
 
 export type SiteNavLink = {
   href: string
@@ -26,7 +33,7 @@ export const siteNavLinks: SiteNavLink[] = [
     actionExternal: true,
   },
   {
-    href: "/explore",
+    href: "/borrow",
     label: "Borrow",
     icon: HandCoins,
     section: "Market scanner",
@@ -36,11 +43,11 @@ export const siteNavLinks: SiteNavLink[] = [
     actionHref: "/risk-warning",
   },
   {
-    href: "/invest",
-    label: "Invest",
+    href: "/lend",
+    label: "Lend",
     icon: ChartNoAxesColumnIncreasing,
     section: "Capital sleeves",
-    description: "Deploy capital across sleeves, compare APY, and size positions without losing portfolio context.",
+    description: "Lend into sleeves, compare APY, and size positions without losing portfolio context.",
     highlights: ["Yield sleeves", "Position sizing"],
     actionLabel: "Open resources",
     actionHref: "https://avana-ashen.vercel.app/developers",
@@ -57,15 +64,25 @@ export const siteNavLinks: SiteNavLink[] = [
     actionHref: "/risk-warning",
   },
   {
-    href: "/incentivize",
-    label: "Simulate",
-    icon: FlaskConical,
-    section: "Incentive modeling",
-    description: "Preview incentive scenarios, APR changes, and pool-level tradeoffs before capital is committed.",
-    highlights: ["APR modeling", "Pool scenarios"],
+    href: "/stake",
+    label: "Stake",
+    icon: Sprout,
+    section: "LP staking",
+    description: "Choose a pool, lock assets, and preview rewards and APR before you stake LP collateral.",
+    highlights: ["Reward preview", "Lock terms"],
     actionLabel: "How it works",
     actionHref: "https://avana-ashen.vercel.app/about",
     actionExternal: true,
+  },
+  {
+    href: "/rewards",
+    label: "Rewards",
+    icon: Gift,
+    section: "Incentives",
+    description: "Track quest progress, points, and protocol metrics across Avana rewards programs.",
+    highlights: ["Quest progress", "Points & tiers"],
+    actionLabel: "Risk warning",
+    actionHref: "/risk-warning",
   },
 ]
 
