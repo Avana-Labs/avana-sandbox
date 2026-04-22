@@ -9,11 +9,11 @@ const ROUTE_MANIFEST_TAG = "site-route-manifest"
 
 const STATIC_ROUTES: SiteRoute[] = [
   { route: "", priority: 1.0 },
-  { route: "/explore", priority: 0.9 },
-  { route: "/invest", priority: 0.85 },
+  { route: "/borrow", priority: 0.9 },
+  { route: "/lend", priority: 0.85 },
   { route: "/perps", priority: 0.85 },
-  { route: "/manage", priority: 0.8 },
-  { route: "/incentivize", priority: 0.7 },
+  { route: "/stake", priority: 0.7 },
+  { route: "/rewards", priority: 0.72 },
   { route: "/risk-warning", priority: 0.5 },
 ]
 

@@ -6,7 +6,7 @@ import { Trophy } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { DeferredRender } from "@/app/components/deferred-render"
-import { PoolGrid } from "@/app/explore/components/pool-grid"
+import { PoolGrid } from "@/app/borrow/components/pool-grid"
 import type { HomeChain } from "@/app/lib/home-data"
 
 type HomeBorrowTabProps = {

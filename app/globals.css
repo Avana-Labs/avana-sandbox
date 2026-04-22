@@ -9,35 +9,89 @@
     text-size-adjust: 100%;
   }
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Page chrome: subtle green-tinted off-white for premium feel */
+    --background: 150 20% 98%;        /* #F8FBF9 soft mint-tinted */
+    --foreground: 150 15% 10%;        /* #161C18 deep green-black text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;                /* pure white elevated cards pop */
+    --card-foreground: 150 15% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 150 15% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 150 15% 12%;
+    --primary-foreground: 150 20% 98%;
 
-    --secondary: 0 0% 96.5%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 150 15% 95%;
+    --secondary-foreground: 150 15% 12%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 215 12% 44%;
+    --muted: 150 15% 95%;             /* #F0F4F1 muted surface */
+    --muted-foreground: 150 8% 42%;   /* #616B64 secondary text */
 
-    --accent: 0 0% 97%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 150 15% 95%;
+    --accent-foreground: 150 15% 12%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 150 20% 98%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 222.2 84% 4.9%;
+    --border: 150 12% 90%;            /* #E0E7E2 hairlines */
+    --input: 150 12% 90%;
+    --ring: 145 65% 45%;
+
+    /* Elevated surfaces used for sub-cards / hover bg in compact UIs */
+    --surface-1: 150 18% 96.5%;       /* #F2F6F3 */
+    --surface-2: 150 15% 93%;         /* #E7EDE9 */
+    --surface-hover: 150 15% 93%;
+
+    /* Premium accent (brand pink kept in light mode) */
+    --brand: 327 96% 53%;
+    --brand-foreground: 0 0% 100%;
+    --brand-soft: 327 90% 96%;
+    --brand-soft-foreground: 327 96% 53%;
 
     --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Premium green-tinted near-black, Robinhood-inspired */
+    --background: 150 8% 6%;         /* #0D1110 deep canvas */
+    --foreground: 150 8% 96%;        /* #F2F5F3 near white */
+
+    --card: 150 7% 9%;                /* #151A18 elevated card */
+    --card-foreground: 150 8% 96%;
+
+    --popover: 150 7% 11%;            /* popover a touch lighter */
+    --popover-foreground: 150 8% 96%;
+
+    --primary: 145 65% 55%;           /* Robinhood green */
+    --primary-foreground: 150 10% 8%;
+
+    --secondary: 150 6% 14%;
+    --secondary-foreground: 150 8% 96%;
+
+    --muted: 150 6% 14%;              /* #1F2523 inner panels */
+    --muted-foreground: 150 6% 64%;   /* #98A29D subtle text */
+
+    --accent: 150 6% 14%;
+    --accent-foreground: 150 8% 96%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 150 8% 96%;
+
+    --border: 150 6% 16%;             /* #242B28 hairline */
+    --input: 150 6% 16%;
+    --ring: 145 65% 55%;
+
+    /* Elevated sub-surfaces for nested cards & hover states */
+    --surface-1: 150 6% 12%;          /* #1B2220 */
+    --surface-2: 150 6% 16%;          /* #242B28 */
+    --surface-hover: 150 6% 18%;      /* #2A322F */
+
+    /* Brand accent: keep pink but ever so slightly dimmed in dark */
+    --brand: 327 92% 58%;
+    --brand-foreground: 0 0% 100%;
+    --brand-soft: 327 40% 20%;
+    --brand-soft-foreground: 327 92% 70%;
   }
 }
 
@@ -56,38 +110,45 @@
   h4,
   h5,
   h6 {
-    @apply mb-2; /* Reduced from mb-4 */
+    @apply mb-2;
   }
   p {
-    @apply mb-2; /* Reduced from mb-4 */
+    @apply mb-2;
   }
 }
 
 /* Tighter utility classes */
 .container {
-  @apply px-3; /* Reduced from px-4 */
+  @apply px-3;
 }
 
 .card-grid {
-  @apply grid gap-3; /* Reduced from gap-4 */
+  @apply grid gap-3;
 }
 
 .section-spacing {
-  @apply py-4; /* Reduced from py-6 */
+  @apply py-4;
 }
 
 /* Tighter form elements */
 .form-group {
-  @apply space-y-2; /* Reduced from space-y-4 */
+  @apply space-y-2;
 }
 
 /* Tighter table styles */
 .table-compact {
-  @apply [&_td]:py-2 [&_th]:py-2; /* Reduced from py-3 */
+  @apply [&_td]:py-2 [&_th]:py-2;
 }
 
 @keyframes loading-shimmer {
   100% {
     transform: translateX(100%);
   }
+}
+
+/* Premium depth for cards in dark mode */
+.dark .surface-elevated {
+  box-shadow:
+    0 0 0 1px hsl(var(--border)),
+    0 1px 0 0 hsl(150 6% 22% / 0.3) inset;
 }
