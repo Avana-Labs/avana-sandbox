@@ -47,10 +47,10 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
     <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : null)}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-slate-100 bg-white p-0 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5">
-            <DialogTitle className="text-[20px] font-semibold tracking-tight text-slate-900">Post as Collateral</DialogTitle>
-            <DialogClose className="flex size-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700">
+        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-border bg-card p-0 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+          <div className="flex items-center justify-between border-b border-border px-5 py-5">
+            <DialogTitle className="text-[20px] font-semibold tracking-tight text-foreground">Post as Collateral</DialogTitle>
+            <DialogClose className="flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
               <span className="sr-only">Close</span>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
                 <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -59,28 +59,28 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
           </div>
 
           <div className="space-y-4 px-5 py-5">
-            <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-100/80 px-4 py-3.5">
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-muted/80 px-4 py-3.5">
               <div className="flex items-center gap-3">
                 <div className="flex items-center">
                   <TokenBubble visual={pool.visuals[0]} size="md" />
                   <TokenBubble visual={pool.visuals[1]} size="md" className="-ml-2" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[16px] font-semibold text-slate-900">{pairLabel}</div>
-                  <div className="text-sm text-slate-500">
+                  <div className="text-[16px] font-semibold text-foreground">{pairLabel}</div>
+                  <div className="text-sm text-muted-foreground">
                     {spoke.label} · Max LTV {pool.ltv}%
                   </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-data text-[20px] font-semibold tabular-nums text-slate-900">
+                <div className="font-data text-[20px] font-semibold tabular-nums text-foreground">
                   {formatUsdExact(positionUsd)}
                 </div>
-                <div className="text-xs text-slate-500">Your position</div>
+                <div className="text-xs text-muted-foreground">Your position</div>
               </div>
             </div>
 
-            <dl className="overflow-hidden rounded-2xl bg-slate-100/70">
+            <dl className="overflow-hidden rounded-2xl bg-muted/70">
               <StatRow label="Max LTV" value={`${pool.ltv}%`} tone="text-emerald-600" />
               <StatRow label="Max Borrow Power" value={formatUsdExact(borrowPower)} tone="text-emerald-600" />
               <StatRow
@@ -105,7 +105,7 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
                 label="Network fee"
                 value={
                   <span className="inline-flex items-center gap-1.5">
-                    <BoltIcon className="size-3.5 text-slate-700" />
+                    <BoltIcon className="size-3.5 text-foreground" />
                     {formatUsdExact(NETWORK_FEE_USD)}
                   </span>
                 }
@@ -143,9 +143,9 @@ function StatRow({
   tone?: string
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-3 text-sm last:border-b-0">
-      <dt className="text-slate-600">{label}</dt>
-      <dd className={cn("font-data font-semibold tabular-nums text-slate-900", tone)}>{value}</dd>
+    <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 text-sm last:border-b-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className={cn("font-data font-semibold tabular-nums text-foreground", tone)}>{value}</dd>
     </div>
   )
 }

@@ -37,11 +37,11 @@ export function PromoCard() {
     <Card className="relative overflow-hidden border-emerald-500/20 bg-emerald-500/5 shadow-none">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent" />
       <CardContent className="relative z-10 p-6">
-        <h3 className="mb-2 font-semibold text-emerald-50">Trade LP-backed Perps</h3>
-        <p className="mb-4 text-sm text-emerald-100/70">
+        <h3 className="mb-2 font-semibold text-emerald-700 dark:text-emerald-50">Trade LP-backed Perps</h3>
+        <p className="mb-4 text-sm text-emerald-700/80 dark:text-emerald-100/70">
           Use your active LP positions across Uniswap and Aerodrome as collateral to trade directionally without unstaking.
         </p>
-        <Button variant="secondary" className="w-full border border-emerald-500/30 bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/30">
+        <Button variant="secondary" className="w-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:bg-emerald-500/20 dark:text-emerald-100 dark:hover:bg-emerald-500/30">
           Learn more
         </Button>
       </CardContent>

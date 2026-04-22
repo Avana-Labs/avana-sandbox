@@ -207,7 +207,7 @@ export const HOME_BORROW_TOKENS: HomeBorrowToken[] = [
     symbol: "WETH",
     subtitle: "Wrapped native",
     borrowApr: 4.0,
-    visual: { symbol: "WETH", shortLabel: "W", bgClassName: "bg-slate-200", textClassName: "text-slate-700" },
+    visual: { symbol: "WETH", shortLabel: "W", bgClassName: "bg-muted", textClassName: "text-foreground" },
   },
   {
     id: "dai",

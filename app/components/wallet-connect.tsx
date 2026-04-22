@@ -17,9 +17,14 @@ import {
   FileText,
   LifeBuoy,
   Mail,
+  Moon,
   Shield,
+  Sun,
   type LucideIcon,
 } from "lucide-react"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
 
 function AppsGridIcon({ className }: { className?: string }) {
   return (
@@ -77,6 +82,13 @@ function MenuLink({ href, label, icon: Icon, newTab, internal }: MenuLinkItem) {
 }
 
 export function WalletConnect({ isResourcesActive = false }: { isResourcesActive?: boolean }) {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const menuContentClass = "rounded-xl border border-border bg-popover p-1 shadow-md"
 
   const topLinks: MenuLinkItem[] = [
@@ -153,6 +165,50 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={10} className={`w-64 ${menuContentClass}`}>
+          <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Global preferences
+          </DropdownMenuLabel>
+          <div className="px-2 py-1.5 flex items-center justify-between gap-2">
+            <span className="text-[13px] text-muted-foreground">Theme</span>
+            <div className="flex items-center rounded-full border border-border p-0.5">
+              <button
+                onClick={() => setTheme("system")}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-semibold rounded-full transition-colors",
+                  mounted && theme === "system" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Auto
+              </button>
+              <button
+                onClick={() => setTheme("light")}
+                className={cn(
+                  "p-1.5 rounded-full transition-colors",
+                  mounted && theme === "light" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Sun className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => setTheme("dark")}
+                className={cn(
+                  "p-1.5 rounded-full transition-colors",
+                  mounted && theme === "dark" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Moon className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[13px] text-muted-foreground">
+            <span>Language</span>
+            <span className="font-semibold text-foreground">English <span className="ml-1 opacity-50">&gt;</span></span>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[13px] text-muted-foreground">
+            <span>Currency</span>
+            <span className="font-semibold text-foreground">USD <span className="ml-1 opacity-50">&gt;</span></span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator className="my-1" />
           <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             Resources
           </DropdownMenuLabel>
