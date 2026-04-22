@@ -3,9 +3,53 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { PillTabButton } from "@/components/ui/pill-tab-button"
 import { TokenIcon } from "@/app/components/token-icon"
+import { DeltaPill, FlashValue } from "@/app/components/ui/live"
+import { TransactionHistoryList } from "./sidebar"
 
 const TABS = ["LP Collaterals", "Positions", "Open Orders", "TWAP", "History"] as const
 type Tab = typeof TABS[number]
+
+function PositionRow({
+  symbol,
+  label,
+  side,
+  leverage,
+  pnlUsd,
+  pnlPct,
+}: {
+  symbol: string
+  label: string
+  side: "long" | "short"
+  leverage: number
+  pnlUsd: number
+  pnlPct: number
+}) {
+  const isLong = side === "long"
+  const sideTint = isLong ? "bg-emerald-500" : "bg-rose-500"
+  const sidePillClass = isLong ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+  const pnlClass = pnlUsd >= 0 ? "text-emerald-500" : "text-rose-500"
+  const pnlPrefix = pnlUsd >= 0 ? "+" : "−"
+  const absPnl = Math.abs(pnlUsd).toFixed(2)
+
+  return (
+    <div className="relative flex items-center justify-between gap-3 rounded-lg border border-border/40 px-3 py-2 pl-4 transition-colors hover:bg-muted/40">
+      <span className={`absolute inset-y-1.5 left-0 w-[3px] rounded-full ${sideTint}`} aria-hidden />
+      <div className="flex items-center gap-3">
+        <TokenIcon symbol={symbol} size="md" />
+        <span className="font-medium text-sm">{label}</span>
+        <span className={`text-[10px] uppercase ${sidePillClass} px-1.5 py-0.5 rounded`}>
+          {isLong ? "Long" : "Short"} {leverage}x
+        </span>
+      </div>
+      <div className="flex flex-col items-end gap-1">
+        <FlashValue value={pnlUsd} goodDirection="up" className={`text-sm font-data tabular-nums ${pnlClass}`}>
+          {`${pnlPrefix}$${absPnl}`}
+        </FlashValue>
+        <DeltaPill value={pnlPct} format="percent" digits={2} goodDirection="up" />
+      </div>
+    </div>
+  )
+}
 
 export function AccountTabs() {
   const [activeTab, setActiveTab] = useState<Tab>("Positions")
@@ -32,29 +76,9 @@ export function AccountTabs() {
             <p className="text-xs text-muted-foreground/60 mt-1">Orders will appear here once submitted.</p>
           </div>
         ) : activeTab === "Positions" ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-2 border-b border-border/40">
-              <div className="flex items-center gap-3">
-                <TokenIcon symbol="ETH" size="md" />
-                <span className="font-medium text-sm">ETH-PERP</span>
-                <span className="text-[10px] uppercase bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded">Long 5x</span>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-data">+$89.20</p>
-                <p className="text-xs text-emerald-500">+1.78%</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between py-2 border-b border-border/40">
-              <div className="flex items-center gap-3">
-                <TokenIcon symbol="SOL" size="md" />
-                <span className="font-medium text-sm">SOL-PERP</span>
-                <span className="text-[10px] uppercase bg-rose-500/10 text-rose-500 px-1.5 py-0.5 rounded">Short 3x</span>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-data">-$24.60</p>
-                <p className="text-xs text-rose-500">-1.23%</p>
-              </div>
-            </div>
+          <div className="space-y-2">
+            <PositionRow symbol="ETH" label="ETH-PERP" side="long" leverage={5} pnlUsd={89.2} pnlPct={1.78} />
+            <PositionRow symbol="SOL" label="SOL-PERP" side="short" leverage={3} pnlUsd={-24.6} pnlPct={-1.23} />
           </div>
         ) : activeTab === "LP Collaterals" ? (
           <div className="space-y-4">
@@ -97,10 +121,7 @@ export function AccountTabs() {
             <p className="text-xs text-muted-foreground/60 mt-1">Time-weighted average price orders appear here.</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-            <p className="text-sm">No history available</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Your past trades and funding payments will be listed here.</p>
-          </div>
+          <TransactionHistoryList />
         )}
       </CardContent>
     </Card>
