@@ -35,9 +35,9 @@ export function TokenBubble({
     <span
       className={cn(
         "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
-        ring && "ring-2 ring-white",
+        ring && "ring-2 ring-background",
         box,
-        showIcon ? "bg-white" : `${visual.bgClass} ${visual.textClass}`,
+        showIcon ? "bg-card" : `${visual.bgClass} ${visual.textClass}`,
         !showIcon && text,
         className,
       )}
@@ -81,9 +81,9 @@ export function TokenPairCell({
         <TokenBubble visual={visuals[1]} size={bubbleSize} className={offset} />
       </div>
       <div className="min-w-0">
-        <div className={cn("font-semibold leading-tight text-slate-900", nameCls)}>{name}</div>
+        <div className={cn("font-semibold leading-tight text-foreground", nameCls)}>{name}</div>
         {subtitle ? (
-          <div className={cn("mt-0.5 truncate font-medium text-slate-500", subtitleCls)}>{subtitle}</div>
+          <div className={cn("mt-0.5 truncate font-medium text-muted-foreground", subtitleCls)}>{subtitle}</div>
         ) : null}
       </div>
     </div>
@@ -108,9 +108,9 @@ export function TokenSingleCell({
     <div className="flex items-center gap-3">
       <TokenBubble visual={visual} size={bubbleSize} />
       <div className="min-w-0">
-        <div className={cn("font-semibold leading-tight text-slate-900", nameCls)}>{name}</div>
+        <div className={cn("font-semibold leading-tight text-foreground", nameCls)}>{name}</div>
         {subtitle ? (
-          <div className={cn("mt-0.5 truncate font-medium text-slate-500", subtitleCls)}>{subtitle}</div>
+          <div className={cn("mt-0.5 truncate font-medium text-muted-foreground", subtitleCls)}>{subtitle}</div>
         ) : null}
       </div>
     </div>
@@ -121,14 +121,14 @@ export function SpokeDot({ spoke, label, withLabel = true, className }: { spoke:
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       <span className={cn("size-1.5 shrink-0 rounded-full", spoke.dotClass)} aria-hidden />
-      {withLabel ? <span className="text-xs font-medium text-slate-600">{label ?? spoke.label.replace(" Spoke", "")}</span> : null}
+      {withLabel ? <span className="text-xs font-medium text-muted-foreground">{label ?? spoke.label.replace(" Spoke", "")}</span> : null}
     </span>
   )
 }
 
 export function DexPill({ dex }: { dex: DexChip }) {
   return (
-    <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
       {dex.label}
       {dex.starred ? <span className="ml-0.5 text-amber-500">★</span> : null}
     </span>
@@ -212,10 +212,10 @@ export function PillButton({
     "inline-flex items-center justify-center rounded-full font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
   const sizeCls = size === "md" ? "h-10 px-5 text-[14px]" : "h-8 px-3.5 text-sm"
   const variantCls = {
-    primary: "bg-slate-950 text-white hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400",
-    ghost: "bg-slate-100 text-slate-900 hover:bg-slate-200",
-    danger: "border border-rose-200 bg-transparent text-rose-600 hover:bg-rose-50",
-    success: "bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400",
+    primary: "bg-foreground text-background hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground",
+    ghost: "bg-muted text-foreground hover:bg-muted",
+    danger: "border border-rose-200 bg-transparent text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/40",
+    success: "bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-muted disabled:text-muted-foreground",
   }[variant]
   return (
     <button type="button" {...props} className={cn(base, sizeCls, variantCls, className)}>
@@ -242,8 +242,8 @@ export function DropdownChip({
       className={cn(
         "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
         active
-          ? "bg-slate-900 text-white hover:bg-slate-800"
-          : "bg-slate-100 text-slate-700 hover:bg-slate-200",
+          ? "bg-foreground text-background hover:bg-foreground/90"
+          : "bg-muted text-foreground hover:bg-muted",
         className,
       )}
     >
@@ -255,15 +255,15 @@ export function DropdownChip({
 export function StatItem({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-xs font-medium uppercase tracking-[0.07em] text-slate-500">{label}</div>
-      <div className={cn("mt-1 font-data text-[17px] font-semibold tabular-nums text-slate-900", tone)}>{value}</div>
+      <div className="text-xs font-medium uppercase tracking-[0.07em] text-muted-foreground">{label}</div>
+      <div className={cn("mt-1 font-data text-[17px] font-semibold tabular-nums text-foreground", tone)}>{value}</div>
     </div>
   )
 }
 
 export function StatsStrip({ items }: { items: Array<{ label: string; value: string; tone?: string }> }) {
   return (
-    <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 sm:flex sm:items-start sm:gap-8">
+    <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-border bg-card px-5 py-4 sm:flex sm:items-start sm:gap-8">
       {items.map((item) => (
         <StatItem key={item.label} label={item.label} value={item.value} tone={item.tone} />
       ))}

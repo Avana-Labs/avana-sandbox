@@ -34,8 +34,8 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
   const m = (value: string) => (showBalance ? value : MASK)
   if (rows.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500">
-        You don&apos;t have any supply positions yet. Provide liquidity on the <span className="font-semibold text-slate-800">Pools to Supply</span> tab to unlock borrow power.
+      <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+        You don&apos;t have any supply positions yet. Provide liquidity on the <span className="font-semibold text-foreground">Pools to Supply</span> tab to unlock borrow power.
       </div>
     )
   }
@@ -45,7 +45,7 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-sm font-medium text-slate-500">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="px-2 py-3">LP Position</th>
                 <th className="px-2 py-3 text-right">Collateral</th>
                 <th className="px-2 py-3 text-right">Max Borrow</th>
@@ -60,21 +60,21 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                 const meta = BORROW_SUPPLY_META[row.pool.id]
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 return (
-                  <tr key={row.pool.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/70">
+                  <tr key={row.pool.id} className="border-t border-border transition-colors hover:bg-muted/70">
                     <td className="px-2 py-3.5">
                       <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="lg" />
                     </td>
-                    <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-slate-900">
+                    <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-foreground">
                       {m(formatCompactUsd(row.pool.collateralUsd))}
                     </td>
-                    <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-slate-900">
+                    <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-foreground">
                       {m(formatCompactUsd(row.pool.borrowPowerUsd))}
                     </td>
                     <td className="px-2 py-3.5 text-right">
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                     </td>
                     <td className="px-2 py-3.5 text-right">
-                      <div className="font-data text-sm tabular-nums text-slate-900">{m(meta?.feesLabel ?? "$0.00")}</div>
+                      <div className="font-data text-sm tabular-nums text-foreground">{m(meta?.feesLabel ?? "$0.00")}</div>
                       <div className="font-data text-xs font-semibold tabular-nums text-emerald-600">
                         {row.pool.pairApr.toFixed(1)}% APR
                       </div>
@@ -109,7 +109,7 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`
           return (
-            <li key={row.pool.id} className="space-y-4 rounded-3xl bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <li key={row.pool.id} className="space-y-4 rounded-3xl bg-card px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center">
@@ -117,7 +117,7 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                     <TokenBubble visual={visuals[1]} size="md" className="-ml-2" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[16px] font-semibold text-slate-900">{row.pool.name}</div>
+                    <div className="text-[16px] font-semibold text-foreground">{row.pool.name}</div>
                     <span
                       className={cn(
                         "mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
@@ -130,39 +130,39 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-data text-[20px] font-semibold tabular-nums text-slate-900">
+                  <div className="font-data text-[20px] font-semibold tabular-nums text-foreground">
                     {m(formatUsdExact(row.pool.collateralUsd))}
                   </div>
-                  <div className="text-xs text-slate-500">Collateral</div>
+                  <div className="text-xs text-muted-foreground">Collateral</div>
                 </div>
               </div>
 
-              <div className="space-y-3 rounded-2xl bg-slate-100/70 px-4 py-3.5">
+              <div className="space-y-3 rounded-2xl bg-muted/70 px-4 py-3.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-slate-700">Health Factor</span>
+                  <span className="text-sm font-semibold text-foreground">Health Factor</span>
                   <span className={cn("font-data text-[28px] font-semibold leading-none tabular-nums", hfTone.text)}>{m(hfLabel)}</span>
                 </div>
-                <div className="relative h-2 rounded-full bg-slate-200">
+                <div className="relative h-2 rounded-full bg-muted">
                   <div className={cn("h-2 rounded-full", hfTone.fill)} style={{ width: `${fillPct}%` }} />
                   <span
-                    className={cn("absolute top-1/2 size-3.5 -translate-y-1/2 rounded-full border-2 bg-white", hfTone.border)}
+                    className={cn("absolute top-1/2 size-3.5 -translate-y-1/2 rounded-full border-2 bg-card", hfTone.border)}
                     style={{ left: `calc(${fillPct}% - 7px)` }}
                     aria-hidden
                   />
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Safe</span>
                   <span>Liquidation</span>
                 </div>
-                <div className="flex items-center justify-between border-t border-slate-200/80 pt-2.5 text-sm">
-                  <span className="text-slate-600">Liquidation at</span>
+                <div className="flex items-center justify-between border-t border-border/80 pt-2.5 text-sm">
+                  <span className="text-muted-foreground">Liquidation at</span>
                   <span className={cn("font-data font-semibold tabular-nums", hfTone.text)}>
                     {m(formatUsdExact(row.pool.liquidationUsd))} collateral
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 divide-x divide-slate-200 overflow-hidden rounded-2xl bg-slate-100/70">
+              <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl bg-muted/70">
                 <SupplyStatCell
                   value={m(formatUsdExact(row.borrowedUsd))}
                   label="Borrowed"
@@ -183,7 +183,7 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                 <button
                   type="button"
                   onClick={() => onRemove(row)}
-                  className="flex-1 rounded-2xl bg-slate-100 px-5 py-3.5 text-center text-[15px] font-semibold text-slate-900 transition-colors hover:bg-slate-200"
+                  className="flex-1 rounded-2xl bg-muted px-5 py-3.5 text-center text-[15px] font-semibold text-foreground transition-colors hover:bg-muted"
                 >
                   Remove LP
                 </button>
@@ -206,15 +206,15 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
 function SupplyStatCell({ value, label, valueTone }: { value: string; label: string; valueTone?: string }) {
   return (
     <div className="flex flex-col items-center justify-center px-2 py-3">
-      <span className={cn("font-data text-[17px] font-semibold tabular-nums text-slate-900", valueTone)}>{value}</span>
-      <span className="mt-0.5 text-xs font-medium uppercase tracking-[0.08em] text-slate-500">{label}</span>
+      <span className={cn("font-data text-[17px] font-semibold tabular-nums text-foreground", valueTone)}>{value}</span>
+      <span className="mt-0.5 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</span>
     </div>
   )
 }
 
 function hfBarTone(hf: number | null): { text: string; fill: string; border: string } {
   if (hf === null || Number.isNaN(hf)) {
-    return { text: "text-slate-400", fill: "bg-slate-300", border: "border-slate-300" }
+    return { text: "text-muted-foreground", fill: "bg-slate-300", border: "border-slate-300" }
   }
   if (!Number.isFinite(hf) || hf >= 3) {
     return { text: "text-emerald-600", fill: "bg-emerald-500", border: "border-emerald-500" }

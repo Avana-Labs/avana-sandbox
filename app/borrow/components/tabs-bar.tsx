@@ -72,7 +72,7 @@ export function TabsBar({
   const activeSortLabel = sortOptions.find((option) => option.key === sortKey)?.label ?? sortOptions[0]?.label ?? ""
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 border-b border-slate-100 bg-white/95 px-4 backdrop-blur md:-mx-6 md:px-6">
+    <div className="sticky top-0 z-30 -mx-4 border-b border-border bg-card/95 px-4 backdrop-blur md:-mx-6 md:px-6">
       <div className="flex flex-wrap items-center gap-x-1 gap-y-2 py-2">
         <nav className="flex items-center gap-1 overflow-x-auto" aria-label="Borrow sections">
           {TAB_ORDER.map((tab) => {
@@ -85,13 +85,13 @@ export function TabsBar({
                 className={cn(
                   "whitespace-nowrap rounded-lg px-3 py-1.5 text-[15px] transition-colors",
                   isActive
-                    ? "text-slate-900 font-semibold"
-                    : "text-slate-500 font-medium hover:text-slate-900",
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground font-medium hover:text-foreground",
                 )}
                 aria-current={isActive ? "page" : undefined}
               >
                 {tab.label}
-                <span className={cn("ml-1.5 text-sm font-normal", isActive ? "text-slate-400" : "text-slate-400")}>
+                <span className={cn("ml-1.5 text-sm font-normal", isActive ? "text-muted-foreground" : "text-muted-foreground")}>
                   {counts[tab.id]}
                 </span>
               </button>
@@ -101,14 +101,14 @@ export function TabsBar({
 
         <div className="ml-auto flex items-center gap-1.5">
           {searchOpen ? (
-            <div className="flex h-8 items-center gap-1.5 rounded-full bg-slate-100 px-3">
-              <Search className="size-3.5 shrink-0 text-slate-500" aria-hidden />
+            <div className="flex h-8 items-center gap-1.5 rounded-full bg-muted px-3">
+              <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
               <input
                 ref={inputRef}
                 value={filterText}
                 onChange={(event) => onFilterChange(event.target.value)}
                 placeholder={currentTab === "assets" ? "Filter tokens" : currentTab === "pools" ? "Filter pools" : "Filter"}
-                className="h-5 w-36 border-none bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                className="h-5 w-36 border-none bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
               />
               <button
                 type="button"
@@ -116,7 +116,7 @@ export function TabsBar({
                   onFilterChange("")
                   setSearchOpen(false)
                 }}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-foreground hover:text-muted-foreground"
                 aria-label="Clear search"
               >
                 <X className="size-3.5" />
@@ -126,7 +126,7 @@ export function TabsBar({
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="inline-flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+              className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted"
               aria-label="Open search"
             >
               <Search className="size-3.5" aria-hidden />
@@ -141,8 +141,8 @@ export function TabsBar({
                   className={cn(
                     "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
                     selectedDexes.size === 0 || selectedDexes.size === BORROW_DEXES.length
-                      ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      : "bg-slate-900 text-white hover:bg-slate-800",
+                      ? "bg-muted text-foreground hover:bg-muted"
+                      : "bg-foreground text-background hover:bg-foreground/90",
                   )}
                 >
                   DEX
@@ -172,7 +172,7 @@ export function TabsBar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full bg-slate-100 px-3 text-sm font-medium text-slate-700 hover:bg-slate-200"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-3 text-sm font-medium text-foreground hover:bg-muted"
                 >
                   {activeSortLabel}
                   <ChevronDown className="size-3.5 opacity-60" aria-hidden />
@@ -189,7 +189,7 @@ export function TabsBar({
                   ))}
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs uppercase tracking-wide text-slate-400">
+                <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
                   Order
                 </DropdownMenuLabel>
                 <DropdownMenuRadioGroup

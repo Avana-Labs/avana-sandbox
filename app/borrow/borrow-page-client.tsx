@@ -133,17 +133,17 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
               <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-slate-500">Total Collateral</p>
+                    <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-muted-foreground">Total Collateral</p>
                     <button
                       type="button"
                       onClick={() => setShowBalance((prev) => !prev)}
                       aria-label={showBalance ? "Hide balance" : "Show balance"}
-                      className="text-slate-400 transition-colors hover:text-slate-600"
+                      className="text-muted-foreground transition-colors hover:text-muted-foreground"
                     >
                       {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                     </button>
                   </div>
-                  <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-slate-900 md:text-[1.8rem]">
+                  <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
                     {showBalance ? formatUsdWhole(suppliesHeroStats.collateral) : mask}
                   </p>
                 </div>
@@ -174,17 +174,17 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
               <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-slate-500">Total Borrowed</p>
+                    <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-muted-foreground">Total Borrowed</p>
                     <button
                       type="button"
                       onClick={() => setShowBalance((prev) => !prev)}
                       aria-label={showBalance ? "Hide balance" : "Show balance"}
-                      className="text-slate-400 transition-colors hover:text-slate-600"
+                      className="text-muted-foreground transition-colors hover:text-muted-foreground"
                     >
                       {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                     </button>
                   </div>
-                  <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-slate-900 md:text-[1.8rem]">
+                  <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
                     {showBalance ? formatUsdWhole(debtsHeroStats.totalBorrowed) : mask}
                   </p>
                 </div>
@@ -237,14 +237,14 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                   {currentTab === "assets" ? (
                     <>
                       <p className="text-[12px] font-medium tracking-tight text-[#7d72cc]">Available Credit</p>
-                      <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-slate-900 md:text-[1.8rem]">
+                      <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
                         {formatUsd(selectedHistoryPoint?.availableCredit ?? metricsData.availableCredit)}
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="text-[12px] font-medium tracking-tight text-slate-500">Total TVL</p>
-                      <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-slate-900 md:text-[1.8rem]">
+                      <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total TVL</p>
+                      <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
                         {formatUsd(selectedHistoryPoint?.totalTvl ?? metricsData.totalTvl)}
                       </p>
                     </>
@@ -255,11 +255,11 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 md:ml-auto md:text-right">
                 {currentTab === "assets" ? (
                   <div>
-                    <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-slate-500 md:justify-end">
+                    <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
                       <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
                       Total TVL
                     </div>
-                    <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
+                    <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
                       {formatUsd(selectedHistoryPoint?.totalTvl ?? metricsData.totalTvl)}
                     </p>
                   </div>
@@ -269,7 +269,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                       <span className="h-1.5 w-1.5 rounded-full bg-[#7ec39f]" />
                       Total Collateral
                     </div>
-                    <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
+                    <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
                       {formatUsd(selectedHistoryPoint?.collaterals ?? metricsData.collaterals)}
                     </p>
                   </div>
@@ -281,7 +281,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                       <span className="h-1.5 w-1.5 rounded-full bg-[#7ec39f]" />
                       Total Collateral
                     </div>
-                    <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
+                    <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
                       {formatUsd(selectedHistoryPoint?.collaterals ?? metricsData.collaterals)}
                     </p>
                   </div>
@@ -291,7 +291,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                       <span className="h-1.5 w-1.5 rounded-full bg-[#a092ef]" />
                       Available Credit
                     </div>
-                    <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
+                    <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
                       {formatUsd(selectedHistoryPoint?.availableCredit ?? metricsData.availableCredit)}
                     </p>
                   </div>
@@ -302,7 +302,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                     <span className="h-1.5 w-1.5 rounded-full bg-[#c29f78]" />
                     Outstanding Loans
                   </div>
-                  <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">
+                  <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
                     {formatUsd(selectedHistoryPoint?.totalLoans ?? metricsData.totalLoans)}
                   </p>
                 </div>
@@ -342,7 +342,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                   ))}
                 </div>
 
-                <div className="mt-4 flex items-center justify-end text-[12px] font-medium text-slate-500 md:text-[13px]">
+                <div className="mt-4 flex items-center justify-end text-[12px] font-medium text-muted-foreground md:text-[13px]">
                   <span>{selectedHistoryPoint?.label ?? ""}</span>
                 </div>
               </div>
@@ -379,7 +379,7 @@ function HeroStat({
         <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
         {label}
       </div>
-      <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">{value}</p>
+      <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">{value}</p>
     </div>
   )
 }
@@ -406,15 +406,15 @@ function HealthFactorCard({ hf, showBalance }: { hf: number | null; showBalance:
     <div className="mt-4 px-1 md:px-2">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
-          <span className="text-[13px] font-semibold text-slate-900">Health factor</span>
-          <Info className="h-3.5 w-3.5 self-center text-slate-400" aria-hidden />
-          <span className="font-data text-[22px] font-bold leading-none tracking-tight text-slate-900">
+          <span className="text-[13px] font-semibold text-foreground">Health factor</span>
+          <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
+          <span className="font-data text-[22px] font-bold leading-none tracking-tight text-foreground">
             {masked ? "••" : hfLabel}
           </span>
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-[#F3F3F3] px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+            "inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
             status.textClass,
           )}
         >
@@ -430,12 +430,12 @@ function HealthFactorCard({ hf, showBalance }: { hf: number | null; showBalance:
         >
           <div
             className={cn(
-              "rounded-md bg-slate-900 px-1.5 py-0.5 font-data text-[11px] font-bold text-white",
+              "rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-bold text-background",
             )}
           >
             {masked ? "••" : hfLabel}
           </div>
-          <div className="-mt-px text-[10px] leading-none text-slate-900">▼</div>
+          <div className="-mt-px text-[10px] leading-none text-foreground">▼</div>
         </div>
 
         <div className="flex h-8 w-full items-end gap-[3px]">
@@ -447,8 +447,8 @@ function HealthFactorCard({ hf, showBalance }: { hf: number | null; showBalance:
                 key={i}
                 className={cn(
                   "flex-1 rounded-[2px] transition-all",
-                  isCurrent ? "h-full ring-2 ring-slate-900 ring-offset-1 ring-offset-white" : "h-[75%]",
-                  isFilled ? hfTickColor(i) : "bg-slate-200",
+                  isCurrent ? "h-full ring-2 ring-foreground ring-offset-1 ring-offset-background" : "h-[75%]",
+                  isFilled ? hfTickColor(i) : "bg-muted",
                 )}
               />
             )
@@ -456,7 +456,7 @@ function HealthFactorCard({ hf, showBalance }: { hf: number | null; showBalance:
         </div>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-slate-500">
+      <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
         <span className="inline-flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-rose-500" />
           1.0 Liquidation
@@ -499,12 +499,12 @@ function CurrentLtvCard({
   return (
     <div className="mt-4 px-1 md:px-2">
       <div className="flex items-baseline gap-2">
-        <span className="text-[13px] font-semibold text-slate-900">Current LTV</span>
-        <Info className="h-3.5 w-3.5 self-center text-slate-400" aria-hidden />
-        <span className="font-data text-[22px] font-bold leading-none tracking-tight text-slate-900">
+        <span className="text-[13px] font-semibold text-foreground">Current LTV</span>
+        <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
+        <span className="font-data text-[22px] font-bold leading-none tracking-tight text-foreground">
           {masked ? "••" : ltvLabel}
         </span>
-        <span className="text-[11px] font-medium text-slate-500">of borrow power used</span>
+        <span className="text-[11px] font-medium text-muted-foreground">of borrow power used</span>
       </div>
 
       <div className="relative mt-10">
@@ -512,10 +512,10 @@ function CurrentLtvCard({
           className="pointer-events-none absolute bottom-full z-10 -translate-x-1/2 pb-1 text-center"
           style={{ left: `${ltvPct}%` }}
         >
-          <div className="rounded-md bg-slate-900 px-1.5 py-0.5 font-data text-[11px] font-bold text-white">
+          <div className="rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-bold text-background">
             {masked ? "••" : ltvLabel}
           </div>
-          <div className="-mt-px text-[10px] leading-none text-slate-900">▼</div>
+          <div className="-mt-px text-[10px] leading-none text-foreground">▼</div>
         </div>
 
         <div className="flex h-8 w-full items-end gap-[3px]">
@@ -536,7 +536,7 @@ function CurrentLtvCard({
                 key={i}
                 className={cn(
                   "flex-1 rounded-[2px] transition-all",
-                  isCurrent ? "h-full ring-2 ring-slate-900 ring-offset-1 ring-offset-white" : "h-[75%]",
+                  isCurrent ? "h-full ring-2 ring-foreground ring-offset-1 ring-offset-background" : "h-[75%]",
                   cls,
                 )}
               />
@@ -545,13 +545,13 @@ function CurrentLtvCard({
         </div>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-slate-500">
+      <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
         <span>
-          Used <span className="font-semibold text-slate-900">{usedLabel}</span>
+          Used <span className="font-semibold text-foreground">{usedLabel}</span>
         </span>
         <span className="inline-flex items-center gap-2">
           <span>
-            Max <span className="font-semibold text-slate-900">{maxLabel}</span>
+            Max <span className="font-semibold text-foreground">{maxLabel}</span>
           </span>
           <span className="text-rose-500">· {liquidationPct.toFixed(0)}%</span>
         </span>

@@ -91,8 +91,8 @@ const TOKEN_MAP: Record<string, TokenIconMeta> = {
   },
   USDe: {
     symbol: "USDe",
-    bgClass: "bg-slate-100",
-    textClass: "text-slate-700",
+    bgClass: "bg-muted",
+    textClass: "text-foreground",
   },
   "3CRV": {
     symbol: "3CRV",
@@ -168,8 +168,8 @@ const TOKEN_MAP: Record<string, TokenIconMeta> = {
   BAL: {
     symbol: "BAL",
     iconUrl: "https://cryptologos.cc/logos/balancer-bal-logo.png",
-    bgClass: "bg-slate-100",
-    textClass: "text-slate-700",
+    bgClass: "bg-muted",
+    textClass: "text-foreground",
   },
   GNO: {
     symbol: "GNO",
@@ -219,8 +219,8 @@ export function getTokenIconMeta(symbol: string): TokenIconMeta {
     TOKEN_MAP[symbol] ??
     TOKEN_MAP[symbol.toUpperCase()] ?? {
       symbol,
-      bgClass: "bg-slate-100",
-      textClass: "text-slate-700",
+      bgClass: "bg-muted",
+      textClass: "text-foreground",
     }
   )
 }

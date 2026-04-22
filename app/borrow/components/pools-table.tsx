@@ -36,7 +36,7 @@ function EModePill() {
 function SpokeHeader({ spoke }: { spoke: BorrowSpoke }) {
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
-      <h3 className="text-[20px] font-semibold tracking-tight text-slate-900">{spoke.label}</h3>
+      <h3 className="text-[20px] font-semibold tracking-tight text-foreground">{spoke.label}</h3>
       {spoke.eMode ? <EModePill /> : null}
     </div>
   )
@@ -75,11 +75,11 @@ function SpokeSection({
     <section>
       <SpokeHeader spoke={spoke} />
 
-      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-sm font-medium text-slate-500">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="px-2 py-3">Pool</th>
                 <th className="px-2 py-3 text-right">Max LTV</th>
                 <th className="px-2 py-3 text-right">Fees APY</th>
@@ -93,21 +93,21 @@ function SpokeSection({
               {rows.map((pool) => (
                 <tr
                   key={pool.id}
-                  className="border-t border-slate-100 transition-colors hover:bg-slate-50/70"
+                  className="border-t border-border transition-colors hover:bg-muted/70"
                   onClick={() => onUseAsCollateral(pool)}
                 >
                   <td className="px-2 py-3.5">
                     <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="lg" />
                   </td>
                   <td className="px-2 py-3.5 text-right">
-                    <span className="font-data text-sm font-semibold tabular-nums text-slate-900">{pool.ltv}%</span>
+                    <span className="font-data text-sm font-semibold tabular-nums text-foreground">{pool.ltv}%</span>
                   </td>
                   <td className="px-2 py-3.5 text-right">
                     <span className={cn("font-data text-sm font-semibold tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}>
                       {`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
                     </span>
                   </td>
-                  <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-slate-900">
+                  <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-foreground">
                     {formatCompactUsd(pool.availableUsd)}
                   </td>
                   <td className="px-2 py-3.5 text-right">
@@ -139,11 +139,11 @@ function SpokeSection({
                 </tr>
               ))}
               {pending.map((row) => (
-                <tr key={row.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3.5 text-xs text-slate-300" />
-                  <td className="px-2 py-3.5 text-sm text-slate-400" colSpan={6}>
+                <tr key={row.id} className="border-t border-border">
+                  <td className="px-4 py-3.5 text-xs text-muted-foreground" />
+                  <td className="px-2 py-3.5 text-sm text-muted-foreground" colSpan={6}>
                     {row.label}
-                    <span className="ml-2 text-xs text-slate-400">· {row.subLabel}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">· {row.subLabel}</span>
                   </td>
                   <td className="px-4 py-3.5 text-right">
                     <PillButton variant="ghost" disabled>
@@ -170,7 +170,7 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
             <section key={entry.spoke.id} className="space-y-3">
               <SpokeHeader spoke={entry.spoke} />
 
-              <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white">
+              <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
                 {entry.rows.map((pool) => (
                   <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onUseAsCollateral(pool)}>
                     <div className="flex items-center justify-between gap-3">
@@ -202,7 +202,7 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                   </li>
                 ))}
                 {pendingForSpoke.map((row) => (
-                  <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-slate-400">
+                  <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
                     <span>
                       {row.label}
                       <span className="ml-1 text-xs">· {row.subLabel}</span>
@@ -224,8 +224,8 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
 function MobileField({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-[0.07em] text-slate-400">{label}</div>
-      <div className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-slate-900", tone)}>{value}</div>
+      <div className="text-xs uppercase tracking-[0.07em] text-muted-foreground">{label}</div>
+      <div className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground", tone)}>{value}</div>
     </div>
   )
 }

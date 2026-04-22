@@ -84,7 +84,7 @@ function PoolCard({
 }) {
   return (
     <Card
-      className={`group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/20 bg-white/50 backdrop-blur-sm overflow-hidden cursor-pointer ${
+      className={`group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/20 bg-card/50 backdrop-blur-sm overflow-hidden cursor-pointer ${
         isSelected ? "ring-1 ring-primary" : ""
       }`}
       onClick={onClick}

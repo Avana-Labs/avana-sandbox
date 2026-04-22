@@ -121,12 +121,12 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
     <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : null)}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-0 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <DialogTitle className="text-[15px] font-semibold text-slate-900">{title}</DialogTitle>
+        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-0 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            <DialogTitle className="text-[15px] font-semibold text-foreground">{title}</DialogTitle>
           </div>
           <div className="space-y-5 px-5 py-5">
-            <div className="rounded-2xl bg-slate-50 px-4 py-3.5">
+            <div className="rounded-2xl bg-muted px-4 py-3.5">
               <div className="flex items-center justify-between gap-3">
                 <TokenPairCell visuals={visuals} name={pool.name} subtitle={pool.venue} size="md" />
                 <SpokeDot spoke={spoke} />
@@ -141,8 +141,8 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
             {isRemove ? (
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium uppercase tracking-[0.07em] text-slate-500">Remove %</span>
-                  <span className="font-data text-sm font-semibold tabular-nums text-slate-900">{percent}%</span>
+                  <span className="text-xs font-medium uppercase tracking-[0.07em] text-muted-foreground">Remove %</span>
+                  <span className="font-data text-sm font-semibold tabular-nums text-foreground">{percent}%</span>
                 </div>
                 <input
                   type="range"
@@ -153,27 +153,27 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
                   onChange={(event) => setPercent(Number(event.target.value))}
                   className="mt-2 w-full accent-slate-900"
                 />
-                <div className="mt-1 flex justify-between text-xs text-slate-400">
+                <div className="mt-1 flex justify-between text-xs text-muted-foreground">
                   <span>0%</span>
                   <span>25%</span>
                   <span>50%</span>
                   <span>75%</span>
                   <span>100%</span>
                 </div>
-                <div className="mt-3 font-data text-[28px] font-semibold text-slate-900">
+                <div className="mt-3 font-data text-[28px] font-semibold text-foreground">
                   {formatUsdExact(removePreview?.removeUsd ?? 0)}
                 </div>
               </div>
             ) : (
               <div>
                 <div className="flex items-center justify-between">
-                  <label htmlFor="repay-amount" className="text-xs font-medium uppercase tracking-[0.07em] text-slate-500">
+                  <label htmlFor="repay-amount" className="text-xs font-medium uppercase tracking-[0.07em] text-muted-foreground">
                     You repay
                   </label>
                   <button
                     type="button"
                     onClick={() => setAmountInput(currentDebtUsd.toFixed(0))}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+                    className="text-xs font-semibold text-muted-foreground hover:text-foreground"
                   >
                     Max
                   </button>
@@ -185,9 +185,9 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
                     value={amountInput}
                     onChange={(event) => setAmountInput(event.target.value.replace(/[^0-9.]/g, ""))}
                     placeholder="0"
-                    className="flex-1 border-none bg-transparent font-data text-[34px] font-semibold text-slate-900 outline-none placeholder:text-slate-300"
+                    className="flex-1 border-none bg-transparent font-data text-[34px] font-semibold text-foreground outline-none placeholder:text-muted-foreground"
                   />
-                  <span className="text-[14px] font-semibold text-slate-500">USDC</span>
+                  <span className="text-[14px] font-semibold text-muted-foreground">USDC</span>
                 </div>
               </div>
             )}
@@ -199,7 +199,7 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
               </div>
             ) : null}
 
-            <dl className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+            <dl className="divide-y divide-border rounded-xl border border-border">
               {isRemove ? (
                 <>
                   <StatLine label="Collateral after" value={formatUsdExact(removePreview?.afterCollateral ?? pool.collateralUsd)} />
@@ -229,7 +229,7 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
                           )}
                           size="sm"
                         />
-                        <span className="text-slate-300">→</span>
+                        <span className="text-muted-foreground">→</span>
                         <HfNumber
                           value={repayPreview?.healthFactorAfterLabel ?? "—"}
                           tone={healthFactorToneClass(repayPreview?.healthFactorAfter ?? null)}
@@ -260,7 +260,7 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
               {ctaLabel}
             </PillButton>
           </div>
-          <DialogClose className="absolute right-4 top-4 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <DialogClose className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
             <span className="sr-only">Close</span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
               <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -275,8 +275,8 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
 function MetricCell({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-[0.07em] text-slate-400">{label}</dt>
-      <dd className="mt-0.5 font-data text-sm font-semibold tabular-nums text-slate-900">{value}</dd>
+      <dt className="text-xs uppercase tracking-[0.07em] text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground">{value}</dd>
     </div>
   )
 }
@@ -284,8 +284,8 @@ function MetricCell({ label, value }: { label: string; value: string }) {
 function StatLine({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between px-3.5 py-2.5 text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className={cn("text-right font-medium text-slate-900")}>{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className={cn("text-right font-medium text-foreground")}>{value}</span>
     </div>
   )
 }

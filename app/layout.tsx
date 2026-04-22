@@ -4,6 +4,7 @@ import localFont from "next/font/local"
 import type React from "react"
 import { Header } from "./components/header"
 import { Toaster } from "sonner"
+import { ThemeProvider } from "./components/theme-provider"
 
 const diatypeSans = localFont({
   src: [
@@ -139,14 +140,22 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${diatypeSans.variable} ${diatypeData.variable} ${diatypeBrand.variable} ${outfitFallback.variable}`}
+      suppressHydrationWarning
     >
       <head />
       <body className="min-h-screen bg-background font-sans">
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <div className="flex-1">{children}</div>
-          <Toaster />
-        </div>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <div className="flex-1">{children}</div>
+            <Toaster />
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )

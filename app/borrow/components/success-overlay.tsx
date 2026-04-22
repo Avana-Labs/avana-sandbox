@@ -67,22 +67,22 @@ export function SuccessOverlay({
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           ref={cardRef}
-          className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-slate-100 bg-white p-0 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+          className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-border bg-card p-0 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
           <DialogTitle className="sr-only">{title}</DialogTitle>
           <div className="relative px-5 py-7 text-center">
             <div className={`mx-auto inline-flex size-14 items-center justify-center rounded-full text-[22px] ${ringBgClass}`}>
               {ringEmoji}
             </div>
-            <h2 className="mt-4 text-[17px] font-semibold text-slate-900">{title}</h2>
-            {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
-            <div className="mt-4 font-data text-[34px] font-semibold text-slate-900">{amountLabel}</div>
+            <h2 className="mt-4 text-[17px] font-semibold text-foreground">{title}</h2>
+            {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
+            <div className="mt-4 font-data text-[34px] font-semibold text-foreground">{amountLabel}</div>
 
-            <dl className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-100 text-left">
+            <dl className="mt-5 divide-y divide-border rounded-xl border border-border text-left">
               {rows.map((row) => (
                 <div key={row.label} className="flex items-center justify-between px-3.5 py-2.5 text-sm">
-                  <dt className="text-slate-500">{row.label}</dt>
-                  <dd className={row.tone ? `font-data font-semibold tabular-nums ${row.tone}` : "font-data font-medium tabular-nums text-slate-900"}>
+                  <dt className="text-muted-foreground">{row.label}</dt>
+                  <dd className={row.tone ? `font-data font-semibold tabular-nums ${row.tone}` : "font-data font-medium tabular-nums text-foreground"}>
                     {row.value}
                   </dd>
                 </div>
@@ -106,7 +106,7 @@ export function SuccessOverlay({
             </div>
           </div>
 
-          <DialogClose className="absolute right-4 top-4 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <DialogClose className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
             <span className="sr-only">Close</span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
               <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

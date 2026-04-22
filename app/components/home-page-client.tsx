@@ -90,9 +90,9 @@ function PickerSurface({
     <div
       className={cn(
         "rounded-[20px] px-4 py-[18px] transition-colors",
-        type === "top" && "border border-[#EDEDED] bg-white hover:border-[#D1D1D1] focus-within:border-[#D1D1D1]",
-        type === "bottom" && "border border-transparent bg-[#F9F9F9] hover:bg-[#F3F3F3] focus-within:bg-[#F3F3F3]",
-        type === "default" && "border border-transparent bg-[#F9F9F9]",
+        type === "top" && "border border-border bg-card hover:border-border/80 focus-within:border-foreground/20 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset]",
+        type === "bottom" && "border border-transparent bg-surface-1 hover:bg-surface-2 focus-within:bg-surface-2",
+        type === "default" && "border border-transparent bg-surface-1",
       )}
     >
       <div className="mb-1 text-[13px] text-muted-foreground">{label}</div>
@@ -104,8 +104,8 @@ function PickerSurface({
 
 function SwapArrowButton() {
   return (
-    <div className="absolute left-1/2 top-1/2 z-10 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-white">
-      <div className="flex size-full items-center justify-center rounded-full border border-[#EDEDED] bg-white text-foreground transition-colors hover:bg-[#F5F5F5]">
+    <div className="absolute left-1/2 top-1/2 z-10 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-background bg-card">
+      <div className="flex size-full items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted">
         <ArrowDown className="h-[18px] w-[18px]" strokeWidth={2} />
       </div>
     </div>
@@ -128,7 +128,7 @@ function PrimaryCardButton({
       onClick={onClick}
       className={cn(
         "mt-1 h-[52px] w-full rounded-[20px] text-[19px] font-semibold shadow-none transition-colors",
-        disabled ? "bg-[#FCECF3] text-[#FB118E] opacity-100 hover:bg-[#FCECF3]" : "bg-[#FB118E] text-white hover:bg-[#e00f7f]",
+        disabled ? "bg-brand-soft text-brand opacity-100 hover:bg-brand-soft" : "bg-brand text-white hover:bg-brand/90",
       )}
     >
       {children}
@@ -175,7 +175,7 @@ function PoolPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-[24px] border border-[#EDEDED] bg-white p-0 shadow-[0_10px_40px_rgba(0,0,0,0.08)] sm:max-w-[440px]">
+      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-[24px] border border-border bg-card p-0 shadow-[0_10px_40px_rgba(0,0,0,0.08)] sm:max-w-[440px]">
         <DialogHeader className="px-5 pb-3 pt-5 text-left">
           <DialogTitle className="text-[17px] font-semibold">{title}</DialogTitle>
         </DialogHeader>
@@ -199,7 +199,7 @@ function PoolPickerDialog({
                 onClick={() => setFocusedPoolId(pool.id)}
                 className={cn(
                   "flex w-full items-center gap-4 px-5 py-3 text-left transition-colors",
-                  isFocused ? "bg-[#F9F9F9]" : "hover:bg-[#F9F9F9]",
+                  isFocused ? "bg-surface-1" : "hover:bg-surface-1",
                 )}
               >
                 <PairVisual visuals={pool.visuals} />
@@ -224,10 +224,10 @@ function PoolPickerDialog({
           })}
         </div>
 
-        <div className="mt-2 h-px bg-[#EDEDED]" />
+        <div className="mt-2 h-px bg-border" />
 
         <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-4 pt-3">
-          <div className="rounded-[20px] border border-[#EDEDED] bg-white p-5">
+          <div className="rounded-[20px] border border-border bg-card p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="font-data text-[44px] font-bold leading-none tracking-tight text-foreground">
@@ -238,7 +238,7 @@ function PoolPickerDialog({
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1">
-                <span className={cn("inline-flex items-center gap-1.5 rounded-full bg-[#F3F3F3] px-3 py-1 text-[11px] font-bold tracking-wide", focusedStatus.textClass)}>
+                <span className={cn("inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-[11px] font-bold tracking-wide", focusedStatus.textClass)}>
                   <span className={cn("inline-block size-2 rounded-full", focusedStatus.dotClass)} />
                   {focusedStatus.label}
                 </span>
@@ -246,13 +246,13 @@ function PoolPickerDialog({
               </div>
             </div>
 
-            <div className="relative mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[#F3F3F3]">
+            <div className="relative mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
               <div
                 className={cn("absolute inset-y-0 left-0 rounded-full", focusedStatus.barClass)}
                 style={{ width: `${gaugePercent}%` }}
               />
               <div
-                className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.08)]"
+                className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-card shadow-[0_0_0_2px_rgba(0,0,0,0.08)]"
                 style={{ left: `${gaugePercent}%` }}
               />
             </div>
@@ -272,11 +272,11 @@ function PoolPickerDialog({
           </div>
         </div>
 
-        <div className="border-t border-[#EDEDED] p-4">
+        <div className="border-t border-border p-4">
           <Button
             type="button"
             onClick={() => onSelect(focusedPoolId)}
-            className="h-[52px] w-full rounded-[20px] bg-[#FB118E] text-[17px] font-semibold text-white shadow-none transition-colors hover:bg-[#e00f7f]"
+            className="h-[52px] w-full rounded-[20px] bg-brand text-[17px] font-semibold text-white shadow-none transition-colors hover:bg-brand/90"
           >
             Use {focusedPool.name}
           </Button>
@@ -320,7 +320,7 @@ function ShortcutTokenButton({
       onClick={onClick}
       className={cn(
         "flex flex-col items-center gap-1.5 rounded-2xl px-2 py-2 transition-colors",
-        selected ? "bg-[#F3F3F3]" : "hover:bg-[#F9F9F9]",
+        selected ? "bg-surface-2" : "hover:bg-surface-1",
       )}
     >
       <TokenBubble visual={visual} className="size-9" />
@@ -364,14 +364,14 @@ function TokenPickerDialog({
         }
       }}
     >
-      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-[24px] border border-[#EDEDED] bg-white p-0 shadow-[0_10px_40px_rgba(0,0,0,0.08)] sm:max-w-[420px]">
+      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-[24px] border border-border bg-card p-0 shadow-[0_10px_40px_rgba(0,0,0,0.08)] sm:max-w-[420px]">
         <DialogHeader className="flex-row items-center justify-between px-5 pb-3 pt-5 text-left space-y-0">
           <DialogTitle className="text-[17px] font-semibold">Select a token</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-1 flex-col overflow-hidden pb-3">
           <div className="px-4">
-            <div className="flex items-center gap-3 rounded-2xl bg-[#F9F9F9] px-4 py-3 transition-colors focus-within:bg-[#F3F3F3]">
+            <div className="flex items-center gap-3 rounded-2xl bg-surface-1 px-4 py-3 transition-colors focus-within:bg-surface-2">
               <Search className="h-[18px] w-[18px] text-muted-foreground" />
               <input
                 type="text"
@@ -380,10 +380,10 @@ function TokenPickerDialog({
                 placeholder="Search tokens"
                 className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
               />
-              <button type="button" className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 shadow-sm transition-colors hover:bg-[#FAFAFA]" aria-label="Filter networks">
+              <button type="button" className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-1 shadow-sm transition-colors hover:bg-muted" aria-label="Filter networks">
                 <span className="relative inline-flex">
-                  <span className="inline-block size-4 rounded-full bg-[#FB118E]" />
-                  <span className="absolute -right-1 inline-block size-4 rounded-full bg-indigo-500 ring-2 ring-white" />
+                  <span className="inline-block size-4 rounded-full bg-brand" />
+                  <span className="absolute -right-1 inline-block size-4 rounded-full bg-indigo-500 ring-2 ring-background" />
                 </span>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
@@ -419,7 +419,7 @@ function TokenPickerDialog({
                   onClick={() => onSelect(token.id)}
                   className={cn(
                     "flex items-center gap-3 px-5 py-2.5 text-left transition-colors",
-                    isSelected ? "bg-[#F9F9F9]" : "hover:bg-[#F9F9F9]",
+                    isSelected ? "bg-surface-1" : "hover:bg-surface-1",
                   )}
                 >
                   <TokenBubble visual={token.visual} className="size-9" />
@@ -485,7 +485,7 @@ function CompactBorrowCard({
             <button
               type="button"
               onClick={onOpenPoolDialog}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/40 bg-white px-2 py-1 text-foreground shadow-sm transition-colors hover:bg-slate-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/40 bg-card px-2 py-1 text-foreground shadow-sm transition-colors hover:bg-muted"
             >
               <PairVisual visuals={pool.visuals} className="w-10" />
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -501,7 +501,7 @@ function CompactBorrowCard({
           footer={
             <div className="flex items-center justify-between gap-3">
               <span>{formatCompactUsd(pool.borrowPowerUsd)} Available to borrow</span>
-              <button type="button" onClick={onSetMax} className="font-semibold text-[#FB118E] transition-opacity hover:opacity-80">
+              <button type="button" onClick={onSetMax} className="font-semibold text-brand transition-opacity hover:opacity-80">
                 Max
               </button>
             </div>
@@ -517,14 +517,14 @@ function CompactBorrowCard({
                 value={amount}
                 onChange={(event) => onAmountChange(event.target.value)}
                 placeholder="0"
-                className="w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-[#BDBDBD]"
+                className="w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
               />
               <span className="text-xs text-muted-foreground">$0</span>
             </label>
             <button
               type="button"
               onClick={onOpenTokenDialog}
-              className="inline-flex h-9 items-center gap-2 rounded-full border border-border/40 bg-white px-3 py-1 text-[17px] font-semibold text-foreground shadow-sm transition-colors hover:bg-slate-50"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-border/40 bg-card px-3 py-1 text-[17px] font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
             >
               <TokenBubble visual={token.visual} className="size-6" />
               {token.symbol}
@@ -552,15 +552,15 @@ function CompactBorrowCard({
       </PrimaryCardButton>
 
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl bg-[#F9F9F9] px-3 py-3">
+        <div className="rounded-2xl bg-surface-1 px-3 py-3">
           <div className="text-[11px] text-muted-foreground">HF</div>
           <div className="mt-1 font-data text-sm font-semibold">{preview.healthFactorLabel}</div>
         </div>
-        <div className="rounded-2xl bg-[#F9F9F9] px-3 py-3">
+        <div className="rounded-2xl bg-surface-1 px-3 py-3">
           <div className="text-[11px] text-muted-foreground">Remaining</div>
           <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{formatCompactUsd(preview.remainingBorrowPowerUsd)}</div>
         </div>
-        <div className="rounded-2xl bg-[#F9F9F9] px-3 py-3">
+        <div className="rounded-2xl bg-surface-1 px-3 py-3">
           <div className="text-[11px] text-muted-foreground">Liq. at</div>
           <div className="mt-1 font-data text-sm font-semibold text-amber-600">{formatCompactUsd(pool.liquidationUsd)}</div>
         </div>
@@ -600,7 +600,7 @@ function CompactRepayCard({
             <button
               type="button"
               onClick={onOpenPoolDialog}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/40 bg-white px-2 py-1 text-foreground shadow-sm transition-colors hover:bg-slate-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/40 bg-card px-2 py-1 text-foreground shadow-sm transition-colors hover:bg-muted"
             >
               <PairVisual visuals={pool.visuals} className="w-10" />
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -616,7 +616,7 @@ function CompactRepayCard({
           footer={
             <div className="flex items-center justify-between gap-3">
               <span>{preview.amountUsd > 0 ? `Interest saved ~${formatCompactUsd(preview.yearlyInterestSavedUsd)} / yr` : "Repay in USDC."}</span>
-              <button type="button" onClick={onSetMax} className="font-semibold text-[#FB118E] transition-opacity hover:opacity-80">
+              <button type="button" onClick={onSetMax} className="font-semibold text-brand transition-opacity hover:opacity-80">
                 Max
               </button>
             </div>
@@ -632,11 +632,11 @@ function CompactRepayCard({
                 value={amount}
                 onChange={(event) => onAmountChange(event.target.value)}
                 placeholder="0"
-                className="w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-[#BDBDBD]"
+                className="w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
               />
               <span className="text-xs text-muted-foreground">$0</span>
             </label>
-            <div className="inline-flex h-9 items-center gap-2 rounded-full border border-border/40 bg-white px-3 py-1 text-[17px] font-semibold text-foreground shadow-sm">
+            <div className="inline-flex h-9 items-center gap-2 rounded-full border border-border/40 bg-card px-3 py-1 text-[17px] font-semibold text-foreground shadow-sm">
               <TokenBubble visual={HOME_BORROW_TOKENS[0].visual} className="size-6" />
               USDC
             </div>
@@ -649,15 +649,15 @@ function CompactRepayCard({
       </PrimaryCardButton>
 
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl bg-[#F9F9F9] px-3 py-3">
+        <div className="rounded-2xl bg-surface-1 px-3 py-3">
           <div className="text-[11px] text-muted-foreground">Remaining</div>
           <div className="mt-1 font-data text-sm font-semibold">{preview.remainingDebtLabel}</div>
         </div>
-        <div className="rounded-2xl bg-[#F9F9F9] px-3 py-3">
+        <div className="rounded-2xl bg-surface-1 px-3 py-3">
           <div className="text-[11px] text-muted-foreground">HF after</div>
           <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{preview.healthFactorAfterLabel}</div>
         </div>
-        <div className="rounded-2xl bg-[#F9F9F9] px-3 py-3">
+        <div className="rounded-2xl bg-surface-1 px-3 py-3">
           <div className="text-[11px] text-muted-foreground">Fee</div>
           <div className="mt-1 font-data text-sm font-semibold">~$0.80</div>
         </div>
@@ -687,7 +687,7 @@ function CompactClaimCard({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded-2xl bg-[#F9F9F9] px-5 py-5 text-foreground">
+      <div className="rounded-2xl bg-surface-1 px-5 py-5 text-foreground">
         <div className="text-sm text-muted-foreground">Total claimable</div>
         <div className="mt-1 font-data text-4xl font-semibold tracking-tight">{formatUsd(preview.selectedTotalUsd)}</div>
       </div>
@@ -703,7 +703,7 @@ function CompactClaimCard({
               onClick={() => onToggleSelection(position.id)}
               className={cn(
                 "flex items-center gap-4 rounded-2xl border px-4 py-3 text-left transition-colors",
-                isSelected ? "border-[#FB118E] bg-[#FCECF3] shadow-sm" : "border-transparent bg-[#F9F9F9] hover:border-border/40",
+                isSelected ? "border-brand bg-brand-soft shadow-sm" : "border-transparent bg-surface-1 hover:border-border/40",
               )}
             >
               <PairVisual visuals={[position.breakdown[0].visual, position.breakdown[1]?.visual ?? position.breakdown[0].visual]} />
@@ -738,10 +738,10 @@ function CompactClaimCard({
               value={amount}
               onChange={(event) => onAmountChange(event.target.value)}
               placeholder="0"
-              className="w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-[#BDBDBD]"
+              className="w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
             />
           </label>
-          <div className="inline-flex h-9 items-center justify-center rounded-full bg-white px-4 py-1 text-[17px] font-semibold text-foreground shadow-sm">
+          <div className="inline-flex h-9 items-center justify-center rounded-full bg-card px-4 py-1 text-[17px] font-semibold text-foreground shadow-sm">
             USD
           </div>
         </div>
@@ -781,7 +781,7 @@ function CompactRemoveCard({
             <button
               type="button"
               onClick={onOpenPoolDialog}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/40 bg-white px-2 py-1 text-foreground shadow-sm transition-colors hover:bg-slate-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/40 bg-card px-2 py-1 text-foreground shadow-sm transition-colors hover:bg-muted"
             >
               <PairVisual visuals={pool.visuals} className="w-10" />
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -812,7 +812,7 @@ function CompactRemoveCard({
                   onClick={() => onPercentChange(preset)}
                   className={cn(
                     "rounded-xl border px-2 py-2 text-sm font-semibold transition-colors",
-                    percent === preset ? "border-transparent bg-white text-foreground shadow-sm" : "border-transparent bg-transparent text-muted-foreground hover:bg-white/50",
+                    percent === preset ? "border-transparent bg-card text-foreground shadow-sm" : "border-transparent bg-transparent text-muted-foreground hover:bg-card/50",
                   )}
                 >
                   {preset}%
@@ -824,15 +824,15 @@ function CompactRemoveCard({
       </div>
 
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl bg-[#F9F9F9] px-3 py-3">
+        <div className="rounded-2xl bg-surface-1 px-3 py-3">
           <div className="text-[11px] text-muted-foreground">Receive</div>
           <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{formatCompactUsd(preview.removeUsd)}</div>
         </div>
-        <div className="rounded-2xl bg-[#F9F9F9] px-3 py-3">
+        <div className="rounded-2xl bg-surface-1 px-3 py-3">
           <div className="text-[11px] text-muted-foreground">After</div>
           <div className="mt-1 font-data text-sm font-semibold">{formatCompactUsd(preview.afterCollateralUsd)}</div>
         </div>
-        <div className="rounded-2xl bg-[#F9F9F9] px-3 py-3">
+        <div className="rounded-2xl bg-surface-1 px-3 py-3">
           <div className="text-[11px] text-muted-foreground">HF</div>
           <div className={cn("mt-1 font-data text-sm font-semibold", preview.isUnsafe ? "text-rose-600" : "text-amber-600")}>
             {preview.healthFactorAfterLabel}
@@ -879,18 +879,18 @@ function ActionSuccessDialog({
 
   return (
     <Dialog open={Boolean(state)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="overflow-hidden rounded-[24px] border border-border/40 bg-white p-0 shadow-xl sm:max-w-[440px]">
+      <DialogContent className="overflow-hidden rounded-[24px] border border-border/40 bg-card p-0 shadow-xl sm:max-w-[440px]">
         {state ? (
           <>
             <DialogHeader className="items-center gap-3 px-6 pb-2 pt-8 text-center">
-              <div className="flex size-20 items-center justify-center rounded-full bg-[#FCECF3] text-5xl">{state.emoji}</div>
+              <div className="flex size-20 items-center justify-center rounded-full bg-brand-soft text-5xl">{state.emoji}</div>
               <DialogTitle className="mt-2 text-2xl font-semibold tracking-tight">{state.title}</DialogTitle>
-              <div className="font-data text-xl font-semibold text-[#FB118E]">{state.amount}</div>
+              <div className="font-data text-xl font-semibold text-brand">{state.amount}</div>
               <DialogDescription className="max-w-sm text-center text-sm text-muted-foreground">{state.description}</DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col gap-4 p-6">
-              <div className="rounded-2xl border border-border/40 bg-[#F9F9F9]">
+              <div className="rounded-2xl border border-border/40 bg-surface-1">
                 <div className="flex flex-col">
                   {state.rows.map((row, index) => (
                     <div key={`${row.label}-${index}`} className="flex items-center justify-between gap-4 px-4 py-3">
@@ -912,7 +912,7 @@ function ActionSuccessDialog({
             </div>
 
             <DialogFooter className="px-6 pb-6 pt-2 sm:justify-center">
-              <Button type="button" className="h-12 w-full rounded-[20px] bg-[#FCECF3] text-[17px] font-semibold text-[#FB118E] shadow-none transition-colors hover:bg-[#FCECF3]" onClick={onClose}>
+              <Button type="button" className="h-12 w-full rounded-[20px] bg-brand-soft text-[17px] font-semibold text-brand shadow-none transition-colors hover:bg-brand-soft" onClick={onClose}>
                 Done
               </Button>
             </DialogFooter>
@@ -1112,13 +1112,13 @@ export function HomePageClient(_props: HomePageClientProps) {
                     <TabsTrigger
                       key={item.value}
                       value={item.value}
-                      className="rounded-full bg-transparent px-4 py-1.5 text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-[#F3F3F3] data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                      className="rounded-full bg-transparent px-4 py-1.5 text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-surface-2 data-[state=active]:text-foreground data-[state=active]:shadow-none"
                     >
                       {item.label}
                     </TabsTrigger>
                   ))}
                 </TabsList>
-                <button type="button" className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-[#F3F3F3] hover:text-foreground" aria-label="Settings">
+                <button type="button" className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground" aria-label="Settings">
                   <Settings className="h-[20px] w-[20px]" />
                 </button>
               </div>

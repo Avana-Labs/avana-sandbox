@@ -38,9 +38,9 @@ export function TokenIcon({
     <span
       className={cn(
         "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
-        ring && "ring-2 ring-white",
+        ring && "ring-2 ring-background",
         box,
-        showIcon ? "bg-white" : cn(meta.bgClass, meta.textClass, text),
+        showIcon ? "bg-card" : cn(meta.bgClass, meta.textClass, text),
         className,
       )}
     >

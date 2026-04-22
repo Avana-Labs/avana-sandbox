@@ -20,7 +20,7 @@ type AssetsTableProps = {
 export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500">
+      <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
         No assets match your filter.
       </div>
     )
@@ -49,7 +49,7 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
         {groups.map((group) => (
           <section key={group.id} className="space-y-3">
             <div className="px-1">
-              <h3 className="text-base font-semibold text-slate-900">{group.label}</h3>
+              <h3 className="text-base font-semibold text-foreground">{group.label}</h3>
             </div>
             <ul className="space-y-3">
               {group.assets.map((asset) => {
@@ -57,14 +57,14 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
                 return (
                   <li
                     key={asset.id}
-                    className="space-y-4 rounded-3xl bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                    className="space-y-4 rounded-3xl bg-card px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <TokenBubble visual={asset.visual} size="lg" />
                         <div className="min-w-0">
-                          <div className="text-[18px] font-semibold text-slate-900">{asset.symbol}</div>
-                          <div className="text-sm text-slate-400">{asset.name}</div>
+                          <div className="text-[18px] font-semibold text-foreground">{asset.symbol}</div>
+                          <div className="text-sm text-muted-foreground">{asset.name}</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -72,11 +72,11 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
                           <SparkIcon className={cn("size-3.5", aprTone)} />
                           {asset.borrowApr.toFixed(2)}%
                         </div>
-                        <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">Borrow APR</div>
+                        <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">Borrow APR</div>
                       </div>
                     </div>
 
-                    <dl className="divide-y divide-slate-100 text-sm">
+                    <dl className="divide-y divide-border text-sm">
                       <AssetStatLine label="Available to Borrow" value={formatCompactUsd(asset.availableUsd)} />
                       <AssetStatLine label="Total Borrowed" value={formatCompactUsd(asset.totalBorrowedUsd)} />
                       <AssetStatLine
@@ -97,7 +97,7 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
                       <button
                         type="button"
                         onClick={() => onViewMarket?.(asset)}
-                        className="flex-1 rounded-2xl bg-slate-100 px-5 py-3.5 text-center text-[15px] font-semibold text-slate-900 transition-colors hover:bg-slate-200"
+                        className="flex-1 rounded-2xl bg-muted px-5 py-3.5 text-center text-[15px] font-semibold text-foreground transition-colors hover:bg-muted"
                       >
                         View market
                       </button>
@@ -127,14 +127,14 @@ function AssetsSection({
   return (
     <section>
       <div className="mb-3 px-1">
-        <h3 className="text-base font-semibold text-slate-900">{label}</h3>
+        <h3 className="text-base font-semibold text-foreground">{label}</h3>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-sm font-medium text-slate-500">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="px-2 py-3">Asset</th>
                 <th className="px-2 py-3 text-right">Borrow APR</th>
                 <th className="px-2 py-3 text-right">Utilization</th>
@@ -146,7 +146,7 @@ function AssetsSection({
             </thead>
             <tbody>
               {assets.map((asset) => (
-                <tr key={asset.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/70">
+                <tr key={asset.id} className="border-t border-border transition-colors hover:bg-muted/70">
                   <td className="px-2 py-3.5">
                     <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} size="lg" />
                   </td>
@@ -160,10 +160,10 @@ function AssetsSection({
                       {asset.utilization}%
                     </span>
                   </td>
-                  <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-slate-900">
+                  <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-foreground">
                     {formatCompactUsd(asset.availableUsd)}
                   </td>
-                  <td className={cn("px-2 py-3.5 text-right font-data text-sm tabular-nums", asset.hasWalletBalance ? "text-slate-900" : "text-slate-400")}>
+                  <td className={cn("px-2 py-3.5 text-right font-data text-sm tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground")}>
                     {asset.walletBalanceLabel}
                   </td>
                   <td className="px-2 py-3.5">
@@ -189,8 +189,8 @@ function AssetsSection({
 function AssetStatLine({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="flex items-center justify-between py-3">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className={cn("font-data font-semibold tabular-nums text-slate-900", tone)}>{value}</dd>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className={cn("font-data font-semibold tabular-nums text-foreground", tone)}>{value}</dd>
     </div>
   )
 }

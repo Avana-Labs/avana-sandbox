@@ -147,8 +147,8 @@ const VISUALS = {
   USDe: {
     symbol: "USDe",
     shortLabel: "Ue",
-    bgClass: "bg-slate-100",
-    textClass: "text-slate-700",
+    bgClass: "bg-muted",
+    textClass: "text-foreground",
   },
   FRAX: {
     symbol: "FRAX",
@@ -270,8 +270,8 @@ const VISUALS = {
   BAL: {
     symbol: "BAL",
     shortLabel: "B",
-    bgClass: "bg-slate-100",
-    textClass: "text-slate-700",
+    bgClass: "bg-muted",
+    textClass: "text-foreground",
     iconUrl: "https://cryptologos.cc/logos/balancer-bal-logo.png",
   },
   GNO: {
@@ -368,8 +368,8 @@ export const BORROW_DEXES: BorrowDex[] = [
     label: "Balancer",
     tvlUsd: 158_180_000,
     dotClass: "bg-slate-700",
-    pillBgClass: "bg-slate-100",
-    pillTextClass: "text-slate-800",
+    pillBgClass: "bg-muted",
+    pillTextClass: "text-foreground",
   },
   {
     id: "aerodrome",
@@ -1208,8 +1208,8 @@ export function utilizationToneClass(utilization: number): string {
 }
 
 export function healthFactorToneClass(hf: number | null): string {
-  if (hf === null || Number.isNaN(hf)) return "text-slate-500"
-  if (!Number.isFinite(hf)) return "text-slate-400"
+  if (hf === null || Number.isNaN(hf)) return "text-muted-foreground"
+  if (!Number.isFinite(hf)) return "text-muted-foreground"
   if (hf > 2) return "text-emerald-600"
   if (hf > 1.5) return "text-amber-600"
   return "text-rose-600"
