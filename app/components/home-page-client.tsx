@@ -353,6 +353,7 @@ export function HomePageClient(_props: HomePageClientProps) {
                       removePool={removePool}
                       removePercent={removePercent}
                       removePreview={removePreview}
+                      removeDebtUsd={debts[removePoolId] ?? 0}
                     />
                   </div>
                 </motion.aside>

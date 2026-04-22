@@ -5,6 +5,7 @@ import { TOKENS, MARKETS } from "./components/data"
 import { LendHero } from "./components/lend-hero"
 import { MyInvestments } from "./components/my-investments"
 import { ExploreOpportunities } from "./components/explore-opportunities"
+import { HotMarkets } from "./components/hot-markets"
 import { RecentActivity } from "./components/recent-activity"
 import { LendModals } from "./components/lend-modals"
 
@@ -58,8 +59,9 @@ export function LendClient() {
               <ExploreOpportunities openDeposit={openDeposit} />
             </div>
 
-            {/* RIGHT: RECENT ACTIVITY */}
-            <div>
+            {/* RIGHT: HOT MARKETS + RECENT ACTIVITY */}
+            <div className="space-y-8">
+              <HotMarkets onSelect={(market) => openDeposit(market)} />
               <RecentActivity />
             </div>
 

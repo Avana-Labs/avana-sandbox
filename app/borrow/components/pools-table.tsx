@@ -6,6 +6,7 @@ import {
   formatCompactUsd,
   formatRiskPremium,
   getSpokeById,
+  type BorrowPoolEvent,
   type BorrowPoolRow,
   type BorrowSpoke,
   type DexGroup,
@@ -18,6 +19,34 @@ import {
   TrendSpark,
 } from "./atoms"
 import { cn } from "@/lib/utils"
+import { FlashValue } from "@/app/components/ui/live"
+
+function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
+  if (!events || events.length === 0) return null
+  return (
+    <div className="mt-1 flex flex-wrap justify-end gap-1">
+      {events.map((event, index) => {
+        const tone = event.tone ?? "info"
+        const toneClass =
+          tone === "positive"
+            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+            : tone === "warning"
+              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+              : tone === "danger"
+                ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                : "bg-muted text-muted-foreground"
+        return (
+          <span
+            key={`${event.label}-${index}`}
+            className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold", toneClass)}
+          >
+            {event.label}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
 
 type PoolsTableProps = {
   groups: DexGroup[]
@@ -100,17 +129,24 @@ function SpokeSection({
                 >
                   <td className="px-4 py-3.5 sm:pl-6">
                     <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="lg" />
+                    <EventTagList events={pool.events} />
                   </td>
                   <td className="px-2 py-3.5 text-right sm:pl-0">
                     <span className="font-data text-sm font-semibold tabular-nums text-foreground">{pool.ltv}%</span>
                   </td>
                   <td className="px-2 py-3.5 text-right">
-                    <span className={cn("font-data text-sm font-semibold tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}>
+                    <FlashValue
+                      value={(pool.aprMin + pool.aprMax) / 2}
+                      goodDirection="down"
+                      className={cn("font-data text-sm font-semibold tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}
+                    >
                       {`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
-                    </span>
+                    </FlashValue>
                   </td>
-                  <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-foreground">
-                    {formatCompactUsd(pool.availableUsd)}
+                  <td className="px-2 py-3.5 text-right">
+                    <FlashValue value={pool.availableUsd} goodDirection="up" className="font-data text-sm tabular-nums text-foreground">
+                      {formatCompactUsd(pool.availableUsd)}
+                    </FlashValue>
                   </td>
                   <td className="px-2 py-3.5 text-right">
                     <span
@@ -181,6 +217,11 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                       <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="md" />
                       <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
                     </div>
+                    {pool.events && pool.events.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        <EventTagList events={pool.events} />
+                      </div>
+                    ) : null}
                     <DexChipRow dexes={pool.dexes} />
                     <div className="grid grid-cols-2 gap-y-2 text-xs">
                       <MobileField label="Max LTV" value={`${pool.ltv}%`} />
@@ -188,8 +229,15 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                         label="Fees APY"
                         value={`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
                         tone={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
+                        flashValue={(pool.aprMin + pool.aprMax) / 2}
+                        flashGoodDirection="down"
                       />
-                      <MobileField label="Available" value={formatCompactUsd(pool.availableUsd)} />
+                      <MobileField
+                        label="Available"
+                        value={formatCompactUsd(pool.availableUsd)}
+                        flashValue={pool.availableUsd}
+                        flashGoodDirection="up"
+                      />
                       <MobileField label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
                     </div>
                     <PillButton
@@ -226,11 +274,33 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
   )
 }
 
-function MobileField({ label, value, tone }: { label: string; value: string; tone?: string }) {
+function MobileField({
+  label,
+  value,
+  tone,
+  flashValue,
+  flashGoodDirection,
+}: {
+  label: string
+  value: string
+  tone?: string
+  flashValue?: number | string
+  flashGoodDirection?: "up" | "down"
+}) {
   return (
     <div>
       <div className="text-xs uppercase tracking-[0.07em] text-muted-foreground">{label}</div>
-      <div className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground", tone)}>{value}</div>
+      {flashValue !== undefined ? (
+        <FlashValue
+          value={flashValue}
+          goodDirection={flashGoodDirection ?? "up"}
+          className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground", tone)}
+        >
+          {value}
+        </FlashValue>
+      ) : (
+        <div className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground", tone)}>{value}</div>
+      )}
     </div>
   )
 }

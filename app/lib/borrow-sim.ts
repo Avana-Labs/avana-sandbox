@@ -60,6 +60,11 @@ export type DexChip = {
   starred?: boolean
 }
 
+export type BorrowPoolEvent = {
+  label: string
+  tone?: "info" | "positive" | "warning" | "danger"
+}
+
 export type BorrowPoolRow = {
   id: string
   name: string
@@ -76,6 +81,7 @@ export type BorrowPoolRow = {
   collateralExampleUsd: number
   trendUp: boolean
   trendValues?: number[]
+  events?: BorrowPoolEvent[]
 }
 
 export type BorrowableAssetCategory = "stable" | "crypto"

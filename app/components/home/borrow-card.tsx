@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/home-sim"
 import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
 import { cn } from "@/lib/utils"
+import { FlashValue } from "@/app/components/ui/live"
 import { PickerSurface, PrimaryCardButton } from "./shared"
 
 export function CompactBorrowCard({
@@ -62,7 +63,12 @@ export function CompactBorrowCard({
           tier="bottom"
           footer={
             <div className="flex items-center justify-between gap-3">
-              <span>{formatCompactUsd(pool.borrowPowerUsd)} Available to borrow</span>
+              <span>
+                <FlashValue value={preview.remainingBorrowPowerUsd} goodDirection="up">
+                  {formatCompactUsd(preview.remainingBorrowPowerUsd)}
+                </FlashValue>{" "}
+                Available to borrow
+              </span>
               <button type="button" onClick={onSetMax} className="font-semibold text-brand transition-opacity hover:opacity-80">
                 Max
               </button>
@@ -128,11 +134,23 @@ export function CompactBorrowCard({
         <div className="mt-1 grid grid-cols-3 gap-2 text-center md:hidden">
           <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
             <div className="text-[11px] text-muted-foreground">HF</div>
-            <div className="mt-1 font-data text-sm font-semibold">{preview.healthFactorLabel}</div>
+            <FlashValue
+              value={preview.healthFactor ?? 99}
+              goodDirection="up"
+              className="mt-1 font-data text-sm font-semibold"
+            >
+              {preview.healthFactorLabel}
+            </FlashValue>
           </div>
           <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
             <div className="text-[11px] text-muted-foreground">Remaining</div>
-            <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{formatCompactUsd(preview.remainingBorrowPowerUsd)}</div>
+            <FlashValue
+              value={preview.remainingBorrowPowerUsd}
+              goodDirection="up"
+              className="mt-1 font-data text-sm font-semibold text-emerald-600"
+            >
+              {formatCompactUsd(preview.remainingBorrowPowerUsd)}
+            </FlashValue>
           </div>
           <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
             <div className="text-[11px] text-muted-foreground">Liq. at</div>
