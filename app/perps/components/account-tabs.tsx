@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { TokenIcon } from "@/app/components/token-icon"
 
 const TABS = ["LP Collaterals", "Positions", "Open Orders", "TWAP", "History"] as const
 type Tab = typeof TABS[number]
@@ -43,7 +44,8 @@ export function AccountTabs() {
         ) : activeTab === "Positions" ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between py-2 border-b border-border/40">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <TokenIcon symbol="ETH" size="md" />
                 <span className="font-medium text-sm">ETH-PERP</span>
                 <span className="text-[10px] uppercase bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded">Long 5x</span>
               </div>
@@ -53,7 +55,8 @@ export function AccountTabs() {
               </div>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-border/40">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <TokenIcon symbol="SOL" size="md" />
                 <span className="font-medium text-sm">SOL-PERP</span>
                 <span className="text-[10px] uppercase bg-rose-500/10 text-rose-500 px-1.5 py-0.5 rounded">Short 3x</span>
               </div>
@@ -66,9 +69,15 @@ export function AccountTabs() {
         ) : activeTab === "LP Collaterals" ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between py-2 border-b border-border/40">
-              <div>
-                <p className="font-medium text-sm">ETH/USDC (Uniswap V3)</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Health: 84%</p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center">
+                  <TokenIcon symbol="ETH" size="md" ring />
+                  <TokenIcon symbol="USDC" size="md" ring className="-ml-2" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">ETH/USDC (Uniswap V3)</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Health: 84%</p>
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm font-data">$14,500.00</p>
@@ -76,9 +85,15 @@ export function AccountTabs() {
               </div>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-border/40">
-              <div>
-                <p className="font-medium text-sm">wstETH/WETH (Aerodrome)</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Health: 92%</p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center">
+                  <TokenIcon symbol="wstETH" size="md" ring />
+                  <TokenIcon symbol="WETH" size="md" ring className="-ml-2" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">wstETH/WETH (Aerodrome)</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Health: 92%</p>
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm font-data">$22,100.00</p>

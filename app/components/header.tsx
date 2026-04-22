@@ -17,10 +17,10 @@ export function Header() {
 
   return (
     <header className={cn(
-      "sticky top-0 z-40 border-b backdrop-blur",
+      "sticky top-0 z-40 backdrop-blur",
       isDarkCanvas
-        ? "border-white/10 bg-[hsl(222_14%_6%)]/90 text-slate-100 supports-[backdrop-filter]:bg-[hsl(222_14%_6%)]/80"
-        : "border-foreground/20 bg-background/95 supports-[backdrop-filter]:bg-background/90"
+        ? "bg-[hsl(222_14%_6%)]/90 text-slate-100 supports-[backdrop-filter]:bg-[hsl(222_14%_6%)]/80"
+        : "bg-background/95 supports-[backdrop-filter]:bg-background/90"
     )}>
       <div className="flex h-[62px] 2xl:h-[52px] w-full items-center gap-4 2xl:gap-3 px-4 md:px-6 lg:px-8">
         <Link href="/" aria-label="Home" title="Home" className="shrink-0 flex items-center">

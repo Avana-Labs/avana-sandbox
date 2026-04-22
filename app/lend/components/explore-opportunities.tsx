@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { TokenIcon } from "@/app/components/token-icon"
 import { MARKETS, TOKENS } from "./data"
 
 interface ExploreOpportunitiesProps {
@@ -18,10 +19,8 @@ export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps)
           <Card key={m.symbol} className={`border-border/40 bg-card/50 shadow-none transition-colors hover:bg-muted/30 cursor-pointer ${m.soon ? 'opacity-60 cursor-default hover:bg-card/50' : ''}`} onClick={() => !m.soon && openDeposit(m)}>
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-full font-medium text-xs ${m.bg} ${m.color}`}>
-                    {m.symbol[0]}
-                  </div>
+                <div className="flex items-center gap-3">
+                  <TokenIcon symbol={m.symbol} size="lg" />
                   <div>
                     <div className="font-medium text-sm">{m.symbol}</div>
                     <div className="text-xs text-muted-foreground">{m.protocol}</div>

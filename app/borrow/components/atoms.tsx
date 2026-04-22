@@ -1,37 +1,60 @@
 "use client"
 
-import { memo, type ButtonHTMLAttributes, type ReactNode } from "react"
+import { memo, useState, type ButtonHTMLAttributes, type ReactNode } from "react"
+import Image from "next/image"
 import { EnhancedGraph } from "@/app/components/enhanced-graph"
 import type { BorrowAssetVisual, BorrowSpoke, DexChip } from "@/app/lib/borrow-sim"
 import { cn } from "@/lib/utils"
+
+type TokenBubbleSize = "xs" | "sm" | "md" | "lg" | "xl"
+
+const BUBBLE_DIMENSIONS: Record<TokenBubbleSize, { box: string; text: string; px: number }> = {
+  xs: { box: "size-4", text: "text-[7px]", px: 16 },
+  sm: { box: "size-5", text: "text-[8px]", px: 20 },
+  md: { box: "size-7", text: "text-[9px]", px: 28 },
+  lg: { box: "size-9", text: "text-[10px]", px: 36 },
+  xl: { box: "size-11", text: "text-[11px]", px: 44 },
+}
 
 export function TokenBubble({
   visual,
   size = "sm",
   className,
+  ring = true,
 }: {
   visual: BorrowAssetVisual
-  size?: "xs" | "sm" | "md" | "lg"
+  size?: TokenBubbleSize
   className?: string
+  ring?: boolean
 }) {
-  const dimensions = {
-    xs: "size-4 text-[7px]",
-    sm: "size-5 text-[8px]",
-    md: "size-7 text-[9px]",
-    lg: "size-9 text-[10px]",
-  }[size]
+  const { box, text, px } = BUBBLE_DIMENSIONS[size]
+  const [imgFailed, setImgFailed] = useState(false)
+  const showIcon = Boolean(visual.iconUrl) && !imgFailed
 
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-full font-semibold ring-2 ring-white",
-        dimensions,
-        visual.bgClass,
-        visual.textClass,
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
+        ring && "ring-2 ring-white",
+        box,
+        showIcon ? "bg-white" : `${visual.bgClass} ${visual.textClass}`,
+        !showIcon && text,
         className,
       )}
     >
-      {visual.shortLabel}
+      {showIcon ? (
+        <Image
+          src={visual.iconUrl as string}
+          alt={visual.symbol}
+          width={px}
+          height={px}
+          className="h-full w-full object-contain"
+          onError={() => setImgFailed(true)}
+          unoptimized
+        />
+      ) : (
+        visual.shortLabel
+      )}
     </span>
   )
 }
@@ -45,19 +68,23 @@ export function TokenPairCell({
   visuals: [BorrowAssetVisual, BorrowAssetVisual]
   name: string
   subtitle?: string
-  size?: "sm" | "md"
+  size?: "sm" | "md" | "lg"
 }) {
-  const offset = size === "md" ? "-ml-2" : "-ml-1.5"
-  const nameCls = size === "md" ? "text-[14px]" : "text-sm"
+  const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "lg" : "md"
+  const offset = size === "lg" ? "-ml-3" : size === "md" ? "-ml-2.5" : "-ml-2"
+  const nameCls = size === "lg" ? "text-[15px]" : size === "md" ? "text-[14px]" : "text-[13.5px]"
+  const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-3">
       <div className="flex items-center">
-        <TokenBubble visual={visuals[0]} size={size === "md" ? "md" : "sm"} />
-        <TokenBubble visual={visuals[1]} size={size === "md" ? "md" : "sm"} className={offset} />
+        <TokenBubble visual={visuals[0]} size={bubbleSize} />
+        <TokenBubble visual={visuals[1]} size={bubbleSize} className={offset} />
       </div>
       <div className="min-w-0">
-        <div className={cn("font-semibold text-slate-900", nameCls)}>{name}</div>
-        {subtitle ? <div className="truncate text-xs text-slate-500">{subtitle}</div> : null}
+        <div className={cn("font-semibold leading-tight text-slate-900", nameCls)}>{name}</div>
+        {subtitle ? (
+          <div className={cn("mt-0.5 truncate font-medium text-slate-500", subtitleCls)}>{subtitle}</div>
+        ) : null}
       </div>
     </div>
   )
@@ -67,17 +94,24 @@ export function TokenSingleCell({
   visual,
   name,
   subtitle,
+  size = "md",
 }: {
   visual: BorrowAssetVisual
   name: string
   subtitle?: string
+  size?: "sm" | "md" | "lg"
 }) {
+  const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "lg" : "md"
+  const nameCls = size === "lg" ? "text-[15px]" : "text-[14px]"
+  const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
   return (
-    <div className="flex items-center gap-2.5">
-      <TokenBubble visual={visual} size="md" />
+    <div className="flex items-center gap-3">
+      <TokenBubble visual={visual} size={bubbleSize} />
       <div className="min-w-0">
-        <div className="text-[14px] font-semibold text-slate-900">{name}</div>
-        {subtitle ? <div className="truncate text-xs text-slate-500">{subtitle}</div> : null}
+        <div className={cn("font-semibold leading-tight text-slate-900", nameCls)}>{name}</div>
+        {subtitle ? (
+          <div className={cn("mt-0.5 truncate font-medium text-slate-500", subtitleCls)}>{subtitle}</div>
+        ) : null}
       </div>
     </div>
   )

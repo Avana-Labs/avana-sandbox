@@ -9,7 +9,7 @@ export function PerpBalanceRow() {
     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div className="space-y-1">
         <div className="flex items-center gap-2 text-[12px] font-medium tracking-tight text-muted-foreground">
-          <h2>My Perp Balance</h2>
+          <h2 className="m-0 leading-none">My Perp Balance</h2>
           <button onClick={() => setShowBalance(!showBalance)} className="hover:text-foreground">
             {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>

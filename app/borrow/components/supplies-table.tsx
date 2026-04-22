@@ -10,7 +10,7 @@ import {
   homeVisualToBorrowVisual,
 } from "@/app/lib/borrow-sim"
 import { HOME_COLLATERAL_POOLS, formatHealthFactor, type HomeCollateralPool } from "@/app/lib/home-sim"
-import { HfNumber, PillButton, SpokeDot, StatsStrip, TokenBubble, TokenPairCell } from "./atoms"
+import { HfNumber, PillButton, SpokeDot, TokenBubble, TokenPairCell } from "./atoms"
 import { cn } from "@/lib/utils"
 
 export type SupplyRowContext = {
@@ -41,26 +41,11 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
   }
   return (
     <div>
-      <StatsStrip
-        items={[
-          { label: "Total Collateral", value: m(formatUsdExact(totals.collateral)) },
-          { label: "Borrowed", value: m(formatUsdExact(totals.borrowed)) },
-          { label: "Available", value: m(formatUsdExact(totals.available)) },
-          { label: "Fees Earned", value: m(formatUsdExact(totals.fees)) },
-          {
-            label: "Avg HF",
-            value: m(formatHealthFactor(totals.averageHf)),
-            tone: healthFactorToneClass(totals.averageHf),
-          },
-        ]}
-      />
-
       <div className="hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-sm font-medium text-slate-500">
-                <th className="w-10 px-2 py-3">#</th>
                 <th className="px-2 py-3">LP Position</th>
                 <th className="px-2 py-3 text-right">Collateral</th>
                 <th className="px-2 py-3 text-right">Max Borrow</th>
@@ -70,15 +55,14 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, index) => {
+              {rows.map((row) => {
                 const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
                 const meta = BORROW_SUPPLY_META[row.pool.id]
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 return (
                   <tr key={row.pool.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/70">
-                    <td className="px-2 py-3.5 text-xs text-slate-400 tabular-nums">{index + 1}</td>
                     <td className="px-2 py-3.5">
-                      <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} />
+                      <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="lg" />
                     </td>
                     <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-slate-900">
                       {m(formatCompactUsd(row.pool.collateralUsd))}

@@ -135,7 +135,6 @@ function AssetsSection({
           <table className="w-full min-w-[820px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-sm font-medium text-slate-500">
-                <th className="w-10 px-4 py-3">#</th>
                 <th className="px-2 py-3">Asset</th>
                 <th className="px-2 py-3 text-right">Borrow APR</th>
                 <th className="px-2 py-3 text-right">Utilization</th>
@@ -146,11 +145,10 @@ function AssetsSection({
               </tr>
             </thead>
             <tbody>
-              {assets.map((asset, index) => (
+              {assets.map((asset) => (
                 <tr key={asset.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/70">
-                  <td className="px-4 py-3.5 text-xs text-slate-400 tabular-nums">{index + 1}</td>
                   <td className="px-2 py-3.5">
-                    <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} />
+                    <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} size="lg" />
                   </td>
                   <td className="px-2 py-3.5 text-right">
                     <span className={cn("font-data text-sm font-semibold tabular-nums", aprToneClass(asset.borrowApr))}>

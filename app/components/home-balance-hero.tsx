@@ -58,7 +58,7 @@ export function HomeBalanceHero({ steps, totalPoints, totalPools, completedPools
           </Badge>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <h1 className="font-medium text-foreground">My LP Collateral Balance</h1>
+              <h1 className="m-0 font-medium leading-none text-foreground">My LP Collateral Balance</h1>
               <button
                 type="button"
                 onClick={() => setShowBalance((currentValue) => !currentValue)}
