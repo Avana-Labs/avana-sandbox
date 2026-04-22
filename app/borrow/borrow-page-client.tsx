@@ -1,8 +1,15 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Info } from "lucide-react"
 import type { BorrowPool, BorrowProtocolMap } from "@/app/lib/borrow-data"
+import {
+  LIQUIDATION_LTV,
+  MAX_LTV,
+  getHealthStatus,
+  healthFactorBarPct,
+} from "@/app/lib/home-sim"
+import { cn } from "@/lib/utils"
 import {
   BorrowWorkspace,
   type BorrowDebtsHeroStats,
@@ -122,11 +129,11 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
           {suppliesHeroStats ? (
-            <section className="mb-10 px-1 md:px-2">
-              <div className="flex flex-col gap-4 pb-6 md:flex-row md:items-end md:justify-between">
+            <section className="mb-10 px-1 md:px-2 min-h-[400px] md:min-h-[280px]">
+              <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-[12px] font-medium tracking-tight text-slate-500">Total Collateral</p>
+                    <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-slate-500">Total Collateral</p>
                     <button
                       type="button"
                       onClick={() => setShowBalance((prev) => !prev)}
@@ -159,13 +166,15 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                   />
                 </div>
               </div>
+
+              <HealthFactorCard hf={suppliesHeroStats.averageHf} showBalance={showBalance} />
             </section>
           ) : debtsHeroStats ? (
-            <section className="mb-10 px-1 md:px-2">
-              <div className="flex flex-col gap-4 pb-6 md:flex-row md:items-end md:justify-between">
+            <section className="mb-10 px-1 md:px-2 min-h-[400px] md:min-h-[280px]">
+              <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-[12px] font-medium tracking-tight text-slate-500">Total Borrowed</p>
+                    <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-slate-500">Total Borrowed</p>
                     <button
                       type="button"
                       onClick={() => setShowBalance((prev) => !prev)}
@@ -213,9 +222,15 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                   />
                 </div>
               </div>
+
+              <CurrentLtvCard
+                borrowed={debtsHeroStats.totalBorrowed}
+                collateral={debtsHeroStats.totalCollateral}
+                showBalance={showBalance}
+              />
             </section>
           ) : (
-          <section className="mb-10 px-1 md:px-2">
+          <section className="mb-10 px-1 md:px-2 min-h-[400px] md:min-h-[280px]">
             <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
               <div className="min-w-0">
                 <div className="min-w-0">
@@ -365,6 +380,182 @@ function HeroStat({
         {label}
       </div>
       <p className="font-data text-[1rem] font-semibold tracking-tight text-slate-900">{value}</p>
+    </div>
+  )
+}
+
+const TICK_COUNT = 40
+
+function hfTickColor(tickIndex: number): string {
+  const ratio = tickIndex / (TICK_COUNT - 1)
+  if (ratio < 0.25) return "bg-rose-500"
+  if (ratio < 0.45) return "bg-orange-500"
+  if (ratio < 0.7) return "bg-amber-400"
+  return "bg-emerald-500"
+}
+
+function HealthFactorCard({ hf, showBalance }: { hf: number | null; showBalance: boolean }) {
+  const safeHf = hf ?? Number.POSITIVE_INFINITY
+  const status = getHealthStatus(safeHf)
+  const markerPct = healthFactorBarPct(hf)
+  const hfLabel = hf === null ? "—" : !Number.isFinite(hf) ? "∞" : hf.toFixed(2)
+  const masked = !showBalance
+  const filledTicks = Math.round((markerPct / 100) * TICK_COUNT)
+
+  return (
+    <div className="mt-4 px-1 md:px-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[13px] font-semibold text-slate-900">Health factor</span>
+          <Info className="h-3.5 w-3.5 self-center text-slate-400" aria-hidden />
+          <span className="font-data text-[22px] font-bold leading-none tracking-tight text-slate-900">
+            {masked ? "••" : hfLabel}
+          </span>
+        </div>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full bg-[#F3F3F3] px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+            status.textClass,
+          )}
+        >
+          <span className={cn("inline-block size-1.5 rounded-full", status.dotClass)} />
+          {masked ? "••" : status.label}
+        </span>
+      </div>
+
+      <div className="relative mt-10">
+        <div
+          className="pointer-events-none absolute bottom-full z-10 -translate-x-1/2 pb-1 text-center"
+          style={{ left: `${markerPct}%` }}
+        >
+          <div
+            className={cn(
+              "rounded-md bg-slate-900 px-1.5 py-0.5 font-data text-[11px] font-bold text-white",
+            )}
+          >
+            {masked ? "••" : hfLabel}
+          </div>
+          <div className="-mt-px text-[10px] leading-none text-slate-900">▼</div>
+        </div>
+
+        <div className="flex h-8 w-full items-end gap-[3px]">
+          {Array.from({ length: TICK_COUNT }).map((_, i) => {
+            const isFilled = i < filledTicks
+            const isCurrent = i === Math.max(0, filledTicks - 1)
+            return (
+              <span
+                key={i}
+                className={cn(
+                  "flex-1 rounded-[2px] transition-all",
+                  isCurrent ? "h-full ring-2 ring-slate-900 ring-offset-1 ring-offset-white" : "h-[75%]",
+                  isFilled ? hfTickColor(i) : "bg-slate-200",
+                )}
+              />
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-slate-500">
+        <span className="inline-flex items-center gap-1">
+          <span className="size-1.5 rounded-full bg-rose-500" />
+          1.0 Liquidation
+        </span>
+        <span className="inline-flex items-center gap-1">
+          5.0+ Safe
+          <span className="size-1.5 rounded-full bg-emerald-500" />
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function CurrentLtvCard({
+  borrowed,
+  collateral,
+  showBalance,
+}: {
+  borrowed: number
+  collateral: number
+  showBalance: boolean
+}) {
+  const ltv = collateral > 0 ? Math.min(1, borrowed / collateral) : 0
+  const ltvPct = ltv * 100
+  const liquidationPct = LIQUIDATION_LTV * 100
+  const maxPct = MAX_LTV * 100
+  const ltvLabel = `${ltvPct.toFixed(2)}%`
+  const masked = !showBalance
+  const maxUsd = collateral * MAX_LTV
+  const usedLabel = masked ? "••" : `$${Math.round(borrowed).toLocaleString("en-US")}`
+  const maxLabel = masked ? "••" : `$${Math.round(maxUsd).toLocaleString("en-US")}`
+
+  const liquidationTick = Math.round((liquidationPct / 100) * TICK_COUNT)
+  const maxTick = Math.round((maxPct / 100) * TICK_COUNT)
+  const usedTicks = Math.round((ltvPct / 100) * TICK_COUNT)
+
+  const toneBefore =
+    ltv >= MAX_LTV * 0.9 ? "bg-rose-500" : ltv >= MAX_LTV * 0.6 ? "bg-amber-500" : "bg-emerald-500"
+
+  return (
+    <div className="mt-4 px-1 md:px-2">
+      <div className="flex items-baseline gap-2">
+        <span className="text-[13px] font-semibold text-slate-900">Current LTV</span>
+        <Info className="h-3.5 w-3.5 self-center text-slate-400" aria-hidden />
+        <span className="font-data text-[22px] font-bold leading-none tracking-tight text-slate-900">
+          {masked ? "••" : ltvLabel}
+        </span>
+        <span className="text-[11px] font-medium text-slate-500">of borrow power used</span>
+      </div>
+
+      <div className="relative mt-10">
+        <div
+          className="pointer-events-none absolute bottom-full z-10 -translate-x-1/2 pb-1 text-center"
+          style={{ left: `${ltvPct}%` }}
+        >
+          <div className="rounded-md bg-slate-900 px-1.5 py-0.5 font-data text-[11px] font-bold text-white">
+            {masked ? "••" : ltvLabel}
+          </div>
+          <div className="-mt-px text-[10px] leading-none text-slate-900">▼</div>
+        </div>
+
+        <div className="flex h-8 w-full items-end gap-[3px]">
+          {Array.from({ length: TICK_COUNT }).map((_, i) => {
+            let cls: string
+            if (i < usedTicks) {
+              cls = toneBefore
+            } else if (i < maxTick) {
+              cls = "bg-emerald-500/35"
+            } else if (i < liquidationTick) {
+              cls = "bg-amber-400/55"
+            } else {
+              cls = "bg-rose-500/80"
+            }
+            const isCurrent = i === Math.max(0, usedTicks - 1)
+            return (
+              <span
+                key={i}
+                className={cn(
+                  "flex-1 rounded-[2px] transition-all",
+                  isCurrent ? "h-full ring-2 ring-slate-900 ring-offset-1 ring-offset-white" : "h-[75%]",
+                  cls,
+                )}
+              />
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-slate-500">
+        <span>
+          Used <span className="font-semibold text-slate-900">{usedLabel}</span>
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span>
+            Max <span className="font-semibold text-slate-900">{maxLabel}</span>
+          </span>
+          <span className="text-rose-500">· {liquidationPct.toFixed(0)}%</span>
+        </span>
+      </div>
     </div>
   )
 }

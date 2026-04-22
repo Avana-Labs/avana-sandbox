@@ -13,7 +13,7 @@ export function RewardsBalanceHero() {
   return (
     <div className="mb-8 space-y-1">
       <div className="flex items-center gap-2 text-[12px] font-medium tracking-tight text-muted-foreground">
-        <h2>My Rewards Balance</h2>
+        <h2 className="m-0 leading-none">My Rewards Balance</h2>
         <button
           type="button"
           onClick={() => setShowBalance(!showBalance)}

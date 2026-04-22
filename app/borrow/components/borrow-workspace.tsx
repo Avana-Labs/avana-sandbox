@@ -9,14 +9,14 @@ import {
   filterAssets,
   filterPools,
   formatUsdExact,
-  groupBySpoke,
+  groupByDex,
   homePoolSpoke,
   homeVisualToBorrowVisual,
   sortAssets,
   sortPools,
   type AssetSortKey,
+  type BorrowDexId,
   type BorrowPoolRow,
-  type BorrowSpokeId,
   type BorrowableAsset,
   type PoolSortKey,
 } from "@/app/lib/borrow-sim"
@@ -110,7 +110,7 @@ export type BorrowWorkspaceProps = {
 export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStatsChange, showBalance = true }: BorrowWorkspaceProps = {}) {
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("pools")
   const [filterText, setFilterText] = useState("")
-  const [selectedSpokes, setSelectedSpokes] = useState<Set<BorrowSpokeId>>(() => new Set())
+  const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
   const [debts, setDebts] = useState<DebtsState>({ ...HOME_INITIAL_DEBTS })
 
   const [poolSortKey, setPoolSortKey] = useState<PoolSortKey>("apr")
@@ -136,11 +136,11 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
     payload: null,
   })
 
-  const toggleSpoke = useCallback((spoke: BorrowSpokeId) => {
-    setSelectedSpokes((previous) => {
+  const toggleDex = useCallback((dex: BorrowDexId) => {
+    setSelectedDexes((previous) => {
       const next = new Set(previous)
-      if (next.has(spoke)) next.delete(spoke)
-      else next.add(spoke)
+      if (next.has(dex)) next.delete(dex)
+      else next.add(dex)
       return next
     })
   }, [])
@@ -165,11 +165,11 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
   }, [debts])
 
   const sortedPools = useMemo(() => {
-    const filtered = filterPools(BORROW_POOL_CATALOG, { text: filterText, spokes: selectedSpokes })
+    const filtered = filterPools(BORROW_POOL_CATALOG, { text: filterText, dexes: selectedDexes })
     return sortPools(filtered, poolSortKey, poolSortDirection)
-  }, [filterText, selectedSpokes, poolSortKey, poolSortDirection])
+  }, [filterText, selectedDexes, poolSortKey, poolSortDirection])
 
-  const poolGroups = useMemo(() => groupBySpoke(sortedPools), [sortedPools])
+  const poolGroups = useMemo(() => groupByDex(sortedPools), [sortedPools])
 
   const sortedAssets = useMemo<BorrowableAsset[]>(() => {
     const filtered = filterAssets(BORROWABLE_ASSETS, filterText)
@@ -466,8 +466,8 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
         counts={counts}
         filterText={filterText}
         onFilterChange={setFilterText}
-        selectedSpokes={selectedSpokes}
-        onToggleSpoke={toggleSpoke}
+        selectedDexes={selectedDexes}
+        onToggleDex={toggleDex}
         sortKey={activeSortKey}
         sortOptions={activeSortOptions}
         sortDirection={activeSortDirection}

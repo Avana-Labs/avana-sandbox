@@ -171,7 +171,7 @@ export default function StakePage() {
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-[12px] font-medium tracking-tight text-muted-foreground">
-                <h2>My Staking Balance</h2>
+                <h2 className="m-0 leading-none">My Staking Balance</h2>
                 <button
                   type="button"
                   onClick={() => setShowBalance(!showBalance)}

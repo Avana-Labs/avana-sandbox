@@ -434,6 +434,45 @@ export function getRiskTone(healthFactor: number | null): HomeRiskTone {
   return "danger"
 }
 
+export type HealthStatus = {
+  label: string
+  dotClass: string
+  textClass: string
+  barClass: string
+}
+
+export function getHealthStatus(hf: number): HealthStatus {
+  if (!Number.isFinite(hf) || hf >= 2.5) {
+    return { label: "SAFE", dotClass: "bg-emerald-500", textClass: "text-emerald-600", barClass: "bg-emerald-500" }
+  }
+  if (hf >= 1.75) {
+    return { label: "GOOD", dotClass: "bg-yellow-400", textClass: "text-yellow-600", barClass: "bg-yellow-400" }
+  }
+  if (hf >= 1.2) {
+    return { label: "WATCH", dotClass: "bg-orange-500", textClass: "text-orange-600", barClass: "bg-orange-500" }
+  }
+  return { label: "AT RISK", dotClass: "bg-rose-500", textClass: "text-rose-600", barClass: "bg-rose-500" }
+}
+
+export function healthGaugePercent(hf: number): number {
+  if (!Number.isFinite(hf)) return 100
+  const min = 1.0
+  const max = 3.0
+  const clamped = Math.max(min, Math.min(max, hf))
+  return ((clamped - min) / (max - min)) * 100
+}
+
+export function healthFactorBarPct(hf: number | null): number {
+  if (hf === null || Number.isNaN(hf)) return 0
+  if (!Number.isFinite(hf)) return 100
+  const min = 1.0
+  const max = 5.0
+  return Math.max(0, Math.min(100, ((hf - min) / (max - min)) * 100))
+}
+
+export const MAX_LTV = 0.8
+export const LIQUIDATION_LTV = 0.83
+
 export function calculateBorrowPreview(pool: HomeCollateralPool, amountUsd: number, tokenSymbol: string): BorrowPreview {
   if (amountUsd <= 0) {
     return {

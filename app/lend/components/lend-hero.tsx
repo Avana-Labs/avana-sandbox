@@ -51,7 +51,7 @@ export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }:
     <>
       <div className="mb-6 space-y-1">
         <div className="flex items-center gap-2 text-[12px] font-medium tracking-tight text-muted-foreground">
-          <h2>My Lending Balance</h2>
+          <h2 className="m-0 leading-none">My Lending Balance</h2>
           <button onClick={() => setShowBalance(!showBalance)} className="hover:text-foreground">
             {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>

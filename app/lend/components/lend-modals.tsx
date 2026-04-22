@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { TokenIcon } from "@/app/components/token-icon"
 import { TOKENS, MARKETS } from "./data"
 
 // Custom hook for confetti
@@ -113,9 +114,7 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
               
               <div className="px-6 py-6">
                 <div className="mb-6 flex items-center gap-4">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-medium ${modalState.token.bg} ${modalState.token.color}`}>
-                    {modalState.token.symbol[0]}
-                  </div>
+                  <TokenIcon symbol={modalState.token.symbol} size="xl" />
                   <div>
                     <div className="text-lg font-medium">{modalState.token.symbol}</div>
                     <div className="text-sm text-muted-foreground">

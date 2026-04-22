@@ -2,14 +2,13 @@
 
 import { memo } from "react"
 import {
-  BORROW_SPOKES,
   aprToneClass,
   formatCompactUsd,
   formatRiskPremium,
   getSpokeById,
   type BorrowPoolRow,
   type BorrowSpoke,
-  type BorrowSpokeId,
+  type DexGroup,
   type PendingMarketRow,
 } from "@/app/lib/borrow-sim"
 import {
@@ -21,27 +20,42 @@ import {
 import { cn } from "@/lib/utils"
 
 type PoolsTableProps = {
-  groups: Record<BorrowSpokeId, BorrowPoolRow[]>
+  groups: DexGroup[]
   pending?: PendingMarketRow[]
   onUseAsCollateral: (pool: BorrowPoolRow) => void
 }
 
-export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral }: PoolsTableProps) {
-  const visibleSpokes = BORROW_SPOKES.filter(
-    (spoke) => (groups[spoke.id]?.length ?? 0) > 0 || pending.some((row) => row.spoke === spoke.id),
-  )
-
+function EModePill() {
   return (
-    <div className="hidden space-y-8 md:block">
-      {visibleSpokes.map((spoke) => (
-        <SpokeSection
-          key={spoke.id}
-          spoke={spoke}
-          rows={groups[spoke.id] ?? []}
-          pending={pending.filter((row) => row.spoke === spoke.id)}
-          onUseAsCollateral={onUseAsCollateral}
-        />
-      ))}
+    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+      E-Mode
+    </span>
+  )
+}
+
+function SpokeHeader({ spoke }: { spoke: BorrowSpoke }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
+      <h3 className="text-[20px] font-semibold tracking-tight text-slate-900">{spoke.label}</h3>
+      {spoke.eMode ? <EModePill /> : null}
+    </div>
+  )
+}
+
+export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral }: PoolsTableProps) {
+  return (
+    <div className="hidden space-y-10 md:block">
+      {groups.flatMap((group) =>
+        group.spokes.map((entry) => (
+          <SpokeSection
+            key={entry.spoke.id}
+            spoke={entry.spoke}
+            rows={entry.rows}
+            pending={pending.filter((row) => row.spoke === entry.spoke.id)}
+            onUseAsCollateral={onUseAsCollateral}
+          />
+        )),
+      )}
     </div>
   )
 })
@@ -57,20 +71,15 @@ function SpokeSection({
   pending: PendingMarketRow[]
   onUseAsCollateral: (pool: BorrowPoolRow) => void
 }) {
-  const shortLabel = spoke.label.replace(" Spoke", "")
-
   return (
     <section>
-      <div className="mb-3 px-1">
-        <h3 className="text-base font-semibold text-slate-900">{shortLabel}</h3>
-      </div>
+      <SpokeHeader spoke={spoke} />
 
       <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-sm font-medium text-slate-500">
-                <th className="w-10 px-4 py-3">#</th>
                 <th className="px-2 py-3">Pool</th>
                 <th className="px-2 py-3 text-right">Max LTV</th>
                 <th className="px-2 py-3 text-right">Fees APY</th>
@@ -81,15 +90,14 @@ function SpokeSection({
               </tr>
             </thead>
             <tbody>
-              {rows.map((pool, idx) => (
+              {rows.map((pool) => (
                 <tr
                   key={pool.id}
                   className="border-t border-slate-100 transition-colors hover:bg-slate-50/70"
                   onClick={() => onUseAsCollateral(pool)}
                 >
-                  <td className="px-4 py-3.5 text-xs text-slate-400 tabular-nums">{idx + 1}</td>
                   <td className="px-2 py-3.5">
-                    <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} />
+                    <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="lg" />
                   </td>
                   <td className="px-2 py-3.5 text-right">
                     <span className="font-data text-sm font-semibold tabular-nums text-slate-900">{pool.ltv}%</span>
@@ -153,59 +161,62 @@ function SpokeSection({
 }
 
 export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTableProps) {
-  const visibleSpokes = BORROW_SPOKES.filter((spoke) => (groups[spoke.id]?.length ?? 0) > 0 || pending.some((row) => row.spoke === spoke.id))
   return (
-    <div className="space-y-6 md:hidden">
-      {visibleSpokes.map((spoke) => {
-        const rows = groups[spoke.id] ?? []
-        const pendingForSpoke = pending.filter((row) => row.spoke === spoke.id)
-        return (
-          <section key={spoke.id} className="space-y-3">
-            <div className="px-1">
-              <h3 className="text-base font-semibold text-slate-900">{spoke.label.replace(" Spoke", "")}</h3>
-            </div>
-            <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white">
-              {rows.map((pool) => (
-                <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onUseAsCollateral(pool)}>
-                  <div className="flex items-center justify-between gap-3">
-                    <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} />
-                    <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} width={52} />
-                  </div>
-                  <DexChipRow dexes={pool.dexes} />
-                  <div className="grid grid-cols-2 gap-y-2 text-xs">
-                    <MobileField label="Max LTV" value={`${pool.ltv}%`} />
-                    <MobileField label="Fees APY" value={`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`} tone={aprToneClass((pool.aprMin + pool.aprMax) / 2)} />
-                    <MobileField label="Available" value={formatCompactUsd(pool.availableUsd)} />
-                    <MobileField label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
-                  </div>
-                  <PillButton
-                    variant="primary"
-                    size="md"
-                    className="w-full"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onUseAsCollateral(pool)
-                    }}
-                  >
-                    Supply
-                  </PillButton>
-                </li>
-              ))}
-              {pendingForSpoke.map((row) => (
-                <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-slate-400">
-                  <span>
-                    {row.label}
-                    <span className="ml-1 text-xs">· {row.subLabel}</span>
-                  </span>
-                  <PillButton variant="ghost" disabled>
-                    Vote →
-                  </PillButton>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      })}
+    <div className="space-y-8 md:hidden">
+      {groups.flatMap((group) =>
+        group.spokes.map((entry) => {
+          const pendingForSpoke = pending.filter((row) => row.spoke === entry.spoke.id)
+          return (
+            <section key={entry.spoke.id} className="space-y-3">
+              <SpokeHeader spoke={entry.spoke} />
+
+              <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white">
+                {entry.rows.map((pool) => (
+                  <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onUseAsCollateral(pool)}>
+                    <div className="flex items-center justify-between gap-3">
+                      <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="md" />
+                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} width={52} />
+                    </div>
+                    <DexChipRow dexes={pool.dexes} />
+                    <div className="grid grid-cols-2 gap-y-2 text-xs">
+                      <MobileField label="Max LTV" value={`${pool.ltv}%`} />
+                      <MobileField
+                        label="Fees APY"
+                        value={`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
+                        tone={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
+                      />
+                      <MobileField label="Available" value={formatCompactUsd(pool.availableUsd)} />
+                      <MobileField label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
+                    </div>
+                    <PillButton
+                      variant="primary"
+                      size="md"
+                      className="w-full"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onUseAsCollateral(pool)
+                      }}
+                    >
+                      Supply
+                    </PillButton>
+                  </li>
+                ))}
+                {pendingForSpoke.map((row) => (
+                  <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-slate-400">
+                    <span>
+                      {row.label}
+                      <span className="ml-1 text-xs">· {row.subLabel}</span>
+                    </span>
+                    <PillButton variant="ghost" disabled>
+                      Vote →
+                    </PillButton>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }),
+      )}
     </div>
   )
 }

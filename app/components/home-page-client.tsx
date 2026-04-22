@@ -19,7 +19,9 @@ import {
   formatUsd,
   getBorrowTokenById,
   getClaimBreakdownLabel,
+  getHealthStatus,
   getPoolById,
+  healthGaugePercent,
   type HomeBorrowToken,
   type HomeCollateralPool,
   type HomeMode,
@@ -137,34 +139,6 @@ function PrimaryCardButton({
 function computeHealthFactor(pool: HomeCollateralPool, debtUsd: number): number {
   if (debtUsd <= 0) return Number.POSITIVE_INFINITY
   return (pool.collateralUsd * (pool.maxLtv / 100)) / debtUsd
-}
-
-type HealthStatus = {
-  label: string
-  dotClass: string
-  textClass: string
-  barClass: string
-}
-
-function getHealthStatus(hf: number): HealthStatus {
-  if (!Number.isFinite(hf) || hf >= 2.5) {
-    return { label: "SAFE", dotClass: "bg-emerald-500", textClass: "text-emerald-600", barClass: "bg-emerald-500" }
-  }
-  if (hf >= 1.75) {
-    return { label: "GOOD", dotClass: "bg-yellow-400", textClass: "text-yellow-600", barClass: "bg-yellow-400" }
-  }
-  if (hf >= 1.2) {
-    return { label: "WATCH", dotClass: "bg-orange-500", textClass: "text-orange-600", barClass: "bg-orange-500" }
-  }
-  return { label: "AT RISK", dotClass: "bg-rose-500", textClass: "text-rose-600", barClass: "bg-rose-500" }
-}
-
-function healthGaugePercent(hf: number): number {
-  if (!Number.isFinite(hf)) return 100
-  const min = 1.0
-  const max = 3.0
-  const clamped = Math.max(min, Math.min(max, hf))
-  return ((clamped - min) / (max - min)) * 100
 }
 
 function PoolPickerDialog({

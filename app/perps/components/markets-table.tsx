@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { TokenIcon } from "@/app/components/token-icon"
 
 type Market = {
   symbol: string
@@ -35,9 +36,12 @@ export function MarketsTable({ markets }: { markets: Market[] }) {
                 {markets.map((m) => (
                   <tr key={m.symbol} className="transition-colors hover:bg-muted/50">
                     <td className="py-3 pl-6">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{m.symbol}</span>
-                        <span className="text-xs text-muted-foreground">{m.name}</span>
+                      <div className="flex items-center gap-3">
+                        <TokenIcon symbol={m.symbol} size="lg" />
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-[14px] font-semibold text-foreground">{m.symbol}</span>
+                          <span className="text-xs text-muted-foreground">{m.name}</span>
+                        </div>
                       </div>
                     </td>
                     <td className="font-data py-3 text-right">${m.price.toLocaleString("en-US")}</td>
@@ -62,14 +66,17 @@ export function MarketsTable({ markets }: { markets: Market[] }) {
           <div className="space-y-4 md:hidden p-4">
             {markets.map((m) => (
               <div key={m.symbol} className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{m.symbol}</span>
-                    <Badge variant="outline" className="h-4 px-1 text-[9px] text-muted-foreground">
-                      {m.maxLeverage}x
-                    </Badge>
+                <div className="flex items-center gap-3">
+                  <TokenIcon symbol={m.symbol} size="md" />
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{m.symbol}</span>
+                      <Badge variant="outline" className="h-4 px-1 text-[9px] text-muted-foreground">
+                        {m.maxLeverage}x
+                      </Badge>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{m.name}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{m.name}</span>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="font-data text-sm">${m.price.toLocaleString("en-US")}</span>

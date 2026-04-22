@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { BORROW_SPOKES, type BorrowSpokeId } from "@/app/lib/borrow-sim"
+import { BORROW_DEXES, type BorrowDexId } from "@/app/lib/borrow-sim"
 import { cn } from "@/lib/utils"
 
 export type BorrowTabId = "pools" | "supplies" | "assets" | "debts"
@@ -25,8 +25,8 @@ export type TabsBarProps = {
   counts: Record<BorrowTabId, number>
   filterText: string
   onFilterChange: (value: string) => void
-  selectedSpokes: Set<BorrowSpokeId>
-  onToggleSpoke: (spoke: BorrowSpokeId) => void
+  selectedDexes: Set<BorrowDexId>
+  onToggleDex: (dex: BorrowDexId) => void
   sortKey: string
   sortOptions: SortOption[]
   sortDirection: "asc" | "desc"
@@ -47,8 +47,8 @@ export function TabsBar({
   counts,
   filterText,
   onFilterChange,
-  selectedSpokes,
-  onToggleSpoke,
+  selectedDexes,
+  onToggleDex,
   sortKey,
   sortOptions,
   sortDirection,
@@ -140,27 +140,27 @@ export function TabsBar({
                   type="button"
                   className={cn(
                     "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
-                    selectedSpokes.size === 0 || selectedSpokes.size === BORROW_SPOKES.length
+                    selectedDexes.size === 0 || selectedDexes.size === BORROW_DEXES.length
                       ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       : "bg-slate-900 text-white hover:bg-slate-800",
                   )}
                 >
-                  Spoke
+                  DEX
                   <ChevronDown className="size-3.5 opacity-60" aria-hidden />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuLabel>Filter spokes</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Filter by DEX</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {BORROW_SPOKES.map((spoke) => (
+                {BORROW_DEXES.map((dex) => (
                   <DropdownMenuCheckboxItem
-                    key={spoke.id}
-                    checked={selectedSpokes.has(spoke.id)}
-                    onCheckedChange={() => onToggleSpoke(spoke.id)}
+                    key={dex.id}
+                    checked={selectedDexes.has(dex.id)}
+                    onCheckedChange={() => onToggleDex(dex.id)}
                     onSelect={(event) => event.preventDefault()}
                   >
-                    <span className={cn("mr-2 size-1.5 rounded-full", spoke.dotClass)} aria-hidden />
-                    {spoke.label.replace(" Spoke", "")}
+                    <span className={cn("mr-2 size-1.5 rounded-full", dex.dotClass)} aria-hidden />
+                    {dex.label}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>

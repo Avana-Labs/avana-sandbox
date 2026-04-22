@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
+import { TokenIcon } from "@/app/components/token-icon"
 import { TOKENS } from "./data"
 
 interface MyInvestmentsProps {
@@ -29,9 +30,7 @@ export function MyInvestments({ openDeposit }: MyInvestmentsProps) {
                   <tr key={t.symbol} className="transition-colors hover:bg-muted/50 cursor-pointer" onClick={() => openDeposit(t)}>
                     <td className="py-3 pl-6">
                       <div className="flex items-center gap-3">
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-full font-medium text-xs ${t.bg} ${t.color}`}>
-                          {t.symbol[0]}
-                        </div>
+                        <TokenIcon symbol={t.symbol} size="lg" />
                         <div className="flex flex-col">
                           <span className="font-medium text-foreground">{t.name}</span>
                           <span className="text-xs text-muted-foreground">{t.symbol}</span>
@@ -60,9 +59,7 @@ export function MyInvestments({ openDeposit }: MyInvestmentsProps) {
             {TOKENS.map((t) => (
               <div key={t.symbol} className="flex items-center justify-between cursor-pointer" onClick={() => openDeposit(t)}>
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-full font-medium text-xs ${t.bg} ${t.color}`}>
-                    {t.symbol[0]}
-                  </div>
+                  <TokenIcon symbol={t.symbol} size="md" />
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">{t.name}</span>
                     <span className="font-data text-xs text-emerald-500">{t.apy.toFixed(2)}% APY</span>
