@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { PillTabButton } from "@/components/ui/pill-tab-button"
 import { TokenIcon } from "@/app/components/token-icon"
 
 const TABS = ["LP Collaterals", "Positions", "Open Orders", "TWAP", "History"] as const
@@ -18,20 +18,10 @@ export function AccountTabs() {
       <Card className="border-border/40 bg-card/50 shadow-none">
       <div className="flex flex-col gap-4 border-b border-border/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="no-scrollbar flex space-x-1 overflow-x-auto">
-          {TABS.map(tab => (
-            <Button
-              key={tab}
-              variant="ghost"
-              size="sm"
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-full px-4 text-xs font-medium ${
-                activeTab === tab
-                  ? "bg-secondary text-secondary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
+          {TABS.map((tab) => (
+            <PillTabButton key={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)}>
               {tab}
-            </Button>
+            </PillTabButton>
           ))}
         </div>
       </div>

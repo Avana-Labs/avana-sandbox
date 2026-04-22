@@ -17,17 +17,13 @@ const HOME_MODE_ITEMS: Array<{
 
 export function HomeModeTabs() {
   return (
-    <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-2xl bg-muted/70 p-2 md:grid-cols-4">
+    <TabsList className="w-full justify-center md:justify-start">
       {HOME_MODE_ITEMS.map((item) => {
         const Icon = item.icon
 
         return (
-          <TabsTrigger
-            key={item.value}
-            value={item.value}
-            className="h-11 rounded-full border border-transparent bg-background/40 px-4 data-[state=active]:border-border/70 data-[state=active]:bg-background"
-          >
-            <Icon className="mr-2 h-4 w-4" />
+          <TabsTrigger key={item.value} value={item.value} className="gap-1.5">
+            <Icon className="size-3.5 shrink-0" aria-hidden />
             {item.label}
           </TabsTrigger>
         )

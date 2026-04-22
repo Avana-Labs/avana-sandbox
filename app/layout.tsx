@@ -57,18 +57,6 @@ const diatypeBrand = localFont({
   display: "swap",
 })
 
-const outfitFallback = localFont({
-  src: [
-    {
-      path: "../public/fonts/outfit/Outfit-VariableFont_wght.ttf",
-      weight: "400 700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-outfit",
-  display: "swap",
-})
-
 export const metadata: Metadata = {
   metadataBase: new URL("https://avana.cc"),
   title: {
@@ -139,11 +127,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${diatypeSans.variable} ${diatypeData.variable} ${diatypeBrand.variable} ${outfitFallback.variable}`}
+      className={`${diatypeSans.variable} ${diatypeData.variable} ${diatypeBrand.variable}`}
       suppressHydrationWarning
     >
       <head />
-      <body className="min-h-screen bg-background font-sans">
+      <body className="min-h-screen bg-background">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

@@ -9,8 +9,8 @@
     text-size-adjust: 100%;
   }
   :root {
-    /* Page chrome: subtle green-tinted off-white for premium feel */
-    --background: 150 20% 98%;        /* #F8FBF9 soft mint-tinted */
+    /* Page chrome: green-grey canvas (slightly under pure white for layered UI) */
+    --background: 150 12% 97%;
     --foreground: 150 15% 10%;        /* #161C18 deep green-black text */
 
     --card: 0 0% 100%;                /* pure white elevated cards pop */
@@ -38,10 +38,10 @@
     --input: 150 12% 90%;
     --ring: 145 65% 45%;
 
-    /* Elevated surfaces used for sub-cards / hover bg in compact UIs */
-    --surface-1: 150 18% 96.5%;       /* #F2F6F3 */
-    --surface-2: 150 15% 93%;         /* #E7EDE9 */
-    --surface-hover: 150 15% 93%;
+    /* Elevated surfaces: cool green-greys (tabs, row hovers) */
+    --surface-1: 150 14% 96%;
+    --surface-2: 150 12% 94%;
+    --surface-hover: 150 16% 92%;
 
     /* Premium accent (brand pink kept in light mode) */
     --brand: 327 96% 53%;
@@ -102,6 +102,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Diatype (Next.js sets --font-diatype-sans on <html>); no Tailwind font-* on layout */
+    font-family: var(--font-diatype-sans), system-ui, sans-serif;
   }
   /* Tighter default spacing */
   h1,
@@ -115,6 +117,31 @@
   p {
     @apply mb-2;
   }
+}
+
+/* Diatype font utilities implemented in plain CSS, not Tailwind config. */
+.font-sans,
+.font-compact {
+  font-family: var(--font-diatype-sans), system-ui, sans-serif;
+}
+
+.font-data {
+  font-family: var(--font-diatype-data), var(--font-diatype-sans), system-ui, sans-serif;
+}
+
+.font-brand {
+  font-family: var(--font-diatype-brand), var(--font-diatype-sans), system-ui, sans-serif;
+}
+
+.no-number-spinner {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.no-number-spinner::-webkit-outer-spin-button,
+.no-number-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* Tighter utility classes */
@@ -146,7 +173,10 @@
   }
 }
 
-/* Premium depth for cards in dark mode */
+/* Premium depth: soft lift in light mode, inset edge in dark */
+.surface-elevated {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
 .dark .surface-elevated {
   box-shadow:
     0 0 0 1px hsl(var(--border)),

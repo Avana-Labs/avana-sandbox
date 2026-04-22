@@ -146,7 +146,7 @@ function AssetsSection({
             </thead>
             <tbody>
               {assets.map((asset) => (
-                <tr key={asset.id} className="border-t border-border transition-colors hover:bg-muted/70">
+                <tr key={asset.id} className="border-t border-border transition-colors hover:bg-surface-hover">
                   <td className="px-2 py-3.5">
                     <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} size="lg" />
                   </td>
@@ -168,7 +168,7 @@ function AssetsSection({
                   </td>
                   <td className="px-2 py-3.5">
                     <div className="flex justify-end">
-                      <TrendSpark isPositive={asset.trendUp} seed={`asset-${asset.id}`} />
+                      <TrendSpark isPositive={asset.trendUp} seed={`asset-${asset.id}`} values={asset.trendValues} />
                     </div>
                   </td>
                   <td className="px-4 py-3.5 text-right">

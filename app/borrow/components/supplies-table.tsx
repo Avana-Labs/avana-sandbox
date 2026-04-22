@@ -17,6 +17,9 @@ export type SupplyRowContext = {
   pool: HomeCollateralPool
   borrowedUsd: number
   healthFactor: number | null
+  pairApr: number
+  feesUsd: number
+  feesLabel: string
 }
 
 type SuppliesTableProps = {
@@ -60,7 +63,7 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                 const meta = BORROW_SUPPLY_META[row.pool.id]
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 return (
-                  <tr key={row.pool.id} className="border-t border-border transition-colors hover:bg-muted/70">
+                  <tr key={row.pool.id} className="border-t border-border transition-colors hover:bg-surface-hover">
                     <td className="px-2 py-3.5">
                       <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="lg" />
                     </td>
@@ -74,9 +77,9 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                     </td>
                     <td className="px-2 py-3.5 text-right">
-                      <div className="font-data text-sm tabular-nums text-foreground">{m(meta?.feesLabel ?? "$0.00")}</div>
+                      <div className="font-data text-sm tabular-nums text-foreground">{m(row.feesLabel)}</div>
                       <div className="font-data text-xs font-semibold tabular-nums text-emerald-600">
-                        {row.pool.pairApr.toFixed(1)}% APR
+                        {row.pairApr.toFixed(1)}% APR
                       </div>
                     </td>
                     <td className="px-2 py-3.5 text-right">
@@ -169,12 +172,12 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                   valueTone="text-rose-500"
                 />
                 <SupplyStatCell
-                  value={m(meta?.feesLabel ?? "$0")}
+                  value={m(row.feesLabel)}
                   label="Fees Earned"
                   valueTone="text-emerald-600"
                 />
                 <SupplyStatCell
-                  value={`${row.pool.pairApr.toFixed(1)}%`}
+                  value={`${row.pairApr.toFixed(1)}%`}
                   label="LP APR"
                 />
               </div>
