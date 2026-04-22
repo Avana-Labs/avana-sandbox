@@ -27,16 +27,17 @@ type PoolsTableProps = {
 
 function EModePill() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-700">
       E-Mode
     </span>
   )
 }
 
-function SpokeHeader({ spoke }: { spoke: BorrowSpoke }) {
+/** Same type scale as perps card: text-lg / font-medium, inside card header strip. */
+function SpokeCardHeader({ spoke }: { spoke: BorrowSpoke }) {
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
-      <h3 className="text-[20px] font-semibold tracking-tight text-foreground">{spoke.label}</h3>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h3 className="text-lg font-medium leading-snug tracking-tight text-foreground">{spoke.label}</h3>
       {spoke.eMode ? <EModePill /> : null}
     </div>
   )
@@ -73,33 +74,34 @@ function SpokeSection({
 }) {
   return (
     <section>
-      <SpokeHeader spoke={spoke} />
-
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="border-b border-border/40 px-4 py-3.5 sm:px-6 sm:py-4">
+          <SpokeCardHeader spoke={spoke} />
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="px-2 py-3">Pool</th>
-                <th className="px-2 py-3 text-right">Max LTV</th>
-                <th className="px-2 py-3 text-right">Fees APY</th>
-                <th className="px-2 py-3 text-right">Available</th>
-                <th className="px-2 py-3 text-right">Risk Premium</th>
-                <th className="w-24 px-2 py-3 text-right">7D</th>
-                <th className="w-36 px-4 py-3 text-right">Action</th>
+              <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
+                <th className="px-4 py-2.5 sm:px-6">Pool</th>
+                <th className="px-2 py-2.5 text-right sm:pl-0">Max LTV</th>
+                <th className="px-2 py-2.5 text-right">Fees APY</th>
+                <th className="px-2 py-2.5 text-right">Available</th>
+                <th className="px-2 py-2.5 text-right">Risk Premium</th>
+                <th className="w-24 px-2 py-2.5 text-right">7D</th>
+                <th className="w-36 px-4 py-2.5 text-right sm:pr-6">Action</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((pool) => (
                 <tr
                   key={pool.id}
-                  className="border-t border-border transition-colors hover:bg-muted/70"
+                  className="border-t border-border transition-colors hover:bg-surface-hover"
                   onClick={() => onUseAsCollateral(pool)}
                 >
-                  <td className="px-2 py-3.5">
+                  <td className="px-4 py-3.5 sm:pl-6">
                     <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="lg" />
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="px-2 py-3.5 text-right sm:pl-0">
                     <span className="font-data text-sm font-semibold tabular-nums text-foreground">{pool.ltv}%</span>
                   </td>
                   <td className="px-2 py-3.5 text-right">
@@ -122,10 +124,10 @@ function SpokeSection({
                   </td>
                   <td className="px-2 py-3.5 text-right">
                     <div className="inline-flex align-middle">
-                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} />
+                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} />
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-right">
+                  <td className="px-4 py-3.5 text-right sm:pr-6">
                     <PillButton
                       variant="primary"
                       onClick={(event) => {
@@ -168,14 +170,16 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
           const pendingForSpoke = pending.filter((row) => row.spoke === entry.spoke.id)
           return (
             <section key={entry.spoke.id} className="space-y-3">
-              <SpokeHeader spoke={entry.spoke} />
-
-              <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
+              <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                <div className="border-b border-border/40 px-4 py-3.5 sm:px-6 sm:py-4">
+                  <SpokeCardHeader spoke={entry.spoke} />
+                </div>
+                <ul className="divide-y divide-border">
                 {entry.rows.map((pool) => (
                   <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onUseAsCollateral(pool)}>
                     <div className="flex items-center justify-between gap-3">
                       <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="md" />
-                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} width={52} />
+                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
                     </div>
                     <DexChipRow dexes={pool.dexes} />
                     <div className="grid grid-cols-2 gap-y-2 text-xs">
@@ -212,7 +216,8 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                     </PillButton>
                   </li>
                 ))}
-              </ul>
+                </ul>
+              </div>
             </section>
           )
         }),

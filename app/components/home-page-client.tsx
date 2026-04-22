@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ArrowDown, Check, ChevronDown, Search, Settings, TrendingUp } from "lucide-react"
+import { Check, ChevronDown, Search, Settings, TrendingUp } from "lucide-react"
 import {
   HOME_BORROW_TOKENS,
   HOME_CLAIM_POSITIONS,
@@ -89,25 +89,15 @@ function PickerSurface({
   return (
     <div
       className={cn(
-        "rounded-[20px] px-4 py-[18px] transition-colors",
-        type === "top" && "border border-border bg-card hover:border-border/80 focus-within:border-foreground/20 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset]",
-        type === "bottom" && "border border-transparent bg-surface-1 hover:bg-surface-2 focus-within:bg-surface-2",
-        type === "default" && "border border-transparent bg-surface-1",
+        "surface-elevated rounded-[20px] border px-4 py-[18px] transition-[background-color,border-color,box-shadow]",
+        type === "top" && "border-border/70 bg-card hover:border-border focus-within:border-foreground/20 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset]",
+        type === "bottom" && "border-border/60 bg-card/78 hover:border-border/80 hover:bg-card/88 focus-within:border-foreground/15 focus-within:bg-card",
+        type === "default" && "border-border/60 bg-card/78",
       )}
     >
       <div className="mb-1 text-[13px] text-muted-foreground">{label}</div>
       {children}
       {footer ? <div className="mt-3 text-xs text-muted-foreground">{footer}</div> : null}
-    </div>
-  )
-}
-
-function SwapArrowButton() {
-  return (
-    <div className="absolute left-1/2 top-1/2 z-10 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-background bg-card">
-      <div className="flex size-full items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted">
-        <ArrowDown className="h-[18px] w-[18px]" strokeWidth={2} />
-      </div>
     </div>
   )
 }
@@ -493,8 +483,6 @@ function CompactBorrowCard({
           </div>
         </PickerSurface>
 
-        <SwapArrowButton />
-
         <PickerSurface
           label="Borrow"
           type="bottom"
@@ -512,12 +500,12 @@ function CompactBorrowCard({
               <span className="sr-only">Borrow amount</span>
               <input
                 aria-label="Borrow amount"
-                type="number"
+                type="text"
                 inputMode="decimal"
                 value={amount}
                 onChange={(event) => onAmountChange(event.target.value)}
                 placeholder="0"
-                className="w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
+                className="no-number-spinner w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
               />
               <span className="text-xs text-muted-foreground">$0</span>
             </label>
@@ -552,15 +540,15 @@ function CompactBorrowCard({
       </PrimaryCardButton>
 
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl bg-surface-1 px-3 py-3">
+        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
           <div className="text-[11px] text-muted-foreground">HF</div>
           <div className="mt-1 font-data text-sm font-semibold">{preview.healthFactorLabel}</div>
         </div>
-        <div className="rounded-2xl bg-surface-1 px-3 py-3">
+        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
           <div className="text-[11px] text-muted-foreground">Remaining</div>
           <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{formatCompactUsd(preview.remainingBorrowPowerUsd)}</div>
         </div>
-        <div className="rounded-2xl bg-surface-1 px-3 py-3">
+        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
           <div className="text-[11px] text-muted-foreground">Liq. at</div>
           <div className="mt-1 font-data text-sm font-semibold text-amber-600">{formatCompactUsd(pool.liquidationUsd)}</div>
         </div>
@@ -608,8 +596,6 @@ function CompactRepayCard({
           </div>
         </PickerSurface>
 
-        <SwapArrowButton />
-
         <PickerSurface
           label="Repay"
           type="bottom"
@@ -627,12 +613,12 @@ function CompactRepayCard({
               <span className="sr-only">Repay amount</span>
               <input
                 aria-label="Repay amount"
-                type="number"
+                type="text"
                 inputMode="decimal"
                 value={amount}
                 onChange={(event) => onAmountChange(event.target.value)}
                 placeholder="0"
-                className="w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
+                className="no-number-spinner w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
               />
               <span className="text-xs text-muted-foreground">$0</span>
             </label>
@@ -649,15 +635,15 @@ function CompactRepayCard({
       </PrimaryCardButton>
 
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl bg-surface-1 px-3 py-3">
+        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
           <div className="text-[11px] text-muted-foreground">Remaining</div>
           <div className="mt-1 font-data text-sm font-semibold">{preview.remainingDebtLabel}</div>
         </div>
-        <div className="rounded-2xl bg-surface-1 px-3 py-3">
+        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
           <div className="text-[11px] text-muted-foreground">HF after</div>
           <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{preview.healthFactorAfterLabel}</div>
         </div>
-        <div className="rounded-2xl bg-surface-1 px-3 py-3">
+        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
           <div className="text-[11px] text-muted-foreground">Fee</div>
           <div className="mt-1 font-data text-sm font-semibold">~$0.80</div>
         </div>
@@ -687,7 +673,7 @@ function CompactClaimCard({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded-2xl bg-surface-1 px-5 py-5 text-foreground">
+      <div className="surface-elevated rounded-2xl border border-border/60 bg-card/80 px-5 py-5 text-foreground">
         <div className="text-sm text-muted-foreground">Total claimable</div>
         <div className="mt-1 font-data text-4xl font-semibold tracking-tight">{formatUsd(preview.selectedTotalUsd)}</div>
       </div>
@@ -703,7 +689,9 @@ function CompactClaimCard({
               onClick={() => onToggleSelection(position.id)}
               className={cn(
                 "flex items-center gap-4 rounded-2xl border px-4 py-3 text-left transition-colors",
-                isSelected ? "border-brand bg-brand-soft shadow-sm" : "border-transparent bg-surface-1 hover:border-border/40",
+                isSelected
+                  ? "border-brand bg-brand-soft shadow-[0_8px_20px_rgba(252,38,114,0.12)]"
+                  : "border-border/50 bg-card/72 shadow-[0_4px_14px_rgba(15,23,42,0.03)] hover:border-border/70 hover:bg-card/85",
               )}
             >
               <PairVisual visuals={[position.breakdown[0].visual, position.breakdown[1]?.visual ?? position.breakdown[0].visual]} />
@@ -733,12 +721,12 @@ function CompactClaimCard({
             <span className="sr-only">Claim amount</span>
             <input
               aria-label="Claim amount"
-              type="number"
+              type="text"
               inputMode="decimal"
               value={amount}
               onChange={(event) => onAmountChange(event.target.value)}
               placeholder="0"
-              className="w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
+                className="no-number-spinner w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
             />
           </label>
           <div className="inline-flex h-9 items-center justify-center rounded-full bg-card px-4 py-1 text-[17px] font-semibold text-foreground shadow-sm">
@@ -789,8 +777,6 @@ function CompactRemoveCard({
           </div>
         </PickerSurface>
 
-        <SwapArrowButton />
-
         <PickerSurface label="Remove amount" type="bottom" footer={`Health factor after ${preview.healthFactorAfterLabel}`}>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
@@ -824,15 +810,15 @@ function CompactRemoveCard({
       </div>
 
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl bg-surface-1 px-3 py-3">
+        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
           <div className="text-[11px] text-muted-foreground">Receive</div>
           <div className="mt-1 font-data text-sm font-semibold text-emerald-600">{formatCompactUsd(preview.removeUsd)}</div>
         </div>
-        <div className="rounded-2xl bg-surface-1 px-3 py-3">
+        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
           <div className="text-[11px] text-muted-foreground">After</div>
           <div className="mt-1 font-data text-sm font-semibold">{formatCompactUsd(preview.afterCollateralUsd)}</div>
         </div>
-        <div className="rounded-2xl bg-surface-1 px-3 py-3">
+        <div className="rounded-2xl border border-border/60 bg-card/72 px-3 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.035)]">
           <div className="text-[11px] text-muted-foreground">HF</div>
           <div className={cn("mt-1 font-data text-sm font-semibold", preview.isUnsafe ? "text-rose-600" : "text-amber-600")}>
             {preview.healthFactorAfterLabel}
@@ -1107,13 +1093,9 @@ export function HomePageClient(_props: HomePageClientProps) {
           <div className="w-full max-w-[420px] rounded-[24px] p-2">
             <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
               <div className="mb-3 flex items-center justify-between px-1 pt-1">
-                <TabsList className="flex h-auto w-fit items-center gap-1 bg-transparent p-0">
+                <TabsList className="w-fit gap-1.5">
                   {HOME_MODE_ITEMS.map((item) => (
-                    <TabsTrigger
-                      key={item.value}
-                      value={item.value}
-                      className="rounded-full bg-transparent px-4 py-1.5 text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-surface-2 data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                    >
+                    <TabsTrigger key={item.value} value={item.value} className="min-h-10 px-4.5 text-sm md:min-h-11 md:px-5 md:text-[15px]">
                       {item.label}
                     </TabsTrigger>
                   ))}

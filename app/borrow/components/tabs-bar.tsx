@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { BORROW_DEXES, type BorrowDexId } from "@/app/lib/borrow-sim"
+import { PillTabButton } from "@/components/ui/pill-tab-button"
 import { cn } from "@/lib/utils"
 
 export type BorrowTabId = "pools" | "supplies" | "assets" | "debts"
@@ -72,29 +73,25 @@ export function TabsBar({
   const activeSortLabel = sortOptions.find((option) => option.key === sortKey)?.label ?? sortOptions[0]?.label ?? ""
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 border-b border-border bg-card/95 px-4 backdrop-blur md:-mx-6 md:px-6">
+    <div className="sticky top-0 z-30 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="flex flex-wrap items-center gap-x-1 gap-y-2 py-2">
-        <nav className="flex items-center gap-1 overflow-x-auto" aria-label="Borrow sections">
+        <nav className="no-scrollbar flex items-center gap-1 overflow-x-auto" aria-label="Borrow sections">
           {TAB_ORDER.map((tab) => {
             const isActive = tab.id === currentTab
             return (
-              <button
+              <PillTabButton
                 key={tab.id}
                 type="button"
+                active={isActive}
                 onClick={() => onTabChange(tab.id)}
-                className={cn(
-                  "whitespace-nowrap rounded-lg px-3 py-1.5 text-[15px] transition-colors",
-                  isActive
-                    ? "text-foreground font-semibold"
-                    : "text-muted-foreground font-medium hover:text-foreground",
-                )}
+                className="text-sm"
                 aria-current={isActive ? "page" : undefined}
               >
                 {tab.label}
-                <span className={cn("ml-1.5 text-sm font-normal", isActive ? "text-muted-foreground" : "text-muted-foreground")}>
+                <span className="ml-1.5 tabular-nums text-[10px] font-medium text-muted-foreground" aria-hidden>
                   {counts[tab.id]}
                 </span>
-              </button>
+              </PillTabButton>
             )
           })}
         </nav>

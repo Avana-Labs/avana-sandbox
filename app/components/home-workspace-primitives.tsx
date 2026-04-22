@@ -1,8 +1,10 @@
 "use client"
 
-import type { ReactNode } from "react"
+import Image from "next/image"
+import { useState, type ReactNode } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import type { HomeAssetVisual, HomeSuccessRow, HomeSuccessRowTone } from "@/app/lib/home-sim"
@@ -54,7 +56,7 @@ export function PremiumPanel({ title, description, action, className, contentCla
     >
       <CardHeader className="gap-3 border-b border-border/60 p-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
-          <CardTitle className="text-base font-semibold tracking-tight">{title}</CardTitle>
+          <CardTitle className="tracking-tight">{title}</CardTitle>
           {description ? <CardDescription className="max-w-xl">{description}</CardDescription> : null}
         </div>
         {action ? <div className="flex shrink-0 items-center gap-2">{action}</div> : null}
@@ -65,17 +67,32 @@ export function PremiumPanel({ title, description, action, className, contentCla
 }
 
 export function TokenBubble({ visual, className }: TokenBubbleProps) {
+  const meta = getTokenIconMeta(visual.symbol)
+  const [imgFailed, setImgFailed] = useState(false)
+  const showIcon = Boolean(meta.iconUrl) && !imgFailed
+
   return (
     <span
       className={cn(
-        "inline-flex size-9 shrink-0 items-center justify-center rounded-full font-data text-[11px] font-semibold",
-        visual.bgClassName,
-        visual.textClassName,
+        "inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full font-data text-[11px] font-semibold",
+        showIcon ? "bg-card" : cn(visual.bgClassName, visual.textClassName),
         className,
       )}
       aria-hidden
     >
-      {visual.shortLabel}
+      {showIcon ? (
+        <Image
+          src={meta.iconUrl as string}
+          alt={visual.symbol}
+          width={36}
+          height={36}
+          className="h-full w-full object-contain"
+          onError={() => setImgFailed(true)}
+          unoptimized
+        />
+      ) : (
+        visual.shortLabel
+      )}
     </span>
   )
 }

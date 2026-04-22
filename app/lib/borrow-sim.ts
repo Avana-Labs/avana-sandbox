@@ -1,3 +1,5 @@
+import { getTokenIconMeta } from "@/app/lib/token-icons"
+
 export type BorrowDexId = "uniswap" | "curve" | "balancer" | "aerodrome"
 
 export type BorrowSpokeId =
@@ -73,6 +75,7 @@ export type BorrowPoolRow = {
   visuals: [BorrowAssetVisual, BorrowAssetVisual]
   collateralExampleUsd: number
   trendUp: boolean
+  trendValues?: number[]
 }
 
 export type BorrowableAssetCategory = "stable" | "crypto"
@@ -90,6 +93,7 @@ export type BorrowableAsset = {
   hasWalletBalance: boolean
   visual: BorrowAssetVisual
   trendUp: boolean
+  trendValues?: number[]
   category: BorrowableAssetCategory
 }
 
@@ -1221,6 +1225,7 @@ export function homeVisualToBorrowVisual(visual: { symbol: string; shortLabel: s
     shortLabel: visual.shortLabel,
     bgClass: visual.bgClassName,
     textClass: visual.textClassName,
+    iconUrl: getTokenIconMeta(visual.symbol).iconUrl,
   }
 }
 

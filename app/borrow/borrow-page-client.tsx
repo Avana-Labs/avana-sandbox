@@ -44,6 +44,8 @@ function formatUsdCents(value: number) {
 
 /** Borrow markets UI: hero-level metrics (from server-prepared data) + the 4-tab Borrow workspace. */
 export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
+  const heroSectionClassName = "mb-4 px-1 md:px-2 min-h-[19rem] md:min-h-[16rem]"
+
   const metricsData = useMemo(() => {
     const totalCollaterals = allPools.reduce((sum, pool) => sum + Math.max(pool.tvl, 0), 0)
     const totalVolume24h = allPools.reduce((sum, pool) => sum + Math.max(pool.volume24h, 0), 0)
@@ -128,8 +130,8 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
-          {suppliesHeroStats ? (
-            <section className="mb-10 px-1 md:px-2 min-h-[400px] md:min-h-[280px]">
+        {suppliesHeroStats ? (
+            <section className={heroSectionClassName}>
               <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -170,7 +172,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
               <HealthFactorCard hf={suppliesHeroStats.averageHf} showBalance={showBalance} />
             </section>
           ) : debtsHeroStats ? (
-            <section className="mb-10 px-1 md:px-2 min-h-[400px] md:min-h-[280px]">
+            <section className={heroSectionClassName}>
               <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -230,7 +232,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
               />
             </section>
           ) : (
-          <section className="mb-10 px-1 md:px-2 min-h-[400px] md:min-h-[280px]">
+          <section className={heroSectionClassName}>
             <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
               <div className="min-w-0">
                 <div className="min-w-0">
@@ -350,12 +352,12 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
           </section>
           )}
 
-          <BorrowWorkspace
-            onTabChange={handleTabChange}
-            onSupplyStatsChange={handleSupplyStatsChange}
-            onDebtsStatsChange={handleDebtsStatsChange}
-            showBalance={showBalance}
-          />
+        <BorrowWorkspace
+          onTabChange={handleTabChange}
+          onSupplyStatsChange={handleSupplyStatsChange}
+          onDebtsStatsChange={handleDebtsStatsChange}
+          showBalance={showBalance}
+        />
         </div>
       </main>
     </div>

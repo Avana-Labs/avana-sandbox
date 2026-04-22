@@ -17,6 +17,8 @@ export type DebtRowContext = {
   borrowedUsd: number
   healthFactor: number | null
   borrowApr: number
+  accruedInterestUsd: number
+  dailyInterestUsd: number
 }
 
 type DebtsTableProps = {
@@ -71,7 +73,7 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 const tokenCount = (row.borrowedUsd).toFixed(0)
                 return (
-                  <tr key={row.pool.id} className="border-t border-border transition-colors hover:bg-muted/70">
+                  <tr key={row.pool.id} className="border-t border-border transition-colors hover:bg-surface-hover">
                     <td className="px-2 py-3.5">
                       <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="lg" />
                     </td>
@@ -85,7 +87,7 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                     </td>
                     <td className="px-2 py-3.5 text-right">
-                      <div className="font-data text-sm tabular-nums text-foreground">{m(formatUsdExact(meta?.accruedInterestUsd ?? 0))}</div>
+                      <div className="font-data text-sm tabular-nums text-foreground">{m(formatUsdExact(row.accruedInterestUsd))}</div>
                       <div className={cn("font-data text-xs font-semibold tabular-nums", aprToneClass(row.borrowApr))}>
                         {row.borrowApr.toFixed(1)}% APR
                       </div>
@@ -116,7 +118,6 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
         {rows.map((row) => {
           const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
           const meta = BORROW_SUPPLY_META[row.pool.id]
-          const dailyInterest = (row.borrowedUsd * row.borrowApr) / 100 / 365
           const pairLabel = `${row.pool.visuals[0].symbol} / ${row.pool.visuals[1].symbol} LP`
           return (
             <li key={row.pool.id} className="space-y-4 rounded-3xl bg-card px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -151,12 +152,12 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
                 />
                 <DebtStatLine
                   label="Accrued Interest"
-                  value={showBalance ? `+${formatUsdExact(meta?.accruedInterestUsd ?? 0)}` : MASK}
+                  value={showBalance ? `+${formatUsdExact(row.accruedInterestUsd)}` : MASK}
                   tone="text-rose-500"
                 />
                 <DebtStatLine
                   label="Daily Interest"
-                  value={showBalance ? `+${formatUsdExact(dailyInterest)}/day` : MASK}
+                  value={showBalance ? `+${formatUsdExact(row.dailyInterestUsd)}/day` : MASK}
                   tone="text-rose-500"
                 />
                 <DebtStatLine label="Opened" value={meta?.openedLabel ?? "—"} />
