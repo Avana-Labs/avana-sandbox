@@ -16,7 +16,7 @@ import { BORROW_DEXES, type BorrowDexId } from "@/app/lib/borrow-sim"
 import { PillTabButton } from "@/components/ui/pill-tab-button"
 import { cn } from "@/lib/utils"
 
-export type BorrowTabId = "pools" | "supplies" | "assets" | "debts"
+export type BorrowTabId = "pools" | "assets" | "positions"
 
 export type SortOption = { key: string; label: string }
 
@@ -36,10 +36,9 @@ export type TabsBarProps = {
 }
 
 const TAB_ORDER: Array<{ id: BorrowTabId; label: string }> = [
-  { id: "pools", label: "Pools to Supply" },
-  { id: "supplies", label: "My Supplies" },
-  { id: "assets", label: "Assets to Borrow" },
-  { id: "debts", label: "My Borrows" },
+  { id: "pools", label: "Collaterals" },
+  { id: "assets", label: "Assets" },
+  { id: "positions", label: "Positions" },
 ]
 
 export function TabsBar({

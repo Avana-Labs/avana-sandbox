@@ -63,16 +63,6 @@ function EModePill() {
   )
 }
 
-/** Same type scale as perps card: text-lg / font-medium, inside card header strip. */
-function SpokeCardHeader({ spoke }: { spoke: BorrowSpoke }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <h3 className="text-lg font-medium leading-snug tracking-tight text-foreground">{spoke.label}</h3>
-      {spoke.eMode ? <EModePill /> : null}
-    </div>
-  )
-}
-
 export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral }: PoolsTableProps) {
   return (
     <div className="hidden space-y-10 md:block">
@@ -103,39 +93,45 @@ function SpokeSection({
   onUseAsCollateral: (pool: BorrowPoolRow) => void
 }) {
   return (
-    <section>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="border-b border-border/40 px-4 py-3.5 sm:px-6 sm:py-4">
-          <SpokeCardHeader spoke={spoke} />
-        </div>
+    <section className="mb-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-lg font-medium">{spoke.label}</h3>
+        {spoke.eMode ? <EModePill /> : null}
+      </div>
+      <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[880px] border-collapse text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
-                <th className="px-4 py-2.5 sm:px-6">Pool</th>
-                <th className="px-2 py-2.5 text-right sm:pl-0">Max LTV</th>
-                <th className="px-2 py-2.5 text-right">Fees APY</th>
-                <th className="px-2 py-2.5 text-right">Available</th>
-                <th className="px-2 py-2.5 text-right">Risk Premium</th>
-                <th className="w-24 px-2 py-2.5 text-right">7D</th>
-                <th className="w-36 px-4 py-2.5 text-right sm:pr-6">Action</th>
+              <tr className="border-b border-border/40 text-left text-muted-foreground">
+                <th className="pb-3 pt-4 pl-6 font-medium">Pool</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Max LTV</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Fees APY</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Supplied</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Risk Premium</th>
+                <th className="w-20 pb-3 pt-4 pl-4 text-right font-medium">7D</th>
+                <th className="w-44 pb-3 pt-4 pl-4 pr-6 text-right font-medium">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/40">
               {rows.map((pool) => (
                 <tr
                   key={pool.id}
-                  className="border-t border-border transition-colors hover:bg-surface-hover"
+                  className="cursor-pointer transition-colors hover:bg-muted/50"
                   onClick={() => onUseAsCollateral(pool)}
                 >
-                  <td className="px-4 py-3.5 sm:pl-6">
-                    <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="lg" />
+                  <td className="py-3 pl-6">
+                    <TokenPairCell
+                      visuals={pool.visuals}
+                      name={pool.name}
+                      subtitle={`${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`}
+                      size="lg"
+                    />
                     <EventTagList events={pool.events} />
                   </td>
-                  <td className="px-2 py-3.5 text-right sm:pl-0">
+                  <td className="py-3 pl-4 text-right">
                     <span className="font-data text-sm font-semibold tabular-nums text-foreground">{pool.ltv}%</span>
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="py-3 pl-4 text-right">
                     <FlashValue
                       value={(pool.aprMin + pool.aprMax) / 2}
                       goodDirection="down"
@@ -144,12 +140,12 @@ function SpokeSection({
                       {`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
                     </FlashValue>
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="py-3 pl-4 text-right">
                     <FlashValue value={pool.availableUsd} goodDirection="up" className="font-data text-sm tabular-nums text-foreground">
                       {formatCompactUsd(pool.availableUsd)}
                     </FlashValue>
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="py-3 pl-4 text-right">
                     <span
                       className={cn(
                         "font-data text-sm font-medium tabular-nums",
@@ -159,12 +155,12 @@ function SpokeSection({
                       {formatRiskPremium(pool.riskPremiumBps)}
                     </span>
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="py-3 pl-4 text-right">
                     <div className="inline-flex align-middle">
                       <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} />
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-right sm:pr-6">
+                  <td className="py-3 pl-4 pr-6 text-right">
                     <div className="inline-flex items-center gap-1.5">
                       <Link
                         href={`/borrow/pool/${pool.id}`}
@@ -187,13 +183,13 @@ function SpokeSection({
                 </tr>
               ))}
               {pending.map((row) => (
-                <tr key={row.id} className="border-t border-border">
-                  <td className="px-4 py-3.5 text-xs text-muted-foreground" />
-                  <td className="px-2 py-3.5 text-sm text-muted-foreground" colSpan={6}>
+                <tr key={row.id}>
+                  <td className="py-3 pl-6 text-xs text-muted-foreground" />
+                  <td className="py-3 text-sm text-muted-foreground" colSpan={6}>
                     {row.label}
                     <span className="ml-2 text-xs text-muted-foreground">· {row.subLabel}</span>
                   </td>
-                  <td className="px-4 py-3.5 text-right">
+                  <td className="py-3 pr-6 text-right">
                     <PillButton variant="ghost" disabled>
                       Vote →
                     </PillButton>
@@ -216,15 +212,21 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
           const pendingForSpoke = pending.filter((row) => row.spoke === entry.spoke.id)
           return (
             <section key={entry.spoke.id} className="space-y-3">
-              <div className="overflow-hidden rounded-2xl border border-border bg-card">
-                <div className="border-b border-border/40 px-4 py-3.5 sm:px-6 sm:py-4">
-                  <SpokeCardHeader spoke={entry.spoke} />
-                </div>
-                <ul className="divide-y divide-border">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-lg font-medium">{entry.spoke.label}</h3>
+                {entry.spoke.eMode ? <EModePill /> : null}
+              </div>
+              <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
+                <ul className="divide-y divide-border/40">
                 {entry.rows.map((pool) => (
                   <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onUseAsCollateral(pool)}>
                     <div className="flex items-center justify-between gap-3">
-                      <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="md" />
+                      <TokenPairCell
+                        visuals={pool.visuals}
+                        name={pool.name}
+                        subtitle={`${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`}
+                        size="md"
+                      />
                       <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
                     </div>
                     {pool.events && pool.events.length > 0 ? (
@@ -243,7 +245,7 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                         flashGoodDirection="down"
                       />
                       <MobileField
-                        label="Available"
+                        label="Supplied"
                         value={formatCompactUsd(pool.availableUsd)}
                         flashValue={pool.availableUsd}
                         flashGoodDirection="up"
