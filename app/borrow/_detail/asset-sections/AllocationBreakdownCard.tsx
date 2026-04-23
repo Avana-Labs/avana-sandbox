@@ -6,9 +6,9 @@ import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { SectionCard } from "../ui"
 
-type Props = { detail: AssetDetail }
+type Props = { detail: AssetDetail; id?: string }
 
-export function AllocationBreakdownCard({ detail }: Props) {
+export function AllocationBreakdownCard({ detail, id }: Props) {
   if (detail.allocation.length === 0) {
     return (
       <SectionCard title="Allocation breakdown">
@@ -20,6 +20,7 @@ export function AllocationBreakdownCard({ detail }: Props) {
   }
   return (
     <SectionCard
+      id={id}
       title="Allocation breakdown"
       subtitle={`Where ${detail.hero.symbol} is deployed across LP collateral pools.`}
       bodyClassName="p-0"
@@ -32,7 +33,7 @@ export function AllocationBreakdownCard({ detail }: Props) {
               <th className="px-2 py-2 text-right">Share</th>
               <th className="px-2 py-2 text-right">Value</th>
               <th className="px-2 py-2 text-right">Utilization</th>
-              <th className="px-4 py-2 text-right sm:pr-5">Borrow APR</th>
+              <th className="px-4 py-2 text-right sm:pr-5">Borrow APY</th>
             </tr>
           </thead>
           <tbody>

@@ -68,8 +68,8 @@ export function AssetDetailClient({ detail }: Props) {
           <div className="flex items-center gap-3">
             <div className="hidden items-center gap-3 text-[12px] font-medium sm:flex">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Supply APY</span>
-                <span className="font-data text-emerald-600 dark:text-emerald-400">{detail.quickStats[1]?.value || "--"}</span>
+                <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Borrow APY</span>
+                <span className="font-data text-emerald-600 dark:text-emerald-400">{detail.quickStats[5]?.value || "--"}</span>
               </div>
             </div>
             <button
@@ -109,7 +109,7 @@ export function AssetDetailClient({ detail }: Props) {
               <AllocationBreakdownCard detail={detail} />
               <AssetCashflowCard detail={detail} />
               <RiskSection detail={detail} />
-              <TransactionHistoryCard detail={detail} />
+              <TransactionHistoryCard transactions={detail.transactions} />
               <AboutCard about={detail.about} />
               <RelatedAssetsRow detail={detail} />
             </div>
