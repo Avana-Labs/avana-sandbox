@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { Progress } from "@/components/ui/progress"
-import { HomeTabs } from "@/app/components/home-tabs"
+import { RewardsTabs } from "./rewards-tabs"
 import { getCachedHomeSnapshot } from "@/app/lib/home-data"
 import { RewardsBalanceHero } from "./rewards-balance-hero"
 
@@ -21,15 +21,15 @@ export default async function RewardsPage() {
           <div className="mb-8">
             <h2 className="sr-only">Quest progress overview</h2>
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium">Your Progress</span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Your progress</span>
+              <span className="text-[11.5px] font-data tabular-nums text-muted-foreground">
                 {completedPools}/{totalPools} completed
               </span>
             </div>
-            <Progress value={progressPercentage} className="h-2" aria-label="Overall quest completion progress" />
+            <Progress value={progressPercentage} className="h-1.5" aria-label="Overall quest completion progress" />
           </div>
 
-          <HomeTabs chains={chains} />
+          <RewardsTabs chains={chains} />
         </div>
       </main>
     </div>

@@ -255,22 +255,26 @@ export function HomePageClient(_props: HomePageClientProps) {
       <main className="px-4">
         <section className="flex min-h-[calc(100vh-64px)] items-start justify-center pt-[5vh] md:pt-[6vh]">
           <div className="flex w-full items-start justify-center gap-4">
-            <div className="w-full max-w-[420px] rounded-[24px] p-2 md:max-w-[480px]">
+            <div className="w-full max-w-[420px] md:max-w-[460px]">
               <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
-                <div className="mb-3 flex items-center justify-between px-1 pt-1">
-                  <TabsList className="w-fit gap-0.5">
+                <div className="mb-4 flex items-center justify-between">
+                  <TabsList className="w-full justify-start">
                     {HOME_MODE_ITEMS.map((item) => (
-                      <TabsTrigger key={item.value} value={item.value} className="h-8 px-3 text-[15px] font-medium">
+                      <TabsTrigger key={item.value} value={item.value}>
                         {item.label}
                       </TabsTrigger>
                     ))}
                   </TabsList>
-                  <button type="button" className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground" aria-label="Settings">
-                    <Settings className="h-[18px] w-[18px]" />
+                  <button
+                    type="button"
+                    className="ml-2 inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+                    aria-label="Settings"
+                  >
+                    <Settings className="h-4 w-4" />
                   </button>
                 </div>
 
-                <div className="relative mt-2 min-h-[320px]">
+                <div className="relative min-h-[320px]">
                   <TabsContent value="borrow" className="mt-0">
                     <CompactBorrowCard
                       pool={borrowPool}
@@ -335,13 +339,13 @@ export function HomePageClient(_props: HomePageClientProps) {
               {showSidePanel ? (
                 <motion.aside
                   key="home-side-panel"
-                  initial={{ opacity: 0, x: -12, width: 0 }}
-                  animate={{ opacity: 1, x: 0, width: 320 }}
-                  exit={{ opacity: 0, x: -12, width: 0 }}
-                  transition={{ duration: 0.28, ease: "easeOut" }}
+                  initial={{ opacity: 0, x: -8, width: 0 }}
+                  animate={{ opacity: 1, x: 0, width: 280 }}
+                  exit={{ opacity: 0, x: -8, width: 0 }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                   className="hidden shrink-0 overflow-hidden pt-[52px] md:block"
                 >
-                  <div className="w-[320px] pr-2">
+                  <div className="w-[280px] pr-2">
                     <HomePreviewPanel
                       mode={mode}
                       borrowPool={borrowPool}

@@ -34,7 +34,7 @@ export function TokenBubble({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-medium",
         ring && "ring-2 ring-background",
         box,
         showIcon ? "bg-card" : `${visual.bgClass} ${visual.textClass}`,
@@ -81,9 +81,9 @@ export function TokenPairCell({
         <TokenBubble visual={visuals[1]} size={bubbleSize} className={offset} />
       </div>
       <div className="min-w-0">
-        <div className={cn("font-semibold leading-tight text-foreground", nameCls)}>{name}</div>
+        <div className={cn("font-medium leading-tight text-foreground", nameCls)}>{name}</div>
         {subtitle ? (
-          <div className={cn("mt-0.5 truncate font-medium text-muted-foreground", subtitleCls)}>{subtitle}</div>
+          <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div>
         ) : null}
       </div>
     </div>
@@ -108,9 +108,9 @@ export function TokenSingleCell({
     <div className="flex items-center gap-3">
       <TokenBubble visual={visual} size={bubbleSize} />
       <div className="min-w-0">
-        <div className={cn("font-semibold leading-tight text-foreground", nameCls)}>{name}</div>
+        <div className={cn("font-medium leading-tight text-foreground", nameCls)}>{name}</div>
         {subtitle ? (
-          <div className={cn("mt-0.5 truncate font-medium text-muted-foreground", subtitleCls)}>{subtitle}</div>
+          <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div>
         ) : null}
       </div>
     </div>
@@ -128,7 +128,7 @@ export function SpokeDot({ spoke, label, withLabel = true, className }: { spoke:
 
 export function DexPill({ dex }: { dex: DexChip }) {
   return (
-    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+    <span className="inline-flex items-center rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
       {dex.label}
       {dex.starred ? <span className="ml-0.5 text-amber-500">★</span> : null}
     </span>
@@ -197,8 +197,8 @@ export function DeltaPill({ isPositive, value }: { isPositive: boolean; value: s
 }
 
 export function HfNumber({ value, tone, size = "md" }: { value: string; tone: string; size?: "sm" | "md" | "lg" }) {
-  const textSize = size === "lg" ? "text-[22px]" : size === "sm" ? "text-xs" : "text-[14px]"
-  return <span className={cn("font-data font-semibold tabular-nums", textSize, tone)}>{value}</span>
+  const textSize = size === "lg" ? "text-[20px]" : size === "sm" ? "text-[11px]" : "text-[13px]"
+  return <span className={cn("font-data font-medium tabular-nums", textSize, tone)}>{value}</span>
 }
 
 export type PillVariant = "primary" | "ghost" | "danger" | "success"
@@ -211,12 +211,12 @@ export function PillButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: PillVariant; size?: "sm" | "md" }) {
   const base =
-    "inline-flex items-center justify-center rounded-full font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-  const sizeCls = size === "md" ? "h-10 px-5 text-[14px]" : "h-8 px-3.5 text-sm"
+    "inline-flex items-center justify-center rounded-radius-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25"
+  const sizeCls = size === "md" ? "h-9 px-4 text-[13px]" : "h-7 px-2.5 text-[12px]"
   const variantCls = {
-    primary: "bg-foreground text-background hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground",
-    ghost: "bg-muted text-foreground hover:bg-muted",
-    danger: "border border-rose-200 bg-transparent text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/40",
+    primary: "bg-accent-primary text-accent-primary-foreground shadow-elev-1 hover:bg-accent-primary-hover disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none",
+    ghost: "border border-border bg-surface-raised text-foreground hover:bg-surface-inset",
+    danger: "border border-destructive/30 bg-transparent text-destructive hover:bg-destructive/5 dark:text-rose-300",
     success: "bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-muted disabled:text-muted-foreground",
   }[variant]
   return (
@@ -242,10 +242,10 @@ export function DropdownChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
+        "inline-flex h-7 items-center gap-1 rounded-xs border px-2 text-[12px] font-medium transition-colors",
         active
-          ? "bg-foreground text-background hover:bg-foreground/90"
-          : "bg-muted text-foreground hover:bg-muted",
+          ? "border-transparent bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary-hover"
+          : "border-border bg-surface-raised text-foreground hover:bg-surface-inset",
         className,
       )}
     >
@@ -257,15 +257,15 @@ export function DropdownChip({
 export function StatItem({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-xs font-medium uppercase tracking-[0.07em] text-muted-foreground">{label}</div>
-      <div className={cn("mt-1 font-data text-[17px] font-semibold tabular-nums text-foreground", tone)}>{value}</div>
+      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
+      <div className={cn("mt-1 font-data text-[15px] font-medium tabular-nums text-foreground", tone)}>{value}</div>
     </div>
   )
 }
 
 export function StatsStrip({ items }: { items: Array<{ label: string; value: string; tone?: string }> }) {
   return (
-    <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-border bg-card px-5 py-4 sm:flex sm:items-start sm:gap-8">
+    <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-3 shadow-elev-1 sm:flex sm:items-start sm:gap-8">
       {items.map((item) => (
         <StatItem key={item.label} label={item.label} value={item.value} tone={item.tone} />
       ))}
@@ -275,7 +275,7 @@ export function StatsStrip({ items }: { items: Array<{ label: string; value: str
 
 export function SpokeTag({ spoke }: { spoke: BorrowSpoke }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium", spoke.pillBgClass, spoke.pillTextClass)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-xs px-1.5 py-0.5 text-[11px] font-medium", spoke.pillBgClass, spoke.pillTextClass)}>
       <span className={cn("size-1.5 rounded-full", spoke.dotClass)} aria-hidden />
       {spoke.label.replace(" Spoke", "")}
     </span>

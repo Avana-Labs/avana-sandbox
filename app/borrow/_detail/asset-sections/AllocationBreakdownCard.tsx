@@ -25,42 +25,42 @@ export function AllocationBreakdownCard({ detail }: Props) {
       bodyClassName="p-0"
     >
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[700px] border-collapse text-sm">
+        <table className="w-full min-w-[700px] border-collapse text-[13px]">
           <thead>
-            <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
-              <th className="px-4 py-2.5 sm:px-6">Pool</th>
-              <th className="px-2 py-2.5 text-right">Share</th>
-              <th className="px-2 py-2.5 text-right">Value</th>
-              <th className="px-2 py-2.5 text-right">Utilization</th>
-              <th className="px-4 py-2.5 text-right sm:pr-6">Borrow APR</th>
+            <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+              <th className="px-4 py-2 sm:px-5">Pool</th>
+              <th className="px-2 py-2 text-right">Share</th>
+              <th className="px-2 py-2 text-right">Value</th>
+              <th className="px-2 py-2 text-right">Utilization</th>
+              <th className="px-4 py-2 text-right sm:pr-5">Borrow APR</th>
             </tr>
           </thead>
           <tbody>
             {detail.allocation.map((row) => (
-              <tr key={row.id} className="border-t border-border transition-colors hover:bg-surface-hover">
-                <td className="px-4 py-3.5 sm:pl-6">
-                  <TokenPairCell visuals={row.visuals} name={row.poolName} subtitle={row.venueLabel} size="md" />
+              <tr key={row.id} className="border-t border-border transition-colors hover:bg-surface-inset/60">
+                <td className="px-4 py-2.5 sm:pl-5">
+                  <TokenPairCell visuals={row.visuals} name={row.poolName} subtitle={row.venueLabel} size="sm" />
                 </td>
-                <td className="px-2 py-3.5 text-right">
+                <td className="px-2 py-2.5 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <span className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                    <span className="h-1 w-16 overflow-hidden rounded-xs bg-surface-inset">
                       <span
-                        className="block h-full rounded-full bg-foreground/50"
+                        className="block h-full rounded-xs bg-accent-primary"
                         style={{ width: `${Math.min(100, row.sharePct)}%` }}
                       />
                     </span>
-                    <span className="font-data text-sm font-semibold tabular-nums text-foreground">
+                    <span className="font-data text-[12.5px] font-medium tabular-nums text-foreground">
                       {row.sharePct.toFixed(2)}%
                     </span>
                   </div>
                 </td>
-                <td className="px-2 py-3.5 text-right font-data text-sm font-medium tabular-nums text-foreground">
+                <td className="px-2 py-2.5 text-right font-data text-[12.5px] font-medium tabular-nums text-foreground">
                   {formatCompactUsd(row.valueUsd)}
                 </td>
-                <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-foreground">
+                <td className="px-2 py-2.5 text-right font-data text-[12.5px] tabular-nums text-foreground">
                   {row.utilizationPct.toFixed(2)}%
                 </td>
-                <td className="px-4 py-3.5 text-right font-data text-sm tabular-nums text-foreground sm:pr-6">
+                <td className="px-4 py-2.5 text-right font-data text-[12.5px] tabular-nums text-foreground sm:pr-5">
                   {row.borrowAprPct.toFixed(2)}%
                 </td>
               </tr>

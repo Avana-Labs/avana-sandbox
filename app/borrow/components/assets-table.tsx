@@ -21,7 +21,7 @@ type AssetsTableProps = {
 export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border/40 bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+      <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
         No assets match your filter.
       </div>
     )
@@ -48,36 +48,35 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
 
       <div className="space-y-6 md:hidden">
         {groups.map((group) => (
-          <section key={group.id} className="space-y-3">
+          <section key={group.id} className="space-y-2">
             <div className="mb-1">
-              <h3 className="text-lg font-medium">{group.label}</h3>
+              <h3 className="text-[14px] font-medium tracking-tight">{group.label}</h3>
             </div>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {group.assets.map((asset) => {
                 const aprTone = aprToneClass(asset.borrowApr)
                 return (
                   <li
                     key={asset.id}
-                    className="space-y-4 rounded-3xl bg-card px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                    className="space-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <TokenBubble visual={asset.visual} size="lg" />
+                      <div className="flex items-center gap-2.5">
+                        <TokenBubble visual={asset.visual} size="md" />
                         <div className="min-w-0">
-                          <div className="text-[18px] font-semibold text-foreground">{asset.symbol}</div>
-                          <div className="text-sm text-muted-foreground">{asset.name}</div>
+                          <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
+                          <div className="text-[12px] text-muted-foreground">{asset.name}</div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className={cn("flex items-center justify-end gap-1.5 font-data text-[22px] font-semibold tabular-nums", aprTone)}>
-                          <SparkIcon className={cn("size-3.5", aprTone)} />
+                        <div className={cn("flex items-center justify-end gap-1 font-data text-[18px] font-medium tabular-nums", aprTone)}>
                           {asset.borrowApr.toFixed(2)}%
                         </div>
-                        <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">Borrow APR</div>
+                        <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Borrow APR</div>
                       </div>
                     </div>
 
-                    <dl className="divide-y divide-border text-sm">
+                    <dl className="divide-y divide-border text-[12.5px]">
                       <AssetStatLine label="Available to Borrow" value={formatCompactUsd(asset.availableUsd)} />
                       <AssetStatLine label="Total Borrowed" value={formatCompactUsd(asset.totalBorrowedUsd)} />
                       <AssetStatLine
@@ -87,18 +86,18 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
                       />
                     </dl>
 
-                    <div className="flex items-stretch gap-3">
+                    <div className="flex items-stretch gap-2">
                       <button
                         type="button"
                         onClick={() => onBorrow(asset)}
-                        className="flex-[2] rounded-2xl bg-rose-500 px-5 py-3.5 text-center text-[15px] font-semibold text-white shadow-[0_6px_20px_-6px_rgba(244,63,94,0.55)] transition-colors hover:bg-rose-600"
+                        className="flex-[2] rounded-radius-sm bg-accent-primary px-4 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
                       >
                         Borrow
                       </button>
                       <Link
                         href={`/borrow/asset/${asset.id}`}
                         onClick={() => onViewMarket?.(asset)}
-                        className="flex flex-1 items-center justify-center rounded-2xl bg-muted px-5 py-3.5 text-center text-[15px] font-semibold text-foreground transition-colors hover:bg-muted/80"
+                        className="flex flex-1 items-center justify-center rounded-radius-sm border border-border bg-surface-raised px-4 py-2.5 text-center text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
                       >
                         Details
                       </Link>
@@ -127,56 +126,56 @@ function AssetsSection({
 }) {
   return (
     <section className="mb-2">
-      <div className="mb-4">
-        <h3 className="text-lg font-medium">{label}</h3>
+      <div className="mb-3">
+        <h3 className="text-[14px] font-medium tracking-tight">{label}</h3>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
+      <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-sm">
+          <table className="w-full min-w-[920px] text-[13px]">
             <thead>
-              <tr className="border-b border-border/40 text-left text-muted-foreground">
-                <th className="pb-3 pt-4 pl-6 font-medium">Asset</th>
-                <th className="pb-3 pt-4 pl-4 text-right font-medium">Borrow APR</th>
-                <th className="pb-3 pt-4 pl-4 text-right font-medium">Utilization</th>
-                <th className="pb-3 pt-4 pl-4 text-right font-medium">Available</th>
-                <th className="pb-3 pt-4 pl-4 text-right font-medium">Wallet Balance</th>
-                <th className="w-20 pb-3 pt-4 pl-4 text-right font-medium">7D</th>
-                <th className="w-44 pb-3 pt-4 pl-4 pr-6 text-right font-medium">Action</th>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">Asset</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Borrow APR</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Utilization</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Available</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Wallet Balance</th>
+                <th className="w-20 pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">7D</th>
+                <th className="w-44 pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40">
+            <tbody className="divide-y divide-border">
               {assets.map((asset) => (
-                <tr key={asset.id} className="transition-colors hover:bg-muted/50">
-                  <td className="py-3 pl-6">
-                    <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} size="lg" />
+                <tr key={asset.id} className="transition-colors hover:bg-surface-inset/60">
+                  <td className="py-2.5 pl-5">
+                    <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} size="md" />
                   </td>
-                  <td className="py-3 pl-4 text-right">
-                    <span className={cn("font-data text-sm font-semibold tabular-nums", aprToneClass(asset.borrowApr))}>
+                  <td className="py-2.5 pl-4 text-right">
+                    <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>
                       {asset.borrowApr.toFixed(1)}%
                     </span>
                   </td>
-                  <td className="py-3 pl-4 text-right">
-                    <span className={cn("font-data text-sm font-semibold tabular-nums", utilizationToneClass(asset.utilization))}>
+                  <td className="py-2.5 pl-4 text-right">
+                    <span className={cn("font-data text-[13px] font-medium tabular-nums", utilizationToneClass(asset.utilization))}>
                       {asset.utilization}%
                     </span>
                   </td>
-                  <td className="py-3 pl-4 text-right font-data text-sm tabular-nums text-foreground">
+                  <td className="py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground">
                     {formatCompactUsd(asset.availableUsd)}
                   </td>
-                  <td className={cn("py-3 pl-4 text-right font-data text-sm tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground")}>
+                  <td className={cn("py-2.5 pl-4 text-right font-data text-[13px] tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground")}>
                     {asset.walletBalanceLabel}
                   </td>
-                  <td className="py-3 pl-4">
+                  <td className="py-2.5 pl-4">
                     <div className="flex justify-end">
                       <TrendSpark isPositive={asset.trendUp} seed={`asset-${asset.id}`} values={asset.trendValues} />
                     </div>
                   </td>
-                  <td className="py-3 pl-4 pr-6 text-right">
+                  <td className="py-2.5 pl-4 pr-5 text-right">
                     <div className="inline-flex items-center gap-1.5">
                       <Link
                         href={`/borrow/asset/${asset.id}`}
-                        className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
                       >
                         Details
                       </Link>
@@ -197,9 +196,9 @@ function AssetsSection({
 
 function AssetStatLine({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <div className="flex items-center justify-between py-3">
+    <div className="flex items-center justify-between py-2">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-semibold tabular-nums text-foreground", tone)}>{value}</dd>
+      <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
     </div>
   )
 }

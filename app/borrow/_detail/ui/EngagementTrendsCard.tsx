@@ -31,28 +31,28 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
   const accent = resolveChartAccent({ theme, accentClassName })
 
   return (
-    <Card className={cn("border-border/40 bg-card/50 p-5 shadow-none sm:p-6", className)}>
+    <Card className={cn("border-border bg-surface-raised p-5 shadow-elev-1 sm:p-6", className)}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="inline-flex size-8 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
-            <Users className="h-4 w-4" aria-hidden />
+          <span className="inline-flex size-7 items-center justify-center rounded-xs border border-border bg-surface-inset text-muted-foreground">
+            <Users className="h-3.5 w-3.5" aria-hidden />
           </span>
-          <h2 className="text-[15px] font-medium text-foreground">
+          <h2 className="text-[14px] font-medium tracking-tight text-foreground">
             {title ?? engagement.title}
           </h2>
         </div>
         <button
           type="button"
           aria-label="More options"
-          className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
         >
-          <MoreHorizontal className="h-4 w-4" aria-hidden />
+          <MoreHorizontal className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
 
       <div className="mt-5 grid grid-cols-[auto_1px_auto] items-start gap-x-6 gap-y-1">
         <Kpi label={engagement.primary.label} value={engagement.primary.valueLabel} delta={engagement.primary.delta} />
-        <span aria-hidden className="h-10 self-center bg-border/60" />
+        <span aria-hidden className="h-10 self-center bg-border" />
         <Kpi label={engagement.secondary.label} value={engagement.secondary.valueLabel} delta={engagement.secondary.delta} />
       </div>
 
@@ -89,13 +89,13 @@ function Kpi({
   const isDown = delta.direction === "down"
   return (
     <div>
-      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
       <div className="mt-1 flex items-baseline gap-2">
-        <span className="font-data text-2xl font-semibold tabular-nums text-foreground sm:text-[28px]">{value}</span>
+        <span className="font-data text-[22px] font-medium tabular-nums text-foreground sm:text-[24px]">{value}</span>
         {delta.direction !== "flat" ? (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 text-xs font-medium tabular-nums",
+              "inline-flex items-center gap-0.5 text-[11.5px] font-medium tabular-nums",
               isUp && "text-emerald-600 dark:text-emerald-400",
               isDown && "text-rose-600 dark:text-rose-400",
             )}
@@ -236,7 +236,7 @@ function LineChart({ points, activeIndex, onHoverIndex, accent, activeLabel, act
             textAnchor="middle"
             className={cn(
               "text-[11px] tabular-nums",
-              isActive ? "fill-foreground font-semibold" : "fill-muted-foreground",
+              isActive ? "fill-foreground font-medium" : "fill-muted-foreground",
             )}
           >
             {formatXTick(p.t)}
@@ -261,7 +261,7 @@ function LineChart({ points, activeIndex, onHoverIndex, accent, activeLabel, act
           x={tooltipW / 2}
           y={40}
           textAnchor="middle"
-          className="fill-foreground text-[14px] font-semibold tabular-nums"
+          className="fill-foreground text-[13px] font-medium tabular-nums"
         >
           {activeValue}
         </text>

@@ -16,8 +16,7 @@ export function PickerSurface({
   tier?: "top" | "bottom"
   /**
    * When true the surface drops its own border so it can sit inside a parent
-   * shell (Uniswap-style swap panel). The parent is expected to draw the
-   * outer rounded border.
+   * shell. The parent is expected to draw the outer container.
    */
   seamless?: boolean
 }) {
@@ -25,13 +24,15 @@ export function PickerSurface({
     return (
       <div
         className={cn(
-          "rounded-2xl px-4 py-[18px] transition-colors",
-          tier === "top" ? "bg-card" : "bg-muted/40",
+          "px-4 py-4 transition-colors",
+          tier === "top" ? "bg-surface-raised" : "bg-surface-inset",
         )}
       >
-        <div className="mb-1 text-[13px] font-medium text-muted-foreground">{label}</div>
+        <div className="mb-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+          {label}
+        </div>
         {children}
-        {footer ? <div className="mt-3 text-xs text-muted-foreground">{footer}</div> : null}
+        {footer ? <div className="mt-3 text-[11.5px] text-muted-foreground">{footer}</div> : null}
       </div>
     )
   }
@@ -39,13 +40,15 @@ export function PickerSurface({
   return (
     <div
       className={cn(
-        "rounded-[20px] border px-4 py-[18px] transition-colors",
-        tier === "top" ? "border-border/70 bg-card" : "border-border/60 bg-muted/40",
+        "rounded-radius-sm border border-border px-4 py-4 transition-colors",
+        tier === "top" ? "bg-surface-raised" : "bg-surface-inset",
       )}
     >
-      <div className="mb-1 text-[13px] font-medium text-muted-foreground">{label}</div>
+      <div className="mb-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+        {label}
+      </div>
       {children}
-      {footer ? <div className="mt-3 text-xs text-muted-foreground">{footer}</div> : null}
+      {footer ? <div className="mt-3 text-[11.5px] text-muted-foreground">{footer}</div> : null}
     </div>
   )
 }
@@ -65,8 +68,10 @@ export function PrimaryCardButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "mt-1 h-[52px] w-full rounded-[20px] text-[19px] font-semibold shadow-none transition-colors",
-        disabled ? "bg-brand-soft text-brand-soft-foreground opacity-100 hover:bg-brand-soft" : "bg-brand text-white hover:bg-brand/90",
+        "mt-1 h-10 w-full rounded-radius-sm text-[13px] font-medium transition-colors shadow-elev-1",
+        disabled
+          ? "bg-muted text-muted-foreground hover:bg-muted"
+          : "bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary-hover",
       )}
     >
       {children}

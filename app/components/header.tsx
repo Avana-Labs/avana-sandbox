@@ -15,8 +15,8 @@ export function Header() {
     pathname === "/risk-warning" || pathname.startsWith("/risk-warning/")
 
   return (
-    <header className="sticky top-0 z-40 backdrop-blur bg-background/95 supports-[backdrop-filter]:bg-background/80">
-      <div className="flex h-[62px] 2xl:h-[52px] w-full items-center gap-4 2xl:gap-3 px-4 md:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+      <div className="flex h-[52px] 2xl:h-12 w-full items-center gap-4 2xl:gap-3 px-4 md:px-6 lg:px-8">
         <Link href="/" aria-label="Home" title="Home" className="shrink-0 flex items-center">
           <Image
             src="/Try.png"
@@ -38,15 +38,15 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "group relative flex flex-row items-center justify-center gap-1.5 2xl:gap-1 px-3 py-2 2xl:px-2 2xl:py-1.5 text-[13px] 2xl:text-[12px] font-normal leading-none transition-colors",
+                  "group relative flex flex-row items-center justify-center gap-1.5 rounded-xs px-2.5 py-1.5 text-[12.5px] font-medium leading-none transition-colors",
                   isActive
                     ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
+                    : "text-muted-foreground hover:bg-surface-inset/60 hover:text-foreground",
                 )}
               >
                 <Icon
                   className={cn(
-                    "h-5 w-5 2xl:h-[18px] 2xl:w-[18px] shrink-0 transition-colors",
+                    "h-4 w-4 shrink-0 transition-colors",
                     isActive
                       ? "text-foreground"
                       : "text-muted-foreground group-hover:text-foreground",

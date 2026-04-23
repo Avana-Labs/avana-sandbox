@@ -29,13 +29,13 @@ export function CompactClaimCard({
   onSubmit: () => void
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="rounded-[20px] border border-border/70 bg-card px-5 py-5 text-foreground">
-        <div className="text-[13px] font-medium text-muted-foreground">Total claimable</div>
-        <div className="mt-1 font-data text-[28px] font-semibold tracking-tight">{formatUsd(preview.selectedTotalUsd)}</div>
+    <div className="flex flex-col gap-3">
+      <div className="rounded-radius-md border border-border bg-surface-raised shadow-elev-1 px-4 py-4 text-foreground">
+        <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Total claimable</div>
+        <div className="mt-1 font-data text-[20px] font-medium tracking-tight">{formatUsd(preview.selectedTotalUsd)}</div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         {HOME_CLAIM_POSITIONS.map((position) => {
           const isSelected = selections[position.id]
 
@@ -45,18 +45,18 @@ export function CompactClaimCard({
               type="button"
               onClick={() => onToggleSelection(position.id)}
               className={cn(
-                "flex items-center gap-4 rounded-[20px] border px-4 py-3 text-left transition-colors",
+                "flex items-center gap-3 rounded-radius-sm border px-3 py-2.5 text-left transition-colors",
                 isSelected
-                  ? "border-brand bg-brand-soft"
-                  : "border-border/60 bg-muted/40 hover:bg-muted/60",
+                  ? "border-accent-emphasis/60 bg-accent-emphasis-soft/40 ring-1 ring-accent-emphasis/20"
+                  : "border-border bg-surface-raised hover:bg-surface-inset",
               )}
             >
               <PairVisual visuals={[position.breakdown[0].visual, position.breakdown[1]?.visual ?? position.breakdown[0].visual]} />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="font-semibold text-foreground">{position.name}</span>
-                <span className="text-xs text-muted-foreground">{position.subtitle}</span>
+                <span className="text-[13px] font-medium text-foreground">{position.name}</span>
+                <span className="text-[11.5px] text-muted-foreground">{position.subtitle}</span>
               </div>
-              <div className="font-data text-sm font-semibold text-emerald-600">{formatUsd(claimableTotals[position.id] ?? 0)}</div>
+              <div className="font-data text-[12.5px] font-medium text-emerald-700 dark:text-emerald-400">{formatUsd(claimableTotals[position.id] ?? 0)}</div>
             </button>
           )
         })}
@@ -68,7 +68,11 @@ export function CompactClaimCard({
         footer={
           <div className="flex items-center justify-between gap-3">
             <span>{preview.helperLabel}</span>
-            <button type="button" onClick={onSetAll} className="font-semibold text-brand transition-opacity hover:opacity-80">
+            <button
+              type="button"
+              onClick={onSetAll}
+              className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            >
               All
             </button>
           </div>
@@ -84,10 +88,10 @@ export function CompactClaimCard({
               value={amount}
               onChange={(event) => onAmountChange(event.target.value)}
               placeholder="0"
-                className="no-number-spinner w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
+              className="no-number-spinner w-full bg-transparent font-data text-[28px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
             />
           </label>
-          <div className="inline-flex h-8 items-center justify-center rounded-full bg-muted px-3 py-1 text-[15px] font-semibold text-foreground">
+          <div className="inline-flex h-7 items-center justify-center rounded-xs border border-border bg-surface-raised px-2 text-[12px] font-medium text-foreground">
             USD
           </div>
         </div>

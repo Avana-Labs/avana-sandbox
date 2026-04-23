@@ -74,18 +74,18 @@ export function DeltaPill({
       ? "bg-muted text-muted-foreground"
       : isGood
         ? isStrong
-          ? "bg-emerald-500 text-white"
-          : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+          ? "bg-emerald-600 text-white"
+          : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
         : isStrong
-          ? "bg-rose-500 text-white"
-          : "bg-rose-500/15 text-rose-700 dark:text-rose-400"
+          ? "bg-rose-600 text-white"
+          : "bg-rose-500/10 text-rose-700 dark:text-rose-400"
 
   const sign = direction === "up" ? "+" : direction === "down" ? "−" : ""
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-data text-[11px] font-semibold tabular-nums",
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-data text-[10.5px] font-medium tabular-nums",
         tone,
         className,
       )}

@@ -27,7 +27,7 @@ export function RiskBreakdownAccordion({ items, className, defaultAllOpen = fals
   }
 
   return (
-    <ul className={cn("flex flex-col divide-y divide-border/60 rounded-xl border border-border bg-background", className)}>
+    <ul className={cn("flex flex-col divide-y divide-border rounded-radius-sm border border-border bg-surface-inset", className)}>
       {items.map((item) => {
         const isOpen = open.has(item.id)
         return (
@@ -37,19 +37,19 @@ export function RiskBreakdownAccordion({ items, className, defaultAllOpen = fals
               onClick={() => toggle(item.id)}
               aria-expanded={isOpen}
               aria-controls={`risk-${item.id}`}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+              className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-raised/60"
             >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <span className="truncate text-sm font-semibold text-foreground">{item.label}</span>
+              <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                <span className="truncate text-[13px] font-medium text-foreground">{item.label}</span>
                 <RiskLevelPill level={item.level} withDot={false} />
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="font-data text-sm font-semibold tabular-nums text-foreground">
+                <span className="font-data text-[13px] font-medium tabular-nums text-foreground">
                   {formatBpsAsPct(item.bps)}
                 </span>
                 <svg
-                  width="14"
-                  height="14"
+                  width="12"
+                  height="12"
                   viewBox="0 0 14 14"
                   aria-hidden
                   className={cn("transition-transform text-muted-foreground", isOpen ? "rotate-180" : "")}
@@ -59,7 +59,7 @@ export function RiskBreakdownAccordion({ items, className, defaultAllOpen = fals
               </div>
             </button>
             {isOpen ? (
-              <div id={`risk-${item.id}`} className="px-4 pb-4 pt-0 text-xs leading-5 text-muted-foreground">
+              <div id={`risk-${item.id}`} className="px-3.5 pb-3 pt-0 text-[11.5px] leading-5 text-muted-foreground">
                 {item.description}
               </div>
             ) : null}

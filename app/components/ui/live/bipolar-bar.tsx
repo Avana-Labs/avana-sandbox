@@ -54,11 +54,11 @@ export function BipolarBar({
   const bar = (
     <div className={cn("relative w-full overflow-hidden rounded-full bg-muted", heightClass)}>
       <div
-        className={cn("absolute inset-y-0 left-0 transition-[width] duration-300 ease-out", leftClass)}
+        className={cn("absolute inset-y-0 left-0 transition-[width] duration-200 ease-out", leftClass)}
         style={{ width: `${leftPct}%` }}
       />
       <div
-        className={cn("absolute inset-y-0 right-0 transition-[width] duration-300 ease-out", rightClass)}
+        className={cn("absolute inset-y-0 right-0 transition-[width] duration-200 ease-out", rightClass)}
         style={{ width: `${rightPct}%` }}
       />
     </div>
@@ -69,7 +69,7 @@ export function BipolarBar({
       <div className={cn("relative w-full", className)}>
         {bar}
         {(leftLabel || rightLabel) ? (
-          <div className="pointer-events-none mt-1 flex items-center justify-between font-data text-[11px] font-semibold tabular-nums">
+          <div className="pointer-events-none mt-1 flex items-center justify-between font-data text-[10.5px] font-medium tabular-nums">
             <span className={cn(leftLabelClass)}>{leftLabel}</span>
             <span className={cn(rightLabelClass)}>{rightLabel}</span>
           </div>
@@ -82,7 +82,7 @@ export function BipolarBar({
     <div className={cn("w-full", className)}>
       {bar}
       {(leftLabel || rightLabel) ? (
-        <div className="mt-1 flex items-center justify-between font-data text-[11px] font-semibold tabular-nums">
+        <div className="mt-1 flex items-center justify-between font-data text-[10.5px] font-medium tabular-nums">
           <span className={cn(leftLabelClass)}>{leftLabel}</span>
           <span className={cn(rightLabelClass)}>{rightLabel}</span>
         </div>

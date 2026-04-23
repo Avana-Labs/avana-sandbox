@@ -41,7 +41,7 @@ export function SupplyBorrowCard({ detail }: Props) {
       subtitle="Protocol-wide supplied vs borrowed for this asset."
       bodyClassName="p-0"
       rightSlot={
-        <div role="tablist" className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-0.5">
+        <div role="tablist" className="inline-flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5">
           {(Object.keys(VIEW_LABEL) as View[]).map((v) => (
             <button
               key={v}
@@ -50,8 +50,8 @@ export function SupplyBorrowCard({ detail }: Props) {
               type="button"
               onClick={() => setView(v)}
               className={cn(
-                "h-7 rounded-full px-2.5 text-xs font-medium tabular-nums transition-colors",
-                view === v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                "h-6 rounded-[3px] px-2 text-[11px] font-medium tabular-nums transition-colors",
+                view === v ? "bg-surface-raised text-foreground shadow-elev-1" : "text-muted-foreground hover:text-foreground",
               )}
             >
               {VIEW_LABEL[v]}
@@ -72,7 +72,7 @@ export function SupplyBorrowCard({ detail }: Props) {
             formatValue={(v) => (view === "utilization" ? formatPct(v, 2) : formatCompactUsd(v))}
           />
         </div>
-        <dl className="grid grid-cols-3 gap-4 px-6 pb-6 text-sm">
+        <dl className="grid grid-cols-3 gap-4 px-5 pb-5 text-[12.5px]">
           <Stat label="Supplied" value={detail.quickStats.find((s) => s.id === "supplied")?.value ?? "—"} />
           <Stat label="Borrowed" value={detail.quickStats.find((s) => s.id === "borrowed")?.value ?? "—"} />
           <Stat label="Utilization" value={detail.quickStats.find((s) => s.id === "utilization")?.value ?? "—"} />
@@ -85,8 +85,8 @@ export function SupplyBorrowCard({ detail }: Props) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-0.5 font-data text-base font-medium tabular-nums text-foreground">{value}</div>
+      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
+      <div className="mt-0.5 font-data text-[14px] font-medium tabular-nums text-foreground">{value}</div>
     </div>
   )
 }
