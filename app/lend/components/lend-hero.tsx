@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react"
+import { useId, useMemo, useState } from "react"
 import { Eye, EyeOff, ArrowUp, ArrowDown, Info } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Area, AreaChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts"
 import { TOKENS, mockChartData } from "./data"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useTheme } from "next-themes"
+import { makeChartPalette, type ThemeMode } from "@/app/lib/chart-colors"
 
 function InfoTip({ text }: { text: string }) {
   return (
@@ -28,6 +30,9 @@ interface LendHeroProps {
 export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }: LendHeroProps) {
   const [activeRange, setActiveRange] = useState("1D")
   const [showBalance, setShowBalance] = useState(true)
+  const { resolvedTheme } = useTheme()
+  const theme: ThemeMode = resolvedTheme === "dark" ? "dark" : "light"
+  const gradientId = useId()
 
   const rangeStats = useMemo(() => ({
     "1H": { apy: 4.50, earnedFraction: 0.001 },
@@ -46,6 +51,11 @@ export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }:
       value: d.value * multiplier * (1 + (Math.random() * 0.02 - 0.01))
     }))
   }, [activeRange])
+
+  const palette = useMemo(
+    () => makeChartPalette({ symbols: TOKENS.map((token) => token.symbol), theme }),
+    [theme],
+  )
 
   return (
     <>
@@ -76,12 +86,13 @@ export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }:
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={displayChartData}>
                     <defs>
-                      <linearGradient id="colorValueHero" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={palette.fillTop} />
+                        <stop offset="95%" stopColor={palette.fillBottom} />
                       </linearGradient>
                     </defs>
                     <RechartsTooltip
+                      cursor={{ stroke: palette.cursor, strokeWidth: 1 }}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
@@ -103,10 +114,10 @@ export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }:
                     <Area
                       type="monotone"
                       dataKey="value"
-                      stroke="#10b981"
+                      stroke={palette.stroke}
                       strokeWidth={2}
                       fillOpacity={1}
-                      fill="url(#colorValueHero)"
+                      fill={`url(#${gradientId})`}
                     />
                   </AreaChart>
                 </ResponsiveContainer>

@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
+import { ArrowDown, ChevronDown } from "lucide-react"
 import {
   calculateBorrowPreview,
   formatCompactUsd,
@@ -40,8 +40,8 @@ export function CompactBorrowCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative flex flex-col gap-1">
-        <PickerSurface label="Collateral" tier="top">
+      <div className="relative flex flex-col gap-1 rounded-[20px] border border-border/70 bg-card p-1">
+        <PickerSurface label="Collateral" tier="top" seamless>
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="font-data text-[28px] font-semibold tracking-tight text-foreground">{formatCompactUsd(pool.collateralUsd)}</div>
@@ -58,9 +58,17 @@ export function CompactBorrowCard({
           </div>
         </PickerSurface>
 
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-[3px] border-card bg-muted text-foreground"
+        >
+          <ArrowDown className="h-4 w-4" />
+        </div>
+
         <PickerSurface
           label="Borrow"
           tier="bottom"
+          seamless
           footer={
             <div className="flex items-center justify-between gap-3">
               <span>

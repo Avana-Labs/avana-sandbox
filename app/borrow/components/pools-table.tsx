@@ -1,6 +1,7 @@
 "use client"
 
 import { memo } from "react"
+import Link from "next/link"
 import {
   aprToneClass,
   formatCompactUsd,
@@ -164,15 +165,24 @@ function SpokeSection({
                     </div>
                   </td>
                   <td className="px-4 py-3.5 text-right sm:pr-6">
-                    <PillButton
-                      variant="primary"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onUseAsCollateral(pool)
-                      }}
-                    >
-                      Supply
-                    </PillButton>
+                    <div className="inline-flex items-center gap-1.5">
+                      <Link
+                        href={`/borrow/pool/${pool.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Details
+                      </Link>
+                      <PillButton
+                        variant="primary"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onUseAsCollateral(pool)
+                        }}
+                      >
+                        Supply
+                      </PillButton>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -240,17 +250,26 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                       />
                       <MobileField label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
                     </div>
-                    <PillButton
-                      variant="primary"
-                      size="md"
-                      className="w-full"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onUseAsCollateral(pool)
-                      }}
-                    >
-                      Supply
-                    </PillButton>
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/borrow/pool/${pool.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="flex h-10 flex-1 items-center justify-center rounded-full border border-border bg-background text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Details
+                      </Link>
+                      <PillButton
+                        variant="primary"
+                        size="md"
+                        className="flex-1"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onUseAsCollateral(pool)
+                        }}
+                      >
+                        Supply
+                      </PillButton>
+                    </div>
                   </li>
                 ))}
                 {pendingForSpoke.map((row) => (

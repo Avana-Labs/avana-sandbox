@@ -8,6 +8,7 @@ import {
   type BorrowableAsset,
   type BorrowableAssetCategory,
 } from "@/app/lib/borrow-sim"
+import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { cn } from "@/lib/utils"
 
@@ -94,13 +95,13 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
                       >
                         Borrow
                       </button>
-                      <button
-                        type="button"
+                      <Link
+                        href={`/borrow/asset/${asset.id}`}
                         onClick={() => onViewMarket?.(asset)}
-                        className="flex-1 rounded-2xl bg-muted px-5 py-3.5 text-center text-[15px] font-semibold text-foreground transition-colors hover:bg-muted"
+                        className="flex flex-1 items-center justify-center rounded-2xl bg-muted px-5 py-3.5 text-center text-[15px] font-semibold text-foreground transition-colors hover:bg-muted/80"
                       >
-                        View market
-                      </button>
+                        Details
+                      </Link>
                     </div>
                   </li>
                 )
@@ -172,9 +173,17 @@ function AssetsSection({
                     </div>
                   </td>
                   <td className="px-4 py-3.5 text-right">
-                    <PillButton variant="primary" onClick={() => onBorrow(asset)}>
-                      Borrow
-                    </PillButton>
+                    <div className="inline-flex items-center gap-1.5">
+                      <Link
+                        href={`/borrow/asset/${asset.id}`}
+                        className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Details
+                      </Link>
+                      <PillButton variant="primary" onClick={() => onBorrow(asset)}>
+                        Borrow
+                      </PillButton>
+                    </div>
                   </td>
                 </tr>
               ))}
