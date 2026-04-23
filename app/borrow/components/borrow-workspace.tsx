@@ -43,7 +43,7 @@ type DebtsState = Record<string, number>
 const POOL_SORT_OPTIONS: SortOption[] = [
   { key: "apr", label: "Fees APY" },
   { key: "ltv", label: "Max LTV" },
-  { key: "available", label: "Available" },
+  { key: "available", label: "Supplied" },
   { key: "riskPremium", label: "Risk premium" },
 ]
 
@@ -425,47 +425,36 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
       ? POOL_SORT_OPTIONS
       : currentTab === "assets"
         ? ASSET_SORT_OPTIONS
-        : currentTab === "supplies"
-          ? SUPPLY_SORT_OPTIONS
-          : DEBT_SORT_OPTIONS
+        : []
 
   const activeSortKey =
     currentTab === "pools"
       ? poolSortKey
       : currentTab === "assets"
         ? assetSortKey
-        : currentTab === "supplies"
-          ? supplySortKey
-          : debtSortKey
+        : ""
 
   const activeSortDirection =
     currentTab === "pools"
       ? poolSortDirection
       : currentTab === "assets"
         ? assetSortDirection
-        : currentTab === "supplies"
-          ? supplySortDirection
-          : debtSortDirection
+        : "desc"
 
   const onSortKeyChange = (key: string) => {
     if (currentTab === "pools") setPoolSortKey(key as PoolSortKey)
     else if (currentTab === "assets") setAssetSortKey(key as AssetSortKey)
-    else if (currentTab === "supplies") setSupplySortKey(key)
-    else setDebtSortKey(key)
   }
 
   const onSortDirectionChange = (direction: "asc" | "desc") => {
     if (currentTab === "pools") setPoolSortDirection(direction)
     else if (currentTab === "assets") setAssetSortDirection(direction)
-    else if (currentTab === "supplies") setSupplySortDirection(direction)
-    else setDebtSortDirection(direction)
   }
 
   const counts: Record<BorrowTabId, number> = {
     pools: sortedPools.length,
-    supplies: supplies.length,
     assets: sortedAssets.length,
-    debts: debtsRows.length,
+    positions: supplies.length + debtsRows.length,
   }
 
   return (
@@ -501,17 +490,6 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
           </>
         ) : null}
 
-        {currentTab === "supplies" ? (
-          <SuppliesPanel
-            rows={sortedSupplies}
-            totals={supplyTotals}
-            onBorrowMore={handleSupplyBorrowMore}
-            onAddCollateral={handleSupplyAddCollateral}
-            onRemove={handleSupplyRemove}
-            showBalance={showBalance}
-          />
-        ) : null}
-
         {currentTab === "assets" ? (
           <AssetsPanel
             rows={sortedAssets}
@@ -523,8 +501,18 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
           />
         ) : null}
 
-        {currentTab === "debts" ? (
-          <DebtsPanel rows={sortedDebts} totals={debtTotals} onRepay={handleDebtRepay} onManage={handleDebtManage} showBalance={showBalance} />
+        {currentTab === "positions" ? (
+          <div className="flex flex-col gap-8">
+            <SuppliesPanel
+              rows={sortedSupplies}
+              totals={supplyTotals}
+              onBorrowMore={handleSupplyBorrowMore}
+              onAddCollateral={handleSupplyAddCollateral}
+              onRemove={handleSupplyRemove}
+              showBalance={showBalance}
+            />
+            <DebtsPanel rows={sortedDebts} totals={debtTotals} onRepay={handleDebtRepay} onManage={handleDebtManage} showBalance={showBalance} />
+          </div>
         ) : null}
       </div>
 

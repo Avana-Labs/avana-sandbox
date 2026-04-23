@@ -45,58 +45,62 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
   const m = (value: string) => (showBalance ? value : MASK)
   if (rows.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-        You don&apos;t have any active borrows. Use an LP position from <span className="font-semibold text-foreground">My Supplies</span> as collateral to start a loan.
+      <div className="rounded-lg border border-dashed border-border/40 bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+        You don&apos;t have any active borrows. Use an LP position from <span className="font-semibold text-foreground">Positions</span> as collateral to start a loan.
       </div>
     )
   }
   const usdc = usdcVisual()
   return (
-    <div>
+    <section className="mb-2">
+      <div className="mb-4">
+        <h3 className="text-lg font-medium">My Borrows</h3>
+      </div>
       <div className="hidden md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+        <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="px-2 py-3">Collateral Position</th>
-                <th className="px-2 py-3 text-right">Borrowed</th>
-                <th className="px-2 py-3 text-right">Health Factor</th>
-                <th className="px-2 py-3 text-right">Accrued Interest</th>
-                <th className="px-2 py-3 text-right">Liq. Threshold</th>
-                <th className="w-48 px-2 py-3" />
+              <tr className="border-b border-border/40 text-left text-muted-foreground">
+                <th className="pb-3 pt-4 pl-6 font-medium">Collateral Position</th>
+                <th className="pb-3 pt-4 text-right font-medium">Borrowed</th>
+                <th className="pb-3 pt-4 text-right font-medium">Health Factor</th>
+                <th className="pb-3 pt-4 text-right font-medium">Accrued Interest</th>
+                <th className="pb-3 pt-4 text-right font-medium">Liq. Threshold</th>
+                <th className="w-48 pb-3 pt-4 pr-6" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/40">
               {rows.map((row) => {
                 const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
                 const meta = BORROW_SUPPLY_META[row.pool.id]
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 const tokenCount = (row.borrowedUsd).toFixed(0)
                 return (
-                  <tr key={row.pool.id} className="border-t border-border transition-colors hover:bg-surface-hover">
-                    <td className="px-2 py-3.5">
+                  <tr key={row.pool.id} className="transition-colors hover:bg-muted/50">
+                    <td className="py-3 pl-6">
                       <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="lg" />
                     </td>
-                    <td className="px-2 py-3.5 text-right">
+                    <td className="py-3 text-right">
                       <div className="font-data text-sm tabular-nums text-foreground">{m(formatCompactUsd(row.borrowedUsd))}</div>
                       <div className="text-xs text-muted-foreground">
                         {showBalance ? `${tokenCount} ${usdc.symbol}` : MASK}
                       </div>
                     </td>
-                    <td className="px-2 py-3.5 text-right">
+                    <td className="py-3 text-right">
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                     </td>
-                    <td className="px-2 py-3.5 text-right">
+                    <td className="py-3 text-right">
                       <div className="font-data text-sm tabular-nums text-foreground">{m(formatUsdExact(row.accruedInterestUsd))}</div>
                       <div className={cn("font-data text-xs font-semibold tabular-nums", aprToneClass(row.borrowApr))}>
                         {row.borrowApr.toFixed(1)}% APR
                       </div>
                     </td>
-                    <td className="px-2 py-3.5 text-right">
+                    <td className="py-3 text-right">
                       <div className="font-data text-sm tabular-nums text-foreground">{m(formatUsdExact(row.pool.liquidationUsd))}</div>
                       <div className="text-xs text-muted-foreground">collateral value</div>
                     </td>
-                    <td className="px-2 py-3.5 text-right">
+                    <td className="py-3 pr-6 text-right">
                       <div className="flex justify-end gap-1.5">
                         <PillButton variant="ghost" onClick={() => onManage(row)}>
                           Manage
@@ -111,6 +115,7 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
               })}
             </tbody>
           </table>
+        </div>
         </div>
       </div>
 
@@ -183,7 +188,7 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
           )
         })}
       </ul>
-    </div>
+    </section>
   )
 }
 

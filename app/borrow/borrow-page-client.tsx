@@ -7,7 +7,6 @@ import {
   LIQUIDATION_LTV,
   MAX_LTV,
   getHealthStatus,
-  healthFactorBarPct,
 } from "@/app/lib/home-sim"
 import { cn } from "@/lib/utils"
 import {
@@ -121,8 +120,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
   const handleSupplyStatsChange = useCallback((stats: BorrowSupplyHeroStats) => setSupplyStats(stats), [])
   const handleDebtsStatsChange = useCallback((stats: BorrowDebtsHeroStats) => setDebtsStats(stats), [])
 
-  const suppliesHeroStats = currentTab === "supplies" && supplyStats ? supplyStats : null
-  const debtsHeroStats = currentTab === "debts" && debtsStats ? debtsStats : null
+  const positionsHeroStats = currentTab === "positions" && supplyStats && debtsStats ? { supplies: supplyStats, debts: debtsStats } : null
   const [showBalance, setShowBalance] = useState(true)
   const mask = "••••••••"
 
@@ -130,106 +128,67 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
-        {suppliesHeroStats ? (
+        {positionsHeroStats ? (
             <section className={heroSectionClassName}>
               <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-muted-foreground">Total Collateral</p>
-                    <button
-                      type="button"
-                      onClick={() => setShowBalance((prev) => !prev)}
-                      aria-label={showBalance ? "Hide balance" : "Show balance"}
-                      className="text-muted-foreground transition-colors hover:text-muted-foreground"
-                    >
-                      {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                    </button>
+                <div className="flex flex-1 items-end gap-8 md:gap-12">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-muted-foreground">Total Collateral</p>
+                      <button
+                        type="button"
+                        onClick={() => setShowBalance((prev) => !prev)}
+                        aria-label={showBalance ? "Hide balance" : "Show balance"}
+                        className="text-muted-foreground transition-colors hover:text-muted-foreground"
+                      >
+                        {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                    <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
+                      {showBalance ? formatUsdWhole(positionsHeroStats.supplies.collateral) : mask}
+                    </p>
                   </div>
-                  <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
-                    {showBalance ? formatUsdWhole(suppliesHeroStats.collateral) : mask}
-                  </p>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-muted-foreground">Total Borrowed</p>
+                    </div>
+                    <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
+                      {showBalance ? formatUsdWhole(positionsHeroStats.debts.totalBorrowed) : mask}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5 md:ml-auto md:text-right">
-                  <HeroStat label="Borrowed" value={showBalance ? formatUsdWhole(suppliesHeroStats.borrowed) : mask} dotClass="bg-rose-400" labelClass="text-rose-500" />
-                  <HeroStat label="Available" value={showBalance ? formatUsdWhole(suppliesHeroStats.available) : mask} dotClass="bg-[#7ec39f]" labelClass="text-[#6ca98b]" />
-                  <HeroStat label="Fees Earned" value={showBalance ? formatUsdWhole(suppliesHeroStats.fees) : mask} dotClass="bg-emerald-500" labelClass="text-emerald-600" />
-                  <HeroStat
-                    label="Avg HF"
-                    value={
-                      !showBalance
-                        ? mask
-                        : suppliesHeroStats.averageHf === null || !Number.isFinite(suppliesHeroStats.averageHf)
-                          ? "—"
-                          : suppliesHeroStats.averageHf.toFixed(2)
-                    }
-                    dotClass="bg-[#a092ef]"
-                    labelClass="text-[#7d72cc]"
-                  />
-                </div>
-              </div>
-
-              <HealthFactorCard hf={suppliesHeroStats.averageHf} showBalance={showBalance} />
-            </section>
-          ) : debtsHeroStats ? (
-            <section className={heroSectionClassName}>
-              <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-muted-foreground">Total Borrowed</p>
-                    <button
-                      type="button"
-                      onClick={() => setShowBalance((prev) => !prev)}
-                      aria-label={showBalance ? "Hide balance" : "Show balance"}
-                      className="text-muted-foreground transition-colors hover:text-muted-foreground"
-                    >
-                      {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
-                  <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
-                    {showBalance ? formatUsdWhole(debtsHeroStats.totalBorrowed) : mask}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5 md:ml-auto md:text-right">
-                  <HeroStat
-                    label="LP Collateral"
-                    value={showBalance ? formatUsdWhole(debtsHeroStats.totalCollateral) : mask}
-                    dotClass="bg-[#7ec39f]"
-                    labelClass="text-[#6ca98b]"
-                  />
-                  <HeroStat
-                    label="Avg HF"
-                    value={
-                      !showBalance
-                        ? mask
-                        : debtsHeroStats.averageHf === null || !Number.isFinite(debtsHeroStats.averageHf)
-                          ? "—"
-                          : debtsHeroStats.averageHf.toFixed(2)
-                    }
-                    dotClass="bg-[#a092ef]"
-                    labelClass="text-[#7d72cc]"
-                  />
+                  <HeroStat label="Available" value={showBalance ? formatUsdWhole(positionsHeroStats.supplies.available) : mask} dotClass="bg-[#7ec39f]" labelClass="text-[#6ca98b]" />
+                  <HeroStat label="Fees Earned" value={showBalance ? formatUsdWhole(positionsHeroStats.supplies.fees) : mask} dotClass="bg-emerald-500" labelClass="text-emerald-600" />
                   <HeroStat
                     label="Accrued Interest"
-                    value={showBalance ? formatUsdCents(debtsHeroStats.accruedInterest) : mask}
+                    value={showBalance ? formatUsdCents(positionsHeroStats.debts.accruedInterest) : mask}
                     dotClass="bg-rose-400"
                     labelClass="text-rose-500"
                   />
                   <HeroStat
                     label="Daily Interest"
-                    value={showBalance ? `+${formatUsdCents(debtsHeroStats.dailyInterest)}` : mask}
+                    value={showBalance ? `+${formatUsdCents(positionsHeroStats.debts.dailyInterest)}` : mask}
                     dotClass="bg-rose-400"
                     labelClass="text-rose-500"
                   />
                 </div>
               </div>
 
-              <CurrentLtvCard
-                borrowed={debtsHeroStats.totalBorrowed}
-                collateral={debtsHeroStats.totalCollateral}
-                showBalance={showBalance}
-              />
+              <div className="mt-4 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-border/40 bg-card/50 p-5">
+                  <HealthFactorCard hf={positionsHeroStats.debts.averageHf ?? positionsHeroStats.supplies.averageHf} showBalance={showBalance} />
+                </div>
+                <div className="rounded-lg border border-border/40 bg-card/50 p-5">
+                  <CurrentLtvCard
+                    borrowed={positionsHeroStats.debts.totalBorrowed}
+                    collateral={positionsHeroStats.debts.totalCollateral}
+                    showBalance={showBalance}
+                  />
+                </div>
+              </div>
             </section>
           ) : (
           <section className={heroSectionClassName}>
@@ -386,37 +345,39 @@ function HeroStat({
   )
 }
 
-const TICK_COUNT = 40
+const TICK_COUNT = 28
 
-function hfTickColor(tickIndex: number): string {
-  const ratio = tickIndex / (TICK_COUNT - 1)
-  if (ratio < 0.25) return "bg-rose-500"
-  if (ratio < 0.45) return "bg-orange-500"
-  if (ratio < 0.7) return "bg-amber-400"
-  return "bg-emerald-500"
-}
+const HF_ZONES = [
+  { id: "danger", label: "Liquidation", min: 0, max: 1.5, widthPct: 30, color: "bg-rose-500" },
+  { id: "warn", label: "Caution", min: 1.5, max: 3, widthPct: 40, color: "bg-amber-500" },
+  { id: "safe", label: "Safe", min: 3, max: Infinity, widthPct: 30, color: "bg-emerald-500" },
+] as const
 
 function HealthFactorCard({ hf, showBalance }: { hf: number | null; showBalance: boolean }) {
   const safeHf = hf ?? Number.POSITIVE_INFINITY
   const status = getHealthStatus(safeHf)
-  const markerPct = healthFactorBarPct(hf)
   const hfLabel = hf === null ? "—" : !Number.isFinite(hf) ? "∞" : hf.toFixed(2)
   const masked = !showBalance
-  const filledTicks = Math.round((markerPct / 100) * TICK_COUNT)
+
+  const activeZoneIdx = (() => {
+    if (hf === null) return -1
+    if (!Number.isFinite(hf)) return HF_ZONES.length - 1
+    return HF_ZONES.findIndex((z) => hf >= z.min && hf < z.max)
+  })()
 
   return (
-    <div className="mt-4 px-1 md:px-2">
-      <div className="flex items-center justify-between gap-3">
+    <div className="flex min-w-0 flex-col gap-3">
+      <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
           <span className="text-[13px] font-semibold text-foreground">Health factor</span>
           <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
-          <span className="font-data text-[22px] font-bold leading-none tracking-tight text-foreground">
+          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
             {masked ? "••" : hfLabel}
           </span>
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+            "inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
             status.textClass,
           )}
         >
@@ -425,48 +386,29 @@ function HealthFactorCard({ hf, showBalance }: { hf: number | null; showBalance:
         </span>
       </div>
 
-      <div className="relative mt-10">
-        <div
-          className="pointer-events-none absolute bottom-full z-10 -translate-x-1/2 pb-1 text-center"
-          style={{ left: `${markerPct}%` }}
-        >
-          <div
-            className={cn(
-              "rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-bold text-background",
-            )}
-          >
-            {masked ? "••" : hfLabel}
-          </div>
-          <div className="-mt-px text-[10px] leading-none text-foreground">▼</div>
-        </div>
-
-        <div className="flex h-8 w-full items-end gap-[3px]">
-          {Array.from({ length: TICK_COUNT }).map((_, i) => {
-            const isFilled = i < filledTicks
-            const isCurrent = i === Math.max(0, filledTicks - 1)
-            return (
-              <span
-                key={i}
-                className={cn(
-                  "flex-1 rounded-[2px] transition-all",
-                  isCurrent ? "h-full ring-2 ring-foreground ring-offset-1 ring-offset-background" : "h-[75%]",
-                  isFilled ? hfTickColor(i) : "bg-muted",
-                )}
-              />
-            )
-          })}
-        </div>
+      <div className="flex h-2.5 w-full items-stretch gap-1">
+        {HF_ZONES.map((zone, i) => {
+          const isActive = i === activeZoneIdx
+          return (
+            <div
+              key={zone.id}
+              className={cn("rounded-full transition-colors", isActive ? zone.color : "bg-muted")}
+              style={{ width: `${zone.widthPct}%` }}
+            />
+          )
+        })}
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <span className="size-1.5 rounded-full bg-rose-500" />
-          1.0 Liquidation
-        </span>
-        <span className="inline-flex items-center gap-1">
-          5.0+ Safe
-          <span className="size-1.5 rounded-full bg-emerald-500" />
-        </span>
+      <div className="flex h-4 items-center justify-between text-[11px] font-medium text-muted-foreground">
+        {HF_ZONES.map((zone, i) => {
+          const isActive = i === activeZoneIdx
+          return (
+            <span key={zone.id} className={cn("inline-flex items-center gap-1.5", isActive && "text-foreground")}>
+              <span className={cn("size-1.5 rounded-full", isActive ? zone.color : "bg-muted-foreground/40")} />
+              {zone.label}
+            </span>
+          )
+        })}
       </div>
     </div>
   )
@@ -484,70 +426,40 @@ function CurrentLtvCard({
   const ltv = collateral > 0 ? Math.min(1, borrowed / collateral) : 0
   const ltvPct = ltv * 100
   const liquidationPct = LIQUIDATION_LTV * 100
-  const maxPct = MAX_LTV * 100
   const ltvLabel = `${ltvPct.toFixed(2)}%`
   const masked = !showBalance
   const maxUsd = collateral * MAX_LTV
   const usedLabel = masked ? "••" : `$${Math.round(borrowed).toLocaleString("en-US")}`
   const maxLabel = masked ? "••" : `$${Math.round(maxUsd).toLocaleString("en-US")}`
 
-  const liquidationTick = Math.round((liquidationPct / 100) * TICK_COUNT)
-  const maxTick = Math.round((maxPct / 100) * TICK_COUNT)
-  const usedTicks = Math.round((ltvPct / 100) * TICK_COUNT)
+  const usedTicks = Math.max(1, Math.round((ltvPct / 100) * TICK_COUNT))
 
-  const toneBefore =
+  const tone =
     ltv >= MAX_LTV * 0.9 ? "bg-rose-500" : ltv >= MAX_LTV * 0.6 ? "bg-amber-500" : "bg-emerald-500"
 
   return (
-    <div className="mt-4 px-1 md:px-2">
-      <div className="flex items-baseline gap-2">
-        <span className="text-[13px] font-semibold text-foreground">Current LTV</span>
-        <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
-        <span className="font-data text-[22px] font-bold leading-none tracking-tight text-foreground">
-          {masked ? "••" : ltvLabel}
-        </span>
-        <span className="text-[11px] font-medium text-muted-foreground">of borrow power used</span>
-      </div>
-
-      <div className="relative mt-10">
-        <div
-          className="pointer-events-none absolute bottom-full z-10 -translate-x-1/2 pb-1 text-center"
-          style={{ left: `${ltvPct}%` }}
-        >
-          <div className="rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-bold text-background">
+    <div className="flex min-w-0 flex-col gap-3">
+      <div className="flex h-6 items-center justify-between gap-3">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <span className="text-[13px] font-semibold text-foreground">Current LTV</span>
+          <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
+          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
             {masked ? "••" : ltvLabel}
-          </div>
-          <div className="-mt-px text-[10px] leading-none text-foreground">▼</div>
+          </span>
         </div>
-
-        <div className="flex h-8 w-full items-end gap-[3px]">
-          {Array.from({ length: TICK_COUNT }).map((_, i) => {
-            let cls: string
-            if (i < usedTicks) {
-              cls = toneBefore
-            } else if (i < maxTick) {
-              cls = "bg-emerald-500/35"
-            } else if (i < liquidationTick) {
-              cls = "bg-amber-400/55"
-            } else {
-              cls = "bg-rose-500/80"
-            }
-            const isCurrent = i === Math.max(0, usedTicks - 1)
-            return (
-              <span
-                key={i}
-                className={cn(
-                  "flex-1 rounded-[2px] transition-all",
-                  isCurrent ? "h-full ring-2 ring-foreground ring-offset-1 ring-offset-background" : "h-[75%]",
-                  cls,
-                )}
-              />
-            )
-          })}
-        </div>
+        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">borrow power used</span>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+      <div className="flex h-2.5 w-full items-stretch gap-[2px]">
+        {Array.from({ length: TICK_COUNT }).map((_, i) => (
+          <span
+            key={i}
+            className={cn("flex-1 rounded-[2px] transition-colors", i < usedTicks ? tone : "bg-muted")}
+          />
+        ))}
+      </div>
+
+      <div className="flex h-4 items-center justify-between text-[11px] font-medium text-muted-foreground">
         <span>
           Used <span className="font-semibold text-foreground">{usedLabel}</span>
         </span>
@@ -555,7 +467,7 @@ function CurrentLtvCard({
           <span>
             Max <span className="font-semibold text-foreground">{maxLabel}</span>
           </span>
-          <span className="text-rose-500">· {liquidationPct.toFixed(0)}%</span>
+          <span className="text-rose-500">{liquidationPct.toFixed(0)}% liq</span>
         </span>
       </div>
     </div>
