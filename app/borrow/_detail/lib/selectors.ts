@@ -34,10 +34,10 @@ const KEY_METRIC_LABELS: Record<KeyMetricId, string> = {
   tvl: "TVL",
   volume: "Volume",
   fees: "Fees",
-  feesApr: "Fees APR",
+  feesApr: "Supply APY",
   rewards: "Rewards",
   utilization: "Utilization",
-  borrowApr: "Borrow APR",
+  borrowApr: "Borrow APY",
   incentives: "Incentives",
   depth2pct: "Depth (±2%)",
   volatility30d: "Volatility 30d",
@@ -49,7 +49,7 @@ const ASSET_CHART_LABELS: Record<AssetChartMetricId, string> = {
   supply: "Supplied",
   borrow: "Borrowed",
   utilization: "Utilization",
-  apy: "APY",
+  apy: "Borrow APY",
 }
 
 /**
