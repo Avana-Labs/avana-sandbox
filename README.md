@@ -19,11 +19,11 @@ The public Avana materials position the protocol around LP collateral across eco
 
 - `/`
 - `/borrow`
-- `/lend` (legacy `/invest` redirects here)
+- `/lend` 
 - `/perps`
 - `/stake`
 - `/rewards`
-- `/risk-warning`
+
 
 ## Local Development
 
@@ -51,20 +51,9 @@ Start the production server:
 npm run start
 ```
 
-## Stack
-
-- Next.js 15
-- React 19
-- TypeScript
-- Tailwind CSS
-- Framer Motion
-- Radix UI
 
 ## Reference Links
 
 - Site: https://avana-ashen.vercel.app/
 - Lightpaper: https://avana-ashen.vercel.app/lightpaper
 
-## Note
-
-This project is a frontend application for a DeFi protocol concept. LP-backed borrowing carries market, liquidation, and smart contract risk, so public protocol materials should be reviewed before any real usage or deployment.
