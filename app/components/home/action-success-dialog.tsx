@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { ArrowUpRight, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -20,47 +20,52 @@ export function ActionSuccessDialog({
   state: HomeSuccessState | null
   onClose: () => void
 }) {
-  useEffect(() => {
-    if (!state) {
-      return
-    }
-
-    import("canvas-confetti")
-      .then((confetti) => {
-        confetti.default({
-          particleCount: 110,
-          spread: 70,
-          origin: { y: 0.65 },
-          colors: ["#FC2672", "#18C964", "#F5A623", "#006FEE", "#7928CA", "#F31260"],
-        })
-      })
-      .catch(() => undefined)
-  }, [state])
-
   return (
     <Dialog open={Boolean(state)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="overflow-hidden rounded-[24px] border border-border/40 bg-card p-0 shadow-xl sm:max-w-[440px]">
+      <DialogContent className="overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 sm:max-w-[420px]">
         {state ? (
           <>
-            <DialogHeader className="items-center gap-3 px-6 pb-2 pt-8 text-center">
-              <div className="flex size-20 items-center justify-center rounded-full bg-brand-soft text-5xl">{state.emoji}</div>
-              <DialogTitle className="mt-2 text-2xl font-semibold tracking-tight">{state.title}</DialogTitle>
-              <div className="font-data text-xl font-semibold text-brand">{state.amount}</div>
-              <DialogDescription className="max-w-sm text-center text-sm text-muted-foreground">{state.description}</DialogDescription>
+            <DialogHeader className="space-y-0 border-b border-border px-5 pb-4 pt-5 text-left">
+              <div className="flex items-start gap-3">
+                <div className="flex size-9 items-center justify-center rounded-xs border border-border bg-surface-inset">
+                  <Check className="h-4 w-4 text-accent-emphasis" strokeWidth={2.25} />
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <DialogTitle className="text-[14px] font-medium text-foreground">
+                    {state.title}
+                  </DialogTitle>
+                  <DialogDescription className="text-[12px] text-muted-foreground">
+                    {state.description}
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
 
-            <div className="flex flex-col gap-4 p-6">
-              <div className="rounded-2xl border border-border/40 bg-surface-1">
-                <div className="flex flex-col">
+            <div className="flex flex-col gap-3 px-5 py-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                  Amount
+                </span>
+                <span className="font-data text-[22px] font-medium tracking-tight text-foreground">
+                  {state.amount}
+                </span>
+              </div>
+
+              {state.rows.length > 0 ? (
+                <div className="divide-y divide-border overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
                   {state.rows.map((row, index) => (
-                    <div key={`${row.label}-${index}`} className="flex items-center justify-between gap-4 px-4 py-3">
-                      <span className="text-sm text-muted-foreground">{row.label}</span>
+                    <div
+                      key={`${row.label}-${index}`}
+                      className="flex items-center justify-between gap-4 px-3.5 py-2.5"
+                    >
+                      <span className="text-[11.5px] text-muted-foreground">{row.label}</span>
                       <span
                         className={cn(
-                          "font-data text-sm font-semibold",
-                          row.tone === "positive" && "text-emerald-600",
-                          row.tone === "warning" && "text-amber-600",
-                          row.tone === "danger" && "text-rose-600",
+                          "font-data text-[12.5px] font-medium tabular-nums",
+                          (!row.tone || row.tone === "default") && "text-foreground",
+                          row.tone === "positive" && "text-emerald-700 dark:text-emerald-400",
+                          row.tone === "warning" && "text-amber-700 dark:text-amber-400",
+                          row.tone === "danger" && "text-rose-700 dark:text-rose-400",
                         )}
                       >
                         {row.value}
@@ -68,13 +73,24 @@ export function ActionSuccessDialog({
                     </div>
                   ))}
                 </div>
-              </div>
+              ) : null}
             </div>
 
-            <DialogFooter className="px-6 pb-6 pt-2 sm:justify-center">
-              <Button type="button" className="h-12 w-full rounded-[20px] bg-brand-soft text-[17px] font-semibold text-brand shadow-none transition-colors hover:bg-brand-soft" onClick={onClose}>
+            <DialogFooter className="flex-col gap-2 border-t border-border px-5 py-3 sm:flex-col sm:space-x-0">
+              <Button
+                type="button"
+                className="h-10 w-full rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
+                onClick={onClose}
+              >
                 Done
               </Button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-1 text-[11.5px] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                View transaction
+                <ArrowUpRight className="h-3 w-3" />
+              </button>
             </DialogFooter>
           </>
         ) : null}

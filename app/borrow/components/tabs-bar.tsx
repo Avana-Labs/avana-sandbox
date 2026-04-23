@@ -72,9 +72,9 @@ export function TabsBar({
   const activeSortLabel = sortOptions.find((option) => option.key === sortKey)?.label ?? sortOptions[0]?.label ?? ""
 
   return (
-    <div className="sticky top-0 z-30 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="flex flex-wrap items-center gap-x-1 gap-y-2 py-2">
-        <nav className="no-scrollbar flex items-center gap-1 overflow-x-auto" aria-label="Borrow sections">
+    <div className="sticky top-0 z-30 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-2 py-1.5">
+        <nav className="no-scrollbar flex items-center gap-0 overflow-x-auto" aria-label="Borrow sections">
           {TAB_ORDER.map((tab) => {
             const isActive = tab.id === currentTab
             return (
@@ -83,11 +83,10 @@ export function TabsBar({
                 type="button"
                 active={isActive}
                 onClick={() => onTabChange(tab.id)}
-                className="text-sm"
                 aria-current={isActive ? "page" : undefined}
               >
                 {tab.label}
-                <span className="ml-1.5 tabular-nums text-[10px] font-medium text-muted-foreground" aria-hidden>
+                <span className="ml-1 tabular-nums text-[10px] font-medium text-muted-foreground" aria-hidden>
                   {counts[tab.id]}
                 </span>
               </PillTabButton>
@@ -95,16 +94,16 @@ export function TabsBar({
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-1">
           {searchOpen ? (
-            <div className="flex h-8 items-center gap-1.5 rounded-full bg-muted px-3">
-              <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <div className="flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-inset px-2">
+              <Search className="size-3 shrink-0 text-muted-foreground" aria-hidden />
               <input
                 ref={inputRef}
                 value={filterText}
                 onChange={(event) => onFilterChange(event.target.value)}
                 placeholder={currentTab === "assets" ? "Filter tokens" : currentTab === "pools" ? "Filter pools" : "Filter"}
-                className="h-5 w-36 border-none bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                className="h-5 w-36 border-none bg-transparent text-[12px] text-foreground outline-none placeholder:text-muted-foreground"
               />
               <button
                 type="button"
@@ -112,20 +111,20 @@ export function TabsBar({
                   onFilterChange("")
                   setSearchOpen(false)
                 }}
-                className="text-muted-foreground hover:text-muted-foreground"
+                className="text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="Clear search"
               >
-                <X className="size-3.5" />
+                <X className="size-3" />
               </button>
             </div>
           ) : (
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted"
+              className="inline-flex size-7 items-center justify-center rounded-xs border border-border bg-surface-raised text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
               aria-label="Open search"
             >
-              <Search className="size-3.5" aria-hidden />
+              <Search className="size-3" aria-hidden />
             </button>
           )}
 
@@ -135,14 +134,14 @@ export function TabsBar({
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
+                    "inline-flex h-7 items-center gap-1 rounded-xs border px-2 text-[12px] font-medium transition-colors",
                     selectedDexes.size === 0 || selectedDexes.size === BORROW_DEXES.length
-                      ? "bg-muted text-foreground hover:bg-muted"
-                      : "bg-foreground text-background hover:bg-foreground/90",
+                      ? "border-border bg-surface-raised text-foreground hover:bg-surface-inset"
+                      : "border-transparent bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary-hover",
                   )}
                 >
                   DEX
-                  <ChevronDown className="size-3.5 opacity-60" aria-hidden />
+                  <ChevronDown className="size-3 opacity-60" aria-hidden />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -168,10 +167,10 @@ export function TabsBar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-3 text-sm font-medium text-foreground hover:bg-muted"
+                  className="inline-flex h-7 items-center gap-1 rounded-xs border border-border bg-surface-raised px-2 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-inset"
                 >
                   {activeSortLabel}
-                  <ChevronDown className="size-3.5 opacity-60" aria-hidden />
+                  <ChevronDown className="size-3 opacity-60" aria-hidden />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -185,7 +184,7 @@ export function TabsBar({
                   ))}
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
+                <DropdownMenuLabel>
                   Order
                 </DropdownMenuLabel>
                 <DropdownMenuRadioGroup

@@ -50,7 +50,7 @@ export function HallOfFame() {
   }, [])
 
   return (
-    <div className="relative h-full min-h-[200px] overflow-hidden rounded-[24px] border border-border/60 bg-card/80">
+    <div className="relative h-full min-h-[200px] overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
       <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br", active.tint)} />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 top-10 z-0">
@@ -67,11 +67,11 @@ export function HallOfFame() {
 
       <div className="relative z-10 flex h-full flex-col p-4">
         <div className="flex items-baseline gap-2">
-          <div className={cn("font-data text-[56px] font-black leading-none tracking-tighter", active.accentText)}>
+          <div className={cn("font-data text-[44px] font-medium leading-none tracking-tight", active.accentText)}>
             {active.maxLeverage}
-            <span className="text-[40px] font-bold">×</span>
+            <span className="text-[32px] font-medium">×</span>
           </div>
-          <div className="text-[11px] font-medium text-muted-foreground">{active.pair}</div>
+          <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{active.pair}</div>
         </div>
 
         <div className="mt-auto flex items-center justify-center gap-1.5">
@@ -82,8 +82,8 @@ export function HallOfFame() {
               aria-label={`Show ${entry.symbol}`}
               onClick={() => setIndex(i)}
               className={cn(
-                "h-1.5 rounded-full transition-all",
-                i === index ? "w-5 bg-foreground" : "w-1.5 bg-muted-foreground/40 hover:bg-muted-foreground/60",
+                "h-1 rounded-xs transition-all",
+                i === index ? "w-4 bg-foreground" : "w-1 bg-muted-foreground/40 hover:bg-muted-foreground/60",
               )}
             />
           ))}

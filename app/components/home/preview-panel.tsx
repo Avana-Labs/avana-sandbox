@@ -30,7 +30,7 @@ function GaugeBar({
         style={{ width: `${safePercent}%` }}
       />
       <div
-        className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-card transition-[left] duration-300 ease-out"
+        className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-raised transition-[left] duration-200 ease-out"
         style={{ left: `${safePercent}%` }}
         aria-hidden
       />
@@ -74,18 +74,18 @@ function PreviewHeroCard({
   flashGoodDirection?: "up" | "down"
 }) {
   return (
-    <div className="rounded-[24px] border border-border/70 bg-card p-5">
+    <div className="rounded-radius-md border border-border bg-surface-raised shadow-elev-1 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <FlashValue
             value={heroValue}
             goodDirection={flashGoodDirection}
-            className="font-data text-[44px] font-bold leading-none tracking-tight text-foreground"
+            className="font-data text-[28px] font-medium leading-none tracking-tight text-foreground"
           >
             {hero}
           </FlashValue>
           <div className="mt-2 flex items-center gap-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
               {heroLabel}
             </div>
             {deltaValue !== undefined && deltaValue !== null && Number.isFinite(deltaValue) ? (
@@ -99,14 +99,14 @@ function PreviewHeroCard({
           </div>
           {subLabel ? <div className="mt-1 text-[11px] text-muted-foreground">{subLabel}</div> : null}
         </div>
-        <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold tracking-wide", statusTextClass)}>
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-muted/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] text-muted-foreground">
           <span className={cn("inline-block size-1.5 rounded-full", statusDotClass)} />
-          {statusLabel}
+          <span className={statusTextClass}>{statusLabel}</span>
         </span>
       </div>
 
-      <GaugeBar percent={gaugePercent} barClass={gaugeBarClass} className="mt-5" />
-      <div className="mt-2 flex justify-between text-[10px] font-medium text-muted-foreground">
+      <GaugeBar percent={gaugePercent} barClass={gaugeBarClass} className="mt-4" />
+      <div className="mt-1.5 flex justify-between text-[10px] font-medium text-muted-foreground">
         <span>{minLabel}</span>
         <span>{maxLabel}</span>
       </div>
@@ -141,24 +141,24 @@ function PreviewStatCard({
 }) {
   const safePercent = Math.max(0, Math.min(100, percent))
   return (
-    <div className="mt-3 rounded-[24px] border border-border/70 bg-card p-5">
+    <div className="mt-2 rounded-radius-md border border-border bg-surface-raised shadow-elev-1 p-4">
       <div className="flex items-baseline gap-2">
-        <FlashValue value={safePercent} goodDirection="down" className="font-data text-[28px] font-bold tracking-tight text-foreground">
+        <FlashValue value={safePercent} goodDirection="down" className="font-data text-[22px] font-medium tracking-tight text-foreground">
           {Number.isFinite(percent) ? `${safePercent.toFixed(0)}%` : "—"}
         </FlashValue>
-        <span className="text-sm text-muted-foreground">{percentLabel}</span>
+        <span className="text-[12px] text-muted-foreground">{percentLabel}</span>
       </div>
 
-      <div className="mt-3 flex items-baseline justify-between gap-3 text-[11px] text-muted-foreground">
+      <div className="mt-2.5 flex items-baseline justify-between gap-3 text-[11px] text-muted-foreground">
         <span>
-          {leftLabel}: <strong className="text-foreground">{leftValue}</strong>
+          {leftLabel}: <strong className="font-medium text-foreground">{leftValue}</strong>
         </span>
         <span>
-          {rightLabel}: <strong className="text-foreground">{rightValue}</strong>
+          {rightLabel}: <strong className="font-medium text-foreground">{rightValue}</strong>
         </span>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-2.5">
         <BipolarBar
           leftValue={safePercent}
           rightValue={100 - safePercent}
@@ -168,7 +168,7 @@ function PreviewStatCard({
           rightClass={rightBarClass ?? "bg-muted-foreground/20"}
           leftLabelClass={leftLabelClass}
           rightLabelClass={rightLabelClass ?? "text-muted-foreground"}
-          heightClass="h-2"
+          heightClass="h-1.5"
           labelPosition="inside"
         />
       </div>

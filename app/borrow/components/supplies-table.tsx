@@ -37,56 +37,56 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
   const m = (value: string) => (showBalance ? value : MASK)
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border/40 bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
-        You don&apos;t have any supply positions yet. Provide liquidity on the <span className="font-semibold text-foreground">Collaterals</span> tab to unlock borrow power.
+      <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
+        You don&apos;t have any supply positions yet. Provide liquidity on the <span className="font-medium text-foreground">Collaterals</span> tab to unlock borrow power.
       </div>
     )
   }
   return (
     <section className="mb-2">
-      <div className="mb-4">
-        <h3 className="text-lg font-medium">My LP Collaterals</h3>
+      <div className="mb-3">
+        <h3 className="text-[14px] font-medium tracking-tight">My LP Collaterals</h3>
       </div>
       <div className="hidden md:block">
-        <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
+        <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[720px] text-[13px]">
             <thead>
-              <tr className="border-b border-border/40 text-left text-muted-foreground">
-                <th className="pb-3 pt-4 pl-6 font-medium">LP Position</th>
-                <th className="pb-3 pt-4 text-right font-medium">Collateral</th>
-                <th className="pb-3 pt-4 text-right font-medium">Max Borrow</th>
-                <th className="pb-3 pt-4 text-right font-medium">Health Factor</th>
-                <th className="pb-3 pt-4 text-right font-medium">Fees Earned</th>
-                <th className="w-52 pb-3 pt-4 pr-6" />
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">LP Position</th>
+                <th className="pb-2 pt-3 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Collateral</th>
+                <th className="pb-2 pt-3 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Max Borrow</th>
+                <th className="pb-2 pt-3 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Health Factor</th>
+                <th className="pb-2 pt-3 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Fees Earned</th>
+                <th className="w-52 pb-2 pt-3 pr-5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40">
+            <tbody className="divide-y divide-border">
               {rows.map((row) => {
                 const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
                 const meta = BORROW_SUPPLY_META[row.pool.id]
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 return (
-                  <tr key={row.pool.id} className="transition-colors hover:bg-muted/50">
-                    <td className="py-3 pl-6">
-                      <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="lg" />
+                  <tr key={row.pool.id} className="transition-colors hover:bg-surface-inset/60">
+                    <td className="py-2.5 pl-5">
+                      <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
                     </td>
-                    <td className="py-3 text-right font-data text-sm tabular-nums text-foreground">
+                    <td className="py-2.5 text-right font-data text-[13px] tabular-nums text-foreground">
                       {m(formatCompactUsd(row.pool.collateralUsd))}
                     </td>
-                    <td className="py-3 text-right font-data text-sm tabular-nums text-foreground">
+                    <td className="py-2.5 text-right font-data text-[13px] tabular-nums text-foreground">
                       {m(formatCompactUsd(row.pool.borrowPowerUsd))}
                     </td>
-                    <td className="py-3 text-right">
+                    <td className="py-2.5 text-right">
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                     </td>
-                    <td className="py-3 text-right">
-                      <div className="font-data text-sm tabular-nums text-foreground">{m(row.feesLabel)}</div>
-                      <div className="font-data text-xs font-semibold tabular-nums text-emerald-600">
+                    <td className="py-2.5 text-right">
+                      <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
+                      <div className="font-data text-[11px] font-medium tabular-nums text-emerald-600">
                         {row.pairApr.toFixed(1)}% APR
                       </div>
                     </td>
-                    <td className="py-3 pr-6 text-right">
+                    <td className="py-2.5 pr-5 text-right">
                       <div className="flex justify-end gap-1.5">
                         <PillButton variant="ghost" onClick={() => onRemove(row)}>
                           Remove
@@ -117,18 +117,18 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`
           return (
-            <li key={row.pool.id} className="space-y-4 rounded-3xl bg-card px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <li key={row.pool.id} className="space-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <div className="flex items-center">
                     <TokenBubble visual={visuals[0]} size="md" />
                     <TokenBubble visual={visuals[1]} size="md" className="-ml-2" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[16px] font-semibold text-foreground">{row.pool.name}</div>
+                    <div className="text-[14px] font-medium text-foreground">{row.pool.name}</div>
                     <span
                       className={cn(
-                        "mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                        "mt-1 inline-flex items-center rounded-xs px-1.5 py-0.5 text-[11px] font-medium",
                         spoke.pillBgClass,
                         spoke.pillTextClass,
                       )}
@@ -138,39 +138,39 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-data text-[20px] font-semibold tabular-nums text-foreground">
+                  <div className="font-data text-[17px] font-medium tabular-nums text-foreground">
                     {m(formatUsdExact(row.pool.collateralUsd))}
                   </div>
-                  <div className="text-xs text-muted-foreground">Collateral</div>
+                  <div className="text-[11px] text-muted-foreground">Collateral</div>
                 </div>
               </div>
 
-              <div className="space-y-3 rounded-2xl bg-muted/70 px-4 py-3.5">
+              <div className="space-y-2.5 rounded-radius-sm border border-border bg-surface-inset px-3 py-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground">Health Factor</span>
-                  <span className={cn("font-data text-[28px] font-semibold leading-none tabular-nums", hfTone.text)}>{m(hfLabel)}</span>
+                  <span className="text-[12.5px] font-medium text-foreground">Health Factor</span>
+                  <span className={cn("font-data text-[22px] font-medium leading-none tabular-nums", hfTone.text)}>{m(hfLabel)}</span>
                 </div>
-                <div className="relative h-2 rounded-full bg-muted">
-                  <div className={cn("h-2 rounded-full", hfTone.fill)} style={{ width: `${fillPct}%` }} />
+                <div className="relative h-1.5 rounded-full bg-surface-raised">
+                  <div className={cn("h-1.5 rounded-full", hfTone.fill)} style={{ width: `${fillPct}%` }} />
                   <span
-                    className={cn("absolute top-1/2 size-3.5 -translate-y-1/2 rounded-full border-2 bg-card", hfTone.border)}
-                    style={{ left: `calc(${fillPct}% - 7px)` }}
+                    className={cn("absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-surface-raised", hfTone.border)}
+                    style={{ left: `calc(${fillPct}% - 6px)` }}
                     aria-hidden
                   />
                 </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>Safe</span>
                   <span>Liquidation</span>
                 </div>
-                <div className="flex items-center justify-between border-t border-border/80 pt-2.5 text-sm">
+                <div className="flex items-center justify-between border-t border-border pt-2 text-[12.5px]">
                   <span className="text-muted-foreground">Liquidation at</span>
-                  <span className={cn("font-data font-semibold tabular-nums", hfTone.text)}>
+                  <span className={cn("font-data font-medium tabular-nums", hfTone.text)}>
                     {m(formatUsdExact(row.pool.liquidationUsd))} collateral
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl bg-muted/70">
+              <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
                 <SupplyStatCell
                   value={m(formatUsdExact(row.borrowedUsd))}
                   label="Borrowed"
@@ -187,18 +187,18 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                 />
               </div>
 
-              <div className="flex items-stretch gap-3">
+              <div className="flex items-stretch gap-2">
                 <button
                   type="button"
                   onClick={() => onRemove(row)}
-                  className="flex-1 rounded-2xl bg-muted px-5 py-3.5 text-center text-[15px] font-semibold text-foreground transition-colors hover:bg-muted"
+                  className="flex-1 rounded-radius-sm border border-border bg-surface-raised px-4 py-2.5 text-center text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
                 >
                   Remove LP
                 </button>
                 <button
                   type="button"
                   onClick={() => onAddCollateral(row)}
-                  className="flex-[2] rounded-2xl bg-rose-500 px-5 py-3.5 text-center text-[15px] font-semibold text-white shadow-[0_6px_20px_-6px_rgba(244,63,94,0.55)] transition-colors hover:bg-rose-600"
+                  className="flex-[2] rounded-radius-sm bg-accent-primary px-4 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
                 >
                   Add Collateral
                 </button>
@@ -213,9 +213,9 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
 
 function SupplyStatCell({ value, label, valueTone }: { value: string; label: string; valueTone?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center px-2 py-3">
-      <span className={cn("font-data text-[17px] font-semibold tabular-nums text-foreground", valueTone)}>{value}</span>
-      <span className="mt-0.5 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</span>
+    <div className="flex flex-col items-center justify-center px-2 py-2.5">
+      <span className={cn("font-data text-[14px] font-medium tabular-nums text-foreground", valueTone)}>{value}</span>
+      <span className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
     </div>
   )
 }

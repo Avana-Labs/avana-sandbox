@@ -21,7 +21,7 @@ export function RangeTabs({ value, onChange, ranges = ALL, className, ariaLabel 
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 p-0.5",
+        "inline-flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5",
         className,
       )}
     >
@@ -35,9 +35,9 @@ export function RangeTabs({ value, onChange, ranges = ALL, className, ariaLabel 
             type="button"
             onClick={() => onChange(r)}
             className={cn(
-              "h-7 rounded-full px-2.5 text-xs font-semibold tabular-nums transition-colors",
+              "h-6 rounded-[3px] px-2 text-[11px] font-medium tabular-nums transition-colors",
               active
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-surface-raised text-foreground shadow-elev-1"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >

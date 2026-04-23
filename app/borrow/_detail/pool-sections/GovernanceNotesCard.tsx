@@ -19,9 +19,9 @@ export function GovernanceNotesCard({ detail }: Props) {
     <SectionCard title="Governance & risk notes">
       <ul className="space-y-3">
         {detail.governanceNotes.map((note, i) => (
-          <li key={i} className={cn("border-l-2 pl-4 text-sm", BORDER[note.tone ?? "info"])}>
+          <li key={i} className={cn("border-l-2 pl-3.5 text-[12.5px]", BORDER[note.tone ?? "info"])}>
             <div className="font-medium text-foreground">{note.title}</div>
-            <div className="text-foreground/70">{note.body}</div>
+            <div className="text-foreground/70 leading-5">{note.body}</div>
           </li>
         ))}
       </ul>

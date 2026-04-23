@@ -17,30 +17,30 @@ export function AssetCashflowCard({ detail }: Props) {
       bodyClassName="p-0"
     >
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-[13px]">
           <thead>
-            <tr className="border-b border-border/40 text-left text-muted-foreground">
-              <th className="pb-3 pl-6 pt-4 font-medium">Line</th>
-              <th className="pb-3 pt-4 text-right font-medium">Reported</th>
-              <th className="pb-3 pr-6 pt-4 text-right font-medium">YoY</th>
+            <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+              <th className="pb-2 pl-5 pt-3">Line</th>
+              <th className="pb-2 pt-3 text-right">Reported</th>
+              <th className="pb-2 pr-5 pt-3 text-right">YoY</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/40">
+          <tbody className="divide-y divide-border">
             {cashflow.rows.map((row, i) => (
               <tr
                 key={i}
                 className={cn(
-                  "transition-colors hover:bg-muted/50",
-                  row.highlighted ? "bg-muted/30" : undefined,
+                  "transition-colors hover:bg-surface-inset/60",
+                  row.highlighted ? "bg-surface-inset/40" : undefined,
                 )}
               >
-                <th scope="row" className="py-3 pl-6 text-left font-medium text-foreground">
+                <th scope="row" className="py-2.5 pl-5 text-left font-medium text-foreground">
                   {row.label}
                 </th>
-                <td className="py-3 text-right font-data font-medium tabular-nums text-foreground">
+                <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">
                   {row.reported}
                 </td>
-                <td className="py-3 pr-6 text-right">
+                <td className="py-2.5 pr-5 text-right">
                   {row.yoy ? (
                     <DeltaPill value={row.yoy.value} format="percent" digits={1} hideZero={false} />
                   ) : null}

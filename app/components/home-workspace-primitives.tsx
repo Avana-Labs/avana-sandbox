@@ -36,11 +36,11 @@ type DetailListProps = {
 export function getToneClasses(tone: HomeSuccessRowTone = "default") {
   switch (tone) {
     case "positive":
-      return "text-emerald-600"
+      return "text-emerald-600 dark:text-emerald-400"
     case "warning":
-      return "text-amber-600"
+      return "text-amber-600 dark:text-amber-400"
     case "danger":
-      return "text-rose-600"
+      return "text-rose-600 dark:text-rose-400"
     default:
       return "text-foreground"
   }
@@ -50,18 +50,18 @@ export function PremiumPanel({ title, description, action, className, contentCla
   return (
     <Card
       className={cn(
-        "overflow-hidden rounded-[28px] border-border/70 bg-card/80 shadow-[0_18px_42px_rgba(15,23,42,0.045)] backdrop-blur-sm",
+        "overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1",
         className,
       )}
     >
-      <CardHeader className="gap-3 border-b border-border/60 p-5 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 flex-col gap-1">
-          <CardTitle className="tracking-tight">{title}</CardTitle>
-          {description ? <CardDescription className="max-w-xl">{description}</CardDescription> : null}
+      <CardHeader className="gap-2 border-b border-border p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <CardTitle className="text-[14px] font-medium tracking-tight">{title}</CardTitle>
+          {description ? <CardDescription className="max-w-xl text-[12px]">{description}</CardDescription> : null}
         </div>
         {action ? <div className="flex shrink-0 items-center gap-2">{action}</div> : null}
       </CardHeader>
-      <CardContent className={cn("p-5", contentClassName)}>{children}</CardContent>
+      <CardContent className={cn("p-4", contentClassName)}>{children}</CardContent>
     </Card>
   )
 }
@@ -74,8 +74,8 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
   return (
     <span
       className={cn(
-        "inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full font-data text-[11px] font-semibold",
-        showIcon ? "bg-card" : cn(visual.bgClassName, visual.textClassName),
+        "inline-flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full font-data text-[10.5px] font-medium",
+        showIcon ? "bg-surface-raised ring-1 ring-border" : cn(visual.bgClassName, visual.textClassName),
         className,
       )}
       aria-hidden
@@ -84,8 +84,8 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
         <Image
           src={meta.iconUrl as string}
           alt={visual.symbol}
-          width={36}
-          height={36}
+          width={28}
+          height={28}
           className="h-full w-full object-contain"
           onError={() => setImgFailed(true)}
           unoptimized
@@ -99,9 +99,9 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
 
 export function PairVisual({ visuals, className }: PairVisualProps) {
   return (
-    <div className={cn("relative h-9 w-14 shrink-0", className)} aria-hidden>
-      <TokenBubble visual={visuals[0]} className="absolute left-0 top-0 border-2 border-background" />
-      <TokenBubble visual={visuals[1]} className="absolute left-5 top-0 border-2 border-background" />
+    <div className={cn("relative h-7 w-11 shrink-0", className)} aria-hidden>
+      <TokenBubble visual={visuals[0]} className="absolute left-0 top-0 ring-2 ring-background" />
+      <TokenBubble visual={visuals[1]} className="absolute left-4 top-0 ring-2 ring-background" />
     </div>
   )
 }
@@ -111,10 +111,10 @@ export function ValueBadge({ label, tone = "default" }: { label: string; tone?: 
     <Badge
       variant="secondary"
       className={cn(
-        "rounded-full border-transparent bg-muted px-2.5 py-1 font-compact text-[11px] font-semibold",
-        tone === "positive" && "bg-emerald-500/10 text-emerald-600",
-        tone === "warning" && "bg-amber-500/10 text-amber-600",
-        tone === "danger" && "bg-rose-500/10 text-rose-600",
+        "rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 font-compact text-[10.5px] font-medium uppercase tracking-[0.04em]",
+        tone === "positive" && "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+        tone === "warning" && "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+        tone === "danger" && "border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-400",
       )}
     >
       {label}
@@ -124,12 +124,12 @@ export function ValueBadge({ label, tone = "default" }: { label: string; tone?: 
 
 export function DetailList({ rows, className }: DetailListProps) {
   return (
-    <div className={cn("rounded-2xl border border-border/60 bg-background/70", className)}>
-      <div className="flex flex-col">
+    <div className={cn("rounded-radius-sm border border-border bg-surface-inset", className)}>
+      <div className="flex flex-col divide-y divide-border">
         {rows.map((row, index) => (
-          <div key={`${row.label}-${index}`} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-sm text-muted-foreground">{row.label}</span>
-            <span className={cn("font-data text-sm font-semibold", getToneClasses(row.tone))}>{row.value}</span>
+          <div key={`${row.label}-${index}`} className="flex flex-col gap-1 px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-[12px] text-muted-foreground">{row.label}</span>
+            <span className={cn("font-data text-[12.5px] font-medium tabular-nums", getToneClasses(row.tone))}>{row.value}</span>
             {index < rows.length - 1 ? <Separator className="sm:hidden" /> : null}
           </div>
         ))}
@@ -150,13 +150,13 @@ export function PanelField({
   children: ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[24px] border border-border/60 bg-background/60 p-4">
+    <div className="flex flex-col gap-2 rounded-radius-sm border border-border bg-surface-inset p-3.5">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-muted-foreground">{label}</span>
+        <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
         {action}
       </div>
       {children}
-      {helper ? <div className="text-xs text-muted-foreground">{helper}</div> : null}
+      {helper ? <div className="text-[11px] text-muted-foreground">{helper}</div> : null}
     </div>
   )
 }

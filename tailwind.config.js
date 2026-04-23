@@ -54,17 +54,38 @@ module.exports = {
         "surface-1": "hsl(var(--surface-1))",
         "surface-2": "hsl(var(--surface-2))",
         "surface-hover": "hsl(var(--surface-hover))",
+        "surface-raised": "hsl(var(--surface-raised))",
+        "surface-inset": "hsl(var(--surface-inset))",
         brand: {
           DEFAULT: "hsl(var(--brand))",
           foreground: "hsl(var(--brand-foreground))",
           soft: "hsl(var(--brand-soft))",
           "soft-foreground": "hsl(var(--brand-soft-foreground))",
         },
+        "accent-primary": {
+          DEFAULT: "hsl(var(--accent-primary))",
+          foreground: "hsl(var(--accent-primary-foreground))",
+          hover: "hsl(var(--accent-primary-hover))",
+        },
+        "accent-emphasis": {
+          DEFAULT: "hsl(var(--accent-emphasis))",
+          foreground: "hsl(var(--accent-emphasis-foreground))",
+          soft: "hsl(var(--accent-emphasis-soft))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xs: "var(--radius-xs)",
+        "radius-sm": "var(--radius-sm)",
+        "radius-md": "var(--radius-md)",
+        "radius-lg": "var(--radius-lg)",
+      },
+      boxShadow: {
+        "elev-1": "var(--elev-1)",
+        "elev-2": "var(--elev-2)",
+        "elev-3": "var(--elev-3)",
       },
       fontSize: {
         "2xs": ["0.625rem", { lineHeight: "0.75rem" }],
