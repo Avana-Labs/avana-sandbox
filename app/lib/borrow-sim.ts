@@ -786,6 +786,49 @@ function slugify(input: string): string {
     .replace(/(^-|-$)/g, "")
 }
 
+/**
+ * Deterministic 0..1 hash from a string. Used to derive per-pool jitter so
+ * every pool gets a unique risk premium (and therefore a unique gauge score).
+ */
+function seededUnit(input: string): number {
+  let h = 2166136261
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return ((h >>> 0) % 10_000) / 10_000
+}
+
+/** Symbols we treat as USD-pegged (or otherwise price-stable) assets. */
+const STABLE_SYMBOLS = new Set([
+  "USDC",
+  "USDT",
+  "DAI",
+  "USDE",
+  "USDS",
+  "USDP",
+  "USD+",
+  "SUSD",
+  "SDAI",
+  "CRVUSD",
+  "GHO",
+  "FRAX",
+  "LUSD",
+  "TUSD",
+  "MIM",
+  "PYUSD",
+  "EURC",
+  "EURS",
+])
+
+function isStableSymbol(symbol: string): boolean {
+  return STABLE_SYMBOLS.has(symbol.toUpperCase())
+}
+
+function isStablePair(a: string, b: string): boolean {
+  return isStableSymbol(a) && isStableSymbol(b)
+}
+
 function buildPoolCatalog(): BorrowPoolRow[] {
   const rows: BorrowPoolRow[] = []
   for (const spoke of BORROW_SPOKES) {
@@ -802,9 +845,20 @@ function buildPoolCatalog(): BorrowPoolRow[] {
       const aprMid = spoke.aprApprox + ((index % 4) - 1.5) * 0.4
       const aprMin = Math.max(0.1, aprMid - 1.2)
       const aprMax = aprMid + 1.5
-      const riskJitter = ((index % 3) - 1) * 8
       const baseId = `${spoke.id}-${slugify(name)}`
       const id = rows.some((row) => row.id === baseId) ? `${baseId}-${index + 1}` : baseId
+      const stablePair = isStablePair(a, b)
+      // Stable/stable pairs: tight, low-bps jitter regardless of spoke base —
+      // peg-to-peg exposure should always rank as low risk.
+      // Everything else: wide, deterministic per-pool jitter (~±25% of base)
+      // so no two pools collapse to the same gauge score.
+      const jitterRange = stablePair
+        ? 8
+        : Math.max(18, Math.round(spoke.riskPremiumBps * 0.25))
+      const riskJitter = Math.round((seededUnit(id) - 0.5) * 2 * jitterRange)
+      const riskPremiumBps = stablePair
+        ? Math.min(32, Math.max(10, 18 + riskJitter))
+        : Math.max(5, spoke.riskPremiumBps + riskJitter)
       const feeTier = seed.feeTier ?? SPOKE_DEFAULT_FEE_TIER[spoke.id] ?? "0.30%"
       const tvlUsd = Math.round((shareOfLiquidity / totalSeeds) * (1.6 + ((index % 4) * 0.18)) / 10000) * 10000
       rows.push({
@@ -820,7 +874,7 @@ function buildPoolCatalog(): BorrowPoolRow[] {
         aprMin: Math.round(aprMin * 10) / 10,
         aprMax: Math.round(aprMax * 10) / 10,
         availableUsd: Math.max(availableUsd, 250_000),
-        riskPremiumBps: Math.max(5, spoke.riskPremiumBps + riskJitter),
+        riskPremiumBps,
         visuals,
         collateralExampleUsd: 1_500 + index * 320,
         trendUp: seed.trendUp ?? index % 2 === 0,

@@ -8,11 +8,13 @@ type RiskGaugeProps = {
   /** Score 0..100 (higher = riskier). */
   score: number
   level: RiskLevel
-  /** Optional headline e.g. "Moderate risk" shown under the needle. */
+  /** Optional headline e.g. "Moderate risk" shown under the score. */
   label?: string
   /** Overall gauge width in px. */
   size?: number
   className?: string
+  /** Number of radial ticks across the half-circle. */
+  ticks?: number
 }
 
 const LEVEL_COLOR: Record<RiskLevel, string> = {
@@ -22,26 +24,42 @@ const LEVEL_COLOR: Record<RiskLevel, string> = {
   high: "text-rose-500",
 }
 
-/**
- * Half-circle gauge. Renders 4 colored segments + a needle at `score`.
- * Accepts any score in [0..100] and clamps at the bounds for display.
- */
-export function RiskGauge({ score, level, label, size = 220, className }: RiskGaugeProps) {
-  const clamped = Math.max(0, Math.min(100, score))
-  const radius = 86
-  const cx = 110
-  const cy = 108
-  const angleFor = (v: number) => Math.PI * (1 - v / 100)
-  const toXY = (angle: number, r: number) => [cx + Math.cos(angle) * r, cy - Math.sin(angle) * r] as const
-  const segments: Array<{ from: number; to: number; cls: string }> = [
-    { from: 0, to: 25, cls: "stroke-emerald-500" },
-    { from: 25, to: 55, cls: "stroke-amber-500" },
-    { from: 55, to: 80, cls: "stroke-orange-500" },
-    { from: 80, to: 100, cls: "stroke-rose-500" },
-  ]
+const LEVEL_STROKE: Record<RiskLevel, string> = {
+  low: "stroke-emerald-500",
+  moderate: "stroke-amber-500",
+  elevated: "stroke-orange-500",
+  high: "stroke-rose-500",
+}
 
-  const needleAngle = angleFor(clamped)
-  const [nx, ny] = toXY(needleAngle, radius - 10)
+/**
+ * Half-circle tick-mark gauge. Renders N radial ticks across a 180° arc and
+ * fills those up to `score` with the level color; remaining ticks are muted.
+ */
+export function RiskGauge({
+  score,
+  level,
+  label,
+  size = 220,
+  ticks = 44,
+  className,
+}: RiskGaugeProps) {
+  const clamped = Math.max(0, Math.min(100, score))
+
+  // SVG coordinate system
+  const W = 220
+  const H = 140
+  const cx = W / 2
+  const cy = 118 // baseline
+  const rOuter = 98
+  const rInner = 76
+  const tickW = 3
+
+  const filledCount = Math.round((clamped / 100) * ticks)
+
+  // Angles sweep from 180° (left, 0 score) to 0° (right, 100 score).
+  const angleFor = (i: number) => Math.PI * (1 - i / (ticks - 1))
+  const toXY = (angle: number, r: number) =>
+    [cx + Math.cos(angle) * r, cy - Math.sin(angle) * r] as const
 
   return (
     <figure
@@ -51,29 +69,81 @@ export function RiskGauge({ score, level, label, size = 220, className }: RiskGa
       data-risk-score={clamped}
       data-risk-level={level}
     >
-      <svg width={size} height={size * 0.65} viewBox="0 0 220 130">
-        {segments.map((seg) => {
-          const [x1, y1] = toXY(angleFor(seg.from), radius)
-          const [x2, y2] = toXY(angleFor(seg.to), radius)
-          const largeArc = seg.to - seg.from > 50 ? 1 : 0
+      <svg
+        width={size}
+        height={(size * H) / W}
+        viewBox={`0 0 ${W} ${H}`}
+        className="overflow-visible"
+      >
+        {Array.from({ length: ticks }).map((_, i) => {
+          const a = angleFor(i)
+          const [x1, y1] = toXY(a, rInner)
+          const [x2, y2] = toXY(a, rOuter)
+          const active = i < filledCount
           return (
-            <path
-              key={`${seg.from}-${seg.to}`}
-              d={`M${x1.toFixed(2)} ${y1.toFixed(2)} A ${radius} ${radius} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`}
-              className={cn("fill-none", seg.cls)}
-              strokeWidth={12}
+            <line
+              key={i}
+              x1={x1.toFixed(2)}
+              y1={y1.toFixed(2)}
+              x2={x2.toFixed(2)}
+              y2={y2.toFixed(2)}
+              strokeWidth={tickW}
               strokeLinecap="round"
-              opacity={0.9}
+              className={cn(
+                "transition-colors",
+                active ? LEVEL_STROKE[level] : "stroke-muted-foreground/15",
+              )}
             />
           )
         })}
-        <line x1={cx} y1={cy} x2={nx.toFixed(2)} y2={ny.toFixed(2)} strokeWidth={3} strokeLinecap="round" className="stroke-foreground" />
-        <circle cx={cx} cy={cy} r={4} className="fill-foreground" />
+
+        {/* Center score */}
+        <text
+          x={cx}
+          y={cy - 18}
+          textAnchor="middle"
+          className="fill-foreground font-data font-bold tabular-nums"
+          style={{ fontSize: 34, letterSpacing: "-0.02em" }}
+        >
+          {clamped}
+        </text>
+        <text
+          x={cx + 30}
+          y={cy - 18}
+          textAnchor="start"
+          className="fill-muted-foreground font-data tabular-nums"
+          style={{ fontSize: 13 }}
+        >
+          /100
+        </text>
+
+        {/* Endpoint labels */}
+        <text
+          x={cx - rOuter - 2}
+          y={cy + 14}
+          textAnchor="middle"
+          className="fill-muted-foreground font-data tabular-nums"
+          style={{ fontSize: 11 }}
+        >
+          0
+        </text>
+        <text
+          x={cx + rOuter + 2}
+          y={cy + 14}
+          textAnchor="middle"
+          className="fill-muted-foreground font-data tabular-nums"
+          style={{ fontSize: 11 }}
+        >
+          100
+        </text>
       </svg>
-      <figcaption className="-mt-1 flex flex-col items-center">
-        <span className={cn("font-data text-3xl font-bold tabular-nums", LEVEL_COLOR[level])}>{clamped}</span>
-        {label ? <span className="text-xs text-muted-foreground">{label}</span> : null}
-      </figcaption>
+      {label ? (
+        <figcaption
+          className={cn("-mt-1 text-xs font-medium", LEVEL_COLOR[level])}
+        >
+          {label}
+        </figcaption>
+      ) : null}
     </figure>
   )
 }
