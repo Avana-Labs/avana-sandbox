@@ -30,7 +30,9 @@ import type {
   AssetDetail,
   AssetDetailHero,
   CashflowCard,
+  CashflowTrend,
   DeltaStat,
+  EngagementTrend,
   KeyMetricId,
   PerfPeriod,
   PerfTabDataset,
@@ -260,6 +262,76 @@ function buildAssetCashflow(asset: BorrowableAsset, supplied: number, borrowed: 
   }
 }
 
+function buildCashflowTrend(asset: BorrowableAsset, _supplied: number, borrowed: number): CashflowTrend {
+  const annualInterest = borrowed * (asset.borrowApr / 100)
+  const monthlyGross = annualInterest / 12
+  const rand = prngFromString(`${asset.id}:cf:trend`)
+  const now = Date.UTC(2026, 3, 22)
+
+  const points: Series["points"] = []
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now)
+    d.setUTCMonth(d.getUTCMonth() - i, 1)
+    const t = d.toISOString().slice(0, 10)
+    const wave = 1 + Math.sin(((11 - i) / 11) * Math.PI * 2) * 0.18
+    const noise = 1 + (rand() - 0.5) * 0.24
+    const gross = Math.max(0, Math.round(monthlyGross * wave * noise))
+    points.push({ t, v: gross })
+  }
+
+  const total = points.reduce((a, p) => a + p.v, 0)
+  return {
+    totalLabel: formatCompactUsd(total),
+    periodLabel: "Yearly",
+    series: {
+      id: `${asset.id}:cf:revenue`,
+      label: "Revenue",
+      points,
+      aggregate: total / 12,
+    },
+  }
+}
+
+function buildAssetEngagement(asset: BorrowableAsset, supplied: number, borrowed: number): EngagementTrend {
+  const rand = prngFromString(`${asset.id}:engagement`)
+  const base = Math.max(800, Math.round(Math.sqrt(supplied) * 1.6))
+  const now = Date.UTC(2026, 3, 22)
+  const samples = 12
+  const points: Series["points"] = []
+  for (let i = samples - 1; i >= 0; i--) {
+    const d = new Date(now - i * 86_400_000)
+    const t = d.toISOString().slice(0, 10)
+    const wave = 1 + Math.sin(((samples - 1 - i) / samples) * Math.PI * 2) * 0.22
+    const noise = 1 + (rand() - 0.5) * 0.25
+    const v = Math.max(0, Math.round(base * wave * noise))
+    points.push({ t, v })
+  }
+  const last = points[points.length - 1].v
+  const total = points.reduce((a, p) => a + p.v, 0)
+  const repayRate = Math.max(40, Math.min(96, asset.utilization * 0.95 + rand() * 4))
+  const active = deltaFromPct(Math.round((rand() * 14 + 3) * 10) / 10)
+  const repay = deltaFromPct(Math.round((rand() * 4 - 1) * 10) / 10)
+  return {
+    title: "User Engagement Trends",
+    primary: {
+      label: "Active wallets",
+      valueLabel: last.toLocaleString(),
+      delta: active,
+    },
+    secondary: {
+      label: "Repay conversion",
+      valueLabel: `${repayRate.toFixed(1)}%`,
+      delta: repay,
+    },
+    series: {
+      id: `${asset.id}:engagement`,
+      label: "Active wallets",
+      points,
+      aggregate: total / samples,
+    },
+  }
+}
+
 function buildAssetRisk(asset: BorrowableAsset, fixture: AssetFixture | undefined): RiskAssessment {
   if (fixture?.risk) return fixture.risk
   const isStable = asset.category === "stable"
@@ -390,9 +462,11 @@ export function buildAssetDetail(asset: BorrowableAsset): AssetDetail {
       nonNegative: true,
       roundTo: 2,
     }),
+    cashflowTrend: buildCashflowTrend(asset, supplied, borrowed),
     allocation,
     keyMetrics: buildAssetKeyMetrics(asset, supplied, borrowed),
     cashflow: buildAssetCashflow(asset, supplied, borrowed),
+    engagement: buildAssetEngagement(asset, supplied, borrowed),
     risk: buildAssetRisk(asset, fixture),
     about: buildAssetAbout(asset, fixture),
     transactions: buildTransactions(asset),

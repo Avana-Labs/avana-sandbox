@@ -6,6 +6,36 @@
  * (`pool.mock.ts`, `asset.mock.ts`) is the only place that knows how the
  * numbers are produced today. When live data arrives the data seam swaps
  * implementations without changing the shapes — see `docs/borrow-detail-tests/HANDOFF.md`.
+ *
+ * ============================================================================
+ * Convex mapping (future persistent layer)
+ * ============================================================================
+ * Every field below has an `@convex-source` JSDoc tag pointing at the table
+ * (and usually the specific column) it should be hydrated from once
+ * `convex/schema.ts` is wired up. High-level fan-out:
+ *
+ *   AssetDetail
+ *     hero / heroMetric / quickStats    ← markets + marketDailyStats
+ *     supplyBorrow / historicalUtilization ← marketDailyStats
+ *     cashflowTrend / cashflow          ← marketRevenueDaily
+ *     engagement                        ← walletEvents
+ *     allocation                        ← assetPoolAllocationDaily (+markets join)
+ *     transactions                      ← walletEvents (raw feed)
+ *     risk                              ← riskAssessments
+ *
+ *   PoolDetail
+ *     hero / heroMetric / quickStats    ← markets + marketDailyStats
+ *     keyMetrics / performance          ← marketDailyStats
+ *     cashflow                          ← marketRevenueDaily
+ *     engagement                        ← walletEvents
+ *     risk                              ← riskAssessments
+ *
+ * Query stubs for all of these live in:
+ *   convex/engagement.ts, convex/cashflow.ts, convex/markets.ts,
+ *   convex/allocation.ts  — each stub returns data shaped *exactly* like the
+ *   corresponding view-model below, so the swap from mocks → live data is a
+ *   one-line change in `./index.ts`.
+ * ============================================================================
  */
 
 import type { BorrowAssetVisual, BorrowPoolRow, BorrowableAsset } from "@/app/lib/borrow-sim"
@@ -14,14 +44,25 @@ import type { BorrowAssetVisual, BorrowPoolRow, BorrowableAsset } from "@/app/li
 // Primitive building blocks
 // -------------------------------------------------------------------------
 
-/** A single (t, v) sample on a time-series chart. */
+/**
+ * A single (t, v) sample on a time-series chart.
+ *
+ * @convex-source Rows from `marketDailyStats.day` (UTC YYYY-MM-DD) or
+ *   `walletEvents.at` bucketed to UTC day strings. Every numeric chart on
+ *   both detail pages is fed by one of these two tables (see `convex/schema.ts`).
+ */
 export type Point = {
   /** ISO-8601 date (YYYY-MM-DD) or an ISO timestamp. */
   t: string
   v: number
 }
 
-/** A named series of points (used by every chart primitive). */
+/**
+ * A named series of points (used by every chart primitive).
+ *
+ * @convex-source `id` mirrors `markets._id` + a metric key so the frontend
+ *   can key React trees stably across fetches.
+ */
 export type Series = {
   id: string
   label: string
@@ -72,6 +113,12 @@ export type RiskMetric = {
   hint?: string
 }
 
+/**
+ * Risk rating shown in the `RiskSection` on both detail pages.
+ *
+ * @convex-source Latest row in `riskAssessments` for the given `marketId`.
+ *   Historical rows are retained for audit; the UI only reads the freshest.
+ */
 export type RiskAssessment = {
   /** Total risk premium in basis points (sum of breakdown items). */
   premiumBps: number
@@ -133,11 +180,70 @@ export type CashflowRow = {
   highlighted?: boolean
 }
 
+/**
+ * Breakdown table + monthly bars shown under the main cashflow card.
+ *
+ * @convex-source `marketRevenueDaily` rolled up to a 12-month window. `rows`
+ *   are the TTM totals; `bars` are per-month series of the same columns.
+ * @convex-query  `cashflow.getBreakdownForAsset({ slug })`
+ * @convex-query  `cashflow.getBreakdownForPool({ slug })`
+ */
 export type CashflowCard = {
   bars: Series[]
   rows: CashflowRow[]
   /** Period the table is anchored to (displayed as a column header). */
   periodLabel: string
+}
+
+/**
+ * Monthly revenue bar chart shown on the asset detail page — the gross
+ * interest this asset generates (paid by borrowers).
+ *
+ * @convex-source `marketRevenueDaily.interestFromBorrowersUsd`, grouped by
+ *   UTC calendar month and zero-filled to 12 buckets.
+ * @convex-query  `cashflow.getRevenueForAsset({ slug })`
+ */
+export type CashflowTrend = {
+  /** Pre-formatted 12-month aggregate total. */
+  totalLabel: string
+  /** Period label displayed in the top-right pill (e.g. "Yearly"). */
+  periodLabel: string
+  /** 12 monthly points representing gross revenue. */
+  series: Series
+}
+
+/**
+ * Daily engagement card: two headline KPIs above a smooth line chart.
+ * Used on both pool and asset detail pages.
+ *
+ * @convex-source All fields derive from `walletEvents`:
+ *   - `series.points[i].v`   distinct wallets emitting any event on day `i`
+ *                            (count of `walletEvents.wallet` per UTC day).
+ *   - `primary.valueLabel`   today's value of `series.points[last].v`.
+ *   - `primary.delta`        today vs. yesterday % change.
+ *   - `secondary.valueLabel` conversion %:
+ *       * asset scope: borrowers who emitted a `repay` within 30 days
+ *         of their latest `borrow`.
+ *       * pool scope : suppliers who emitted a `borrow` within 24h of
+ *         their latest `supply`.
+ * @convex-query  `engagement.getForAsset({ slug })`
+ * @convex-query  `engagement.getForPool({ slug })`
+ */
+export type EngagementTrend = {
+  /** Title rendered in the card header (e.g. "User Engagement Trends"). */
+  title: string
+  primary: {
+    label: string
+    valueLabel: string
+    delta: DeltaStat
+  }
+  secondary: {
+    label: string
+    valueLabel: string
+    delta: DeltaStat
+  }
+  /** Daily series plotted as a smooth area-line. Points are ISO date + count. */
+  series: Series
 }
 
 export type PoolDetailHero = {
@@ -195,6 +301,7 @@ export type PoolDetail = {
   performance: Record<PerfTab, Record<PerfPeriod, PerfTabDataset>>
   keyMetrics: Record<KeyMetricId, Record<TimeRangeId, Series>>
   cashflow: CashflowCard
+  engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
   related: RelatedPoolSummary[]
@@ -209,6 +316,14 @@ export type PoolDetail = {
 
 export type AssetChartMetricId = "supply" | "borrow" | "utilization" | "apy"
 
+/**
+ * One row in the asset's allocation breakdown table.
+ *
+ * @convex-source Latest row per `poolId` in `assetPoolAllocationDaily` joined
+ *   to `markets` for `poolName` / `venueLabel`. `visuals` is hydrated by the
+ *   frontend because icon assets are a client concern.
+ * @convex-query  `allocation.getForAsset({ slug })`
+ */
 export type AllocationRow = {
   id: string
   /** Pool name, e.g. "USDC / USDT". */
@@ -222,6 +337,14 @@ export type AllocationRow = {
   borrowAprPct: number
 }
 
+/**
+ * Row in the asset "Recent transactions" table.
+ *
+ * @convex-source `walletEvents` filtered by `marketId` (same table that
+ *   feeds `EngagementTrend`). `amountLabel` pre-formats `amountUsd` with a
+ *   sign based on `kind` (borrow/withdraw negative, supply/repay positive).
+ * @convex-query  TBD — likely `transactions.getForAsset({ slug, limit })`.
+ */
 export type TxHistoryRow = {
   id: string
   /** ISO timestamp. */
@@ -268,9 +391,12 @@ export type AssetDetail = {
   }
   interestGenerated: Record<PerfPeriod, PerfTabDataset>
   historicalUtilization: Series
+  /** Monthly income / expense / savings bars shown after historical utilization. */
+  cashflowTrend: CashflowTrend
   allocation: AllocationRow[]
   keyMetrics: Record<KeyMetricId, Record<TimeRangeId, Series>>
   cashflow: CashflowCard
+  engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
   transactions: TxHistoryRow[]

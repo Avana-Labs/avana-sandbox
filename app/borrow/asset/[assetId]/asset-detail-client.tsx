@@ -4,12 +4,13 @@ import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { StickyDetailHeader, RiskLevelPill } from "@/app/borrow/_detail/ui"
+import { StickyDetailHeader, RiskLevelPill, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
 import {
   AssetHero,
   AssetHeroIdentity,
   SupplyBorrowCard,
   HistoricalUtilizationCard,
+  CashflowTrendCard,
   AllocationBreakdownCard,
   AssetCashflowCard,
   TransactionHistoryCard,
@@ -100,6 +101,11 @@ export function AssetDetailClient({ detail }: Props) {
               <QuickStatsGrid detail={detail} />
               <SupplyBorrowCard detail={detail} />
               <HistoricalUtilizationCard detail={detail} />
+              <CashflowTrendCard detail={detail} />
+              <EngagementTrendsCard
+                engagement={detail.engagement}
+                accentClassName={detail.hero.visual.textClass}
+              />
               <AllocationBreakdownCard detail={detail} />
               <AssetCashflowCard detail={detail} />
               <RiskSection detail={detail} />
