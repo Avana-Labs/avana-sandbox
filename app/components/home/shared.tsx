@@ -8,12 +8,34 @@ export function PickerSurface({
   children,
   footer,
   tier = "top",
+  seamless = false,
 }: {
   label: string
   children: React.ReactNode
   footer?: React.ReactNode
   tier?: "top" | "bottom"
+  /**
+   * When true the surface drops its own border so it can sit inside a parent
+   * shell (Uniswap-style swap panel). The parent is expected to draw the
+   * outer rounded border.
+   */
+  seamless?: boolean
 }) {
+  if (seamless) {
+    return (
+      <div
+        className={cn(
+          "rounded-2xl px-4 py-[18px] transition-colors",
+          tier === "top" ? "bg-card" : "bg-muted/40",
+        )}
+      >
+        <div className="mb-1 text-[13px] font-medium text-muted-foreground">{label}</div>
+        {children}
+        {footer ? <div className="mt-3 text-xs text-muted-foreground">{footer}</div> : null}
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn(

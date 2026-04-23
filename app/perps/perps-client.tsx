@@ -31,7 +31,7 @@ export function PerpsClient() {
         {/* HERO SECTION */}
         <div className="mt-8 mb-8 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-stretch">
           <div className="flex flex-col overflow-hidden">
-            <BalanceChart />
+            <BalanceChart symbols={MOCK_MARKETS.slice(0, 3).map((market) => market.symbol)} />
           </div>
           <div className="flex flex-col">
             <HallOfFame />
