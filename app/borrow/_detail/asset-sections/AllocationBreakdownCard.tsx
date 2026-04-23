@@ -43,14 +43,14 @@ export function AllocationBreakdownCard({ detail }: Props) {
                 </td>
                 <td className="px-2 py-3.5 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <span className="font-data text-sm font-semibold tabular-nums text-foreground">
-                      {row.sharePct.toFixed(2)}%
-                    </span>
                     <span className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
                       <span
                         className="block h-full rounded-full bg-foreground/50"
                         style={{ width: `${Math.min(100, row.sharePct)}%` }}
                       />
+                    </span>
+                    <span className="font-data text-sm font-semibold tabular-nums text-foreground">
+                      {row.sharePct.toFixed(2)}%
                     </span>
                   </div>
                 </td>

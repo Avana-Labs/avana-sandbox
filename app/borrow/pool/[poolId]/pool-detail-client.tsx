@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { StickyDetailHeader, RiskLevelPill } from "@/app/borrow/_detail/ui"
+import { StickyDetailHeader, RiskLevelPill, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
 import {
   PoolHero,
   PoolHeroIdentity,
@@ -117,6 +117,10 @@ export function PoolDetailClient({ detail }: Props) {
               <QuickStatsGrid detail={detail} />
               <KeyMetricsCard detail={detail} />
               <CashflowCard detail={detail} />
+              <EngagementTrendsCard
+                engagement={detail.engagement}
+                accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
+              />
               <RiskSection detail={detail} />
               <AboutCard about={detail.about} />
               <RelatedPoolsRow detail={detail} />

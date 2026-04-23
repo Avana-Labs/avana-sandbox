@@ -28,6 +28,7 @@ import type {
   CashflowCard,
   ChartMetricId,
   DeltaStat,
+  EngagementTrend,
   KeyMetricId,
   PerfPeriod,
   PerfTab,
@@ -461,6 +462,51 @@ function buildCashflow(row: BorrowPoolRow, fixture: FixtureOverride | undefined)
   }
 }
 
+function buildPoolEngagement(row: BorrowPoolRow, fixture: FixtureOverride | undefined): EngagementTrend {
+  const rand = prngFromString(`${row.id}:engagement`)
+  const tvl = fixture?.baseTvlUsd ?? getSpokeById(row.spoke).liquidityUsd
+  const base = Math.max(600, Math.round(Math.sqrt(tvl) * 1.3))
+  const now = Date.UTC(2026, 3, 22)
+  const samples = 12
+  const points: Series["points"] = []
+  for (let i = samples - 1; i >= 0; i--) {
+    const d = new Date(now - i * 86_400_000)
+    const t = d.toISOString().slice(0, 10)
+    const wave = 1 + Math.sin(((samples - 1 - i) / samples) * Math.PI * 2) * 0.2
+    const noise = 1 + (rand() - 0.5) * 0.25
+    const v = Math.max(0, Math.round(base * wave * noise))
+    points.push({ t, v })
+  }
+  const last = points[points.length - 1].v
+  const total = points.reduce((a, p) => a + p.v, 0)
+  const conversion = 4 + rand() * 10
+  const pctDelta = (p: number): DeltaStat =>
+    p === 0
+      ? { value: 0, direction: "flat", label: "0.0%" }
+      : p > 0
+        ? { value: p, direction: "up", label: `+${p.toFixed(1)}%` }
+        : { value: p, direction: "down", label: `${p.toFixed(1)}%` }
+  return {
+    title: "User Engagement Trends",
+    primary: {
+      label: "Active wallets",
+      valueLabel: last.toLocaleString(),
+      delta: pctDelta(Math.round((rand() * 14 + 2) * 10) / 10),
+    },
+    secondary: {
+      label: "Borrow conversion",
+      valueLabel: `${conversion.toFixed(1)}%`,
+      delta: pctDelta(Math.round((rand() * 4 - 1) * 10) / 10),
+    },
+    series: {
+      id: `${row.id}:engagement`,
+      label: "Active wallets",
+      points,
+      aggregate: total / samples,
+    },
+  }
+}
+
 function buildRisk(row: BorrowPoolRow, fixture: FixtureOverride | undefined): RiskAssessment {
   if (fixture?.risk) return fixture.risk
   const bps = row.riskPremiumBps
@@ -541,6 +587,7 @@ export function buildPoolDetail(row: BorrowPoolRow): PoolDetail {
     performance: buildPerformance(row, fixture),
     keyMetrics: buildKeyMetrics(row, fixture),
     cashflow: buildCashflow(row, fixture),
+    engagement: buildPoolEngagement(row, fixture),
     risk: buildRisk(row, fixture),
     about: buildAbout(row, fixture),
     related: buildRelated(row),

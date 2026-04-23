@@ -7,6 +7,31 @@
  *
  * Contract test lives in `./__tests__/contract.test.ts` — keep it green when
  * you swap mocks for real data and the UI will keep working.
+ *
+ * ─── Convex migration ────────────────────────────────────────────────────
+ * When `convex/schema.ts` is populated and data is flowing, replace the
+ * `build*Detail` calls below with Convex query invocations. The queries are
+ * already defined and return the exact UI shapes — see:
+ *
+ *   convex/engagement.ts    EngagementTrend  (asset + pool)
+ *   convex/cashflow.ts      CashflowTrend + CashflowCard
+ *   convex/markets.ts       Series for hero + key metrics + supply/borrow
+ *   convex/allocation.ts    AllocationRow[]
+ *
+ * Server component example once wired:
+ *
+ *   import { fetchQuery } from "convex/nextjs"
+ *   import { api } from "@/convex/_generated/api"
+ *   const [engagement, cashflow, utilization] = await Promise.all([
+ *     fetchQuery(api.engagement.getForAsset, { slug }),
+ *     fetchQuery(api.cashflow.getRevenueForAsset, { slug }),
+ *     fetchQuery(api.markets.getHistoricalUtilization, { slug }),
+ *   ])
+ *   return { ...buildAssetDetail(row), engagement, cashflowTrend: cashflow, historicalUtilization: utilization }
+ *
+ * That pattern works card-by-card, so the mocks can be peeled off as each
+ * Convex table is populated — no big-bang migration needed.
+ * ─────────────────────────────────────────────────────────────────────────
  */
 
 import { BORROWABLE_ASSETS, BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
@@ -19,6 +44,8 @@ export type {
   AllocationRow,
   AboutCard,
   CashflowCard,
+  CashflowTrend,
+  EngagementTrend,
   ChartMetricId,
   KeyMetricId,
   PerfTab,

@@ -61,7 +61,7 @@ export function SupplyBorrowCard({ detail }: Props) {
       }
     >
       <div className="flex flex-col gap-5">
-        <div className="h-[240px] w-full pt-4">
+        <div className="w-full pt-4">
           <LightweightChart
             series={series}
             type="area"

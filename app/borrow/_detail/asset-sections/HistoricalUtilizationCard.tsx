@@ -14,7 +14,7 @@ export function HistoricalUtilizationCard({ detail }: Props) {
       subtitle="Borrowed ÷ supplied over the last 12 months."
       bodyClassName="p-0"
     >
-      <div className="h-[220px] w-full pt-4">
+      <div className="w-full pt-4">
         <LightweightChart
           series={detail.historicalUtilization}
           type="area"
