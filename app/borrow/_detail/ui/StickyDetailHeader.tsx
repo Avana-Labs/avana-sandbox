@@ -58,18 +58,18 @@ export function StickyDetailHeader({
       aria-hidden={!visible}
       data-visible={visible}
       className={cn(
-        "pointer-events-none fixed left-0 right-0 top-0 z-30 border-b border-border/40 bg-background/95 backdrop-blur transition-all duration-300",
-        visible ? "translate-y-0 opacity-100 pointer-events-auto" : "-translate-y-2 opacity-0",
+        "pointer-events-none fixed left-0 right-0 top-0 z-30 border-b border-border bg-background/90 backdrop-blur-md transition-all duration-200",
+        visible ? "translate-y-0 opacity-100 pointer-events-auto" : "-translate-y-1 opacity-0",
         className,
       )}
     >
-      <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between gap-4 px-4">
+      <div className="mx-auto flex h-12 max-w-[1200px] items-center justify-between gap-4 px-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex items-center gap-3">
             {title}
           </div>
           {subtitle ? (
-            <div className="hidden truncate text-[13px] text-muted-foreground sm:block">{subtitle}</div>
+            <div className="hidden truncate text-[12px] text-muted-foreground sm:block">{subtitle}</div>
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-3">

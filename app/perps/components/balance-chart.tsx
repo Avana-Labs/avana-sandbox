@@ -26,7 +26,7 @@ export function BalanceChart({ symbols = DEFAULT_SYMBOLS }: { symbols?: string[]
   const palette = React.useMemo(() => makeChartPalette({ symbols, theme }), [symbolKey, theme])
 
   return (
-    <Card className="border-border/40 bg-card/50 shadow-none">
+    <Card className="border-border bg-surface-raised shadow-elev-1">
       <CardContent className="p-0">
         <div className="h-[240px] w-full pt-4">
           <ResponsiveContainer width="100%" height="100%">
@@ -42,12 +42,12 @@ export function BalanceChart({ symbols = DEFAULT_SYMBOLS }: { symbols?: string[]
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="rounded-lg border border-border bg-background p-2 shadow-sm">
+                      <div className="rounded-xs border border-border bg-popover px-2 py-1.5 shadow-elev-2">
                         <div className="flex flex-col">
-                          <span className="text-[10px] uppercase text-muted-foreground">
+                          <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                             {payload[0].payload.time}
                           </span>
-                          <span className="font-data font-medium">
+                          <span className="font-data text-[12.5px] font-medium text-foreground">
                             ${payload[0].value?.toLocaleString()}
                           </span>
                         </div>

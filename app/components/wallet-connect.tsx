@@ -89,7 +89,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
     setMounted(true)
   }, [])
 
-  const menuContentClass = "rounded-xl border border-border bg-popover p-1 shadow-md"
+  const menuContentClass = "rounded-radius-sm border border-border bg-popover p-1 shadow-elev-3"
 
   const topLinks: MenuLinkItem[] = [
     {
@@ -148,8 +148,8 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
   ]
 
   return (
-    <div className="flex items-center gap-3 2xl:gap-2 pl-2">
-      <div className="h-8 2xl:h-6 w-px bg-foreground/20" />
+    <div className="flex items-center gap-2 pl-2">
+      <div className="h-5 w-px bg-border" />
 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
@@ -157,25 +157,28 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
             type="button"
             aria-label="Open resources and support"
             title="Resources and support"
-            className={`flex h-9 w-9 2xl:h-7 2xl:w-7 appearance-none select-none items-center justify-center rounded-none border-transparent bg-transparent shadow-none outline-none ring-0 [-webkit-tap-highlight-color:transparent] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:bg-transparent active:ring-0 hover:bg-transparent ${
-              isResourcesActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={cn(
+              "flex size-8 appearance-none select-none items-center justify-center rounded-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25",
+              isResourcesActive
+                ? "text-foreground"
+                : "text-muted-foreground hover:bg-surface-inset/60 hover:text-foreground",
+            )}
           >
-            <AppsGridIcon className="h-5 w-5 2xl:h-4 2xl:w-4" />
+            <AppsGridIcon className="h-4 w-4" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" sideOffset={10} className={`w-64 ${menuContentClass}`}>
-          <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Global preferences
-          </DropdownMenuLabel>
-          <div className="px-2 py-1.5 flex items-center justify-between gap-2">
-            <span className="text-[13px] text-muted-foreground">Theme</span>
-            <div className="flex items-center rounded-full border border-border p-0.5">
+        <DropdownMenuContent align="end" sideOffset={8} className={`w-64 ${menuContentClass}`}>
+          <DropdownMenuLabel>Global preferences</DropdownMenuLabel>
+          <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+            <span className="text-[12px] text-muted-foreground">Theme</span>
+            <div className="flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5">
               <button
                 onClick={() => setTheme("system")}
                 className={cn(
-                  "px-2.5 py-1 text-xs font-semibold rounded-full transition-colors",
-                  mounted && theme === "system" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  "rounded-xs px-2 py-1 text-[11px] font-medium transition-colors",
+                  mounted && theme === "system"
+                    ? "bg-surface-raised text-foreground shadow-elev-1"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Auto
@@ -183,47 +186,46 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
               <button
                 onClick={() => setTheme("light")}
                 className={cn(
-                  "p-1.5 rounded-full transition-colors",
-                  mounted && theme === "light" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  "rounded-xs p-1 transition-colors",
+                  mounted && theme === "light"
+                    ? "bg-surface-raised text-foreground shadow-elev-1"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Sun className="h-3.5 w-3.5" />
+                <Sun className="h-3 w-3" />
               </button>
               <button
                 onClick={() => setTheme("dark")}
                 className={cn(
-                  "p-1.5 rounded-full transition-colors",
-                  mounted && theme === "dark" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  "rounded-xs p-1 transition-colors",
+                  mounted && theme === "dark"
+                    ? "bg-surface-raised text-foreground shadow-elev-1"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Moon className="h-3.5 w-3.5" />
+                <Moon className="h-3 w-3" />
               </button>
             </div>
           </div>
-          <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[13px] text-muted-foreground">
+          <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[12px] text-muted-foreground">
             <span>Language</span>
-            <span className="font-semibold text-foreground">English <span className="ml-1 opacity-50">&gt;</span></span>
+            <span className="font-medium text-foreground">English <span className="ml-1 opacity-50">&gt;</span></span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[13px] text-muted-foreground">
+          <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[12px] text-muted-foreground">
             <span>Currency</span>
-            <span className="font-semibold text-foreground">USD <span className="ml-1 opacity-50">&gt;</span></span>
+            <span className="font-medium text-foreground">USD <span className="ml-1 opacity-50">&gt;</span></span>
           </DropdownMenuItem>
-          <DropdownMenuSeparator className="my-1" />
-          <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Resources
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="my-0" />
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Resources</DropdownMenuLabel>
           {topLinks.map((item) => (
             <MenuLink key={item.label} {...item} />
           ))}
-          <DropdownMenuSeparator className="my-0" />
-          <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Docs
-          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Docs</DropdownMenuLabel>
           {docsLinks.map((item) => (
             <MenuLink key={item.label} {...item} />
           ))}
-          <DropdownMenuSeparator className="my-0" />
+          <DropdownMenuSeparator />
           {moreLinks.map((item) => (
             <MenuLink key={item.label} {...item} />
           ))}
@@ -234,9 +236,9 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
         type="button"
         aria-label="Sign in"
         title="Sign in"
-        className="flex h-10 w-10 2xl:h-8 2xl:w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25"
       >
-        <CircleUserRound className="h-6 w-6 2xl:h-5 2xl:w-5" strokeWidth={1.5} />
+        <CircleUserRound className="h-4 w-4" strokeWidth={1.5} />
       </button>
     </div>
   )

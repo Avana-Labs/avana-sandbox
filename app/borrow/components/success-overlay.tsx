@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import confetti from "canvas-confetti"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { Check } from "lucide-react"
 import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog"
 import { PillButton } from "./atoms"
 
@@ -27,88 +26,62 @@ export function SuccessOverlay({
   title,
   subtitle,
   amountLabel,
-  ringEmoji = "✓",
-  ringBgClass = "bg-emerald-100 text-emerald-700",
   rows,
   primaryLabel = "Done",
   onPrimary,
 }: SuccessOverlayProps) {
-  const cardRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    if (!open || !cardRef.current) return
-    const card = cardRef.current
-    const canvas = document.createElement("canvas")
-    canvas.style.position = "absolute"
-    canvas.style.inset = "0"
-    canvas.style.pointerEvents = "none"
-    canvas.style.width = "100%"
-    canvas.style.height = "100%"
-    card.prepend(canvas)
-    const confettiInstance = confetti.create(canvas, { resize: true, useWorker: true })
-    const timer = window.setTimeout(() => {
-      confettiInstance({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.25 },
-        colors: ["#10b981", "#6366f1", "#f59e0b", "#ec4899"],
-      })
-    }, 50)
-    return () => {
-      window.clearTimeout(timer)
-      confettiInstance.reset()
-      canvas.remove()
-    }
-  }, [open])
-
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : null)}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
-          ref={cardRef}
-          className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-border bg-card p-0 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+          className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 duration-150 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
-          <DialogTitle className="sr-only">{title}</DialogTitle>
-          <div className="relative px-5 py-7 text-center">
-            <div className={`mx-auto inline-flex size-14 items-center justify-center rounded-full text-[22px] ${ringBgClass}`}>
-              {ringEmoji}
+          <div className="border-b border-border px-5 pb-4 pt-5">
+            <div className="flex items-start gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xs border border-border bg-surface-inset text-accent-emphasis">
+                <Check className="size-4" strokeWidth={2.25} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-[14px] font-medium text-foreground">{title}</DialogTitle>
+                {subtitle ? <p className="mt-0.5 text-[12px] text-muted-foreground">{subtitle}</p> : null}
+              </div>
             </div>
-            <h2 className="mt-4 text-[17px] font-semibold text-foreground">{title}</h2>
-            {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
-            <div className="mt-4 font-data text-[34px] font-semibold text-foreground">{amountLabel}</div>
+            <div className="mt-4 font-data text-[22px] font-medium tabular-nums text-foreground">{amountLabel}</div>
+          </div>
 
-            <dl className="mt-5 divide-y divide-border rounded-xl border border-border text-left">
+          <div className="px-5 py-4">
+            <dl className="divide-y divide-border overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
               {rows.map((row) => (
-                <div key={row.label} className="flex items-center justify-between px-3.5 py-2.5 text-sm">
+                <div key={row.label} className="flex items-center justify-between px-3 py-2 text-[12.5px]">
                   <dt className="text-muted-foreground">{row.label}</dt>
-                  <dd className={row.tone ? `font-data font-semibold tabular-nums ${row.tone}` : "font-data font-medium tabular-nums text-foreground"}>
+                  <dd className={row.tone ? `font-data font-medium tabular-nums ${row.tone}` : "font-data font-medium tabular-nums text-foreground"}>
                     {row.value}
                   </dd>
                 </div>
               ))}
             </dl>
-
-            <div className="mt-5 flex items-center justify-center gap-2">
-              <PillButton variant="ghost" size="md" onClick={onClose}>
-                Close
-              </PillButton>
-              <PillButton
-                variant="primary"
-                size="md"
-                onClick={() => {
-                  onPrimary?.()
-                  onClose()
-                }}
-              >
-                {primaryLabel}
-              </PillButton>
-            </div>
           </div>
 
-          <DialogClose className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+          <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
+            <PillButton variant="ghost" size="sm" onClick={onClose}>
+              Close
+            </PillButton>
+            <PillButton
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                onPrimary?.()
+                onClose()
+              }}
+            >
+              {primaryLabel}
+            </PillButton>
+          </div>
+
+          <DialogClose className="absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground">
             <span className="sr-only">Close</span>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
               <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </DialogClose>

@@ -28,7 +28,7 @@ export function PageIntro({
       )}
     >
       <div className="min-w-0 space-y-1">
-        <h1 className={cn("text-base font-semibold leading-snug tracking-tight text-foreground", titleClassName)}>{title}</h1>
+        <h1 className={cn("text-[15px] font-medium leading-snug tracking-tight text-foreground", titleClassName)}>{title}</h1>
       </div>
       {children ? (
         <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center">{children}</div>

@@ -45,12 +45,12 @@ function ShortcutTokenButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1.5 rounded-2xl px-2 py-2 transition-colors",
-        selected ? "bg-surface-2" : "hover:bg-surface-1",
+        "flex flex-col items-center gap-1.5 rounded-xs px-2 py-2 transition-colors",
+        selected ? "bg-surface-inset" : "hover:bg-surface-inset",
       )}
     >
-      <TokenBubble visual={visual} className="size-9" />
-      <span className="text-[13px] font-medium text-foreground">{symbol}</span>
+      <TokenBubble visual={visual} className="size-8" />
+      <span className="text-[12px] font-medium text-foreground">{symbol}</span>
     </button>
   )
 }
@@ -90,28 +90,32 @@ export function TokenPickerDialog({
         }
       }}
     >
-      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-[24px] border border-border bg-card p-0 shadow-[0_10px_40px_rgba(0,0,0,0.08)] sm:max-w-[420px]">
-        <DialogHeader className="flex-row items-center justify-between px-5 pb-3 pt-5 text-left space-y-0">
-          <DialogTitle className="text-[17px] font-semibold">Select a token</DialogTitle>
+      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 sm:max-w-[420px]">
+        <DialogHeader className="flex-row items-center justify-between border-b border-border px-5 pb-3 pt-4 text-left space-y-0">
+          <DialogTitle className="text-[13px] font-medium">Select a token</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-1 flex-col overflow-hidden pb-3">
-          <div className="px-4">
-            <div className="flex items-center gap-3 rounded-2xl bg-surface-1 px-4 py-3 transition-colors focus-within:bg-surface-2">
-              <Search className="h-[18px] w-[18px] text-muted-foreground" />
+          <div className="px-4 pt-3">
+            <div className="flex items-center gap-2.5 rounded-radius-sm border border-border bg-surface-inset px-3 py-2 transition-colors focus-within:border-accent-emphasis/40">
+              <Search className="h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search tokens"
-                className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+                className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
               />
-              <button type="button" className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-1 shadow-sm transition-colors hover:bg-muted" aria-label="Filter networks">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 rounded-xs border border-border bg-surface-raised px-1.5 py-0.5 transition-colors hover:bg-surface-hover"
+                aria-label="Filter networks"
+              >
                 <span className="relative inline-flex">
-                  <span className="inline-block size-4 rounded-full bg-brand" />
-                  <span className="absolute -right-1 inline-block size-4 rounded-full bg-indigo-500 ring-2 ring-background" />
+                  <span className="inline-block size-3.5 rounded-full bg-accent-emphasis" />
+                  <span className="absolute -right-1 inline-block size-3.5 rounded-full bg-indigo-500 ring-2 ring-surface-raised" />
                 </span>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
               </button>
             </div>
           </div>
@@ -128,8 +132,8 @@ export function TokenPickerDialog({
             ))}
           </div>
 
-          <div className="mt-2 flex items-center gap-1.5 px-5 pb-1 pt-2 text-[13px] text-muted-foreground">
-            <TrendingUp className="h-3.5 w-3.5" />
+          <div className="mt-2 flex items-center gap-1.5 border-t border-border px-5 pb-1 pt-3 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+            <TrendingUp className="h-3 w-3" />
             <span>Tokens by 24H volume</span>
           </div>
 
@@ -144,25 +148,25 @@ export function TokenPickerDialog({
                   type="button"
                   onClick={() => onSelect(token.id)}
                   className={cn(
-                    "flex items-center gap-3 px-5 py-2.5 text-left transition-colors",
-                    isSelected ? "bg-surface-1" : "hover:bg-surface-1",
+                    "flex items-center gap-3 px-5 py-2 text-left transition-colors",
+                    isSelected ? "bg-surface-inset" : "hover:bg-surface-inset",
                   )}
                 >
-                  <TokenBubble visual={token.visual} className="size-9" />
+                  <TokenBubble visual={token.visual} className="size-8" />
                   <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-[15px] font-semibold text-foreground">{token.name}</span>
-                    <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                    <span className="truncate text-[13px] font-medium text-foreground">{token.name}</span>
+                    <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
                       <span>{token.symbol}</span>
-                      {address ? <span className="truncate">{address}</span> : null}
+                      {address ? <span className="truncate font-data">{address}</span> : null}
                     </div>
                   </div>
-                  {isSelected ? <Check className="h-4 w-4 text-primary" /> : null}
+                  {isSelected ? <Check className="h-3.5 w-3.5 text-foreground" /> : null}
                 </button>
               )
             })}
 
             {filteredTokens.length === 0 ? (
-              <div className="mx-4 rounded-2xl border border-dashed border-border/60 px-4 py-6 text-center text-sm text-muted-foreground">
+              <div className="mx-4 rounded-radius-sm border border-dashed border-border px-4 py-6 text-center text-[12px] text-muted-foreground">
                 No tokens match that search.
               </div>
             ) : null}

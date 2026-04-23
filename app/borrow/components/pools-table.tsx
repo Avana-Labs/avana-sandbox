@@ -35,11 +35,11 @@ function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
               ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
               : tone === "danger"
                 ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                : "bg-muted text-muted-foreground"
+                : "bg-surface-inset text-muted-foreground"
         return (
           <span
             key={`${event.label}-${index}`}
-            className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold", toneClass)}
+            className={cn("inline-flex items-center rounded-xs px-1.5 py-0.5 text-[10px] font-medium", toneClass)}
           >
             {event.label}
           </span>
@@ -57,7 +57,7 @@ type PoolsTableProps = {
 
 function EModePill() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-700">
+    <span className="inline-flex items-center gap-1 rounded-xs border border-accent-emphasis/30 bg-accent-emphasis-soft px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-accent-emphasis dark:text-accent-emphasis">
       E-Mode
     </span>
   )
@@ -94,78 +94,78 @@ function SpokeSection({
 }) {
   return (
     <section className="mb-2">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-medium">{spoke.label}</h3>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-[14px] font-medium tracking-tight">{spoke.label}</h3>
         {spoke.eMode ? <EModePill /> : null}
       </div>
-      <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
+      <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-sm">
+          <table className="w-full min-w-[920px] text-[13px]">
             <thead>
-              <tr className="border-b border-border/40 text-left text-muted-foreground">
-                <th className="pb-3 pt-4 pl-6 font-medium">Pool</th>
-                <th className="pb-3 pt-4 pl-4 text-right font-medium">Max LTV</th>
-                <th className="pb-3 pt-4 pl-4 text-right font-medium">Fees APY</th>
-                <th className="pb-3 pt-4 pl-4 text-right font-medium">Supplied</th>
-                <th className="pb-3 pt-4 pl-4 text-right font-medium">Risk Premium</th>
-                <th className="w-20 pb-3 pt-4 pl-4 text-right font-medium">7D</th>
-                <th className="w-44 pb-3 pt-4 pl-4 pr-6 text-right font-medium">Action</th>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">Pool</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Max LTV</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Fees APY</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Supplied</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Risk Premium</th>
+                <th className="w-20 pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">7D</th>
+                <th className="w-44 pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40">
+            <tbody className="divide-y divide-border">
               {rows.map((pool) => (
                 <tr
                   key={pool.id}
-                  className="cursor-pointer transition-colors hover:bg-muted/50"
+                  className="cursor-pointer transition-colors hover:bg-surface-inset/60"
                   onClick={() => onUseAsCollateral(pool)}
                 >
-                  <td className="py-3 pl-6">
+                  <td className="py-2.5 pl-5">
                     <TokenPairCell
                       visuals={pool.visuals}
                       name={pool.name}
                       subtitle={`${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`}
-                      size="lg"
+                      size="md"
                     />
                     <EventTagList events={pool.events} />
                   </td>
-                  <td className="py-3 pl-4 text-right">
-                    <span className="font-data text-sm font-semibold tabular-nums text-foreground">{pool.ltv}%</span>
+                  <td className="py-2.5 pl-4 text-right">
+                    <span className="font-data text-[13px] font-medium tabular-nums text-foreground">{pool.ltv}%</span>
                   </td>
-                  <td className="py-3 pl-4 text-right">
+                  <td className="py-2.5 pl-4 text-right">
                     <FlashValue
                       value={(pool.aprMin + pool.aprMax) / 2}
                       goodDirection="down"
-                      className={cn("font-data text-sm font-semibold tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}
+                      className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}
                     >
                       {`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
                     </FlashValue>
                   </td>
-                  <td className="py-3 pl-4 text-right">
-                    <FlashValue value={pool.availableUsd} goodDirection="up" className="font-data text-sm tabular-nums text-foreground">
+                  <td className="py-2.5 pl-4 text-right">
+                    <FlashValue value={pool.availableUsd} goodDirection="up" className="font-data text-[13px] tabular-nums text-foreground">
                       {formatCompactUsd(pool.availableUsd)}
                     </FlashValue>
                   </td>
-                  <td className="py-3 pl-4 text-right">
+                  <td className="py-2.5 pl-4 text-right">
                     <span
                       className={cn(
-                        "font-data text-sm font-medium tabular-nums",
+                        "font-data text-[13px] font-medium tabular-nums",
                         pool.riskPremiumBps >= 100 ? "text-rose-600" : pool.riskPremiumBps >= 60 ? "text-amber-600" : "text-emerald-600",
                       )}
                     >
                       {formatRiskPremium(pool.riskPremiumBps)}
                     </span>
                   </td>
-                  <td className="py-3 pl-4 text-right">
+                  <td className="py-2.5 pl-4 text-right">
                     <div className="inline-flex align-middle">
                       <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} />
                     </div>
                   </td>
-                  <td className="py-3 pl-4 pr-6 text-right">
+                  <td className="py-2.5 pl-4 pr-5 text-right">
                     <div className="inline-flex items-center gap-1.5">
                       <Link
                         href={`/borrow/pool/${pool.id}`}
                         onClick={(event) => event.stopPropagation()}
-                        className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
                       >
                         Details
                       </Link>
@@ -211,13 +211,13 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
         group.spokes.map((entry) => {
           const pendingForSpoke = pending.filter((row) => row.spoke === entry.spoke.id)
           return (
-            <section key={entry.spoke.id} className="space-y-3">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-lg font-medium">{entry.spoke.label}</h3>
+            <section key={entry.spoke.id} className="space-y-2">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-[14px] font-medium tracking-tight">{entry.spoke.label}</h3>
                 {entry.spoke.eMode ? <EModePill /> : null}
               </div>
-              <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
-                <ul className="divide-y divide-border/40">
+              <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
+                <ul className="divide-y divide-border">
                 {entry.rows.map((pool) => (
                   <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onUseAsCollateral(pool)}>
                     <div className="flex items-center justify-between gap-3">
@@ -256,7 +256,7 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                       <Link
                         href={`/borrow/pool/${pool.id}`}
                         onClick={(event) => event.stopPropagation()}
-                        className="flex h-10 flex-1 items-center justify-center rounded-full border border-border bg-background text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                        className="flex h-9 flex-1 items-center justify-center rounded-xs border border-border bg-surface-raised text-[13px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
                       >
                         Details
                       </Link>
@@ -310,17 +310,17 @@ function MobileField({
 }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-[0.07em] text-muted-foreground">{label}</div>
+      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
       {flashValue !== undefined ? (
         <FlashValue
           value={flashValue}
           goodDirection={flashGoodDirection ?? "up"}
-          className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground", tone)}
+          className={cn("mt-0.5 font-data text-[13px] font-medium tabular-nums text-foreground", tone)}
         >
           {value}
         </FlashValue>
       ) : (
-        <div className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground", tone)}>{value}</div>
+        <div className={cn("mt-0.5 font-data text-[13px] font-medium tabular-nums text-foreground", tone)}>{value}</div>
       )}
     </div>
   )

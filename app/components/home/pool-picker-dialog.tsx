@@ -55,13 +55,13 @@ export function PoolPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-[24px] border border-border bg-card p-0 shadow-[0_10px_40px_rgba(0,0,0,0.08)] sm:max-w-[440px]">
-        <DialogHeader className="px-5 pb-3 pt-5 text-left">
-          <DialogTitle className="text-[17px] font-semibold">{title}</DialogTitle>
+      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 sm:max-w-[440px]">
+        <DialogHeader className="border-b border-border px-5 pb-3 pt-4 text-left">
+          <DialogTitle className="text-[13px] font-medium">{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex items-center gap-1.5 px-5 pb-1 text-[13px] text-muted-foreground">
-          <TrendingUp className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-1.5 px-5 pb-1 pt-3 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+          <TrendingUp className="h-3 w-3" />
           <span>Positions</span>
         </div>
 
@@ -78,27 +78,27 @@ export function PoolPickerDialog({
                 type="button"
                 onClick={() => setFocusedPoolId(pool.id)}
                 className={cn(
-                  "flex w-full items-center gap-4 px-5 py-3 text-left transition-colors",
-                  isFocused ? "bg-surface-1" : "hover:bg-surface-1",
+                  "flex w-full items-center gap-4 px-5 py-2.5 text-left transition-colors",
+                  isFocused ? "bg-surface-inset" : "hover:bg-surface-inset",
                 )}
               >
                 <PairVisual visuals={pool.visuals} />
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[15px] font-semibold text-foreground">{pool.name}</span>
-                  <span className="text-[13px] text-muted-foreground">
+                  <span className="truncate text-[13px] font-medium text-foreground">{pool.name}</span>
+                  <span className="text-[11.5px] text-muted-foreground">
                     {pool.venue} · Max LTV {pool.maxLtv}%
                   </span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="font-data text-[15px] font-semibold">
+                  <span className="font-data text-[13px] font-medium">
                     {mode === "repay" ? (debtUsd > 0 ? formatCompactUsd(debtUsd) : "No debt") : formatCompactUsd(pool.collateralUsd)}
                   </span>
-                  <span className={cn("inline-flex items-center gap-1 text-[12px] font-semibold", status.textClass)}>
+                  <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", status.textClass)}>
                     <span className={cn("inline-block size-1.5 rounded-full", status.dotClass)} />
                     HF {Number.isFinite(hf) ? hf.toFixed(2) : "∞"}
                   </span>
                 </div>
-                {isFocused ? <Check className="h-4 w-4 text-primary" /> : null}
+                {isFocused ? <Check className="ml-1 h-3.5 w-3.5 text-foreground" /> : null}
               </button>
             )
           })}
@@ -107,44 +107,44 @@ export function PoolPickerDialog({
         <div className="mt-2 h-px bg-border" />
 
         <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-4 pt-3">
-          <div className="rounded-[20px] border border-border bg-card p-5">
+          <div className="rounded-radius-sm border border-border bg-surface-inset p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="font-data text-[44px] font-bold leading-none tracking-tight text-foreground">
+                <div className="font-data text-[26px] font-medium leading-none tracking-tight text-foreground">
                   {Number.isFinite(focusedHf) ? focusedHf.toFixed(2) : "∞"}
                 </div>
-                <div className="mt-1.5 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                   Health factor
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1">
-                <span className={cn("inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-[11px] font-bold tracking-wide", focusedStatus.textClass)}>
-                  <span className={cn("inline-block size-2 rounded-full", focusedStatus.dotClass)} />
-                  {focusedStatus.label}
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] text-muted-foreground">
+                  <span className={cn("inline-block size-1.5 rounded-full", focusedStatus.dotClass)} />
+                  <span className={focusedStatus.textClass}>{focusedStatus.label}</span>
                 </span>
                 <span className="text-[11px] text-muted-foreground">{focusedPool.name}</span>
               </div>
             </div>
 
-            <div className="relative mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+            <div className="relative mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className={cn("absolute inset-y-0 left-0 rounded-full", focusedStatus.barClass)}
                 style={{ width: `${gaugePercent}%` }}
               />
               <div
-                className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-card shadow-[0_0_0_2px_rgba(0,0,0,0.08)]"
+                className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-raised"
                 style={{ left: `${gaugePercent}%` }}
               />
             </div>
             <div className="mt-2 flex items-baseline justify-between gap-2">
               <div className="flex items-baseline gap-1.5">
-                <span className="font-data text-[16px] font-bold tracking-tight text-foreground">
+                <span className="font-data text-[13px] font-medium tracking-tight text-foreground">
                   {ltvUsedPercent.toFixed(0)}%
                 </span>
-                <span className="text-[12px] text-muted-foreground">borrow power used</span>
+                <span className="text-[11px] text-muted-foreground">borrow power used</span>
               </div>
               <span className="text-[11px] text-muted-foreground">
-                <span className="font-semibold text-foreground">{formatCompactUsd(focusedDebt)}</span>
+                <span className="font-medium text-foreground">{formatCompactUsd(focusedDebt)}</span>
                 <span className="mx-1">/</span>
                 <span>{formatCompactUsd(focusedPool.borrowPowerUsd)}</span>
               </span>
@@ -152,11 +152,11 @@ export function PoolPickerDialog({
           </div>
         </div>
 
-        <div className="border-t border-border p-4">
+        <div className="border-t border-border p-3">
           <Button
             type="button"
             onClick={() => onSelect(focusedPoolId)}
-            className="h-[52px] w-full rounded-[20px] bg-brand text-[17px] font-semibold text-white shadow-none transition-colors hover:bg-brand/90"
+            className="h-10 w-full rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
           >
             Use {focusedPool.name}
           </Button>

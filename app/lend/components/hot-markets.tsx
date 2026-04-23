@@ -30,7 +30,7 @@ export function HotMarkets({
   return (
     <div>
       <div className="mb-3">
-        <h2 className="text-lg font-medium">Top movers</h2>
+        <h2 className="text-[14px] font-medium tracking-tight text-foreground">Top movers</h2>
       </div>
 
       <div
@@ -48,22 +48,22 @@ export function HotMarkets({
               onClick={() => onSelect?.(m)}
               className={cn(
                 "group relative flex w-[172px] shrink-0 snap-start flex-col justify-between",
-                "rounded-2xl border border-border/40 bg-card/60 p-4 text-left",
-                "transition-all hover:-translate-y-0.5 hover:border-border hover:bg-card hover:shadow-md",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40",
+                "rounded-radius-md border border-border bg-surface-raised p-3.5 text-left shadow-elev-1",
+                "transition-colors hover:bg-surface-inset hover:border-border",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25",
               )}
             >
               <div className="flex items-start justify-between">
-                <TokenIcon symbol={m.symbol} size="lg" />
+                <TokenIcon symbol={m.symbol} size="md" />
                 {m.event ? (
-                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                  <span className="rounded-xs border border-amber-500/25 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.06em] text-amber-700 dark:text-amber-400">
                     Hot
                   </span>
                 ) : null}
               </div>
 
               <div className="mt-3">
-                <div className="truncate text-sm font-semibold text-foreground">
+                <div className="truncate text-[13px] font-medium text-foreground">
                   {m.symbol}
                 </div>
                 <div className="truncate text-[11px] text-muted-foreground">
@@ -76,14 +76,14 @@ export function HotMarkets({
                   value={m.apy}
                   goodDirection={isUp ? "up" : "down"}
                   className={cn(
-                    "font-data text-3xl font-semibold leading-none tabular-nums",
+                    "font-data text-[24px] font-medium leading-none tabular-nums",
                     isUp
                       ? "text-emerald-600 dark:text-emerald-400"
                       : "text-rose-600 dark:text-rose-400",
                   )}
                 >
                   {m.apy.toFixed(2)}
-                  <span className="ml-0.5 text-xl">%</span>
+                  <span className="ml-0.5 text-[16px]">%</span>
                 </FlashValue>
                 <div className="mt-2">
                   <DeltaPill

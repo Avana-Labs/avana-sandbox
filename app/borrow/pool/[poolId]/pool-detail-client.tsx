@@ -22,7 +22,7 @@ function TokenAvatar({ visual, className }: { visual: any; className?: string })
   return (
     <span
       className={cn(
-        "inline-flex size-7 items-center justify-center rounded-full border-2 border-background ring-1 ring-border/60",
+        "inline-flex size-6 items-center justify-center rounded-full border-2 border-background ring-1 ring-border",
         visual.bgClass,
         visual.textClass,
         className,
@@ -32,7 +32,7 @@ function TokenAvatar({ visual, className }: { visual: any; className?: string })
         // eslint-disable-next-line @next/next/no-img-element
         <img src={visual.iconUrl} alt="" className="size-full rounded-full" />
       ) : (
-        <span className="text-[10px] font-semibold">{visual.shortLabel}</span>
+        <span className="text-[10px] font-medium">{visual.shortLabel}</span>
       )}
     </span>
   )
@@ -57,41 +57,41 @@ export function PoolDetailClient({ detail }: Props) {
         heroRef={heroRef}
         sparkline={{ series: detail.heroMetric.series[detail.heroMetric.metricId]["1M"] }}
         title={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="flex -space-x-2">
               <TokenAvatar visual={detail.hero.visuals[0]} />
               <TokenAvatar visual={detail.hero.visuals[1]} />
             </div>
-            <span className="font-semibold text-foreground">{detail.hero.name}</span>
+            <span className="text-[13px] font-medium text-foreground">{detail.hero.name}</span>
           </div>
         }
         subtitle={
-          <div className="flex items-center gap-2">
-            <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <span className="rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[10.5px] font-medium text-muted-foreground">
               {detail.hero.feeTier || detail.hero.venue}
             </span>
-            <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+            <span className="rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[10.5px] font-medium text-muted-foreground">
               {detail.hero.chain}
             </span>
           </div>
         }
         actions={
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-3 text-sm font-medium sm:flex">
+            <div className="hidden items-center gap-3 text-[12px] font-medium sm:flex">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">TVL</span>
-                <span>{detail.quickStats[0].value}</span>
+                <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">TVL</span>
+                <span className="font-data">{detail.quickStats[0].value}</span>
               </div>
-              <div className="h-6 w-px bg-border/60" />
+              <div className="h-5 w-px bg-border" />
               <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">APR</span>
-                <span className="text-emerald-500">{detail.quickStats[3]?.value || "--"}</span>
+                <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">APR</span>
+                <span className="font-data text-emerald-600 dark:text-emerald-400">{detail.quickStats[3]?.value || "--"}</span>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand/90 lg:hidden"
+              className="inline-flex h-8 items-center justify-center rounded-radius-sm bg-accent-primary px-3 text-[12.5px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover lg:hidden"
             >
               Borrow
             </button>
@@ -165,23 +165,23 @@ function MobileSupplyDock({
         role="dialog"
         aria-label="Borrow"
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t border-border/40 bg-card p-4 shadow-2xl transition-transform",
+          "fixed inset-x-0 bottom-0 z-50 rounded-t-radius-md border-t border-border bg-surface-raised p-4 shadow-elev-3 transition-transform duration-200",
           open ? "translate-y-0" : "translate-y-full",
         )}
       >
         <button
           type="button"
           onClick={onToggle}
-          className="mb-3 flex w-full items-center justify-center gap-2 text-xs font-medium text-muted-foreground"
+          className="mb-3 flex w-full items-center justify-center gap-1.5 text-[11.5px] font-medium text-muted-foreground"
         >
-          Hide <ChevronDown className="h-3.5 w-3.5" />
+          Hide <ChevronDown className="h-3 w-3" />
         </button>
         {children}
       </div>
       <button
         type="button"
         onClick={onToggle}
-        className="fixed inset-x-4 bottom-4 z-30 h-12 rounded-full bg-foreground text-sm font-medium text-background shadow-lg"
+        className="fixed inset-x-4 bottom-4 z-30 h-10 rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-3"
       >
         Borrow against this pool
       </button>

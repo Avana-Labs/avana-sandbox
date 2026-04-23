@@ -37,7 +37,7 @@ export function AssetHeroIdentity({
         {leading}
         <span
           className={cn(
-            "inline-flex size-11 items-center justify-center rounded-full border-2 border-background ring-1 ring-border/40",
+            "inline-flex size-9 items-center justify-center rounded-full border-2 border-background ring-1 ring-border",
             detail.hero.visual.bgClass,
             detail.hero.visual.textClass,
           )}
@@ -45,16 +45,16 @@ export function AssetHeroIdentity({
         >
           {detail.hero.visual.iconUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={detail.hero.visual.iconUrl} alt="" className="size-7 rounded-full" />
+            <img src={detail.hero.visual.iconUrl} alt="" className="size-6 rounded-full" />
           ) : (
-            <span className="text-sm font-semibold">{detail.hero.visual.shortLabel}</span>
+            <span className="text-[12px] font-medium">{detail.hero.visual.shortLabel}</span>
           )}
         </span>
         <div className="flex items-baseline gap-2 min-w-0">
-          <h1 className="truncate text-[1.6rem] font-semibold leading-tight tracking-tight text-foreground md:text-[1.8rem]">
+          <h1 className="truncate text-[20px] font-medium leading-tight tracking-tight text-foreground md:text-[24px]">
             {detail.hero.name}
           </h1>
-          <span className="text-[15px] font-medium text-muted-foreground">
+          <span className="text-[12.5px] font-medium text-muted-foreground">
             {detail.hero.symbol}
           </span>
         </div>
@@ -93,7 +93,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
 
       {/* ── 2. Chart card with overlayed value + delta ── */}
       <Card
-        className="relative overflow-hidden border-border/40 bg-card/50 shadow-none"
+        className="relative overflow-hidden border-border bg-surface-raised shadow-elev-1"
         data-testid="asset-hero-chart-card"
       >
         <CardContent className="relative p-0">
@@ -107,8 +107,8 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
               formatValue={formatValue}
             />
           </div>
-          <div className="pointer-events-none absolute left-6 top-6 z-[2]">
-            <div className="font-data text-[1.35rem] font-normal leading-none tabular-nums text-foreground md:text-[1.55rem]">
+          <div className="pointer-events-none absolute left-5 top-5 z-[2]">
+            <div className="font-data text-[20px] font-medium leading-none tabular-nums text-foreground md:text-[22px]">
               {valueLabel}
             </div>
             <InlineDelta
@@ -151,10 +151,10 @@ function MetricTextTabs({
             type="button"
             onClick={() => onChange(m)}
             className={cn(
-              "text-[13px] tabular-nums transition-colors",
+              "text-[12.5px] font-medium tabular-nums transition-colors",
               active
-                ? "font-semibold text-foreground"
-                : "font-medium text-muted-foreground hover:text-foreground",
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {labelForAssetMetric(m)}

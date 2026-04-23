@@ -15,7 +15,7 @@ function LongShortButtons({
   onTrade?: (symbol: string, side: "long" | "short") => void
   size?: "sm" | "md"
 }) {
-  const sizeClass = size === "sm" ? "h-7 px-2.5 text-[11px]" : "h-8 px-3 text-[12px]"
+  const sizeClass = size === "sm" ? "h-6 px-2 text-[11px]" : "h-7 px-2.5 text-[11.5px]"
   return (
     <div className="inline-flex gap-1.5">
       <button
@@ -24,7 +24,7 @@ function LongShortButtons({
           event.stopPropagation()
           onTrade?.(symbol, "long")
         }}
-        className={`${sizeClass} inline-flex items-center gap-1 rounded-full bg-emerald-500/10 font-semibold text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400`}
+        className={`${sizeClass} inline-flex items-center gap-1 rounded-xs border border-emerald-500/20 bg-emerald-500/10 font-medium text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:border-emerald-500/25 dark:text-emerald-400`}
       >
         <TrendingUp className="h-3 w-3" />
         Long
@@ -35,7 +35,7 @@ function LongShortButtons({
           event.stopPropagation()
           onTrade?.(symbol, "short")
         }}
-        className={`${sizeClass} inline-flex items-center gap-1 rounded-full bg-rose-500/10 font-semibold text-rose-600 transition-colors hover:bg-rose-500/20 dark:text-rose-400`}
+        className={`${sizeClass} inline-flex items-center gap-1 rounded-xs border border-rose-500/20 bg-rose-500/10 font-medium text-rose-700 transition-colors hover:bg-rose-500/15 dark:border-rose-500/25 dark:text-rose-400`}
       >
         <TrendingDown className="h-3 w-3" />
         Short
@@ -74,17 +74,17 @@ export function MarketsTable({
 
   return (
     <div>
-      <div className="mb-4 flex items-baseline justify-between gap-2">
-        <h2 className="text-lg font-medium">Markets</h2>
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <h2 className="text-[14px] font-medium tracking-tight text-foreground">Markets</h2>
         <span className="text-[11px] text-muted-foreground">
           Avana 24h volume <span className="font-data tabular-nums text-foreground">{formatVolume(totalVolume)}</span>
         </span>
       </div>
-      <Card className="border-border/40 bg-card/50 shadow-none overflow-hidden">
+      <Card className="border-border bg-surface-raised shadow-elev-1 overflow-hidden">
         <CardContent className="p-0">
           {/* Desktop Table */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[960px] table-fixed text-sm">
+            <table className="w-full min-w-[960px] table-fixed text-[13px]">
               <colgroup>
                 <col className="w-auto" />
                 <col className="w-[150px]" />
@@ -94,28 +94,28 @@ export function MarketsTable({
                 <col className="w-[190px]" />
               </colgroup>
               <thead>
-                <tr className="border-b border-border/40 text-left text-muted-foreground">
-                  <th className="px-6 pb-3 pt-4 font-medium">Asset</th>
-                  <th className="px-4 pb-3 pt-4 text-right font-medium">Price</th>
-                  <th className="px-4 pb-3 pt-4 text-right font-medium">Volume</th>
-                  <th className="px-4 pb-3 pt-4 text-right font-medium">Long / Short OI</th>
-                  <th className="px-4 pb-3 pt-4 text-center font-medium">Max Lev</th>
-                  <th className="px-6 pb-3 pt-4 text-right font-medium">Trade</th>
+                <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                  <th className="px-5 pb-2 pt-3">Asset</th>
+                  <th className="px-3 pb-2 pt-3 text-right">Price</th>
+                  <th className="px-3 pb-2 pt-3 text-right">Volume</th>
+                  <th className="px-3 pb-2 pt-3 text-right">Long / Short OI</th>
+                  <th className="px-3 pb-2 pt-3 text-center">Max Lev</th>
+                  <th className="px-5 pb-2 pt-3 text-right">Trade</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/40">
+              <tbody className="divide-y divide-border">
                 {markets.map((m) => (
-                  <tr key={m.symbol} className="transition-colors hover:bg-muted/50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <TokenIcon symbol={m.symbol} size="lg" />
+                  <tr key={m.symbol} className="transition-colors hover:bg-surface-inset/60">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <TokenIcon symbol={m.symbol} size="md" />
                         <div className="flex min-w-0 flex-col leading-tight">
-                          <span className="text-[14px] font-semibold text-foreground">{m.symbol}</span>
-                          <span className="truncate text-xs text-muted-foreground">{m.name}</span>
+                          <span className="text-[13px] font-medium text-foreground">{m.symbol}</span>
+                          <span className="truncate text-[11.5px] text-muted-foreground">{m.name}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-right">
+                    <td className="px-3 py-3 text-right">
                       <div className="flex flex-col items-end gap-1">
                         <FlashValue value={m.price} goodDirection="up" className="font-data tabular-nums">
                           ${m.price.toLocaleString("en-US")}
@@ -123,12 +123,12 @@ export function MarketsTable({
                         <DeltaPill value={m.change} format="percent" digits={2} />
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-right">
+                    <td className="px-3 py-3 text-right">
                       <FlashValue value={m.volume} goodDirection="up" className="font-data tabular-nums text-foreground">
                         {formatVolume(m.volume)}
                       </FlashValue>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <div className="mx-auto w-[190px]">
                         <BipolarBar
                           leftValue={m.longOi}
@@ -143,12 +143,12 @@ export function MarketsTable({
                         />
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-center">
+                    <td className="px-3 py-3 text-center">
                       <Badge variant="outline" className="text-[10px] text-muted-foreground">
                         {m.maxLeverage}x
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-5 py-3 text-right">
                       <div className="flex justify-end">
                         <LongShortButtons symbol={m.symbol} onTrade={onTrade} size="sm" />
                       </div>

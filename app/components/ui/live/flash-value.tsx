@@ -71,7 +71,7 @@ export function FlashValue({
   value,
   children,
   goodDirection = "up",
-  durationMs = 500,
+  durationMs = 320,
   className,
   minDelta = 0,
   skipInitial = true,
@@ -110,15 +110,15 @@ export function FlashValue({
   const isGood = flash ? flash === goodDirection : false
   const tint = flash
     ? isGood
-      ? "bg-emerald-500/15"
-      : "bg-rose-500/15"
+      ? "bg-emerald-500/10"
+      : "bg-rose-500/10"
     : "bg-transparent"
 
   return (
     <span
       className={cn(
-        "relative inline-flex rounded-md px-0.5",
-        reducedMotion ? "" : "transition-colors duration-300 ease-out",
+        "relative inline-flex rounded-xs px-0.5",
+        reducedMotion ? "" : "transition-colors duration-200 ease-out",
         tint,
         className,
       )}

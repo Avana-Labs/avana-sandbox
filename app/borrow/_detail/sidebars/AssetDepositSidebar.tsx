@@ -57,22 +57,22 @@ export function AssetDepositSidebar({ detail, className }: Props) {
     <>
       <aside
         className={cn(
-          "flex w-full flex-col gap-4 rounded-2xl border border-border/40 bg-card/50 p-5",
+          "flex w-full flex-col gap-4 rounded-radius-md border border-border bg-surface-raised p-4 shadow-elev-1",
           className,
         )}
         aria-label={`Deposit ${detail.hero.symbol}`}
       >
         <header className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-sm font-medium text-muted-foreground">Your deposits</div>
-            <div className="mt-1 font-data text-2xl font-medium tabular-nums text-foreground">$0.00</div>
+            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Your deposits</div>
+            <div className="mt-1 font-data text-[22px] font-medium tabular-nums text-foreground">$0.00</div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1.5 rounded-xs border border-emerald-200/70 bg-emerald-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400">
             {apyLabel} APY
           </span>
         </header>
 
-        <dl className="grid grid-cols-2 gap-y-2 text-sm">
+        <dl className="grid grid-cols-2 gap-y-1.5 text-[12.5px]">
           <dt className="text-muted-foreground">Asset</dt>
           <dd className="text-right font-medium text-foreground">{detail.hero.symbol}</dd>
           <dt className="text-muted-foreground">Supply APY</dt>
@@ -85,21 +85,21 @@ export function AssetDepositSidebar({ detail, className }: Props) {
           <button
             type="button"
             onClick={() => open("deposit")}
-            className="h-11 rounded-full bg-foreground text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+            className="h-9 rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
           >
             Deposit
           </button>
           <button
             type="button"
             onClick={() => open("withdraw")}
-            className="h-11 rounded-full border border-border/60 bg-transparent text-sm font-medium text-foreground transition-colors hover:bg-muted/40"
+            className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
           >
             Withdraw
           </button>
         </div>
 
         <p className="text-[11px] text-muted-foreground">
-          Deposits earn {apyLabel} from the base supply rate plus the spoke's risk premium.
+          Deposits earn {apyLabel} from the base supply rate plus the spoke&apos;s risk premium.
         </p>
       </aside>
 
