@@ -39,18 +39,18 @@ export function CompactBorrowCard({
   void onQuickTokenSelect
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="relative flex flex-col gap-1 rounded-[20px] border border-border/70 bg-card p-1">
+    <div className="flex flex-col gap-3">
+      <div className="relative flex flex-col divide-y divide-border rounded-radius-md border border-border bg-surface-raised shadow-elev-1 overflow-hidden">
         <PickerSurface label="Collateral" tier="top" seamless>
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="font-data text-[28px] font-semibold tracking-tight text-foreground">{formatCompactUsd(pool.collateralUsd)}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{pool.name}</div>
+              <div className="font-data text-[20px] font-medium tracking-tight text-foreground">{formatCompactUsd(pool.collateralUsd)}</div>
+              <div className="mt-0.5 text-[11.5px] text-muted-foreground">{pool.name}</div>
             </div>
             <button
               type="button"
               onClick={onOpenPoolDialog}
-              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-2 py-1 text-foreground transition-colors hover:bg-muted/80"
+              className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-inset px-2 text-foreground transition-colors hover:bg-surface-hover"
             >
               <PairVisual visuals={pool.visuals} className="w-10" />
               <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -68,9 +68,13 @@ export function CompactBorrowCard({
                 <FlashValue value={preview.remainingBorrowPowerUsd} goodDirection="up">
                   {formatCompactUsd(preview.remainingBorrowPowerUsd)}
                 </FlashValue>{" "}
-                Available to borrow
+                available to borrow
               </span>
-              <button type="button" onClick={onSetMax} className="font-semibold text-brand transition-opacity hover:opacity-80">
+              <button
+                type="button"
+                onClick={onSetMax}
+                className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:text-foreground hover:underline"
+              >
                 Max
               </button>
             </div>
@@ -86,17 +90,17 @@ export function CompactBorrowCard({
                 value={amount}
                 onChange={(event) => onAmountChange(event.target.value)}
                 placeholder="0"
-                className="no-number-spinner w-full bg-transparent font-data text-[40px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
+                className="no-number-spinner w-full bg-transparent font-data text-[28px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
               />
-              <span className="text-xs text-muted-foreground">{amount ? `$${amount}` : "$0"}</span>
+              <span className="text-[11px] text-muted-foreground">{amount ? `$${amount}` : "$0"}</span>
             </label>
             {token ? (
               <button
                 type="button"
                 onClick={onOpenTokenDialog}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[15px] font-semibold text-foreground transition-colors hover:bg-muted/80"
+                className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-raised px-2 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover"
               >
-                <TokenBubble visual={token.visual} className="size-5" />
+                <TokenBubble visual={token.visual} className="size-4" />
                 {token.symbol}
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
@@ -104,10 +108,10 @@ export function CompactBorrowCard({
               <button
                 type="button"
                 onClick={onOpenTokenDialog}
-                className="inline-flex h-8 items-center gap-1 rounded-full bg-brand px-3 text-[13px] font-semibold text-white transition-colors hover:bg-brand/90"
+                className="inline-flex h-7 items-center gap-1 rounded-xs bg-accent-primary px-2.5 text-[12px] font-medium text-accent-primary-foreground transition-colors hover:bg-accent-primary-hover"
               >
                 Select token
-                <ChevronDown className="h-3.5 w-3.5 text-white/85" />
+                <ChevronDown className="h-3.5 w-3.5 opacity-80" />
               </button>
             )}
           </div>
@@ -117,13 +121,21 @@ export function CompactBorrowCard({
       {preview.warningTitle && preview.warningMessage ? (
         <div
           className={cn(
-            "rounded-2xl border px-4 py-3 text-sm",
-            preview.riskTone === "danger"
-              ? "border-rose-200 bg-rose-500/10 text-rose-700"
-              : "border-amber-200 bg-amber-500/10 text-amber-700",
+            "flex items-start gap-2 rounded-radius-sm border border-border bg-surface-inset px-3 py-2.5 text-[12px]",
           )}
         >
-          <strong className="font-semibold">{preview.warningTitle}.</strong> {preview.warningMessage}
+          <span
+            className={cn(
+              "mt-1 inline-block size-1.5 shrink-0 rounded-full",
+              preview.riskTone === "danger" ? "bg-rose-500" : "bg-amber-500",
+            )}
+          />
+          <span className="text-foreground">
+            <strong className={cn("font-medium", preview.riskTone === "danger" ? "text-rose-700 dark:text-rose-300" : "text-amber-700 dark:text-amber-300")}>
+              {preview.warningTitle}.
+            </strong>{" "}
+            <span className="text-muted-foreground">{preview.warningMessage}</span>
+          </span>
         </div>
       ) : null}
 
@@ -133,29 +145,29 @@ export function CompactBorrowCard({
 
       {hasAmount ? (
         <div className="mt-1 grid grid-cols-3 gap-2 text-center md:hidden">
-          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
-            <div className="text-[11px] text-muted-foreground">HF</div>
+          <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
+            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">HF</div>
             <FlashValue
               value={preview.healthFactor ?? 99}
               goodDirection="up"
-              className="mt-1 font-data text-sm font-semibold"
+              className="mt-0.5 font-data text-[12.5px] font-medium"
             >
               {preview.healthFactorLabel}
             </FlashValue>
           </div>
-          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
-            <div className="text-[11px] text-muted-foreground">Remaining</div>
+          <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
+            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">Remaining</div>
             <FlashValue
               value={preview.remainingBorrowPowerUsd}
               goodDirection="up"
-              className="mt-1 font-data text-sm font-semibold text-emerald-600"
+              className="mt-0.5 font-data text-[12.5px] font-medium text-emerald-700 dark:text-emerald-400"
             >
               {formatCompactUsd(preview.remainingBorrowPowerUsd)}
             </FlashValue>
           </div>
-          <div className="rounded-2xl border border-border/60 bg-card px-3 py-3">
-            <div className="text-[11px] text-muted-foreground">Liq. at</div>
-            <div className="mt-1 font-data text-sm font-semibold text-amber-600">{formatCompactUsd(pool.liquidationUsd)}</div>
+          <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
+            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">Liq. at</div>
+            <div className="mt-0.5 font-data text-[12.5px] font-medium text-amber-700 dark:text-amber-400">{formatCompactUsd(pool.liquidationUsd)}</div>
           </div>
         </div>
       ) : null}

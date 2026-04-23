@@ -34,28 +34,28 @@ export function RiskSection({ detail }: Props) {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="min-w-0">
-            <div className="text-xs font-medium text-muted-foreground">Risk premium</div>
+            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Risk premium</div>
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="font-data text-3xl font-semibold tabular-nums text-foreground md:text-4xl">
+              <span className="font-data text-[26px] font-medium tabular-nums text-foreground md:text-[30px]">
                 {formatBpsAsPct(risk.premiumBps)}
               </span>
-              <span className="text-sm text-muted-foreground">({risk.premiumBps} bps)</span>
+              <span className="text-[12px] text-muted-foreground">({risk.premiumBps} bps)</span>
             </div>
-            <p className="mt-2 max-w-prose text-sm leading-6 text-foreground/80">{risk.headline}</p>
+            <p className="mt-2 max-w-prose text-[13px] leading-6 text-foreground/80">{risk.headline}</p>
           </div>
           <div className="flex flex-col items-center">
             <RiskGauge score={risk.score} level={risk.level} label={`${riskLevelLabel(risk.level)} risk`} size={140} />
             {risk.lastReviewed ? (
-              <p className="mt-1 text-[11px] text-muted-foreground">Last reviewed {risk.lastReviewed}</p>
+              <p className="mt-1 text-[10.5px] text-muted-foreground">Last reviewed {risk.lastReviewed}</p>
             ) : null}
           </div>
         </div>
 
-        <p className="text-sm leading-6 text-foreground/80">{risk.summary}</p>
+        <p className="text-[13px] leading-6 text-foreground/80">{risk.summary}</p>
 
         <div>
-          <div className="mb-2 text-xs font-medium text-muted-foreground">Breakdown</div>
-          <ul className="divide-y divide-border/40 rounded-xl border border-border/40">
+          <div className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Breakdown</div>
+          <ul className="divide-y divide-border rounded-radius-sm border border-border bg-surface-inset">
             {risk.breakdown.map((item) => {
               const open = expanded.has(item.id)
               const relatedMetric = metricByLabel[item.label.toLowerCase()]
@@ -65,15 +65,15 @@ export function RiskSection({ detail }: Props) {
                     type="button"
                     aria-expanded={open}
                     onClick={() => toggle(item.id)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+                    className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-raised/60"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="truncate text-sm font-medium text-foreground">{item.label}</span>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="truncate text-[13px] font-medium text-foreground">{item.label}</span>
                       <RiskLevelPill level={item.level} withDot={false} />
                     </div>
-                    <div className="flex shrink-0 items-center gap-3">
+                    <div className="flex shrink-0 items-center gap-2.5">
                       {relatedMetric ? (
-                        <span className="hidden font-data text-xs tabular-nums text-muted-foreground sm:inline">
+                        <span className="hidden font-data text-[11.5px] tabular-nums text-muted-foreground sm:inline">
                           {relatedMetric}
                         </span>
                       ) : null}
@@ -90,10 +90,10 @@ export function RiskSection({ detail }: Props) {
                     </div>
                   </button>
                   {open ? (
-                    <div className="px-4 pb-4 text-xs leading-5 text-muted-foreground">
+                    <div className="px-3.5 pb-3 text-[11.5px] leading-5 text-muted-foreground">
                       {item.description}
                       {relatedMetric ? (
-                        <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-muted/60 px-2 py-1 font-data text-[11px] tabular-nums text-foreground">
+                        <div className="mt-2 inline-flex items-center gap-2 rounded-xs border border-border bg-surface-raised px-2 py-1 font-data text-[11px] tabular-nums text-foreground">
                           {item.label}: {relatedMetric}
                         </div>
                       ) : null}

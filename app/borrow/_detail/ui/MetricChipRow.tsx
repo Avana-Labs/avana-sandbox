@@ -47,17 +47,17 @@ export function MetricChipRow<T extends string>({
               type="button"
               onClick={() => onChange(chip.id)}
               className={cn(
-                "flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all",
+                "flex flex-col items-start gap-1 rounded-radius-sm border p-3 text-left transition-colors",
                 active
-                  ? "border-border/80 bg-muted/40 shadow-sm"
-                  : "border-transparent bg-transparent hover:bg-muted/20",
+                  ? "border-border bg-surface-inset"
+                  : "border-transparent bg-transparent hover:bg-surface-inset/60",
               )}
             >
-              <span className="text-xs font-medium text-muted-foreground">{chip.label}</span>
+              <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{chip.label}</span>
               {chip.hint ? (
                 <span
                   className={cn(
-                    "font-data text-base font-medium tabular-nums",
+                    "font-data text-[14px] font-medium tabular-nums",
                     active ? "text-foreground" : "text-foreground/80",
                   )}
                 >
@@ -87,17 +87,17 @@ export function MetricChipRow<T extends string>({
             type="button"
             onClick={() => onChange(chip.id)}
             className={cn(
-              "flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition-colors",
+              "flex h-7 shrink-0 items-center gap-1.5 rounded-xs border px-2.5 text-[12px] font-medium transition-colors",
               active
-                ? "border-border/80 bg-muted/50 text-foreground"
-                : "border-border/40 bg-transparent text-muted-foreground hover:bg-muted/20 hover:text-foreground",
+                ? "border-border bg-surface-inset text-foreground"
+                : "border-border bg-surface-raised text-muted-foreground hover:bg-surface-inset hover:text-foreground",
             )}
           >
             <span>{chip.label}</span>
             {chip.hint ? (
               <span
                 className={cn(
-                  "text-[12px] tabular-nums",
+                  "text-[11.5px] tabular-nums",
                   active ? "text-foreground/70" : "text-muted-foreground/70",
                 )}
               >

@@ -46,41 +46,41 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : null)}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-border bg-card p-0 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
-          <div className="flex items-center justify-between border-b border-border px-5 py-5">
-            <DialogTitle className="text-[20px] font-semibold tracking-tight text-foreground">Post as Collateral</DialogTitle>
-            <DialogClose className="flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 duration-150 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+          <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+            <DialogTitle className="text-[13px] font-medium tracking-tight text-foreground">Post as collateral</DialogTitle>
+            <DialogClose className="inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground">
               <span className="sr-only">Close</span>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
+                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </DialogClose>
           </div>
 
-          <div className="space-y-4 px-5 py-5">
-            <div className="flex items-center justify-between gap-3 rounded-2xl bg-muted/80 px-4 py-3.5">
-              <div className="flex items-center gap-3">
+          <div className="space-y-4 px-5 py-4">
+            <div className="flex items-center justify-between gap-3 rounded-radius-sm border border-border bg-surface-inset px-3.5 py-3">
+              <div className="flex items-center gap-2.5">
                 <div className="flex items-center">
                   <TokenBubble visual={pool.visuals[0]} size="md" />
                   <TokenBubble visual={pool.visuals[1]} size="md" className="-ml-2" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[16px] font-semibold text-foreground">{pairLabel}</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-[14px] font-medium text-foreground">{pairLabel}</div>
+                  <div className="text-[12px] text-muted-foreground">
                     {spoke.label} · Max LTV {pool.ltv}%
                   </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-data text-[20px] font-semibold tabular-nums text-foreground">
+                <div className="font-data text-[17px] font-medium tabular-nums text-foreground">
                   {formatUsdExact(positionUsd)}
                 </div>
-                <div className="text-xs text-muted-foreground">Your position</div>
+                <div className="text-[11px] text-muted-foreground">Your position</div>
               </div>
             </div>
 
-            <dl className="overflow-hidden rounded-2xl bg-muted/70">
+            <dl className="overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
               <StatRow label="Max LTV" value={`${pool.ltv}%`} tone="text-emerald-600" />
               <StatRow label="Max Borrow Power" value={formatUsdExact(borrowPower)} tone="text-emerald-600" />
               <StatRow
@@ -122,9 +122,9 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
                   feesApy,
                 })
               }
-              className="w-full rounded-2xl bg-rose-500 px-5 py-4 text-center text-[16px] font-semibold text-white shadow-[0_10px_28px_-10px_rgba(244,63,94,0.6)] transition-colors hover:bg-rose-600"
+              className="w-full rounded-radius-sm bg-accent-primary px-5 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
             >
-              Post as Collateral
+              Post as collateral
             </button>
           </div>
         </DialogPrimitive.Content>
@@ -143,9 +143,9 @@ function StatRow({
   tone?: string
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 text-sm last:border-b-0">
+    <div className="flex items-center justify-between border-b border-border px-3 py-2 text-[12.5px] last:border-b-0">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-semibold tabular-nums text-foreground", tone)}>{value}</dd>
+      <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
     </div>
   )
 }

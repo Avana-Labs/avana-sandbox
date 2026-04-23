@@ -22,9 +22,9 @@ export function MobileMenu() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative h-10 w-10 rounded-xl border border-border/70 bg-card text-foreground shadow-sm hover:bg-muted/40 md:hidden"
+          className="relative size-8 rounded-xs border border-border bg-surface-raised text-foreground shadow-elev-1 hover:bg-surface-inset md:hidden"
         >
-          <Menu className="h-5 w-5 transition-transform duration-200" />
+          <Menu className="h-4 w-4" />
           <span className="sr-only">Toggle menu</span>
         </Button>
       </SheetTrigger>
@@ -33,17 +33,17 @@ export function MobileMenu() {
           <SheetTitle>Navigation menu</SheetTitle>
           <SheetDescription>Browse the main Avana routes and open the primary action.</SheetDescription>
         </SheetHeader>
-        <div className="flex flex-col h-full">
-          <div className="border-b border-border/70 p-4">
-            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-              <Link href="/" className="font-brand text-xl font-medium flex items-center gap-2" onClick={() => setOpen(false)}>
+        <div className="flex h-full flex-col">
+          <div className="border-b border-border p-4">
+            <div className="rounded-radius-sm border border-border bg-surface-inset p-3">
+              <Link href="/" className="flex items-center gap-2 font-brand text-[15px] font-medium" onClick={() => setOpen(false)}>
                 Avana
               </Link>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{activeNav.description}</p>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{activeNav.description}</p>
             </div>
           </div>
-          <nav className="flex-1 overflow-y-auto p-4">
-            <div className="flex flex-col gap-4">
+          <nav className="flex-1 overflow-y-auto p-3">
+            <div className="flex flex-col gap-0.5">
               {siteNavLinks.map((link) => {
                 const Icon = link.icon
                 const isActive = activeNav.href === link.href
@@ -53,39 +53,39 @@ export function MobileMenu() {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-base font-medium transition-colors",
+                      "flex items-center justify-between gap-3 rounded-xs px-3 py-2.5 text-[13px] font-medium transition-colors",
                       isActive
-                        ? "border-border bg-muted/35 text-foreground"
-                        : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/20 hover:text-foreground",
+                        ? "bg-surface-inset text-foreground"
+                        : "text-muted-foreground hover:bg-surface-inset/60 hover:text-foreground",
                     )}
                     onClick={() => setOpen(false)}
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon className={cn("h-4 w-4", isActive ? "text-foreground" : "text-muted-foreground")} />
+                    <div className="flex items-center gap-2.5">
+                      <Icon className={cn("h-3.5 w-3.5", isActive ? "text-foreground" : "text-muted-foreground")} />
                       <div>
                         <div>{link.label}</div>
-                        <div className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                        <div className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                           {link.section}
                         </div>
                       </div>
                     </div>
-                    {isActive ? <span className="h-2 w-2 rounded-full bg-foreground" /> : null}
+                    {isActive ? <span className="h-1 w-1 rounded-full bg-foreground" /> : null}
                   </Link>
                 )
               })}
             </div>
           </nav>
-          <div className="mt-auto border-t border-border/70 p-4">
+          <div className="mt-auto border-t border-border p-3">
             <Button
-              className="w-full rounded-xl"
-              variant="outline"
+              className="w-full"
+              variant="default"
               onClick={() => {
                 router.push("/borrow")
                 setOpen(false)
               }}
             >
-              <Wallet className="h-4 w-4 mr-2" />
-              Get Started
+              <Wallet className="h-3.5 w-3.5" />
+              Get started
             </Button>
           </div>
         </div>

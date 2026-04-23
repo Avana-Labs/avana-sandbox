@@ -11,12 +11,12 @@ export function AboutCard({ about, title = "About" }: Props) {
   return (
     <SectionCard title={title} subtitle="Description, key parameters and event history.">
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-foreground/80">{about.description}</p>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <p className="text-[13px] leading-6 text-foreground/80">{about.description}</p>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-[12.5px]">
           {about.stats.map((s) => (
-            <div key={s.label} className="flex items-center justify-between border-b border-border/60 pb-2">
+            <div key={s.label} className="flex items-center justify-between border-b border-border pb-2">
               <dt className="text-muted-foreground">{s.label}</dt>
-              <dd className="font-data font-semibold tabular-nums text-foreground">{s.value}</dd>
+              <dd className="font-data font-medium tabular-nums text-foreground">{s.value}</dd>
             </div>
           ))}
         </dl>
@@ -25,16 +25,16 @@ export function AboutCard({ about, title = "About" }: Props) {
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
-            className="text-xs font-semibold text-foreground underline decoration-dotted underline-offset-4"
+            className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 hover:text-foreground hover:underline"
           >
             {open ? "Hide history" : "Show history"}
           </button>
           {open ? (
-            <ol className="mt-3 space-y-3 border-l border-border pl-4 text-sm">
+            <ol className="mt-3 space-y-3 border-l border-border pl-4 text-[12.5px]">
               {about.history.map((h, i) => (
-                <li key={i} className="relative before:absolute before:-left-[9px] before:top-1.5 before:size-2 before:rounded-full before:bg-foreground">
-                  <div className="font-data text-xs tabular-nums text-muted-foreground">{h.date}</div>
-                  <div className="font-semibold text-foreground">{h.title}</div>
+                <li key={i} className="relative before:absolute before:-left-[5px] before:top-1.5 before:size-1.5 before:rounded-full before:bg-foreground">
+                  <div className="font-data text-[11px] tabular-nums text-muted-foreground">{h.date}</div>
+                  <div className="font-medium text-foreground">{h.title}</div>
                   {h.description ? <div className="text-muted-foreground">{h.description}</div> : null}
                 </li>
               ))}

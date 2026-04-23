@@ -39,7 +39,7 @@ export function PoolHeroIdentity({
           <TokenAvatar visual={detail.hero.visuals[0]} />
           <TokenAvatar visual={detail.hero.visuals[1]} />
         </div>
-        <h1 className="truncate text-[1.6rem] font-semibold leading-tight tracking-tight text-foreground md:text-[1.8rem]">
+        <h1 className="truncate text-[20px] font-medium leading-tight tracking-tight text-foreground md:text-[24px]">
           {detail.hero.name}
         </h1>
       </div>
@@ -86,7 +86,7 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
 
       {/* ── 2. Chart card with overlayed value + delta ── */}
       <Card
-        className="relative overflow-hidden border-border/40 bg-card/50 shadow-none"
+        className="relative overflow-hidden border-border bg-surface-raised shadow-elev-1"
         data-testid="pool-hero-chart-card"
       >
         <CardContent className="relative p-0">
@@ -100,8 +100,8 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
               formatValue={formatValue}
             />
           </div>
-          <div className="pointer-events-none absolute left-6 top-6 z-[2]">
-            <div className="font-data text-[1.35rem] font-normal leading-none tabular-nums text-foreground md:text-[1.55rem]">
+          <div className="pointer-events-none absolute left-5 top-5 z-[2]">
+            <div className="font-data text-[20px] font-medium leading-none tabular-nums text-foreground md:text-[22px]">
               {valueLabel}
             </div>
             <InlineDelta
@@ -143,10 +143,10 @@ function MetricTextTabs({
             type="button"
             onClick={() => onChange(m)}
             className={cn(
-              "text-[13px] tabular-nums transition-colors",
+              "text-[12.5px] font-medium tabular-nums transition-colors",
               active
-                ? "font-semibold text-foreground"
-                : "font-medium text-muted-foreground hover:text-foreground",
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {labelForPoolMetric(m)}
@@ -196,7 +196,7 @@ function IconButton({
   "aria-label": string
 }) {
   const className =
-    "inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    "inline-flex size-7 items-center justify-center rounded-xs border border-border bg-surface-raised text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
   if (href) {
     return (
       <a href={href} target="_blank" rel="noreferrer" className={className} {...rest}>
@@ -223,7 +223,7 @@ function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number]
   return (
     <span
       className={cn(
-        "inline-flex size-11 items-center justify-center rounded-full border-2 border-background ring-1 ring-border/40",
+        "inline-flex size-9 items-center justify-center rounded-full border-2 border-background ring-1 ring-border",
         visual.bgClass,
         visual.textClass,
       )}
@@ -231,9 +231,9 @@ function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number]
     >
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={visual.iconUrl} alt="" className="size-7 rounded-full" />
+        <img src={visual.iconUrl} alt="" className="size-6 rounded-full" />
       ) : (
-        <span className="text-sm font-semibold">{visual.shortLabel}</span>
+        <span className="text-[12px] font-medium">{visual.shortLabel}</span>
       )}
     </span>
   )

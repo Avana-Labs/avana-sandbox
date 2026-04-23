@@ -4,13 +4,14 @@ import * as React from "react"
 import { Button, type ButtonProps } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-/** Shared class for Radix TabsTrigger (active state via data-state). */
+/** Shared class for Radix TabsTrigger — underline-tab grammar. */
 export const pillTabTriggerClassName = cn(
-  "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-xs font-medium",
+  "relative inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap px-3 text-[12px] font-medium",
   "text-muted-foreground transition-colors hover:text-foreground",
-  "data-[state=active]:bg-black/5 data-[state=active]:text-foreground dark:data-[state=active]:bg-secondary dark:data-[state=active]:text-secondary-foreground",
-  "data-[state=active]:hover:bg-black/10 dark:data-[state=active]:hover:bg-secondary dark:data-[state=active]:hover:text-secondary-foreground",
-  "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+  "data-[state=active]:text-foreground",
+  "after:pointer-events-none after:absolute after:inset-x-3 after:-bottom-px after:h-[2px] after:bg-transparent after:transition-colors after:content-['']",
+  "data-[state=active]:after:bg-foreground",
+  "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:rounded-xs",
   "disabled:pointer-events-none disabled:opacity-50",
 )
 
@@ -19,8 +20,7 @@ export type PillTabButtonProps = Omit<ButtonProps, "variant" | "size"> & {
 }
 
 /**
- * Card section tabs — 12px pill labels, secondary fill when active.
- * Matches perps `AccountTabs` pattern.
+ * Card section tabs — underline indicator when active.
  */
 export const PillTabButton = React.forwardRef<HTMLButtonElement, PillTabButtonProps>(
   ({ active, className, ...props }, ref) => (
@@ -30,9 +30,10 @@ export const PillTabButton = React.forwardRef<HTMLButtonElement, PillTabButtonPr
       variant="ghost"
       size="sm"
       className={cn(
-        "rounded-full px-4 text-xs font-medium",
+        "relative h-9 rounded-none px-3 text-[12px] font-medium hover:bg-transparent",
+        "after:pointer-events-none after:absolute after:inset-x-3 after:-bottom-px after:h-[2px] after:bg-transparent after:transition-colors after:content-['']",
         active
-          ? "bg-black/5 text-foreground hover:bg-black/10 dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary dark:hover:text-secondary-foreground"
+          ? "text-foreground after:bg-foreground"
           : "text-muted-foreground hover:text-foreground",
         className,
       )}
