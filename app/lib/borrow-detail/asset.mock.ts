@@ -263,7 +263,17 @@ function buildAssetCashflow(asset: BorrowableAsset, supplied: number, borrowed: 
 function buildAssetRisk(asset: BorrowableAsset, fixture: AssetFixture | undefined): RiskAssessment {
   if (fixture?.risk) return fixture.risk
   const isStable = asset.category === "stable"
-  const bps = isStable ? 30 : 120
+  // Derive a unique bps per asset so every gauge shows a distinct score.
+  // Base = category default, then shift by asset-specific signals:
+  //   +utilization (higher utilization → higher premium)
+  //   +borrowApr (higher rate → higher premium)
+  //   ±seeded hash for deterministic spread across assets with similar stats.
+  const base = isStable ? 28 : 110
+  const utilAdj = (asset.utilization - 50) * (isStable ? 0.2 : 0.45)
+  const aprAdj = (asset.borrowApr - (isStable ? 4 : 6)) * (isStable ? 1.4 : 2.2)
+  const seed = prngFromString(`asset-risk:${asset.id}`)()
+  const spread = (seed - 0.5) * (isStable ? 24 : 70)
+  const bps = Math.max(8, Math.round(base + utilAdj + aprAdj + spread))
   const level = riskLevelFromBps(bps)
   return {
     premiumBps: bps,
