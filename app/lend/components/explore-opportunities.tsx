@@ -26,7 +26,7 @@ export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps)
               onClick={() => !m.soon && openDeposit(m)}
             >
               <CardContent className="p-4">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <TokenIcon symbol={m.symbol} size="lg" />
                     <div>
@@ -34,43 +34,50 @@ export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps)
                       <div className="text-xs text-muted-foreground">{m.protocol}</div>
                     </div>
                   </div>
-                  {!m.soon ? (
-                    <div className="flex items-center gap-1.5">
-                      <FlashValue value={m.apy} goodDirection="up">
-                        <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-medium">
-                          {m.apy.toFixed(2)}% APY
-                        </Badge>
-                      </FlashValue>
-                      <DeltaPill value={m.apyChange24h} format="percent" digits={2} label="24h" />
-                    </div>
-                  ) : (
+                  {m.soon ? (
                     <Badge variant="outline" className="font-medium text-muted-foreground">Soon</Badge>
-                  )}
+                  ) : m.event ? (
+                    <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium text-[10px] uppercase tracking-wide">
+                      {m.event}
+                    </Badge>
+                  ) : null}
                 </div>
 
                 {!m.soon ? (
-                  <div className="mt-3">
-                    <div className="mb-1 flex items-baseline justify-between text-xs text-muted-foreground">
-                      <span>Utilization</span>
-                      <span>TVL <span className="font-data text-foreground">{m.tvl}</span></span>
-                    </div>
-                    <BipolarBar
-                      leftValue={borrowed}
-                      rightValue={available}
-                      leftLabel={`Borrowed ${borrowed}%`}
-                      rightLabel={`Idle ${available}%`}
-                      leftClass={borrowed >= 85 ? "bg-rose-500" : borrowed >= 60 ? "bg-amber-500" : "bg-emerald-500"}
-                      rightClass="bg-muted-foreground/20"
-                      leftLabelClass={borrowed >= 85 ? "text-rose-600" : borrowed >= 60 ? "text-amber-600" : "text-emerald-600"}
-                      rightLabelClass="text-muted-foreground"
-                      heightClass="h-2"
-                    />
-                    {m.event ? (
-                      <div className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
-                        {m.event}
+                  <>
+                    <div className="mt-4 flex items-end justify-between gap-2">
+                      <div>
+                        <FlashValue
+                          value={m.apy}
+                          goodDirection="up"
+                          className="font-data text-4xl font-semibold leading-none tabular-nums text-emerald-600 dark:text-emerald-400"
+                        >
+                          {m.apy.toFixed(2)}
+                          <span className="ml-0.5 text-2xl">%</span>
+                        </FlashValue>
+                        <div className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">APY</div>
                       </div>
-                    ) : null}
-                  </div>
+                      <DeltaPill value={m.apyChange24h} format="percent" digits={2} label="24h" />
+                    </div>
+
+                    <div className="mt-4">
+                      <div className="mb-1 flex items-baseline justify-between text-xs text-muted-foreground">
+                        <span>Utilization</span>
+                        <span>TVL <span className="font-data text-foreground">{m.tvl}</span></span>
+                      </div>
+                      <BipolarBar
+                        leftValue={borrowed}
+                        rightValue={available}
+                        leftLabel={`Borrowed ${borrowed}%`}
+                        rightLabel={`Idle ${available}%`}
+                        leftClass={borrowed >= 85 ? "bg-rose-500" : borrowed >= 60 ? "bg-amber-500" : "bg-emerald-500"}
+                        rightClass="bg-muted-foreground/20"
+                        leftLabelClass={borrowed >= 85 ? "text-rose-600" : borrowed >= 60 ? "text-amber-600" : "text-emerald-600"}
+                        rightLabelClass="text-muted-foreground"
+                        heightClass="h-2"
+                      />
+                    </div>
+                  </>
                 ) : (
                   <div className="mt-4 flex items-center justify-between text-sm">
                     <div className="flex flex-col">
