@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowDown, ChevronDown } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import {
   calculateBorrowPreview,
   formatCompactUsd,
@@ -57,13 +57,6 @@ export function CompactBorrowCard({
             </button>
           </div>
         </PickerSurface>
-
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-[3px] border-card bg-muted text-foreground"
-        >
-          <ArrowDown className="h-4 w-4" />
-        </div>
 
         <PickerSurface
           label="Borrow"

@@ -30,11 +30,11 @@ export function CompactRemoveCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative flex flex-col gap-1">
-        <PickerSurface label="Remove from" tier="top">
+      <div className="relative flex flex-col gap-1 rounded-[20px] border border-border/70 bg-card p-1">
+        <PickerSurface label="Remove from" tier="top" seamless>
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="font-data text-2xl font-semibold tracking-tight text-foreground">{pool.name}</div>
+              <div className="font-data text-[28px] font-semibold tracking-tight text-foreground">{pool.name}</div>
               <div className="mt-1 text-xs text-muted-foreground">Max safe remove {preview.safePercent}%</div>
             </div>
             <button
@@ -48,7 +48,7 @@ export function CompactRemoveCard({
           </div>
         </PickerSurface>
 
-        <PickerSurface label="Remove amount" tier="bottom" footer={`Health factor after ${preview.healthFactorAfterLabel}`}>
+        <PickerSurface label="Remove amount" tier="bottom" seamless footer={`Health factor after ${preview.healthFactorAfterLabel}`}>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm text-muted-foreground">Percentage</span>

@@ -33,11 +33,11 @@ export function CompactRepayCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative flex flex-col gap-1">
-        <PickerSurface label="Loan position" tier="top">
+      <div className="relative flex flex-col gap-1 rounded-[20px] border border-border/70 bg-card p-1">
+        <PickerSurface label="Loan position" tier="top" seamless>
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="font-data text-2xl font-semibold tracking-tight text-foreground">{formatCompactUsd(debtUsd)}</div>
+              <div className="font-data text-[28px] font-semibold tracking-tight text-foreground">{formatCompactUsd(debtUsd)}</div>
               <div className="mt-1 text-xs text-muted-foreground">{pool.name}</div>
             </div>
             <button
@@ -54,6 +54,7 @@ export function CompactRepayCard({
         <PickerSurface
           label="Repay"
           tier="bottom"
+          seamless
           footer={
             <div className="flex items-center justify-between gap-3">
               <span>{preview.amountUsd > 0 ? `Interest saved ~${formatCompactUsd(preview.yearlyInterestSavedUsd)} / yr` : "Repay in USDC."}</span>

@@ -254,8 +254,8 @@ export function HomePageClient(_props: HomePageClientProps) {
     <div className="bg-background">
       <main className="px-4">
         <section className="flex min-h-[calc(100vh-64px)] items-start justify-center pt-[5vh] md:pt-[6vh]">
-          <motion.div layout className="flex w-full items-start justify-center gap-4">
-            <motion.div layout className="w-full max-w-[420px] rounded-[24px] p-2 md:max-w-[480px]">
+          <div className="flex w-full items-start justify-center gap-4">
+            <div className="w-full max-w-[420px] rounded-[24px] p-2 md:max-w-[480px]">
               <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
                 <div className="mb-3 flex items-center justify-between px-1 pt-1">
                   <TabsList className="w-fit gap-0.5">
@@ -270,7 +270,7 @@ export function HomePageClient(_props: HomePageClientProps) {
                   </button>
                 </div>
 
-                <div className="relative mt-2">
+                <div className="relative mt-2 min-h-[320px]">
                   <TabsContent value="borrow" className="mt-0">
                     <CompactBorrowCard
                       pool={borrowPool}
@@ -329,13 +329,12 @@ export function HomePageClient(_props: HomePageClientProps) {
                   </TabsContent>
                 </div>
               </Tabs>
-            </motion.div>
+            </div>
 
             <AnimatePresence initial={false}>
               {showSidePanel ? (
                 <motion.aside
                   key="home-side-panel"
-                  layout
                   initial={{ opacity: 0, x: -12, width: 0 }}
                   animate={{ opacity: 1, x: 0, width: 320 }}
                   exit={{ opacity: 0, x: -12, width: 0 }}
@@ -359,7 +358,7 @@ export function HomePageClient(_props: HomePageClientProps) {
                 </motion.aside>
               ) : null}
             </AnimatePresence>
-          </motion.div>
+          </div>
         </section>
       </main>
 
