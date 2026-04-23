@@ -1,3 +1,5 @@
+import { getTokenIconMeta } from "@/app/lib/token-icons"
+
 export type BorrowDexId = "uniswap" | "curve" | "balancer" | "aerodrome"
 
 export type BorrowSpokeId =
@@ -58,10 +60,17 @@ export type DexChip = {
   starred?: boolean
 }
 
+export type BorrowPoolEvent = {
+  label: string
+  tone?: "info" | "positive" | "warning" | "danger"
+}
+
 export type BorrowPoolRow = {
   id: string
   name: string
   venue: string
+  feeTier: string
+  tvlUsd: number
   spoke: BorrowSpokeId
   ltv: number
   dexes: DexChip[]
@@ -73,9 +82,11 @@ export type BorrowPoolRow = {
   visuals: [BorrowAssetVisual, BorrowAssetVisual]
   collateralExampleUsd: number
   trendUp: boolean
+  trendValues?: number[]
+  events?: BorrowPoolEvent[]
 }
 
-export type BorrowableAssetCategory = "stable" | "crypto"
+export type BorrowableAssetCategory = "stable" | "eth" | "btc" | "crypto"
 
 export type BorrowableAsset = {
   id: string
@@ -90,11 +101,14 @@ export type BorrowableAsset = {
   hasWalletBalance: boolean
   visual: BorrowAssetVisual
   trendUp: boolean
+  trendValues?: number[]
   category: BorrowableAssetCategory
 }
 
 export const BORROWABLE_CATEGORIES: { id: BorrowableAssetCategory; label: string; dotClass: string }[] = [
   { id: "stable", label: "Stablecoins", dotClass: "bg-emerald-500" },
+  { id: "eth", label: "ETH", dotClass: "bg-indigo-500" },
+  { id: "btc", label: "BTC", dotClass: "bg-amber-500" },
   { id: "crypto", label: "Crypto", dotClass: "bg-blue-500" },
 ]
 
@@ -647,6 +661,25 @@ type PoolSeed = {
   pair: [VisualSymbol, VisualSymbol]
   name?: string
   trendUp?: boolean
+  feeTier?: string
+}
+
+const SPOKE_DEFAULT_FEE_TIER: Record<BorrowSpokeId, string> = {
+  "uni-v2": "0.30%",
+  "uni-v3-stable": "0.05%",
+  "uni-v3-bluechip": "0.30%",
+  "uni-v3-gov": "1.00%",
+  "curve-stable": "0.04%",
+  "curve-correlated": "0.04%",
+  "curve-crypto": "0.40%",
+  "bal-stable": "0.04%",
+  "bal-correlated": "0.04%",
+  "bal-weighted": "0.30%",
+  "bal-boosted": "0.10%",
+  "bal-reclamm": "0.30%",
+  "aero-basic-stable": "0.05%",
+  "aero-basic-volatile": "0.30%",
+  "aero-slipstream-bluechip": "0.05%",
 }
 
 const POOL_SEEDS: Record<BorrowSpokeId, PoolSeed[]> = {
@@ -753,6 +786,49 @@ function slugify(input: string): string {
     .replace(/(^-|-$)/g, "")
 }
 
+/**
+ * Deterministic 0..1 hash from a string. Used to derive per-pool jitter so
+ * every pool gets a unique risk premium (and therefore a unique gauge score).
+ */
+function seededUnit(input: string): number {
+  let h = 2166136261
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return ((h >>> 0) % 10_000) / 10_000
+}
+
+/** Symbols we treat as USD-pegged (or otherwise price-stable) assets. */
+const STABLE_SYMBOLS = new Set([
+  "USDC",
+  "USDT",
+  "DAI",
+  "USDE",
+  "USDS",
+  "USDP",
+  "USD+",
+  "SUSD",
+  "SDAI",
+  "CRVUSD",
+  "GHO",
+  "FRAX",
+  "LUSD",
+  "TUSD",
+  "MIM",
+  "PYUSD",
+  "EURC",
+  "EURS",
+])
+
+function isStableSymbol(symbol: string): boolean {
+  return STABLE_SYMBOLS.has(symbol.toUpperCase())
+}
+
+function isStablePair(a: string, b: string): boolean {
+  return isStableSymbol(a) && isStableSymbol(b)
+}
+
 function buildPoolCatalog(): BorrowPoolRow[] {
   const rows: BorrowPoolRow[] = []
   for (const spoke of BORROW_SPOKES) {
@@ -769,13 +845,28 @@ function buildPoolCatalog(): BorrowPoolRow[] {
       const aprMid = spoke.aprApprox + ((index % 4) - 1.5) * 0.4
       const aprMin = Math.max(0.1, aprMid - 1.2)
       const aprMax = aprMid + 1.5
-      const riskJitter = ((index % 3) - 1) * 8
       const baseId = `${spoke.id}-${slugify(name)}`
       const id = rows.some((row) => row.id === baseId) ? `${baseId}-${index + 1}` : baseId
+      const stablePair = isStablePair(a, b)
+      // Stable/stable pairs: tight, low-bps jitter regardless of spoke base —
+      // peg-to-peg exposure should always rank as low risk.
+      // Everything else: wide, deterministic per-pool jitter (~±25% of base)
+      // so no two pools collapse to the same gauge score.
+      const jitterRange = stablePair
+        ? 8
+        : Math.max(18, Math.round(spoke.riskPremiumBps * 0.25))
+      const riskJitter = Math.round((seededUnit(id) - 0.5) * 2 * jitterRange)
+      const riskPremiumBps = stablePair
+        ? Math.min(32, Math.max(10, 18 + riskJitter))
+        : Math.max(5, spoke.riskPremiumBps + riskJitter)
+      const feeTier = seed.feeTier ?? SPOKE_DEFAULT_FEE_TIER[spoke.id] ?? "0.30%"
+      const tvlUsd = Math.round((shareOfLiquidity / totalSeeds) * (1.6 + ((index % 4) * 0.18)) / 10000) * 10000
       rows.push({
         id,
         name,
         venue: `${dex.label} · ${spoke.description}`,
+        feeTier,
+        tvlUsd: Math.max(tvlUsd, 500_000),
         spoke: spoke.id,
         ltv: Math.round((spoke.maxLtv + ltvJitter) * 10) / 10,
         dexes: [{ id: spoke.dex, label: dex.label }],
@@ -783,7 +874,7 @@ function buildPoolCatalog(): BorrowPoolRow[] {
         aprMin: Math.round(aprMin * 10) / 10,
         aprMax: Math.round(aprMax * 10) / 10,
         availableUsd: Math.max(availableUsd, 250_000),
-        riskPremiumBps: Math.max(5, spoke.riskPremiumBps + riskJitter),
+        riskPremiumBps,
         visuals,
         collateralExampleUsd: 1_500 + index * 320,
         trendUp: seed.trendUp ?? index % 2 === 0,
@@ -903,7 +994,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: false,
     visual: v("WETH"),
     trendUp: true,
-    category: "crypto",
+    category: "eth",
   },
   {
     id: "eth",
@@ -918,7 +1009,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: true,
     visual: v("ETH"),
     trendUp: true,
-    category: "crypto",
+    category: "eth",
   },
   {
     id: "wbtc",
@@ -933,7 +1024,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: false,
     visual: v("WBTC"),
     trendUp: true,
-    category: "crypto",
+    category: "btc",
   },
   {
     id: "cbbtc",
@@ -948,7 +1039,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: false,
     visual: v("cbBTC"),
     trendUp: true,
-    category: "crypto",
+    category: "btc",
   },
   {
     id: "steth",
@@ -963,7 +1054,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: false,
     visual: v("stETH"),
     trendUp: true,
-    category: "crypto",
+    category: "eth",
   },
   {
     id: "wsteth",
@@ -978,7 +1069,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: false,
     visual: v("wstETH"),
     trendUp: true,
-    category: "crypto",
+    category: "eth",
   },
   {
     id: "reth",
@@ -993,7 +1084,7 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     hasWalletBalance: false,
     visual: v("rETH"),
     trendUp: true,
-    category: "crypto",
+    category: "eth",
   },
   {
     id: "cbeth",
@@ -1007,6 +1098,51 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     walletBalanceLabel: "0 cbETH",
     hasWalletBalance: false,
     visual: v("cbETH"),
+    trendUp: true,
+    category: "eth",
+  },
+  {
+    id: "aave",
+    symbol: "AAVE",
+    name: "Aave",
+    subtitle: "Aave governance token",
+    borrowApr: 4.5,
+    totalBorrowedUsd: 1_200_000,
+    utilization: 45,
+    availableUsd: 3_500_000,
+    walletBalanceLabel: "0 AAVE",
+    hasWalletBalance: false,
+    visual: v("AAVE"),
+    trendUp: true,
+    category: "crypto",
+  },
+  {
+    id: "uni",
+    symbol: "UNI",
+    name: "Uniswap",
+    subtitle: "Uniswap governance token",
+    borrowApr: 4.2,
+    totalBorrowedUsd: 800_000,
+    utilization: 35,
+    availableUsd: 2_800_000,
+    walletBalanceLabel: "0 UNI",
+    hasWalletBalance: false,
+    visual: v("UNI"),
+    trendUp: false,
+    category: "crypto",
+  },
+  {
+    id: "crv",
+    symbol: "CRV",
+    name: "Curve DAO",
+    subtitle: "Curve governance token",
+    borrowApr: 5.1,
+    totalBorrowedUsd: 600_000,
+    utilization: 38,
+    availableUsd: 1_900_000,
+    walletBalanceLabel: "0 CRV",
+    hasWalletBalance: false,
+    visual: v("CRV"),
     trendUp: true,
     category: "crypto",
   },
@@ -1221,6 +1357,7 @@ export function homeVisualToBorrowVisual(visual: { symbol: string; shortLabel: s
     shortLabel: visual.shortLabel,
     bgClass: visual.bgClassName,
     textClass: visual.textClassName,
+    iconUrl: getTokenIconMeta(visual.symbol).iconUrl,
   }
 }
 

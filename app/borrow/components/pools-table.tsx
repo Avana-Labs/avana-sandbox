@@ -1,11 +1,13 @@
 "use client"
 
 import { memo } from "react"
+import Link from "next/link"
 import {
   aprToneClass,
   formatCompactUsd,
   formatRiskPremium,
   getSpokeById,
+  type BorrowPoolEvent,
   type BorrowPoolRow,
   type BorrowSpoke,
   type DexGroup,
@@ -18,6 +20,34 @@ import {
   TrendSpark,
 } from "./atoms"
 import { cn } from "@/lib/utils"
+import { FlashValue } from "@/app/components/ui/live"
+
+function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
+  if (!events || events.length === 0) return null
+  return (
+    <div className="mt-1 flex flex-wrap justify-end gap-1">
+      {events.map((event, index) => {
+        const tone = event.tone ?? "info"
+        const toneClass =
+          tone === "positive"
+            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+            : tone === "warning"
+              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+              : tone === "danger"
+                ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                : "bg-muted text-muted-foreground"
+        return (
+          <span
+            key={`${event.label}-${index}`}
+            className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold", toneClass)}
+          >
+            {event.label}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
 
 type PoolsTableProps = {
   groups: DexGroup[]
@@ -27,18 +57,9 @@ type PoolsTableProps = {
 
 function EModePill() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-700">
       E-Mode
     </span>
-  )
-}
-
-function SpokeHeader({ spoke }: { spoke: BorrowSpoke }) {
-  return (
-    <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
-      <h3 className="text-[20px] font-semibold tracking-tight text-foreground">{spoke.label}</h3>
-      {spoke.eMode ? <EModePill /> : null}
-    </div>
   )
 }
 
@@ -72,45 +93,59 @@ function SpokeSection({
   onUseAsCollateral: (pool: BorrowPoolRow) => void
 }) {
   return (
-    <section>
-      <SpokeHeader spoke={spoke} />
-
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <section className="mb-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-lg font-medium">{spoke.label}</h3>
+        {spoke.eMode ? <EModePill /> : null}
+      </div>
+      <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[880px] border-collapse text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="px-2 py-3">Pool</th>
-                <th className="px-2 py-3 text-right">Max LTV</th>
-                <th className="px-2 py-3 text-right">Fees APY</th>
-                <th className="px-2 py-3 text-right">Available</th>
-                <th className="px-2 py-3 text-right">Risk Premium</th>
-                <th className="w-24 px-2 py-3 text-right">7D</th>
-                <th className="w-36 px-4 py-3 text-right">Action</th>
+              <tr className="border-b border-border/40 text-left text-muted-foreground">
+                <th className="pb-3 pt-4 pl-6 font-medium">Pool</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Max LTV</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Fees APY</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Supplied</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Risk Premium</th>
+                <th className="w-20 pb-3 pt-4 pl-4 text-right font-medium">7D</th>
+                <th className="w-44 pb-3 pt-4 pl-4 pr-6 text-right font-medium">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/40">
               {rows.map((pool) => (
                 <tr
                   key={pool.id}
-                  className="border-t border-border transition-colors hover:bg-muted/70"
+                  className="cursor-pointer transition-colors hover:bg-muted/50"
                   onClick={() => onUseAsCollateral(pool)}
                 >
-                  <td className="px-2 py-3.5">
-                    <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="lg" />
+                  <td className="py-3 pl-6">
+                    <TokenPairCell
+                      visuals={pool.visuals}
+                      name={pool.name}
+                      subtitle={`${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`}
+                      size="lg"
+                    />
+                    <EventTagList events={pool.events} />
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="py-3 pl-4 text-right">
                     <span className="font-data text-sm font-semibold tabular-nums text-foreground">{pool.ltv}%</span>
                   </td>
-                  <td className="px-2 py-3.5 text-right">
-                    <span className={cn("font-data text-sm font-semibold tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}>
+                  <td className="py-3 pl-4 text-right">
+                    <FlashValue
+                      value={(pool.aprMin + pool.aprMax) / 2}
+                      goodDirection="down"
+                      className={cn("font-data text-sm font-semibold tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}
+                    >
                       {`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
-                    </span>
+                    </FlashValue>
                   </td>
-                  <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-foreground">
-                    {formatCompactUsd(pool.availableUsd)}
+                  <td className="py-3 pl-4 text-right">
+                    <FlashValue value={pool.availableUsd} goodDirection="up" className="font-data text-sm tabular-nums text-foreground">
+                      {formatCompactUsd(pool.availableUsd)}
+                    </FlashValue>
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="py-3 pl-4 text-right">
                     <span
                       className={cn(
                         "font-data text-sm font-medium tabular-nums",
@@ -120,32 +155,41 @@ function SpokeSection({
                       {formatRiskPremium(pool.riskPremiumBps)}
                     </span>
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="py-3 pl-4 text-right">
                     <div className="inline-flex align-middle">
-                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} />
+                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} />
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-right">
-                    <PillButton
-                      variant="primary"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onUseAsCollateral(pool)
-                      }}
-                    >
-                      Supply
-                    </PillButton>
+                  <td className="py-3 pl-4 pr-6 text-right">
+                    <div className="inline-flex items-center gap-1.5">
+                      <Link
+                        href={`/borrow/pool/${pool.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Details
+                      </Link>
+                      <PillButton
+                        variant="primary"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onUseAsCollateral(pool)
+                        }}
+                      >
+                        Supply
+                      </PillButton>
+                    </div>
                   </td>
                 </tr>
               ))}
               {pending.map((row) => (
-                <tr key={row.id} className="border-t border-border">
-                  <td className="px-4 py-3.5 text-xs text-muted-foreground" />
-                  <td className="px-2 py-3.5 text-sm text-muted-foreground" colSpan={6}>
+                <tr key={row.id}>
+                  <td className="py-3 pl-6 text-xs text-muted-foreground" />
+                  <td className="py-3 text-sm text-muted-foreground" colSpan={6}>
                     {row.label}
                     <span className="ml-2 text-xs text-muted-foreground">· {row.subLabel}</span>
                   </td>
-                  <td className="px-4 py-3.5 text-right">
+                  <td className="py-3 pr-6 text-right">
                     <PillButton variant="ghost" disabled>
                       Vote →
                     </PillButton>
@@ -168,15 +212,28 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
           const pendingForSpoke = pending.filter((row) => row.spoke === entry.spoke.id)
           return (
             <section key={entry.spoke.id} className="space-y-3">
-              <SpokeHeader spoke={entry.spoke} />
-
-              <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-lg font-medium">{entry.spoke.label}</h3>
+                {entry.spoke.eMode ? <EModePill /> : null}
+              </div>
+              <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
+                <ul className="divide-y divide-border/40">
                 {entry.rows.map((pool) => (
                   <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onUseAsCollateral(pool)}>
                     <div className="flex items-center justify-between gap-3">
-                      <TokenPairCell visuals={pool.visuals} name={pool.name} subtitle={pool.venue} size="md" />
-                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} width={52} />
+                      <TokenPairCell
+                        visuals={pool.visuals}
+                        name={pool.name}
+                        subtitle={`${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`}
+                        size="md"
+                      />
+                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
                     </div>
+                    {pool.events && pool.events.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        <EventTagList events={pool.events} />
+                      </div>
+                    ) : null}
                     <DexChipRow dexes={pool.dexes} />
                     <div className="grid grid-cols-2 gap-y-2 text-xs">
                       <MobileField label="Max LTV" value={`${pool.ltv}%`} />
@@ -184,21 +241,37 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                         label="Fees APY"
                         value={`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
                         tone={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
+                        flashValue={(pool.aprMin + pool.aprMax) / 2}
+                        flashGoodDirection="down"
                       />
-                      <MobileField label="Available" value={formatCompactUsd(pool.availableUsd)} />
+                      <MobileField
+                        label="Supplied"
+                        value={formatCompactUsd(pool.availableUsd)}
+                        flashValue={pool.availableUsd}
+                        flashGoodDirection="up"
+                      />
                       <MobileField label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
                     </div>
-                    <PillButton
-                      variant="primary"
-                      size="md"
-                      className="w-full"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onUseAsCollateral(pool)
-                      }}
-                    >
-                      Supply
-                    </PillButton>
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/borrow/pool/${pool.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="flex h-10 flex-1 items-center justify-center rounded-full border border-border bg-background text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Details
+                      </Link>
+                      <PillButton
+                        variant="primary"
+                        size="md"
+                        className="flex-1"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onUseAsCollateral(pool)
+                        }}
+                      >
+                        Supply
+                      </PillButton>
+                    </div>
                   </li>
                 ))}
                 {pendingForSpoke.map((row) => (
@@ -212,7 +285,8 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                     </PillButton>
                   </li>
                 ))}
-              </ul>
+                </ul>
+              </div>
             </section>
           )
         }),
@@ -221,11 +295,33 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
   )
 }
 
-function MobileField({ label, value, tone }: { label: string; value: string; tone?: string }) {
+function MobileField({
+  label,
+  value,
+  tone,
+  flashValue,
+  flashGoodDirection,
+}: {
+  label: string
+  value: string
+  tone?: string
+  flashValue?: number | string
+  flashGoodDirection?: "up" | "down"
+}) {
   return (
     <div>
       <div className="text-xs uppercase tracking-[0.07em] text-muted-foreground">{label}</div>
-      <div className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground", tone)}>{value}</div>
+      {flashValue !== undefined ? (
+        <FlashValue
+          value={flashValue}
+          goodDirection={flashGoodDirection ?? "up"}
+          className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground", tone)}
+        >
+          {value}
+        </FlashValue>
+      ) : (
+        <div className={cn("mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground", tone)}>{value}</div>
+      )}
     </div>
   )
 }

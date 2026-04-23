@@ -3,6 +3,7 @@
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import { HomeBorrowTab } from "@/app/components/home-borrow-tab"
+import { PillTabButton } from "@/components/ui/pill-tab-button"
 import { HomeMarketsTabSkeleton, HomeResourcesTabSkeleton } from "@/app/components/loading-states"
 import type { HomeChain } from "@/app/lib/home-data"
 
@@ -31,7 +32,7 @@ export function HomeTabs({ chains }: HomeTabsProps) {
   return (
     <div className="space-y-6">
       <div
-        className="inline-flex h-10 w-full items-center justify-center rounded-md bg-muted p-1 text-muted-foreground"
+        className="no-scrollbar flex flex-wrap items-center justify-center gap-1"
         role="tablist"
         aria-label="Homepage sections"
       >
@@ -39,20 +40,18 @@ export function HomeTabs({ chains }: HomeTabsProps) {
           const isActive = activeTab === tab.id
 
           return (
-            <button
+            <PillTabButton
               key={tab.id}
-              type="button"
               role="tab"
+              type="button"
+              active={isActive}
               aria-selected={isActive}
               aria-controls={`home-tab-panel-${tab.id}`}
               id={`home-tab-${tab.id}`}
-              className={`inline-flex w-full items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 font-compact text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                isActive ? "bg-card text-foreground shadow-sm" : ""
-              }`}
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
-            </button>
+            </PillTabButton>
           )
         })}
       </div>

@@ -1,6 +1,13 @@
+"use client"
+
 import { Eye, EyeOff, Plus, Minus, X } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { DeltaPill, FlashValue } from "@/app/components/ui/live"
+
+const MOCK_BALANCE = 48_250
+const MOCK_PNL_USD = 1_240.5
+const MOCK_PNL_PCT = 2.6
 
 export function PerpBalanceRow() {
   const [showBalance, setShowBalance] = useState(true)
@@ -15,12 +22,21 @@ export function PerpBalanceRow() {
           </button>
         </div>
         <div className="flex items-baseline gap-3">
-          <span className="font-data text-[1.45rem] font-semibold tracking-tight md:text-[1.8rem]">
+          <FlashValue
+            value={showBalance ? MOCK_BALANCE : "hidden"}
+            goodDirection="up"
+            className="font-data text-[1.45rem] font-semibold tracking-tight md:text-[1.8rem]"
+          >
             {showBalance ? "$48,250.00" : "••••••••"}
-          </span>
-          <span className="text-sm font-medium text-emerald-500">
-            +$1,240.50 (2.6%)
-          </span>
+          </FlashValue>
+          {showBalance ? (
+            <div className="flex items-center gap-2">
+              <span className={`text-sm font-medium ${MOCK_PNL_USD >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                {MOCK_PNL_USD >= 0 ? "+" : "−"}${Math.abs(MOCK_PNL_USD).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <DeltaPill value={MOCK_PNL_PCT} format="percent" digits={2} />
+            </div>
+          ) : null}
         </div>
       </div>
       <div className="flex gap-2">

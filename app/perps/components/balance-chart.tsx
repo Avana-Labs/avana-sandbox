@@ -1,7 +1,10 @@
 "use client"
 
+import * as React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts"
+import { useTheme } from "next-themes"
+import { makeChartPalette, type ThemeMode } from "@/app/lib/chart-colors"
 
 const mockData = [
   { time: "00:00", value: 47000 },
@@ -13,7 +16,15 @@ const mockData = [
   { time: "24:00", value: 48250 },
 ]
 
-export function BalanceChart() {
+const DEFAULT_SYMBOLS = ["ETH", "BTC", "SOL"]
+
+export function BalanceChart({ symbols = DEFAULT_SYMBOLS }: { symbols?: string[] }) {
+  const { resolvedTheme } = useTheme()
+  const theme: ThemeMode = resolvedTheme === "dark" ? "dark" : "light"
+  const gradientId = React.useId()
+  const symbolKey = React.useMemo(() => symbols.join("|"), [symbols])
+  const palette = React.useMemo(() => makeChartPalette({ symbols, theme }), [symbolKey, theme])
+
   return (
     <Card className="border-border/40 bg-card/50 shadow-none">
       <CardContent className="p-0">
@@ -21,12 +32,13 @@ export function BalanceChart() {
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={mockData}>
               <defs>
-                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={palette.fillTop} />
+                  <stop offset="95%" stopColor={palette.fillBottom} />
                 </linearGradient>
               </defs>
               <Tooltip
+                cursor={{ stroke: palette.cursor, strokeWidth: 1 }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (
@@ -48,10 +60,10 @@ export function BalanceChart() {
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="hsl(var(--primary))"
+                stroke={palette.stroke}
                 strokeWidth={2}
                 fillOpacity={1}
-                fill="url(#colorValue)"
+                fill={`url(#${gradientId})`}
               />
             </AreaChart>
           </ResponsiveContainer>
