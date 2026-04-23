@@ -8,6 +8,7 @@ import {
   type BorrowableAsset,
   type BorrowableAssetCategory,
 } from "@/app/lib/borrow-sim"
+import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { cn } from "@/lib/utils"
 
@@ -20,7 +21,7 @@ type AssetsTableProps = {
 export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+      <div className="rounded-lg border border-dashed border-border/40 bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
         No assets match your filter.
       </div>
     )
@@ -48,8 +49,8 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
       <div className="space-y-6 md:hidden">
         {groups.map((group) => (
           <section key={group.id} className="space-y-3">
-            <div className="px-1">
-              <h3 className="text-base font-semibold text-foreground">{group.label}</h3>
+            <div className="mb-1">
+              <h3 className="text-lg font-medium">{group.label}</h3>
             </div>
             <ul className="space-y-3">
               {group.assets.map((asset) => {
@@ -94,13 +95,13 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
                       >
                         Borrow
                       </button>
-                      <button
-                        type="button"
+                      <Link
+                        href={`/borrow/asset/${asset.id}`}
                         onClick={() => onViewMarket?.(asset)}
-                        className="flex-1 rounded-2xl bg-muted px-5 py-3.5 text-center text-[15px] font-semibold text-foreground transition-colors hover:bg-muted"
+                        className="flex flex-1 items-center justify-center rounded-2xl bg-muted px-5 py-3.5 text-center text-[15px] font-semibold text-foreground transition-colors hover:bg-muted/80"
                       >
-                        View market
-                      </button>
+                        Details
+                      </Link>
                     </div>
                   </li>
                 )
@@ -125,56 +126,64 @@ function AssetsSection({
   onBorrow: (asset: BorrowableAsset) => void
 }) {
   return (
-    <section>
-      <div className="mb-3 px-1">
-        <h3 className="text-base font-semibold text-foreground">{label}</h3>
+    <section className="mb-2">
+      <div className="mb-4">
+        <h3 className="text-lg font-medium">{label}</h3>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="overflow-hidden rounded-lg border border-border/40 bg-card/50 shadow-none">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] border-collapse text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="px-2 py-3">Asset</th>
-                <th className="px-2 py-3 text-right">Borrow APR</th>
-                <th className="px-2 py-3 text-right">Utilization</th>
-                <th className="px-2 py-3 text-right">Available</th>
-                <th className="px-2 py-3 text-right">Wallet Balance</th>
-                <th className="px-2 py-3 text-right">7D</th>
-                <th className="w-32 px-4 py-3" />
+              <tr className="border-b border-border/40 text-left text-muted-foreground">
+                <th className="pb-3 pt-4 pl-6 font-medium">Asset</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Borrow APR</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Utilization</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Available</th>
+                <th className="pb-3 pt-4 pl-4 text-right font-medium">Wallet Balance</th>
+                <th className="w-20 pb-3 pt-4 pl-4 text-right font-medium">7D</th>
+                <th className="w-44 pb-3 pt-4 pl-4 pr-6 text-right font-medium">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/40">
               {assets.map((asset) => (
-                <tr key={asset.id} className="border-t border-border transition-colors hover:bg-muted/70">
-                  <td className="px-2 py-3.5">
+                <tr key={asset.id} className="transition-colors hover:bg-muted/50">
+                  <td className="py-3 pl-6">
                     <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} size="lg" />
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="py-3 pl-4 text-right">
                     <span className={cn("font-data text-sm font-semibold tabular-nums", aprToneClass(asset.borrowApr))}>
                       {asset.borrowApr.toFixed(1)}%
                     </span>
                   </td>
-                  <td className="px-2 py-3.5 text-right">
+                  <td className="py-3 pl-4 text-right">
                     <span className={cn("font-data text-sm font-semibold tabular-nums", utilizationToneClass(asset.utilization))}>
                       {asset.utilization}%
                     </span>
                   </td>
-                  <td className="px-2 py-3.5 text-right font-data text-sm tabular-nums text-foreground">
+                  <td className="py-3 pl-4 text-right font-data text-sm tabular-nums text-foreground">
                     {formatCompactUsd(asset.availableUsd)}
                   </td>
-                  <td className={cn("px-2 py-3.5 text-right font-data text-sm tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground")}>
+                  <td className={cn("py-3 pl-4 text-right font-data text-sm tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground")}>
                     {asset.walletBalanceLabel}
                   </td>
-                  <td className="px-2 py-3.5">
+                  <td className="py-3 pl-4">
                     <div className="flex justify-end">
-                      <TrendSpark isPositive={asset.trendUp} seed={`asset-${asset.id}`} />
+                      <TrendSpark isPositive={asset.trendUp} seed={`asset-${asset.id}`} values={asset.trendValues} />
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-right">
-                    <PillButton variant="primary" onClick={() => onBorrow(asset)}>
-                      Borrow
-                    </PillButton>
+                  <td className="py-3 pl-4 pr-6 text-right">
+                    <div className="inline-flex items-center gap-1.5">
+                      <Link
+                        href={`/borrow/asset/${asset.id}`}
+                        className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Details
+                      </Link>
+                      <PillButton variant="primary" onClick={() => onBorrow(asset)}>
+                        Borrow
+                      </PillButton>
+                    </div>
                   </td>
                 </tr>
               ))}

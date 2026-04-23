@@ -163,17 +163,19 @@ export function BorrowableTokenRow({ visuals }: { visuals: BorrowAssetVisual[] }
 export const TrendSpark = memo(function TrendSpark({
   isPositive,
   seed,
+  values,
   width = 64,
   height = 24,
 }: {
   isPositive: boolean
   seed: string
+  values?: number[]
   width?: number
   height?: number
 }) {
   return (
     <div style={{ width, height }} className="shrink-0">
-      <EnhancedGraph isPositive={isPositive} seed={seed} points={14} height={height} />
+      <EnhancedGraph isPositive={isPositive} seed={seed} values={values} points={14} height={height} />
     </div>
   )
 })

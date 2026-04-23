@@ -5,12 +5,12 @@ export const TOKENS = [
 ] as const
 
 export const MARKETS = [
-  { symbol: "wstETH", name: "Lido Wrapped stETH", apy: 5.14, tvl: "$8.4M", utilization: 38, type: "Liquid", protocol: "Lido", color: "text-[#627EEA]", bg: "bg-[#EEF0FF]", soon: false },
-  { symbol: "WBTC", name: "Wrapped Bitcoin", apy: 3.48, tvl: "$0.9M", utilization: 29, type: "Med util", protocol: "WBTC", color: "text-[#F7931A]", bg: "bg-[#FFF5E5]", soon: false },
-  { symbol: "DAI", name: "MakerDAO Stablecoin", apy: 4.01, tvl: "$4.8M", utilization: 72, type: "Liquid", protocol: "MakerDAO", color: "text-[#EA580C]", bg: "bg-[#FEF0E7]", soon: false },
-  { symbol: "cbBTC", name: "Coinbase Wrapped BTC", apy: 4.25, tvl: "$2.1M", utilization: 45, type: "Liquid", protocol: "Coinbase", color: "text-[#0052FF]", bg: "bg-[#E5EEFF]", soon: false },
-  { symbol: "USDe", name: "Ethena USDe", apy: 12.5, tvl: "$15.2M", utilization: 88, type: "High util", protocol: "Ethena", color: "text-[#18181B]", bg: "bg-[#F4F4F5]", soon: false },
-  { symbol: "GHO", name: "Aave native stablecoin", apy: 0, tvl: "—", utilization: 0, type: "Soon", protocol: "Aave", color: "text-[#7928CA]", bg: "bg-[#F5EEFF]", soon: true },
+  { symbol: "wstETH", name: "Lido Wrapped stETH", apy: 5.14, apyChange24h: 0.18, tvl: "$8.4M", utilization: 38, type: "Liquid", protocol: "Lido", color: "text-[#627EEA]", bg: "bg-[#EEF0FF]", soon: false, event: null },
+  { symbol: "WBTC", name: "Wrapped Bitcoin", apy: 3.48, apyChange24h: -0.06, tvl: "$0.9M", utilization: 29, type: "Med util", protocol: "WBTC", color: "text-[#F7931A]", bg: "bg-[#FFF5E5]", soon: false, event: null },
+  { symbol: "DAI", name: "MakerDAO Stablecoin", apy: 4.01, apyChange24h: 0.22, tvl: "$4.8M", utilization: 72, type: "Liquid", protocol: "MakerDAO", color: "text-[#EA580C]", bg: "bg-[#FEF0E7]", soon: false, event: "Rewards boosted" },
+  { symbol: "cbBTC", name: "Coinbase Wrapped BTC", apy: 4.25, apyChange24h: 0.04, tvl: "$2.1M", utilization: 45, type: "Liquid", protocol: "Coinbase", color: "text-[#0052FF]", bg: "bg-[#E5EEFF]", soon: false, event: null },
+  { symbol: "USDe", name: "Ethena USDe", apy: 12.5, apyChange24h: 1.42, tvl: "$15.2M", utilization: 88, type: "High util", protocol: "Ethena", color: "text-[#18181B]", bg: "bg-[#F4F4F5]", soon: false, event: "Cap near full" },
+  { symbol: "GHO", name: "Aave native stablecoin", apy: 0, apyChange24h: 0, tvl: "—", utilization: 0, type: "Soon", protocol: "Aave", color: "text-[#7928CA]", bg: "bg-[#F5EEFF]", soon: true, event: null },
 ] as const
 
 export const ACTIVITY = [

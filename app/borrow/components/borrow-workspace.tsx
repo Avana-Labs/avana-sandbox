@@ -5,7 +5,6 @@ import {
   BORROWABLE_ASSETS,
   BORROW_PENDING_ROWS,
   BORROW_POOL_CATALOG,
-  BORROW_SUPPLY_META,
   filterAssets,
   filterPools,
   formatUsdExact,
@@ -37,13 +36,14 @@ import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./
 import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "./repay-remove-modal"
 import { SupplyCollateralModal, type SupplyCollateralContext, type SupplyCollateralResult } from "./supply-collateral-modal"
 import { SuccessOverlay, type SuccessOverlayProps } from "./success-overlay"
+import { useLiveBorrowMarket } from "./use-live-borrow-market"
 
 type DebtsState = Record<string, number>
 
 const POOL_SORT_OPTIONS: SortOption[] = [
   { key: "apr", label: "Fees APY" },
   { key: "ltv", label: "Max LTV" },
-  { key: "available", label: "Available" },
+  { key: "available", label: "Supplied" },
   { key: "riskPremium", label: "Risk premium" },
 ]
 
@@ -72,9 +72,9 @@ function computeHealthFactor(pool: HomeCollateralPool, debt: number): number | n
   return (pool.collateralUsd * (pool.maxLtv / 100)) / debt
 }
 
-function averageHealthFactor(rows: Array<{ pool: HomeCollateralPool; borrowedUsd: number }>): number | null {
+function averageHealthFactor(rows: Array<{ borrowedUsd: number; healthFactor: number | null }>): number | null {
   const finite = rows
-    .map((row) => computeHealthFactor(row.pool, row.borrowedUsd))
+    .map((row) => row.healthFactor)
     .filter((value): value is number => value !== null && Number.isFinite(value))
   if (finite.length === 0) return null
   return finite.reduce((sum, value) => sum + value, 0) / finite.length
@@ -136,6 +136,10 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
     payload: null,
   })
 
+  const { livePools, liveAssets, liveSupplyMetrics, liveDebtMetrics } = useLiveBorrowMarket(debts)
+  const livePoolById = useMemo(() => new Map(livePools.map((pool) => [pool.id, pool])), [livePools])
+  const liveAssetById = useMemo(() => new Map(liveAssets.map((asset) => [asset.id, asset])), [liveAssets])
+
   const toggleDex = useCallback((dex: BorrowDexId) => {
     setSelectedDexes((previous) => {
       const next = new Set(previous)
@@ -150,31 +154,37 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
     return HOME_COLLATERAL_POOLS.map((pool) => ({
       pool,
       borrowedUsd: debts[pool.id] ?? 0,
-      healthFactor: computeHealthFactor(pool, debts[pool.id] ?? 0),
+      healthFactor: liveSupplyMetrics[pool.id]?.healthFactor ?? computeHealthFactor(pool, debts[pool.id] ?? 0),
+      pairApr: liveSupplyMetrics[pool.id]?.pairApr ?? pool.pairApr,
+      feesUsd: liveSupplyMetrics[pool.id]?.feesUsd ?? 0,
+      feesLabel: liveSupplyMetrics[pool.id]?.feesLabel ?? "$0.00",
     }))
-  }, [debts])
+  }, [debts, liveSupplyMetrics])
 
   const debtsRows = useMemo<DebtRowContext[]>(() => {
-    const usdc = getUsdcToken()
     return HOME_COLLATERAL_POOLS.map((pool) => ({
       pool,
       borrowedUsd: debts[pool.id] ?? 0,
-      healthFactor: computeHealthFactor(pool, debts[pool.id] ?? 0),
-      borrowApr: usdc.borrowApr,
+      healthFactor: liveDebtMetrics[pool.id]?.healthFactor ?? computeHealthFactor(pool, debts[pool.id] ?? 0),
+      borrowApr: liveDebtMetrics[pool.id]?.borrowApr ?? getUsdcToken().borrowApr,
+      accruedInterestUsd: liveDebtMetrics[pool.id]?.accruedInterestUsd ?? 0,
+      dailyInterestUsd: liveDebtMetrics[pool.id]?.dailyInterestUsd ?? 0,
     })).filter((row) => row.borrowedUsd > 0)
-  }, [debts])
+  }, [debts, liveDebtMetrics])
 
   const sortedPools = useMemo(() => {
     const filtered = filterPools(BORROW_POOL_CATALOG, { text: filterText, dexes: selectedDexes })
-    return sortPools(filtered, poolSortKey, poolSortDirection)
-  }, [filterText, selectedDexes, poolSortKey, poolSortDirection])
+    const baseSorted = sortPools(filtered, poolSortKey, poolSortDirection)
+    return baseSorted.map((pool) => livePoolById.get(pool.id) ?? pool)
+  }, [filterText, livePoolById, selectedDexes, poolSortKey, poolSortDirection])
 
   const poolGroups = useMemo(() => groupByDex(sortedPools), [sortedPools])
 
   const sortedAssets = useMemo<BorrowableAsset[]>(() => {
     const filtered = filterAssets(BORROWABLE_ASSETS, filterText)
-    return sortAssets(filtered, assetSortKey, assetSortDirection)
-  }, [filterText, assetSortKey, assetSortDirection])
+    const baseSorted = sortAssets(filtered, assetSortKey, assetSortDirection)
+    return baseSorted.map((asset) => liveAssetById.get(asset.id) ?? asset)
+  }, [filterText, liveAssetById, assetSortKey, assetSortDirection])
 
   const sortedSupplies = useMemo(() => {
     const copy = [...supplies]
@@ -186,7 +196,7 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
           case "hf":
             return Number.isFinite(row.healthFactor ?? NaN) ? (row.healthFactor as number) : 99
           case "apr":
-            return row.pool.pairApr
+            return row.pairApr
           case "collateral":
           default:
             return row.pool.collateralUsd
@@ -225,7 +235,7 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
     const collateral = supplies.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
     const borrowed = supplies.reduce((sum, row) => sum + row.borrowedUsd, 0)
     const available = supplies.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
-    const fees = Object.values(BORROW_SUPPLY_META).reduce((sum, meta) => sum + meta.feesUsd, 0)
+    const fees = supplies.reduce((sum, row) => sum + row.feesUsd, 0)
     const averageHf = averageHealthFactor(supplies.filter((row) => row.borrowedUsd > 0))
     return { collateral, borrowed, available, fees, averageHf }
   }, [supplies])
@@ -233,9 +243,9 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
   const debtTotals = useMemo(() => {
     const totalBorrowed = debtsRows.reduce((sum, row) => sum + row.borrowedUsd, 0)
     const totalCollateral = debtsRows.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
-    const accruedInterest = debtsRows.reduce((sum, row) => sum + (BORROW_SUPPLY_META[row.pool.id]?.accruedInterestUsd ?? 0), 0)
+    const accruedInterest = debtsRows.reduce((sum, row) => sum + row.accruedInterestUsd, 0)
     const averageHf = averageHealthFactor(debtsRows)
-    const dailyInterest = debtsRows.reduce((sum, row) => sum + (row.borrowedUsd * (row.borrowApr / 100)) / 365, 0)
+    const dailyInterest = debtsRows.reduce((sum, row) => sum + row.dailyInterestUsd, 0)
     return { totalBorrowed, totalCollateral, accruedInterest, averageHf, dailyInterest }
   }, [debtsRows])
 
@@ -294,7 +304,7 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
   const handleSupplyAddCollateral = useCallback((context: SupplyRowContext) => {
     const { pool } = context
     const spokeId = homePoolSpoke(pool.category)
-    const feesApy = pool.pairApr
+    const feesApy = context.pairApr
     const borrowPoolRow: BorrowPoolRow = {
       id: pool.id,
       name: pool.name,
@@ -415,51 +425,40 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
       ? POOL_SORT_OPTIONS
       : currentTab === "assets"
         ? ASSET_SORT_OPTIONS
-        : currentTab === "supplies"
-          ? SUPPLY_SORT_OPTIONS
-          : DEBT_SORT_OPTIONS
+        : []
 
   const activeSortKey =
     currentTab === "pools"
       ? poolSortKey
       : currentTab === "assets"
         ? assetSortKey
-        : currentTab === "supplies"
-          ? supplySortKey
-          : debtSortKey
+        : ""
 
   const activeSortDirection =
     currentTab === "pools"
       ? poolSortDirection
       : currentTab === "assets"
         ? assetSortDirection
-        : currentTab === "supplies"
-          ? supplySortDirection
-          : debtSortDirection
+        : "desc"
 
   const onSortKeyChange = (key: string) => {
     if (currentTab === "pools") setPoolSortKey(key as PoolSortKey)
     else if (currentTab === "assets") setAssetSortKey(key as AssetSortKey)
-    else if (currentTab === "supplies") setSupplySortKey(key)
-    else setDebtSortKey(key)
   }
 
   const onSortDirectionChange = (direction: "asc" | "desc") => {
     if (currentTab === "pools") setPoolSortDirection(direction)
     else if (currentTab === "assets") setAssetSortDirection(direction)
-    else if (currentTab === "supplies") setSupplySortDirection(direction)
-    else setDebtSortDirection(direction)
   }
 
   const counts: Record<BorrowTabId, number> = {
     pools: sortedPools.length,
-    supplies: supplies.length,
     assets: sortedAssets.length,
-    debts: debtsRows.length,
+    positions: supplies.length + debtsRows.length,
   }
 
   return (
-    <section className="px-4 pb-16 md:px-6">
+    <section className="pb-16">
       <TabsBar
         currentTab={currentTab}
         onTabChange={(tab) => setCurrentTab(tab)}
@@ -475,7 +474,7 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
         onSortDirectionChange={onSortDirectionChange}
       />
 
-      <div className="py-6">
+      <div className="pt-3 pb-6">
         {currentTab === "pools" ? (
           <>
             <PoolsTable
@@ -491,17 +490,6 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
           </>
         ) : null}
 
-        {currentTab === "supplies" ? (
-          <SuppliesPanel
-            rows={sortedSupplies}
-            totals={supplyTotals}
-            onBorrowMore={handleSupplyBorrowMore}
-            onAddCollateral={handleSupplyAddCollateral}
-            onRemove={handleSupplyRemove}
-            showBalance={showBalance}
-          />
-        ) : null}
-
         {currentTab === "assets" ? (
           <AssetsPanel
             rows={sortedAssets}
@@ -513,8 +501,18 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
           />
         ) : null}
 
-        {currentTab === "debts" ? (
-          <DebtsPanel rows={sortedDebts} totals={debtTotals} onRepay={handleDebtRepay} onManage={handleDebtManage} showBalance={showBalance} />
+        {currentTab === "positions" ? (
+          <div className="flex flex-col gap-8">
+            <SuppliesPanel
+              rows={sortedSupplies}
+              totals={supplyTotals}
+              onBorrowMore={handleSupplyBorrowMore}
+              onAddCollateral={handleSupplyAddCollateral}
+              onRemove={handleSupplyRemove}
+              showBalance={showBalance}
+            />
+            <DebtsPanel rows={sortedDebts} totals={debtTotals} onRepay={handleDebtRepay} onManage={handleDebtManage} showBalance={showBalance} />
+          </div>
         ) : null}
       </div>
 
