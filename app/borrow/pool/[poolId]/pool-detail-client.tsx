@@ -13,6 +13,7 @@ import {
   CashflowCard,
   RiskSection,
   AboutCard,
+  CollateralHistoryCard,
   RelatedPoolsRow,
 } from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
@@ -79,12 +80,12 @@ export function PoolDetailClient({ detail }: Props) {
           <div className="flex items-center gap-3">
             <div className="hidden items-center gap-3 text-[12px] font-medium sm:flex">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">TVL</span>
+                <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Total Supplied</span>
                 <span className="font-data">{detail.quickStats[0].value}</span>
               </div>
               <div className="h-5 w-px bg-border" />
               <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">APR</span>
+                <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Supply APY</span>
                 <span className="font-data text-emerald-600 dark:text-emerald-400">{detail.quickStats[3]?.value || "--"}</span>
               </div>
             </div>
@@ -122,6 +123,7 @@ export function PoolDetailClient({ detail }: Props) {
                 accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
               />
               <RiskSection detail={detail} />
+              <CollateralHistoryCard transactions={detail.transactions} />
               <AboutCard about={detail.about} />
               <RelatedPoolsRow detail={detail} />
             </div>

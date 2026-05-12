@@ -9,7 +9,7 @@ import { LightweightChart, SectionCard } from "../ui"
 
 type View = "supplied" | "borrowed" | "utilization"
 
-type Props = { detail: AssetDetail }
+type Props = { detail: AssetDetail; id?: string }
 
 const VIEW_LABEL: Record<View, string> = {
   supplied: "Supplied",
@@ -17,7 +17,7 @@ const VIEW_LABEL: Record<View, string> = {
   utilization: "Utilization",
 }
 
-export function SupplyBorrowCard({ detail }: Props) {
+export function SupplyBorrowCard({ detail, id }: Props) {
   const [view, setView] = React.useState<View>("supplied")
 
   const series =
@@ -37,6 +37,7 @@ export function SupplyBorrowCard({ detail }: Props) {
 
   return (
     <SectionCard
+      id={id}
       title="Supply & Borrow"
       subtitle="Protocol-wide supplied vs borrowed for this asset."
       bodyClassName="p-0"

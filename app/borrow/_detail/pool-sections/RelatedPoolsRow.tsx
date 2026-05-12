@@ -24,7 +24,7 @@ export function RelatedPoolsRow({ detail }: Props) {
             >
               <TokenPairCell visuals={rel.visuals} name={rel.name} subtitle={rel.venue} size="sm" />
               <div className="flex items-center justify-between text-[11.5px]">
-                <span className="text-muted-foreground">APR</span>
+                <span className="text-muted-foreground">Supply APY</span>
                 <span className="font-data font-medium tabular-nums text-foreground">{rel.aprLabel}</span>
               </div>
               <div className="flex items-center justify-between text-[11.5px]">
