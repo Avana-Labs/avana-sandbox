@@ -72,13 +72,9 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
       supplyApy90d: { value: "6.44%" },
     },
     about: {
-      description: "USDC is Circle's regulated, fully-backed USD stablecoin. It is the default stable asset for the protocol's risk curves and the primary borrow asset for LP carry strategies.",
-      stats: [
-        { label: "Issuer", value: "Circle" },
-        { label: "Oracle", value: "Chainlink USDC / USD" },
-        { label: "Reserve factor", value: "10%" },
-        { label: "Deployed on", value: "Ethereum, Arbitrum, Base" },
-      ],
+      description:
+        "USDC is Circle's regulated, fully-backed USD stablecoin and the main unit of account for this market. It anchors the protocol's conservative borrow curves, acts as the default settlement asset for LP carry strategies, and serves as the reference point for risk pricing across stablecoin routes. In practice, that makes it the most common asset for users who want cash-like exposure with on-chain mobility.",
+      stats: [],
       history: [
         { date: "2024-04-01", title: "Launch", description: "USDC listed day-1 with 80% borrow cap." },
         { date: "2025-03-09", title: "De-peg drill", description: "Simulated 2023-style de-peg; guardrails paused borrows for 18m." },
@@ -380,13 +376,10 @@ function buildAssetRisk(asset: BorrowableAsset, fixture: AssetFixture | undefine
 function buildAssetAbout(asset: BorrowableAsset, fixture: AssetFixture | undefined): AboutCard {
   if (fixture?.about) return fixture.about
   return {
-    description: `${asset.name} (${asset.symbol}) — ${asset.subtitle}.`,
-    stats: [
-      { label: "Category", value: asset.category === "stable" ? "Stablecoin" : "Crypto" },
-      { label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%` },
-      { label: "Utilization", value: `${asset.utilization.toFixed(1)}%` },
-      { label: "Available", value: formatCompactUsd(asset.availableUsd) },
-    ],
+    description:
+      `${asset.name} (${asset.symbol}) is a core borrowable market in the protocol and a building block for both directional hedges and LP carry loops. ` +
+      `${asset.subtitle} The borrow APY is influenced by utilization, reserve settings, and how often the asset is used as collateral elsewhere in the system, so the page focuses on the live rate, the supply/borrow mix, and the latest risk posture.`,
+    stats: [],
     history: [
       { date: "2025-02-10", title: "Listed", description: `${asset.symbol} listed with conservative borrow cap.` },
       { date: "2025-11-18", title: "Parameters refreshed", description: "Quarterly risk review — no changes." },

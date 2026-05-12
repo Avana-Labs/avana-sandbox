@@ -14,12 +14,12 @@ const KIND_TONE: Record<TxHistoryRow["kind"], string> = {
 }
 
 const KIND_LABEL: Record<TxHistoryRow["kind"], string> = {
-  supply: "Supply",
-  withdraw: "Withdraw",
+  supply: "Add collateral",
+  withdraw: "Remove collateral",
   borrow: "Borrow",
   repay: "Repay",
   liquidation: "Liquidation",
-  rewards: "Rewards",
+  rewards: "Claim fees",
 }
 
 type Props = {
@@ -28,17 +28,13 @@ type Props = {
   subtitle?: string
 }
 
-export function TransactionHistoryCard({
+export function CollateralHistoryCard({
   transactions,
-  title = "Transaction history",
-  subtitle = "Recent activity for this market.",
+  title = "Collateral history",
+  subtitle = "Recent collateral adds, removals, and fee claims.",
 }: Props) {
   return (
-    <SectionCard
-      title={title}
-      subtitle={subtitle}
-      bodyClassName="p-0"
-    >
+    <SectionCard title={title} subtitle={subtitle} bodyClassName="p-0">
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead>

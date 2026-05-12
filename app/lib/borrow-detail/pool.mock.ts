@@ -40,6 +40,7 @@ import type {
   RiskAssessment,
   Series,
   TimeRangeId,
+  TxHistoryRow,
 } from "./types"
 import { ALL_CHART_METRICS, ALL_KEY_METRICS, ALL_PERF_PERIODS, ALL_PERF_TABS } from "./types"
 
@@ -104,20 +105,15 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
     baseVolumeUsd: 48_900_000,
     baseFeesUsd: 146_700,
     quickStats: {
-      tvl: { value: "$312.4M", delta: deltaUp(2.4) },
-      volume24h: { value: "$48.9M", delta: deltaUp(6.1) },
-      fees24h: { value: "$146.7K", delta: deltaUp(6.1) },
+      totalSupplied: { value: "$312.4M", delta: deltaUp(2.4) },
+      totalBorrowed: { value: "$48.9M", delta: deltaUp(6.1) },
+      riskPremium: { value: formatBpsAsPct(70), delta: deltaUp(6.1) },
       utilization: { value: "62.1%", delta: deltaDown(1.3) },
     },
     about: {
       description:
-        "ETH/USDC 0.30% is the deepest Uniswap v3 pool by volume and functions as the benchmark pair for ETH price discovery. Bluechip spoke accepts these LP positions with an 70% max LTV.",
-      stats: [
-        { label: "Max LTV", value: "70%" },
-        { label: "Liquidation LTV", value: "78%" },
-        { label: "Oracle", value: "Uniswap TWAP 30m" },
-        { label: "Deployed on", value: "Ethereum Mainnet" },
-      ],
+        "ETH/USDC 0.30% is the deepest Uniswap v3 pool by volume and functions as the benchmark pair for ETH price discovery. The Bluechip spoke accepts these LP positions as borrow collateral, which means this market sits at the intersection of deep trading liquidity, a stable quote asset, and a higher-risk volatile leg. The combination gives borrowers meaningful capacity while still keeping the underwriting rules conservative enough to absorb ETH drawdowns.",
+      stats: [],
       history: [
         { date: "2024-05-07", title: "Spoke launched", description: "Uni v3 Bluechip added as collateral source." },
         { date: "2024-11-19", title: "LTV raised to 70%", description: "Risk council bumped the ceiling from 65% to 70%." },
@@ -156,20 +152,15 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
     baseVolumeUsd: 18_200_000,
     baseFeesUsd: 54_600,
     quickStats: {
-      tvl: { value: "$148.3M", delta: deltaUp(1.1) },
-      volume24h: { value: "$18.2M", delta: deltaUp(3.8) },
-      fees24h: { value: "$54.6K", delta: deltaUp(3.8) },
+      totalSupplied: { value: "$148.3M", delta: deltaUp(1.1) },
+      totalBorrowed: { value: "$18.2M", delta: deltaUp(3.8) },
+      riskPremium: { value: formatBpsAsPct(85), delta: deltaUp(3.8) },
       utilization: { value: "48.3%", delta: deltaDown(0.4) },
     },
     about: {
       description:
-        "WBTC/WETH is the dominant on-chain BTC↔ETH trading pair. Bluechip spoke allows it as collateral with a conservative 67% LTV given bridged-BTC tail risk.",
-      stats: [
-        { label: "Max LTV", value: "67%" },
-        { label: "Liquidation LTV", value: "75%" },
-        { label: "Oracle", value: "Chainlink BTC/ETH + UNI TWAP" },
-        { label: "Deployed on", value: "Ethereum Mainnet" },
-      ],
+        "WBTC/WETH is the dominant on-chain BTC↔ETH trading pair and one of the most familiar blue-chip routes in DeFi. The Bluechip spoke allows it as collateral with a conservative 67% LTV because bridged-BTC custody risk, even when well managed, still deserves a tighter margin than native ETH pairs. That keeps borrowing power useful without treating wrapped BTC like a pure base-asset market.",
+      stats: [],
       history: [
         { date: "2024-07-22", title: "Pool onboarded", description: "WBTC/WETH added to the Bluechip spoke." },
         { date: "2025-02-14", title: "Dual-oracle", description: "Added Chainlink feed alongside the TWAP for resilience." },
@@ -207,20 +198,15 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
     baseVolumeUsd: 22_100_000,
     baseFeesUsd: 2_210,
     quickStats: {
-      tvl: { value: "$198.6M", delta: deltaUp(0.4) },
-      volume24h: { value: "$22.1M", delta: deltaUp(1.9) },
-      fees24h: { value: "$2.21K", delta: deltaUp(1.9) },
+      totalSupplied: { value: "$198.6M", delta: deltaUp(0.4) },
+      totalBorrowed: { value: "$22.1M", delta: deltaUp(1.9) },
+      riskPremium: { value: formatBpsAsPct(25), delta: deltaUp(1.9) },
       utilization: { value: "71.4%", delta: deltaUp(0.8) },
     },
     about: {
       description:
-        "USDC and USDT both trade at parity and the pool is overwhelmingly used for order-routing. The Stable spoke admits it with a high LTV because peg-risk is shared and depth is enormous.",
-      stats: [
-        { label: "Max LTV", value: "78%" },
-        { label: "Liquidation LTV", value: "85%" },
-        { label: "Oracle", value: "Chainlink USDC + USDT" },
-        { label: "Deployed on", value: "Ethereum Mainnet" },
-      ],
+        "USDC and USDT both trade at parity and the pool is overwhelmingly used for order-routing, stability-seeking flow, and tight-spread execution. The Stable spoke admits it with a high LTV because peg-risk is shared, depth is enormous, and the pool behaves more like cash infrastructure than a typical volatile LP. That makes it a natural fit for users who want borrowing power while keeping the underlying collateral profile simple to reason about.",
+      stats: [],
       history: [
         { date: "2024-04-15", title: "Stable spoke launch", description: "USDC/USDT included from day 1." },
         { date: "2025-03-09", title: "De-peg drill", description: "Circuit-breaker simulated during USDC March 2023 re-run — no forced liquidations." },
@@ -273,17 +259,15 @@ function pickChain(row: BorrowPoolRow): string {
 
 function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
   const spoke = getSpokeById(row.spoke)
-  const tvl = spoke.liquidityUsd
-  const volume = Math.round(tvl * 0.12)
-  const fees = Math.round(volume * 0.003)
+  const totalSupplied = spoke.liquidityUsd
+  const totalBorrowed = Math.round(totalSupplied * (row.ltv / 100))
   return [
-    { id: "tvl", label: "TVL", value: formatCompactUsd(tvl), delta: deltaUp(1.8) },
-    { id: "volume24h", label: "Volume 24h", value: formatCompactUsd(volume), delta: deltaUp(2.9) },
-    { id: "fees24h", label: "Fees 24h", value: formatCompactUsd(fees), delta: deltaUp(2.9) },
-    { id: "apr", label: "APR", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
+    { id: "totalSupplied", label: "Total Supplied", value: formatCompactUsd(totalSupplied), delta: deltaUp(1.8) },
+    { id: "totalBorrowed", label: "Total Borrowed", value: formatCompactUsd(totalBorrowed), delta: deltaUp(2.9) },
+    { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
+    { id: "apr", label: "Supply APY", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
     { id: "utilization", label: "Utilization", value: formatPct(spoke.maxLtv * 0.82, 1) },
     { id: "maxLtv", label: "Max LTV", value: formatPct(spoke.maxLtv, 1) },
-    { id: "riskPremium", label: "Risk Premium", value: formatBpsAsPct(row.riskPremiumBps) },
     { id: "available", label: "Available to borrow", value: formatCompactUsd(row.availableUsd) },
   ]
 }
@@ -530,7 +514,7 @@ function buildRisk(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Ri
       { id: "dex", label: "Source dex", value: getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue },
       { id: "spoke", label: "Spoke", value: getSpokeById(row.spoke).label },
       { id: "maxLtv", label: "Max LTV", value: formatPct(getSpokeById(row.spoke).maxLtv, 0) },
-      { id: "apr", label: "APR range", value: aprRangeLabel(row) },
+      { id: "apr", label: "Supply APY range", value: aprRangeLabel(row) },
     ],
   }
 }
@@ -539,13 +523,11 @@ function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): A
   if (fixture?.about) return fixture.about
   const spoke = getSpokeById(row.spoke)
   return {
-    description: `${row.name} on ${getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue}. Accepted by the ${spoke.label} with a ${spoke.maxLtv}% max LTV.`,
-    stats: [
-      { label: "Max LTV", value: formatPct(spoke.maxLtv, 0) },
-      { label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps) },
-      { label: "APR range", value: aprRangeLabel(row) },
-      { label: "Available to borrow", value: formatCompactUsd(row.availableUsd) },
-    ],
+    description:
+      `${row.name} on ${getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue} is treated as LP collateral inside the ${spoke.label}. ` +
+      `The pool's depth, fee tier, and pair composition determine how much it can support, while the spoke's max LTV keeps the borrow power anchored to the market's actual risk. ` +
+      `That gives this page a single source of truth for how the pool should be understood: what it is, how much capital it can safely support, and what kind of downside the protocol is underwriting.`,
+    stats: [],
     history: [
       { date: "2025-01-14", title: "Onboarded", description: `Added to the ${spoke.label}.` },
       { date: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV." },
@@ -564,6 +546,34 @@ function buildRelated(row: BorrowPoolRow): RelatedPoolSummary[] {
       aprLabel: aprRangeLabel(other),
       availableLabel: formatCompactUsd(other.availableUsd),
     }))
+}
+
+function buildCollateralHistory(row: BorrowPoolRow): TxHistoryRow[] {
+  const seed = prngFromString(`${row.id}:tx`)
+  const kinds: TxHistoryRow["kind"][] = ["supply", "withdraw", "rewards"]
+  const now = Date.UTC(2026, 3, 23)
+  const out: TxHistoryRow[] = []
+
+  for (let i = 0; i < 12; i++) {
+    const kind = kinds[Math.floor(seed() * kinds.length)]
+    const amountBase = kind === "rewards" ? 250 + seed() * 15_000 : 50_000 + seed() * 1_950_000
+    const amount = Math.round(amountBase / 100) * 100
+    const at = new Date(now - i * 6 * 60 * 60 * 1000 - Math.floor(seed() * 86_400_000)).toISOString()
+    const prefix = kind === "withdraw" ? "-" : "+"
+    out.push({
+      id: `${row.id}-tx-${i}`,
+      at,
+      kind,
+      amountLabel: `${prefix}${formatCompactUsd(amount)}`,
+      counterpartyLabel:
+        kind === "rewards"
+          ? `Fee claim · ${row.venue}`
+          : `${kind === "supply" ? "Added" : "Removed"} collateral · ${row.name}`,
+      txHashShort: `0x${Math.floor(seed() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(seed() * 0xffff).toString(16).padStart(4, "0")}`,
+    })
+  }
+
+  return out
 }
 
 // -------------------------------------------------------------------------
@@ -590,6 +600,7 @@ export function buildPoolDetail(row: BorrowPoolRow): PoolDetail {
     engagement: buildPoolEngagement(row, fixture),
     risk: buildRisk(row, fixture),
     about: buildAbout(row, fixture),
+    transactions: buildCollateralHistory(row),
     related: buildRelated(row),
     governanceNotes: [
       { title: "Risk council", body: "Quarterly risk review touches every active pool.", tone: "info" },
