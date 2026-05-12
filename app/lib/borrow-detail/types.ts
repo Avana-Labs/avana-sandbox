@@ -304,6 +304,7 @@ export type PoolDetail = {
   engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
+  transactions: TxHistoryRow[]
   related: RelatedPoolSummary[]
   governanceNotes: Array<{ title: string; body: string; tone?: "info" | "warning" | "positive" }>
   /** Passthrough reference to the table row so sidebars can stay in sync. */
@@ -338,12 +339,12 @@ export type AllocationRow = {
 }
 
 /**
- * Row in the asset "Recent transactions" table.
+ * Row used by the detail-page activity tables.
  *
- * @convex-source `walletEvents` filtered by `marketId` (same table that
- *   feeds `EngagementTrend`). `amountLabel` pre-formats `amountUsd` with a
- *   sign based on `kind` (borrow/withdraw negative, supply/repay positive).
- * @convex-query  TBD — likely `transactions.getForAsset({ slug, limit })`.
+ * @convex-source `walletEvents` filtered by the page's market id. `amountLabel`
+ *   pre-formats `amountUsd` with a sign based on `kind`.
+ * @convex-query  TBD — likely `transactions.getForAsset({ slug, limit })` or a
+ *   collateral-specific equivalent.
  */
 export type TxHistoryRow = {
   id: string
