@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -36,8 +37,14 @@ export function MobileMenu() {
         <div className="flex h-full flex-col">
           <div className="border-b border-border p-4">
             <div className="rounded-radius-sm border border-border bg-surface-inset p-3">
-              <Link href="/" className="flex items-center gap-2 font-brand text-[15px] font-medium" onClick={() => setOpen(false)}>
-                Avana
+              <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
+                <Image
+                  src="/Avana Full (Personal) PNG.png"
+                  alt="Avana"
+                  width={142}
+                  height={30}
+                  className="h-14 w-auto origin-left scale-[1.08] object-contain dark:invert"
+                />
               </Link>
               <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{activeNav.description}</p>
             </div>

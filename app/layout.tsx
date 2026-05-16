@@ -107,12 +107,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/icon.svg",
+        url: "/Avana Favicon.png",
       },
     ],
     shortcut: [
       {
-        url: "/icon.svg",
+        url: "/Avana Favicon.png",
       },
     ],
   },
