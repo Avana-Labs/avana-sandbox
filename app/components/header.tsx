@@ -4,10 +4,12 @@ import Image from "next/image"
 import Link from "next/link"
 import { Search } from "lucide-react"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useTheme } from "next-themes"
 import { MobileMenu } from "./mobile-menu"
 import { businessDesktopHeaderLinks, getHeaderMode, personalDesktopHeaderLinks } from "./site-nav"
 
-const utilityLinks = ["My Rewards", "English/USD", "Support Center", "Light Theme"]
+const utilityLinks = ["My Rewards", "English/USD", "Support Center"]
 const modeConfig = {
   personal: {
     label: "Personal",
@@ -22,6 +24,32 @@ const modeConfig = {
     logo: "/Avana Full (Business) PNG.png",
   },
 } as const
+
+function ThemeStatusLabel() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const label = !mounted ? "Theme" : resolvedTheme === "dark" ? "Dark Theme" : "Light Theme"
+  const handleClick = () => {
+    if (!mounted) return
+    setTheme(resolvedTheme === "dark" ? "light" : "dark")
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="whitespace-nowrap transition-colors hover:text-[#272a2f]"
+      aria-label={mounted ? `Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme` : "Theme toggle"}
+    >
+      {label}
+    </button>
+  )
+}
 
 export function Header() {
   const pathname = usePathname()
@@ -64,6 +92,10 @@ export function Header() {
                     <span className="whitespace-nowrap">{item}</span>
                   </div>
                 ))}
+                <div className="flex shrink-0 items-center gap-[8px]">
+                  <span className="text-[#c5c8cc]">|</span>
+                  <ThemeStatusLabel />
+                </div>
 
                 <div className="ml-[6px] flex h-[26px] w-[230px] shrink-0 items-center border border-[#d8dadd] bg-white px-[10px] text-[#777b80] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
                   <Search className="h-[14px] w-[14px] shrink-0 text-[#8d9196]" strokeWidth={2.2} />
