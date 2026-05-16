@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
 import { MobileMenu } from "./mobile-menu"
 import { businessDesktopHeaderLinks, getHeaderMode, personalDesktopHeaderLinks } from "./site-nav"
 
-const utilityLinks = ["English/USD", "Support Center", "Light Theme"]
+const utilityLinks = ["My Rewards", "English/USD", "Support Center", "Light Theme"]
 const modeConfig = {
   personal: {
     label: "Personal",
@@ -28,6 +28,7 @@ export function Header() {
   const mode = getHeaderMode(pathname)
   const desktopLinks = mode === "business" ? businessDesktopHeaderLinks : personalDesktopHeaderLinks
   const activeMode = modeConfig[mode]
+  const desktopNavItemWidth = mode === "business" ? "w-[132px]" : "w-[96px]"
 
   return (
     <header className="sticky top-0 z-40 bg-white">
@@ -35,10 +36,10 @@ export function Header() {
 
       <div className="hidden lg:block">
         <div className="border-b border-[#e5e7eb] bg-[#fafafa]">
-          <div className="mx-auto grid h-[38px] max-w-5xl grid-cols-[132px_minmax(0,1fr)] items-end gap-6 px-4">
+          <div className="mx-auto grid h-[32px] max-w-5xl grid-cols-[126px_minmax(0,1fr)] items-end gap-3">
             <div aria-hidden />
             <div className="flex min-w-0 items-end justify-between gap-5">
-              <div className="inline-flex h-[34px] shrink-0 overflow-hidden rounded-t-[2px] border border-b-0 border-[#c9cdd2] bg-[#e5e5e5] text-[12px] font-semibold leading-none">
+              <div className="ml-[72px] inline-flex h-[28px] shrink-0 overflow-hidden rounded-t-[2px] border border-b-0 border-[#c9cdd2] bg-[#e5e5e5] text-[13px] font-semibold leading-none">
                 {(["personal", "business"] as const).map((item) => {
                   const isActive = item === mode
                   const config = modeConfig[item]
@@ -56,7 +57,7 @@ export function Header() {
                 })}
               </div>
 
-              <div className="flex min-w-0 items-center gap-[8px] pb-[5px] text-[11px] font-medium leading-none text-[#697078]">
+              <div className="flex min-w-0 items-center gap-[8px] pb-[4px] text-[11px] font-medium leading-none text-[#697078]">
                 {utilityLinks.map((item, index) => (
                   <div key={item} className="flex shrink-0 items-center gap-[8px]">
                     {index > 0 ? <span className="text-[#c5c8cc]">|</span> : null}
@@ -64,11 +65,12 @@ export function Header() {
                   </div>
                 ))}
 
-                <div className="ml-[6px] flex h-[26px] w-[220px] shrink-0 items-center border border-[#aeb3b8] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                  <span className="px-[9px] text-[11px] font-semibold text-[#5d6268]">Search</span>
-                  <div className="ml-auto flex h-full w-[29px] items-center justify-center border-l border-[#aeb3b8] text-[#1f2328]">
-                    <Search className="h-[15px] w-[15px]" strokeWidth={2.5} />
-                  </div>
+                <div className="ml-[6px] flex h-[26px] w-[230px] shrink-0 items-center border border-[#d8dadd] bg-white px-[10px] text-[#777b80] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+                  <Search className="h-[14px] w-[14px] shrink-0 text-[#8d9196]" strokeWidth={2.2} />
+                  <span className="ml-[8px] min-w-0 flex-1 truncate text-[11px] font-medium">Search</span>
+                  <span className="ml-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-[5px] bg-[#f0f1f2] px-[5px] text-[11px] font-medium leading-none text-[#8a8e93]">
+                    /
+                  </span>
                 </div>
               </div>
             </div>
@@ -76,13 +78,13 @@ export function Header() {
         </div>
 
         <div className="bg-white" style={{ borderTop: `3px solid ${activeMode.accent}` }}>
-          <div className="mx-auto grid h-[72px] max-w-5xl grid-cols-[132px_minmax(0,1fr)] items-center gap-6 px-4">
+          <div className="mx-auto grid h-[60px] max-w-5xl grid-cols-[126px_minmax(0,1fr)] items-center gap-3">
             <Link href={mode === "business" ? "/business" : "/"} aria-label="Home" title="Home" className="flex items-center justify-start">
-              <Image src={activeMode.logo} alt="Avana" width={210} height={56} className="h-[36px] w-auto object-contain" priority />
+              <Image src={activeMode.logo} alt="Avana" width={300} height={150} className="h-[52px] w-auto object-contain" priority />
             </Link>
 
             <div className="flex items-center justify-start">
-              <nav className="flex h-[48px] w-full items-stretch overflow-hidden rounded-[3px] border border-[#cdd1d5] bg-gradient-to-b from-[#f1f3f5] via-[#dfe3e7] to-[#c9ced3] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(15,23,42,0.06)]">
+              <nav className="flex h-[42px] w-full items-stretch border border-[#d3d8de] bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)]">
                 <div className="flex min-w-0 flex-1 items-stretch">
                   {desktopLinks.map((link) => {
                     const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
@@ -91,22 +93,23 @@ export function Header() {
                       <Link
                         key={link.href}
                         href={link.href}
-                        className="relative flex min-w-0 flex-1 items-center justify-center px-3 text-[12px] font-semibold leading-none text-[#3f454b] transition-colors hover:bg-[#d5dae0]"
+                        className={`relative flex ${desktopNavItemWidth} shrink-0 items-center justify-center border-r border-[#d3d8de] bg-white px-3 text-[13px] font-medium leading-none text-[#343a40] transition-colors hover:bg-[#f6f8fa]`}
                       >
                         <span
-                          className="absolute inset-x-0 top-0 h-[3px] opacity-0"
+                          className="absolute inset-x-0 bottom-0 h-[3px] opacity-0"
                           style={isActive ? { backgroundColor: activeMode.accent, opacity: 1 } : undefined}
                         />
                         <span className="truncate">{link.label}</span>
                       </Link>
                     )
                   })}
+                  <div className="min-w-0 flex-1" aria-hidden />
                 </div>
 
-                <div className="relative flex w-[132px] shrink-0 items-center justify-end px-[10px]">
+                <div className="relative flex w-[128px] shrink-0 items-center justify-end px-[10px]">
                   <Link
                     href="/login"
-                    className="rounded-[4px] px-[18px] py-[9px] text-[11px] font-bold leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_1px_2px_rgba(15,23,42,0.1)] transition-opacity hover:opacity-90"
+                    className="px-[18px] py-[8px] text-[13px] font-medium leading-none text-white shadow-[0_1px_2px_rgba(15,23,42,0.12)] transition-opacity hover:opacity-90"
                     style={{ backgroundColor: activeMode.accent }}
                   >
                     LOGIN
