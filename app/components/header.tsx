@@ -16,14 +16,14 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
-      <div className="flex h-[52px] 2xl:h-12 w-full items-center gap-4 2xl:gap-3 px-4 md:px-6 lg:px-8">
+      <div className="flex h-14 md:h-[52px] 2xl:h-12 w-full items-center gap-4 2xl:gap-3 px-4 md:px-6 lg:px-8">
         <Link href="/" aria-label="Home" title="Home" className="shrink-0 flex items-center">
           <Image
-            src="/Try.png"
+            src="/Avana Full (Personal) PNG.png"
             alt="Avana"
             width={142}
             height={30}
-            className="h-6 w-auto object-contain md:h-6 2xl:h-5 dark:invert"
+            className="h-14 w-auto origin-left scale-[1.08] object-contain md:h-[52px] dark:invert"
             priority
           />
         </Link>
