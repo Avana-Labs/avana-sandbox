@@ -20,6 +20,13 @@ export type SiteNavLink = {
   actionExternal?: boolean
 }
 
+export type HeaderMode = "personal" | "business"
+
+export type DesktopHeaderLink = {
+  href: string
+  label: string
+}
+
 export const siteNavLinks: SiteNavLink[] = [
   {
     href: "/",
@@ -85,6 +92,25 @@ export const siteNavLinks: SiteNavLink[] = [
     actionHref: "/risk-warning",
   },
 ]
+
+export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
+  { href: "/", label: "Home" },
+  { href: "/borrow", label: "Borrow" },
+  { href: "/lend", label: "Invest" },
+  { href: "/perps", label: "Trade" },
+  { href: "/rewards", label: "Rewards" },
+  { href: "/manage", label: "Manage" },
+]
+
+export const businessDesktopHeaderLinks: DesktopHeaderLink[] = [
+  { href: "/business/credit-markets", label: "Credit Markets" },
+  { href: "/business/credit-lines", label: "Credit Lines" },
+  { href: "/business/risk-analysis", label: "Risk Analysis" },
+]
+
+export function getHeaderMode(pathname: string): HeaderMode {
+  return pathname.startsWith("/business") ? "business" : "personal"
+}
 
 export function getActiveSiteNav(pathname: string): SiteNavLink {
   return (
