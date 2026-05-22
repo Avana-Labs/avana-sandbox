@@ -14,13 +14,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Switch } from "@/components/ui/switch"
-import { BrandLogo } from "./brand-logo"
+import { BrandIcon, BrandLogo } from "./brand-logo"
 import { useDisplayPreferences } from "./display-preferences"
 import { MobileMenu } from "./mobile-menu"
 import { SearchCommand } from "./search-command"
 import { personalDesktopHeaderLinks } from "./site-nav"
 
-function PreferencesMenu() {
+function PreferencesMenu({ mobile = false }: { mobile?: boolean }) {
   const { resolvedTheme, setTheme } = useTheme()
   const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
   const [mounted, setMounted] = useState(false)
@@ -36,9 +36,13 @@ function PreferencesMenu() {
           type="button"
           aria-label="Open preferences"
           title="Preferences"
-          className="inline-flex size-9 items-center justify-center rounded-full bg-surface-inset text-muted-foreground transition-colors hover:text-foreground dark:bg-surface-2"
+          className={
+            mobile
+              ? "inline-flex h-11 w-11 items-center justify-center text-[#6f6f6f] transition hover:text-[#2f2f2f] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+              : "inline-flex size-9 items-center justify-center rounded-full bg-surface-inset text-muted-foreground transition-colors hover:text-foreground dark:bg-surface-2"
+          }
         >
-          <MoreHorizontal className="h-4 w-4" />
+          <MoreHorizontal className={mobile ? "h-6 w-6" : "h-4 w-4"} />
         </button>
       </DropdownMenuTrigger>
 
@@ -115,6 +119,21 @@ function PreferencesMenu() {
 export function Header() {
   const pathname = usePathname()
   const desktopLinks = personalDesktopHeaderLinks
+  const renderMobileBrand = () => <BrandIcon className="h-8 w-8" />
+  const renderMobileActions = () => (
+    <>
+      <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">
+        <SearchCommand iconOnly />
+        <PreferencesMenu mobile />
+      </span>
+      <Link
+        href="/login"
+        className="inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
+      >
+        Connect
+      </Link>
+    </>
+  )
 
   return (
     <header className="sticky top-0 z-40 bg-background/95 text-foreground backdrop-blur">
@@ -180,13 +199,17 @@ export function Header() {
         </div>
 
         <div className="lg:hidden">
-          <div className="flex h-14 w-full items-center gap-3 px-4">
-            <Link href="/" aria-label="Home" title="Home" className="shrink-0 flex items-center">
-              <BrandLogo mobileOnly />
-            </Link>
+          <div className="flex h-16 w-full items-center justify-between bg-white px-4 sm:px-6">
+            <div className="flex items-center gap-3">
+              <Link href="/" aria-label="Home" title="Home" className="inline-flex items-center">
+                {renderMobileBrand()}
+              </Link>
 
-            <div className="ml-auto">
-              <MobileMenu />
+              <MobileMenu actions={renderMobileActions()} brand={renderMobileBrand()} />
+            </div>
+
+            <div className="flex items-center gap-0.5">
+              {renderMobileActions()}
             </div>
           </div>
         </div>

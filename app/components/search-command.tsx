@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { ArrowUpRight, BadgeDollarSign, Layers3, Search, Sparkles } from "lucide-react"
 import {
   Dialog,
@@ -101,7 +102,11 @@ function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
         visual.textClass,
       )}
     >
-      {visual.iconUrl ? <img src={visual.iconUrl} alt="" className="size-full rounded-full" /> : visual.shortLabel}
+      {visual.iconUrl ? (
+        <Image src={visual.iconUrl} alt="" width={32} height={32} className="size-full rounded-full object-cover" />
+      ) : (
+        visual.shortLabel
+      )}
     </span>
   )
 }
@@ -117,7 +122,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
         )}
       >
         {visuals[0].iconUrl ? (
-          <img src={visuals[0].iconUrl} alt="" className="size-full rounded-full" />
+          <Image src={visuals[0].iconUrl} alt="" width={32} height={32} className="size-full rounded-full object-cover" />
         ) : (
           <span className="text-[9px] font-medium">{visuals[0].shortLabel}</span>
         )}
@@ -130,7 +135,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
         )}
       >
         {visuals[1].iconUrl ? (
-          <img src={visuals[1].iconUrl} alt="" className="size-full rounded-full" />
+          <Image src={visuals[1].iconUrl} alt="" width={32} height={32} className="size-full rounded-full object-cover" />
         ) : (
           <span className="text-[9px] font-medium">{visuals[1].shortLabel}</span>
         )}
@@ -165,7 +170,7 @@ function isTypingTarget(target: EventTarget | null) {
   return target.isContentEditable || tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT"
 }
 
-export function SearchCommand() {
+export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
@@ -210,13 +215,23 @@ export function SearchCommand() {
         type="button"
         aria-label="Search Avana"
         onClick={() => setOpen(true)}
-        className="flex h-9 w-full items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-left text-[14px] font-normal text-muted-foreground shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover dark:shadow-none"
+        className={
+          iconOnly
+            ? "inline-flex h-11 w-11 items-center justify-center text-[#6f6f6f] transition hover:text-[#2f2f2f] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+            : "flex h-9 w-full items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-left text-[14px] font-normal text-muted-foreground shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover dark:shadow-none"
+        }
       >
-        <Search className="h-4 w-4 shrink-0" />
-        <span className="min-w-0 flex-1 truncate">Search pools, borrow, invest</span>
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-[6px] border border-border bg-background px-1 text-[10px] font-normal text-muted-foreground dark:bg-surface-inset">
-          /
-        </span>
+        {iconOnly ? (
+          <Search className="h-6 w-6" />
+        ) : (
+          <>
+            <Search className="h-4 w-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate">Search pools, borrow, invest</span>
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-[6px] border border-border bg-background px-1 text-[10px] font-normal text-muted-foreground dark:bg-surface-inset">
+              /
+            </span>
+          </>
+        )}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
