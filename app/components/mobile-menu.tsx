@@ -1,13 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { BrandLogo } from "./brand-logo"
 import { getActiveSiteNav, siteNavLinks } from "./site-nav"
 
 /** Compact mobile navigation for the core Avana routes. */
@@ -38,13 +38,7 @@ export function MobileMenu() {
           <div className="border-b border-border p-4">
             <div className="rounded-radius-sm border border-border bg-surface-inset p-3">
               <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
-                <Image
-                  src="/Avana Full (Personal) PNG.png"
-                  alt="Avana"
-                  width={142}
-                  height={30}
-                  className="h-14 w-auto origin-left scale-[1.08] object-contain dark:invert"
-                />
+                <BrandLogo mobileOnly />
               </Link>
               <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{activeNav.description}</p>
             </div>
@@ -87,12 +81,12 @@ export function MobileMenu() {
               className="w-full"
               variant="default"
               onClick={() => {
-                router.push("/borrow")
+                router.push("/login")
                 setOpen(false)
               }}
             >
               <Wallet className="h-3.5 w-3.5" />
-              Get started
+              Connect
             </Button>
           </div>
         </div>
