@@ -1,96 +1,139 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Menu, Wallet } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { useState } from "react"
-import { cn } from "@/lib/utils"
-import { BrandLogo } from "./brand-logo"
-import { getActiveSiteNav, siteNavLinks } from "./site-nav"
+import { usePathname } from "next/navigation"
+import { Menu, X } from "lucide-react"
+import type { ReactNode } from "react"
+import { useEffect, useState } from "react"
+import { siteNavLinks } from "./site-nav"
 
-/** Compact mobile navigation for the core Avana routes. */
-export function MobileMenu() {
-  const [open, setOpen] = useState(false)
-  const router = useRouter()
+const siteRoutes = {
+  home: "/",
+}
+
+type MobileMenuProps = {
+  actions?: ReactNode
+  brand?: ReactNode
+}
+
+export function MobileMenu({ actions, brand }: MobileMenuProps) {
+  const [isVisible, setIsVisible] = useState(false)
   const pathname = usePathname()
-  const activeNav = getActiveSiteNav(pathname)
+
+  useEffect(() => {
+    setIsVisible(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!isVisible) {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsVisible(false)
+      }
+    }
+
+    const previousOverflow = document.body.style.overflow
+    const previousPaddingRight = document.body.style.paddingRight
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+    document.body.style.overflow = "hidden"
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+    }
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.body.style.paddingRight = previousPaddingRight
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isVisible])
+
+  const onClose = () => setIsVisible(false)
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative size-8 rounded-xs border border-border bg-surface-raised text-foreground shadow-elev-1 hover:bg-surface-inset md:hidden"
-        >
-          <Menu className="h-4 w-4" />
-          <span className="sr-only">Toggle menu</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-[300px] sm:w-[340px] p-0">
-        <SheetHeader className="sr-only">
-          <SheetTitle>Navigation menu</SheetTitle>
-          <SheetDescription>Browse the main Avana routes and open the primary action.</SheetDescription>
-        </SheetHeader>
-        <div className="flex h-full flex-col">
-          <div className="border-b border-border p-4">
-            <div className="rounded-radius-sm border border-border bg-surface-inset p-3">
-              <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
-                <BrandLogo mobileOnly />
-              </Link>
-              <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{activeNav.description}</p>
-            </div>
-          </div>
-          <nav className="flex-1 overflow-y-auto p-3">
-            <div className="flex flex-col gap-0.5">
-              {siteNavLinks.map((link) => {
-                const Icon = link.icon
-                const isActive = activeNav.href === link.href
+    <>
+      <button
+        type="button"
+        className="inline-flex h-10 w-10 items-center justify-center text-[#6f6f6f] transition hover:text-[#2f2f2f] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] md:hidden"
+        aria-label="Toggle menu"
+        aria-expanded={isVisible}
+        aria-controls="mobile-site-nav"
+        onClick={() => setIsVisible((currentValue) => !currentValue)}
+      >
+        <Menu className="h-7 w-7" strokeWidth={1.8} />
+        <span className="sr-only">Toggle menu</span>
+      </button>
 
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                      "flex items-center justify-between gap-3 rounded-xs px-3 py-2.5 text-[13px] font-medium transition-colors",
-                      isActive
-                        ? "bg-surface-inset text-foreground"
-                        : "text-muted-foreground hover:bg-surface-inset/60 hover:text-foreground",
-                    )}
-                    onClick={() => setOpen(false)}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className={cn("h-3.5 w-3.5", isActive ? "text-foreground" : "text-muted-foreground")} />
-                      <div>
-                        <div>{link.label}</div>
-                        <div className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                          {link.section}
-                        </div>
-                      </div>
-                    </div>
-                    {isActive ? <span className="h-1 w-1 rounded-full bg-foreground" /> : null}
-                  </Link>
-                )
-              })}
-            </div>
-          </nav>
-          <div className="mt-auto border-t border-border p-3">
-            <Button
-              className="w-full bg-brand text-brand-foreground hover:bg-brand/90"
-              variant="default"
-              onClick={() => {
-                router.push("/login")
-                setOpen(false)
-              }}
+      <div
+        className={`fixed inset-0 z-[60] min-h-[100dvh] bg-white text-foreground transition-opacity duration-300 ease-out md:hidden ${
+          isVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile menu"
+        aria-hidden={!isVisible}
+      >
+        <div className="flex h-16 items-center justify-between bg-white px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <Link
+              href={siteRoutes.home}
+              prefetch={false}
+              aria-label="Avana"
+              className="inline-flex items-center"
+              onClick={onClose}
             >
-              <Wallet className="h-3.5 w-3.5" />
-              Connect
-            </Button>
+              {brand}
+            </Link>
+
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center text-[#6f6f6f] transition hover:text-[#2f2f2f] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+              aria-label="Close menu"
+              onClick={onClose}
+            >
+              <X className="h-7 w-7" strokeWidth={1.8} />
+            </button>
           </div>
+
+          {actions ? <div className="flex items-center gap-0.5">{actions}</div> : null}
         </div>
-      </SheetContent>
-    </Sheet>
+
+        <nav
+          id="mobile-site-nav"
+          aria-label="Mobile navigation"
+          className={`h-[calc(100dvh-4rem)] overflow-y-auto bg-white px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
+            isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+          }`}
+        >
+          <ul className="space-y-6">
+            {siteNavLinks.map((link, index) => {
+              const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+
+              return (
+                <li key={link.href} className="flex items-start justify-between gap-4">
+                  <Link
+                    href={link.href}
+                    prefetch={false}
+                    onClick={onClose}
+                    className={`max-w-[calc(100%-2.5rem)] text-[clamp(1.7rem,7.1vw,2.45rem)] font-[560] leading-[0.98] tracking-[-0.05em] transition-colors ${
+                      isActive ? "text-foreground" : "text-foreground/92 hover:text-foreground"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+
+                  <span className="pt-1 text-[10px] font-medium tabular-nums tracking-[0.08em] text-[#01AACF]">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+      </div>
+    </>
   )
 }
