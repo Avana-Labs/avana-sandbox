@@ -78,7 +78,7 @@ export function MobileMenu() {
           </nav>
           <div className="mt-auto border-t border-border p-3">
             <Button
-              className="w-full"
+              className="w-full bg-brand text-brand-foreground hover:bg-brand/90"
               variant="default"
               onClick={() => {
                 router.push("/login")
