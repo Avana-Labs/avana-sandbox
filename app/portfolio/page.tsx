@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Risk Analysis",
+  title: "Portfolio",
 }
 
-export default function RiskAnalysisPage() {
+export default function PortfolioPage() {
   return <main className="min-h-[calc(100vh-144px)] bg-background" />
 }

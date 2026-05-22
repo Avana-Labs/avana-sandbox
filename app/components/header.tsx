@@ -1,31 +1,23 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { CircleHelp, MoreHorizontal, MoonStar, Search, SunMedium } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useTheme } from "next-themes"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { BrandLogo } from "./brand-logo"
 import { MobileMenu } from "./mobile-menu"
-import { businessDesktopHeaderLinks, getHeaderMode, personalDesktopHeaderLinks } from "./site-nav"
+import { personalDesktopHeaderLinks } from "./site-nav"
 
-const utilityLinks = ["My Rewards", "English/USD", "Support Center"]
-const modeConfig = {
-  personal: {
-    label: "Personal",
-    href: "/",
-    accent: "#01AACF",
-    logo: "/Avana Full (Personal) PNG.png",
-  },
-  business: {
-    label: "Business",
-    href: "/business",
-    accent: "#BC846F",
-    logo: "/Avana Full (Business) PNG.png",
-  },
-} as const
-
-function ThemeStatusLabel() {
+function PreferencesMenu() {
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -33,144 +25,164 @@ function ThemeStatusLabel() {
     setMounted(true)
   }, [])
 
-  const label = !mounted ? "Theme" : resolvedTheme === "dark" ? "Dark Theme" : "Light Theme"
-  const handleClick = () => {
-    if (!mounted) return
-    setTheme(resolvedTheme === "dark" ? "light" : "dark")
-  }
-
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="whitespace-nowrap transition-colors hover:text-[#272a2f]"
-      aria-label={mounted ? `Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme` : "Theme toggle"}
-    >
-      {label}
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Open preferences"
+          title="Preferences"
+          className="inline-flex size-9 items-center justify-center rounded-full bg-surface-inset text-muted-foreground transition-colors hover:text-foreground dark:bg-surface-2"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" sideOffset={10} className="w-64 p-1.5">
+        <DropdownMenuLabel className="px-2 py-2 text-[16px] font-medium normal-case tracking-normal text-foreground">
+          Global preferences
+        </DropdownMenuLabel>
+        <div className="px-2 pb-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[14px] font-normal text-muted-foreground">Theme</span>
+            <div className="flex items-center overflow-hidden rounded-full border border-border bg-background">
+              <button
+                type="button"
+                onClick={() => setTheme("system")}
+                className={`px-3.5 py-1.5 text-[13px] font-medium ${
+                  mounted && resolvedTheme === "system" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                Auto
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={`px-2.5 py-1.5 text-[13px] font-medium ${
+                  mounted && resolvedTheme === "light" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <SunMedium className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={`px-2.5 py-1.5 text-[13px] font-medium ${
+                  mounted && resolvedTheme === "dark" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <MoonStar className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="flex items-center justify-between px-2 py-2.5 text-[14px] font-normal text-foreground">
+          <span className="text-muted-foreground">Language</span>
+          <span>English</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="flex items-center justify-between px-2 py-2.5 text-[14px] font-normal text-foreground">
+          <span className="text-muted-foreground">Currency</span>
+          <span>USD</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="px-2 py-2.5 text-[14px] font-normal text-foreground">
+          <CircleHelp className="mr-2 h-3.5 w-3.5" />
+          Support center
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
 export function Header() {
   const pathname = usePathname()
-  const mode = getHeaderMode(pathname)
-  const desktopLinks = mode === "business" ? businessDesktopHeaderLinks : personalDesktopHeaderLinks
-  const activeMode = modeConfig[mode]
-  const desktopNavItemWidth = mode === "business" ? "w-[132px]" : "w-[96px]"
+  const desktopLinks = personalDesktopHeaderLinks
 
   return (
-    <header className="sticky top-0 z-40 bg-background text-foreground">
-      <div className="hidden h-[3px] w-full bg-border lg:block" />
-
+    <header className="sticky top-0 z-40 bg-background/95 text-foreground backdrop-blur">
       <div className="hidden lg:block">
-        <div className="border-b border-border bg-card">
-          <div className="mx-auto grid h-[32px] max-w-5xl grid-cols-[126px_minmax(0,1fr)] items-end gap-3">
-            <div aria-hidden />
-            <div className="flex min-w-0 items-end justify-between gap-5">
-              <div className="ml-[72px] inline-flex h-[28px] shrink-0 overflow-hidden rounded-t-[2px] border border-b-0 border-border bg-surface-2 text-[13px] font-semibold leading-none">
-                {(["personal", "business"] as const).map((item) => {
-                  const isActive = item === mode
-                  const config = modeConfig[item]
+          <div className="relative mx-auto flex h-[68px] w-full max-w-[2200px] -translate-y-2 items-center justify-between px-6 xl:px-10 2xl:px-12">
+            <div className="flex shrink-0 items-center gap-2.5">
+              <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
+                <BrandLogo />
+              </Link>
+
+              <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5">
+                {desktopLinks.slice(0, 4).map((link) => {
+                  const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
 
                   return (
                     <Link
-                      key={item}
-                      href={config.href}
-                      className="flex min-w-[88px] items-center justify-center px-4 text-center text-foreground transition-colors hover:bg-surface-1"
-                      style={isActive ? { backgroundColor: config.accent, color: "#ffffff" } : undefined}
+                      key={link.href}
+                      href={link.href}
+                      className={`rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                      }`}
                     >
-                      {config.label}
+                      {link.label}
+                    </Link>
+                  )
+                })}
+              </nav>
+            </div>
+
+            <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4">
+              <button
+                type="button"
+                aria-label="Search"
+                className="flex h-9 w-full items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-left text-[14px] font-normal text-muted-foreground shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover dark:shadow-none"
+              >
+                <Search className="h-4 w-4 shrink-0" />
+                <span className="min-w-0 flex-1 truncate">Search tokens, pools, wallets</span>
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-[6px] border border-border bg-background px-1 text-[10px] font-normal text-muted-foreground dark:bg-surface-inset">
+                  /
+                </span>
+              </button>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1.5">
+              <div className="mr-1 flex items-center gap-0.5">
+                {desktopLinks.slice(4).map((link) => {
+                  const isActive = pathname.startsWith(link.href)
+
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={`rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {link.label}
                     </Link>
                   )
                 })}
               </div>
 
-              <div className="flex min-w-0 items-center gap-[8px] pb-[4px] text-[11px] font-medium leading-none text-muted-foreground">
-                {utilityLinks.map((item, index) => (
-                  <div key={item} className="flex shrink-0 items-center gap-[8px]">
-                    {index > 0 ? <span className="text-muted-foreground/40">|</span> : null}
-                    <span className="whitespace-nowrap">{item}</span>
-                  </div>
-                ))}
-                <div className="flex shrink-0 items-center gap-[8px]">
-                  <span className="text-muted-foreground/40">|</span>
-                  <ThemeStatusLabel />
-                </div>
+              <PreferencesMenu />
 
-                <div className="ml-[6px] flex h-[26px] w-[230px] shrink-0 items-center border border-border bg-background px-[10px] text-muted-foreground shadow-elev-1">
-                  <Search className="h-[14px] w-[14px] shrink-0 text-muted-foreground" strokeWidth={2.2} />
-                  <span className="ml-[8px] min-w-0 flex-1 truncate text-[11px] font-medium">Search</span>
-                  <span className="ml-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-[5px] bg-surface-1 px-[5px] text-[11px] font-medium leading-none text-muted-foreground">
-                    /
-                  </span>
-                </div>
-              </div>
+              <Link
+                href="/login"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-accent-primary px-4 font-sans text-[15px] font-medium text-accent-primary-foreground shadow-none transition-colors hover:bg-accent-primary-hover"
+              >
+                Connect
+              </Link>
             </div>
           </div>
         </div>
 
-        <div className="bg-background" style={{ borderTop: `3px solid ${activeMode.accent}` }}>
-          <div className="mx-auto grid h-[60px] max-w-5xl grid-cols-[126px_minmax(0,1fr)] items-center gap-3">
-            <Link href={mode === "business" ? "/business" : "/"} aria-label="Home" title="Home" className="flex items-center justify-start">
-              <Image src={activeMode.logo} alt="Avana" width={300} height={150} className="h-[52px] w-auto object-contain" priority />
+        <div className="lg:hidden">
+          <div className="flex h-14 w-full items-center gap-3 px-4">
+            <Link href="/" aria-label="Home" title="Home" className="shrink-0 flex items-center">
+              <BrandLogo mobileOnly />
             </Link>
 
-            <div className="flex items-center justify-start">
-              <nav className="flex h-[42px] w-full items-stretch border border-border bg-background shadow-elev-1">
-                <div className="flex min-w-0 flex-1 items-stretch">
-                  {desktopLinks.map((link) => {
-                    const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
-
-                    return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={`relative flex ${desktopNavItemWidth} shrink-0 items-center justify-center border-r border-border bg-background px-3 text-[13px] font-medium leading-none text-foreground transition-colors hover:bg-surface-1`}
-                      >
-                        <span
-                          className="absolute inset-x-0 bottom-0 h-[3px] opacity-0"
-                          style={isActive ? { backgroundColor: activeMode.accent, opacity: 1 } : undefined}
-                        />
-                        <span className="truncate">{link.label}</span>
-                      </Link>
-                    )
-                  })}
-                  <div className="min-w-0 flex-1" aria-hidden />
-                </div>
-
-                <div className="relative flex w-[128px] shrink-0 items-center justify-end px-[10px]">
-                  <Link
-                    href="/login"
-                    className="px-[18px] py-[8px] text-[13px] font-medium leading-none text-white shadow-elev-1 transition-opacity hover:opacity-90"
-                    style={{ backgroundColor: activeMode.accent }}
-                  >
-                    LOGIN
-                  </Link>
-                </div>
-              </nav>
+            <div className="ml-auto">
+              <MobileMenu />
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="lg:hidden">
-        <div className="flex h-14 w-full items-center gap-4 bg-background px-4">
-          <Link href="/" aria-label="Home" title="Home" className="shrink-0 flex items-center">
-            <Image
-              src="/Avana Full (Personal) PNG.png"
-              alt="Avana"
-              width={142}
-              height={30}
-              className="h-14 w-auto origin-left scale-[1.08] object-contain dark:invert"
-              priority
-            />
-          </Link>
-
-          <div className="ml-auto">
-            <MobileMenu />
-          </div>
-        </div>
-      </div>
     </header>
   )
 }
