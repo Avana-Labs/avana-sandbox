@@ -92,7 +92,7 @@ export const siteNavLinks: SiteNavLink[] = [
 ]
 
 export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
-  { href: "/", label: "Home" },
+  { href: "/", label: "Express" },
   { href: "/borrow", label: "Borrow" },
   { href: "/lend", label: "Invest" },
   { href: "/perps", label: "Trade" },
