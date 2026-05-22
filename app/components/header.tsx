@@ -102,7 +102,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 bg-background/95 text-foreground backdrop-blur">
       <div className="hidden lg:block">
-          <div className="relative mx-auto flex h-[68px] w-full max-w-[2200px] -translate-y-2 items-center justify-between px-6 xl:px-10 2xl:px-12">
+          <div className="relative flex h-[68px] w-full -translate-y-2 items-center justify-between px-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
             <div className="flex shrink-0 items-center gap-2.5">
               <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
                 <BrandLogo />
