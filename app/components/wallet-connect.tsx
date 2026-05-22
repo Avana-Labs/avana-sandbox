@@ -14,6 +14,8 @@ import {
   ArrowUpRight,
   CircleUserRound,
   Code2,
+  Eye,
+  EyeOff,
   FileText,
   LifeBuoy,
   Mail,
@@ -25,6 +27,8 @@ import {
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
+import { useDisplayPreferences } from "./display-preferences"
+import { Switch } from "@/components/ui/switch"
 
 function AppsGridIcon({ className }: { className?: string }) {
   return (
@@ -83,6 +87,7 @@ function MenuLink({ href, label, icon: Icon, newTab, internal }: MenuLinkItem) {
 
 export function WalletConnect({ isResourcesActive = false }: { isResourcesActive?: boolean }) {
   const { theme, setTheme } = useTheme()
+  const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -206,6 +211,17 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
                 <Moon className="h-3 w-3" />
               </button>
             </div>
+          </div>
+          <div className="flex items-center justify-between gap-3 px-2 py-1.5">
+            <span className="flex items-center gap-2 text-[12px] text-muted-foreground">
+              {showDollarAmounts ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+              Dollar amounts
+            </span>
+            <Switch
+              checked={showDollarAmounts}
+              onCheckedChange={setShowDollarAmounts}
+              aria-label="Toggle dollar amounts"
+            />
           </div>
           <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[12px] text-muted-foreground">
             <span>Language</span>

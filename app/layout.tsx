@@ -5,6 +5,7 @@ import type React from "react"
 import { Header } from "./components/header"
 import { Toaster } from "sonner"
 import { ThemeProvider } from "./components/theme-provider"
+import { DisplayPreferencesProvider } from "./components/display-preferences"
 
 const diatypeSans = localFont({
   src: [
@@ -138,11 +139,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <div className="flex-1">{children}</div>
-            <Toaster />
-          </div>
+          <DisplayPreferencesProvider>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <div className="flex-1">{children}</div>
+              <Toaster />
+            </div>
+          </DisplayPreferencesProvider>
         </ThemeProvider>
       </body>
     </html>

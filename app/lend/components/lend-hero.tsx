@@ -1,11 +1,12 @@
 import { useId, useMemo, useState } from "react"
-import { Eye, EyeOff, ArrowUp, ArrowDown, Info } from "lucide-react"
+import { ArrowUp, ArrowDown, Info } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Area, AreaChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts"
 import { TOKENS, mockChartData } from "./data"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useTheme } from "next-themes"
 import { makeChartPalette, type ThemeMode } from "@/app/lib/chart-colors"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
 
 function InfoTip({ text }: { text: string }) {
   return (
@@ -29,8 +30,8 @@ interface LendHeroProps {
 
 export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }: LendHeroProps) {
   const [activeRange, setActiveRange] = useState("1D")
-  const [showBalance, setShowBalance] = useState(true)
   const { resolvedTheme } = useTheme()
+  const { showDollarAmounts } = useDisplayPreferences()
   const theme: ThemeMode = resolvedTheme === "dark" ? "dark" : "light"
   const gradientId = useId()
 
@@ -62,16 +63,15 @@ export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }:
       <div className="mb-6 space-y-1">
         <div className="flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
           <h2 className="m-0 leading-none">My lending balance</h2>
-          <button onClick={() => setShowBalance(!showBalance)} className="hover:text-foreground">
-            {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-          </button>
         </div>
         <div className="flex items-baseline gap-3">
           <span className="font-data text-[22px] font-medium tracking-tight md:text-[28px]">
-            {showBalance ? `$${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "••••••••"}
+            {showDollarAmounts ? `$${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "••••••••"}
           </span>
           <span className="font-data text-[12.5px] font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
-            +${(totalEarned * (rangeStats[activeRange as keyof typeof rangeStats]?.earnedFraction || 1)).toFixed(2)} ({rangeStats[activeRange as keyof typeof rangeStats]?.apy.toFixed(2) || "4.18"}%)
+            {showDollarAmounts
+              ? `+${(totalEarned * (rangeStats[activeRange as keyof typeof rangeStats]?.earnedFraction || 1)).toFixed(2)} (${rangeStats[activeRange as keyof typeof rangeStats]?.apy.toFixed(2) || "4.18"}%)`
+              : "••••••••"}
           </span>
         </div>
       </div>
