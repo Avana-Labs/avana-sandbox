@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react"
 import {
   ChartCandlestick,
   ChartNoAxesColumnIncreasing,
+  CircleHelp,
   Gift,
   HandCoins,
   House,
@@ -88,6 +89,16 @@ export const siteNavLinks: SiteNavLink[] = [
     highlights: ["Quest progress", "Points & tiers"],
     actionLabel: "Risk warning",
     actionHref: "/risk-warning",
+  },
+  {
+    href: "/support-center",
+    label: "Support center",
+    icon: CircleHelp,
+    section: "Help",
+    description: "Select a topic, review related articles, and contact support from a calm guided flow.",
+    highlights: ["Guided help", "Message support"],
+    actionLabel: "Open support",
+    actionHref: "/support-center",
   },
 ]
 
