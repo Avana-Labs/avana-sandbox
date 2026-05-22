@@ -1,13 +1,14 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { Eye, EyeOff, Info } from "lucide-react"
+import { Info } from "lucide-react"
 import type { BorrowPool, BorrowProtocolMap } from "@/app/lib/borrow-data"
 import {
   LIQUIDATION_LTV,
   MAX_LTV,
   getHealthStatus,
 } from "@/app/lib/home-sim"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { cn } from "@/lib/utils"
 import {
   BorrowWorkspace,
@@ -121,7 +122,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
   const handleDebtsStatsChange = useCallback((stats: BorrowDebtsHeroStats) => setDebtsStats(stats), [])
 
   const positionsHeroStats = currentTab === "positions" && supplyStats && debtsStats ? { supplies: supplyStats, debts: debtsStats } : null
-  const [showBalance, setShowBalance] = useState(true)
+  const { showDollarAmounts } = useDisplayPreferences()
   const mask = "••••••••"
 
   return (
@@ -135,17 +136,9 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-muted-foreground">Total Collateral</p>
-                      <button
-                        type="button"
-                        onClick={() => setShowBalance((prev) => !prev)}
-                        aria-label={showBalance ? "Hide balance" : "Show balance"}
-                        className="text-muted-foreground transition-colors hover:text-muted-foreground"
-                      >
-                        {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                      </button>
                     </div>
                     <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
-                      {showBalance ? formatUsdWhole(positionsHeroStats.supplies.collateral) : mask}
+                      {showDollarAmounts ? formatUsdWhole(positionsHeroStats.supplies.collateral) : mask}
                     </p>
                   </div>
 
@@ -154,23 +147,23 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
                       <p className="m-0 text-[12px] font-medium leading-none tracking-tight text-muted-foreground">Total Borrowed</p>
                     </div>
                     <p className="mt-1 font-data text-[1.45rem] font-semibold tracking-tight text-foreground md:text-[1.8rem]">
-                      {showBalance ? formatUsdWhole(positionsHeroStats.debts.totalBorrowed) : mask}
+                      {showDollarAmounts ? formatUsdWhole(positionsHeroStats.debts.totalBorrowed) : mask}
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5 md:ml-auto md:text-right">
-                  <HeroStat label="Available" value={showBalance ? formatUsdWhole(positionsHeroStats.supplies.available) : mask} dotClass="bg-[#7ec39f]" labelClass="text-[#6ca98b]" />
-                  <HeroStat label="Fees Earned" value={showBalance ? formatUsdWhole(positionsHeroStats.supplies.fees) : mask} dotClass="bg-emerald-500" labelClass="text-emerald-600" />
+                  <HeroStat label="Available" value={showDollarAmounts ? formatUsdWhole(positionsHeroStats.supplies.available) : mask} dotClass="bg-[#7ec39f]" labelClass="text-[#6ca98b]" />
+                  <HeroStat label="Fees Earned" value={showDollarAmounts ? formatUsdWhole(positionsHeroStats.supplies.fees) : mask} dotClass="bg-emerald-500" labelClass="text-emerald-600" />
                   <HeroStat
                     label="Accrued Interest"
-                    value={showBalance ? formatUsdCents(positionsHeroStats.debts.accruedInterest) : mask}
+                    value={showDollarAmounts ? formatUsdCents(positionsHeroStats.debts.accruedInterest) : mask}
                     dotClass="bg-rose-400"
                     labelClass="text-rose-500"
                   />
                   <HeroStat
                     label="Daily Interest"
-                    value={showBalance ? `+${formatUsdCents(positionsHeroStats.debts.dailyInterest)}` : mask}
+                    value={showDollarAmounts ? `+${formatUsdCents(positionsHeroStats.debts.dailyInterest)}` : mask}
                     dotClass="bg-rose-400"
                     labelClass="text-rose-500"
                   />
@@ -179,13 +172,13 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
 
               <div className="mt-4 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2">
                 <div className="rounded-lg border border-border/40 bg-card/50 p-5">
-                  <HealthFactorCard hf={positionsHeroStats.debts.averageHf ?? positionsHeroStats.supplies.averageHf} showBalance={showBalance} />
+                  <HealthFactorCard hf={positionsHeroStats.debts.averageHf ?? positionsHeroStats.supplies.averageHf} showBalance={showDollarAmounts} />
                 </div>
                 <div className="rounded-lg border border-border/40 bg-card/50 p-5">
                   <CurrentLtvCard
                     borrowed={positionsHeroStats.debts.totalBorrowed}
                     collateral={positionsHeroStats.debts.totalCollateral}
-                    showBalance={showBalance}
+                    showBalance={showDollarAmounts}
                   />
                 </div>
               </div>
@@ -315,7 +308,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
           onTabChange={handleTabChange}
           onSupplyStatsChange={handleSupplyStatsChange}
           onDebtsStatsChange={handleDebtsStatsChange}
-          showBalance={showBalance}
+          showBalance={showDollarAmounts}
         />
         </div>
       </main>

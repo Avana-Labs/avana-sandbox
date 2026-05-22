@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CircleHelp, MoreHorizontal, MoonStar, SunMedium } from "lucide-react"
+import { CircleHelp, Eye, EyeOff, MoreHorizontal, MoonStar, SunMedium } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useTheme } from "next-themes"
@@ -13,13 +13,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Switch } from "@/components/ui/switch"
 import { BrandLogo } from "./brand-logo"
+import { useDisplayPreferences } from "./display-preferences"
 import { MobileMenu } from "./mobile-menu"
 import { SearchCommand } from "./search-command"
 import { personalDesktopHeaderLinks } from "./site-nav"
 
 function PreferencesMenu() {
   const { resolvedTheme, setTheme } = useTheme()
+  const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -78,6 +81,17 @@ function PreferencesMenu() {
           </div>
         </div>
         <DropdownMenuSeparator />
+        <div className="flex items-center justify-between gap-3 px-2 py-2.5">
+          <span className="flex items-center gap-2 text-[14px] font-normal text-muted-foreground">
+            {showDollarAmounts ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+            Dollar amounts
+          </span>
+          <Switch
+            checked={showDollarAmounts}
+            onCheckedChange={setShowDollarAmounts}
+            aria-label="Toggle dollar amounts"
+          />
+        </div>
         <DropdownMenuItem className="flex items-center justify-between px-2 py-2.5 text-[14px] font-normal text-foreground">
           <span className="text-muted-foreground">Language</span>
           <span>English</span>
@@ -157,7 +171,7 @@ export function Header() {
 
               <Link
                 href="/login"
-                className="inline-flex h-10 items-center justify-center rounded-full bg-accent-primary px-4 font-sans text-[15px] font-medium text-accent-primary-foreground shadow-none transition-colors hover:bg-accent-primary-hover"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-brand px-4 font-sans text-[15px] font-medium text-brand-foreground shadow-none transition-colors hover:bg-brand/90"
               >
                 Connect
               </Link>
