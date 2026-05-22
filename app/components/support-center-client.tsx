@@ -1,0 +1,474 @@
+"use client"
+
+import { useMemo, useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+type SupportArticle = {
+  title: string
+  body: string
+}
+
+type SupportTopic = {
+  value: string
+  label: string
+  articles: SupportArticle[]
+}
+
+type SupportCategory = {
+  value: string
+  label: string
+  topics: SupportTopic[]
+}
+
+const SUPPORT_CATEGORIES: SupportCategory[] = [
+  {
+    value: "core-concepts",
+    label: "Core Concepts",
+    topics: [
+      {
+        value: "what-is-avana",
+        label: "What is Avana?",
+        articles: [
+          {
+            title: "Protocol overview",
+            body: "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.",
+          },
+          {
+            title: "Why it exists",
+            body: "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.",
+          },
+        ],
+      },
+      {
+        value: "what-is-a-borrow-spoke",
+        label: "What does the Borrow Spoke do?",
+        articles: [
+          {
+            title: "LP-specific underwriting",
+            body: "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.",
+          },
+          {
+            title: "Shared coordination",
+            body: "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    value: "borrowing-capacity",
+    label: "Borrowing Capacity & Valuation",
+    topics: [
+      {
+        value: "capacity-calculation",
+        label: "How is borrowing capacity calculated?",
+        articles: [
+          {
+            title: "Adjusted collateral value",
+            body: "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.",
+          },
+          {
+            title: "Aggregated in the spoke",
+            body: "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.",
+          },
+        ],
+      },
+      {
+        value: "capacity-changes",
+        label: "Why did my capacity change?",
+        articles: [
+          {
+            title: "Market movement",
+            body: "Capacity can change when the underlying assets move or when recoverable value shifts.",
+          },
+          {
+            title: "Risk settings",
+            body: "Collateral factors and market-specific risk settings can also change the amount shown in the interface.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    value: "health-liquidation",
+    label: "Health & Liquidation",
+    topics: [
+      {
+        value: "health-factor",
+        label: "What is the health factor?",
+        articles: [
+          {
+            title: "How to read health",
+            body: "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.",
+          },
+          {
+            title: "What it means for users",
+            body: "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.",
+          },
+        ],
+      },
+      {
+        value: "liquidation-flow",
+        label: "When can liquidation happen?",
+        articles: [
+          {
+            title: "Triggers",
+            body: "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.",
+          },
+          {
+            title: "What happens next",
+            body: "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    value: "leverage-markets",
+    label: "Leverage Markets",
+    topics: [
+      {
+        value: "how-leverage-works",
+        label: "How do leverage markets work?",
+        articles: [
+          {
+            title: "LP-backed exposure",
+            body: "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.",
+          },
+          {
+            title: "Position stacking",
+            body: "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.",
+          },
+        ],
+      },
+      {
+        value: "multiple-positions",
+        label: "Can one account use multiple LP positions?",
+        articles: [
+          {
+            title: "Multiple positions",
+            body: "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.",
+          },
+          {
+            title: "Per-position risk",
+            body: "Each position is evaluated on its own terms before being included in the final borrowing capacity.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    value: "fees-policy",
+    label: "Fees & Interface Policy",
+    topics: [
+      {
+        value: "interface-fees",
+        label: "Are interface fees fixed across all integrations?",
+        articles: [
+          {
+            title: "Operational settings",
+            body: "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.",
+          },
+          {
+            title: "Integration differences",
+            body: "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.",
+          },
+        ],
+      },
+      {
+        value: "protocol-economics",
+        label: "What counts as protocol economics vs interface policy?",
+        articles: [
+          {
+            title: "Protocol layer",
+            body: "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.",
+          },
+          {
+            title: "Interface layer",
+            body: "The frontend can present policy, routing, and support flows differently from one integration to another.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    value: "risk-security",
+    label: "Risk & Security",
+    topics: [
+      {
+        value: "main-risks",
+        label: "What are the main risks?",
+        articles: [
+          {
+            title: "Market and liquidity risk",
+            body: "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.",
+          },
+          {
+            title: "Liquidation risk",
+            body: "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.",
+          },
+        ],
+      },
+      {
+        value: "security-guidance",
+        label: "How should I think about security?",
+        articles: [
+          {
+            title: "Protocol guidance",
+            body: "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.",
+          },
+          {
+            title: "Support request",
+            body: "If something looks off, send the details and our team can help you triage the issue.",
+          },
+        ],
+      },
+    ],
+  },
+]
+
+export function SupportCenterClient() {
+  const [stage, setStage] = useState<1 | 2 | 3>(1)
+  const [categoryValue, setCategoryValue] = useState("")
+  const [topicValue, setTopicValue] = useState("")
+  const [message, setMessage] = useState("")
+
+  const selectedCategory = useMemo(
+    () => SUPPORT_CATEGORIES.find((category) => category.value === categoryValue),
+    [categoryValue],
+  )
+  const selectedTopic = useMemo(
+    () => selectedCategory?.topics.find((topic) => topic.value === topicValue),
+    [selectedCategory, topicValue],
+  )
+
+  const hasArticles = Boolean(selectedTopic && stage >= 2)
+  const canContinue = Boolean(selectedTopic)
+  const canSend = message.trim().length > 0
+  const footerLabel = stage === 3 ? "Send" : "Continue"
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryValue(value)
+    setTopicValue("")
+    setMessage("")
+    setStage(2)
+  }
+
+  const handleTopicChange = (value: string) => {
+    setTopicValue(value)
+    setMessage("")
+  }
+
+  const handleBack = () => {
+    if (stage === 3) {
+      setStage(2)
+      return
+    }
+
+    if (topicValue) {
+      setTopicValue("")
+      setMessage("")
+      return
+    }
+
+    if (categoryValue) {
+      setCategoryValue("")
+      setTopicValue("")
+      setMessage("")
+      setStage(1)
+    }
+  }
+
+  const handleContinue = () => {
+    if (canContinue) {
+      setStage(3)
+    }
+  }
+
+  const handleSend = () => {
+    return
+  }
+
+  return (
+    <main className="min-h-[calc(100vh-68px)] bg-background text-foreground">
+      <div className="mx-auto w-full max-w-[960px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
+        <header className="border-b border-border pb-6 sm:pb-8">
+          <h1 className="max-w-[12ch] text-[32px] font-medium leading-[1.04] tracking-[-0.04em] sm:text-[48px]">
+            How can we help?
+          </h1>
+        </header>
+
+        <div className="mt-6 grid gap-7 sm:mt-8 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-14">
+          <aside aria-label="Support progress" className="lg:border-r lg:border-border lg:pr-8">
+            <ol className="grid grid-cols-3 gap-2 lg:flex lg:flex-col lg:gap-6">
+              {[
+                ["Choose topic", stage >= 1],
+                ["Review resources", Boolean(selectedTopic)],
+                ["Contact support", stage === 3],
+              ].map(([label, isActive], index) => (
+                <li key={label as string} className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
+                  <span
+                    className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-medium ${
+                      isActive
+                        ? "border-[#01AACF] bg-[#01AACF] text-white"
+                        : "border-border bg-background text-muted-foreground"
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
+                  <span
+                    className={`text-[11px] font-medium leading-tight sm:text-[12px] lg:text-[14px] ${
+                      isActive ? "text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    {label as string}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </aside>
+
+          <section className="min-w-0">
+            {stage !== 3 ? (
+              <div className="max-w-[560px] space-y-6 sm:space-y-7">
+                <div>
+                  <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
+                    Tell us what happened
+                  </h2>
+                  <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
+                    Choose the closest match so we can show the most relevant guidance first.
+                  </p>
+                </div>
+
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label htmlFor="support-category" className="block text-[14px] font-medium text-foreground">
+                      Category
+                    </label>
+                    <Select value={categoryValue} onValueChange={handleCategoryChange}>
+                      <SelectTrigger
+                        id="support-category"
+                        className="h-11 w-full border-border bg-background px-3.5 text-[16px] font-normal shadow-none sm:text-[15px]"
+                      >
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[420px]">
+                        {SUPPORT_CATEGORIES.map((category) => (
+                          <SelectItem key={category.value} value={category.value} className="py-3 text-[15px] font-normal">
+                            {category.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {categoryValue ? (
+                    <div className="space-y-2">
+                      <label htmlFor="support-topic" className="block text-[14px] font-medium text-foreground">
+                        Topic
+                      </label>
+                      <Select value={topicValue} onValueChange={handleTopicChange}>
+                        <SelectTrigger
+                          id="support-topic"
+                          className="h-11 w-full border-border bg-background px-3.5 text-[16px] font-normal shadow-none sm:text-[15px]"
+                        >
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[420px]">
+                          {selectedCategory?.topics.map((topic) => (
+                            <SelectItem key={topic.value} value={topic.value} className="py-3 text-[15px] font-normal">
+                              {topic.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+                </div>
+
+                {hasArticles ? (
+                  <div className="border-y border-border py-5">
+                    <h3 className="text-[15px] font-semibold text-foreground">Recommended articles</h3>
+                    <div className="mt-3 divide-y divide-border">
+                      {selectedTopic?.articles.map((article) => (
+                        <button
+                          key={article.title}
+                          type="button"
+                          className="block w-full py-3 text-left"
+                        >
+                          <div className="text-[15px] font-medium text-[#01AACF]">
+                            {article.title}
+                          </div>
+                          <p className="mt-1 max-w-[56ch] text-[13px] leading-5 text-muted-foreground">
+                            {article.body}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="max-w-[560px] space-y-6 sm:space-y-7">
+                <div className="border-b border-border pb-5">
+                  <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
+                    Contact support
+                  </h2>
+                  <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
+                    Tell us more about{" "}
+                    <span className="font-medium text-foreground">{selectedTopic?.label}</span>.
+                  </p>
+                </div>
+
+                <dl className="grid gap-x-6 gap-y-3 text-[13px] sm:grid-cols-2">
+                  <div>
+                    <dt className="font-medium text-muted-foreground">Category</dt>
+                    <dd className="mt-1 text-foreground">{selectedCategory?.label}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-muted-foreground">Topic</dt>
+                    <dd className="mt-1 text-foreground">{selectedTopic?.label}</dd>
+                  </div>
+                </dl>
+
+                <div className="space-y-2">
+                  <label htmlFor="support-message" className="block text-[14px] font-medium text-foreground">
+                    Describe the issue
+                  </label>
+                  <textarea
+                    id="support-message"
+                    value={message}
+                    onChange={(event) => setMessage(event.target.value)}
+                    className="h-[220px] w-full resize-none rounded-radius-sm border border-border bg-background px-3.5 py-3 text-[16px] leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-[#01AACF] focus:ring-2 focus:ring-[#01AACF]/15 sm:h-[260px] sm:text-[15px]"
+                    placeholder="Include what you were trying to do, what happened, and any transaction or market details that may help."
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-7 flex max-w-[560px] items-center justify-between gap-3 border-t border-border pt-5 sm:mt-9">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleBack}
+                className="h-10 px-0 text-[14px] font-medium text-[#01AACF] hover:bg-transparent hover:text-[#009dbd] sm:h-9"
+              >
+                Back
+              </Button>
+
+              <Button
+                type="button"
+                onClick={stage === 3 ? handleSend : handleContinue}
+                disabled={stage !== 3 ? !canContinue : !canSend}
+                className="h-10 rounded-[4px] bg-[#01AACF] px-5 text-[14px] font-medium text-white hover:bg-[#009dbd] disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
+              >
+                {footerLabel}
+              </Button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  )
+}

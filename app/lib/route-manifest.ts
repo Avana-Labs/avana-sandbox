@@ -15,6 +15,7 @@ const STATIC_ROUTES: SiteRoute[] = [
   { route: "/stake", priority: 0.7 },
   { route: "/rewards", priority: 0.72 },
   { route: "/portfolio", priority: 0.65 },
+  { route: "/support-center", priority: 0.45 },
   { route: "/risk-warning", priority: 0.5 },
 ]
 

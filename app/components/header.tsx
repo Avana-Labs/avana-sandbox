@@ -86,9 +86,11 @@ function PreferencesMenu() {
           <span>USD</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="px-2 py-2.5 text-[14px] font-normal text-foreground">
-          <CircleHelp className="mr-2 h-3.5 w-3.5" />
-          Support center
+        <DropdownMenuItem asChild className="px-2 py-2.5 text-[14px] font-normal text-foreground">
+          <Link href="/support-center" className="flex items-center">
+            <CircleHelp className="mr-2 h-3.5 w-3.5" />
+            Support center
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
