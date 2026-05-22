@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CircleHelp, MoreHorizontal, MoonStar, Search, SunMedium } from "lucide-react"
+import { CircleHelp, MoreHorizontal, MoonStar, SunMedium } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useTheme } from "next-themes"
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { BrandLogo } from "./brand-logo"
 import { MobileMenu } from "./mobile-menu"
+import { SearchCommand } from "./search-command"
 import { personalDesktopHeaderLinks } from "./site-nav"
 
 function PreferencesMenu() {
@@ -130,17 +131,7 @@ export function Header() {
             </div>
 
             <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4">
-              <button
-                type="button"
-                aria-label="Search"
-                className="flex h-9 w-full items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-left text-[14px] font-normal text-muted-foreground shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover dark:shadow-none"
-              >
-                <Search className="h-4 w-4 shrink-0" />
-                <span className="min-w-0 flex-1 truncate">Search tokens, pools, wallets</span>
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-[6px] border border-border bg-background px-1 text-[10px] font-normal text-muted-foreground dark:bg-surface-inset">
-                  /
-                </span>
-              </button>
+              <SearchCommand />
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">

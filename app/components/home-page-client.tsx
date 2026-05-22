@@ -260,7 +260,7 @@ export function HomePageClient(_props: HomePageClientProps) {
                 <div className="mb-4 flex items-center justify-between">
                   <TabsList className="w-full justify-start">
                     {HOME_MODE_ITEMS.map((item) => (
-                      <TabsTrigger key={item.value} value={item.value}>
+                      <TabsTrigger key={item.value} value={item.value} className="text-[14px] font-normal">
                         {item.label}
                       </TabsTrigger>
                     ))}
