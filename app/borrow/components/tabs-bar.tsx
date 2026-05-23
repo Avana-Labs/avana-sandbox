@@ -73,7 +73,7 @@ export function TabsBar({
                 onClick={() => onTabChange(tab.id)}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[12px] font-medium transition-colors",
+                  "inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[14px] font-normal transition-colors",
                   isActive
                     ? "border-border bg-surface-2 text-foreground dark:bg-surface-2 dark:text-foreground"
                     : "border-border bg-background text-muted-foreground hover:bg-surface-inset hover:text-foreground dark:bg-surface-1 dark:hover:bg-surface-hover",
@@ -82,7 +82,7 @@ export function TabsBar({
                 {tab.label}
                 <span
                   className={cn(
-                    "tabular-nums",
+                    "tabular-nums text-[14px] font-normal",
                     isActive ? "text-foreground/70" : "text-muted-foreground",
                   )}
                   aria-hidden
@@ -101,7 +101,7 @@ export function TabsBar({
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[12px] font-medium transition-colors",
+                    "inline-flex h-9 items-center gap-1 rounded-full border px-3 text-[14px] font-normal transition-colors",
                     selectedDexes.size === 0 || selectedDexes.size === BORROW_DEXES.length
                       ? "border-border bg-surface-raised text-foreground hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover"
                       : "border-transparent bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary-hover",
@@ -134,7 +134,7 @@ export function TabsBar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-surface-raised px-3 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover"
+                  className="inline-flex h-9 items-center gap-1 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-normal text-foreground transition-colors hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover"
                 >
                   {activeSortLabel}
                   <ChevronDown className="size-3 opacity-60" aria-hidden />
