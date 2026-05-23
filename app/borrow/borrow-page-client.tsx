@@ -133,7 +133,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
     ]
   }, [])
 
-  const [currentTab, setCurrentTab] = useState<BorrowTabId>("pools")
+  const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
   const [supplyStats, setSupplyStats] = useState<BorrowSupplyHeroStats | null>(null)
   const [debtsStats, setDebtsStats] = useState<BorrowDebtsHeroStats | null>(null)
   const handleTabChange = useCallback((tab: BorrowTabId) => setCurrentTab(tab), [])
