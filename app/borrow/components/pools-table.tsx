@@ -105,7 +105,7 @@ function SpokeSection({
               <tr className="border-b border-border text-left text-muted-foreground">
                 <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">Pool</th>
                 <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Max LTV</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Fees APY</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">APY</th>
                 <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Supplied</th>
                 <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Risk Premium</th>
                 <th className="w-20 pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">7D</th>
@@ -238,7 +238,7 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral }: PoolsTabl
                     <div className="grid grid-cols-2 gap-y-2 text-xs">
                       <MobileField label="Max LTV" value={`${pool.ltv}%`} />
                       <MobileField
-                        label="Fees APY"
+                        label="APY"
                         value={`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
                         tone={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
                         flashValue={(pool.aprMin + pool.aprMax) / 2}
