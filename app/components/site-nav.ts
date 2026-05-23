@@ -6,7 +6,6 @@ import {
   Gift,
   HandCoins,
   House,
-  Sprout,
 } from "lucide-react"
 
 export type SiteNavLink = {
@@ -68,17 +67,6 @@ export const siteNavLinks: SiteNavLink[] = [
     highlights: ["Funding view", "Live positions"],
     actionLabel: "Risk warning",
     actionHref: "/risk-warning",
-  },
-  {
-    href: "/stake",
-    label: "Stake",
-    icon: Sprout,
-    section: "LP staking",
-    description: "Choose a pool, lock assets, and preview rewards and APR before you stake LP collateral.",
-    highlights: ["Reward preview", "Lock terms"],
-    actionLabel: "How it works",
-    actionHref: "https://avana-ashen.vercel.app/about",
-    actionExternal: true,
   },
   {
     href: "/rewards",
