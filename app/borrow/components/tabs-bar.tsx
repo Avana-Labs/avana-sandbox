@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
 import { ChevronDown } from "lucide-react"
 import {
   DropdownMenu,
@@ -15,16 +14,22 @@ import {
 import { BORROW_DEXES, type BorrowDexId } from "@/app/lib/borrow-sim"
 import { cn } from "@/lib/utils"
 
-export type BorrowTabId = "pools" | "assets" | "positions"
+export const POOL_TAB_IDS = ["all-markets", "btc", "eth", "forex", "governance", "smart-pools"] as const
+
+export type PoolTabId = (typeof POOL_TAB_IDS)[number]
+
+export type BorrowTabId = PoolTabId | "assets" | "positions"
 
 export type SortOption = { key: string; label: string }
+
+export function isPoolTab(tab: BorrowTabId): tab is PoolTabId {
+  return POOL_TAB_IDS.includes(tab as PoolTabId)
+}
 
 export type TabsBarProps = {
   currentTab: BorrowTabId
   onTabChange: (tab: BorrowTabId) => void
   counts: Record<BorrowTabId, number>
-  filterText: string
-  onFilterChange: (value: string) => void
   selectedDexes: Set<BorrowDexId>
   onToggleDex: (dex: BorrowDexId) => void
   sortKey: string
@@ -35,7 +40,12 @@ export type TabsBarProps = {
 }
 
 const TAB_ORDER: Array<{ id: BorrowTabId; label: string }> = [
-  { id: "pools", label: "Collaterals" },
+  { id: "all-markets", label: "All Markets" },
+  { id: "btc", label: "BTC" },
+  { id: "eth", label: "ETH" },
+  { id: "forex", label: "Forex" },
+  { id: "governance", label: "Governance" },
+  { id: "smart-pools", label: "Smart Pools" },
   { id: "assets", label: "Assets" },
   { id: "positions", label: "Positions" },
 ]
@@ -44,8 +54,6 @@ export function TabsBar({
   currentTab,
   onTabChange,
   counts,
-  filterText,
-  onFilterChange,
   selectedDexes,
   onToggleDex,
   sortKey,
@@ -54,10 +62,6 @@ export function TabsBar({
   onSortKeyChange,
   onSortDirectionChange,
 }: TabsBarProps) {
-  useEffect(() => {
-    onFilterChange("")
-  }, [currentTab, onFilterChange])
-
   const activeSortLabel = sortOptions.find((option) => option.key === sortKey)?.label ?? sortOptions[0]?.label ?? ""
 
   return (
@@ -95,7 +99,7 @@ export function TabsBar({
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
-          {currentTab === "pools" ? (
+          {isPoolTab(currentTab) ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button

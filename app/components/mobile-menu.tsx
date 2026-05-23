@@ -57,7 +57,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     <>
       <button
         type="button"
-        className="inline-flex h-10 w-10 items-center justify-center text-[#6f6f6f] transition hover:text-[#2f2f2f] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] md:hidden"
+        className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] md:hidden"
         aria-label="Toggle menu"
         aria-expanded={isVisible}
         aria-controls="mobile-site-nav"
@@ -68,7 +68,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       </button>
 
       <div
-        className={`fixed inset-0 z-[60] min-h-[100dvh] bg-white text-foreground transition-opacity duration-300 ease-out md:hidden ${
+        className={`fixed inset-0 z-[60] min-h-[100dvh] bg-background text-foreground transition-opacity duration-300 ease-out md:hidden ${
           isVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
         role="dialog"
@@ -76,7 +76,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
         aria-label="Mobile menu"
         aria-hidden={!isVisible}
       >
-        <div className="flex h-16 items-center justify-between bg-white px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between border-b border-border bg-background px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Link
               href={siteRoutes.home}
@@ -90,7 +90,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center justify-center text-[#6f6f6f] transition hover:text-[#2f2f2f] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+              className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
               aria-label="Close menu"
               onClick={onClose}
             >
@@ -104,7 +104,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
         <nav
           id="mobile-site-nav"
           aria-label="Mobile navigation"
-          className={`h-[calc(100dvh-4rem)] overflow-y-auto bg-white px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
+          className={`h-[calc(100dvh-4rem)] overflow-y-auto bg-background px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
             isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
           }`}
         >
@@ -125,7 +125,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                     {link.label}
                   </Link>
 
-                  <span className="pt-1 text-[10px] font-medium tabular-nums tracking-[0.08em] text-[#01AACF]">
+                  <span className="pt-1 text-[10px] font-medium tabular-nums tracking-[0.08em] text-brand">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                 </li>
