@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronDown, Search, X } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { BORROW_DEXES, type BorrowDexId } from "@/app/lib/borrow-sim"
-import { PillTabButton } from "@/components/ui/pill-tab-button"
 import { cn } from "@/lib/utils"
 
 export type BorrowTabId = "pools" | "assets" | "positions"
@@ -55,88 +54,56 @@ export function TabsBar({
   onSortKeyChange,
   onSortDirectionChange,
 }: TabsBarProps) {
-  const [searchOpen, setSearchOpen] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (searchOpen) {
-      inputRef.current?.focus()
-    }
-  }, [searchOpen])
-
   useEffect(() => {
     onFilterChange("")
-    setSearchOpen(false)
   }, [currentTab, onFilterChange])
 
   const activeSortLabel = sortOptions.find((option) => option.key === sortKey)?.label ?? sortOptions[0]?.label ?? ""
 
   return (
-    <div className="sticky top-0 z-30 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+    <div className="sticky top-16 z-30 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 lg:top-[68px]">
       <div className="flex flex-wrap items-center gap-x-1 gap-y-2 py-1.5">
-        <nav className="no-scrollbar flex items-center gap-0 overflow-x-auto" aria-label="Borrow sections">
+        <nav className="no-scrollbar flex items-center gap-2 overflow-x-auto" aria-label="Borrow sections">
           {TAB_ORDER.map((tab) => {
             const isActive = tab.id === currentTab
             return (
-              <PillTabButton
+              <button
                 key={tab.id}
                 type="button"
-                active={isActive}
                 onClick={() => onTabChange(tab.id)}
                 aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[12px] font-medium transition-colors",
+                  isActive
+                    ? "border-border bg-surface-2 text-foreground dark:bg-surface-2 dark:text-foreground"
+                    : "border-border bg-background text-muted-foreground hover:bg-surface-inset hover:text-foreground dark:bg-surface-1 dark:hover:bg-surface-hover",
+                )}
               >
                 {tab.label}
-                <span className="ml-1 tabular-nums text-[10px] font-medium text-muted-foreground" aria-hidden>
+                <span
+                  className={cn(
+                    "tabular-nums",
+                    isActive ? "text-foreground/70" : "text-muted-foreground",
+                  )}
+                  aria-hidden
+                >
                   {counts[tab.id]}
                 </span>
-              </PillTabButton>
+              </button>
             )
           })}
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
-          {searchOpen ? (
-            <div className="flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-inset px-2">
-              <Search className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-              <input
-                ref={inputRef}
-                value={filterText}
-                onChange={(event) => onFilterChange(event.target.value)}
-                placeholder={currentTab === "assets" ? "Filter tokens" : currentTab === "pools" ? "Filter pools" : "Filter"}
-                className="h-5 w-36 border-none bg-transparent text-[12px] text-foreground outline-none placeholder:text-muted-foreground"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  onFilterChange("")
-                  setSearchOpen(false)
-                }}
-                className="text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Clear search"
-              >
-                <X className="size-3" />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="inline-flex size-7 items-center justify-center rounded-xs border border-border bg-surface-raised text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-              aria-label="Open search"
-            >
-              <Search className="size-3" aria-hidden />
-            </button>
-          )}
-
           {currentTab === "pools" ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex h-7 items-center gap-1 rounded-xs border px-2 text-[12px] font-medium transition-colors",
+                    "inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[12px] font-medium transition-colors",
                     selectedDexes.size === 0 || selectedDexes.size === BORROW_DEXES.length
-                      ? "border-border bg-surface-raised text-foreground hover:bg-surface-inset"
+                      ? "border-border bg-surface-raised text-foreground hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover"
                       : "border-transparent bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary-hover",
                   )}
                 >
@@ -167,7 +134,7 @@ export function TabsBar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-7 items-center gap-1 rounded-xs border border-border bg-surface-raised px-2 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+                  className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-surface-raised px-3 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover"
                 >
                   {activeSortLabel}
                   <ChevronDown className="size-3 opacity-60" aria-hidden />
