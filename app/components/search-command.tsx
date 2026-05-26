@@ -217,7 +217,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
         onClick={() => setOpen(true)}
         className={
           iconOnly
-            ? "inline-flex h-11 w-11 items-center justify-center text-[#6f6f6f] transition hover:text-[#2f2f2f] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+            ? "inline-flex h-11 w-11 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
             : "flex h-9 w-full items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-left text-[14px] font-normal text-muted-foreground shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors hover:bg-surface-inset dark:bg-surface-2 dark:hover:bg-surface-hover dark:shadow-none"
         }
       >
