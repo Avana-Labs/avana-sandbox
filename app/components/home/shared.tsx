@@ -68,10 +68,10 @@ export function PrimaryCardButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "mt-1 h-10 w-full rounded-radius-sm text-[13px] font-medium transition-colors shadow-elev-1",
+        "mt-1 h-11 w-full rounded-2xl text-base font-medium transition-colors shadow-elev-1",
         disabled
           ? "bg-muted text-muted-foreground hover:bg-muted"
-          : "bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary-hover",
+          : "bg-[hsl(var(--brand))] text-white hover:bg-[hsl(var(--brand))]/90",
       )}
     >
       {children}

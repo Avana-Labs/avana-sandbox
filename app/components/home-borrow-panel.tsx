@@ -32,7 +32,7 @@ export function HomeBorrowPanel({
     <div className="flex h-full flex-col gap-2.5">
       <div className="rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:flex-1 md:min-h-[250px]">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm font-medium text-muted-foreground">You&apos;re borrowing</span>
+          <span className="text-sm font-medium text-[hsl(var(--brand))]">You&apos;re borrowing</span>
         </div>
 
         <div className="flex min-h-[150px] flex-col items-center justify-center gap-4 py-3 sm:min-h-[220px] md:min-h-[150px] md:flex-1 md:py-0">
@@ -61,20 +61,20 @@ export function HomeBorrowPanel({
             {token ? (
               <TokenBubble visual={token.visual} className="size-10 shrink-0 md:size-9" />
             ) : (
-              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-surface-inset text-[12px] font-medium text-muted-foreground md:size-9">
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-[hsl(var(--brand))]/20 bg-[hsl(var(--brand-soft))] text-[12px] font-medium text-[hsl(var(--brand))] md:size-9">
                 ?
               </span>
             )}
           </span>
           <span className="flex min-w-0 flex-col leading-tight">
-            <span className="text-[12px] font-medium tracking-[0.02em] text-muted-foreground md:text-[11.5px]">
-              Borrow assets
+            <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+              Borrow asset
             </span>
             <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
               {selectedAssetLabel}
             </span>
           </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
         </Button>
 
         <Button
@@ -90,18 +90,23 @@ export function HomeBorrowPanel({
             />
           </span>
           <span className="flex min-w-0 flex-col leading-tight">
-            <span className="text-[12px] font-medium tracking-[0.02em] text-muted-foreground md:text-[11.5px]">
-              Collateralize
+            <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+              Collateral position
             </span>
             <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
               {pool.name}
             </span>
           </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
         </Button>
       </div>
 
-      <Button type="button" className="h-11 rounded-2xl text-base md:shrink-0" disabled={!preview.isValid || preview.isEmpty} onClick={onSubmit}>
+      <Button
+        type="button"
+        className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90 md:shrink-0"
+        disabled={!preview.isValid || preview.isEmpty}
+        onClick={onSubmit}
+      >
         {preview.ctaLabel}
       </Button>
     </div>
