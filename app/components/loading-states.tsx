@@ -475,7 +475,7 @@ export function RewardsResourcesTabSkeleton() {
 }
 
 // -----------------------------------------------------------------------------
-// stake (`/stake`) — balance hero + amber notice + progress + wizard grid
+// portfolio (`/portfolio`) — balance hero + amber notice + progress + wizard grid
 // -----------------------------------------------------------------------------
 
 export function StakePageSkeleton() {

@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { Eye, EyeOff, ShieldAlert, Sparkles } from "lucide-react"
+import { ShieldAlert, Sparkles } from "lucide-react"
 import { HomeHowItWorksDialog } from "@/app/components/home-how-it-works-dialog"
 import { StaticSparkline } from "@/app/components/static-sparkline"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import type { HomeHowItWorksStep } from "@/app/lib/home-data"
 import { HOME_PORTFOLIO_SUMMARY, formatCompactUsd, formatUsd } from "@/app/lib/home-sim"
+import { useDisplayPreferences } from "./display-preferences"
 
 type HomeBalanceHeroProps = {
   steps: HomeHowItWorksStep[]
@@ -46,7 +46,7 @@ function HeroMetric({ label, value, tone = "default" }: HeroMetricProps) {
 }
 
 export function HomeBalanceHero({ steps, totalPoints, totalPools, completedPools, progressPercentage }: HomeBalanceHeroProps) {
-  const [showBalance, setShowBalance] = useState(true)
+  const { showDollarAmounts } = useDisplayPreferences()
 
   return (
     <Card className="overflow-hidden rounded-[32px] border-border/70 bg-card/80 shadow-[0_20px_56px_rgba(15,23,42,0.06)] backdrop-blur-sm">
@@ -59,20 +59,12 @@ export function HomeBalanceHero({ steps, totalPoints, totalPools, completedPools
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <h1 className="m-0 font-medium leading-none text-foreground">My LP Collateral Balance</h1>
-              <button
-                type="button"
-                onClick={() => setShowBalance((currentValue) => !currentValue)}
-                className="rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={showBalance ? "Hide balance" : "Show balance"}
-              >
-                {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              </button>
             </div>
             <CardTitle className="font-data text-4xl font-semibold tracking-tight sm:text-5xl">
-              {showBalance ? formatUsd(HOME_PORTFOLIO_SUMMARY.totalCollateralUsd) : "••••••••"}
+              {showDollarAmounts ? formatUsd(HOME_PORTFOLIO_SUMMARY.totalCollateralUsd) : "••••••••"}
             </CardTitle>
             <CardDescription className="text-sm text-emerald-600">
-              +{formatUsd(HOME_PORTFOLIO_SUMMARY.dailyChangeUsd)} today
+              {showDollarAmounts ? `+${formatUsd(HOME_PORTFOLIO_SUMMARY.dailyChangeUsd)} today` : "••••••••"}
             </CardDescription>
           </div>
         </div>
