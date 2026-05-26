@@ -27,7 +27,7 @@ import {
   type HomeBorrowToken,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
-import { TabsBar, type BorrowTabId, type SortOption } from "./tabs-bar"
+import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId, type SortOption } from "./tabs-bar"
 import { PoolsList, PoolsTable } from "./pools-table"
 import { SuppliesPanel, type SupplyRowContext } from "./supplies-table"
 import { AssetsPanel } from "./assets-table"
@@ -41,7 +41,7 @@ import { useLiveBorrowMarket } from "./use-live-borrow-market"
 type DebtsState = Record<string, number>
 
 const POOL_SORT_OPTIONS: SortOption[] = [
-  { key: "apr", label: "Fees APY" },
+  { key: "apr", label: "APY" },
   { key: "ltv", label: "Max LTV" },
   { key: "available", label: "Supplied" },
   { key: "riskPremium", label: "Risk premium" },
@@ -84,6 +84,51 @@ function getUsdcToken(): HomeBorrowToken {
   return HOME_BORROW_TOKENS.find((token) => token.id === "usdc") ?? HOME_BORROW_TOKENS[1]
 }
 
+const BTC_SYMBOLS = new Set(["WBTC", "CBBTC"])
+const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
+const FOREX_SYMBOLS = new Set(["USDC", "USDT", "DAI", "CRVUSD", "GHO", "EURC", "USD+", "SDAI", "FRAX", "USDE", "USDS", "USDP", "LUSD", "TUSD", "MIM", "PYUSD", "EURS"])
+const GOV_SYMBOLS = new Set(["AAVE", "UNI", "CRV", "LDO", "BAL", "AURA", "GNO"])
+const SMART_SPOKES = new Set<string>([
+  "uni-v2",
+  "uni-v3-stable",
+  "uni-v3-bluechip",
+  "curve-crypto",
+  "bal-weighted",
+  "bal-boosted",
+  "bal-reclamm",
+  "aero-slipstream-bluechip",
+])
+
+function poolHasAnySymbol(pool: BorrowPoolRow, symbols: Set<string>) {
+  return pool.visuals.some((visual) => symbols.has(visual.symbol.toUpperCase()))
+}
+
+function poolIsStable(pool: BorrowPoolRow) {
+  return pool.visuals.every((visual) => FOREX_SYMBOLS.has(visual.symbol.toUpperCase()))
+}
+
+function poolMatchesTab(pool: BorrowPoolRow, tab: PoolTabId) {
+  if (tab === "all-markets") return true
+  if (tab === "btc") return poolHasAnySymbol(pool, BTC_SYMBOLS)
+  if (tab === "eth") return poolHasAnySymbol(pool, ETH_SYMBOLS)
+  if (tab === "forex") return poolIsStable(pool)
+  if (tab === "governance") return poolHasAnySymbol(pool, GOV_SYMBOLS)
+  if (tab === "smart-pools") {
+    if (SMART_SPOKES.has(pool.spoke)) return true
+    return !poolMatchesAnyCoreTab(pool)
+  }
+  return false
+}
+
+function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
+  return (
+    poolHasAnySymbol(pool, BTC_SYMBOLS) ||
+    poolHasAnySymbol(pool, ETH_SYMBOLS) ||
+    poolIsStable(pool) ||
+    poolHasAnySymbol(pool, GOV_SYMBOLS)
+  )
+}
+
 export type BorrowSupplyHeroStats = {
   collateral: number
   borrowed: number
@@ -108,7 +153,7 @@ export type BorrowWorkspaceProps = {
 }
 
 export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStatsChange, showBalance = true }: BorrowWorkspaceProps = {}) {
-  const [currentTab, setCurrentTab] = useState<BorrowTabId>("pools")
+  const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
   const [filterText, setFilterText] = useState("")
   const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
   const [debts, setDebts] = useState<DebtsState>({ ...HOME_INITIAL_DEBTS })
@@ -172,13 +217,19 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
     })).filter((row) => row.borrowedUsd > 0)
   }, [debts, liveDebtMetrics])
 
-  const sortedPools = useMemo(() => {
+  const filteredPools = useMemo(() => {
     const filtered = filterPools(BORROW_POOL_CATALOG, { text: filterText, dexes: selectedDexes })
-    const baseSorted = sortPools(filtered, poolSortKey, poolSortDirection)
-    return baseSorted.map((pool) => livePoolById.get(pool.id) ?? pool)
-  }, [filterText, livePoolById, selectedDexes, poolSortKey, poolSortDirection])
+    return filtered.map((pool) => livePoolById.get(pool.id) ?? pool)
+  }, [filterText, livePoolById, selectedDexes])
 
-  const poolGroups = useMemo(() => groupByDex(sortedPools), [sortedPools])
+  const sortedPools = useMemo(() => sortPools(filteredPools, poolSortKey, poolSortDirection), [filteredPools, poolSortKey, poolSortDirection])
+
+  const visiblePools = useMemo(() => {
+    if (!isPoolTab(currentTab)) return []
+    return sortedPools.filter((pool) => poolMatchesTab(pool, currentTab))
+  }, [currentTab, sortedPools])
+
+  const poolGroups = useMemo(() => groupByDex(visiblePools), [visiblePools])
 
   const sortedAssets = useMemo<BorrowableAsset[]>(() => {
     const filtered = filterAssets(BORROWABLE_ASSETS, filterText)
@@ -229,6 +280,18 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
     })
     return copy
   }, [debtsRows, debtSortKey, debtSortDirection])
+
+  const poolTabCounts = useMemo(() => {
+    const count = (tab: PoolTabId) => sortedPools.filter((pool) => poolMatchesTab(pool, tab)).length
+    return {
+      "all-markets": count("all-markets"),
+      btc: count("btc"),
+      eth: count("eth"),
+      forex: count("forex"),
+      governance: count("governance"),
+      "smart-pools": count("smart-pools"),
+    }
+  }, [sortedPools])
 
   // Totals
   const supplyTotals = useMemo(() => {
@@ -359,7 +422,7 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
           { label: "Position", value: `${result.pool.name} LP · ${result.pool.venue}` },
           { label: "Max LTV", value: `${result.pool.ltv}%`, tone: "text-emerald-600" },
           { label: "Borrow power", value: formatUsdExact(result.borrowPowerUsd), tone: "text-emerald-600" },
-          { label: "Fees APY", value: `${result.feesApy.toFixed(1)}% · LP keeps earning`, tone: "text-emerald-600" },
+          { label: "APY", value: `${result.feesApy.toFixed(1)}% · LP keeps earning`, tone: "text-emerald-600" },
         ],
         primaryLabel: "Done",
       },
@@ -421,38 +484,43 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
 
   // Sort options per tab
   const activeSortOptions =
-    currentTab === "pools"
+    isPoolTab(currentTab)
       ? POOL_SORT_OPTIONS
       : currentTab === "assets"
         ? ASSET_SORT_OPTIONS
         : []
 
   const activeSortKey =
-    currentTab === "pools"
+    isPoolTab(currentTab)
       ? poolSortKey
       : currentTab === "assets"
         ? assetSortKey
         : ""
 
   const activeSortDirection =
-    currentTab === "pools"
+    isPoolTab(currentTab)
       ? poolSortDirection
       : currentTab === "assets"
         ? assetSortDirection
         : "desc"
 
   const onSortKeyChange = (key: string) => {
-    if (currentTab === "pools") setPoolSortKey(key as PoolSortKey)
+    if (isPoolTab(currentTab)) setPoolSortKey(key as PoolSortKey)
     else if (currentTab === "assets") setAssetSortKey(key as AssetSortKey)
   }
 
   const onSortDirectionChange = (direction: "asc" | "desc") => {
-    if (currentTab === "pools") setPoolSortDirection(direction)
+    if (isPoolTab(currentTab)) setPoolSortDirection(direction)
     else if (currentTab === "assets") setAssetSortDirection(direction)
   }
 
   const counts: Record<BorrowTabId, number> = {
-    pools: sortedPools.length,
+    "all-markets": poolTabCounts["all-markets"],
+    btc: poolTabCounts.btc,
+    eth: poolTabCounts.eth,
+    forex: poolTabCounts.forex,
+    governance: poolTabCounts.governance,
+    "smart-pools": poolTabCounts["smart-pools"],
     assets: sortedAssets.length,
     positions: supplies.length + debtsRows.length,
   }
@@ -463,8 +531,6 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
         currentTab={currentTab}
         onTabChange={(tab) => setCurrentTab(tab)}
         counts={counts}
-        filterText={filterText}
-        onFilterChange={setFilterText}
         selectedDexes={selectedDexes}
         onToggleDex={toggleDex}
         sortKey={activeSortKey}
@@ -475,7 +541,7 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
       />
 
       <div className="pt-3 pb-6">
-        {currentTab === "pools" ? (
+        {isPoolTab(currentTab) ? (
           <>
             <PoolsTable
               groups={poolGroups}
@@ -491,15 +557,15 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
         ) : null}
 
         {currentTab === "assets" ? (
-          <AssetsPanel
-            rows={sortedAssets}
-            onBorrow={handleAssetBorrow}
-            onViewMarket={(asset) => {
-              setFilterText(asset.symbol)
-              setCurrentTab("pools")
-            }}
-          />
-        ) : null}
+            <AssetsPanel
+              rows={sortedAssets}
+              onBorrow={handleAssetBorrow}
+              onViewMarket={(asset) => {
+                setFilterText(asset.symbol)
+                setCurrentTab("all-markets")
+              }}
+            />
+          ) : null}
 
         {currentTab === "positions" ? (
           <div className="flex flex-col gap-8">
