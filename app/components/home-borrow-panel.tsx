@@ -30,7 +30,7 @@ export function HomeBorrowPanel({
 
   return (
     <div className="flex h-full flex-col gap-2.5">
-      <div className="rounded-[18px] border border-border bg-background px-5 py-4 shadow-elev-1 md:flex-1 md:min-h-[250px]">
+      <div className="rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:flex-1 md:min-h-[250px]">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-muted-foreground">You&apos;re borrowing</span>
         </div>
@@ -54,22 +54,24 @@ export function HomeBorrowPanel({
         <Button
           type="button"
           variant="outline"
-          className="h-12 justify-between rounded-[20px] px-4 text-left"
+          className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)_1rem] md:gap-2.5 md:px-3.5"
           onClick={onOpenTokenSheet}
         >
-          <span className="flex min-w-0 items-center gap-3">
+          <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
             {token ? (
-              <TokenBubble visual={token.visual} className="size-8" />
+              <TokenBubble visual={token.visual} className="size-10 shrink-0 md:size-9" />
             ) : (
-              <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface-inset text-[11px] font-medium text-muted-foreground">
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-surface-inset text-[12px] font-medium text-muted-foreground md:size-9">
                 ?
               </span>
             )}
-            <span className="flex min-w-0 flex-col">
-              <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                Borrow assets
-              </span>
-              <span className="truncate text-[14px] font-medium text-foreground">{selectedAssetLabel}</span>
+          </span>
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="text-[12px] font-medium tracking-[0.02em] text-muted-foreground md:text-[11.5px]">
+              Borrow assets
+            </span>
+            <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
+              {selectedAssetLabel}
             </span>
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -78,16 +80,21 @@ export function HomeBorrowPanel({
         <Button
           type="button"
           variant="outline"
-          className="h-12 justify-between rounded-[20px] px-4 text-left"
+          className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)_1rem] md:gap-2.5 md:px-3.5"
           onClick={onOpenPoolSheet}
         >
-          <span className="flex min-w-0 items-center gap-3">
-            <PairVisual visuals={pool.visuals} className="w-11" />
-            <span className="flex min-w-0 flex-col">
-              <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                Collateralize
-              </span>
-              <span className="truncate text-[14px] font-medium text-foreground">{pool.name}</span>
+          <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
+            <PairVisual
+              visuals={pool.visuals}
+              className="h-10 w-[3.2rem] shrink-0 [&>span]:size-10 [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[1.25rem] md:h-9 md:w-[2.75rem] md:[&>span]:size-8 md:[&>span:nth-child(2)]:left-[1.05rem]"
+            />
+          </span>
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="text-[12px] font-medium tracking-[0.02em] text-muted-foreground md:text-[11.5px]">
+              Collateralize
+            </span>
+            <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
+              {pool.name}
             </span>
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
