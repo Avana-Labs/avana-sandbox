@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Globe2, Menu, Shield, SunMedium } from "lucide-react"
+import { ArrowUpRight, Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Globe2, Menu, Shield, SunMedium } from "lucide-react"
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { Switch } from "@/components/ui/switch"
@@ -242,9 +242,9 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             <Link href="/support-center" prefetch={false} onClick={onClose} className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <CircleHelp className={rootSettingsIconClass} />
-                <span>Support Center</span>
+                <span>Help Center</span>
               </span>
-              <ChevronRight className="h-[1.1rem] w-[1.1rem] text-muted-foreground" />
+              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
             </Link>
           </li>
           <li
@@ -262,7 +262,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 <Shield className={rootSettingsIconClass} />
                 <span>Security & privacy</span>
               </span>
-              <ChevronRight className="h-[1.1rem] w-[1.1rem] text-muted-foreground" />
+              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
             </a>
           </li>
         </ul>
