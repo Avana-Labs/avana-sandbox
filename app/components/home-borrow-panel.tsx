@@ -1,7 +1,7 @@
 "use client"
 
 import { ChevronDown } from "lucide-react"
-import type { BorrowPreview, HomeBorrowToken, HomeCollateralPool } from "@/app/lib/home-sim"
+import { HOME_BORROW_TOKENS, type BorrowPreview, type HomeBorrowToken, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { Button } from "@/components/ui/button"
 import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
 
@@ -27,6 +27,7 @@ export function HomeBorrowPanel({
   onSubmit,
 }: HomeBorrowPanelProps) {
   const selectedAssetLabel = token?.symbol ?? "Select asset"
+  const defaultBorrowToken = HOME_BORROW_TOKENS[0]
 
   return (
     <div className="flex h-full flex-col gap-2.5">
@@ -58,13 +59,7 @@ export function HomeBorrowPanel({
           onClick={onOpenTokenSheet}
         >
           <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
-            {token ? (
-              <TokenBubble visual={token.visual} className="size-10 shrink-0 md:size-9" />
-            ) : (
-              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-[hsl(var(--brand))]/20 bg-[hsl(var(--brand-soft))] text-[12px] font-medium text-[hsl(var(--brand))] md:size-9">
-                ?
-              </span>
-            )}
+            <TokenBubble visual={(token ?? defaultBorrowToken).visual} className="size-10 shrink-0 md:size-9" />
           </span>
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
