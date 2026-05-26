@@ -9,7 +9,7 @@ import {
 import { PairVisual } from "@/app/components/home-workspace-primitives"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
-import { PickerSurface, PrimaryCardButton } from "./shared"
+import { PrimaryCardButton } from "./shared"
 
 export function CompactRemoveCard({
   pool,
@@ -26,90 +26,94 @@ export function CompactRemoveCard({
   onPercentChange: (value: number) => void
   onSubmit: () => void
 }) {
-  const hasAmount = percent > 0
-
   return (
-    <div className="flex flex-col gap-3">
-      <div className="relative flex flex-col divide-y divide-border rounded-radius-md border border-border bg-surface-raised shadow-elev-1 overflow-hidden">
-        <PickerSurface label="Remove from" tier="top" seamless>
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <div className="font-data text-[20px] font-medium tracking-tight text-foreground">{pool.name}</div>
-              <div className="mt-0.5 text-[11.5px] text-muted-foreground">Max safe remove {preview.safePercent}%</div>
-            </div>
-            <button
-              type="button"
-              onClick={onOpenPoolDialog}
-              className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-inset px-2 text-foreground transition-colors hover:bg-surface-hover"
-            >
-              <PairVisual visuals={pool.visuals} className="w-10" />
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-          </div>
-        </PickerSurface>
+    <div className="flex flex-col gap-2.5">
+      <div className="rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:flex-1 md:min-h-[250px]">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-medium text-[hsl(var(--brand))]">You&apos;re removing</span>
+          <span className="text-[12px] text-[hsl(var(--brand))]">Safe max {preview.safePercent}%</span>
+        </div>
 
-        <PickerSurface label="Remove amount" tier="bottom" seamless footer={`Health factor after ${preview.healthFactorAfterLabel}`}>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[11.5px] text-muted-foreground">Percentage</span>
-              <span className="font-data text-[22px] font-medium tracking-tight">{percent}%</span>
-            </div>
-            <Slider
-              value={[percent]}
-              onValueChange={(value) => onPercentChange(value[0] ?? 0)}
-              max={100}
-              step={1}
-              aria-label="Remove collateral percentage"
-            />
-            <div className="grid grid-cols-4 gap-1.5">
-              {[25, 50, 75, 100].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => onPercentChange(preset)}
-                  className={cn(
-                    "rounded-xs border px-2 py-1.5 text-[12px] font-medium transition-colors",
-                    percent === preset
-                      ? "border-border bg-surface-raised text-foreground"
-                      : "border-border/50 bg-transparent text-muted-foreground hover:border-border hover:text-foreground",
-                  )}
-                >
-                  {preset}%
-                </button>
-              ))}
-            </div>
+        <div className="flex min-h-[150px] flex-col items-center justify-center gap-3 py-3 text-center sm:min-h-[220px] md:min-h-[150px] md:flex-1 md:py-0">
+          <div className="font-compact text-[clamp(3.2rem,9vw,4.8rem)] font-medium leading-none tracking-[-0.05em] text-foreground">
+            {percent}%
           </div>
-        </PickerSurface>
+          <div className="text-[12px] text-muted-foreground">
+            {percent > 0 ? `${formatCompactUsd(preview.removeUsd)} returned` : "Choose how much collateral to remove"}
+          </div>
+        </div>
       </div>
 
-      {hasAmount ? (
-        <div className="mt-1 grid grid-cols-3 gap-2 text-center md:hidden">
-          <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
-            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">Receive</div>
-            <div className="mt-0.5 font-data text-[12.5px] font-medium text-emerald-700 dark:text-emerald-400">{formatCompactUsd(preview.removeUsd)}</div>
-          </div>
-          <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
-            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">After</div>
-            <div className="mt-0.5 font-data text-[12.5px] font-medium">{formatCompactUsd(preview.afterCollateralUsd)}</div>
-          </div>
-          <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
-            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">HF</div>
-            <div className={cn("mt-0.5 font-data text-[12.5px] font-medium", preview.isUnsafe ? "text-rose-700 dark:text-rose-400" : "text-amber-700 dark:text-amber-400")}>
-              {preview.healthFactorAfterLabel}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <button
+        type="button"
+        onClick={onOpenPoolDialog}
+        className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md border border-border bg-surface-raised px-4 text-left shadow-elev-1 transition-colors hover:bg-surface-inset md:h-[58px] md:grid-cols-[3rem_minmax(0,1fr)_1rem] md:px-3.5"
+      >
+        <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
+          <PairVisual
+            visuals={pool.visuals}
+            className="h-10 w-[3.2rem] shrink-0 [&>span]:size-10 [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[1.25rem] md:h-9 md:w-[2.75rem] md:[&>span]:size-8 md:[&>span:nth-child(2)]:left-[1.05rem]"
+          />
+        </span>
+        <span className="flex min-w-0 flex-col leading-tight">
+            <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+              Collateral position
+            </span>
+          <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
+            {pool.name}
+          </span>
+        </span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
+      </button>
 
-      {preview.isUnsafe ? (
-        <div className="flex items-start gap-2 rounded-radius-sm border border-border bg-surface-inset px-3 py-2.5 text-[12px]">
-          <span className="mt-1 inline-block size-1.5 shrink-0 rounded-full bg-rose-500" />
-          <span>
-            <strong className="font-medium text-rose-700 dark:text-rose-300">Liquidation risk.</strong>{" "}
-            <span className="text-muted-foreground">Repay debt first before removing this much.</span>
+      <div className="rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1 md:px-3.5 md:py-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+            Remove amount
+          </span>
+          <span className="font-compact text-[18px] font-medium text-foreground md:text-[16px]">
+            {preview.healthFactorAfterLabel}
           </span>
         </div>
-      ) : null}
+
+        <div className="mt-3">
+          <Slider
+            value={[percent]}
+            onValueChange={(value) => onPercentChange(value[0] ?? 0)}
+            max={100}
+            step={1}
+            aria-label="Remove collateral percentage"
+          />
+        </div>
+
+        <div className="mt-3 grid grid-cols-4 gap-1.5">
+          {[25, 50, 75, 100].map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => onPercentChange(preset)}
+              className={cn(
+                "rounded-radius-sm border px-2 py-1.5 text-[12px] font-medium transition-colors",
+                percent === preset
+                  ? "border-[hsl(var(--brand))]/30 bg-[hsl(var(--brand-soft))] text-[hsl(var(--brand))]"
+                  : "border-border/50 bg-transparent text-muted-foreground hover:border-[hsl(var(--brand))]/30 hover:text-[hsl(var(--brand))]",
+              )}
+            >
+              {preset}%
+            </button>
+          ))}
+        </div>
+
+        {preview.isUnsafe ? (
+          <div className="mt-3 text-[12px] text-rose-700 dark:text-rose-300">
+            Liquidation risk. Repay debt first before removing this much.
+          </div>
+        ) : (
+          <div className="mt-3 text-[12px] text-muted-foreground">
+            Remaining collateral {formatCompactUsd(preview.afterCollateralUsd)}
+          </div>
+        )}
+      </div>
 
       <PrimaryCardButton disabled={preview.isUnsafe} onClick={onSubmit}>
         {preview.ctaLabel}

@@ -9,8 +9,8 @@
     text-size-adjust: 100%;
   }
   :root {
-    /* Page chrome: green-grey canvas (slightly under pure white for layered UI) */
-    --background: 150 12% 97%;
+    /* Page chrome: pure white in light mode */
+    --background: 0 0% 100%;
     --foreground: 150 15% 10%;        /* #161C18 deep green-black text */
 
     --card: 0 0% 100%;                /* pure white elevated cards pop */
@@ -43,11 +43,11 @@
     --surface-2: 150 12% 94%;
     --surface-hover: 150 16% 92%;
 
-    /* Premium accent (brand pink kept in light mode) */
-    --brand: 327 96% 53%;
+    /* Avana brand cyan */
+    --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
-    --brand-soft: 327 90% 96%;
-    --brand-soft-foreground: 327 96% 53%;
+    --brand-soft: 191 100% 95%;
+    --brand-soft-foreground: 191 99% 41%;
 
     --radius: 0.5rem;
 
@@ -111,11 +111,11 @@
     --surface-2: 150 6% 16%;          /* #242B28 */
     --surface-hover: 150 6% 18%;      /* #2A322F */
 
-    /* Brand accent: keep pink but ever so slightly dimmed in dark */
-    --brand: 327 92% 58%;
+    /* Avana brand cyan */
+    --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
-    --brand-soft: 327 40% 20%;
-    --brand-soft-foreground: 327 92% 70%;
+    --brand-soft: 191 55% 18%;
+    --brand-soft-foreground: 191 92% 70%;
 
     /* Elevation — border-assisted in dark */
     --elev-1: 0 0 0 1px hsl(var(--border)), 0 1px 0 rgba(255, 255, 255, 0.02) inset;
@@ -212,6 +212,18 @@
 @keyframes loading-shimmer {
   100% {
     transform: translateX(100%);
+  }
+}
+
+@keyframes mobile-menu-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

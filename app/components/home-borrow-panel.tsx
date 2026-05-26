@@ -1,61 +1,19 @@
 "use client"
 
 import { ChevronDown } from "lucide-react"
-import type { BorrowPreview, HomeBorrowToken, HomeCollateralPool } from "@/app/lib/home-sim"
-import { formatCompactUsd } from "@/app/lib/home-sim"
+import { HOME_BORROW_TOKENS, type BorrowPreview, type HomeBorrowToken, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { Button } from "@/components/ui/button"
-import { DetailList, PairVisual, PanelField, PremiumPanel, TokenBubble, ValueBadge } from "@/app/components/home-workspace-primitives"
+import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
 
 type HomeBorrowPanelProps = {
   pool: HomeCollateralPool
-  token: HomeBorrowToken
+  token: HomeBorrowToken | null
   amount: string
   preview: BorrowPreview
   onAmountChange: (value: string) => void
   onOpenPoolSheet: () => void
   onOpenTokenSheet: () => void
-  onSetMax: () => void
   onSubmit: () => void
-}
-
-function BorrowHealthGauge({ preview }: { preview: BorrowPreview }) {
-  const toneClassName =
-    preview.riskTone === "positive"
-      ? "bg-emerald-500"
-      : preview.riskTone === "warning"
-        ? "bg-amber-500"
-        : preview.riskTone === "danger"
-          ? "bg-rose-500"
-          : "bg-primary"
-
-  return (
-    <div className="flex flex-col gap-4 rounded-[24px] border border-border/60 bg-background/70 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-muted-foreground">Health factor</span>
-        <span
-          className={[
-            "font-data text-2xl font-semibold",
-            preview.riskTone === "positive" ? "text-emerald-600" : "",
-            preview.riskTone === "warning" ? "text-amber-600" : "",
-            preview.riskTone === "danger" ? "text-rose-600" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-        >
-          {preview.healthFactorLabel}
-        </span>
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="h-2 overflow-hidden rounded-full bg-secondary">
-          <div className={`${toneClassName} h-full rounded-full`} style={{ width: `${preview.progressPercent}%` }} />
-        </div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Safe</span>
-          <span>Liquidation risk</span>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 export function HomeBorrowPanel({
@@ -66,113 +24,86 @@ export function HomeBorrowPanel({
   onAmountChange,
   onOpenPoolSheet,
   onOpenTokenSheet,
-  onSetMax,
   onSubmit,
 }: HomeBorrowPanelProps) {
+  const selectedAssetLabel = token?.symbol ?? "Select asset"
+  const defaultBorrowToken = HOME_BORROW_TOKENS[0]
+
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-      <PremiumPanel
-        title="Borrow against an LP position"
-        description="Choose collateral, size a borrow, and preview how far you can push leverage before risk gets uncomfortable."
-      >
-        <div className="flex flex-col gap-4">
-          <PanelField
-            label="Collateral"
-            helper={`${pool.venue} · Max LTV ${pool.maxLtv}% · Power ${formatCompactUsd(pool.borrowPowerUsd)}`}
-          >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-col gap-1">
-                <span className="font-data text-3xl font-semibold tracking-tight">{formatCompactUsd(pool.collateralUsd)}</span>
-                <span className="text-sm text-muted-foreground">{pool.name}</span>
-              </div>
-              <Button type="button" variant="outline" className="h-12 rounded-full px-4" onClick={onOpenPoolSheet}>
-                <PairVisual visuals={pool.visuals} />
-                {pool.name}
-                <ChevronDown data-icon="inline-end" />
-              </Button>
-            </div>
-          </PanelField>
-
-          <PanelField
-            label="Borrow"
-            helper={preview.amountUsd > 0 ? `Approximate settlement value ${preview.amountLabel}` : "Choose the token and size you want to borrow."}
-            action={
-              <button type="button" onClick={onSetMax} className="text-xs font-semibold text-primary transition-opacity hover:opacity-80">
-                Max
-              </button>
-            }
-          >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <label className="flex min-w-0 flex-1 flex-col gap-2">
-                <span className="sr-only">Borrow amount</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(event) => onAmountChange(event.target.value)}
-                  placeholder="0"
-                  className="w-full bg-transparent font-data text-5xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/30"
-                />
-              </label>
-              <Button type="button" variant="outline" className="h-12 rounded-full px-4" onClick={onOpenTokenSheet}>
-                <TokenBubble visual={token.visual} className="size-8" />
-                {token.symbol}
-                <ChevronDown data-icon="inline-end" />
-              </Button>
-            </div>
-          </PanelField>
-
-          {preview.warningTitle && preview.warningMessage ? (
-            <div
-              className={[
-                "flex flex-col gap-1 rounded-2xl border px-4 py-3 text-sm",
-                preview.riskTone === "danger"
-                  ? "border-rose-200 bg-rose-500/10 text-rose-700"
-                  : "border-amber-200 bg-amber-500/10 text-amber-700",
-              ].join(" ")}
-            >
-              <strong className="font-semibold">{preview.warningTitle}</strong>
-              <span>{preview.warningMessage}</span>
-            </div>
-          ) : null}
-
-          <Button type="button" className="h-12 rounded-2xl text-base" disabled={!preview.isValid || preview.isEmpty} onClick={onSubmit}>
-            {preview.ctaLabel}
-          </Button>
+    <div className="flex h-full flex-col gap-2.5">
+      <div className="rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:flex-1 md:min-h-[250px]">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-medium text-[hsl(var(--brand))]">You&apos;re borrowing</span>
         </div>
-      </PremiumPanel>
 
-      <div className="flex flex-col gap-5">
-        <PremiumPanel title="Risk preview" description="The reference LPFI flow keeps this card live as you type.">
-          <div className="flex flex-col gap-4">
-            <BorrowHealthGauge preview={preview} />
-            <DetailList
-              rows={[
-                { label: "Borrowed", value: preview.amountUsd > 0 ? formatCompactUsd(preview.amountUsd) : "$0.00" },
-                { label: "Remaining power", value: formatCompactUsd(preview.remainingBorrowPowerUsd), tone: "positive" },
-                { label: "Liquidation threshold", value: formatCompactUsd(pool.liquidationUsd), tone: "warning" },
-              ]}
+        <div className="flex min-h-[150px] flex-col items-center justify-center gap-4 py-3 sm:min-h-[220px] md:min-h-[150px] md:flex-1 md:py-0">
+          <label className="flex items-baseline justify-center gap-2">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={amount}
+              onChange={(event) => onAmountChange(event.target.value)}
+              placeholder="0"
+              className="w-[min(100%,12ch)] bg-transparent text-center font-compact text-[clamp(3.2rem,9vw,4.8rem)] font-medium leading-none tracking-[-0.05em] text-foreground outline-none placeholder:text-muted-foreground/20"
+              aria-label="Borrow amount"
             />
-          </div>
-        </PremiumPanel>
-
-        <PremiumPanel title="Selected route" description="Match LPFI mechanics, but in a calmer Uniswap-like surface.">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap gap-2">
-              <ValueBadge label={pool.category} />
-              <ValueBadge label={`${token.borrowApr.toFixed(1)}% APR`} tone="warning" />
-              <ValueBadge label={`${pool.pairApr.toFixed(1)}% LP APR`} tone="positive" />
-            </div>
-            <DetailList
-              rows={[
-                { label: "Collateral venue", value: pool.venue },
-                { label: "Borrow asset", value: token.symbol },
-                { label: "LP still earning", value: `${pool.pairApr.toFixed(1)}% APR`, tone: "positive" },
-              ]}
-            />
-          </div>
-        </PremiumPanel>
+          </label>
+        </div>
       </div>
+
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)_1rem] md:gap-2.5 md:px-3.5"
+          onClick={onOpenTokenSheet}
+        >
+          <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
+            <TokenBubble visual={(token ?? defaultBorrowToken).visual} className="size-10 shrink-0 md:size-9" />
+          </span>
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+              Borrow asset
+            </span>
+            <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
+              {selectedAssetLabel}
+            </span>
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)_1rem] md:gap-2.5 md:px-3.5"
+          onClick={onOpenPoolSheet}
+        >
+          <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
+            <PairVisual
+              visuals={pool.visuals}
+              className="h-10 w-[3.2rem] shrink-0 [&>span]:size-10 [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[1.25rem] md:h-9 md:w-[2.75rem] md:[&>span]:size-8 md:[&>span:nth-child(2)]:left-[1.05rem]"
+            />
+          </span>
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+              Collateral position
+            </span>
+            <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
+              {pool.name}
+            </span>
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
+        </Button>
+      </div>
+
+      <Button
+        type="button"
+        className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90 md:shrink-0"
+        disabled={!preview.isValid || preview.isEmpty}
+        onClick={onSubmit}
+      >
+        {preview.ctaLabel}
+      </Button>
     </div>
   )
 }

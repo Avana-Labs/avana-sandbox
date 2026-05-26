@@ -22,10 +22,8 @@ import {
   getPoolById,
   type HomeMode,
 } from "@/app/lib/home-sim"
-import type { HomeChain, HomeHowItWorksStep } from "@/app/lib/home-data"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ActionSuccessDialog } from "./home/action-success-dialog"
-import { CompactBorrowCard } from "./home/borrow-card"
 import { CompactClaimCard } from "./home/claim-card"
 import { CompactRemoveCard } from "./home/remove-card"
 import { CompactRepayCard } from "./home/repay-card"
@@ -33,15 +31,7 @@ import { HomePreviewPanel } from "./home/preview-panel"
 import { PoolPickerDialog } from "./home/pool-picker-dialog"
 import { TokenPickerDialog } from "./home/token-picker-dialog"
 import type { HomeSuccessState, PoolDialogMode } from "./home/types"
-
-type HomePageClientProps = {
-  chains: HomeChain[]
-  howItWorksSteps: HomeHowItWorksStep[]
-  totalPools: number
-  completedPools: number
-  progressPercentage: number
-  totalPoints: number
-}
+import { HomeBorrowPanel } from "./home-borrow-panel"
 
 const HOME_MODE_ITEMS: Array<{ value: HomeMode; label: string }> = [
   { value: "borrow", label: "Borrow" },
@@ -57,7 +47,7 @@ const REPAY_APR_BY_POOL_ID: Record<string, number> = {
   "wbtc-eth": 0,
 }
 
-export function HomePageClient(_props: HomePageClientProps) {
+export function HomePageClient() {
   // TODO(wallet): when wallet is connected, hydrate these from the user's
   // actual LP positions + debt balances instead of HOME_DEFAULT_SELECTIONS /
   // HOME_INITIAL_* fixtures. Shape should stay the same so the cards below
@@ -254,13 +244,17 @@ export function HomePageClient(_props: HomePageClientProps) {
     <div className="bg-background">
       <main className="px-4">
         <section className="flex min-h-[calc(100vh-64px)] items-start justify-center pt-[5vh] md:pt-[6vh]">
-          <div className="flex w-full items-start justify-center gap-4">
-            <div className="w-full max-w-[420px] md:max-w-[460px]">
+          <div className="flex w-full items-stretch justify-center gap-4">
+            <div className="w-full max-w-[420px] self-stretch md:max-w-[460px]">
               <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
                 <div className="mb-4 flex items-center justify-between">
                   <TabsList className="w-full justify-start">
                     {HOME_MODE_ITEMS.map((item) => (
-                      <TabsTrigger key={item.value} value={item.value}>
+                      <TabsTrigger
+                        key={item.value}
+                        value={item.value}
+                        className="text-[14px] font-normal data-[state=active]:text-[hsl(var(--brand))] data-[state=active]:after:bg-[hsl(var(--brand))]"
+                      >
                         {item.label}
                       </TabsTrigger>
                     ))}
@@ -276,16 +270,14 @@ export function HomePageClient(_props: HomePageClientProps) {
 
                 <div className="relative min-h-[320px]">
                   <TabsContent value="borrow" className="mt-0">
-                    <CompactBorrowCard
+                    <HomeBorrowPanel
                       pool={borrowPool}
                       token={borrowToken}
                       amount={borrowAmount}
                       preview={borrowPreview}
                       onAmountChange={setBorrowAmount}
-                      onOpenPoolDialog={() => setPoolDialogMode("borrow")}
-                      onOpenTokenDialog={() => setTokenDialogOpen(true)}
-                      onQuickTokenSelect={setBorrowTokenId}
-                      onSetMax={() => setBorrowAmount(String(borrowPool.borrowPowerUsd))}
+                      onOpenPoolSheet={() => setPoolDialogMode("borrow")}
+                      onOpenTokenSheet={() => setTokenDialogOpen(true)}
                       onSubmit={handleBorrowConfirm}
                     />
                   </TabsContent>

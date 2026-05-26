@@ -22,7 +22,7 @@ export function HomeModeTabs() {
         const Icon = item.icon
 
         return (
-          <TabsTrigger key={item.value} value={item.value} className="gap-1.5">
+          <TabsTrigger key={item.value} value={item.value} className="gap-1.5 text-[14px] font-normal">
             <Icon className="size-3.5 shrink-0" aria-hidden />
             {item.label}
           </TabsTrigger>

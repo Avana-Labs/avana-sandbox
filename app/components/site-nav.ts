@@ -2,10 +2,10 @@ import type { LucideIcon } from "lucide-react"
 import {
   ChartCandlestick,
   ChartNoAxesColumnIncreasing,
+  CircleHelp,
   Gift,
   HandCoins,
   House,
-  Sprout,
 } from "lucide-react"
 
 export type SiteNavLink = {
@@ -18,6 +18,11 @@ export type SiteNavLink = {
   actionLabel: string
   actionHref: string
   actionExternal?: boolean
+}
+
+export type DesktopHeaderLink = {
+  href: string
+  label: string
 }
 
 export const siteNavLinks: SiteNavLink[] = [
@@ -44,7 +49,7 @@ export const siteNavLinks: SiteNavLink[] = [
   },
   {
     href: "/lend",
-    label: "Lend",
+    label: "Invest",
     icon: ChartNoAxesColumnIncreasing,
     section: "Capital sleeves",
     description: "Lend into sleeves, compare APY, and size positions without losing portfolio context.",
@@ -55,24 +60,13 @@ export const siteNavLinks: SiteNavLink[] = [
   },
   {
     href: "/perps",
-    label: "Perps",
+    label: "Trade",
     icon: ChartCandlestick,
     section: "Directional overlays",
     description: "Monitor leverage, funding, and active overlays in a tighter trading workspace built around LP positions.",
     highlights: ["Funding view", "Live positions"],
     actionLabel: "Risk warning",
     actionHref: "/risk-warning",
-  },
-  {
-    href: "/stake",
-    label: "Stake",
-    icon: Sprout,
-    section: "LP staking",
-    description: "Choose a pool, lock assets, and preview rewards and APR before you stake LP collateral.",
-    highlights: ["Reward preview", "Lock terms"],
-    actionLabel: "How it works",
-    actionHref: "https://avana-ashen.vercel.app/about",
-    actionExternal: true,
   },
   {
     href: "/rewards",
@@ -84,6 +78,25 @@ export const siteNavLinks: SiteNavLink[] = [
     actionLabel: "Risk warning",
     actionHref: "/risk-warning",
   },
+  {
+    href: "/support-center",
+    label: "Support center",
+    icon: CircleHelp,
+    section: "Help",
+    description: "Select a topic, review related articles, and contact support from a calm guided flow.",
+    highlights: ["Guided help", "Message support"],
+    actionLabel: "Open support",
+    actionHref: "/support-center",
+  },
+]
+
+export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
+  { href: "/", label: "Express" },
+  { href: "/borrow", label: "Borrow" },
+  { href: "/lend", label: "Invest" },
+  { href: "/perps", label: "Trade" },
+  { href: "/portfolio", label: "Portfolio" },
+  { href: "/rewards", label: "Rewards" },
 ]
 
 export function getActiveSiteNav(pathname: string): SiteNavLink {
