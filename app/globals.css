@@ -227,6 +227,75 @@
   }
 }
 
+@keyframes mobile-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobile-sheet-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+}
+
+@media (max-width: 639px) {
+  .mobile-bottom-sheet {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    transform: none;
+    overflow: hidden;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-left-radius: 1.75rem;
+    border-top-right-radius: 1.75rem;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: min(86dvh, calc(100dvh - 2.75rem));
+    animation-duration: 280ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, opacity;
+  }
+
+  .mobile-bottom-sheet-dragging {
+    transition: none !important;
+  }
+
+  .mobile-bottom-sheet-handle {
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .mobile-bottom-sheet-handle:active {
+    cursor: grabbing;
+  }
+
+  .mobile-bottom-sheet[data-state="open"] {
+    animation-name: mobile-sheet-in;
+  }
+
+  .mobile-bottom-sheet[data-state="closed"] {
+    animation-name: mobile-sheet-out;
+  }
+}
+
 /* Premium depth: soft lift in light mode, inset edge in dark */
 .surface-elevated {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
