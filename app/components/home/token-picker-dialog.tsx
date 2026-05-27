@@ -79,6 +79,14 @@ export function TokenPickerDialog({
       (token) => token.symbol.toLowerCase().includes(normalizedQuery) || token.name.toLowerCase().includes(normalizedQuery),
     )
   }, [query])
+  const aaveFooterNote = (
+    <>
+      Powered by Aave v4.{" "}
+      <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
+        Learn More
+      </a>
+    </>
+  )
 
   return (
     <Dialog
@@ -170,6 +178,10 @@ export function TokenPickerDialog({
                 No tokens match that search.
               </div>
             ) : null}
+          </div>
+
+          <div className="border-t border-border px-5 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 text-center text-[12px] text-muted-foreground">
+            {aaveFooterNote}
           </div>
         </div>
       </DialogContent>
