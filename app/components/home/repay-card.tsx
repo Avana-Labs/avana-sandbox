@@ -7,6 +7,7 @@ import {
   formatCompactUsd,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
+import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
 import { PrimaryCardButton } from "./shared"
 
@@ -50,7 +51,7 @@ export function CompactRepayCard({
               type="text"
               inputMode="decimal"
               value={amount}
-              onChange={(event) => onAmountChange(event.target.value)}
+              onChange={(event) => onAmountChange(sanitizeNumericInput(event.target.value))}
               placeholder="0"
               className="no-number-spinner w-[min(100%,12ch)] bg-transparent text-center font-compact text-[clamp(3.2rem,9vw,4.8rem)] font-medium leading-none tracking-[-0.05em] text-foreground outline-none placeholder:text-muted-foreground/20"
             />

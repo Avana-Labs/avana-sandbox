@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react"
 import { HOME_BORROW_TOKENS, type BorrowPreview, type HomeBorrowToken, type HomeCollateralPool } from "@/app/lib/home-sim"
+import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { Button } from "@/components/ui/button"
 import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
 
@@ -42,7 +43,7 @@ export function HomeBorrowPanel({
               type="text"
               inputMode="decimal"
               value={amount}
-              onChange={(event) => onAmountChange(event.target.value)}
+              onChange={(event) => onAmountChange(sanitizeNumericInput(event.target.value))}
               placeholder="0"
               className="w-[min(100%,12ch)] bg-transparent text-center font-compact text-[clamp(3.2rem,9vw,4.8rem)] font-medium leading-none tracking-[-0.05em] text-foreground outline-none placeholder:text-muted-foreground/20"
               aria-label="Borrow amount"
