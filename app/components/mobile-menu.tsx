@@ -131,13 +131,13 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   const currentCurrency = CURRENCY_OPTIONS.find((option) => option.code === currency) ?? CURRENCY_OPTIONS[0]
   const lightModeEnabled = mounted ? resolvedTheme === "light" : false
   const isVisible = open && isShown
+  const isSelectorSheetOpen = view !== "root"
 
   const rootSettingsClass =
     "flex w-full items-center justify-between gap-4 text-left text-[1.2rem] font-medium leading-[1.14] text-foreground/92"
   const rootSettingsLabelClass = "flex items-center gap-3"
   const rootSettingsIconClass = `h-[1.15rem] w-[1.15rem] stroke-[1.9] ${accentClass}`
   const dividerClass = "border-[#01AACF]/25 dark:border-[#01AACF]/35"
-  const selectorPanelClass = `rounded-[1.75rem] border ${dividerClass} bg-background px-5 py-5`
   const introDelay = (index: number) => `${120 + index * 35}ms`
   const settingsIntroStyle = (index: number) =>
     settingsIntroActive
@@ -272,7 +272,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
   function renderPanelHeader(title: string, backView: MobileMenuView) {
     return (
-      <div className="mb-5 flex items-center gap-3">
+      <div className="mb-5 flex items-center gap-3 border-b border-border px-5 pb-4 pt-8">
         <button
           type="button"
           onClick={() => setView(backView)}
@@ -286,11 +286,40 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     )
   }
 
-  function renderLanguageList() {
+  function renderSelectorSheet(title: string, backView: MobileMenuView, content: ReactNode) {
     return (
-      <div className={selectorPanelClass}>
-        {renderPanelHeader("Language", "root")}
-        <ul className="space-y-1">
+      <>
+        <button
+          type="button"
+          aria-label={`Close ${title.toLowerCase()} sheet`}
+          onClick={() => setView("root")}
+          className={`absolute inset-0 bg-black/35 backdrop-blur-sm transition-opacity duration-200 ${
+            isSelectorSheetOpen ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        <div
+          className={`absolute inset-x-0 bottom-0 max-h-[min(82dvh,calc(100dvh-4rem))] overflow-hidden rounded-t-[1.75rem] border border-b-0 border-border bg-background shadow-[0_-24px_64px_rgba(15,23,42,0.18)] transition-transform duration-300 ease-out ${
+            isSelectorSheetOpen ? "translate-y-0" : "translate-y-full"
+          }`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+        >
+          <div className="absolute left-1/2 top-3 h-1.5 w-16 -translate-x-1/2 rounded-full bg-foreground/20" />
+          {renderPanelHeader(title, backView)}
+          <div className="max-h-[calc(min(82dvh,calc(100dvh-4rem))-6.5rem)] overflow-y-auto px-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            {content}
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  function renderLanguageList() {
+    return renderSelectorSheet(
+      "Language",
+      "root",
+      <ul className="space-y-1">
           {LANGUAGE_OPTIONS.map((option) => (
             <li key={option.code}>
               <button
@@ -306,16 +335,15 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               </button>
             </li>
           ))}
-        </ul>
-      </div>
+      </ul>,
     )
   }
 
   function renderCurrencyList() {
-    return (
-      <div className={selectorPanelClass}>
-        {renderPanelHeader("Currency", "root")}
-        <ul className="space-y-1">
+    return renderSelectorSheet(
+      "Currency",
+      "root",
+      <ul className="space-y-1">
           {CURRENCY_OPTIONS.map((option) => (
             <li key={option.code}>
               <button
@@ -334,8 +362,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               </button>
             </li>
           ))}
-        </ul>
-      </div>
+      </ul>,
     )
   }
 
@@ -395,12 +422,13 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
           aria-label="Mobile navigation"
           className={`h-[calc(100dvh-4rem)] overflow-y-auto px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
             isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
-          }`}
+          } ${isSelectorSheetOpen ? "pointer-events-none opacity-35 blur-[1px]" : ""}`}
         >
-          {view === "root" ? renderRootMenu() : null}
-          {view === "language" ? renderLanguageList() : null}
-          {view === "currency" ? renderCurrencyList() : null}
+          {renderRootMenu()}
         </nav>
+
+        {view === "language" ? renderLanguageList() : null}
+        {view === "currency" ? renderCurrencyList() : null}
       </div>
     </>
   )

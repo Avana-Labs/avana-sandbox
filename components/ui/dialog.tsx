@@ -31,26 +31,132 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-surface-raised p-5 shadow-elev-3 duration-150 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-radius-md',
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground opacity-70 transition-colors hover:bg-surface-inset hover:text-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:pointer-events-none">
-        <X className="h-3.5 w-3.5" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-))
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    hideClose?: boolean
+  }
+>(({ className, children, hideClose = false, ...props }, ref) => {
+  const [dragOffset, setDragOffset] = React.useState(0)
+  const [isDragging, setIsDragging] = React.useState(false)
+  const closeButtonRef = React.useRef<HTMLButtonElement | null>(null)
+  const dragStateRef = React.useRef<{
+    pointerId: number
+    startY: number
+    offset: number
+  } | null>(null)
+
+  const composedRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      if (typeof ref === 'function') {
+        ref(node)
+      } else if (ref) {
+        ref.current = node
+      }
+    },
+    [ref],
+  )
+
+  const endDrag = React.useCallback(
+    (shouldClose: boolean) => {
+      dragStateRef.current = null
+      setIsDragging(false)
+      setDragOffset(0)
+
+      if (shouldClose) {
+        closeButtonRef.current?.click()
+      }
+    },
+    [],
+  )
+
+  const handlePointerDown = React.useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (window.innerWidth >= 640) {
+        return
+      }
+
+      dragStateRef.current = {
+        pointerId: event.pointerId,
+        startY: event.clientY,
+        offset: dragOffset,
+      }
+      setIsDragging(true)
+      event.currentTarget.setPointerCapture(event.pointerId)
+    },
+    [dragOffset],
+  )
+
+  const handlePointerMove = React.useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const dragState = dragStateRef.current
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return
+    }
+
+    const nextOffset = event.clientY - dragState.startY + dragState.offset
+    setDragOffset(Math.min(240, Math.max(-32, nextOffset)))
+  }, [])
+
+  const handlePointerUp = React.useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const dragState = dragStateRef.current
+      if (!dragState || dragState.pointerId !== event.pointerId) {
+        return
+      }
+
+      event.currentTarget.releasePointerCapture(event.pointerId)
+      endDrag(dragOffset > 120)
+    },
+    [dragOffset, endDrag],
+  )
+
+  const handlePointerCancel = React.useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const dragState = dragStateRef.current
+      if (!dragState || dragState.pointerId !== event.pointerId) {
+        return
+      }
+
+      endDrag(false)
+    },
+    [endDrag],
+  )
+
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={composedRef}
+        className={cn(
+          'mobile-bottom-sheet fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-surface-raised p-5 pt-10 shadow-elev-3 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 sm:rounded-radius-md sm:p-5 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
+          isDragging ? 'mobile-bottom-sheet-dragging' : '',
+          className,
+        )}
+        style={dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined}
+        {...props}
+      >
+        <div
+          className="mobile-bottom-sheet-handle absolute inset-x-0 top-0 z-10 flex h-10 items-start justify-center pt-3 sm:hidden"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
+        >
+          <div className="h-1.5 w-16 rounded-full bg-foreground/22" />
+        </div>
+        {children}
+        <DialogPrimitive.Close
+          ref={closeButtonRef}
+          className={cn(
+            'absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground opacity-70 transition-colors hover:bg-surface-inset hover:text-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:pointer-events-none',
+            hideClose ? 'pointer-events-none opacity-0' : '',
+          )}
+        >
+          <X className="h-3.5 w-3.5" />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  )
+})
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
 const DialogHeader = ({
