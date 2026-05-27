@@ -11,6 +11,7 @@ type HomeBorrowPanelProps = {
   token: HomeBorrowToken | null
   amount: string
   preview: BorrowPreview
+  submitLabel?: string
   onAmountChange: (value: string) => void
   onOpenPoolSheet: () => void
   onOpenTokenSheet: () => void
@@ -22,6 +23,7 @@ export function HomeBorrowPanel({
   token,
   amount,
   preview,
+  submitLabel,
   onAmountChange,
   onOpenPoolSheet,
   onOpenTokenSheet,
@@ -103,7 +105,7 @@ export function HomeBorrowPanel({
         disabled={!preview.isValid || preview.isEmpty}
         onClick={onSubmit}
       >
-        {preview.ctaLabel}
+        {submitLabel ?? preview.ctaLabel}
       </Button>
     </div>
   )
