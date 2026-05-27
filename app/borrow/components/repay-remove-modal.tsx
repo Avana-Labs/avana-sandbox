@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import {
   calculateRepayPreview,
   formatHealthFactor,
@@ -260,12 +260,6 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
               {ctaLabel}
             </PillButton>
           </div>
-          <DialogClose className="absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground">
-            <span className="sr-only">Close</span>
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
-              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </DialogClose>
       </DialogContent>
     </Dialog>
   )
