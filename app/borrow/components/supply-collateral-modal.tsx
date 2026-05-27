@@ -43,19 +43,23 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
     }
   }, [open, context])
 
-  const pool = context?.pool ?? ({} as BorrowPoolRow)
-  const spoke = getSpokeById(pool.spoke)
-  const positionUsd = pool.collateralExampleUsd
-  const borrowPower = positionUsd * (pool.ltv / 100)
+  const pool = context?.pool
+  const spoke = getSpokeById(pool?.spoke ?? "uni-v2")
+  const positionUsd = pool?.collateralExampleUsd ?? 0
+  const borrowPower = positionUsd * ((pool?.ltv ?? 0) / 100)
   const borrowAprEst = spoke.aprApprox
-  const riskPremiumPct = pool.riskPremiumBps / 100
-  const feesApy = (pool.aprMin + pool.aprMax) / 2
-  const pairLabel = `${pool.visuals[0].symbol}/${pool.visuals[1].symbol} LP`
+  const riskPremiumPct = (pool?.riskPremiumBps ?? 0) / 100
+  const feesApy = ((pool?.aprMin ?? 0) + (pool?.aprMax ?? 0)) / 2
+  const visuals = pool?.visuals ?? []
+  const [visualA, visualB] = visuals
+  const pairLabel = visualA && visualB ? `${visualA.symbol}/${visualB.symbol} LP` : "LP position"
 
   useEffect(() => {
     if (stage !== "processing") return
+    if (!pool) return
 
     const timer = window.setTimeout(() => {
+      if (!pool) return
       onConfirm({
         pool,
         amountUsd: positionUsd,
@@ -68,7 +72,7 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
     return () => window.clearTimeout(timer)
   }, [borrowPower, feesApy, onConfirm, pool, positionUsd, stage])
 
-  if (!context) return null
+  if (!context || !pool) return null
 
   const handleClose = () => {
     if (stage === "processing") return
@@ -92,8 +96,8 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
               <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="flex items-center">
-                    <TokenBubble visual={pool.visuals[0]} size="md" />
-                    <TokenBubble visual={pool.visuals[1]} size="md" className="-ml-2" />
+                    {visualA ? <TokenBubble visual={visualA} size="md" /> : null}
+                    {visualB ? <TokenBubble visual={visualB} size="md" className="-ml-2" /> : null}
                   </div>
                   <div className="min-w-0">
                     <div className="text-[14px] font-medium text-foreground">{pairLabel}</div>
@@ -139,10 +143,10 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
             amountLabel={formatUsdExact(positionUsd)}
             title="Collateral posted"
             subtitle="Collateral post completed."
-            visual={
+              visual={
               <div className="flex items-center">
-                <TokenBubble visual={pool.visuals[0]} size="md" />
-                <TokenBubble visual={pool.visuals[1]} size="md" className="-ml-2" />
+                {visualA ? <TokenBubble visual={visualA} size="md" /> : null}
+                {visualB ? <TokenBubble visual={visualB} size="md" className="-ml-2" /> : null}
               </div>
             }
             rows={[
