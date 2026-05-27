@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -31,10 +30,8 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
-    hideClose?: boolean
-  }
->(({ className, children, hideClose = false, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => {
   const [dragOffset, setDragOffset] = React.useState(0)
   const [isDragging, setIsDragging] = React.useState(false)
   const contentRef = React.useRef<HTMLDivElement | null>(null)
@@ -59,14 +56,17 @@ const DialogContent = React.forwardRef<
   )
 
   const endDrag = React.useCallback(
-    (shouldClose: boolean) => {
+    (shouldClose: boolean, finalOffset: number) => {
       dragStateRef.current = null
       setIsDragging(false)
-      setDragOffset(0)
 
       if (shouldClose) {
+        setDragOffset(0)
         closeButtonRef.current?.click()
+        return
       }
+
+      setDragOffset(Math.max(0, finalOffset))
     },
     [],
   )
@@ -98,7 +98,7 @@ const DialogContent = React.forwardRef<
 
     const nextOffset = event.clientY - dragState.startY + dragState.offset
     dragState.moved = dragState.moved || Math.abs(nextOffset) > 8
-    setDragOffset(Math.min(320, Math.max(-36, nextOffset)))
+    setDragOffset(Math.min(320, Math.max(0, nextOffset)))
     event.preventDefault()
   }, [])
 
@@ -113,7 +113,7 @@ const DialogContent = React.forwardRef<
       const contentHeight = contentRef.current?.offsetHeight ?? 0
       const closeThreshold = Math.max(180, contentHeight * 0.32)
       const shouldClose = dragState.moved && dragOffset > closeThreshold
-      endDrag(shouldClose)
+      endDrag(shouldClose, dragOffset)
       event.preventDefault()
     },
     [dragOffset, endDrag],
@@ -126,10 +126,10 @@ const DialogContent = React.forwardRef<
         return
       }
 
-      endDrag(false)
+      endDrag(false, dragOffset)
       event.preventDefault()
     },
-    [endDrag],
+    [dragOffset, endDrag],
   )
 
   return (
@@ -138,7 +138,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={composedRef}
         className={cn(
-          'mobile-bottom-sheet fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-surface-raised p-5 pt-10 shadow-elev-3 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 sm:rounded-radius-md sm:p-5 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
+          'mobile-bottom-sheet fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-surface-raised p-5 shadow-elev-3 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 sm:rounded-radius-md sm:p-5 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
           isDragging ? 'mobile-bottom-sheet-dragging' : '',
           className,
         )}
@@ -152,17 +152,15 @@ const DialogContent = React.forwardRef<
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerCancel}
         >
-          <div className="h-1.5 w-16 rounded-full bg-foreground/22" />
+          <div className="h-1.5 w-[4.5rem] rounded-full bg-foreground/35 shadow-[0_1px_0_rgba(255,255,255,0.18)_inset]" />
         </div>
         {children}
         <DialogPrimitive.Close
           ref={closeButtonRef}
-          className={cn(
-            'absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground opacity-70 transition-colors hover:bg-surface-inset hover:text-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:pointer-events-none',
-            hideClose ? 'pointer-events-none opacity-0' : '',
-          )}
+          className="pointer-events-none absolute opacity-0"
+          aria-hidden="true"
+          tabIndex={-1}
         >
-          <X className="h-3.5 w-3.5" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
