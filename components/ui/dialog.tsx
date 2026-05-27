@@ -138,7 +138,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={composedRef}
         className={cn(
-          'mobile-bottom-sheet fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-surface-raised p-5 shadow-elev-3 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 sm:rounded-radius-md sm:p-5 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
+          'mobile-bottom-sheet mobile-dialog-sheet fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-surface-raised p-5 shadow-elev-3 duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 sm:rounded-radius-md sm:p-5 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
           isDragging ? 'mobile-bottom-sheet-dragging' : '',
           className,
         )}
