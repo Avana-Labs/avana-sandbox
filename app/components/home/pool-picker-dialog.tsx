@@ -52,6 +52,14 @@ export function PoolPickerDialog({
   const ltvUsedPercent = focusedPool.borrowPowerUsd > 0
     ? Math.min(100, (focusedDebt / focusedPool.borrowPowerUsd) * 100)
     : 0
+  const aaveFooterNote = (
+    <>
+      Powered by Aave v4.{" "}
+      <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
+        Learn More
+      </a>
+    </>
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,10 +164,13 @@ export function PoolPickerDialog({
           <Button
             type="button"
             onClick={() => onSelect(focusedPoolId)}
-            className="h-10 w-full rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
+            className="h-11 w-full rounded-radius-sm bg-[hsl(var(--brand))] text-[13px] font-medium text-white shadow-elev-1 transition-colors hover:bg-[hsl(var(--brand))]/90"
           >
             Use {focusedPool.name}
           </Button>
+          <div className="mt-3 text-center text-[12px] text-muted-foreground">
+            {aaveFooterNote}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
