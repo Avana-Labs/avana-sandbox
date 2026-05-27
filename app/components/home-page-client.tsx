@@ -27,7 +27,11 @@ import { useMediaQuery } from "@/app/lib/use-media-query"
 import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TransactionFlowPanel, type TransactionFlowStage, type TransactionSuccessState } from "@/app/components/transaction-flow"
+import {
+  TransactionFlowPanel,
+  type TransactionFlowStage,
+  type TransactionSuccessState,
+} from "@/app/components/transaction-flow"
 import { CompactClaimCard } from "./home/claim-card"
 import { CompactRemoveCard } from "./home/remove-card"
 import { CompactRepayCard } from "./home/repay-card"
@@ -617,6 +621,8 @@ export function HomePageClient() {
 
       <Dialog open={showMobileFlow} onOpenChange={(open) => !open && closeFlow()}>
         <DialogContent
+          fullScreenOnMobile
+          hideMobileHandle
           className="w-[calc(100vw-1.5rem)] max-w-md overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
         >
           <DialogTitle className="sr-only">Transaction preview</DialogTitle>
