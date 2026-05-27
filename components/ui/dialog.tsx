@@ -37,15 +37,18 @@ const DialogContent = React.forwardRef<
 >(({ className, children, hideClose = false, ...props }, ref) => {
   const [dragOffset, setDragOffset] = React.useState(0)
   const [isDragging, setIsDragging] = React.useState(false)
+  const contentRef = React.useRef<HTMLDivElement | null>(null)
   const closeButtonRef = React.useRef<HTMLButtonElement | null>(null)
   const dragStateRef = React.useRef<{
     pointerId: number
     startY: number
     offset: number
+    moved: boolean
   } | null>(null)
 
   const composedRef = React.useCallback(
     (node: HTMLDivElement | null) => {
+      contentRef.current = node
       if (typeof ref === 'function') {
         ref(node)
       } else if (ref) {
@@ -78,9 +81,11 @@ const DialogContent = React.forwardRef<
         pointerId: event.pointerId,
         startY: event.clientY,
         offset: dragOffset,
+        moved: false,
       }
       setIsDragging(true)
       event.currentTarget.setPointerCapture(event.pointerId)
+      event.preventDefault()
     },
     [dragOffset],
   )
@@ -92,7 +97,9 @@ const DialogContent = React.forwardRef<
     }
 
     const nextOffset = event.clientY - dragState.startY + dragState.offset
-    setDragOffset(Math.min(240, Math.max(-32, nextOffset)))
+    dragState.moved = dragState.moved || Math.abs(nextOffset) > 8
+    setDragOffset(Math.min(320, Math.max(-36, nextOffset)))
+    event.preventDefault()
   }, [])
 
   const handlePointerUp = React.useCallback(
@@ -103,7 +110,11 @@ const DialogContent = React.forwardRef<
       }
 
       event.currentTarget.releasePointerCapture(event.pointerId)
-      endDrag(dragOffset > 120)
+      const contentHeight = contentRef.current?.offsetHeight ?? 0
+      const closeThreshold = Math.max(180, contentHeight * 0.32)
+      const shouldClose = dragState.moved && dragOffset > closeThreshold
+      endDrag(shouldClose)
+      event.preventDefault()
     },
     [dragOffset, endDrag],
   )
@@ -116,6 +127,7 @@ const DialogContent = React.forwardRef<
       }
 
       endDrag(false)
+      event.preventDefault()
     },
     [endDrag],
   )
