@@ -148,7 +148,7 @@ export function ExternalLinkGuard() {
             <X className="h-4 w-4" aria-hidden />
           </DialogClose>
 
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-4">
             <div className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-background text-[#01AACF] shadow-sm">
               <ExternalLink className="h-5 w-5" strokeWidth={1.9} aria-hidden />
             </div>
@@ -162,9 +162,14 @@ export function ExternalLinkGuard() {
             </DialogHeader>
           </div>
 
-          <div className="rounded-2xl border border-border bg-background/70 px-4 py-3 text-[13px] leading-5 text-muted-foreground">
-            Avana does not control third-party sites and is not responsible for their content, security, or privacy
-            practices.
+          <div className="border-t border-border pt-4">
+            <div className="flex items-start gap-3 rounded-[18px] bg-surface-inset/40 px-4 py-3">
+              <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#01AACF]" aria-hidden />
+              <p className="text-[13px] leading-5 text-muted-foreground">
+                Avana does not control third-party sites and is not responsible for their content, security, or
+                privacy practices.
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
@@ -172,14 +177,14 @@ export function ExternalLinkGuard() {
               type="button"
               variant="outline"
               onClick={() => setPendingLink(null)}
-              className="w-full rounded-full sm:w-auto"
+              className="w-full rounded-full border-border bg-background/80 text-foreground hover:bg-surface-inset sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="button"
               onClick={openExternalLink}
-              className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
+              className="w-full rounded-full bg-brand text-brand-foreground shadow-none hover:bg-brand/90 sm:w-auto"
             >
               Continue
               <ArrowUpRight className="ml-2 h-4 w-4" aria-hidden />
