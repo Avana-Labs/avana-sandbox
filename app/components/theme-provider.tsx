@@ -22,6 +22,19 @@ function getSystemTheme() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 }
 
+function getStoredTheme(storageKey: string, fallback: Theme) {
+  if (typeof window === "undefined") {
+    return fallback
+  }
+
+  const storedTheme = window.localStorage.getItem(storageKey) as Theme | null
+  if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "system") {
+    return storedTheme
+  }
+
+  return fallback
+}
+
 function applyThemeClass(resolvedTheme: "light" | "dark") {
   const root = document.documentElement
   root.classList.toggle("dark", resolvedTheme === "dark")
@@ -37,26 +50,17 @@ type ThemeProviderProps = React.PropsWithChildren<{
 }>
 
 export function ThemeProvider({ children, defaultTheme = "system", storageKey = THEME_STORAGE_KEY }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(defaultTheme)
+  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme(storageKey, defaultTheme))
   const [systemTheme, setSystemTheme] = useState<"light" | "dark">(() => getSystemTheme())
-  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    const storedTheme = window.localStorage.getItem(storageKey) as Theme | null
-    if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "system") {
-      setThemeState(storedTheme)
-    }
+    setThemeState(getStoredTheme(storageKey, defaultTheme))
     setSystemTheme(getSystemTheme())
-    setHydrated(true)
-  }, [storageKey])
+  }, [defaultTheme, storageKey])
 
   useEffect(() => {
-    if (!hydrated) {
-      return
-    }
-
     window.localStorage.setItem(storageKey, theme)
-  }, [hydrated, storageKey, theme])
+  }, [storageKey, theme])
 
   useEffect(() => {
     if (typeof window === "undefined") {
