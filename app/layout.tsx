@@ -6,6 +6,7 @@ import { Header } from "./components/header"
 import { Toaster } from "sonner"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
+import { ExternalLinkGuard } from "./components/external-link-guard"
 
 const themeBootstrapScript = `
 (() => {
@@ -161,6 +162,7 @@ export default function RootLayout({
               <Header />
               <div className="flex-1">{children}</div>
               <Toaster />
+              <ExternalLinkGuard />
             </div>
           </DisplayPreferencesProvider>
         </ThemeProvider>
