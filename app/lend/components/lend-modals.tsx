@@ -63,7 +63,11 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
   return (
     <Dialog open={modalState.isOpen} onOpenChange={(open) => !open && handleClose()}>
       {token && (
-        <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden border-border bg-surface-raised shadow-elev-3 rounded-radius-md">
+        <DialogContent
+          fullScreenOnMobile
+          hideMobileHandle
+          className="sm:max-w-[440px] p-0 overflow-hidden border-border bg-surface-raised shadow-elev-3 rounded-radius-md"
+        >
           <DialogTitle className="sr-only">
             {modalState.type === "deposit" ? "Deposit" : "Withdraw"} {token.symbol}
           </DialogTitle>

@@ -83,13 +83,15 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? handleClose() : null)}>
       <DialogContent
+        fullScreenOnMobile
+        hideMobileHandle
         className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md overflow-y-auto rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
       >
-        <DialogTitle className="sr-only">Post as collateral</DialogTitle>
+        <DialogTitle className="sr-only">Pledge collateral</DialogTitle>
         {stage === "entry" ? (
           <>
             <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-              <span className="text-[13px] font-medium tracking-tight text-foreground">Post as collateral</span>
+              <span className="text-[13px] font-medium tracking-tight text-foreground">Pledge collateral</span>
             </div>
 
             <div className="space-y-4 px-5 py-4">
@@ -132,17 +134,17 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
                 onClick={() => setStage("review")}
                 className="w-full rounded-radius-sm bg-accent-primary px-5 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
               >
-                Review collateral post
+                Review pledge
               </button>
             </div>
           </>
         ) : (
           <TransactionFlowPanel
             stage={stage as TransactionFlowStage}
-            actionLabel="collateral post"
+            actionLabel="pledging collateral"
             amountLabel={formatUsdExact(positionUsd)}
-            title="Collateral posted"
-            subtitle="Collateral post completed."
+            title="Collateral pledged"
+            subtitle="Collateral is now available for borrowing."
               visual={
               <div className="flex items-center">
                 {visualA ? <TokenBubble visual={visualA} size="md" /> : null}

@@ -28,10 +28,15 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+  fullScreenOnMobile?: boolean
+  hideMobileHandle?: boolean
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+  DialogContentProps
+>(({ className, children, fullScreenOnMobile = false, hideMobileHandle = false, ...props }, ref) => {
   const [dragOffset, setDragOffset] = React.useState(0)
   const [isDragging, setIsDragging] = React.useState(false)
   const contentRef = React.useRef<HTMLDivElement | null>(null)
@@ -139,21 +144,25 @@ const DialogContent = React.forwardRef<
         ref={composedRef}
         className={cn(
           'mobile-bottom-sheet mobile-dialog-sheet fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-surface-raised p-5 shadow-elev-3 duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 sm:rounded-radius-md sm:p-5 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
+          fullScreenOnMobile &&
+            'max-sm:left-0 max-sm:top-0 max-sm:h-[100dvh] max-sm:w-screen max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:border-0 max-sm:p-0 max-sm:shadow-none max-sm:overflow-hidden',
           isDragging ? 'mobile-bottom-sheet-dragging' : '',
           className,
         )}
         style={dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined}
         {...props}
       >
-        <div
-          className="mobile-bottom-sheet-handle absolute inset-x-0 top-0 z-10 flex h-10 items-start justify-center pt-3 sm:hidden"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerCancel}
-        >
-          <div className="h-1.5 w-[4.5rem] rounded-full bg-foreground/35 shadow-[0_1px_0_rgba(255,255,255,0.18)_inset]" />
-        </div>
+        {!fullScreenOnMobile && !hideMobileHandle ? (
+          <div
+            className="mobile-bottom-sheet-handle absolute inset-x-0 top-0 z-10 flex h-10 items-start justify-center pt-3 sm:hidden"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
+          >
+            <div className="h-1.5 w-[4.5rem] rounded-full bg-foreground/35 shadow-[0_1px_0_rgba(255,255,255,0.18)_inset]" />
+          </div>
+        ) : null}
         {children}
         <DialogPrimitive.Close
           ref={closeButtonRef}

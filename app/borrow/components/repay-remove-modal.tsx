@@ -140,6 +140,8 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? handleClose() : null)}>
       <DialogContent
+        fullScreenOnMobile
+        hideMobileHandle
         className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md overflow-y-auto rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
       >
         <DialogTitle className="sr-only">{isRemove ? "Remove liquidity" : "Repay debt"}</DialogTitle>

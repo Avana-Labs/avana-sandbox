@@ -188,9 +188,11 @@ export function BorrowModal({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? handleClose() : null)}>
-    <DialogContent
-      className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md overflow-y-auto rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
-    >
+      <DialogContent
+        fullScreenOnMobile
+        hideMobileHandle
+        className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md overflow-y-auto rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
+      >
         <DialogTitle className="sr-only">Borrow against collateral</DialogTitle>
         {stage === "entry" ? (
           <>
