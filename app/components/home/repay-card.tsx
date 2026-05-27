@@ -16,6 +16,7 @@ export function CompactRepayCard({
   debtUsd,
   amount,
   preview,
+  submitLabel,
   onOpenPoolDialog,
   onAmountChange,
   onSetMax,
@@ -25,6 +26,7 @@ export function CompactRepayCard({
   debtUsd: number
   amount: string
   preview: ReturnType<typeof calculateRepayPreview>
+  submitLabel?: string
   onOpenPoolDialog: () => void
   onAmountChange: (value: string) => void
   onSetMax: () => void
@@ -101,7 +103,7 @@ export function CompactRepayCard({
       </div>
 
       <PrimaryCardButton disabled={!preview.isValid || preview.isEmpty} onClick={onSubmit}>
-        {preview.ctaLabel}
+        {submitLabel ?? preview.ctaLabel}
       </PrimaryCardButton>
     </div>
   )
