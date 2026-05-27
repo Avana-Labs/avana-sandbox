@@ -1,13 +1,12 @@
 "use client"
 
-import { ArrowUpRight, ExternalLink, X } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { ArrowUpRight, X } from "lucide-react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -115,21 +114,6 @@ export function ExternalLinkGuard() {
     window.open(href, openTarget, "noopener,noreferrer")
   }
 
-  const description = useMemo(() => {
-    if (!pendingLink) {
-      return null
-    }
-
-    return (
-      <>
-        You are about to leave Avana and open a third-party website.
-        <span className="mt-2 block text-[13px] text-muted-foreground">
-          Destination: <span className="font-medium text-foreground">{pendingLink.host}</span>
-        </span>
-      </>
-    )
-  }, [pendingLink])
-
   return (
     <Dialog
       open={pendingLink !== null}
@@ -139,8 +123,8 @@ export function ExternalLinkGuard() {
         }
       }}
     >
-      <DialogContent className="overflow-hidden rounded-[24px] border-border bg-surface-raised p-0 shadow-elev-3 sm:max-w-[520px]">
-        <div className="relative flex flex-col gap-6 px-5 pb-5 pt-12 sm:px-6 sm:pb-6 sm:pt-6">
+      <DialogContent className="overflow-hidden rounded-[18px] border-border bg-background p-0 shadow-elev-3 sm:max-w-[600px]">
+        <div className="relative flex flex-col px-5 pb-5 pt-8 sm:px-7 sm:pb-6 sm:pt-7">
           <DialogClose
             className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             aria-label="Close dialog"
@@ -148,43 +132,25 @@ export function ExternalLinkGuard() {
             <X className="h-4 w-4" aria-hidden />
           </DialogClose>
 
-          <div className="flex items-start gap-4">
-            <div className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-background text-[#01AACF] shadow-sm">
-              <ExternalLink className="h-5 w-5" strokeWidth={1.9} aria-hidden />
-            </div>
-            <DialogHeader className="space-y-2 text-left">
-              <DialogTitle className="text-[24px] font-medium leading-tight tracking-[-0.03em] text-foreground sm:text-[28px]">
-                Third-Party Website
-              </DialogTitle>
-              <DialogDescription className="text-[15px] leading-6 text-muted-foreground">
-                {description}
-              </DialogDescription>
-            </DialogHeader>
+          <DialogHeader className="pb-5 text-left">
+            <DialogTitle className="text-[20px] font-medium leading-tight tracking-[-0.02em] text-foreground sm:text-[22px]">
+              Third-Party Website
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="border-t border-border pt-5">
+            <p className="max-w-[40rem] text-[14px] leading-6 text-muted-foreground sm:text-[15px]">
+              By clicking "Continue", you will leave the Avana website and access a website made available by an
+              independent third party. Avana is not responsible for the actions or content of any third-party
+              websites.
+            </p>
           </div>
 
-          <div className="border-t border-border pt-4">
-            <div className="flex items-start gap-3 rounded-[18px] bg-surface-inset/40 px-4 py-3">
-              <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#01AACF]" aria-hidden />
-              <p className="text-[13px] leading-5 text-muted-foreground">
-                Avana does not control third-party sites and is not responsible for their content, security, or
-                privacy practices.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setPendingLink(null)}
-              className="w-full rounded-full border-border bg-background/80 text-foreground hover:bg-surface-inset sm:w-auto"
-            >
-              Cancel
-            </Button>
+          <div className="border-t border-border pt-5">
             <Button
               type="button"
               onClick={openExternalLink}
-              className="w-full rounded-full bg-brand text-brand-foreground shadow-none hover:bg-brand/90 sm:w-auto"
+              className="h-10 w-full rounded-[10px] bg-[#01AACF] text-[14px] font-medium text-white shadow-none hover:bg-[#009dbd]"
             >
               Continue
               <ArrowUpRight className="ml-2 h-4 w-4" aria-hidden />
