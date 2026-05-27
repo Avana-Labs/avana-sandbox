@@ -5,6 +5,7 @@ import {
   calculateClaimPreview,
   formatUsd,
 } from "@/app/lib/home-sim"
+import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { PairVisual } from "@/app/components/home-workspace-primitives"
 import { cn } from "@/lib/utils"
 import { PrimaryCardButton } from "./shared"
@@ -14,6 +15,7 @@ export function CompactClaimCard({
   preview,
   claimableTotals,
   selections,
+  submitLabel,
   onToggleSelection,
   onAmountChange,
   onSetAll,
@@ -23,6 +25,7 @@ export function CompactClaimCard({
   preview: ReturnType<typeof calculateClaimPreview>
   claimableTotals: Record<string, number>
   selections: Record<string, boolean>
+  submitLabel?: string
   onToggleSelection: (positionId: string) => void
   onAmountChange: (value: string) => void
   onSetAll: () => void
@@ -49,7 +52,7 @@ export function CompactClaimCard({
               type="text"
               inputMode="decimal"
               value={amount}
-              onChange={(event) => onAmountChange(event.target.value)}
+              onChange={(event) => onAmountChange(sanitizeNumericInput(event.target.value))}
               placeholder="0"
               className="no-number-spinner w-[min(100%,12ch)] bg-transparent text-center font-compact text-[clamp(3.2rem,9vw,4.8rem)] font-medium leading-none tracking-[-0.05em] text-foreground outline-none placeholder:text-muted-foreground/20"
             />
@@ -99,7 +102,7 @@ export function CompactClaimCard({
       </div>
 
       <PrimaryCardButton disabled={!preview.hasSelection} onClick={onSubmit}>
-        {preview.ctaLabel}
+        {submitLabel ?? preview.ctaLabel}
       </PrimaryCardButton>
     </div>
   )

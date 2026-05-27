@@ -3,6 +3,7 @@
 import { RotateCcw } from "lucide-react"
 import type { HomeCollateralPool, RepayPreview } from "@/app/lib/home-sim"
 import { formatCompactUsd } from "@/app/lib/home-sim"
+import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { Button } from "@/components/ui/button"
 import { DetailList, PairVisual, PanelField, PremiumPanel, ValueBadge } from "@/app/components/home-workspace-primitives"
 import { cn } from "@/lib/utils"
@@ -93,7 +94,7 @@ export function HomeRepayPanel({
                   type="number"
                   inputMode="decimal"
                   value={amount}
-                  onChange={(event) => onAmountChange(event.target.value)}
+                  onChange={(event) => onAmountChange(sanitizeNumericInput(event.target.value))}
                   placeholder="0"
                   className="w-full bg-transparent font-data text-5xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/30"
                 />

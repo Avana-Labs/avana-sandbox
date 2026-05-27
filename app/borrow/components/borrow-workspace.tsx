@@ -7,7 +7,6 @@ import {
   BORROW_POOL_CATALOG,
   filterAssets,
   filterPools,
-  formatUsdExact,
   groupByDex,
   homePoolSpoke,
   homeVisualToBorrowVisual,
@@ -23,7 +22,6 @@ import {
   HOME_BORROW_TOKENS,
   HOME_COLLATERAL_POOLS,
   HOME_INITIAL_DEBTS,
-  formatHealthFactor,
   type HomeBorrowToken,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
@@ -35,7 +33,6 @@ import { DebtsPanel, type DebtRowContext } from "./debts-table"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./borrow-modal"
 import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "./repay-remove-modal"
 import { SupplyCollateralModal, type SupplyCollateralContext, type SupplyCollateralResult } from "./supply-collateral-modal"
-import { SuccessOverlay, type SuccessOverlayProps } from "./success-overlay"
 import { useLiveBorrowMarket } from "./use-live-borrow-market"
 
 type DebtsState = Record<string, number>
@@ -52,19 +49,6 @@ const ASSET_SORT_OPTIONS: SortOption[] = [
   { key: "utilization", label: "Utilization" },
   { key: "available", label: "Available" },
   { key: "totalBorrowed", label: "Total borrowed" },
-]
-
-const SUPPLY_SORT_OPTIONS: SortOption[] = [
-  { key: "collateral", label: "Collateral" },
-  { key: "borrowed", label: "Borrowed" },
-  { key: "hf", label: "Health factor" },
-  { key: "apr", label: "LP APR" },
-]
-
-const DEBT_SORT_OPTIONS: SortOption[] = [
-  { key: "borrowed", label: "Borrowed" },
-  { key: "hf", label: "Health factor" },
-  { key: "apr", label: "Borrow APR" },
 ]
 
 function computeHealthFactor(pool: HomeCollateralPool, debt: number): number | null {
@@ -162,10 +146,10 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
   const [poolSortDirection, setPoolSortDirection] = useState<"asc" | "desc">("desc")
   const [assetSortKey, setAssetSortKey] = useState<AssetSortKey>("apr")
   const [assetSortDirection, setAssetSortDirection] = useState<"asc" | "desc">("asc")
-  const [supplySortKey, setSupplySortKey] = useState<string>("collateral")
-  const [supplySortDirection, setSupplySortDirection] = useState<"asc" | "desc">("desc")
-  const [debtSortKey, setDebtSortKey] = useState<string>("borrowed")
-  const [debtSortDirection, setDebtSortDirection] = useState<"asc" | "desc">("desc")
+  const [supplySortKey] = useState<string>("collateral")
+  const [supplySortDirection] = useState<"asc" | "desc">("desc")
+  const [debtSortKey] = useState<string>("borrowed")
+  const [debtSortDirection] = useState<"asc" | "desc">("desc")
 
   const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
   const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
@@ -176,11 +160,6 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
     open: false,
     context: null,
   })
-  const [successState, setSuccessState] = useState<{ open: boolean; payload: Omit<SuccessOverlayProps, "open" | "onClose"> | null }>({
-    open: false,
-    payload: null,
-  })
-
   const { livePools, liveAssets, liveSupplyMetrics, liveDebtMetrics } = useLiveBorrowMarket(debts)
   const livePoolById = useMemo(() => new Map(livePools.map((pool) => [pool.id, pool])), [livePools])
   const liveAssetById = useMemo(() => new Map(liveAssets.map((asset) => [asset.id, asset])), [liveAssets])
@@ -372,6 +351,8 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
       id: pool.id,
       name: pool.name,
       venue: pool.venue,
+      feeTier: pool.category,
+      tvlUsd: pool.collateralUsd,
       spoke: spokeId,
       ltv: pool.maxLtv,
       dexes: [],
@@ -409,49 +390,11 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
   }, [])
 
   const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
-    setSupplyModal({ open: false, context: null })
-    setSuccessState({
-      open: true,
-      payload: {
-        title: "Posted as collateral",
-        subtitle: `${result.pool.name} LP · ${result.pool.venue}`,
-        amountLabel: formatUsdExact(result.amountUsd),
-        ringEmoji: "✓",
-        ringBgClass: "bg-emerald-100 text-emerald-700",
-        rows: [
-          { label: "Position", value: `${result.pool.name} LP · ${result.pool.venue}` },
-          { label: "Max LTV", value: `${result.pool.ltv}%`, tone: "text-emerald-600" },
-          { label: "Borrow power", value: formatUsdExact(result.borrowPowerUsd), tone: "text-emerald-600" },
-          { label: "APY", value: `${result.feesApy.toFixed(1)}% · LP keeps earning`, tone: "text-emerald-600" },
-        ],
-        primaryLabel: "Done",
-      },
-    })
+    void result
   }, [])
 
   const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
     setDebts((previous) => ({ ...previous, [result.pool.id]: (previous[result.pool.id] ?? 0) + result.amountUsd }))
-    setBorrowModal({ open: false, context: null })
-    setSuccessState({
-      open: true,
-      payload: {
-        title: "Borrow successful",
-        subtitle: `${result.pool.name} collateral`,
-        amountLabel: `${result.amountUsd.toFixed(0)} ${result.token.symbol}`,
-        ringEmoji: "✓",
-        ringBgClass: "bg-emerald-100 text-emerald-700",
-        rows: [
-          { label: "Against", value: `${result.pool.name} · ${formatUsdExact(result.pool.collateralUsd)}` },
-          { label: "Rate", value: `${result.token.borrowApr.toFixed(1)}% APR`, tone: "text-rose-600" },
-          {
-            label: "Health factor",
-            value: formatHealthFactor(result.healthFactorAfter),
-          },
-          { label: "Remaining power", value: formatUsdExact(result.remainingBorrowPowerUsd) },
-        ],
-        primaryLabel: "Done",
-      },
-    })
   }, [])
 
   const handleRepayRemoveConfirm = useCallback((result: RepayRemoveResult) => {
@@ -461,25 +404,6 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
         [result.pool.id]: Math.max(0, (previous[result.pool.id] ?? 0) - result.amountUsd),
       }))
     }
-    setRepayRemoveModal({ open: false, context: null })
-    setSuccessState({
-      open: true,
-      payload: {
-        title: result.mode === "repay" ? "Repay successful" : "Removed liquidity",
-        subtitle: `${result.pool.name}`,
-        amountLabel:
-          result.mode === "repay"
-            ? `-${formatUsdExact(result.amountUsd)}`
-            : `${(result.percent ?? 0).toFixed(0)}% · ${formatUsdExact(result.amountUsd)}`,
-        ringEmoji: result.mode === "repay" ? "↓" : "−",
-        ringBgClass: result.mode === "repay" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700",
-        rows: [
-          { label: "Position", value: result.pool.name },
-          { label: "Health factor", value: formatHealthFactor(result.healthFactorAfter) },
-        ],
-        primaryLabel: "Done",
-      },
-    })
   }, [])
 
   // Sort options per tab
@@ -601,18 +525,6 @@ export function BorrowWorkspace({ onTabChange, onSupplyStatsChange, onDebtsStats
         context={repayRemoveModal.context}
         onClose={() => setRepayRemoveModal({ open: false, context: null })}
         onConfirm={handleRepayRemoveConfirm}
-      />
-
-      <SuccessOverlay
-        open={successState.open}
-        onClose={() => setSuccessState({ open: false, payload: null })}
-        title={successState.payload?.title ?? ""}
-        subtitle={successState.payload?.subtitle}
-        amountLabel={successState.payload?.amountLabel ?? ""}
-        ringEmoji={successState.payload?.ringEmoji}
-        ringBgClass={successState.payload?.ringBgClass}
-        rows={successState.payload?.rows ?? []}
-        primaryLabel={successState.payload?.primaryLabel}
       />
     </section>
   )

@@ -1,8 +1,7 @@
 "use client"
 
-import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { Check } from "lucide-react"
-import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { PillButton } from "./atoms"
 
 export type SuccessRow = { label: string; value: string; tone?: string }
@@ -32,11 +31,10 @@ export function SuccessOverlay({
 }: SuccessOverlayProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : null)}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <DialogPrimitive.Content
-          className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 duration-150 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
-        >
+      <DialogContent
+        hideClose
+        className="w-[calc(100vw-1.5rem)] max-w-md overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
+      >
           <div className="border-b border-border px-5 pb-4 pt-5">
             <div className="flex items-start gap-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-xs border border-border bg-surface-inset text-accent-emphasis">
@@ -78,15 +76,7 @@ export function SuccessOverlay({
               {primaryLabel}
             </PillButton>
           </div>
-
-          <DialogClose className="absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground">
-            <span className="sr-only">Close</span>
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
-              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </DialogClose>
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
+      </DialogContent>
     </Dialog>
   )
 }
