@@ -15,6 +15,7 @@ export function CompactClaimCard({
   preview,
   claimableTotals,
   selections,
+  submitLabel,
   onToggleSelection,
   onAmountChange,
   onSetAll,
@@ -24,6 +25,7 @@ export function CompactClaimCard({
   preview: ReturnType<typeof calculateClaimPreview>
   claimableTotals: Record<string, number>
   selections: Record<string, boolean>
+  submitLabel?: string
   onToggleSelection: (positionId: string) => void
   onAmountChange: (value: string) => void
   onSetAll: () => void
@@ -100,7 +102,7 @@ export function CompactClaimCard({
       </div>
 
       <PrimaryCardButton disabled={!preview.hasSelection} onClick={onSubmit}>
-        {preview.ctaLabel}
+        {submitLabel ?? preview.ctaLabel}
       </PrimaryCardButton>
     </div>
   )

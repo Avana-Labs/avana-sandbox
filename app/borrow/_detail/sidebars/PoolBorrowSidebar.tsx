@@ -6,16 +6,14 @@ import type { PoolDetail } from "@/app/lib/borrow-detail"
 import {
   calculateBorrowPreview,
   formatCompactUsd,
-  formatHealthFactor,
   getBorrowTokenById,
   getPoolById,
   type HomeAssetVisual,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
 import { CompactBorrowCard } from "@/app/components/home/borrow-card"
-import { ActionSuccessDialog } from "@/app/components/home/action-success-dialog"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
-import type { HomeSuccessState } from "@/app/components/home/types"
+import { BorrowModal } from "@/app/borrow/components/borrow-modal"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -30,7 +28,7 @@ type Props = {
  * - The pool is LOCKED to the current detail page (home catalog entry if
  *   available, otherwise an adapter built from PoolDetail).
  * - The borrow token picker reuses the home `TokenPickerDialog`.
- * - Submission goes to the home `ActionSuccessDialog` for identical UX.
+ * - Submission opens the shared borrow modal so the flow matches home.
  */
 export function PoolBorrowSidebar({ detail, className }: Props) {
   const pool = React.useMemo(() => resolvePool(detail), [detail])
@@ -38,7 +36,7 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
   const [tokenId, setTokenId] = React.useState<string | null>(null)
   const [amount, setAmount] = React.useState("")
   const [tokenDialogOpen, setTokenDialogOpen] = React.useState(false)
-  const [successState, setSuccessState] = React.useState<HomeSuccessState | null>(null)
+  const [borrowModalOpen, setBorrowModalOpen] = React.useState(false)
 
   const token = React.useMemo(() => (tokenId ? getBorrowTokenById(tokenId) : null), [tokenId])
 
@@ -56,27 +54,7 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
       if (!token) toast.warning("Select a token to borrow")
       return
     }
-    setSuccessState({
-      emoji: "💎",
-      title: "Borrowed",
-      amount: `${formatCompactUsd(preview.amountUsd)} ${token.symbol}`,
-      description: "Your collateral is pulling weight. Funds are on the way.",
-      rows: [
-        { label: "Collateral", value: `${formatCompactUsd(pool.collateralUsd)} ${pool.name}` },
-        {
-          label: "Health factor",
-          value: formatHealthFactor(preview.healthFactor),
-          tone: preview.riskTone === "neutral" ? "default" : preview.riskTone,
-        },
-        {
-          label: "Remaining borrow power",
-          value: formatCompactUsd(preview.remainingBorrowPowerUsd),
-          tone: "positive",
-        },
-      ],
-    })
-    setAmount("")
-    toast.success(`Borrowed ${formatCompactUsd(preview.amountUsd)} ${token.symbol}`)
+    setBorrowModalOpen(true)
   }
 
   return (
@@ -99,6 +77,23 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
         />
       </aside>
 
+      <BorrowModal
+        open={borrowModalOpen}
+        context={{
+          pool,
+          currentDebtUsd: 0,
+          defaultTokenId: token?.id ?? undefined,
+        }}
+        initialAmount={amount}
+        initialTokenId={token?.id ?? null}
+        startStage="review"
+        onClose={() => setBorrowModalOpen(false)}
+        onConfirm={(result) => {
+          toast.success(`Borrowed ${formatCompactUsd(result.amountUsd)} ${result.token.symbol}`)
+          setAmount("")
+        }}
+      />
+
       <TokenPickerDialog
         open={tokenDialogOpen}
         onOpenChange={setTokenDialogOpen}
@@ -108,8 +103,6 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
           setTokenDialogOpen(false)
         }}
       />
-
-      <ActionSuccessDialog state={successState} onClose={() => setSuccessState(null)} />
     </>
   )
 }

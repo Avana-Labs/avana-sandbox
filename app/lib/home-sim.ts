@@ -503,10 +503,10 @@ export function calculateBorrowPreview(pool: HomeCollateralPool, amountUsd: numb
 
   if (riskTone === "danger") {
     warningTitle = "High liquidation risk"
-    warningMessage = `Health factor drops to ${formatHealthFactor(healthFactor)}. Consider borrowing less.`
+    warningMessage = `Health factor: ${formatHealthFactor(healthFactor)}.`
   } else if (riskTone === "warning") {
     warningTitle = "Borrowing gets tighter"
-    warningMessage = `Health factor would sit at ${formatHealthFactor(healthFactor)}.`
+    warningMessage = `Health factor: ${formatHealthFactor(healthFactor)}.`
   }
 
   return {
