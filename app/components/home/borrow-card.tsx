@@ -7,6 +7,7 @@ import {
   type HomeBorrowToken,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
+import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
@@ -88,7 +89,7 @@ export function CompactBorrowCard({
                 type="text"
                 inputMode="decimal"
                 value={amount}
-                onChange={(event) => onAmountChange(event.target.value)}
+                onChange={(event) => onAmountChange(sanitizeNumericInput(event.target.value))}
                 placeholder="0"
                 className="no-number-spinner w-full bg-transparent font-data text-[28px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
               />

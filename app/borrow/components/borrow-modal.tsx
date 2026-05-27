@@ -16,6 +16,7 @@ import {
   type HomeBorrowToken,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
+import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import {
   BORROWABLE_TOKEN_OPTIONS,
   formatUsdExact,
@@ -136,8 +137,7 @@ export function BorrowModal({ open, context, onClose, onConfirm }: BorrowModalPr
                   inputMode="decimal"
                   value={amountInput}
                   onChange={(event) => {
-                    const next = event.target.value.replace(/[^0-9.]/g, "")
-                    setAmountInput(next)
+                    setAmountInput(sanitizeNumericInput(event.target.value))
                   }}
                   placeholder="0"
                   className="flex-1 border-none bg-transparent font-data text-[24px] font-medium text-foreground outline-none placeholder:text-muted-foreground"

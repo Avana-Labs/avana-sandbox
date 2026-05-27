@@ -3,6 +3,7 @@
 import { Coins } from "lucide-react"
 import type { ClaimPreview, HomeClaimPosition } from "@/app/lib/home-sim"
 import { formatUsd, getClaimBreakdownLabel } from "@/app/lib/home-sim"
+import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { Button } from "@/components/ui/button"
 import { DetailList, PairVisual, PanelField, PremiumPanel, TokenBubble, ValueBadge } from "@/app/components/home-workspace-primitives"
 import { cn } from "@/lib/utils"
@@ -98,7 +99,7 @@ export function HomeClaimPanel({
                   type="number"
                   inputMode="decimal"
                   value={amount}
-                  onChange={(event) => onAmountChange(event.target.value)}
+                  onChange={(event) => onAmountChange(sanitizeNumericInput(event.target.value))}
                   placeholder="0"
                   className="w-full bg-transparent font-data text-5xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/30"
                 />
