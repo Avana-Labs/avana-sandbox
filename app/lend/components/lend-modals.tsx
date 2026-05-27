@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Check } from "lucide-react"
 import { TokenIcon } from "@/app/components/token-icon"
+import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { TOKENS, MARKETS } from "./data"
 
 type ModalState = {
@@ -30,16 +31,12 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
     }, 500)
   }
 
-  const isWithdraw = modalState.type === 'withdraw'
-  const isDeposit = modalState.type === 'deposit'
-  const token = modalState.token as any
-  const tokenSymbol = token?.symbol || ''
-  const tokenBg = token?.bg || ''
-  const tokenColor = token?.color || ''
-  const tokenBalance = token?.balance || 0
-  const tokenPrice = token?.price || 1
-  const tokenApy = token?.apy || 5.20
-  const tokenEarned = token?.earned || 0
+  const isWithdraw = modalState.type === "withdraw"
+  const token = modalState.token
+  const tokenBalance = token && "balance" in token ? token.balance : 0
+  const tokenPrice = token && "price" in token ? token.price : 1
+  const tokenApy = token?.apy ?? 5.2
+  const tokenEarned = token && "earned" in token ? token.earned : 0
   const parsedAmount = parseFloat(modalState.amount) || 0
   const isExceedsBalance = isWithdraw && parsedAmount > tokenBalance
   const isInvalidAmount = !parsedAmount || parsedAmount <= 0
@@ -56,15 +53,15 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
                 <Check className="h-5 w-5" strokeWidth={2.25} />
               </div>
               <h2 className="mb-1.5 text-[16px] font-medium tracking-tight text-foreground">
-                {'balance' in modalState.token && modalState.actionType === 'withdraw' ? 'Withdrawal submitted' : 'Deposit submitted'}
+                {"balance" in token && modalState.actionType === "withdraw" ? "Withdrawal submitted" : "Deposit submitted"}
               </h2>
               <div className="font-data text-[20px] font-medium tabular-nums text-foreground mb-1.5">
-                {modalState.amount} {modalState.token.symbol}
+                {modalState.amount} {token.symbol}
               </div>
               <p className="text-[12px] text-muted-foreground mb-5 max-w-[320px]">
-                {'balance' in modalState.token && modalState.actionType === 'withdraw' 
-                  ? 'Funds will be returned to your wallet once the transaction confirms.' 
-                  : 'Your position will begin earning supply APY starting next block.'}
+                {"balance" in token && modalState.actionType === "withdraw"
+                  ? "Funds will be returned to your wallet once the transaction confirms."
+                  : "Your position will begin earning supply APY starting next block."}
               </p>
               <Button className="w-full" onClick={closeModal}>Done</Button>
             </div>
@@ -72,19 +69,19 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
             <>
               <DialogHeader className="px-5 py-4 border-b border-border relative">
                 <DialogTitle className="sr-only">
-                  {modalState.type === 'deposit' ? 'Deposit' : 'Withdraw'} {modalState.token.symbol}
+                  {modalState.type === "deposit" ? "Deposit" : "Withdraw"} {token.symbol}
                 </DialogTitle>
                 <div className="flex gap-5 relative">
                   <button 
-                    onClick={() => setModalState(prev => ({ ...prev, type: 'deposit' }))}
-                    className={`text-[13px] font-medium pb-4 -mb-4 transition-colors border-b-[1.5px] ${modalState.type === 'deposit' ? 'text-foreground border-accent-primary' : 'text-muted-foreground border-transparent hover:text-foreground'}`}
+                    onClick={() => setModalState(prev => ({ ...prev, type: "deposit" }))}
+                    className={`text-[13px] font-medium pb-4 -mb-4 transition-colors border-b-[1.5px] ${modalState.type === "deposit" ? "text-foreground border-accent-primary" : "text-muted-foreground border-transparent hover:text-foreground"}`}
                   >
                     Deposit
                   </button>
-                  {'balance' in modalState.token && (
+                  {"balance" in token && (
                     <button 
-                      onClick={() => setModalState(prev => ({ ...prev, type: 'withdraw' }))}
-                      className={`text-[13px] font-medium pb-4 -mb-4 transition-colors border-b-[1.5px] ${modalState.type === 'withdraw' ? 'text-foreground border-accent-primary' : 'text-muted-foreground border-transparent hover:text-foreground'}`}
+                      onClick={() => setModalState(prev => ({ ...prev, type: "withdraw" }))}
+                      className={`text-[13px] font-medium pb-4 -mb-4 transition-colors border-b-[1.5px] ${modalState.type === "withdraw" ? "text-foreground border-accent-primary" : "text-muted-foreground border-transparent hover:text-foreground"}`}
                     >
                       Withdraw
                     </button>
@@ -94,11 +91,11 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
               
               <div className="px-5 py-5">
                 <div className="mb-5 flex items-center gap-3">
-                  <TokenIcon symbol={modalState.token.symbol} size="lg" />
+                  <TokenIcon symbol={token.symbol} size="lg" />
                   <div>
-                    <div className="text-[14px] font-medium text-foreground">{modalState.token.symbol}</div>
+                    <div className="text-[14px] font-medium text-foreground">{token.symbol}</div>
                     <div className="text-[11.5px] text-muted-foreground">
-                      {modalState.type === 'withdraw' ? 'Withdraw from LP Hub' : 'LP Hub · Supply-only spoke'}
+                      {modalState.type === "withdraw" ? "Withdraw from LP Hub" : "LP Hub · Supply-only spoke"}
                     </div>
                   </div>
                 </div>
@@ -109,16 +106,16 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
                       type="number" 
                       placeholder="0"
                       value={modalState.amount}
-                      onChange={(e) => setModalState(prev => ({ ...prev, amount: e.target.value }))}
+                      onChange={(e) => setModalState(prev => ({ ...prev, amount: sanitizeNumericInput(e.target.value) }))}
                       className="w-full bg-transparent text-[26px] font-medium outline-none placeholder:text-muted-foreground/30 font-data tabular-nums tracking-tight"
                     />
                     <div className="rounded-xs border border-border bg-surface-raised px-2.5 py-1 text-[12px] font-medium">
-                      {modalState.token.symbol}
+                      {token.symbol}
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>≈ ${(parseFloat(modalState.amount || '0') * ('price' in modalState.token ? modalState.token.price : 1)).toFixed(2)}</span>
-                    {'balance' in modalState.token && (
+                    <span>≈ ${(parseFloat(modalState.amount || "0") * tokenPrice).toFixed(2)}</span>
+                    {"balance" in token && (
                       <button 
                         className="font-medium text-accent-primary hover:underline"
                         onClick={() => setModalState(prev => ({ ...prev, amount: tokenBalance.toString() }))}
@@ -130,15 +127,15 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
                 </div>
 
                 <div className="mb-5 space-y-2 rounded-radius-sm border border-border bg-surface-inset px-3.5 py-3 text-[12px]">
-                  {modalState.type === 'deposit' ? (
+                  {modalState.type === "deposit" ? (
                     <>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Supply APY</span>
-                        <span className="font-data font-medium tabular-nums text-emerald-600 dark:text-emerald-400">{modalState.token.apy.toFixed(2)}%</span>
+                        <span className="font-data font-medium tabular-nums text-emerald-600 dark:text-emerald-400">{tokenApy.toFixed(2)}%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Base rate + LP premium</span>
-                        <span className="font-data font-medium tabular-nums text-foreground">3.85% + {(modalState.token.apy || 5.20) - 3.85}%</span>
+                        <span className="font-data font-medium tabular-nums text-foreground">3.85% + {tokenApy - 3.85}%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Est. daily yield</span>
@@ -151,12 +148,12 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
                     <>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Deposited balance</span>
-                        <span className="font-data font-medium tabular-nums text-foreground">${'balance' in modalState.token ? modalState.token.balance.toLocaleString() : '0'}.00</span>
+                        <span className="font-data font-medium tabular-nums text-foreground">${tokenBalance.toLocaleString()}.00</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Interest earned</span>
                         <span className="font-data font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
-                          +${'earned' in modalState.token ? modalState.token.earned.toFixed(2) : '0.00'}
+                          +${tokenEarned.toFixed(2)}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -178,7 +175,7 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
                   disabled={isInvalidAmount || Boolean(isExceedsBalance)}
                   onClick={handleAction}
                 >
-                  {isInvalidAmount ? 'Enter an amount' : isExceedsBalance ? 'Exceeds balance' : `${modalState.type === 'deposit' ? 'Deposit' : 'Withdraw'} ${modalState.token.symbol}`}
+                  {isInvalidAmount ? "Enter an amount" : isExceedsBalance ? "Exceeds balance" : `${modalState.type === "deposit" ? "Deposit" : "Withdraw"} ${token.symbol}`}
                 </Button>
               </div>
             </>
