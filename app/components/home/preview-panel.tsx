@@ -175,8 +175,8 @@ function PreviewStatCard({
 
       {thresholds && thresholds.length > 0 ? (
         <div className="mt-2 flex justify-between text-[10px] font-medium text-muted-foreground">
-          {thresholds.map((threshold) => (
-            <span key={`${threshold.at}-label`}>{threshold.label}</span>
+          {thresholds.map((threshold, index) => (
+            <span key={`${threshold.at}-${threshold.label}-${index}`}>{threshold.label}</span>
           ))}
         </div>
       ) : null}
