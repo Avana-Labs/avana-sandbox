@@ -7,6 +7,21 @@ import { Toaster } from "sonner"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 
+const themeBootstrapScript = `
+(() => {
+  const storageKey = "avana-theme";
+  const root = document.documentElement;
+  const storedTheme = window.localStorage.getItem(storageKey);
+  const theme = storedTheme === "light" || storedTheme === "dark" || storedTheme === "system"
+    ? storedTheme
+    : "system";
+  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  const resolvedTheme = theme === "system" ? systemTheme : theme;
+  root.classList.toggle("dark", resolvedTheme === "dark");
+  root.style.colorScheme = resolvedTheme;
+})();
+`
+
 const diatypeSans = localFont({
   src: [
     {
@@ -131,7 +146,9 @@ export default function RootLayout({
       className={`${diatypeSans.variable} ${diatypeData.variable} ${diatypeBrand.variable}`}
       suppressHydrationWarning
     >
-      <head />
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider
           attribute="class"
