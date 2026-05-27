@@ -172,17 +172,20 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
     const nextOffset = event.clientY - dragState.startY + dragState.offset
     dragState.moved = dragState.moved || Math.abs(nextOffset) > 8
-    setSheetDragOffset(Math.min(320, Math.max(-36, nextOffset)))
+    setSheetDragOffset(Math.min(320, Math.max(0, nextOffset)))
     event.preventDefault()
   }
 
-  const finishSelectorDrag = (shouldClose: boolean) => {
+  const finishSelectorDrag = (shouldClose: boolean, finalOffset: number) => {
     sheetDragStateRef.current = null
     setSheetDragging(false)
-    setSheetDragOffset(0)
     if (shouldClose) {
+      setSheetDragOffset(0)
       setView("root")
+      return
     }
+
+    setSheetDragOffset(Math.max(0, finalOffset))
   }
 
   const handleSelectorPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -194,7 +197,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     event.currentTarget.releasePointerCapture(event.pointerId)
     const sheetHeight = selectorSheetRef.current?.offsetHeight ?? 0
     const closeThreshold = Math.max(180, sheetHeight * 0.32)
-    finishSelectorDrag(dragState.moved && sheetDragOffset > closeThreshold)
+    finishSelectorDrag(dragState.moved && sheetDragOffset > closeThreshold, sheetDragOffset)
     event.preventDefault()
   }
 
@@ -204,7 +207,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       return
     }
 
-    finishSelectorDrag(false)
+    finishSelectorDrag(false, sheetDragOffset)
     event.preventDefault()
   }
 
@@ -347,7 +350,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
   function renderPanelHeader(title: string, backView: MobileMenuView) {
     return (
-      <div className="mb-5 flex items-center gap-3 border-b border-border px-5 pb-4 pt-8">
+      <div className="mb-5 flex items-center gap-3 border-b border-border px-5 pb-4">
         <button
           type="button"
           onClick={() => {
@@ -382,7 +385,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
           ref={(node) => {
             selectorSheetRef.current = node
           }}
-          className={`absolute inset-x-0 bottom-0 max-h-[min(82dvh,calc(100dvh-4rem))] overflow-hidden rounded-t-[1.75rem] border border-b-0 border-border bg-background shadow-[0_-24px_64px_rgba(15,23,42,0.18)] transition-transform duration-300 ease-out ${
+          className={`mobile-bottom-sheet absolute inset-x-0 bottom-0 max-h-[min(82dvh,calc(100dvh-4rem))] overflow-hidden rounded-t-[1.75rem] border border-b-0 border-border bg-background p-0 shadow-[0_-24px_64px_rgba(15,23,42,0.18)] transition-transform duration-300 ease-out ${
             isSelectorSheetOpen ? "translate-y-0" : "translate-y-full"
           } ${sheetDragging ? "mobile-bottom-sheet-dragging" : ""}`}
           style={sheetDragOffset ? { transform: `translateY(${sheetDragOffset}px)` } : undefined}
@@ -397,7 +400,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             onPointerUp={handleSelectorPointerUp}
             onPointerCancel={handleSelectorPointerCancel}
           >
-            <div className="h-1.5 w-16 rounded-full bg-foreground/20" />
+            <div className="h-1.5 w-[4.5rem] rounded-full bg-foreground/35 shadow-[0_1px_0_rgba(255,255,255,0.18)_inset]" />
           </div>
           {renderPanelHeader(title, backView)}
           <div className="max-h-[calc(min(82dvh,calc(100dvh-4rem))-6.5rem)] overflow-y-auto px-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
