@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, CheckCircle2, LoaderCircle, ShieldCheck } from "lucide-react"
+import { ArrowLeft, CheckCircle2, LoaderCircle, ShieldCheck, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { HomeSuccessRow } from "@/app/lib/home-sim"
@@ -20,9 +20,16 @@ type TransactionFlowPanelProps = {
   amountLabel: string
   title: string
   subtitle: string
+  hero?: React.ReactNode
   visual?: React.ReactNode
   rows: HomeSuccessRow[]
   note?: string
+  progressLabel?: string
+  progressPercent?: number
+  progressLeftLabel?: string
+  progressRightLabel?: string
+  feeValue?: string
+  footerNote?: React.ReactNode
   primaryLabel: string
   onPrimary?: () => void
   onBack?: () => void
@@ -61,9 +68,16 @@ export function TransactionFlowPanel({
   amountLabel,
   title,
   subtitle,
+  hero,
   visual,
   rows,
   note,
+  progressLabel,
+  progressPercent,
+  progressLeftLabel,
+  progressRightLabel,
+  feeValue = "$0",
+  footerNote,
   primaryLabel,
   onPrimary,
   onBack,
@@ -80,44 +94,62 @@ export function TransactionFlowPanel({
           ? title
           : ""
 
-  const subtitleText =
-    stage === "review"
-      ? subtitle
-      : stage === "approve"
-        ? "Approve this transaction in your wallet."
-        : stage === "processing"
-          ? "Transaction submitted. Waiting for confirmation."
-          : subtitle
-
-  const showTitleText = stage === "approve" || stage === "processing" || stage === "success"
-  const shouldStretch = stage === "processing"
+  const shouldStretch = stage === "processing" || variant === "bare"
   const showCloseButton = variant !== "bare" && stage !== "processing" && Boolean(onClose)
+  const useReviewHeading = stage === "review" || stage === "approve"
+  const reviewHeadingClass =
+    "mt-6 text-[clamp(2.2rem,8vw,3.5rem)] font-medium tracking-tight text-foreground sm:mt-4 sm:max-w-[24rem] sm:text-[1.55rem] sm:leading-[1.08]"
+  const amountLabelClass =
+    useReviewHeading
+      ? ""
+      : "mt-3 font-data text-[15px] font-medium tracking-tight text-muted-foreground sm:mt-3 sm:text-[16px]"
+  const titleClass =
+    stage === "review"
+      ? ""
+      : "mt-6 max-w-[24rem] text-[clamp(2.2rem,8vw,3.5rem)] font-medium tracking-tight text-foreground sm:mt-4 sm:text-[1.55rem] sm:leading-[1.08]"
+  const showProgressSummary =
+    progressLabel &&
+    progressLeftLabel &&
+    progressRightLabel &&
+    Number.isFinite(progressPercent)
+  const headerClass =
+    variant === "bare"
+      ? "flex items-center justify-between px-5 pt-[calc(env(safe-area-inset-top)+1rem)]"
+      : "flex items-center justify-between px-5 pt-5 sm:px-5 sm:pt-5"
+  const contentClass =
+    variant === "bare"
+      ? "flex min-h-0 flex-col px-8 pb-3 pt-6"
+      : "flex min-h-0 flex-col px-8 pb-3 pt-6"
+  const contentColumnClass =
+    "flex w-full min-h-0 flex-col"
+  const footerClass =
+    variant === "bare"
+      ? "border-t border-border px-5 pb-[calc(1.1rem+env(safe-area-inset-bottom))] pt-4"
+      : "border-t border-border px-5 pb-6 pt-5"
 
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden",
+        "flex min-h-0 flex-col overflow-hidden bg-background",
         shouldStretch ? "h-full" : "h-auto",
-        variant === "surface" && "rounded-radius-md border border-border bg-background shadow-elev-3",
+        variant === "surface" && "rounded-radius-md border border-border bg-background",
         variant === "bare" && "bg-background",
         className,
       )}
     >
-      <div className="flex items-center justify-between px-4 pt-4 sm:px-5 sm:pt-5">
-        <div className="flex items-center gap-2">
-          {stage !== "processing" && stage !== "success" && onBack ? (
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Back"
-            >
-              <ArrowLeft className="size-4" />
-            </button>
-          ) : (
-            <div className="size-8" aria-hidden />
-          )}
-        </div>
+      <div className={headerClass}>
+        {stage !== "processing" && onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="Back"
+          >
+            <ArrowLeft className="size-4" />
+          </button>
+        ) : (
+          <div className="size-8" aria-hidden />
+        )}
 
         {showCloseButton ? (
           <button
@@ -133,11 +165,13 @@ export function TransactionFlowPanel({
         )}
       </div>
 
-      <div className={cn("flex min-h-0 flex-col px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4", shouldStretch && "flex-1")}>
-        <div className={cn("mx-auto flex w-full max-w-[26rem] min-h-0 flex-col", shouldStretch && "h-full")}>
+      <div className={cn(contentClass, shouldStretch && "flex-1")}>
+        <div className={cn(contentColumnClass, shouldStretch && "h-full")}>
           <div className="flex flex-col items-center text-center">
-            {stage === "processing" ? (
-              <div className="relative flex size-[72px] items-center justify-center sm:size-20">
+            {hero ? (
+              <div className="flex items-center justify-center">{hero}</div>
+            ) : stage === "processing" ? (
+              <div className="relative flex size-[72px] items-center justify-center">
                 <div className="absolute inset-0 rounded-full border border-[hsl(var(--brand))]/15 bg-[hsl(var(--brand-soft))]/25" />
                 <div
                   className="absolute inset-2 rounded-full border border-[hsl(var(--brand))]/15"
@@ -158,7 +192,7 @@ export function TransactionFlowPanel({
                 <LoaderCircle className="relative z-10 size-7 animate-spin text-[hsl(var(--brand))]" />
               </div>
             ) : stage === "success" ? (
-              <div className="relative flex size-[72px] items-center justify-center sm:size-20">
+              <div className="relative flex size-[72px] items-center justify-center">
                 <div className="absolute inset-0 rounded-full bg-emerald-500/10" />
                 <div className="absolute inset-2 rounded-full border border-emerald-500/20 bg-emerald-500/10" />
                 <div className="absolute inset-4 rounded-full bg-emerald-500/10" />
@@ -168,23 +202,35 @@ export function TransactionFlowPanel({
                 <SparkleDot className="absolute bottom-2 left-3" delay="0.32s" />
               </div>
             ) : (
-              <div className="flex size-14 items-center justify-center rounded-full bg-background text-foreground">
-                {visual ?? <ShieldCheck className="size-7 text-[hsl(var(--brand))]" />}
+              <div className="flex size-[72px] items-center justify-center rounded-full bg-background text-foreground">
+                {visual ? (
+                  <div className="scale-[2.2] sm:scale-[1.8]">
+                    {visual}
+                  </div>
+                ) : (
+                  <ShieldCheck className="size-7 text-[hsl(var(--brand))]" />
+                )}
               </div>
             )}
 
-            {showTitleText ? (
-              <div className="mt-2 text-[15px] font-medium tracking-tight text-foreground sm:mt-4 sm:text-[16px]">{titleText}</div>
+            {!useReviewHeading && stage !== "review" ? (
+              <div className={titleClass}>
+                {titleText}
+              </div>
             ) : null}
-            <div className={cn("font-data text-[24px] font-medium tracking-tight text-foreground sm:text-[30px]", showTitleText ? "mt-1 sm:mt-2" : "mt-2 sm:mt-4")}>
-              {amountLabel}
-            </div>
-            <p className="mt-2 max-w-[22rem] text-[12px] leading-5 text-muted-foreground sm:mt-3 sm:text-[13px]">{subtitleText}</p>
+            {useReviewHeading ? (
+              <div className={reviewHeadingClass}>{amountLabel}</div>
+            ) : (
+              <div className={amountLabelClass}>{amountLabel}</div>
+            )}
+            {useReviewHeading ? (
+              <p className="mt-3 text-[15px] text-muted-foreground">{subtitle}</p>
+            ) : null}
           </div>
 
           <div
             className={cn(
-              "mt-4 pb-1 sm:mt-6",
+              "mt-8 pb-1",
               shouldStretch && "min-h-0 flex-1 overflow-y-auto",
               stage === "processing" && "animate-in fade-in slide-in-from-bottom-2 duration-300",
             )}
@@ -198,7 +244,7 @@ export function TransactionFlowPanel({
                     style={{ animation: "loading-shimmer 1.4s ease-in-out infinite" }}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <ProgressRow label="Wallet approved" done />
                   <ProgressRow label="Transaction submitted" done />
                   <ProgressRow label="Waiting for confirmation" active />
@@ -207,17 +253,15 @@ export function TransactionFlowPanel({
             ) : rows.length > 0 ? (
               <div className="space-y-5">
                 {rows.map((row, index) => (
-                  <div key={`${row.label}-${index}`} className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="text-[12px] font-medium text-muted-foreground">{row.label}</div>
-                    </div>
+                  <div key={`${row.label}-${index}`} className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 text-[14px] font-medium text-muted-foreground">{row.label}</div>
                     <div
                       className={cn(
-                        "text-right font-data text-[14px] font-medium tabular-nums",
+                        "text-right text-[15px] font-medium",
                         (!row.tone || row.tone === "default") && "text-foreground",
-                        row.tone === "positive" && "text-emerald-700 dark:text-emerald-400",
-                        row.tone === "warning" && "text-amber-700 dark:text-amber-400",
-                        row.tone === "danger" && "text-rose-700 dark:text-rose-400",
+                        row.tone === "positive" && "text-emerald-600",
+                        row.tone === "warning" && "text-amber-600",
+                        row.tone === "danger" && "text-rose-600",
                       )}
                     >
                       {row.value}
@@ -227,26 +271,55 @@ export function TransactionFlowPanel({
               </div>
             ) : null}
 
+            {showProgressSummary ? (
+              <div className="mt-7">
+                <div className="flex items-baseline justify-between gap-3 text-[12px]">
+                  <span className="text-muted-foreground">{progressLabel}</span>
+                  <span className="font-medium text-foreground">{Math.max(0, Math.min(100, progressPercent!)).toFixed(0)}%</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-[hsl(var(--brand))]"
+                    style={{ width: `${Math.max(0, Math.min(100, progressPercent!))}%` }}
+                  />
+                </div>
+                <div className="mt-2 flex items-baseline justify-between gap-3 text-[11.5px] text-muted-foreground">
+                  <span>{progressLeftLabel}</span>
+                  <span>{progressRightLabel}</span>
+                </div>
+              </div>
+            ) : null}
+
             {note ? <p className="mt-4 text-[12px] leading-5 text-muted-foreground">{note}</p> : null}
           </div>
 
-          <div className="mt-4 pt-3 sm:mt-5 sm:pt-4">
-            {stage === "processing" ? (
-              <div className="flex items-center justify-center gap-2 text-[12px] text-muted-foreground">
-                <LoaderCircle className="size-3.5 animate-spin text-[hsl(var(--brand))]" />
-                Processing transaction
-              </div>
-            ) : (
-              <Button
-                type="button"
-                className="h-11 w-full rounded-2xl bg-[hsl(var(--brand))] text-[14px] text-white hover:bg-[hsl(var(--brand))]/90"
-                onClick={onPrimary}
-              >
-                {primaryLabel}
-              </Button>
-            )}
-          </div>
         </div>
+      </div>
+
+      <div className={footerClass}>
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <div className="text-[13px] font-medium text-foreground">Fees paid</div>
+            <div className="mt-0.5 text-[12px] text-muted-foreground">Estimated transaction cost</div>
+          </div>
+          <div className="font-data text-[20px] font-medium tracking-tight text-foreground">{feeValue}</div>
+        </div>
+        {stage === "processing" ? (
+          <div className="flex items-center justify-center gap-2 text-[12px] text-muted-foreground">
+            <LoaderCircle className="size-3.5 animate-spin text-[hsl(var(--brand))]" />
+            Processing transaction
+          </div>
+        ) : (
+          <Button
+            type="button"
+            className="h-12 w-full rounded-[14px] bg-[hsl(var(--brand))] text-[15px] text-white hover:bg-[hsl(var(--brand))]/90"
+            onClick={onPrimary}
+          >
+            {primaryLabel}
+          </Button>
+        )}
+
+        {footerNote ? <div className="mt-3 text-center text-[12px] text-muted-foreground">{footerNote}</div> : null}
       </div>
     </div>
   )
