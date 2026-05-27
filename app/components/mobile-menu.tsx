@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ArrowUpRight, Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Globe2, Menu, Shield, SunMedium } from "lucide-react"
 import type { ReactNode } from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Switch } from "@/components/ui/switch"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
@@ -27,6 +27,15 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   const [settingsIntroActive, setSettingsIntroActive] = useState(false)
   const [view, setView] = useState<MobileMenuView>("root")
   const [mounted, setMounted] = useState(false)
+  const [sheetDragOffset, setSheetDragOffset] = useState(0)
+  const [sheetDragging, setSheetDragging] = useState(false)
+  const selectorSheetRef = useRef<HTMLDivElement | null>(null)
+  const sheetDragStateRef = useRef<{
+    pointerId: number
+    startY: number
+    offset: number
+    moved: boolean
+  } | null>(null)
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
   const { language, setLanguage, currency, setCurrency } = useDisplayPreferences()
@@ -41,6 +50,9 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     setIsShown(false)
     setSettingsIntroActive(false)
     setView("root")
+    setSheetDragOffset(0)
+    setSheetDragging(false)
+    sheetDragStateRef.current = null
   }, [pathname])
 
   useEffect(() => {
@@ -131,13 +143,79 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   const currentCurrency = CURRENCY_OPTIONS.find((option) => option.code === currency) ?? CURRENCY_OPTIONS[0]
   const lightModeEnabled = mounted ? resolvedTheme === "light" : false
   const isVisible = open && isShown
+  const isSelectorSheetOpen = view !== "root"
+
+  const closeSelectorSheet = () => {
+    setView("root")
+    setSheetDragOffset(0)
+    setSheetDragging(false)
+    sheetDragStateRef.current = null
+  }
+
+  const handleSelectorPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    sheetDragStateRef.current = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      offset: sheetDragOffset,
+      moved: false,
+    }
+    setSheetDragging(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+    event.preventDefault()
+  }
+
+  const handleSelectorPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const dragState = sheetDragStateRef.current
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return
+    }
+
+    const nextOffset = event.clientY - dragState.startY + dragState.offset
+    dragState.moved = dragState.moved || Math.abs(nextOffset) > 8
+    setSheetDragOffset(Math.min(320, Math.max(0, nextOffset)))
+    event.preventDefault()
+  }
+
+  const finishSelectorDrag = (shouldClose: boolean, finalOffset: number) => {
+    sheetDragStateRef.current = null
+    setSheetDragging(false)
+    if (shouldClose) {
+      setSheetDragOffset(0)
+      setView("root")
+      return
+    }
+
+    setSheetDragOffset(Math.max(0, finalOffset))
+  }
+
+  const handleSelectorPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const dragState = sheetDragStateRef.current
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return
+    }
+
+    event.currentTarget.releasePointerCapture(event.pointerId)
+    const sheetHeight = selectorSheetRef.current?.offsetHeight ?? 0
+    const closeThreshold = Math.max(180, sheetHeight * 0.32)
+    finishSelectorDrag(dragState.moved && sheetDragOffset > closeThreshold, sheetDragOffset)
+    event.preventDefault()
+  }
+
+  const handleSelectorPointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    const dragState = sheetDragStateRef.current
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return
+    }
+
+    finishSelectorDrag(false, sheetDragOffset)
+    event.preventDefault()
+  }
 
   const rootSettingsClass =
     "flex w-full items-center justify-between gap-4 text-left text-[1.2rem] font-medium leading-[1.14] text-foreground/92"
   const rootSettingsLabelClass = "flex items-center gap-3"
   const rootSettingsIconClass = `h-[1.15rem] w-[1.15rem] stroke-[1.9] ${accentClass}`
   const dividerClass = "border-[#01AACF]/25 dark:border-[#01AACF]/35"
-  const selectorPanelClass = `rounded-[1.75rem] border ${dividerClass} bg-background px-5 py-5`
   const introDelay = (index: number) => `${120 + index * 35}ms`
   const settingsIntroStyle = (index: number) =>
     settingsIntroActive
@@ -272,10 +350,16 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
   function renderPanelHeader(title: string, backView: MobileMenuView) {
     return (
-      <div className="mb-5 flex items-center gap-3">
+      <div className="mb-5 flex items-center gap-3 border-b border-border px-5 pb-4">
         <button
           type="button"
-          onClick={() => setView(backView)}
+          onClick={() => {
+            if (backView === "root") {
+              closeSelectorSheet()
+              return
+            }
+            setView(backView)
+          }}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-surface-inset"
           aria-label="Back to menu"
         >
@@ -286,18 +370,59 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     )
   }
 
-  function renderLanguageList() {
+  function renderSelectorSheet(title: string, backView: MobileMenuView, content: ReactNode) {
     return (
-      <div className={selectorPanelClass}>
-        {renderPanelHeader("Language", "root")}
-        <ul className="space-y-1">
+      <>
+        <button
+          type="button"
+          aria-label={`Close ${title.toLowerCase()} sheet`}
+          onClick={closeSelectorSheet}
+          className={`absolute inset-0 bg-black/35 backdrop-blur-sm transition-opacity duration-200 ${
+            isSelectorSheetOpen ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        <div
+          ref={(node) => {
+            selectorSheetRef.current = node
+          }}
+          className={`mobile-bottom-sheet absolute inset-x-0 bottom-0 max-h-[min(82dvh,calc(100dvh-4rem))] overflow-hidden rounded-t-[1.75rem] border border-b-0 border-border bg-background p-0 shadow-[0_-24px_64px_rgba(15,23,42,0.18)] transition-transform duration-300 ease-out ${
+            isSelectorSheetOpen ? "translate-y-0" : "translate-y-full"
+          } ${sheetDragging ? "mobile-bottom-sheet-dragging" : ""}`}
+          style={sheetDragOffset ? { transform: `translateY(${sheetDragOffset}px)` } : undefined}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+        >
+          <div
+            className="mobile-bottom-sheet-handle absolute inset-x-0 top-0 z-10 flex h-10 items-start justify-center pt-3"
+            onPointerDown={handleSelectorPointerDown}
+            onPointerMove={handleSelectorPointerMove}
+            onPointerUp={handleSelectorPointerUp}
+            onPointerCancel={handleSelectorPointerCancel}
+          >
+            <div className="h-1.5 w-[4.5rem] rounded-full bg-foreground/35 shadow-[0_1px_0_rgba(255,255,255,0.18)_inset]" />
+          </div>
+          {renderPanelHeader(title, backView)}
+          <div className="max-h-[calc(min(82dvh,calc(100dvh-4rem))-6.5rem)] overflow-y-auto px-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            {content}
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  function renderLanguageList() {
+    return renderSelectorSheet(
+      "Language",
+      "root",
+      <ul className="space-y-1">
           {LANGUAGE_OPTIONS.map((option) => (
             <li key={option.code}>
               <button
                 type="button"
                 onClick={() => {
                   setLanguage(option.code)
-                  setView("root")
+                  closeSelectorSheet()
                 }}
                 className="flex w-full items-center justify-between gap-4 rounded-2xl px-3 py-4 text-left"
               >
@@ -306,23 +431,22 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               </button>
             </li>
           ))}
-        </ul>
-      </div>
+      </ul>,
     )
   }
 
   function renderCurrencyList() {
-    return (
-      <div className={selectorPanelClass}>
-        {renderPanelHeader("Currency", "root")}
-        <ul className="space-y-1">
+    return renderSelectorSheet(
+      "Currency",
+      "root",
+      <ul className="space-y-1">
           {CURRENCY_OPTIONS.map((option) => (
             <li key={option.code}>
               <button
                 type="button"
                 onClick={() => {
                   setCurrency(option.code)
-                  setView("root")
+                  closeSelectorSheet()
                 }}
                 className="flex w-full items-center justify-between gap-4 rounded-2xl px-3 py-4 text-left"
               >
@@ -334,8 +458,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               </button>
             </li>
           ))}
-        </ul>
-      </div>
+      </ul>,
     )
   }
 
@@ -395,12 +518,13 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
           aria-label="Mobile navigation"
           className={`h-[calc(100dvh-4rem)] overflow-y-auto px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
             isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
-          }`}
+          } ${isSelectorSheetOpen ? "pointer-events-none opacity-35 blur-[1px]" : ""}`}
         >
-          {view === "root" ? renderRootMenu() : null}
-          {view === "language" ? renderLanguageList() : null}
-          {view === "currency" ? renderCurrencyList() : null}
+          {renderRootMenu()}
         </nav>
+
+        {view === "language" ? renderLanguageList() : null}
+        {view === "currency" ? renderCurrencyList() : null}
       </div>
     </>
   )

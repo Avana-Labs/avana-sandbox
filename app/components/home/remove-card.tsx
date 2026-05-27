@@ -15,6 +15,7 @@ export function CompactRemoveCard({
   pool,
   percent,
   preview,
+  submitLabel,
   onOpenPoolDialog,
   onPercentChange,
   onSubmit,
@@ -22,6 +23,7 @@ export function CompactRemoveCard({
   pool: HomeCollateralPool
   percent: number
   preview: ReturnType<typeof calculateRemovePreview>
+  submitLabel?: string
   onOpenPoolDialog: () => void
   onPercentChange: (value: number) => void
   onSubmit: () => void
@@ -116,7 +118,7 @@ export function CompactRemoveCard({
       </div>
 
       <PrimaryCardButton disabled={preview.isUnsafe} onClick={onSubmit}>
-        {preview.ctaLabel}
+        {submitLabel ?? preview.ctaLabel}
       </PrimaryCardButton>
     </div>
   )

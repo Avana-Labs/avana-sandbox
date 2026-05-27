@@ -235,7 +235,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="top-1/2 max-h-[min(620px,calc(100vh-96px))] w-[calc(100vw-24px)] max-w-[500px] gap-0 overflow-hidden rounded-[20px] border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:rounded-[20px] [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
+        <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-[20px] border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-[20px] [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
           <DialogTitle className="sr-only">Search Avana</DialogTitle>
           <DialogDescription className="sr-only">
             Search collateral pools, assets to borrow, and assets to lend or invest.
