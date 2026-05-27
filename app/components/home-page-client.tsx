@@ -319,6 +319,30 @@ export function HomePageClient() {
     return null
   }, [activeFlow, borrowToken, claimSelections, removePool])
 
+  const flowHero = useMemo(() => {
+    if (!activeFlow) return null
+
+    if (activeFlow.mode === "borrow" && borrowToken) {
+      return (
+        <div className="flex items-center gap-3 sm:gap-2.5">
+          <div className="relative">
+            <PairVisual
+              visuals={borrowPool.visuals}
+              className="h-[72px] w-[108px] [&>span]:size-[72px] [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[2.25rem] [&>span]:ring-0 sm:h-[58px] sm:w-[88px] sm:[&>span]:size-[58px] sm:[&>span:nth-child(2)]:left-[1.85rem]"
+            />
+            <span className="absolute bottom-0 left-[2.9rem] inline-flex size-7 items-center justify-center rounded-full border border-border bg-background sm:left-[2.35rem] sm:size-6">
+              <Lock className="size-3 text-foreground" />
+            </span>
+          </div>
+          <ArrowRight className="size-4 text-foreground" aria-hidden />
+          <TokenBubble visual={borrowToken.visual} className="size-[72px] text-[18px] ring-0 sm:size-[58px] sm:text-[15px]" />
+        </div>
+      )
+    }
+
+    return null
+  }, [activeFlow, borrowPool.visuals, borrowToken])
+
   const flowConfig = useMemo(() => {
     if (!activeFlow) {
       return null
@@ -332,23 +356,50 @@ export function HomePageClient() {
         subtitle: activeFlow.success.description,
         rows: activeFlow.success.rows,
         note: undefined,
+        progressLabel: undefined,
+        progressPercent: undefined,
+        progressLeftLabel: undefined,
+        progressRightLabel: undefined,
+        feeValue: "$0",
+        footerNote: activeFlow.mode === "borrow" ? (
+          <>
+            Powered by Aave v4.{" "}
+            <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
+              Learn More
+            </a>
+          </>
+        ) : undefined,
       }
     }
 
     switch (activeFlow.mode) {
       case "borrow":
+        const borrowPowerUsedPct = borrowPool.borrowPowerUsd > 0 ? Math.min(100, ((borrowPool.borrowPowerUsd - borrowPreview.remainingBorrowPowerUsd) / borrowPool.borrowPowerUsd) * 100) : 0
         return {
           actionLabel: "borrow",
-          amountLabel: `${Number.parseFloat(borrowAmount || "0").toFixed(0)} ${borrowToken?.symbol ?? ""}`.trim(),
+          amountLabel: `Borrow ${formatCompactUsd(Number.parseFloat(borrowAmount || "0"))} in ${borrowToken?.symbol ?? ""}`.trim(),
           title: "Borrow successful",
-          subtitle: `Borrow against ${borrowPool.name}.`,
+          subtitle: `with ${borrowPool.visuals[0].symbol} / ${borrowPool.visuals[1].symbol} as collateral`,
           rows: [
-            { label: "Collateral", value: `${borrowPool.name} · ${formatCompactUsd(borrowPool.collateralUsd)}` },
-            { label: "Borrow APR", value: `${borrowToken?.borrowApr.toFixed(1) ?? "0.0"}%`, tone: "warning" },
+            { label: "Collateral", value: formatCompactUsd(borrowPool.collateralUsd) },
             { label: "Health factor", value: borrowPreview.healthFactorLabel, tone: borrowPreview.riskTone === "danger" ? "danger" : "positive" },
-            { label: "Liquidation threshold", value: formatCompactUsd(borrowPool.liquidationUsd), tone: "warning" },
+            { label: "Borrow APY", value: `${borrowToken?.borrowApr.toFixed(1) ?? "0.0"}%`, tone: "warning" },
+            { label: "Pool APY", value: `${borrowPool.pairApr.toFixed(1)}%` },
           ] as HomeSuccessRow[],
-          note: borrowPreview.warningTitle ? "Borrow carefully." : "Approve wallet, then wait for confirmation.",
+          note: borrowPreview.warningTitle ? "Borrow carefully." : undefined,
+          progressLabel: "Borrow power used",
+          progressPercent: borrowPowerUsedPct,
+          progressLeftLabel: `${formatCompactUsd(borrowPool.borrowPowerUsd - borrowPreview.remainingBorrowPowerUsd)} used`,
+          progressRightLabel: `${formatCompactUsd(borrowPreview.remainingBorrowPowerUsd)} available`,
+          feeValue: "$0",
+          footerNote: (
+            <>
+              Powered by Aave v4.{" "}
+              <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
+                Learn More
+              </a>
+            </>
+          ),
         }
       case "repay":
         return {
@@ -362,7 +413,13 @@ export function HomePageClient() {
             { label: "Health factor", value: `${repayPreview.oldHealthFactorLabel} -> ${repayPreview.healthFactorAfterLabel}`, tone: "positive" },
             { label: "Interest saved / yr", value: formatCompactUsd(repayPreview.yearlyInterestSavedUsd), tone: "positive" },
           ] as HomeSuccessRow[],
-          note: "Approve wallet, then wait for confirmation.",
+          note: undefined,
+          progressLabel: "Debt repaid",
+          progressPercent: (debts[repayPoolId] ?? 0) > 0 ? Math.min(100, (((debts[repayPoolId] ?? 0) - repayPreview.remainingDebtUsd) / (debts[repayPoolId] ?? 1)) * 100) : 0,
+          progressLeftLabel: `${formatCompactUsd((debts[repayPoolId] ?? 0) - repayPreview.remainingDebtUsd)} repaid`,
+          progressRightLabel: `${repayPreview.remainingDebtLabel} left`,
+          feeValue: "$0",
+          footerNote: undefined,
         }
       case "claim":
         return {
@@ -375,7 +432,13 @@ export function HomePageClient() {
             { label: "Total claimable", value: formatUsd(claimPreview.selectedTotalUsd) },
             { label: "Claim amount", value: formatUsd(claimPreview.effectiveClaimUsd), tone: "positive" },
           ] as HomeSuccessRow[],
-          note: "Approve wallet, then wait for confirmation.",
+          note: undefined,
+          progressLabel: "Positions selected",
+          progressPercent: HOME_CLAIM_POSITIONS.length > 0 ? (claimPreview.selectedPositionIds.length / HOME_CLAIM_POSITIONS.length) * 100 : 0,
+          progressLeftLabel: `${claimPreview.selectedPositionIds.length} selected`,
+          progressRightLabel: `${HOME_CLAIM_POSITIONS.length - claimPreview.selectedPositionIds.length} remaining`,
+          feeValue: "$0",
+          footerNote: undefined,
         }
       case "remove":
         return {
@@ -389,7 +452,13 @@ export function HomePageClient() {
             { label: "Health factor", value: removePreview.healthFactorAfterLabel, tone: removePreview.isUnsafe ? "danger" : "positive" },
             { label: "Safe max", value: `${removePreview.safePercent}%` },
           ] as HomeSuccessRow[],
-          note: removePreview.isUnsafe ? "This removal would be unsafe." : "Approve wallet, then wait for confirmation.",
+          note: removePreview.isUnsafe ? "This removal would be unsafe." : undefined,
+          progressLabel: "Collateral removed",
+          progressPercent: removePercent,
+          progressLeftLabel: `${formatCompactUsd(removePreview.removeUsd)} removed`,
+          progressRightLabel: `${formatCompactUsd(removePreview.afterCollateralUsd)} left`,
+          feeValue: "$0",
+          footerNote: undefined,
         }
     }
   }, [
@@ -485,9 +554,16 @@ export function HomePageClient() {
                         amountLabel={flowConfig.amountLabel}
                         title={flowConfig.title}
                         subtitle={flowConfig.subtitle}
+                        hero={flowHero}
                         visual={flowVisual}
                         rows={flowConfig.rows}
                         note={flowConfig.note}
+                        progressLabel={flowConfig.progressLabel}
+                        progressPercent={flowConfig.progressPercent}
+                        progressLeftLabel={flowConfig.progressLeftLabel}
+                        progressRightLabel={flowConfig.progressRightLabel}
+                        feeValue={flowConfig.feeValue}
+                        footerNote={flowConfig.footerNote}
                         primaryLabel={flowPrimaryLabel}
                         onPrimary={advanceFlow}
                         onBack={() => setHomeFlow(null)}
@@ -516,9 +592,16 @@ export function HomePageClient() {
                         amountLabel={flowConfig.amountLabel}
                         title={flowConfig.title}
                         subtitle={flowConfig.subtitle}
+                        hero={flowHero}
                         visual={flowVisual}
                         rows={flowConfig.rows}
                         note={flowConfig.note}
+                        progressLabel={flowConfig.progressLabel}
+                        progressPercent={flowConfig.progressPercent}
+                        progressLeftLabel={flowConfig.progressLeftLabel}
+                        progressRightLabel={flowConfig.progressRightLabel}
+                        feeValue={flowConfig.feeValue}
+                        footerNote={flowConfig.footerNote}
                         primaryLabel={flowPrimaryLabel}
                         onPrimary={advanceFlow}
                         onBack={() => setHomeFlow(null)}
@@ -547,9 +630,16 @@ export function HomePageClient() {
                         amountLabel={flowConfig.amountLabel}
                         title={flowConfig.title}
                         subtitle={flowConfig.subtitle}
+                        hero={flowHero}
                         visual={flowVisual}
                         rows={flowConfig.rows}
                         note={flowConfig.note}
+                        progressLabel={flowConfig.progressLabel}
+                        progressPercent={flowConfig.progressPercent}
+                        progressLeftLabel={flowConfig.progressLeftLabel}
+                        progressRightLabel={flowConfig.progressRightLabel}
+                        feeValue={flowConfig.feeValue}
+                        footerNote={flowConfig.footerNote}
                         primaryLabel={flowPrimaryLabel}
                         onPrimary={advanceFlow}
                         onBack={() => setHomeFlow(null)}
@@ -583,9 +673,16 @@ export function HomePageClient() {
                         amountLabel={flowConfig.amountLabel}
                         title={flowConfig.title}
                         subtitle={flowConfig.subtitle}
+                        hero={flowHero}
                         visual={flowVisual}
                         rows={flowConfig.rows}
                         note={flowConfig.note}
+                        progressLabel={flowConfig.progressLabel}
+                        progressPercent={flowConfig.progressPercent}
+                        progressLeftLabel={flowConfig.progressLeftLabel}
+                        progressRightLabel={flowConfig.progressRightLabel}
+                        feeValue={flowConfig.feeValue}
+                        footerNote={flowConfig.footerNote}
                         primaryLabel={flowPrimaryLabel}
                         onPrimary={advanceFlow}
                         onBack={() => setHomeFlow(null)}
@@ -670,9 +767,16 @@ export function HomePageClient() {
               amountLabel={flowConfig.amountLabel}
               title={flowConfig.title}
               subtitle={flowConfig.subtitle}
+              hero={flowHero}
               visual={flowVisual}
               rows={flowConfig.rows}
               note={flowConfig.note}
+              progressLabel={flowConfig.progressLabel}
+              progressPercent={flowConfig.progressPercent}
+              progressLeftLabel={flowConfig.progressLeftLabel}
+              progressRightLabel={flowConfig.progressRightLabel}
+              feeValue={flowConfig.feeValue}
+              footerNote={flowConfig.footerNote}
               primaryLabel={flowPrimaryLabel}
               onPrimary={advanceFlow}
               onBack={() => setHomeFlow(null)}
