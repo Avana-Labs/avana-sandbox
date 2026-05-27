@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { Settings } from "lucide-react"
+import { ArrowLeft, ArrowRight, Lock, Settings } from "lucide-react"
 import { toast } from "sonner"
 import {
   HOME_CLAIM_POSITIONS,
@@ -26,6 +26,7 @@ import {
 import { useMediaQuery } from "@/app/lib/use-media-query"
 import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   TransactionFlowPanel,
@@ -421,7 +422,7 @@ export function HomePageClient() {
   return (
     <div className="bg-background">
       <main className="px-4">
-        <section className="flex min-h-[calc(100vh-64px)] items-start justify-center pt-[5vh] md:pt-[6vh]">
+        <section className="flex items-start justify-center py-4 md:py-6">
           <div className="flex w-full items-stretch justify-center gap-4">
             <div className="w-full max-w-[420px] self-stretch md:max-w-[460px]">
               <Tabs
@@ -459,7 +460,25 @@ export function HomePageClient() {
 
                 <div className="relative min-h-[320px]">
                   <TabsContent value="borrow" className="mt-0">
-                    {showInlineFlow && flowConfig ? (
+                    {showInlineFlow && activeFlow?.mode === "borrow" && activeFlowStage === "review" && borrowToken ? (
+                      <BorrowReviewScreen
+                        borrowTitle={`Borrow ${formatCompactUsd(Number.parseFloat(borrowAmount || "0"))} in ${borrowToken.symbol}`}
+                        collateralSubtitle={`with ${borrowPool.visuals[0].symbol} / ${borrowPool.visuals[1].symbol} as collateral`}
+                        collateralAmount={formatCompactUsd(borrowPool.collateralUsd)}
+                        borrowApr={`${borrowToken.borrowApr.toFixed(1)}%`}
+                        healthFactor={borrowPreview.healthFactorLabel}
+                        poolApy={`${borrowPool.pairApr.toFixed(1)}%`}
+                        borrowPowerUsedPct={borrowPool.borrowPowerUsd > 0 ? Math.min(100, ((borrowPool.borrowPowerUsd - borrowPreview.remainingBorrowPowerUsd) / borrowPool.borrowPowerUsd) * 100) : 0}
+                        borrowPowerUsedLabel={formatCompactUsd(borrowPool.borrowPowerUsd - borrowPreview.remainingBorrowPowerUsd)}
+                        borrowPowerRemainingLabel={formatCompactUsd(borrowPreview.remainingBorrowPowerUsd)}
+                        feePaid="$0"
+                        poolVisuals={borrowPool.visuals}
+                        borrowVisual={borrowToken.visual}
+                        onBack={() => setHomeFlow(null)}
+                        onContinue={advanceFlow}
+                        isMobile={false}
+                      />
+                    ) : showInlineFlow && flowConfig ? (
                       <TransactionFlowPanel
                         stage={activeFlowStage}
                         actionLabel={flowConfig.actionLabel}
@@ -623,10 +642,28 @@ export function HomePageClient() {
         <DialogContent
           fullScreenOnMobile
           hideMobileHandle
-          className="w-[calc(100vw-1.5rem)] max-w-md overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
+          className="w-[calc(100vw-1.5rem)] max-w-md overflow-hidden rounded-radius-md border border-border bg-background p-0 shadow-elev-3 max-sm:[&>*]:h-full max-sm:[&>*]:min-h-0"
         >
           <DialogTitle className="sr-only">Transaction preview</DialogTitle>
-          {showMobileFlow && flowConfig ? (
+          {showMobileFlow && flowConfig && activeFlow?.mode === "borrow" && activeFlowStage === "review" && borrowToken ? (
+            <BorrowReviewScreen
+              borrowTitle={`Borrow ${formatCompactUsd(Number.parseFloat(borrowAmount || "0"))} in ${borrowToken.symbol}`}
+              collateralSubtitle={`with ${borrowPool.visuals[0].symbol} / ${borrowPool.visuals[1].symbol} as collateral`}
+              collateralAmount={formatCompactUsd(borrowPool.collateralUsd)}
+              borrowApr={`${borrowToken.borrowApr.toFixed(1)}%`}
+              healthFactor={borrowPreview.healthFactorLabel}
+              poolApy={`${borrowPool.pairApr.toFixed(1)}%`}
+              borrowPowerUsedPct={borrowPool.borrowPowerUsd > 0 ? Math.min(100, ((borrowPool.borrowPowerUsd - borrowPreview.remainingBorrowPowerUsd) / borrowPool.borrowPowerUsd) * 100) : 0}
+              borrowPowerUsedLabel={formatCompactUsd(borrowPool.borrowPowerUsd - borrowPreview.remainingBorrowPowerUsd)}
+              borrowPowerRemainingLabel={formatCompactUsd(borrowPreview.remainingBorrowPowerUsd)}
+              feePaid="$0"
+              poolVisuals={borrowPool.visuals}
+              borrowVisual={borrowToken.visual}
+              onBack={() => setHomeFlow(null)}
+              onContinue={advanceFlow}
+              isMobile
+            />
+          ) : showMobileFlow && flowConfig ? (
             <TransactionFlowPanel
               stage={activeFlowStage}
               actionLabel={flowConfig.actionLabel}
@@ -668,6 +705,156 @@ export function HomePageClient() {
           setTokenDialogOpen(false)
         }}
       />
+    </div>
+  )
+}
+
+function BorrowReviewScreen({
+  borrowTitle,
+  collateralSubtitle,
+  collateralAmount,
+  borrowApr,
+  healthFactor,
+  poolApy,
+  borrowPowerUsedPct,
+  borrowPowerUsedLabel,
+  borrowPowerRemainingLabel,
+  feePaid,
+  poolVisuals,
+  borrowVisual,
+  onBack,
+  onContinue,
+  isMobile = false,
+}: {
+  borrowTitle: string
+  collateralSubtitle: string
+  collateralAmount: string
+  borrowApr: string
+  healthFactor: string
+  poolApy: string
+  borrowPowerUsedPct: number
+  borrowPowerUsedLabel: string
+  borrowPowerRemainingLabel: string
+  feePaid: string
+  poolVisuals: [Parameters<typeof PairVisual>[0]["visuals"][0], Parameters<typeof PairVisual>[0]["visuals"][1]]
+  borrowVisual: Parameters<typeof TokenBubble>[0]["visual"]
+  onBack: () => void
+  onContinue: () => void
+  isMobile?: boolean
+}) {
+  return (
+    <div className={isMobile ? "flex h-full min-h-0 flex-col bg-background" : "flex flex-col rounded-radius-md border border-border bg-background"}>
+      <div className={isMobile ? "px-5 pt-[calc(env(safe-area-inset-top)+1rem)]" : "px-5 pt-5"}>
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Back"
+        >
+          <ArrowLeft className="size-4" />
+        </button>
+      </div>
+
+      <div className={isMobile ? "min-h-0 flex-1 overflow-y-auto px-8 pb-3 pt-6" : "px-8 pb-4 pt-6"}>
+        <div className="flex flex-col items-center text-center">
+          <div className={isMobile ? "flex items-center gap-3" : "flex items-center gap-2.5"}>
+            <div className="relative">
+              <PairVisual
+                visuals={poolVisuals}
+                className={isMobile ? "h-[72px] w-[108px] [&>span]:size-[72px] [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[2.25rem] [&>span]:ring-0" : "h-[58px] w-[88px] [&>span]:size-[58px] [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[1.85rem] [&>span]:ring-0"}
+              />
+              <span className={isMobile ? "absolute bottom-0 left-[2.9rem] inline-flex size-7 items-center justify-center rounded-full border border-border bg-background" : "absolute bottom-0 left-[2.35rem] inline-flex size-6 items-center justify-center rounded-full border border-border bg-background"}>
+                <Lock className="size-3 text-foreground" />
+              </span>
+            </div>
+            <ArrowRight className="size-4 text-foreground" aria-hidden />
+            <TokenBubble visual={borrowVisual} className={isMobile ? "size-[72px] text-[18px] ring-0" : "size-[58px] text-[15px] ring-0"} />
+          </div>
+
+          <div className={isMobile ? "mt-6 text-[clamp(2.2rem,8vw,3.5rem)] font-medium tracking-tight text-foreground" : "mt-4 max-w-[24rem] text-[1.55rem] font-medium leading-[1.08] tracking-tight text-foreground"}>
+            {borrowTitle}
+          </div>
+          <p className="mt-3 text-[15px] text-muted-foreground">{collateralSubtitle}</p>
+        </div>
+
+        <div className="mt-8 space-y-5">
+          <MobileConfirmRow label="Collateral" value={collateralAmount} />
+          <MobileConfirmRow label="Health factor" value={healthFactor} tone="positive" />
+          <MobileConfirmRow label="Borrow APY" value={borrowApr} tone="warning" />
+          <MobileConfirmRow label="Pool APY" value={poolApy} />
+        </div>
+
+        <div className="mt-7">
+          <div className="flex items-baseline justify-between gap-3 text-[12px]">
+            <span className="text-muted-foreground">Borrow power used</span>
+            <span className="font-medium text-foreground">{borrowPowerUsedPct.toFixed(0)}%</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full bg-[hsl(var(--brand))]" style={{ width: `${borrowPowerUsedPct}%` }} />
+          </div>
+          <div className="mt-2 flex items-baseline justify-between gap-3 text-[11.5px] text-muted-foreground">
+            <span>{borrowPowerUsedLabel} used</span>
+            <span>{borrowPowerRemainingLabel} available</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div className={isMobile ? "border-t border-border px-5 pb-[calc(1.1rem+env(safe-area-inset-bottom))] pt-4" : "border-t border-border px-5 pb-6 pt-5"}>
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <div className="text-[13px] font-medium text-foreground">Fees paid</div>
+            <div className="mt-0.5 text-[12px] text-muted-foreground">Estimated transaction cost</div>
+          </div>
+          <div className="font-data text-[20px] font-medium tracking-tight text-foreground">{feePaid}</div>
+        </div>
+        <Button
+          type="button"
+          className="h-12 w-full rounded-[14px] bg-[hsl(var(--brand))] text-[15px] text-white hover:bg-[hsl(var(--brand))]/90"
+          onClick={onContinue}
+        >
+          Borrow now
+        </Button>
+
+        <div className="mt-3 text-center text-[12px] text-muted-foreground">
+          Powered by Aave v4.{" "}
+          <a
+            href="https://aave.com/docs/aave-v4"
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent-emphasis"
+          >
+            Learn More
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MobileConfirmRow({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string
+  value: string
+  tone?: "default" | "positive" | "warning"
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-[14px] font-medium text-muted-foreground">{label}</span>
+      <span
+        className={
+          tone === "positive"
+            ? "text-[15px] font-medium text-emerald-600"
+            : tone === "warning"
+              ? "text-[15px] font-medium text-amber-600"
+              : "text-[15px] font-medium text-foreground"
+        }
+      >
+        {value}
+      </span>
     </div>
   )
 }

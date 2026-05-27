@@ -90,13 +90,16 @@ export function TransactionFlowPanel({
           : subtitle
 
   const showTitleText = stage === "approve" || stage === "processing" || stage === "success"
+  const shouldStretch = stage === "processing"
+  const showCloseButton = variant !== "bare" && stage !== "processing" && Boolean(onClose)
 
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden",
-        variant === "surface" && "rounded-radius-md border border-border bg-surface-raised",
-        variant === "bare" && "bg-transparent",
+        "flex min-h-0 flex-col overflow-hidden",
+        shouldStretch ? "h-full" : "h-auto",
+        variant === "surface" && "rounded-radius-md border border-border bg-background shadow-elev-3",
+        variant === "bare" && "bg-background",
         className,
       )}
     >
@@ -106,7 +109,7 @@ export function TransactionFlowPanel({
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+              className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label="Back"
             >
               <ArrowLeft className="size-4" />
@@ -116,22 +119,22 @@ export function TransactionFlowPanel({
           )}
         </div>
 
-        {stage !== "processing" && onClose ? (
+        {showCloseButton ? (
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+            className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label="Close"
           >
-            <span className="text-lg leading-none">x</span>
+            <X className="size-4" />
           </button>
         ) : (
           <div className="size-8" aria-hidden />
         )}
       </div>
 
-      <div className="flex flex-1 min-h-0 flex-col px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-        <div className="mx-auto flex h-full w-full max-w-[26rem] min-h-0 flex-col">
+      <div className={cn("flex min-h-0 flex-col px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4", shouldStretch && "flex-1")}>
+        <div className={cn("mx-auto flex w-full max-w-[26rem] min-h-0 flex-col", shouldStretch && "h-full")}>
           <div className="flex flex-col items-center text-center">
             {stage === "processing" ? (
               <div className="relative flex size-[72px] items-center justify-center sm:size-20">
@@ -165,7 +168,7 @@ export function TransactionFlowPanel({
                 <SparkleDot className="absolute bottom-2 left-3" delay="0.32s" />
               </div>
             ) : (
-              <div className="flex size-14 items-center justify-center rounded-full bg-surface-inset text-foreground">
+              <div className="flex size-14 items-center justify-center rounded-full bg-background text-foreground">
                 {visual ?? <ShieldCheck className="size-7 text-[hsl(var(--brand))]" />}
               </div>
             )}
@@ -179,7 +182,13 @@ export function TransactionFlowPanel({
             <p className="mt-2 max-w-[22rem] text-[12px] leading-5 text-muted-foreground sm:mt-3 sm:text-[13px]">{subtitleText}</p>
           </div>
 
-          <div className={cn("mt-4 min-h-0 flex-1 overflow-y-auto pb-1 sm:mt-6", stage === "processing" && "animate-in fade-in slide-in-from-bottom-2 duration-300")}>
+          <div
+            className={cn(
+              "mt-4 pb-1 sm:mt-6",
+              shouldStretch && "min-h-0 flex-1 overflow-y-auto",
+              stage === "processing" && "animate-in fade-in slide-in-from-bottom-2 duration-300",
+            )}
+          >
             {stage === "processing" ? (
               <div className="space-y-4 pt-2">
                 <div className="relative h-1.5 overflow-hidden rounded-full bg-surface-inset">
@@ -196,7 +205,7 @@ export function TransactionFlowPanel({
                 </div>
               </div>
             ) : rows.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {rows.map((row, index) => (
                   <div key={`${row.label}-${index}`} className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
@@ -221,7 +230,7 @@ export function TransactionFlowPanel({
             {note ? <p className="mt-4 text-[12px] leading-5 text-muted-foreground">{note}</p> : null}
           </div>
 
-          <div className="mt-4 border-t border-border/70 pt-3 sm:mt-5 sm:pt-4">
+          <div className="mt-4 pt-3 sm:mt-5 sm:pt-4">
             {stage === "processing" ? (
               <div className="flex items-center justify-center gap-2 text-[12px] text-muted-foreground">
                 <LoaderCircle className="size-3.5 animate-spin text-[hsl(var(--brand))]" />

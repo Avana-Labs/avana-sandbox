@@ -145,7 +145,7 @@ const DialogContent = React.forwardRef<
         className={cn(
           'mobile-bottom-sheet mobile-dialog-sheet fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-surface-raised p-5 shadow-elev-3 duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 sm:rounded-radius-md sm:p-5 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
           fullScreenOnMobile &&
-            'max-sm:left-0 max-sm:top-0 max-sm:h-[100dvh] max-sm:w-screen max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:border-0 max-sm:p-0 max-sm:shadow-none max-sm:overflow-hidden',
+            'mobile-bottom-sheet-fullscreen max-md:left-0 max-md:top-0 max-md:h-[100dvh] max-md:w-screen max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0 max-md:p-0 max-md:shadow-none max-md:overflow-hidden',
           isDragging ? 'mobile-bottom-sheet-dragging' : '',
           className,
         )}
