@@ -322,31 +322,92 @@ export function HomePageClient() {
   const flowHero = useMemo(() => {
     if (!activeFlow) return null
 
+    const pairHeroClassName =
+      "h-[72px] w-[108px] [&>span]:size-[72px] [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[2.25rem] [&>span]:ring-0 sm:h-[58px] sm:w-[88px] sm:[&>span]:size-[58px] sm:[&>span:nth-child(2)]:left-[1.85rem]"
+    const tokenHeroClassName = "size-[72px] text-[18px] ring-0 sm:size-[58px] sm:text-[15px]"
+    const lockBadgeClassName =
+      "absolute bottom-0 left-[2.9rem] inline-flex size-7 items-center justify-center rounded-full border border-border bg-background sm:left-[2.35rem] sm:size-6"
+
     if (activeFlow.mode === "borrow" && borrowToken) {
       return (
         <div className="flex items-center gap-3 sm:gap-2.5">
           <div className="relative">
-            <PairVisual
-              visuals={borrowPool.visuals}
-              className="h-[72px] w-[108px] [&>span]:size-[72px] [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[2.25rem] [&>span]:ring-0 sm:h-[58px] sm:w-[88px] sm:[&>span]:size-[58px] sm:[&>span:nth-child(2)]:left-[1.85rem]"
-            />
-            <span className="absolute bottom-0 left-[2.9rem] inline-flex size-7 items-center justify-center rounded-full border border-border bg-background sm:left-[2.35rem] sm:size-6">
+            <PairVisual visuals={borrowPool.visuals} className={pairHeroClassName} />
+            <span className={lockBadgeClassName}>
               <Lock className="size-3 text-foreground" />
             </span>
           </div>
           <ArrowRight className="size-4 text-foreground" aria-hidden />
-          <TokenBubble visual={borrowToken.visual} className="size-[72px] text-[18px] ring-0 sm:size-[58px] sm:text-[15px]" />
+          <TokenBubble visual={borrowToken.visual} className={tokenHeroClassName} />
+        </div>
+      )
+    }
+
+    if (activeFlow.mode === "repay") {
+      return (
+        <div className="flex items-center gap-3 sm:gap-2.5">
+          <TokenBubble visual={getBorrowTokenById("usdc").visual} className={tokenHeroClassName} />
+          <ArrowRight className="size-4 text-foreground" aria-hidden />
+          <div className="relative">
+            <PairVisual visuals={repayPool.visuals} className={pairHeroClassName} />
+            <span className={lockBadgeClassName}>
+              <Lock className="size-3 text-foreground" />
+            </span>
+          </div>
+        </div>
+      )
+    }
+
+    if (activeFlow.mode === "claim") {
+      const selectedPosition =
+        HOME_CLAIM_POSITIONS.find((position) => claimSelections[position.id]) ??
+        HOME_CLAIM_POSITIONS[0]
+
+      return (
+        <div className="flex items-center gap-3 sm:gap-2.5">
+          <div className="relative">
+            <PairVisual
+              visuals={[selectedPosition.breakdown[0].visual, selectedPosition.breakdown[1]?.visual ?? selectedPosition.breakdown[0].visual]}
+              className={pairHeroClassName}
+            />
+          </div>
+          <ArrowRight className="size-4 text-foreground" aria-hidden />
+          <TokenBubble visual={selectedPosition.breakdown[0].visual} className={tokenHeroClassName} />
+        </div>
+      )
+    }
+
+    if (activeFlow.mode === "remove") {
+      return (
+        <div className="flex items-center gap-3 sm:gap-2.5">
+          <div className="relative">
+            <PairVisual visuals={removePool.visuals} className={pairHeroClassName} />
+            <span className={lockBadgeClassName}>
+              <Lock className="size-3 text-foreground" />
+            </span>
+          </div>
+          <ArrowRight className="size-4 text-foreground" aria-hidden />
+          <PairVisual visuals={removePool.visuals} className={pairHeroClassName} />
         </div>
       )
     }
 
     return null
-  }, [activeFlow, borrowPool.visuals, borrowToken])
+  }, [activeFlow, borrowPool.visuals, borrowToken, claimSelections, removePool.visuals, repayPool.visuals])
 
   const flowConfig = useMemo(() => {
     if (!activeFlow) {
       return null
     }
+
+    const aaveFooterNote = (
+      <>
+        Powered by Aave v4.{" "}
+        <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
+          Learn More
+        </a>
+      </>
+    )
 
     if (activeFlow.stage === "success" && activeFlow.success) {
         return {
@@ -361,14 +422,7 @@ export function HomePageClient() {
         progressLeftLabel: undefined,
         progressRightLabel: undefined,
         feeValue: "$0",
-        footerNote: activeFlow.mode === "borrow" ? (
-          <>
-            Powered by Aave v4.{" "}
-            <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
-              Learn More
-            </a>
-          </>
-        ) : undefined,
+        footerNote: aaveFooterNote,
       }
     }
 
@@ -392,21 +446,14 @@ export function HomePageClient() {
           progressLeftLabel: `${formatCompactUsd(borrowPool.borrowPowerUsd - borrowPreview.remainingBorrowPowerUsd)} used`,
           progressRightLabel: `${formatCompactUsd(borrowPreview.remainingBorrowPowerUsd)} available`,
           feeValue: "$0",
-          footerNote: (
-            <>
-              Powered by Aave v4.{" "}
-              <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
-                Learn More
-              </a>
-            </>
-          ),
+          footerNote: aaveFooterNote,
         }
       case "repay":
         return {
           actionLabel: "repayment",
-          amountLabel: `${formatCompactUsd(Number.parseFloat(repayAmount || "0"))} USDC`,
+          amountLabel: `Repay ${formatCompactUsd(Number.parseFloat(repayAmount || "0"))} in USDC`,
           title: "Repayment successful",
-          subtitle: `Repay debt on ${repayPool.name}.`,
+          subtitle: `against ${repayPool.visuals[0].symbol} / ${repayPool.visuals[1].symbol} collateral`,
           rows: [
             { label: "Current debt", value: `${formatCompactUsd(debts[repayPoolId] ?? 0)} USDC` },
             { label: "Remaining debt", value: repayPreview.remainingDebtLabel },
@@ -419,14 +466,21 @@ export function HomePageClient() {
           progressLeftLabel: `${formatCompactUsd((debts[repayPoolId] ?? 0) - repayPreview.remainingDebtUsd)} repaid`,
           progressRightLabel: `${repayPreview.remainingDebtLabel} left`,
           feeValue: "$0",
-          footerNote: undefined,
+          footerNote: aaveFooterNote,
         }
       case "claim":
+        const selectedPositionCount = claimPreview.selectedPositionIds.length
+        const selectedPosition =
+          HOME_CLAIM_POSITIONS.find((position) => claimPreview.selectedPositionIds.includes(position.id)) ??
+          HOME_CLAIM_POSITIONS[0]
         return {
           actionLabel: "claim",
-          amountLabel: formatUsd(claimPreview.effectiveClaimUsd),
+          amountLabel: `Claim ${formatUsd(claimPreview.effectiveClaimUsd)}`,
           title: "Claim successful",
-          subtitle: "Claim accrued LP fees.",
+          subtitle:
+            selectedPositionCount > 1
+              ? `from ${selectedPositionCount} collateral positions`
+              : `from ${selectedPosition.name}`,
           rows: [
             { label: "Positions selected", value: String(claimPreview.selectedPositionIds.length) },
             { label: "Total claimable", value: formatUsd(claimPreview.selectedTotalUsd) },
@@ -438,14 +492,14 @@ export function HomePageClient() {
           progressLeftLabel: `${claimPreview.selectedPositionIds.length} selected`,
           progressRightLabel: `${HOME_CLAIM_POSITIONS.length - claimPreview.selectedPositionIds.length} remaining`,
           feeValue: "$0",
-          footerNote: undefined,
+          footerNote: aaveFooterNote,
         }
       case "remove":
         return {
           actionLabel: "removal",
-          amountLabel: `${removePercent}%`,
+          amountLabel: `Remove ${removePercent}% collateral`,
           title: "Removal successful",
-          subtitle: `Remove collateral from ${removePool.name}.`,
+          subtitle: `from ${removePool.visuals[0].symbol} / ${removePool.visuals[1].symbol}`,
           rows: [
             { label: "Returned to wallet", value: formatCompactUsd(removePreview.removeUsd), tone: "positive" },
             { label: "Remaining collateral", value: formatCompactUsd(removePreview.afterCollateralUsd) },
@@ -458,7 +512,7 @@ export function HomePageClient() {
           progressLeftLabel: `${formatCompactUsd(removePreview.removeUsd)} removed`,
           progressRightLabel: `${formatCompactUsd(removePreview.afterCollateralUsd)} left`,
           feeValue: "$0",
-          footerNote: undefined,
+          footerNote: aaveFooterNote,
         }
     }
   }, [
