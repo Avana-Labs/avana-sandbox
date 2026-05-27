@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import {
   Select,
   SelectContent,
@@ -131,7 +132,7 @@ export function StakeWizard() {
                         <Input
                           type="text"
                           value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
+                          onChange={(e) => setAmount(sanitizeNumericInput(e.target.value))}
                           placeholder={`Enter amount in ${getSelectedAsset()?.name || "tokens"}`}
                         />
                       </div>
@@ -140,7 +141,7 @@ export function StakeWizard() {
                         <Input
                           type="number"
                           value={duration}
-                          onChange={(e) => setDuration(e.target.value)}
+                          onChange={(e) => setDuration(sanitizeNumericInput(e.target.value))}
                           placeholder="How long assets stay staked"
                           min="1"
                         />

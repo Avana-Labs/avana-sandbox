@@ -227,6 +227,56 @@
   }
 }
 
+@media (max-width: 639px) {
+  .mobile-bottom-sheet {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    transform: none;
+    overflow: hidden;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-left-radius: 1.75rem;
+    border-top-right-radius: 1.75rem;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding-top: 3.2rem !important;
+    max-height: min(86dvh, calc(100dvh - 2.75rem));
+    will-change: transform, opacity;
+  }
+
+  .mobile-dialog-sheet {
+    opacity: 1;
+    transition:
+      transform 380ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 220ms ease-out;
+  }
+
+  @starting-style {
+    .mobile-dialog-sheet[data-state="open"] {
+      opacity: 0;
+      transform: translateY(calc(100% + 1rem));
+    }
+  }
+
+  .mobile-bottom-sheet-dragging {
+    transition: none !important;
+  }
+
+  .mobile-bottom-sheet-handle {
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .mobile-bottom-sheet-handle:active {
+    cursor: grabbing;
+  }
+}
+
 /* Premium depth: soft lift in light mode, inset edge in dark */
 .surface-elevated {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
