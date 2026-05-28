@@ -60,11 +60,13 @@ export function TokenPickerDialog({
   onOpenChange,
   selectedTokenId,
   onSelect,
+  tokens = HOME_BORROW_TOKENS,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedTokenId: string | null
   onSelect: (tokenId: string) => void
+  tokens?: HomeBorrowToken[]
 }) {
   const [query, setQuery] = useState("")
 
@@ -72,13 +74,21 @@ export function TokenPickerDialog({
     const normalizedQuery = query.trim().toLowerCase()
 
     if (!normalizedQuery) {
-      return HOME_BORROW_TOKENS
+      return tokens
     }
 
-    return HOME_BORROW_TOKENS.filter(
+    return tokens.filter(
       (token) => token.symbol.toLowerCase().includes(normalizedQuery) || token.name.toLowerCase().includes(normalizedQuery),
     )
-  }, [query])
+  }, [query, tokens])
+  const aaveFooterNote = (
+    <>
+      Powered by Aave v4.{" "}
+      <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
+        Learn More
+      </a>
+    </>
+  )
 
   return (
     <Dialog
@@ -121,7 +131,7 @@ export function TokenPickerDialog({
           </div>
 
           <div className="mt-2 grid grid-cols-5 gap-1 px-3 pt-2">
-            {HOME_BORROW_TOKENS.slice(0, 5).map((token) => (
+            {tokens.slice(0, 5).map((token) => (
               <ShortcutTokenButton
                 key={`shortcut-${token.id}`}
                 visual={token.visual}
@@ -170,6 +180,10 @@ export function TokenPickerDialog({
                 No tokens match that search.
               </div>
             ) : null}
+          </div>
+
+          <div className="border-t border-border px-5 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 text-center text-[12px] text-muted-foreground">
+            {aaveFooterNote}
           </div>
         </div>
       </DialogContent>
