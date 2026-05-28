@@ -489,6 +489,7 @@ export type HeroMarketCardProps = {
   title: string
   subtitle?: string
   hideTitleOnMobile?: boolean
+  className?: string
   rows: Array<{
     id: string
     href: string
@@ -501,9 +502,14 @@ export type HeroMarketCardProps = {
   }>
 }
 
-export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, rows }: HeroMarketCardProps) {
+export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, className, rows }: HeroMarketCardProps) {
   return (
-    <section className="min-w-[19rem] max-w-[19rem] shrink-0 rounded-radius-md border border-border/70 bg-background p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] md:min-w-[20rem] md:max-w-[20rem] md:p-4">
+    <section
+      className={cn(
+        "min-w-[19rem] max-w-[19rem] shrink-0 rounded-radius-md border border-border/70 bg-background p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] md:min-w-[20rem] md:max-w-[20rem] md:p-4",
+        className,
+      )}
+    >
       <div className="mb-3">
         <h3
           className={cn(
