@@ -1,0 +1,224 @@
+"use client"
+
+import { useCallback, useMemo, useState } from "react"
+import {
+  homePoolSpoke,
+  homeVisualToBorrowVisual,
+  type BorrowPoolRow,
+} from "@/app/lib/borrow-sim"
+import {
+  HOME_BORROW_TOKENS,
+  HOME_COLLATERAL_POOLS,
+  HOME_INITIAL_DEBTS,
+  type HomeBorrowToken,
+  type HomeCollateralPool,
+} from "@/app/lib/home-sim"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "@/app/borrow/components/borrow-modal"
+import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "@/app/borrow/components/repay-remove-modal"
+import {
+  SupplyCollateralModal,
+  type SupplyCollateralContext,
+  type SupplyCollateralResult,
+} from "@/app/borrow/components/supply-collateral-modal"
+import { DebtsPanel, type DebtRowContext } from "@/app/borrow/components/debts-table"
+import { SuppliesPanel, type SupplyRowContext } from "@/app/borrow/components/supplies-table"
+
+type DebtsState = Record<string, number>
+
+function computeHealthFactor(pool: HomeCollateralPool, debt: number): number | null {
+  if (debt <= 0) return Number.POSITIVE_INFINITY
+  return (pool.collateralUsd * (pool.maxLtv / 100)) / debt
+}
+
+function averageHealthFactor(rows: Array<{ healthFactor: number | null }>): number | null {
+  const finite = rows
+    .map((row) => row.healthFactor)
+    .filter((value): value is number => value !== null && Number.isFinite(value))
+  if (finite.length === 0) return null
+  return finite.reduce((sum, value) => sum + value, 0) / finite.length
+}
+
+function getUsdcToken(): HomeBorrowToken {
+  return HOME_BORROW_TOKENS.find((token) => token.id === "usdc") ?? HOME_BORROW_TOKENS[1]
+}
+
+function sortByCollateralDesc(rows: SupplyRowContext[]) {
+  return [...rows].sort((left, right) => right.pool.collateralUsd - left.pool.collateralUsd)
+}
+
+function sortByBorrowedDesc(rows: DebtRowContext[]) {
+  return [...rows].sort((left, right) => right.borrowedUsd - left.borrowedUsd)
+}
+
+export function PortfolioPositions() {
+  const { showDollarAmounts } = useDisplayPreferences()
+  const [debts, setDebts] = useState<DebtsState>(() => ({ ...HOME_INITIAL_DEBTS }))
+  const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
+  const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
+    open: false,
+    context: null,
+  })
+  const [repayRemoveModal, setRepayRemoveModal] = useState<{ open: boolean; context: RepayRemoveContext | null }>({
+    open: false,
+    context: null,
+  })
+
+  const supplies = useMemo<SupplyRowContext[]>(() => {
+    return HOME_COLLATERAL_POOLS.map((pool) => ({
+      pool,
+      borrowedUsd: debts[pool.id] ?? 0,
+      healthFactor: computeHealthFactor(pool, debts[pool.id] ?? 0),
+      pairApr: pool.pairApr,
+      feesUsd: 0,
+      feesLabel: "$0.00",
+    }))
+  }, [debts])
+
+  const debtsRows = useMemo<DebtRowContext[]>(() => {
+    return HOME_COLLATERAL_POOLS.map((pool) => ({
+      pool,
+      borrowedUsd: debts[pool.id] ?? 0,
+      healthFactor: computeHealthFactor(pool, debts[pool.id] ?? 0),
+      borrowApr: getUsdcToken().borrowApr,
+      accruedInterestUsd: 0,
+      dailyInterestUsd: 0,
+    })).filter((row) => row.borrowedUsd > 0)
+  }, [debts])
+
+  const sortedSupplies = useMemo(() => sortByCollateralDesc(supplies), [supplies])
+  const sortedDebts = useMemo(() => sortByBorrowedDesc(debtsRows), [debtsRows])
+
+  const supplyTotals = useMemo(() => {
+    const collateral = supplies.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
+    const borrowed = supplies.reduce((sum, row) => sum + row.borrowedUsd, 0)
+    const available = supplies.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
+    const fees = supplies.reduce((sum, row) => sum + row.feesUsd, 0)
+    const averageHf = averageHealthFactor(supplies.filter((row) => row.borrowedUsd > 0))
+    return { collateral, borrowed, available, fees, averageHf }
+  }, [supplies])
+
+  const debtTotals = useMemo(() => {
+    const totalBorrowed = debtsRows.reduce((sum, row) => sum + row.borrowedUsd, 0)
+    const totalCollateral = debtsRows.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
+    const accruedInterest = debtsRows.reduce((sum, row) => sum + row.accruedInterestUsd, 0)
+    const averageHf = averageHealthFactor(debtsRows)
+    const dailyInterest = debtsRows.reduce((sum, row) => sum + row.dailyInterestUsd, 0)
+    return { totalBorrowed, totalCollateral, accruedInterest, averageHf, dailyInterest }
+  }, [debtsRows])
+
+  const handleSupplyBorrowMore = useCallback((context: SupplyRowContext) => {
+    setBorrowModal({
+      open: true,
+      context: {
+        pool: context.pool,
+        currentDebtUsd: context.borrowedUsd,
+        defaultTokenId: "usdc",
+      },
+    })
+  }, [])
+
+  const handleSupplyAddCollateral = useCallback((context: SupplyRowContext) => {
+    const pool = context.pool
+    const borrowPoolRow: BorrowPoolRow = {
+      id: pool.id,
+      name: pool.name,
+      venue: pool.venue,
+      feeTier: pool.category,
+      tvlUsd: pool.collateralUsd,
+      spoke: homePoolSpoke(pool.category),
+      ltv: pool.maxLtv,
+      dexes: [],
+      borrowableTokens: [],
+      aprMin: context.pairApr,
+      aprMax: context.pairApr,
+      availableUsd: Math.max(0, pool.borrowPowerUsd - context.borrowedUsd),
+      riskPremiumBps: 0,
+      visuals: pool.visuals.map(homeVisualToBorrowVisual) as BorrowPoolRow["visuals"],
+      collateralExampleUsd: pool.collateralUsd,
+      trendUp: true,
+    }
+    setSupplyModal({ open: true, context: { pool: borrowPoolRow } })
+  }, [])
+
+  const handleSupplyRemove = useCallback((context: SupplyRowContext) => {
+    setRepayRemoveModal({
+      open: true,
+      context: { pool: context.pool, currentDebtUsd: context.borrowedUsd, mode: "remove" },
+    })
+  }, [])
+
+  const handleDebtRepay = useCallback((context: DebtRowContext) => {
+    setRepayRemoveModal({
+      open: true,
+      context: { pool: context.pool, currentDebtUsd: context.borrowedUsd, mode: "repay", borrowApr: context.borrowApr },
+    })
+  }, [])
+
+  const handleDebtManage = useCallback((context: DebtRowContext) => {
+    setBorrowModal({
+      open: true,
+      context: { pool: context.pool, currentDebtUsd: context.borrowedUsd, defaultTokenId: "usdc" },
+    })
+  }, [])
+
+  const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
+    void result
+  }, [])
+
+  const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
+    setDebts((previous) => ({ ...previous, [result.pool.id]: (previous[result.pool.id] ?? 0) + result.amountUsd }))
+  }, [])
+
+  const handleRepayRemoveConfirm = useCallback((result: RepayRemoveResult) => {
+    if (result.mode === "repay") {
+      setDebts((previous) => ({
+        ...previous,
+        [result.pool.id]: Math.max(0, (previous[result.pool.id] ?? 0) - result.amountUsd),
+      }))
+    }
+  }, [])
+
+  return (
+    <section className="space-y-8">
+      <div className="flex flex-col gap-8">
+        <SuppliesPanel
+          rows={sortedSupplies}
+          totals={supplyTotals}
+          onBorrowMore={handleSupplyBorrowMore}
+          onAddCollateral={handleSupplyAddCollateral}
+          onRemove={handleSupplyRemove}
+          showBalance={showDollarAmounts}
+        />
+        <DebtsPanel
+          rows={sortedDebts}
+          totals={debtTotals}
+          onRepay={handleDebtRepay}
+          onManage={handleDebtManage}
+          showBalance={showDollarAmounts}
+        />
+      </div>
+
+      <BorrowModal
+        open={borrowModal.open}
+        context={borrowModal.context}
+        onClose={() => setBorrowModal({ open: false, context: null })}
+        onConfirm={handleBorrowConfirm}
+      />
+
+      <SupplyCollateralModal
+        open={supplyModal.open}
+        context={supplyModal.context}
+        onClose={() => setSupplyModal({ open: false, context: null })}
+        onConfirm={handleSupplyConfirm}
+      />
+
+      <RepayRemoveModal
+        open={repayRemoveModal.open}
+        context={repayRemoveModal.context}
+        onClose={() => setRepayRemoveModal({ open: false, context: null })}
+        onConfirm={handleRepayRemoveConfirm}
+      />
+    </section>
+  )
+}
