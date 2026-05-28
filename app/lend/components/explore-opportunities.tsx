@@ -5,7 +5,7 @@ import { BipolarBar, DeltaPill, FlashValue } from "@/app/components/ui/live"
 import { MARKETS, TOKENS } from "./data"
 
 interface ExploreOpportunitiesProps {
-  openDeposit: (token: typeof TOKENS[number] | typeof MARKETS[number]) => void;
+  openDeposit?: (token: typeof TOKENS[number] | typeof MARKETS[number]) => void;
 }
 
 export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps) {
@@ -23,7 +23,7 @@ export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps)
             <Card
               key={m.symbol}
               className={`border-border bg-surface-raised shadow-elev-1 transition-colors hover:bg-surface-inset cursor-pointer ${m.soon ? "opacity-60 cursor-default hover:bg-surface-raised" : ""}`}
-              onClick={() => !m.soon && openDeposit(m)}
+              onClick={() => !m.soon && openDeposit?.(m)}
             >
               <CardContent className="p-3.5">
                 <div className="flex items-start justify-between">

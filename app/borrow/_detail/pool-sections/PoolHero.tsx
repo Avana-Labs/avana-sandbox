@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import type { PoolDetail, ChartMetricId, TimeRangeId } from "@/app/lib/borrow-detail"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { formatPct } from "@/app/lib/borrow-detail"
-import { RangeTabs, LightweightChart } from "../ui"
+import { LightweightChart } from "../ui"
 import { labelForPoolMetric } from "../lib/selectors"
 
 type PoolHeroProps = {
@@ -17,8 +17,14 @@ type PoolHeroProps = {
   hideIdentity?: boolean
 }
 
-const ALL_METRICS: ChartMetricId[] = ["tvl", "volume", "fees", "price"]
 const BAR_METRICS: ReadonlySet<ChartMetricId> = new Set<ChartMetricId>(["volume", "fees"])
+const RANGE_OPTIONS: Array<{ value: TimeRangeId; label: string }> = [
+  { value: "1D", label: "24H" },
+  { value: "1W", label: "7D" },
+  { value: "1M", label: "30D" },
+  { value: "3M", label: "90D" },
+  { value: "1Y", label: "1Y" },
+]
 
 export function PoolHeroIdentity({
   detail,
@@ -58,13 +64,9 @@ export function PoolHeroIdentity({
 }
 
 export function PoolHero({ detail, leading, actions, className, hideIdentity = false }: PoolHeroProps) {
-  const [metric, setMetric] = React.useState<ChartMetricId>(detail.heroMetric.metricId)
-  const [range, setRange] = React.useState<TimeRangeId>("1M")
-  const [chartType, setChartType] = React.useState<"area" | "bar">("area")
-
-  React.useEffect(() => {
-    setChartType(BAR_METRICS.has(metric) ? "bar" : "area")
-  }, [metric])
+  const metric = detail.heroMetric.metricId
+  const [range, setRange] = React.useState<TimeRangeId>("1W")
+  const chartType: "line" | "bar" = BAR_METRICS.has(metric) ? "bar" : "line"
 
   const series = detail.heroMetric.series[metric][range]
   const points = series.points
@@ -76,7 +78,7 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
     (v: number) => (metric === "price" ? formatPrice(v) : formatCompactUsd(v)),
     [metric],
   )
-  const valueLabel = formatValue(last)
+  const valueLabel = detail.heroMetric.valueLabel
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="pool-hero">
@@ -86,18 +88,19 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
 
       {/* ── 2. Chart card with overlayed value + delta ── */}
       <Card
-        className="relative overflow-hidden border-border bg-surface-raised shadow-elev-1"
+        className="relative overflow-hidden border-border/40 bg-background/70 shadow-none"
         data-testid="pool-hero-chart-card"
       >
         <CardContent className="relative p-0">
-          <div className="h-[340px] w-full md:h-[380px]">
+          <div className="h-[380px] w-full md:h-[460px]">
             <LightweightChart
               series={series}
               type={chartType}
-              height={380}
+              height={460}
               accentClassName={detail.hero.visuals.map((visual) => visual.textClass)}
               ariaLabel={`${labelForPoolMetric(metric)} over ${range}`}
               formatValue={formatValue}
+              showLastLabel
             />
           </div>
           <div className="pointer-events-none absolute left-5 top-5 z-[2]">
@@ -115,45 +118,30 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
 
       {/* ── 4. Controls BELOW chart ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <RangeTabs value={range} onChange={setRange} />
-        <MetricTextTabs metrics={ALL_METRICS} value={metric} onChange={setMetric} />
+        <div role="tablist" aria-label="Time range" className="inline-flex items-center rounded-full bg-surface-inset p-1">
+          {RANGE_OPTIONS.map((option) => {
+            const active = option.value === range
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setRange(option.value)}
+                className={cn(
+                  "rounded-full px-4 py-2 text-[12px] font-medium transition-colors",
+                  active
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </section>
-  )
-}
-
-function MetricTextTabs({
-  metrics,
-  value,
-  onChange,
-}: {
-  metrics: ChartMetricId[]
-  value: ChartMetricId
-  onChange: (v: ChartMetricId) => void
-}) {
-  return (
-    <div role="tablist" aria-label="Chart metric" className="inline-flex items-center gap-4">
-      {metrics.map((m) => {
-        const active = m === value
-        return (
-          <button
-            key={m}
-            role="tab"
-            aria-selected={active}
-            type="button"
-            onClick={() => onChange(m)}
-            className={cn(
-              "text-[12.5px] font-medium tabular-nums transition-colors",
-              active
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {labelForPoolMetric(m)}
-          </button>
-        )
-      })}
-    </div>
   )
 }
 
