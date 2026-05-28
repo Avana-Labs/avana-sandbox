@@ -88,12 +88,12 @@ export function LightweightChart({
         fontSize: 11,
         attributionLogo: false,
       },
-      rightPriceScale: { visible: false, borderVisible: false, scaleMargins: { top: 0.2, bottom: 0.08 } },
+      rightPriceScale: { visible: true, borderVisible: false, scaleMargins: { top: 0.18, bottom: 0.1 } },
       leftPriceScale: { visible: false },
       timeScale: { borderVisible: false, fixLeftEdge: true, fixRightEdge: true },
       grid: {
         vertLines: { visible: false },
-        horzLines: { visible: false },
+        horzLines: { visible: true, color: mfColor(0.08) },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
@@ -269,11 +269,15 @@ export function LightweightChart({
 }
 
 function toChartData(series: Series, type: LwChartType) {
-  return series.points
-    .map((p) => ({ time: toLwTime(p.t), value: p.v }))
-    .filter((p) => Number.isFinite(p.value))
-    .sort((a, b) => (a.time > b.time ? 1 : a.time < b.time ? -1 : 0))
-    .map((p) => (type === "bar" ? { time: p.time, value: p.value, color: undefined } : { time: p.time, value: p.value }))
+  const deduped = new Map<string, number>()
+  for (const point of series.points) {
+    if (!Number.isFinite(point.v)) continue
+    deduped.set(toLwTime(point.t), point.v)
+  }
+
+  return [...deduped.entries()]
+    .sort((a, b) => (a[0] > b[0] ? 1 : a[0] < b[0] ? -1 : 0))
+    .map(([time, value]) => (type === "bar" ? { time, value, color: undefined } : { time, value }))
 }
 
 function toLwTime(raw: string): string {

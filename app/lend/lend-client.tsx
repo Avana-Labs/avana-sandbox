@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { TOKENS, MARKETS } from "./components/data"
 import { LendHero } from "./components/lend-hero"
 import { MyInvestments } from "./components/my-investments"
-import { ExploreOpportunities } from "./components/explore-opportunities"
+import { LendAssetSpokes } from "./components/lend-asset-spokes"
 import { HotMarkets } from "./components/hot-markets"
 import { LendModals } from "./components/lend-modals"
 
@@ -65,7 +65,7 @@ export function LendClient() {
           </div>
 
           <div className="mt-8">
-            <ExploreOpportunities openDeposit={openDeposit} />
+            <LendAssetSpokes />
           </div>
 
         </div>
