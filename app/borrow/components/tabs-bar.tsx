@@ -18,7 +18,7 @@ export const POOL_TAB_IDS = ["all-markets", "btc", "eth", "forex", "governance",
 
 export type PoolTabId = (typeof POOL_TAB_IDS)[number]
 
-export type BorrowTabId = PoolTabId | "assets" | "positions"
+export type BorrowTabId = PoolTabId
 
 export type SortOption = { key: string; label: string }
 
@@ -46,8 +46,6 @@ const TAB_ORDER: Array<{ id: BorrowTabId; label: string }> = [
   { id: "forex", label: "Forex" },
   { id: "governance", label: "Governance" },
   { id: "smart-pools", label: "Smart Pools" },
-  { id: "assets", label: "Assets" },
-  { id: "positions", label: "Positions" },
 ]
 
 export function TabsBar({
