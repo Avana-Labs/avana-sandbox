@@ -30,7 +30,7 @@ export function RewardsTabs({ chains }: RewardsTabsProps) {
   const [activeTab, setActiveTab] = useState<(typeof rewardsTabs)[number]["id"]>("quests")
 
   return (
-    <div className="space-y-6">
+    <div id="rewards-tabs" className="space-y-6">
       <div
         className="no-scrollbar flex flex-wrap items-center justify-center gap-1"
         role="tablist"
