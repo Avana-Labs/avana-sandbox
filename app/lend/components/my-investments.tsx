@@ -10,7 +10,7 @@ export function MyInvestments({ openDeposit }: MyInvestmentsProps) {
   return (
     <div className="mb-10">
       <div className="mb-3">
-        <h2 className="text-[14px] font-medium tracking-tight text-foreground">My investments</h2>
+        <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">My investments</h2>
       </div>
       <Card className="border-border bg-surface-raised shadow-elev-1 overflow-hidden">
         <CardContent className="p-0">

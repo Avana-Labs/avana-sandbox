@@ -12,7 +12,7 @@ export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps)
   return (
     <div>
       <div className="mb-3">
-        <h2 className="text-[14px] font-medium tracking-tight text-foreground">Explore opportunities</h2>
+        <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">Explore opportunities</h2>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">

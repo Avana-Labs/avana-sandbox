@@ -30,7 +30,7 @@ export function HotMarkets({
   return (
     <div>
       <div className="mb-3">
-        <h2 className="text-[14px] font-medium tracking-tight text-foreground">Top movers</h2>
+        <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">Top movers</h2>
       </div>
 
       <div
