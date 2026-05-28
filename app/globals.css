@@ -77,39 +77,39 @@
   }
 
   .dark {
-    /* Premium green-tinted near-black, Robinhood-inspired */
-    --background: 150 8% 6%;         /* #0D1110 deep canvas */
-    --foreground: 150 8% 96%;        /* #F2F5F3 near white */
+    /* Neutral slate dark mode; keep Avana cyan as the brand accent */
+    --background: 220 20% 6%;         /* deep canvas */
+    --foreground: 220 15% 96%;        /* near white */
 
-    --card: 150 7% 9%;                /* #151A18 elevated card */
-    --card-foreground: 150 8% 96%;
+    --card: 220 16% 9%;               /* elevated card */
+    --card-foreground: 220 15% 96%;
 
-    --popover: 150 7% 11%;            /* popover a touch lighter */
-    --popover-foreground: 150 8% 96%;
+    --popover: 220 14% 11%;           /* popover a touch lighter */
+    --popover-foreground: 220 15% 96%;
 
-    --primary: 145 65% 55%;           /* Robinhood green */
-    --primary-foreground: 150 10% 8%;
+    --primary: 145 65% 55%;           /* existing primary accent */
+    --primary-foreground: 220 10% 8%;
 
-    --secondary: 150 6% 14%;
-    --secondary-foreground: 150 8% 96%;
+    --secondary: 220 10% 14%;
+    --secondary-foreground: 220 15% 96%;
 
-    --muted: 150 6% 14%;              /* #1F2523 inner panels */
-    --muted-foreground: 150 6% 64%;   /* #98A29D subtle text */
+    --muted: 220 10% 14%;             /* inner panels */
+    --muted-foreground: 220 8% 64%;   /* subtle text */
 
-    --accent: 150 6% 14%;
-    --accent-foreground: 150 8% 96%;
+    --accent: 220 10% 14%;
+    --accent-foreground: 220 15% 96%;
 
     --destructive: 0 62% 50%;
-    --destructive-foreground: 150 8% 96%;
+    --destructive-foreground: 220 15% 96%;
 
-    --border: 150 6% 16%;             /* #242B28 hairline */
-    --input: 150 6% 16%;
+    --border: 220 10% 16%;            /* hairline */
+    --input: 220 10% 16%;
     --ring: 145 65% 55%;
 
     /* Elevated sub-surfaces for nested cards & hover states */
-    --surface-1: 150 6% 12%;          /* #1B2220 */
-    --surface-2: 150 6% 16%;          /* #242B28 */
-    --surface-hover: 150 6% 18%;      /* #2A322F */
+    --surface-1: 220 10% 12%;
+    --surface-2: 220 10% 16%;
+    --surface-hover: 220 10% 18%;
 
     /* Avana brand cyan */
     --brand: 191 99% 41%;
@@ -132,8 +132,8 @@
     --accent-emphasis-foreground: 222 20% 11%;
     --accent-emphasis-soft: 214 40% 18%;
 
-    --surface-raised: 150 7% 10%;
-    --surface-inset: 150 6% 13%;
+    --surface-raised: 220 14% 10%;
+    --surface-inset: 220 12% 13%;
   }
 }
 
