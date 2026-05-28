@@ -42,10 +42,10 @@ export function MyInvestments({ openDeposit }: MyInvestmentsProps) {
                       <div className="font-data text-[11px] tabular-nums text-muted-foreground">${(t.balance * t.price).toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
                     </td>
                     <td className="py-2.5 text-right">
-                      <span className="font-data text-[13px] font-medium tabular-nums text-emerald-600 dark:text-emerald-400">{t.apy.toFixed(2)}%</span>
+                      <span className="font-data text-[13px] font-medium tabular-nums text-[#01AACF]">{t.apy.toFixed(2)}%</span>
                     </td>
                     <td className="py-2.5 pr-5 text-right">
-                      <div className="font-data text-[13px] font-medium tabular-nums text-emerald-600 dark:text-emerald-400">+${t.earned.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
+                      <div className="font-data text-[13px] font-medium tabular-nums text-[#01AACF]">+${t.earned.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
                       <div className="font-data text-[11px] tabular-nums text-muted-foreground">+${t.daily.toFixed(2)} today</div>
                     </td>
                   </tr>
@@ -62,12 +62,12 @@ export function MyInvestments({ openDeposit }: MyInvestmentsProps) {
                   <TokenIcon symbol={t.symbol} size="md" />
                   <div className="flex flex-col">
                     <span className="text-[13px] font-medium text-foreground">{t.name}</span>
-                    <span className="font-data text-[11px] tabular-nums text-emerald-600 dark:text-emerald-400">{t.apy.toFixed(2)}% APY</span>
+                    <span className="font-data text-[11px] tabular-nums text-[#01AACF]">{t.apy.toFixed(2)}% APY</span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="font-data text-[13px] tabular-nums text-foreground">{t.symbol === "ETH" ? t.balance.toFixed(3) : t.balance.toLocaleString("en-US", { minimumFractionDigits: 2 })} {t.symbol}</span>
-                  <span className="font-data text-[11px] tabular-nums text-emerald-600 dark:text-emerald-400">
+                  <span className="font-data text-[11px] tabular-nums text-[#01AACF]">
                     +${t.earned.toLocaleString("en-US", { minimumFractionDigits: 2 })} earned
                   </span>
                 </div>

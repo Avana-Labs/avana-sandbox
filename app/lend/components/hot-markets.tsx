@@ -35,7 +35,7 @@ export function HotMarkets({
 
       <div
         className={cn(
-          "-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-2",
+          "grid grid-cols-2 gap-3 pb-2 sm:grid-cols-3 lg:-mx-1 lg:flex lg:snap-x lg:snap-mandatory lg:overflow-x-auto lg:px-1",
           HIDE_SCROLLBAR,
         )}
       >
@@ -47,7 +47,7 @@ export function HotMarkets({
               type="button"
               onClick={() => onSelect?.(m)}
               className={cn(
-                "group relative flex w-[172px] shrink-0 snap-start flex-col justify-between",
+                "group relative flex w-full flex-col justify-between lg:w-[172px] lg:shrink-0 lg:snap-start",
                 "rounded-radius-md border border-border bg-surface-raised p-3.5 text-left shadow-elev-1",
                 "transition-colors hover:bg-surface-inset hover:border-border",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25",
@@ -78,7 +78,7 @@ export function HotMarkets({
                   className={cn(
                     "font-data text-[24px] font-medium leading-none tabular-nums",
                     isUp
-                      ? "text-emerald-600 dark:text-emerald-400"
+                      ? "text-[#01AACF]"
                       : "text-rose-600 dark:text-rose-400",
                   )}
                 >

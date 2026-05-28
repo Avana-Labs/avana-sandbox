@@ -4,6 +4,7 @@ import { StakeWarningCard } from "../stake/components/stake-warning-card"
 import { StakeWizard } from "../stake/stake-wizard"
 import { PortfolioPositions } from "./portfolio-positions"
 import { PortfolioStrategies } from "./portfolio-strategies"
+import { RecentActivity } from "../lend/components/recent-activity"
 
 export const metadata: Metadata = {
   title: "Portfolio",
@@ -19,6 +20,7 @@ export default function PortfolioPage() {
           <StakeWarningCard />
           <PortfolioPositions />
           <PortfolioStrategies />
+          <RecentActivity />
           <StakeWizard />
         </div>
       </main>
