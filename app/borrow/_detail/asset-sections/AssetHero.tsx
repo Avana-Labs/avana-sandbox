@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import type { AssetChartMetricId, AssetDetail, TimeRangeId } from "@/app/lib/borrow-detail"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { formatPct } from "@/app/lib/borrow-detail"
-import { RangeTabs, LightweightChart } from "../ui"
+import { LightweightChart } from "../ui"
 import { labelForAssetMetric } from "../lib/selectors"
 
 type Props = {
@@ -17,8 +17,14 @@ type Props = {
   hideIdentity?: boolean
 }
 
-const ALL_METRICS: AssetChartMetricId[] = ["supply", "borrow", "utilization", "apy"]
 const BAR_METRICS: ReadonlySet<AssetChartMetricId> = new Set<AssetChartMetricId>(["borrow"])
+const RANGE_OPTIONS: Array<{ value: TimeRangeId; label: string }> = [
+  { value: "1D", label: "24H" },
+  { value: "1W", label: "7D" },
+  { value: "1M", label: "30D" },
+  { value: "3M", label: "90D" },
+  { value: "1Y", label: "1Y" },
+]
 
 export function AssetHeroIdentity({
   detail,
@@ -65,13 +71,9 @@ export function AssetHeroIdentity({
 }
 
 export function AssetHero({ detail, leading, actions, className, hideIdentity = false }: Props) {
-  const [metric, setMetric] = React.useState<AssetChartMetricId>(detail.heroMetric.metricId)
-  const [range, setRange] = React.useState<TimeRangeId>("1M")
-  const [chartType, setChartType] = React.useState<"area" | "bar">("area")
-
-  React.useEffect(() => {
-    setChartType(BAR_METRICS.has(metric) ? "bar" : "area")
-  }, [metric])
+  const metric = detail.heroMetric.metricId
+  const [range, setRange] = React.useState<TimeRangeId>("1W")
+  const chartType: "line" | "bar" = BAR_METRICS.has(metric) ? "bar" : "line"
 
   const series = detail.heroMetric.series[metric][range]
   const points = series.points
@@ -83,7 +85,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
     (v: number) => (isPct ? formatPct(v, 2) : formatCompactUsd(v)),
     [isPct],
   )
-  const valueLabel = formatValue(last)
+  const valueLabel = detail.heroMetric.valueLabel
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="asset-hero">
@@ -93,18 +95,19 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
 
       {/* ── 2. Chart card with overlayed value + delta ── */}
       <Card
-        className="relative overflow-hidden border-border bg-surface-raised shadow-elev-1"
+        className="relative overflow-hidden border-border/40 bg-background/70 shadow-none"
         data-testid="asset-hero-chart-card"
       >
         <CardContent className="relative p-0">
-          <div className="h-[340px] w-full md:h-[380px]">
+          <div className="h-[380px] w-full md:h-[460px]">
             <LightweightChart
               series={series}
               type={chartType}
-              height={380}
+              height={460}
               accentClassName={detail.hero.visual.textClass}
               ariaLabel={`${labelForAssetMetric(metric)} over ${range}`}
               formatValue={formatValue}
+              showLastLabel
             />
           </div>
           <div className="pointer-events-none absolute left-5 top-5 z-[2]">
@@ -123,45 +126,30 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
 
       {/* ── 4. Controls BELOW chart ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <RangeTabs value={range} onChange={setRange} />
-        <MetricTextTabs metrics={ALL_METRICS} value={metric} onChange={setMetric} />
+        <div role="tablist" aria-label="Time range" className="inline-flex items-center rounded-full bg-surface-inset p-1">
+          {RANGE_OPTIONS.map((option) => {
+            const active = option.value === range
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setRange(option.value)}
+                className={cn(
+                  "rounded-full px-4 py-2 text-[12px] font-medium transition-colors",
+                  active
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </section>
-  )
-}
-
-function MetricTextTabs({
-  metrics,
-  value,
-  onChange,
-}: {
-  metrics: AssetChartMetricId[]
-  value: AssetChartMetricId
-  onChange: (v: AssetChartMetricId) => void
-}) {
-  return (
-    <div role="tablist" aria-label="Chart metric" className="inline-flex items-center gap-4">
-      {metrics.map((m) => {
-        const active = m === value
-        return (
-          <button
-            key={m}
-            role="tab"
-            aria-selected={active}
-            type="button"
-            onClick={() => onChange(m)}
-            className={cn(
-              "text-[12.5px] font-medium tabular-nums transition-colors",
-              active
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {labelForAssetMetric(m)}
-          </button>
-        )
-      })}
-    </div>
   )
 }
 
@@ -193,4 +181,3 @@ function InlineDelta({
     </div>
   )
 }
-

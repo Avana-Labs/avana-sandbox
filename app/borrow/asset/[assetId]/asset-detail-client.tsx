@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { StickyDetailHeader, RiskLevelPill, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { StickyDetailHeader, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
 import {
   AssetHero,
   AssetHeroIdentity,
@@ -16,11 +16,11 @@ import {
   TransactionHistoryCard,
   RelatedAssetsRow,
 } from "@/app/borrow/_detail/asset-sections"
-import { RiskSection, AboutCard, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { RiskSection, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { AssetDepositSidebar } from "@/app/borrow/_detail/sidebars"
 import { cn } from "@/lib/utils"
 
-function TokenAvatar({ visual, className }: { visual: any; className?: string }) {
+function TokenAvatar({ visual, className }: { visual: AssetDetail["hero"]["visual"]; className?: string }) {
   return (
     <span
       className={cn(
@@ -95,7 +95,7 @@ export function AssetDetailClient({ detail }: Props) {
 
           <AssetHeroIdentity detail={detail} className="mb-6" />
 
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
             <div ref={heroRef} className="flex min-w-0 flex-col space-y-10">
               <AssetHero detail={detail} hideIdentity />
               <QuickStatsGrid detail={detail} />
@@ -110,7 +110,6 @@ export function AssetDetailClient({ detail }: Props) {
               <AssetCashflowCard detail={detail} />
               <RiskSection detail={detail} />
               <TransactionHistoryCard transactions={detail.transactions} />
-              <AboutCard about={detail.about} />
               <RelatedAssetsRow detail={detail} />
             </div>
 
