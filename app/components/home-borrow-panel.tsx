@@ -12,6 +12,9 @@ type HomeBorrowPanelProps = {
   amount: string
   preview: BorrowPreview
   submitLabel?: string
+  poolReadOnly?: boolean
+  hideSubmitButton?: boolean
+  flatHero?: boolean
   onAmountChange: (value: string) => void
   onOpenPoolSheet: () => void
   onOpenTokenSheet: () => void
@@ -24,6 +27,9 @@ export function HomeBorrowPanel({
   amount,
   preview,
   submitLabel,
+  poolReadOnly = false,
+  hideSubmitButton = false,
+  flatHero = false,
   onAmountChange,
   onOpenPoolSheet,
   onOpenTokenSheet,
@@ -31,15 +37,18 @@ export function HomeBorrowPanel({
 }: HomeBorrowPanelProps) {
   const selectedAssetLabel = token?.symbol ?? "Select asset"
   const defaultBorrowToken = HOME_BORROW_TOKENS[0]
+  const heroClass = flatHero
+    ? "px-1 py-3 md:flex-1 md:min-h-[140px]"
+    : "rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:flex-1 md:min-h-[250px]"
 
   return (
     <div className="flex h-full flex-col gap-2.5">
-      <div className="rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:flex-1 md:min-h-[250px]">
+      <div className={heroClass}>
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-[hsl(var(--brand))]">You&apos;re borrowing</span>
         </div>
 
-        <div className="flex min-h-[150px] flex-col items-center justify-center gap-4 py-3 sm:min-h-[220px] md:min-h-[150px] md:flex-1 md:py-0">
+        <div className={flatHero ? "flex min-h-[100px] flex-col items-center justify-center gap-4 py-3 sm:min-h-[120px] md:min-h-[110px] md:flex-1 md:py-0" : "flex min-h-[150px] flex-col items-center justify-center gap-4 py-3 sm:min-h-[220px] md:min-h-[150px] md:flex-1 md:py-0"}>
           <label className="flex items-baseline justify-center gap-2">
             <input
               type="text"
@@ -75,38 +84,60 @@ export function HomeBorrowPanel({
           <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
         </Button>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)_1rem] md:gap-2.5 md:px-3.5"
-          onClick={onOpenPoolSheet}
-        >
-          <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
-            <PairVisual
-              visuals={pool.visuals}
-              className="h-10 w-[3.2rem] shrink-0 [&>span]:size-10 [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[1.25rem] md:h-9 md:w-[2.75rem] md:[&>span]:size-8 md:[&>span:nth-child(2)]:left-[1.05rem]"
-            />
-          </span>
-          <span className="flex min-w-0 flex-col leading-tight">
-            <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
-              Collateral position
+        {poolReadOnly ? (
+          <div className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md border border-border bg-surface-raised px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)_1rem] md:gap-2.5 md:px-3.5">
+            <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
+              <PairVisual
+                visuals={pool.visuals}
+                className="h-10 w-[3.2rem] shrink-0 [&>span]:size-10 [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[1.25rem] md:h-9 md:w-[2.75rem] md:[&>span]:size-8 md:[&>span:nth-child(2)]:left-[1.05rem]"
+              />
             </span>
-            <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
-              {pool.name}
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+                Collateral position
+              </span>
+              <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
+                {pool.name}
+              </span>
             </span>
-          </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
-        </Button>
+            <span />
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)_1rem] md:gap-2.5 md:px-3.5"
+            onClick={onOpenPoolSheet}
+          >
+            <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
+              <PairVisual
+                visuals={pool.visuals}
+                className="h-10 w-[3.2rem] shrink-0 [&>span]:size-10 [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[1.25rem] md:h-9 md:w-[2.75rem] md:[&>span]:size-8 md:[&>span:nth-child(2)]:left-[1.05rem]"
+              />
+            </span>
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+                Collateral position
+              </span>
+              <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
+                {pool.name}
+              </span>
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
+          </Button>
+        )}
       </div>
 
-      <Button
-        type="button"
-        className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90 md:shrink-0"
-        disabled={!preview.isValid || preview.isEmpty}
-        onClick={onSubmit}
-      >
-        {submitLabel ?? preview.ctaLabel}
-      </Button>
+      {!hideSubmitButton ? (
+        <Button
+          type="button"
+          className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90 md:shrink-0"
+          disabled={!preview.isValid || preview.isEmpty}
+          onClick={onSubmit}
+        >
+          {submitLabel ?? preview.ctaLabel}
+        </Button>
+      ) : null}
     </div>
   )
 }
