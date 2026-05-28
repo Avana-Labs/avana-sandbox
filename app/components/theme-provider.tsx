@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react"
 
 export type Theme = "light" | "dark" | "system"
 
@@ -41,6 +41,28 @@ function applyThemeClass(resolvedTheme: "light" | "dark") {
   root.style.colorScheme = resolvedTheme
 }
 
+function disableThemeTransitions() {
+  const style = document.createElement("style")
+  style.setAttribute("data-avana-theme-transition", "true")
+  style.textContent = `
+    *,
+    *::before,
+    *::after {
+      transition-property: none !important;
+      transition-duration: 0s !important;
+      transition-delay: 0s !important;
+      animation: none !important;
+    }
+  `
+  document.head.appendChild(style)
+
+  return () => {
+    window.requestAnimationFrame(() => {
+      style.remove()
+    })
+  }
+}
+
 type ThemeProviderProps = React.PropsWithChildren<{
   attribute?: string
   defaultTheme?: Theme
@@ -49,7 +71,12 @@ type ThemeProviderProps = React.PropsWithChildren<{
   storageKey?: string
 }>
 
-export function ThemeProvider({ children, defaultTheme = "system", storageKey = THEME_STORAGE_KEY }: ThemeProviderProps) {
+export function ThemeProvider({
+  children,
+  defaultTheme = "system",
+  disableTransitionOnChange = true,
+  storageKey = THEME_STORAGE_KEY,
+}: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => getStoredTheme(storageKey, defaultTheme))
   const [systemTheme, setSystemTheme] = useState<"light" | "dark">(() => getSystemTheme())
 
@@ -76,9 +103,23 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
 
   const resolvedTheme = theme === "system" ? systemTheme : theme
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    let restoreTransitions: (() => void) | undefined
+
+    if (disableTransitionOnChange) {
+      restoreTransitions = disableThemeTransitions()
+    }
+
     applyThemeClass(resolvedTheme)
-  }, [resolvedTheme])
+
+    return () => {
+      restoreTransitions?.()
+    }
+  }, [disableTransitionOnChange, resolvedTheme])
 
   const value = useMemo<ThemeContextValue>(
     () => ({
