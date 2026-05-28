@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 }
 
 export default async function RewardsPage() {
-  const { chains, totalPools, completedPools, progressPercentage } = await getCachedHomeSnapshot()
+  const { totalPools, completedPools, progressPercentage } = await getCachedHomeSnapshot()
 
   return (
     <div className="bg-background">
@@ -21,7 +21,7 @@ export default async function RewardsPage() {
             progressPercentage={progressPercentage}
           />
 
-          <RewardsTabs chains={chains} />
+          <RewardsTabs />
         </div>
       </main>
     </div>
