@@ -18,6 +18,8 @@ export function CompactBorrowCard({
   token,
   amount,
   preview,
+  poolReadOnly = false,
+  hideSubmitButton = false,
   onAmountChange,
   onOpenPoolDialog,
   onOpenTokenDialog,
@@ -29,6 +31,8 @@ export function CompactBorrowCard({
   token: HomeBorrowToken | null
   amount: string
   preview: ReturnType<typeof calculateBorrowPreview>
+  poolReadOnly?: boolean
+  hideSubmitButton?: boolean
   onAmountChange: (value: string) => void
   onOpenPoolDialog: () => void
   onOpenTokenDialog: () => void
@@ -48,14 +52,20 @@ export function CompactBorrowCard({
               <div className="font-data text-[20px] font-medium tracking-tight text-foreground">{formatCompactUsd(pool.collateralUsd)}</div>
               <div className="mt-0.5 text-[11.5px] text-muted-foreground">{pool.name}</div>
             </div>
-            <button
-              type="button"
-              onClick={onOpenPoolDialog}
-              className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-inset px-2 text-foreground transition-colors hover:bg-surface-hover"
-            >
-              <PairVisual visuals={pool.visuals} className="w-10" />
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
+            {poolReadOnly ? (
+              <span className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-inset px-2 text-foreground">
+                <PairVisual visuals={pool.visuals} className="w-10" />
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenPoolDialog}
+                className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-inset px-2 text-foreground transition-colors hover:bg-surface-hover"
+              >
+                <PairVisual visuals={pool.visuals} className="w-10" />
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            )}
           </div>
         </PickerSurface>
 
@@ -140,9 +150,11 @@ export function CompactBorrowCard({
         </div>
       ) : null}
 
-      <PrimaryCardButton disabled={!preview.isValid || preview.isEmpty} onClick={onSubmit}>
-        {preview.ctaLabel}
-      </PrimaryCardButton>
+      {!hideSubmitButton ? (
+        <PrimaryCardButton disabled={!preview.isValid || preview.isEmpty} onClick={onSubmit}>
+          {preview.ctaLabel}
+        </PrimaryCardButton>
+      ) : null}
 
       {hasAmount ? (
         <div className="mt-1 grid grid-cols-3 gap-2 text-center md:hidden">
