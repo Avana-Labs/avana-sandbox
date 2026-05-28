@@ -324,10 +324,10 @@ export function LendPageSkeleton() {
 }
 
 // -----------------------------------------------------------------------------
-// perps (`/perps`) — balance row + chart + markets table + account tabs
+// multiply (`/multiply`) — balance row + chart + markets table + account tabs
 // -----------------------------------------------------------------------------
 
-export function PerpsPageSkeleton() {
+export function MultiplyPageSkeleton() {
   return (
     <Page>
       <BalanceHeroSkeleton actionCount={3} />
@@ -337,7 +337,7 @@ export function PerpsPageSkeleton() {
           <Skeleton className="h-3 w-28 rounded-xs" />
           <div className="flex gap-1 rounded-xs border border-border bg-surface-inset p-0.5">
             {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton key={`perps-range-${index}`} className="h-5 w-8 rounded-xs" />
+              <Skeleton key={`multiply-range-${index}`} className="h-5 w-8 rounded-xs" />
             ))}
           </div>
         </div>
@@ -348,12 +348,12 @@ export function PerpsPageSkeleton() {
       <Surface className="mb-6">
         <div className="flex items-center gap-4 border-b border-border px-4 py-2.5">
           {[`flex-1`, `w-14`, `w-14`, `w-16`, `w-12`].map((w, index) => (
-            <Skeleton key={`perps-th-${index}`} className={cn("h-2.5 rounded-xs", w)} />
+            <Skeleton key={`multiply-th-${index}`} className={cn("h-2.5 rounded-xs", w)} />
           ))}
         </div>
         <div className="divide-y divide-border">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={`perps-market-${index}`} className="flex items-center gap-4 px-4 py-3">
+            <div key={`multiply-market-${index}`} className="flex items-center gap-4 px-4 py-3">
               <Skeleton className="h-6 w-6 rounded-xs" />
               <div className="min-w-0 flex-1 space-y-1.5">
                 <Skeleton className="h-3 w-24 rounded-xs" />
@@ -374,12 +374,12 @@ export function PerpsPageSkeleton() {
       <Surface>
         <div className="flex gap-4 border-b border-border px-4">
           {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={`perps-acct-tab-${index}`} className="my-2 h-4 w-20 rounded-xs" />
+            <Skeleton key={`multiply-acct-tab-${index}`} className="my-2 h-4 w-20 rounded-xs" />
           ))}
         </div>
         <div className="divide-y divide-border">
           {Array.from({ length: 3 }).map((_, index) => (
-            <ListRow key={`perps-acct-row-${index}`} avatar trailing />
+            <ListRow key={`multiply-acct-row-${index}`} avatar trailing />
           ))}
         </div>
       </Surface>

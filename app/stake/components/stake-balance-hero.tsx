@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { STAKING_BALANCE } from "../stake.mock"
 
-/** Compact balance hero shown at the top of the stake wizard. Mirrors lend/perps/rewards headers. */
+/** Compact balance hero shown at the top of the stake wizard. Mirrors lend/multiply/rewards headers. */
 export function StakeBalanceHero() {
   const { showDollarAmounts } = useDisplayPreferences()
 

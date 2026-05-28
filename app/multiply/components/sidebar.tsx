@@ -10,9 +10,9 @@ export const TX_HISTORY = [
     amount: "+$2,400"
   },
   {
-    action: "Perp funding",
+    action: "Funding",
     status: "confirmed",
-    details: "BTC-PERP 8h",
+    details: "BTC 8h",
     date: "Yesterday · 16:02",
     amount: "-$12.40"
   },
@@ -37,9 +37,9 @@ export function PromoCard() {
     <Card className="relative overflow-hidden border-emerald-500/20 bg-emerald-500/5 shadow-none">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent" />
       <CardContent className="relative z-10 p-6">
-        <h3 className="mb-2 font-semibold text-emerald-700 dark:text-emerald-50">Trade LP-backed Perps</h3>
+        <h3 className="mb-2 font-semibold text-emerald-700 dark:text-emerald-50">Multiply LP-backed positions</h3>
         <p className="mb-4 text-sm text-emerald-700/80 dark:text-emerald-100/70">
-          Use your active LP positions across Uniswap and Aerodrome as collateral to trade directionally without unstaking.
+          Use your active LP positions across Uniswap and Aerodrome as collateral to multiply directional exposure without unstaking.
         </p>
         <Button variant="secondary" className="w-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:bg-emerald-500/20 dark:text-emerald-100 dark:hover:bg-emerald-500/30">
           Learn more

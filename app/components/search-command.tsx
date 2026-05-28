@@ -14,7 +14,7 @@ import { BORROWABLE_ASSETS, BORROW_POOL_CATALOG, type BorrowAssetVisual } from "
 import { MARKETS, TOKENS } from "@/app/lend/components/data"
 import { cn } from "@/lib/utils"
 
-type SearchTab = "all" | "pools" | "borrow" | "invest"
+type SearchTab = "all" | "pools" | "borrow" | "lend"
 
 type SearchResult = {
   id: string
@@ -32,7 +32,7 @@ const TABS: Array<{ id: SearchTab; label: string }> = [
   { id: "all", label: "All" },
   { id: "pools", label: "Collateral pools" },
   { id: "borrow", label: "Borrow" },
-  { id: "invest", label: "Invest" },
+  { id: "lend", label: "Lend" },
 ]
 
 const lendSymbols: ReadonlySet<string> = new Set([
@@ -76,21 +76,21 @@ function getSearchResults(): SearchResult[] {
     visual: asset.visual,
   }))
 
-  const investResults = BORROWABLE_ASSETS.filter((asset) => lendSymbols.has(asset.symbol))
+  const lendResults = BORROWABLE_ASSETS.filter((asset) => lendSymbols.has(asset.symbol))
     .slice(0, 12)
     .map((asset) => ({
-      id: `invest-${asset.id}`,
-      tab: "invest" as const,
+      id: `lend-${asset.id}`,
+      tab: "lend" as const,
       title: asset.name,
       subtitle: `${asset.symbol} lending market / ${asset.utilization}% utilization`,
-      eyebrow: "Invest asset",
+      eyebrow: "Lend asset",
       metric: `${Math.max(asset.borrowApr - 0.8, 0.1).toFixed(1)}% APY`,
       href: `/borrow/asset/${asset.id}`,
-      keywords: `${asset.id} ${asset.symbol} ${asset.name} invest lend deposit supply yield apy`,
+      keywords: `${asset.id} ${asset.symbol} ${asset.name} lend deposit supply yield apy`,
       visual: asset.visual,
     }))
 
-  return [...poolResults, ...borrowResults, ...investResults]
+  return [...poolResults, ...borrowResults, ...lendResults]
 }
 
 function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
@@ -161,7 +161,7 @@ function SectionIcon({ tab }: { tab: SearchResult["tab"] }) {
 function sectionLabel(tab: SearchResult["tab"]) {
   if (tab === "pools") return "Pools to use as collateral"
   if (tab === "borrow") return "Assets to borrow"
-  return "Assets to lend or invest"
+  return "Assets to lend"
 }
 
 function isTypingTarget(target: EventTarget | null) {
@@ -199,7 +199,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
       return `${result.title} ${result.subtitle} ${result.eyebrow} ${result.keywords}`.toLowerCase().includes(normalizedQuery)
     })
 
-  const groupedResults: Array<[SearchResult["tab"], SearchResult[]]> = (["pools", "borrow", "invest"] as const)
+  const groupedResults: Array<[SearchResult["tab"], SearchResult[]]> = (["pools", "borrow", "lend"] as const)
     .map((tab) => [tab, visibleResults.filter((result) => result.tab === tab)] as [SearchResult["tab"], SearchResult[]])
     .filter(([, group]) => group.length > 0)
 
@@ -226,7 +226,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
         ) : (
           <>
             <Search className="h-4 w-4 shrink-0" />
-            <span className="min-w-0 flex-1 truncate">Search pools, borrow, invest</span>
+            <span className="min-w-0 flex-1 truncate">Search pools, borrow, lend</span>
             <span className="flex h-5 min-w-5 items-center justify-center rounded-[6px] border border-border bg-background px-1 text-[10px] font-normal text-muted-foreground dark:bg-surface-inset">
               /
             </span>
@@ -238,7 +238,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
         <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-[20px] border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-[20px] [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
           <DialogTitle className="sr-only">Search Avana</DialogTitle>
           <DialogDescription className="sr-only">
-            Search collateral pools, assets to borrow, and assets to lend or invest.
+            Search collateral pools, assets to borrow, and assets to lend.
           </DialogDescription>
 
           <div className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -247,7 +247,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search pools, borrow assets, invest assets"
+              placeholder="Search pools, borrow assets, lend assets"
               className="h-8 min-w-0 flex-1 bg-transparent text-[16px] font-normal text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>
