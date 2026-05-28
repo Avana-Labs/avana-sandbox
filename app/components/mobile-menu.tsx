@@ -123,11 +123,11 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     },
     {
       href: "/lend",
-      label: "Invest",
+      label: "Lend",
     },
     {
-      href: "/perps",
-      label: "Trade",
+      href: "/multiply",
+      label: "Multiply",
     },
     {
       href: "/portfolio",
