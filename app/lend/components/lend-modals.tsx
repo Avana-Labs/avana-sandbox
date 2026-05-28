@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/components/transaction-flow"
+import { PrimaryCardButton } from "@/app/components/home/shared"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { TOKENS, MARKETS } from "./data"
@@ -37,11 +37,17 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
   const tokenBalance = token && "balance" in token ? token.balance : 0
   const tokenPrice = token && "price" in token ? token.price : 1
   const tokenApy = token?.apy ?? 5.2
-  const tokenEarned = token && "earned" in token ? token.earned : 0
   const parsedAmount = parseFloat(modalState.amount) || 0
   const isExceedsBalance = isWithdraw && parsedAmount > tokenBalance
   const isInvalidAmount = !parsedAmount || parsedAmount <= 0
-  const estDailyYield = (parsedAmount * tokenApy / 100 / 365).toFixed(3)
+  const aaveFooterNote = (
+    <>
+      Powered by Aave v4.{" "}
+      <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
+        Learn More
+      </a>
+    </>
+  )
 
   useEffect(() => {
     if (stage !== "processing" || !token) return
@@ -63,12 +69,16 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
   return (
     <Dialog open={modalState.isOpen} onOpenChange={(open) => !open && handleClose()}>
       {token && (
-        <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden border-border bg-surface-raised shadow-elev-3 rounded-radius-md">
+        <DialogContent
+          fullScreenOnMobile
+          hideMobileHandle
+          className="sm:max-w-[440px] p-0 overflow-hidden border-border bg-surface-raised shadow-elev-3 rounded-radius-md"
+        >
           <DialogTitle className="sr-only">
             {modalState.type === "deposit" ? "Deposit" : "Withdraw"} {token.symbol}
           </DialogTitle>
           {stage === "entry" ? (
-            <>
+            <div className="flex h-full min-h-0 flex-col bg-background sm:h-auto">
               <DialogHeader className="px-5 py-4 border-b border-border relative">
                 <div className="flex gap-5 relative">
                   <button
@@ -88,100 +98,92 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
                 </div>
               </DialogHeader>
 
-              <div className="px-5 py-5">
-                <div className="mb-5 flex items-center gap-3">
-                  <TokenIcon symbol={token.symbol} size="lg" />
-                  <div>
-                    <div className="text-[14px] font-medium text-foreground">{token.symbol}</div>
-                    <div className="text-[11.5px] text-muted-foreground">
-                      {modalState.type === "withdraw" ? "Withdraw from LP Hub" : "LP Hub · Supply-only spoke"}
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 sm:px-8 sm:pb-5 sm:pt-6">
+                <div className="flex min-h-full flex-col gap-2.5">
+                  <div className="px-1 py-3 md:flex-1 md:min-h-[140px]">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-[hsl(var(--brand))]">
+                        {modalState.type === "deposit" ? "You're depositing" : "You're withdrawing"}
+                      </span>
+                      {"balance" in token ? (
+                        <button
+                          type="button"
+                          onClick={() => setModalState((prev) => ({ ...prev, amount: tokenBalance.toString() }))}
+                          className="text-[12px] font-medium text-[hsl(var(--brand))] transition-colors hover:opacity-80"
+                        >
+                          Max
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <div className="flex min-h-[100px] flex-col items-center justify-center gap-3 py-2 text-center sm:min-h-[120px] md:min-h-[110px] md:py-0">
+                      <label className="flex w-full justify-center">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={modalState.amount}
+                          onChange={(e) => setModalState((prev) => ({ ...prev, amount: sanitizeNumericInput(e.target.value) }))}
+                          className="no-number-spinner w-[min(100%,12ch)] bg-transparent text-center font-compact text-[clamp(3.2rem,9vw,4.8rem)] font-medium leading-none tracking-[-0.05em] text-foreground outline-none placeholder:text-muted-foreground/20"
+                        />
+                      </label>
+                      <div className="text-[12px] text-muted-foreground">
+                        {modalState.amount
+                          ? `≈ $${(parseFloat(modalState.amount || "0") * tokenPrice).toFixed(2)}`
+                          : modalState.type === "deposit"
+                            ? "Start earning from LP Hub deposits"
+                            : "Choose how much to withdraw"}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="group relative mb-4 border-b border-border pb-3 focus-within:border-accent-primary/40 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={modalState.amount}
-                      onChange={(e) => setModalState((prev) => ({ ...prev, amount: sanitizeNumericInput(e.target.value) }))}
-                      className="w-full bg-transparent text-[26px] font-medium outline-none placeholder:text-muted-foreground/30 font-data tabular-nums tracking-tight"
-                    />
-                    <div className="rounded-xs border border-border bg-surface-raised px-2.5 py-1 text-[12px] font-medium">
-                      {token.symbol}
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)] items-center gap-2.5 rounded-radius-md border border-border bg-surface-raised px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)] md:gap-2.5 md:px-3.5">
+                      <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
+                        <TokenIcon symbol={token.symbol} size="lg" />
+                      </span>
+                      <span className="flex min-w-0 flex-col leading-tight">
+                        <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+                          {modalState.type === "deposit" ? "Deposit asset" : "Withdraw asset"}
+                        </span>
+                        <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
+                          {token.symbol}
+                        </span>
+                      </span>
+                    </div>
+
+                    <div className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)] items-center gap-2.5 rounded-radius-md border border-border bg-surface-raised px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)] md:gap-2.5 md:px-3.5">
+                      <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
+                        <span className="font-compact text-[28px] leading-none text-[hsl(var(--brand))]">{modalState.type === "deposit" ? "%" : "$"}</span>
+                      </span>
+                      <span className="flex min-w-0 flex-col leading-tight">
+                        <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
+                          {modalState.type === "deposit" ? "Supply APY" : "Available balance"}
+                        </span>
+                        <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
+                          {modalState.type === "deposit" ? `${tokenApy.toFixed(2)}%` : `${tokenBalance.toLocaleString()}`}
+                        </span>
+                      </span>
                     </div>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>≈ ${(parseFloat(modalState.amount || "0") * tokenPrice).toFixed(2)}</span>
-                    {"balance" in token && (
-                      <button
-                        className="font-medium text-accent-primary hover:underline"
-                        onClick={() => setModalState((prev) => ({ ...prev, amount: tokenBalance.toString() }))}
-                      >
-                        Max: {isWithdraw ? tokenBalance : 12400}
-                      </button>
-                    )}
-                  </div>
-                </div>
 
-                <div className="mb-5 divide-y divide-border border-y border-border text-[12px]">
-                  {modalState.type === "deposit" ? (
-                    <>
-                      <div className="flex justify-between px-0 py-2.5">
-                        <span className="text-muted-foreground">Supply APY</span>
-                        <span className="font-data font-medium tabular-nums text-emerald-600 dark:text-emerald-400">{tokenApy.toFixed(2)}%</span>
-                      </div>
-                      <div className="flex justify-between px-0 py-2.5">
-                        <span className="text-muted-foreground">Base rate + LP premium</span>
-                        <span className="font-data font-medium tabular-nums text-foreground">3.85% + {tokenApy - 3.85}%</span>
-                      </div>
-                      <div className="flex justify-between px-0 py-2.5">
-                        <span className="text-muted-foreground">Est. daily yield</span>
-                        <span className="font-data font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
-                          ${estDailyYield} / day
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex justify-between px-0 py-2.5">
-                        <span className="text-muted-foreground">Deposited balance</span>
-                        <span className="font-data font-medium tabular-nums text-foreground">${tokenBalance.toLocaleString()}.00</span>
-                      </div>
-                      <div className="flex justify-between px-0 py-2.5">
-                        <span className="text-muted-foreground">Interest earned</span>
-                        <span className="font-data font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
-                          +${tokenEarned.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between px-0 py-2.5">
-                        <span className="text-muted-foreground">You&apos;ll stop earning</span>
-                        <span className="font-data font-medium tabular-nums text-foreground">
-                          -${estDailyYield} / day
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  <div className="flex justify-between px-0 py-2.5">
-                    <span className="text-muted-foreground">Network fee</span>
-                    <span className="font-data font-medium tabular-nums text-foreground">~$0.80</span>
-                  </div>
-                </div>
-
-                <Button
-                  className="w-full h-10 text-[13px]"
-                  disabled={isInvalidAmount || Boolean(isExceedsBalance)}
-                  onClick={() => setStage("review")}
-                >
-                  {isInvalidAmount
-                    ? "Enter an amount"
-                    : isExceedsBalance
-                      ? "Exceeds balance"
+                  <PrimaryCardButton
+                    disabled={isInvalidAmount || Boolean(isExceedsBalance)}
+                    onClick={() => setStage("review")}
+                  >
+                    {isInvalidAmount
+                      ? "Enter an amount"
+                      : isExceedsBalance
+                        ? "Exceeds balance"
                       : `Review ${modalState.type === "deposit" ? "deposit" : "withdrawal"}`}
-                </Button>
+                  </PrimaryCardButton>
+
+                  <div className="mt-auto pt-3 text-center text-[12px] text-muted-foreground">
+                    {aaveFooterNote}
+                  </div>
+                </div>
               </div>
-            </>
+            </div>
           ) : (
             <TransactionFlowPanel
               stage={stage as TransactionFlowStage}
@@ -197,8 +199,17 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
                 { label: modalState.type === "deposit" ? "Supply APY" : "Deposited balance", value: modalState.type === "deposit" ? `${tokenApy.toFixed(2)}%` : `$${tokenBalance.toLocaleString()}.00`, tone: modalState.type === "deposit" ? "positive" as const : "default" as const },
                 { label: "Network fee", value: "~$0.80" },
               ]}
-              note="Approve wallet, then wait for confirmation."
-              primaryLabel={stage === "review" ? "Continue" : stage === "approve" ? "Approve wallet" : "Done"}
+              note={undefined}
+              footerNote={aaveFooterNote}
+              primaryLabel={
+                stage === "review"
+                  ? modalState.type === "deposit"
+                    ? "Deposit now"
+                    : "Withdraw now"
+                  : stage === "approve"
+                    ? "Approve wallet"
+                    : "Done"
+              }
               onPrimary={() => {
                 if (stage === "review") setStage("approve")
                 else if (stage === "approve") setStage("processing")
