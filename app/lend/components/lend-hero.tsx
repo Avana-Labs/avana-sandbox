@@ -88,7 +88,7 @@ export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }:
                     ]}
                   />
                   <RechartsTooltip
-                    cursor={{ stroke: "rgba(240, 90, 40, 0.16)", strokeWidth: 1 }}
+                    cursor={{ stroke: "rgba(1, 170, 207, 0.16)", strokeWidth: 1 }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         return (
@@ -143,7 +143,7 @@ export function LendHero({ totalValue, totalEarned, openDeposit, openWithdraw }:
         </div>
 
         {/* RIGHT: ACTION GRID & STATS */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 lg:pt-[128px]">
           <div className="grid grid-cols-2 gap-2.5">
             <button onClick={() => openDeposit(TOKENS[0])} className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15">
               <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
