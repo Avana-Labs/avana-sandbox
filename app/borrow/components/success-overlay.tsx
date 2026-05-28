@@ -67,7 +67,8 @@ export function SuccessOverlay({
             </PillButton>
             <PillButton
               variant="primary"
-              size="sm"
+              size="md"
+              className="h-10 rounded-[14px] bg-[hsl(var(--brand))] px-4 text-[13px] font-medium text-white shadow-elev-1 hover:bg-[hsl(var(--brand))]/90"
               onClick={() => {
                 onPrimary?.()
                 onClose()

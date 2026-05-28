@@ -1,14 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { ArrowLeft, ArrowRight, Lock } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/components/transaction-flow"
 import {
   HOME_BORROW_TOKENS,
@@ -18,16 +12,14 @@ import {
   type HomeBorrowToken,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
-import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import {
   BORROWABLE_TOKEN_OPTIONS,
   formatUsdExact,
-  getSpokeById,
-  healthFactorToneClass,
-  homePoolSpoke,
   homeVisualToBorrowVisual,
 } from "@/app/lib/borrow-sim"
-import { HfNumber, PillButton, SpokeDot, TokenBubble, TokenPairCell } from "./atoms"
+import { HomeBorrowPanel } from "@/app/components/home-borrow-panel"
+import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
+import { PillButton, TokenBubble } from "./atoms"
 
 const BORROWABLE_IDS = new Set(BORROWABLE_TOKEN_OPTIONS.map((option) => option.id))
 
@@ -70,12 +62,14 @@ export function BorrowModal({
   const [amountInput, setAmountInput] = useState("")
   const [tokenId, setTokenId] = useState("usdc")
   const [stage, setStage] = useState<ModalStage>("entry")
+  const [tokenPickerOpen, setTokenPickerOpen] = useState(false)
 
   useEffect(() => {
     if (open && context) {
       setAmountInput(initialAmount ?? "")
       setTokenId(initialTokenId ?? context.defaultTokenId ?? "usdc")
       setStage(startStage)
+      setTokenPickerOpen(false)
     }
   }, [initialAmount, initialTokenId, open, context, startStage])
 
@@ -95,7 +89,6 @@ export function BorrowModal({
 
   const pool = context?.pool ?? HOME_COLLATERAL_POOLS[0]
   const currentDebtUsd = context?.currentDebtUsd ?? 0
-  const spoke = getSpokeById(homePoolSpoke(pool.category))
   const visuals = pool.visuals.map(homeVisualToBorrowVisual) as [
     ReturnType<typeof homeVisualToBorrowVisual>,
     ReturnType<typeof homeVisualToBorrowVisual>,
@@ -105,8 +98,14 @@ export function BorrowModal({
   const projectedDebtUsd = currentDebtUsd + safeAmountUsd
   const projectedHealthFactor =
     projectedDebtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / projectedDebtUsd : Number.POSITIVE_INFINITY
-  const exceedsPower = safeAmountUsd > Math.max(0, pool.borrowPowerUsd - currentDebtUsd)
-  const ctaDisabled = !preview || preview.isEmpty || exceedsPower
+  const aaveFooterNote = (
+    <>
+      Powered by Aave v4.{" "}
+      <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
+        Learn More
+      </a>
+    </>
+  )
 
   useEffect(() => {
     if (stage !== "processing") {
@@ -149,6 +148,85 @@ export function BorrowModal({
     onClose()
   }
 
+  const renderReview = () => (
+    <div className="flex h-full min-h-0 flex-col bg-background sm:h-auto">
+      <div className="px-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-5 sm:pt-5">
+        <button
+          type="button"
+          onClick={() => setStage("entry")}
+          className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Back"
+        >
+          <ArrowLeft className="size-4" />
+        </button>
+      </div>
+
+      <div className="flex flex-1 flex-col px-5 pt-5 sm:px-8 sm:pt-6">
+        <div className="flex flex-col items-center text-center">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <TokenBubble visual={visuals[0]} size="xl" className="ring-0" />
+              <span className="absolute -bottom-0.5 -right-0.5 inline-flex size-5 items-center justify-center rounded-full border border-border bg-background">
+                <Lock className="size-2.5 text-foreground" />
+              </span>
+            </div>
+            <ArrowRight className="size-4 text-foreground" aria-hidden />
+            <TokenBubble visual={homeVisualToBorrowVisual(token.visual)} size="xl" className="ring-0" />
+          </div>
+
+          <h2 className="mt-5 font-sans text-[clamp(2rem,5vw,3rem)] font-medium tracking-tight text-foreground">
+            Borrow {formatUsdExact(safeAmountUsd)} in {token.symbol}
+          </h2>
+          <p className="mt-2 text-[15px] text-muted-foreground">
+            with {visuals[0].symbol} as collateral
+          </p>
+        </div>
+
+        <div className="mt-10 space-y-5">
+          <ReviewRow label="Receive" value={`${safeAmountUsd.toFixed(0)} ${token.symbol}`} />
+          <ReviewRow label="Collateral" value={`${(pool.collateralUsd / Math.max(pool.liquidationUsd, 1)).toFixed(5)} ${visuals[0].symbol}`} />
+          <ReviewRow label="Loan-to-Value" value={`${Math.min(100, (projectedDebtUsd / Math.max(pool.collateralUsd, 1)) * 100).toFixed(0)}%`} tone="positive" />
+          <ReviewRow label="Liquidation price" value={`${pool.liquidationUsd.toLocaleString("en-US", { maximumFractionDigits: 6 })} ${token.symbol}`} />
+          <ReviewRow label="Variable interest rate" value={`${token.borrowApr.toFixed(2)}%`} />
+        </div>
+
+      </div>
+
+      <div className="border-t border-border px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-8 sm:pb-5">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+            <div className="text-[13px] font-medium text-foreground">Fees paid</div>
+            <div className="mt-0.5 text-[12px] text-muted-foreground">Estimated transaction cost</div>
+            </div>
+            <div className="font-data text-[22px] font-medium tracking-tight text-foreground">
+            $0
+            </div>
+          </div>
+
+        <PillButton
+          variant="primary"
+          size="md"
+          className="mt-4 h-12 w-full rounded-[14px] bg-[hsl(var(--brand))] text-[15px] text-white shadow-elev-1 hover:bg-[hsl(var(--brand))]/90"
+          onClick={() => setStage("approve")}
+        >
+          Borrow now
+        </PillButton>
+
+        <div className="mt-3 text-center text-[12px] text-muted-foreground">
+          Powered by Aave v4.{" "}
+          <a
+            href="https://aave.com/docs/aave-v4"
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent-emphasis"
+          >
+            Learn More
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+
   const renderFlow = () => (
     <TransactionFlowPanel
       stage={stage as TransactionFlowStage}
@@ -171,9 +249,10 @@ export function BorrowModal({
           : flowRows
       }
       note={
-        preview.warningTitle ? "Borrow carefully." : "Approve wallet, then wait for confirmation."
+        preview.warningTitle ? "Borrow carefully." : undefined
       }
-      primaryLabel={stage === "review" ? "Continue" : stage === "approve" ? "Approve wallet" : "Done"}
+      footerNote={aaveFooterNote}
+      primaryLabel={stage === "review" ? "Borrow now" : stage === "approve" ? "Approve wallet" : "Done"}
       onPrimary={() => {
         if (stage === "review") setStage("approve")
         else if (stage === "approve") setStage("processing")
@@ -188,109 +267,47 @@ export function BorrowModal({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? handleClose() : null)}>
-    <DialogContent
-      className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md overflow-y-auto rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
-    >
+      <DialogContent
+        fullScreenOnMobile
+        hideMobileHandle
+        className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md overflow-hidden rounded-radius-md border border-border bg-background p-0 shadow-elev-3"
+      >
         <DialogTitle className="sr-only">Borrow against collateral</DialogTitle>
         {stage === "entry" ? (
-          <>
-            <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-              <span className="text-[13px] font-medium text-foreground">Borrow against collateral</span>
+          <div className="flex h-full min-h-0 flex-col bg-background sm:h-auto">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:px-8 sm:pb-5 sm:pt-6">
+              <HomeBorrowPanel
+                pool={pool}
+                token={token}
+                amount={amountInput}
+                preview={preview}
+                poolReadOnly
+                flatHero
+                submitLabel="Review borrow"
+                onAmountChange={setAmountInput}
+                onOpenPoolSheet={() => {}}
+                onOpenTokenSheet={() => setTokenPickerOpen(true)}
+                onSubmit={() => setStage("review")}
+              />
+
+              <div className="mt-auto pt-3 text-center text-[12px] text-muted-foreground">
+                {aaveFooterNote}
+              </div>
             </div>
 
-            <div className="space-y-4 px-5 py-4">
-              <div className="border-b border-border pb-3">
-                <div className="flex items-center justify-between gap-3">
-                  <TokenPairCell visuals={visuals} name={pool.name} subtitle={pool.venue} size="sm" />
-                  <SpokeDot spoke={spoke} />
-                </div>
-                <dl className="mt-3 grid grid-cols-3 gap-x-3 gap-y-2 text-xs">
-                  <MetricCell label="Collateral" value={formatUsdExact(pool.collateralUsd)} />
-                  <MetricCell label="Borrow power" value={formatUsdExact(pool.borrowPowerUsd)} />
-                  <MetricCell label="Max LTV" value={`${pool.maxLtv}%`} />
-                </dl>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <label htmlFor="borrow-amount" className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                    You borrow
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setAmountInput(Math.max(0, pool.borrowPowerUsd - currentDebtUsd).toFixed(0))}
-                    className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 hover:text-foreground hover:underline"
-                  >
-                    Max
-                  </button>
-                </div>
-                <div className="mt-2 flex items-center gap-3">
-                  <input
-                    id="borrow-amount"
-                    inputMode="decimal"
-                    value={amountInput}
-                    onChange={(event) => setAmountInput(sanitizeNumericInput(event.target.value))}
-                    placeholder="0"
-                    className="flex-1 border-none bg-transparent font-data text-[24px] font-medium text-foreground outline-none placeholder:text-muted-foreground"
-                  />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-surface-inset px-2.5 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover"
-                      >
-                        <TokenBubble visual={homeVisualToBorrowVisual(token.visual)} size="xs" />
-                        {token.symbol}
-                        <ChevronDown className="size-3 opacity-60" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-44">
-                      {tokenOptions.map((option) => (
-                        <DropdownMenuItem key={option.id} onSelect={() => setTokenId(option.id)}>
-                          <TokenBubble visual={homeVisualToBorrowVisual(option.visual)} size="xs" className="mr-2" />
-                          <span className="flex-1">{option.symbol}</span>
-                          <span className="text-[11px] text-muted-foreground">{option.borrowApr.toFixed(1)}%</span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">~ {formatUsdExact(safeAmountUsd)}</div>
-              </div>
-
-              <dl className="divide-y divide-border border-y border-border">
-                <StatLine label="After borrow" value={formatUsdExact(projectedDebtUsd)} />
-                <StatLine
-                  label="Health factor"
-                  value={
-                    <span className="flex items-center gap-1.5">
-                      <HfNumber value={formatHealthFactor(currentHealthFactor)} tone={healthFactorToneClass(currentHealthFactor)} size="sm" />
-                      <span className="text-muted-foreground">{"->"}</span>
-                      <HfNumber value={formatHealthFactor(projectedHealthFactor)} tone={healthFactorToneClass(projectedHealthFactor)} size="sm" />
-                    </span>
-                  }
-                />
-                <StatLine label="Remaining power" value={formatUsdExact(Math.max(0, pool.borrowPowerUsd - projectedDebtUsd))} />
-              </dl>
-
-              {preview.warningTitle ? (
-                <div className="border-t border-border pt-3 text-[11.5px] text-muted-foreground">
-                  <div className="font-medium text-foreground">{preview.warningTitle}</div>
-                  <div className="mt-0.5">{preview.warningMessage}</div>
-                </div>
-              ) : null}
-
-              <PillButton
-                variant="primary"
-                size="md"
-                className="w-full"
-                disabled={ctaDisabled}
-                onClick={() => setStage("review")}
-              >
-                {preview.isEmpty ? "Enter an amount" : exceedsPower ? "Exceeds borrow power" : "Review borrow"}
-              </PillButton>
-            </div>
-          </>
+            <TokenPickerDialog
+              open={tokenPickerOpen}
+              onOpenChange={setTokenPickerOpen}
+              selectedTokenId={token.id}
+              tokens={tokenOptions}
+              onSelect={(nextTokenId) => {
+                setTokenId(nextTokenId)
+                setTokenPickerOpen(false)
+              }}
+            />
+          </div>
+        ) : stage === "review" ? (
+          renderReview()
         ) : (
           renderFlow()
         )}
@@ -299,20 +316,21 @@ export function BorrowModal({
   )
 }
 
-function MetricCell({ label, value }: { label: string; value: string }) {
+function ReviewRow({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string
+  value: string
+  tone?: "default" | "positive"
+}) {
   return (
-    <div>
-      <dt className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 font-data text-[12.5px] font-medium tabular-nums text-foreground">{value}</dd>
-    </div>
-  )
-}
-
-function StatLine({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between px-3 py-2 text-[12.5px]">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium text-foreground">{value}</span>
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-[14px] text-foreground">{label}</span>
+      <span className={tone === "positive" ? "text-[14px] font-medium text-emerald-600" : "text-[14px] font-medium text-foreground"}>
+        {value}
+      </span>
     </div>
   )
 }
