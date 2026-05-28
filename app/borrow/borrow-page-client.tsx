@@ -485,9 +485,10 @@ function CurrentLtvCard({
   )
 }
 
-type HeroMarketCardProps = {
+export type HeroMarketCardProps = {
   title: string
-  subtitle: string
+  subtitle?: string
+  hideTitleOnMobile?: boolean
   rows: Array<{
     id: string
     href: string
@@ -500,12 +501,19 @@ type HeroMarketCardProps = {
   }>
 }
 
-function HeroMarketCard({ title, subtitle, rows }: HeroMarketCardProps) {
+export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, rows }: HeroMarketCardProps) {
   return (
     <section className="min-w-[19rem] max-w-[19rem] shrink-0 rounded-radius-md border border-border/70 bg-background p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] md:min-w-[20rem] md:max-w-[20rem] md:p-4">
       <div className="mb-3">
-        <h3 className="font-compact text-[14px] font-medium tracking-tight text-foreground md:text-[15px]">{title}</h3>
-        <p className="mt-0.5 text-[11.5px] leading-4 text-muted-foreground">{subtitle}</p>
+        <h3
+          className={cn(
+            "font-compact text-[14px] font-medium tracking-tight text-foreground md:text-[15px]",
+            hideTitleOnMobile ? "hidden md:block" : "",
+          )}
+        >
+          {title}
+        </h3>
+        {subtitle ? <p className="mt-0.5 text-[11.5px] leading-4 text-muted-foreground">{subtitle}</p> : null}
       </div>
 
       <div className="space-y-3.5">

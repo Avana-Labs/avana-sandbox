@@ -394,8 +394,50 @@ export function PerpsPageSkeleton() {
 export function RewardsPageSkeleton() {
   return (
     <Page>
-      <BalanceHeroSkeleton actionCount={0} />
-      <ProgressRow />
+      <div className="mb-8 grid gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)]">
+        <Surface className="rounded-[28px] px-5 py-4 shadow-none">
+          <div className="flex min-h-[168px] flex-col justify-between gap-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-32 rounded-xs" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-24 rounded-xs" />
+                <Skeleton className="h-3 w-28 rounded-xs" />
+              </div>
+              <Skeleton className="h-10 w-28 rounded-radius-sm" />
+            </div>
+
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-48 rounded-xs" />
+              <Skeleton className="h-3 w-56 rounded-xs" />
+            </div>
+          </div>
+        </Surface>
+
+        <div className="space-y-4">
+          <Skeleton className="h-4 w-36 rounded-xs" />
+
+          {Array.from({ length: 2 }).map((_, index) => (
+            <Surface key={`rewards-hero-row-${index}`} className="rounded-[24px] p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-11 w-11 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-3.5 w-28 rounded-xs" />
+                    <Skeleton className="h-3 w-16 rounded-xs" />
+                  </div>
+                </div>
+                <div className="space-y-2 text-right">
+                  <Skeleton className="h-3.5 w-16 rounded-xs" />
+                  <Skeleton className="h-3 w-12 rounded-xs" />
+                </div>
+              </div>
+            </Surface>
+          ))}
+        </div>
+      </div>
 
       <div className="mb-6 flex justify-center">
         <div className="inline-flex gap-1 rounded-radius-sm border border-border bg-surface-inset p-1">
