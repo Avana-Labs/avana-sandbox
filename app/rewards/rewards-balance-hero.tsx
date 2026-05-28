@@ -1,16 +1,20 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link"
-import { ArrowRight, Info } from "lucide-react"
+import { Info } from "lucide-react"
 import { HeroMarketCard } from "@/app/borrow/borrow-page-client"
 import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/borrow-sim"
 
 const REWARDS_BALANCE_TOTAL = 14_400
-const REWARDS_GAIN_TOKEN = 12.46
-const REWARDS_GAIN_PCT = 4.52
+
+type RewardsBalanceHeroProps = {
+  completedPools: number
+  totalPools: number
+  progressPercentage: number
+}
 
 function formatTokenAmount(value: number) {
   return value.toLocaleString("en-US", {
@@ -19,7 +23,7 @@ function formatTokenAmount(value: number) {
   })
 }
 
-export function RewardsBalanceHero() {
+export function RewardsBalanceHero({ completedPools, totalPools, progressPercentage }: RewardsBalanceHeroProps) {
   const { showDollarAmounts } = useDisplayPreferences()
   const rewardsPools = BORROW_POOL_CATALOG
     .filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
@@ -38,58 +42,59 @@ export function RewardsBalanceHero() {
 
   return (
     <div className="mb-8 grid gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
-      <section className="relative overflow-hidden rounded-radius-md border border-border/70 bg-card px-5 py-3.5">
+      <section className="relative overflow-hidden rounded-radius-md border border-border/70 bg-card px-5 py-3 md:h-[174px]">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
+        <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
+          <Image
+            src="/Avana Icon (Personal) PNG.png"
+            alt=""
+            width={760}
+            height={760}
+            className="h-64 w-64 object-contain opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] md:h-[20rem] md:w-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
+            aria-hidden
+          />
+        </div>
 
-        <div className="relative flex min-h-[136px] flex-col justify-between gap-3">
+        <div className="relative flex min-h-[120px] flex-col gap-2 md:h-full md:min-h-0">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="font-data text-[26px] font-medium leading-none tracking-[-0.04em] text-foreground sm:text-[34px]">
+                <span className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[28px]">
                   {showDollarAmounts ? formatTokenAmount(REWARDS_BALANCE_TOTAL) : "••••••••"}
-                  <span className="ml-2 align-middle text-[0.82em]">AVA</span>
+                  <span className="ml-1.5 align-middle text-[0.9em]">AVA</span>
                 </span>
 
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white dark:bg-zinc-100">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20">
                   <Image
                     src="/Avana Icon (Personal) PNG.png"
                     alt="Avana token"
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 rounded-full object-cover"
+                    width={38}
+                    height={38}
+                    className="h-[38px] w-[38px] scale-[1.68] object-contain brightness-0 invert"
                     priority
                   />
                 </div>
               </div>
 
-              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+              <div className="mt-0.5 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
                 <span>Rewards earned</span>
                 <Info className="h-3.5 w-3.5" />
               </div>
-              <div className="mt-0.5 font-data text-[11px] font-semibold tabular-nums text-pink-500 dark:text-pink-400">
-                {showDollarAmounts ? `+${REWARDS_GAIN_TOKEN.toFixed(2)} AVA (${REWARDS_GAIN_PCT.toFixed(2)}%)` : "••••••••"}
-              </div>
             </div>
 
-            <Button variant="outline" className="h-10 shrink-0 rounded-[14px] px-4 text-[12px] font-semibold shadow-none">
+            <Button variant="outline" className="h-9 shrink-0 rounded-[14px] px-4 text-[12px] font-medium shadow-none">
               Collect rewards
             </Button>
           </div>
 
-          <div className="relative">
-            <Button
-              asChild
-              variant="ghost"
-              className="h-auto justify-start gap-2 p-0 text-left text-[14px] font-semibold tracking-[-0.02em] text-foreground hover:bg-transparent hover:text-foreground/80"
-            >
-              <Link href="#rewards-tabs" aria-label="Find pools with Avana rewards">
-                <span>Find pools with Avana rewards</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <p className="mt-1 max-w-[460px] text-[12px] leading-4.5 text-muted-foreground">
-              Eligible pools have token rewards so you can earn more.
-            </p>
+          <div className="relative mt-auto space-y-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[12px] font-medium text-muted-foreground">Your progress</span>
+              <span className="text-[12px] font-medium text-muted-foreground">
+                {completedPools}/{totalPools} completed
+              </span>
+            </div>
+            <Progress value={progressPercentage} className="h-1.5" aria-label="Overall quest completion progress" />
           </div>
         </div>
       </section>

@@ -9,13 +9,17 @@ export const metadata: Metadata = {
 }
 
 export default async function RewardsPage() {
-  const { chains } = await getCachedHomeSnapshot()
+  const { chains, totalPools, completedPools, progressPercentage } = await getCachedHomeSnapshot()
 
   return (
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-5xl">
-          <RewardsBalanceHero />
+          <RewardsBalanceHero
+            completedPools={completedPools}
+            totalPools={totalPools}
+            progressPercentage={progressPercentage}
+          />
 
           <RewardsTabs chains={chains} />
         </div>
