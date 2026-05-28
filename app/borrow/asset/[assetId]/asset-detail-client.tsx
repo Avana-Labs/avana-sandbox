@@ -75,7 +75,7 @@ export function AssetDetailClient({ detail }: Props) {
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="inline-flex h-8 items-center justify-center rounded-radius-sm bg-accent-primary px-3 text-[12.5px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover lg:hidden"
+              className="inline-flex h-8 items-center justify-center rounded-radius-sm bg-[hsl(var(--brand))] px-3 text-[12.5px] font-medium text-white shadow-elev-1 transition-colors hover:bg-[hsl(var(--brand))]/90 lg:hidden"
             >
               Deposit
             </button>
@@ -175,7 +175,7 @@ function MobileDepositDock({
       <button
         type="button"
         onClick={onToggle}
-        className="fixed inset-x-4 bottom-4 z-30 h-10 rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-3"
+        className="fixed inset-x-4 bottom-4 z-30 h-10 rounded-radius-sm bg-[hsl(var(--brand))] text-[13px] font-medium text-white shadow-elev-3 hover:bg-[hsl(var(--brand))]/90"
       >
         {label}
       </button>
