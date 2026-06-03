@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { StickyDetailHeader, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection, StickyDetailHeader, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
 import {
   AssetHero,
   AssetHeroIdentity,
@@ -17,7 +17,7 @@ import {
   RelatedAssetsRow,
 } from "@/app/borrow/_detail/asset-sections"
 import { RiskSection, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
-import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
+import { AssetTokenActions, AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { cn } from "@/lib/utils"
 
 function TokenAvatar({ visual, className }: { visual: AssetDetail["hero"]["visual"]; className?: string }) {
@@ -117,6 +117,12 @@ export function AssetDetailClient({ detail }: Props) {
               <AssetCashflowCard detail={detail} />
               <RiskSection detail={detail} />
               <TransactionHistoryCard transactions={detail.transactions} />
+              <AboutNewsSection
+                className="lg:hidden"
+                about={detail.about}
+                newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
+                newsImageLabel={detail.hero.symbol}
+              />
               <RelatedAssetsRow detail={detail} />
             </section>
           </div>
@@ -134,7 +140,7 @@ export function AssetDetailClient({ detail }: Props) {
         onToggle={() => setMobileOpen((v) => !v)}
         label={`Deposit ${detail.hero.symbol}`}
       >
-        <AssetTokenSidebar detail={detail} />
+        <AssetTokenActions detail={detail} />
       </MobileDepositDock>
     </div>
   )
