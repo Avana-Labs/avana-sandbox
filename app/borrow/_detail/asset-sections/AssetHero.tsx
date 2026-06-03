@@ -209,7 +209,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
                   aria-selected={active}
                   onClick={() => setRange(option.value)}
                   className={cn(
-                    "rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-all",
+                    "rounded-full px-3.5 py-1.5 text-[11.5px] font-medium transition-all",
                     active
                       ? "bg-white text-[#111111] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
                       : "text-[#8C8C8C] hover:text-[#111111]",
