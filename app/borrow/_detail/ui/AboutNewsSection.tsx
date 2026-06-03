@@ -15,7 +15,7 @@ type Props = {
 
 export function AboutNewsSection({ about, newsImageUrl, newsImageLabel, className }: Props) {
   return (
-    <section className={cn("space-y-4 border-t border-[#ECECEC] pt-10", className)}>
+    <section className={cn("space-y-4 pt-10", className)}>
       <AboutCard about={about} />
       <NewsCard items={buildNewsItems(about, newsImageUrl, newsImageLabel)} />
     </section>
