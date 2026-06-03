@@ -5,7 +5,7 @@ import { ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutCard } from "@/app/borrow/_detail/pool-sections"
-import { HeroSideCard } from "@/app/borrow/_detail/ui"
+import { HeroSideCard, NewsCard } from "@/app/borrow/_detail/ui"
 import { AssetDepositSidebar } from "./AssetDepositSidebar"
 
 type Props = { detail: AssetDetail; className?: string }
@@ -46,6 +46,19 @@ export function AssetTokenSidebar({ detail, className }: Props) {
       </HeroSideCard>
 
       <AboutCard about={detail.about} title={`About ${detail.hero.name}`} compact />
+
+      <NewsCard
+        items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
+          title: entry.title,
+          description: entry.description,
+          source: index === 0 ? "Latest update" : "Protocol note",
+          time: entry.date,
+        }))).map((item) => ({
+          ...item,
+          imageUrl: detail.hero.visual.iconUrl ?? undefined,
+          imageLabel: detail.hero.symbol,
+        }))}
+      />
     </div>
   )
 }

@@ -134,6 +134,10 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
         { date: "2015-07-30", title: "Mainnet launch", description: "Ethereum genesis block mined." },
         { date: "2022-09-15", title: "The Merge", description: "Proof-of-stake consensus activated." },
       ],
+      news: [
+        { time: "2025-01-14", title: "Onboarded", description: "Added to the Uniswap v2 LPs.", source: "Latest update" },
+        { time: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV.", source: "Protocol note" },
+      ],
     },
   },
   weth: {

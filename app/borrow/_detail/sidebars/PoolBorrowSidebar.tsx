@@ -3,8 +3,8 @@
 import * as React from "react"
 import { toast } from "sonner"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { NewsCard } from "@/app/borrow/_detail/ui"
 import { AboutCard } from "@/app/borrow/_detail/pool-sections"
+import { NewsCard } from "@/app/borrow/_detail/ui"
 import {
   calculateBorrowPreview,
   formatCompactUsd,
@@ -77,11 +77,13 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
 
         <AboutCard about={detail.about} />
         <NewsCard
-          items={detail.about.history.slice(0, 3).map((entry, index) => ({
+          items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
             title: entry.title,
             description: entry.description,
             source: index === 0 ? "Latest update" : "Protocol note",
             time: entry.date,
+          }))).map((item) => ({
+            ...item,
             imageUrl: detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined,
             imageLabel: detail.hero.name,
           }))}
