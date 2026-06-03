@@ -77,8 +77,8 @@ export function AccountTabs() {
           </div>
         ) : activeTab === "Positions" ? (
           <div className="space-y-2">
-            <PositionRow symbol="ETH" label="ETH-PERP" side="long" leverage={5} pnlUsd={89.2} pnlPct={1.78} />
-            <PositionRow symbol="SOL" label="SOL-PERP" side="short" leverage={3} pnlUsd={-24.6} pnlPct={-1.23} />
+            <PositionRow symbol="ETH" label="ETH-MULT" side="long" leverage={5} pnlUsd={89.2} pnlPct={1.78} />
+            <PositionRow symbol="SOL" label="SOL-MULT" side="short" leverage={3} pnlUsd={-24.6} pnlPct={-1.23} />
           </div>
         ) : activeTab === "LP Collaterals" ? (
           <div className="divide-y divide-border rounded-radius-sm border border-border bg-surface-inset">

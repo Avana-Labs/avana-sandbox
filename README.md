@@ -19,8 +19,8 @@ The public Avana materials position the protocol around LP collateral across eco
 
 - `/`
 - `/borrow`
-- `/lend` 
-- `/perps`
+- `/lend`
+- `/multiply`
 - `/stake`
 - `/rewards`
 
@@ -56,4 +56,3 @@ npm run start
 
 - Site: https://avana-ashen.vercel.app/
 - Lightpaper: https://avana-ashen.vercel.app/lightpaper
-

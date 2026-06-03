@@ -8,11 +8,11 @@ import { BipolarBar, DeltaPill, FlashValue } from "@/app/components/ui/live"
 
 function LongShortButtons({
   symbol,
-  onTrade,
+  onMultiply,
   size = "md",
 }: {
   symbol: string
-  onTrade?: (symbol: string, side: "long" | "short") => void
+  onMultiply?: (symbol: string, side: "long" | "short") => void
   size?: "sm" | "md"
 }) {
   const sizeClass = size === "sm" ? "h-6 px-2 text-[11px]" : "h-7 px-2.5 text-[11.5px]"
@@ -22,7 +22,7 @@ function LongShortButtons({
         type="button"
         onClick={(event) => {
           event.stopPropagation()
-          onTrade?.(symbol, "long")
+          onMultiply?.(symbol, "long")
         }}
         className={`${sizeClass} inline-flex items-center gap-1 rounded-xs border border-emerald-500/20 bg-emerald-500/10 font-medium text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:border-emerald-500/25 dark:text-emerald-400`}
       >
@@ -33,7 +33,7 @@ function LongShortButtons({
         type="button"
         onClick={(event) => {
           event.stopPropagation()
-          onTrade?.(symbol, "short")
+          onMultiply?.(symbol, "short")
         }}
         className={`${sizeClass} inline-flex items-center gap-1 rounded-xs border border-rose-500/20 bg-rose-500/10 font-medium text-rose-700 transition-colors hover:bg-rose-500/15 dark:border-rose-500/25 dark:text-rose-400`}
       >
@@ -65,10 +65,10 @@ function formatVolume(value: number): string {
 
 export function MarketsTable({
   markets,
-  onTrade,
+  onMultiply,
 }: {
   markets: Market[]
-  onTrade?: (symbol: string, side: "long" | "short") => void
+  onMultiply?: (symbol: string, side: "long" | "short") => void
 }) {
   const totalVolume = markets.reduce((sum, m) => sum + m.volume, 0)
 
@@ -100,7 +100,7 @@ export function MarketsTable({
                   <th className="px-3 pb-2 pt-3 text-right">Volume</th>
                   <th className="px-3 pb-2 pt-3 text-right">Long / Short OI</th>
                   <th className="px-3 pb-2 pt-3 text-center">Max Lev</th>
-                  <th className="px-5 pb-2 pt-3 text-right">Trade</th>
+                  <th className="px-5 pb-2 pt-3 text-right">Multiply</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -150,7 +150,7 @@ export function MarketsTable({
                     </td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex justify-end">
-                        <LongShortButtons symbol={m.symbol} onTrade={onTrade} size="sm" />
+                        <LongShortButtons symbol={m.symbol} onMultiply={onMultiply} size="sm" />
                       </div>
                     </td>
                   </tr>
@@ -202,7 +202,7 @@ export function MarketsTable({
                   </div>
                 </div>
                 <div className="flex justify-end pt-1">
-                  <LongShortButtons symbol={m.symbol} onTrade={onTrade} size="sm" />
+                  <LongShortButtons symbol={m.symbol} onMultiply={onMultiply} size="sm" />
                 </div>
               </div>
             ))}

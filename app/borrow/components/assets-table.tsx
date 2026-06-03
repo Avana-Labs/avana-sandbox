@@ -6,7 +6,6 @@ import {
   formatCompactUsd,
   utilizationToneClass,
   type BorrowableAsset,
-  type BorrowableAssetCategory,
 } from "@/app/lib/borrow-sim"
 import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
@@ -16,9 +15,10 @@ type AssetsTableProps = {
   rows: BorrowableAsset[]
   onBorrow: (asset: BorrowableAsset) => void
   onViewMarket?: (asset: BorrowableAsset) => void
+  groupByCategory?: boolean
 }
 
-export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) {
+export function AssetsPanel({ rows, onBorrow, onViewMarket, groupByCategory = true }: AssetsTableProps) {
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
@@ -27,10 +27,12 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
     )
   }
 
-  const groups = BORROWABLE_CATEGORIES.map((cat) => ({
-    ...cat,
-    assets: rows.filter((row) => row.category === cat.id),
-  })).filter((group) => group.assets.length > 0)
+  const groups = groupByCategory
+    ? BORROWABLE_CATEGORIES.map((cat) => ({
+        ...cat,
+        assets: rows.filter((row) => row.category === cat.id),
+      })).filter((group) => group.assets.length > 0)
+    : [{ id: "all", label: "", dotClass: "", assets: rows }]
 
   return (
     <div>
@@ -42,6 +44,7 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
             dotClass={group.dotClass}
             assets={group.assets}
             onBorrow={onBorrow}
+            hideHeader={!groupByCategory}
           />
         ))}
       </div>
@@ -49,9 +52,11 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket }: AssetsTableProps) 
       <div className="space-y-6 md:hidden">
         {groups.map((group) => (
           <section key={group.id} className="space-y-2">
-            <div className="mb-1">
-              <h3 className="text-[14px] font-medium tracking-tight">{group.label}</h3>
-            </div>
+            {groupByCategory ? (
+              <div className="mb-1">
+                <h3 className="text-[14px] font-medium tracking-tight">{group.label}</h3>
+              </div>
+            ) : null}
             <ul className="space-y-2">
               {group.assets.map((asset) => {
                 const aprTone = aprToneClass(asset.borrowApr)
@@ -118,17 +123,24 @@ function AssetsSection({
   dotClass,
   assets,
   onBorrow,
+  hideHeader = false,
 }: {
   label: string
   dotClass: string
   assets: BorrowableAsset[]
   onBorrow: (asset: BorrowableAsset) => void
+  hideHeader?: boolean
 }) {
   return (
     <section className="mb-2">
-      <div className="mb-3">
-        <h3 className="text-[14px] font-medium tracking-tight">{label}</h3>
-      </div>
+      {!hideHeader ? (
+        <div className="mb-3">
+          <h3 className="flex items-center gap-1.5 text-[14px] font-medium tracking-tight">
+            <span className={cn("size-1.5 rounded-full", dotClass)} aria-hidden />
+            {label}
+          </h3>
+        </div>
+      ) : null}
 
       <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
         <div className="overflow-x-auto">
@@ -200,16 +212,5 @@ function AssetStatLine({ label, value, tone }: { label: string; value: string; t
       <dt className="text-muted-foreground">{label}</dt>
       <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
     </div>
-  )
-}
-
-function SparkIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden className={className}>
-      <path
-        d="M8 1.5l1.35 3.65L13 6.5l-3.65 1.35L8 11.5 6.65 7.85 3 6.5l3.65-1.35L8 1.5z"
-        fill="currentColor"
-      />
-    </svg>
   )
 }

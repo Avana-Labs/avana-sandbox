@@ -17,7 +17,7 @@ type SectionCardProps = {
 }
 
 /**
- * Canonical section shell used across `/perps`, `/lend`, and now the borrow
+ * Canonical section shell used across `/multiply`, `/lend`, and now the borrow
  * detail pages. Title sits OUTSIDE the Card (matches `HotMarkets`,
  * `MyInvestments`) and the Card itself uses the soft `border-border/40 bg-card/50`
  * surface with `shadow-none`. Body padding defaults to `p-6`; tables should

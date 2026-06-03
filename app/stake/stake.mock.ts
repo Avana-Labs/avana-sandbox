@@ -65,7 +65,7 @@ export const stakeSteps = [
 
 export type StakeStep = (typeof stakeSteps)[number]
 
-/** Mock hero totals — same shape as lend / perps / rewards balance rows. */
+/** Mock hero totals — same shape as lend / multiply / rewards balance rows. */
 export const STAKING_BALANCE = {
   total: 14_400,
   gainUsd: 12.46,

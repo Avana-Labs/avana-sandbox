@@ -49,7 +49,7 @@ export const siteNavLinks: SiteNavLink[] = [
   },
   {
     href: "/lend",
-    label: "Invest",
+    label: "Lend",
     icon: ChartNoAxesColumnIncreasing,
     section: "Capital sleeves",
     description: "Lend into sleeves, compare APY, and size positions without losing portfolio context.",
@@ -59,11 +59,11 @@ export const siteNavLinks: SiteNavLink[] = [
     actionExternal: true,
   },
   {
-    href: "/perps",
-    label: "Trade",
+    href: "/multiply",
+    label: "Multiply",
     icon: ChartCandlestick,
     section: "Directional overlays",
-    description: "Monitor leverage, funding, and active overlays in a tighter trading workspace built around LP positions.",
+    description: "Monitor leverage, funding, and active overlays in a tighter LP-backed workspace.",
     highlights: ["Funding view", "Live positions"],
     actionLabel: "Risk warning",
     actionHref: "/risk-warning",
@@ -93,8 +93,8 @@ export const siteNavLinks: SiteNavLink[] = [
 export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
   { href: "/", label: "Express" },
   { href: "/borrow", label: "Borrow" },
-  { href: "/lend", label: "Invest" },
-  { href: "/perps", label: "Trade" },
+  { href: "/lend", label: "Lend" },
+  { href: "/multiply", label: "Multiply" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/rewards", label: "Rewards" },
 ]

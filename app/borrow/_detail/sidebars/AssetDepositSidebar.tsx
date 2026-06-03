@@ -3,10 +3,12 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import { AboutCard } from "@/app/borrow/_detail/pool-sections"
+import { NewsCard } from "@/app/borrow/_detail/ui"
 import { LendModals } from "@/app/lend/components/lend-modals"
 import { TOKENS, MARKETS } from "@/app/lend/components/data"
 
-type Props = { detail: AssetDetail; className?: string }
+type Props = { detail: AssetDetail; className?: string; embedded?: boolean }
 
 type LendToken = (typeof TOKENS)[number] | (typeof MARKETS)[number]
 type ModalState = {
@@ -34,7 +36,7 @@ const INITIAL_MODAL: ModalState = {
  * screen and any lend changes (confetti, Max, base rate breakdown, ...)
  * automatically flow here too.
  */
-export function AssetDepositSidebar({ detail, className }: Props) {
+export function AssetDepositSidebar({ detail, className, embedded = false }: Props) {
   const [modalState, setModalState] = React.useState<ModalState>(INITIAL_MODAL)
 
   const token = React.useMemo(() => toLendToken(detail), [detail])
@@ -57,7 +59,10 @@ export function AssetDepositSidebar({ detail, className }: Props) {
     <>
       <aside
         className={cn(
-          "flex w-full flex-col gap-4 rounded-radius-md border border-border bg-surface-raised p-4 shadow-elev-1",
+          "flex w-full flex-col gap-4",
+          embedded
+            ? "p-0"
+            : "rounded-radius-md border border-border bg-surface-raised p-4 shadow-elev-1",
           className,
         )}
         aria-label={`Deposit ${detail.hero.symbol}`}
@@ -102,6 +107,22 @@ export function AssetDepositSidebar({ detail, className }: Props) {
           Deposits earn {apyLabel} from the base supply rate plus the spoke&apos;s risk premium.
         </p>
       </aside>
+
+      {embedded ? null : (
+        <div className={cn("mt-4 flex w-full flex-col gap-4", className)}>
+          <AboutCard about={detail.about} />
+          <NewsCard
+            items={detail.about.history.slice(0, 3).map((entry, index) => ({
+              title: entry.title,
+              description: entry.description,
+              source: index === 0 ? "Latest update" : "Protocol note",
+              time: entry.date,
+              imageUrl: detail.hero.visual.iconUrl ?? undefined,
+              imageLabel: detail.hero.symbol,
+            }))}
+          />
+        </div>
+      )}
 
       <LendModals modalState={modalState} setModalState={setModalState} closeModal={close} />
     </>
