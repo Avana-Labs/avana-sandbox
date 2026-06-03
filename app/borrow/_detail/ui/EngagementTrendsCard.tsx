@@ -37,7 +37,7 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
           <span className="inline-flex size-7 items-center justify-center rounded-xs border border-border bg-surface-inset text-muted-foreground">
             <Users className="h-3.5 w-3.5" aria-hidden />
           </span>
-          <h2 className="text-[14px] font-medium tracking-tight text-foreground">
+          <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">
             {title ?? engagement.title}
           </h2>
         </div>

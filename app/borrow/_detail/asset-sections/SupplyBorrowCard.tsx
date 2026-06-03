@@ -73,21 +73,7 @@ export function SupplyBorrowCard({ detail, id }: Props) {
             formatValue={(v) => (view === "utilization" ? formatPct(v, 2) : formatCompactUsd(v))}
           />
         </div>
-        <dl className="grid grid-cols-3 gap-4 px-5 pb-5 text-[12.5px]">
-          <Stat label="Supplied" value={detail.quickStats.find((s) => s.id === "supplied")?.value ?? "—"} />
-          <Stat label="Borrowed" value={detail.quickStats.find((s) => s.id === "borrowed")?.value ?? "—"} />
-          <Stat label="Utilization" value={detail.quickStats.find((s) => s.id === "utilization")?.value ?? "—"} />
-        </dl>
       </div>
     </SectionCard>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      <div className="mt-0.5 font-data text-[14px] font-medium tabular-nums text-foreground">{value}</div>
-    </div>
   )
 }
