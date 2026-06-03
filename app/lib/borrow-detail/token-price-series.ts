@@ -6,13 +6,13 @@ import { createPrng, hashString } from "./prng"
 import type { Point, Series, TimeRangeId } from "./types"
 
 const ETH_DAILY: Point[] = [
-  { t: "2026-05-22", v: 2088.5 },
-  { t: "2026-05-23", v: 2046.0 },
-  { t: "2026-05-24", v: 1994.25 },
-  { t: "2026-05-25", v: 1975.0 },
-  { t: "2026-05-26", v: 1998.5 },
-  { t: "2026-05-27", v: 2008.75 },
-  { t: "2026-05-28", v: 2019.96 },
+  { t: "2026-05-28", v: 2024.8 },
+  { t: "2026-05-29", v: 1980.2 },
+  { t: "2026-05-30", v: 2000.8 },
+  { t: "2026-05-31", v: 2024.9 },
+  { t: "2026-06-01", v: 1990.4 },
+  { t: "2026-06-02", v: 1972.1 },
+  { t: "2026-06-03", v: 1791.81 },
 ]
 
 const CURATED_DAILY: Record<string, Point[]> = {
@@ -46,7 +46,7 @@ function buildWalkSeries(daily: Point[], range: TimeRangeId, assetId: string): P
     range === "1D"
       ? 10 * 60 * 1000
       : range === "1W"
-        ? 15 * 60 * 1000
+        ? 30 * 60 * 1000
         : range === "1M"
           ? 2 * 60 * 60 * 1000
           : 6 * 60 * 60 * 1000
@@ -66,7 +66,7 @@ function buildWalkSeries(daily: Point[], range: TimeRangeId, assetId: string): P
 
   const startMs = endMs - spanMs
   const rand = createPrng(hashString(`${assetId}:${range}:walk`))
-  const stepNoise = range === "1W" ? 1.75 : range === "1D" ? 1.2 : 4.5
+  const stepNoise = range === "1W" ? 0.85 : range === "1D" ? 1.2 : 4.5
 
   let price = interpolateDaily(daily, startMs)
   const points: Point[] = []

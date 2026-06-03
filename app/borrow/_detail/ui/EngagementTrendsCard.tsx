@@ -1,11 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, TrendingDown, TrendingUp, Users } from "lucide-react"
 import { useTheme } from "next-themes"
 import type { EngagementTrend } from "@/app/lib/borrow-detail"
 import { resolveChartAccent, toRgba, type ThemeMode } from "@/app/lib/chart-colors"
-import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -31,32 +29,18 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
   const accent = resolveChartAccent({ theme, accentClassName })
 
   return (
-    <Card className={cn("border-border bg-surface-raised p-5 shadow-elev-1 sm:p-6", className)}>
+    <section className={cn("min-w-0", className)}>
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="inline-flex size-7 items-center justify-center rounded-xs border border-border bg-surface-inset text-muted-foreground">
-            <Users className="h-3.5 w-3.5" aria-hidden />
-          </span>
-          <h2 className="text-[14px] font-medium tracking-tight text-foreground">
-            {title ?? engagement.title}
-          </h2>
-        </div>
-        <button
-          type="button"
-          aria-label="More options"
-          className="inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-        >
-          <MoreHorizontal className="h-3.5 w-3.5" aria-hidden />
-        </button>
+        <h2 className="min-w-0 text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">
+          {title ?? engagement.title}
+        </h2>
       </div>
 
-      <div className="mt-5 grid grid-cols-[auto_1px_auto] items-start gap-x-6 gap-y-1">
-        <Kpi label={engagement.primary.label} value={engagement.primary.valueLabel} delta={engagement.primary.delta} />
-        <span aria-hidden className="h-10 self-center bg-border" />
-        <Kpi label={engagement.secondary.label} value={engagement.secondary.valueLabel} delta={engagement.secondary.delta} />
-      </div>
+      <p className="mt-3 max-w-[36rem] text-[13px] leading-5 text-muted-foreground">
+        Active wallets track unique wallets with activity over the last 30 days.
+      </p>
 
-      <div className="mt-5">
+      <div className="relative mt-5">
         {hasData ? (
           <LineChart
             points={engagement.series.points}
@@ -71,42 +55,12 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
             No engagement data available.
           </div>
         )}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0 bottom-0 z-[7] w-14 bg-gradient-to-r from-background via-background/90 to-transparent"
+        />
       </div>
-    </Card>
-  )
-}
-
-function Kpi({
-  label,
-  value,
-  delta,
-}: {
-  label: string
-  value: string
-  delta: { value: number; direction: "up" | "down" | "flat"; label: string }
-}) {
-  const isUp = delta.direction === "up"
-  const isDown = delta.direction === "down"
-  return (
-    <div>
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      <div className="mt-1 flex items-baseline gap-2">
-        <span className="font-data text-[22px] font-medium tabular-nums text-foreground sm:text-[24px]">{value}</span>
-        {delta.direction !== "flat" ? (
-          <span
-            className={cn(
-              "inline-flex items-center gap-0.5 text-[11.5px] font-medium tabular-nums",
-              isUp && "text-emerald-600 dark:text-emerald-400",
-              isDown && "text-rose-600 dark:text-rose-400",
-            )}
-          >
-            {isUp ? <TrendingUp className="h-3 w-3" aria-hidden /> : null}
-            {isDown ? <TrendingDown className="h-3 w-3" aria-hidden /> : null}
-            {delta.label.replace("+", "").replace("−", "")}
-          </span>
-        ) : null}
-      </div>
-    </div>
+    </section>
   )
 }
 

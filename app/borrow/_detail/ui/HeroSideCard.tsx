@@ -40,7 +40,7 @@ export function HeroSideCard({
           {title || subtitle ? (
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                {title ? <div className="text-[14px] font-medium tracking-tight text-foreground">{title}</div> : null}
+                {title ? <div className="text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">{title}</div> : null}
                 {subtitle ? <div className="mt-0.5 text-[11.5px] text-muted-foreground">{subtitle}</div> : null}
               </div>
             </div>

@@ -41,13 +41,13 @@ export function LendClient() {
   return (
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-[1152px]">
           
           <LendHero 
             totalValue={totalValue} 
             totalEarned={totalEarned} 
-            openDeposit={openDeposit as any} 
-            openWithdraw={openWithdraw as any} 
+            openDeposit={openDeposit} 
+            openWithdraw={openWithdraw} 
           />
 
           <div className="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start mt-12">

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { formatPct } from "@/app/lib/borrow-detail"
-import { LightweightChart, SectionCard } from "../ui"
+import { LightweightChart } from "../ui"
 
 type View = "supplied" | "borrowed" | "utilization"
 
@@ -36,12 +36,12 @@ export function SupplyBorrowCard({ detail, id }: Props) {
         : undefined
 
   return (
-    <SectionCard
-      id={id}
-      title="Supply & Borrow"
-      subtitle="Protocol-wide supplied vs borrowed for this asset."
-      bodyClassName="p-0"
-      rightSlot={
+    <section id={id} className="min-w-0">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">Supply & Borrow</h2>
+          <p className="mt-0.5 text-[11.5px] text-muted-foreground">Protocol-wide supplied vs borrowed for this asset.</p>
+        </div>
         <div role="tablist" className="inline-flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5">
           {(Object.keys(VIEW_LABEL) as View[]).map((v) => (
             <button
@@ -59,35 +59,22 @@ export function SupplyBorrowCard({ detail, id }: Props) {
             </button>
           ))}
         </div>
-      }
-    >
-      <div className="flex flex-col gap-5">
-        <div className="w-full pt-4">
-          <LightweightChart
-            series={series}
-            type="area"
-            height={240}
-            tone={tone}
-            accentClassName={accentClassName}
-            ariaLabel={`${VIEW_LABEL[view]} over time`}
-            formatValue={(v) => (view === "utilization" ? formatPct(v, 2) : formatCompactUsd(v))}
-          />
-        </div>
-        <dl className="grid grid-cols-3 gap-4 px-5 pb-5 text-[12.5px]">
-          <Stat label="Supplied" value={detail.quickStats.find((s) => s.id === "supplied")?.value ?? "—"} />
-          <Stat label="Borrowed" value={detail.quickStats.find((s) => s.id === "borrowed")?.value ?? "—"} />
-          <Stat label="Utilization" value={detail.quickStats.find((s) => s.id === "utilization")?.value ?? "—"} />
-        </dl>
       </div>
-    </SectionCard>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      <div className="mt-0.5 font-data text-[14px] font-medium tabular-nums text-foreground">{value}</div>
-    </div>
+      <div className="relative w-full pt-4">
+        <LightweightChart
+          series={series}
+          type="area"
+          height={240}
+          tone={tone}
+          accentClassName={accentClassName}
+          ariaLabel={`${VIEW_LABEL[view]} over time`}
+          formatValue={(v) => (view === "utilization" ? formatPct(v, 2) : formatCompactUsd(v))}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-4 bottom-0 z-[7] w-14 bg-gradient-to-r from-background via-background/90 to-transparent"
+        />
+      </div>
+    </section>
   )
 }

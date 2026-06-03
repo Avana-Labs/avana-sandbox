@@ -19,20 +19,20 @@ type Props = {
 
 export function NewsCard({ items, title = "News" }: Props) {
   return (
-    <section className="rounded-2xl bg-white overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-0 py-3">
-        <h2 className="text-title-sm text-text-extra-high truncate">{title}</h2>
+    <section className="overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-elev-1">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <h2 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-text-extra-high">{title}</h2>
       </div>
-      <ul className="divide-y divide-border-light">
+      <ul className="divide-y divide-border/70">
         {items.map((item, index) => {
           const content = (
-            <div className="group flex items-stretch gap-3 px-0 py-3 focus-visible:outline-none">
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100 ring-1 ring-border-light">
+            <div className="group flex items-stretch gap-3 px-4 py-3 focus-visible:outline-none">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-inset ring-1 ring-border">
                 {item.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" src={item.imageUrl} />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gray-100 text-[10px] font-medium text-text-low">
+                  <div className="flex h-full w-full items-center justify-center bg-surface-inset text-[10px] font-medium text-text-low">
                     {item.imageLabel ?? item.source.slice(0, 2).toUpperCase()}
                   </div>
                 )}
