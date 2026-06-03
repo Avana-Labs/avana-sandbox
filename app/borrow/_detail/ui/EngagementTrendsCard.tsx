@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, TrendingDown, TrendingUp, Users } from "lucide-react"
+import { TrendingDown, TrendingUp } from "lucide-react"
 import { useTheme } from "next-themes"
 import type { EngagementTrend } from "@/app/lib/borrow-detail"
 import { resolveChartAccent, toRgba, type ThemeMode } from "@/app/lib/chart-colors"
-import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -31,23 +30,11 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
   const accent = resolveChartAccent({ theme, accentClassName })
 
   return (
-    <Card className={cn("border-border bg-surface-raised p-5 shadow-elev-1 sm:p-6", className)}>
+    <section className={cn("min-w-0", className)}>
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="inline-flex size-7 items-center justify-center rounded-xs border border-border bg-surface-inset text-muted-foreground">
-            <Users className="h-3.5 w-3.5" aria-hidden />
-          </span>
-          <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">
-            {title ?? engagement.title}
-          </h2>
-        </div>
-        <button
-          type="button"
-          aria-label="More options"
-          className="inline-flex size-7 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-        >
-          <MoreHorizontal className="h-3.5 w-3.5" aria-hidden />
-        </button>
+        <h2 className="min-w-0 text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">
+          {title ?? engagement.title}
+        </h2>
       </div>
 
       <div className="mt-5 grid grid-cols-[auto_1px_auto] items-start gap-x-6 gap-y-1">
@@ -56,7 +43,7 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
         <Kpi label={engagement.secondary.label} value={engagement.secondary.valueLabel} delta={engagement.secondary.delta} />
       </div>
 
-      <div className="mt-5">
+      <div className="relative mt-5">
         {hasData ? (
           <LineChart
             points={engagement.series.points}
@@ -71,8 +58,12 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
             No engagement data available.
           </div>
         )}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0 bottom-0 z-[7] w-14 bg-gradient-to-r from-background via-background/90 to-transparent"
+        />
       </div>
-    </Card>
+    </section>
   )
 }
 
