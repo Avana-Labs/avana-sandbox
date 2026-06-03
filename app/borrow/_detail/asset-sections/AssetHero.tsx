@@ -87,9 +87,9 @@ export function AssetHeroIdentity({
           </div>
         </div>
 
-        <div className="hidden shrink-0 items-center gap-5 self-center pl-5 lg:flex">
+        <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
           <HeroIcon label="Search" onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(`${detail.hero.name} ${detail.hero.symbol}`)}`, "_blank")}>
-            <Search className="h-[18px] w-[18px]" strokeWidth={1.35} />
+            <Search className="h-3.5 w-3.5" />
           </HeroIcon>
           <HeroIcon
             label="Website"
@@ -97,7 +97,7 @@ export function AssetHeroIdentity({
               window.open(detail.hero.websiteUrl ?? `https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")
             }
           >
-            <Globe className="h-[18px] w-[18px]" strokeWidth={1.35} />
+            <Globe className="h-3.5 w-3.5" />
           </HeroIcon>
           <HeroIcon
             label="X"
@@ -106,7 +106,7 @@ export function AssetHeroIdentity({
             <XIcon />
           </HeroIcon>
           <HeroIcon label="Share" onClick={() => navigator.clipboard.writeText(window.location.href)}>
-            <MessageSquare className="h-[18px] w-[18px]" strokeWidth={1.35} />
+            <MessageSquare className="h-3.5 w-3.5" />
           </HeroIcon>
           {actions}
         </div>
@@ -236,7 +236,7 @@ function HeroIcon({ label, onClick, children }: { label: string; onClick: () => 
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="inline-flex items-center justify-center text-[#A3A3A3] transition-colors hover:text-[#555555]"
+      className="size-7 flex items-center justify-center rounded-full text-text-medium transition-colors hover:bg-gray-50 hover:text-text-high"
     >
       {children}
     </button>
@@ -245,10 +245,9 @@ function HeroIcon({ label, onClick, children }: { label: string; onClick: () => 
 
 function XIcon() {
   return (
-    <svg className="h-[18px] w-[18px]" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+    <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 28 28" aria-hidden="true">
       <path
         d="M16.093 12.7389L24.283 3H22.3422L15.2308 11.4562L9.55101 3H3L11.589 15.7872L3 26H4.94088L12.4507 17.07L18.449 26H25L16.0925 12.7389H16.093ZM13.4347 15.8999L12.5644 14.6266L5.6402 4.49462H8.62127L14.2092 12.6714L15.0795 13.9448L22.3431 24.5733H19.3621L13.4347 15.9004V15.8999Z"
-        fill="currentColor"
       />
     </svg>
   )
