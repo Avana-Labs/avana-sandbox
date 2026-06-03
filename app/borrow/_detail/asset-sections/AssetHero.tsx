@@ -25,6 +25,8 @@ const RANGE_OPTIONS: Array<{ value: TimeRangeId; label: string }> = [
   { value: "1Y", label: "1Y" },
 ]
 
+const TOKEN_CHART_HEIGHT = 320
+
 export function AssetHeroIdentity({
   detail,
   leading,
@@ -148,8 +150,8 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
     <section className={cn(className)} data-testid="asset-hero">
       {hideIdentity ? null : <AssetHeroIdentity detail={detail} leading={leading} actions={actions} />}
 
-      <div className="pt-6" data-testid="asset-hero-chart-card">
-        <div className="mb-5">
+      <div className="pt-4" data-testid="asset-hero-chart-card">
+        <div className="mb-8">
           <p className="font-data text-[26px] font-normal leading-none tracking-[-0.03em] text-[#111111]">
             {displayPrice}
           </p>
@@ -166,8 +168,9 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
             <LightweightChart
               series={series}
               type="area"
-              height={248}
+              height={TOKEN_CHART_HEIGHT}
               variant="token"
+              priceRange={{ min: 1800, max: 2040 }}
               showEndDot
               timeRange={range}
               ariaLabel={`${labelForAssetMetric(metric)} over ${range}`}
@@ -176,11 +179,11 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
               onHoverChange={setHover}
             />
           ) : (
-            <div className="h-[248px]">
+            <div style={{ height: TOKEN_CHART_HEIGHT }}>
               <LightweightChart
                 series={series}
                 type={chartType}
-                height={248}
+                height={TOKEN_CHART_HEIGHT}
                 accentClassName="text-zinc-700"
                 ariaLabel={`${labelForAssetMetric(metric)} over ${range}`}
                 formatValue={formatHeroValue}
@@ -190,7 +193,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
           )}
         </div>
 
-        <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="mt-8 flex items-center justify-between gap-3">
           <div
             role="tablist"
             aria-label="Time range"
@@ -220,7 +223,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
           <button
             type="button"
             aria-label="Expand chart"
-            className="inline-flex size-8 items-center justify-center rounded-md text-[#B0B0B0] transition-colors hover:bg-[#F5F5F5] hover:text-[#666666]"
+            className="inline-flex size-11 items-center justify-center rounded-full border border-[#E2E2E2] bg-white text-[#7A7A7A] transition-colors hover:border-[#D4D4D4] hover:bg-[#FAFAFA] hover:text-[#444444]"
           >
             <LoginCameraIcon />
           </button>

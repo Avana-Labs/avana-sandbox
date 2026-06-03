@@ -95,7 +95,7 @@ export function AssetDetailClient({ detail }: Props) {
           <span className="font-normal text-[#1A1A1A]">{detail.hero.name}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-[auto_1fr] lg:gap-x-10">
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
           <div className="min-w-0 lg:col-start-1 lg:row-start-1">
             <AssetHeroIdentity detail={detail} />
           </div>

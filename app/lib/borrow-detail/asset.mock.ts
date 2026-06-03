@@ -117,8 +117,8 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
   },
   eth: {
     chain: "Ethereum",
-    heroPriceUsd: 2019.96,
-    heroPriceChangePct: -5.35,
+    heroPriceUsd: 1791.81,
+    heroPriceChangePct: -12.9,
     contractLabel: "7vfC...voxs",
     contractAddress: "7vfC2Jf2voxs",
     websiteUrl: "https://ethereum.org",
