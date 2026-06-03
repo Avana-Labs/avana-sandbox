@@ -468,16 +468,51 @@ function buildAssetRisk(asset: BorrowableAsset, fixture: AssetFixture | undefine
 }
 
 function buildAssetAbout(asset: BorrowableAsset, fixture: AssetFixture | undefined): AboutCard {
-  if (fixture?.about) return fixture.about
+  if (fixture?.about) {
+    return {
+      ...fixture.about,
+      stats: fixture.about.stats.length > 0 ? fixture.about.stats : buildAboutStats(asset, fixture),
+    }
+  }
   return {
     description:
       `${asset.name} (${asset.symbol}) is a core borrowable market in the protocol and a building block for both directional hedges and LP carry loops. ` +
       `${asset.subtitle} The borrow APY is influenced by utilization, reserve settings, and how often the asset is used as collateral elsewhere in the system, so the page focuses on the live rate, the supply/borrow mix, and the latest risk posture.`,
-    stats: [],
+    stats: buildAboutStats(asset, fixture),
     history: [
       { date: "2025-02-10", title: "Listed", description: `${asset.symbol} listed with conservative borrow cap.` },
       { date: "2025-11-18", title: "Parameters refreshed", description: "Quarterly risk review — no changes." },
     ],
+  }
+}
+
+function buildAboutStats(asset: BorrowableAsset, fixture?: AssetFixture): AboutCard["stats"] {
+  const tokenSeed = fakeAddressSeed(`${asset.id}:token`)
+  const tokenLabel = fixture?.contractLabel ?? tokenSeed.short
+  const tokenExplorer = fixture?.contractAddress
+    ? `https://etherscan.io/address/${fixture.contractAddress}`
+    : `https://etherscan.io/address/${tokenSeed.full}`
+  const vaultHash = fakeAddressSeed(`${asset.id}:vault`)
+  const stakingHash = fakeAddressSeed(`${asset.id}:staking`)
+
+  return [
+    { label: "Vault Contract Address", value: vaultHash.short, href: `https://etherscan.io/address/${vaultHash.full}` },
+    { label: "Token Contract Address", value: tokenLabel, href: tokenExplorer },
+    { label: "Staking Contract Address", value: stakingHash.short, href: `https://etherscan.io/address/${stakingHash.full}` },
+    { label: "Deployed On", value: asset.category === "stable" ? "March 18, 2024" : "October 7, 2024" },
+  ]
+}
+
+function fakeAddressSeed(seed: string) {
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  }
+  const hex = hash.toString(16).padStart(8, "0").toUpperCase()
+  const full = hex.repeat(5).slice(0, 40)
+  return {
+    short: `0x${hex.slice(0, 4)}...${hex.slice(4)}`,
+    full: `0x${full}`,
   }
 }
 
