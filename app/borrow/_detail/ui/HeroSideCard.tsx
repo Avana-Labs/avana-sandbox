@@ -10,7 +10,7 @@ export type HeroSideTab = {
 }
 
 type HeroSideCardProps = {
-  title: React.ReactNode
+  title?: React.ReactNode
   subtitle?: React.ReactNode
   tabs: HeroSideTab[]
   value: string
@@ -37,12 +37,14 @@ export function HeroSideCard({
     >
       <CardContent className="space-y-4 p-4">
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-[14px] font-medium tracking-tight text-foreground">{title}</div>
-              {subtitle ? <div className="mt-0.5 text-[11.5px] text-muted-foreground">{subtitle}</div> : null}
+          {title || subtitle ? (
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                {title ? <div className="text-[14px] font-medium tracking-tight text-foreground">{title}</div> : null}
+                {subtitle ? <div className="mt-0.5 text-[11.5px] text-muted-foreground">{subtitle}</div> : null}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div
             role="tablist"
