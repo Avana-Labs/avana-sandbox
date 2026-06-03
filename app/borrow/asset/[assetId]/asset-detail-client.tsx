@@ -112,14 +112,16 @@ export function AssetDetailClient({ detail }: Props) {
               <InterestRateModelCard detail={detail} />
               <SupplyBorrowCard detail={detail} />
               <HistoricalUtilizationCard detail={detail} />
-              <CashflowTrendCard detail={detail} />
-              <EngagementTrendsCard
-                engagement={detail.engagement}
-                accentClassName={detail.hero.visual.textClass}
-              />
               <AllocationBreakdownCard detail={detail} />
               <AssetCashflowCard detail={detail} />
               <RiskSection detail={detail} />
+              <div className="space-y-6">
+                <CashflowTrendCard detail={detail} />
+                <EngagementTrendsCard
+                  engagement={detail.engagement}
+                  accentClassName={detail.hero.visual.textClass}
+                />
+              </div>
               <TransactionHistoryCard transactions={detail.transactions} />
               <AboutNewsSection
                 className="lg:hidden"
