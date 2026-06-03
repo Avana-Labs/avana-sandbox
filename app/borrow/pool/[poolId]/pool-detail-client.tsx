@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { StickyDetailHeader, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection, StickyDetailHeader, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
 import {
   PoolHero,
   PoolHeroIdentity,
@@ -15,7 +15,7 @@ import {
   CollateralHistoryCard,
   RelatedPoolsRow,
 } from "@/app/borrow/_detail/pool-sections"
-import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
+import { PoolBorrowActions, PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { cn } from "@/lib/utils"
 
 function TokenAvatar({
@@ -129,6 +129,12 @@ export function PoolDetailClient({ detail }: Props) {
               />
               <RiskSection detail={detail} />
               <CollateralHistoryCard transactions={detail.transactions} />
+              <AboutNewsSection
+                className="lg:hidden"
+                about={detail.about}
+                newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
+                newsImageLabel={detail.hero.name}
+              />
               <RelatedPoolsRow detail={detail} />
             </div>
 
@@ -142,7 +148,7 @@ export function PoolDetailClient({ detail }: Props) {
       </main>
 
       <MobileSupplyDock open={mobileOpen} onToggle={() => setMobileOpen((v) => !v)}>
-        <PoolBorrowSidebar detail={detail} />
+        <PoolBorrowActions detail={detail} />
       </MobileSupplyDock>
     </div>
   )

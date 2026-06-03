@@ -21,32 +21,13 @@ const AGGREGATORS = [
 
 /**
  * Token-style right rail: Swap / Perps / Pools tabs with aggregator links,
- * deposit flow on Pools, and an About block below — mirrors the Tokens detail UI.
+ * deposit flow on Pools, and info cards below — mirrors the Tokens detail UI.
  */
 export function AssetTokenSidebar({ detail, className }: Props) {
-  const [tab, setTab] = React.useState<SidebarTab>("swap")
-
   return (
     <div className={cn("flex w-full flex-col gap-6", className)}>
-      <HeroSideCard
-        tabs={[
-          { id: "swap", label: "Swap" },
-          { id: "perps", label: "Perps" },
-          { id: "pools", label: "Pools" },
-        ]}
-        value={tab}
-        onValueChange={(value: string) => setTab(value as SidebarTab)}
-        className="rounded-[20px] border border-[#E8E8E8] bg-white p-5 shadow-none [&>div]:p-0"
-      >
-        {tab === "pools" ? (
-          <PoolsPanel detail={detail} />
-        ) : (
-          <AggregatorsPanel tab={tab} symbol={detail.hero.symbol} />
-        )}
-      </HeroSideCard>
-
+      <TokenRail detail={detail} />
       <AboutCard about={detail.about} title={`About ${detail.hero.name}`} compact />
-
       <NewsCard
         items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
           title: entry.title,
@@ -59,6 +40,31 @@ export function AssetTokenSidebar({ detail, className }: Props) {
           imageLabel: detail.hero.symbol,
         }))}
       />
+    </div>
+  )
+}
+
+export function AssetTokenActions({ detail, className }: Props) {
+  return <TokenRail detail={detail} className={className} />
+}
+
+function TokenRail({ detail, className }: { detail: AssetDetail; className?: string }) {
+  const [tab, setTab] = React.useState<SidebarTab>("swap")
+
+  return (
+    <div className={cn("flex w-full flex-col gap-6", className)}>
+      <HeroSideCard
+      tabs={[
+        { id: "swap", label: "Swap" },
+        { id: "perps", label: "Perps" },
+        { id: "pools", label: "Pools" },
+      ]}
+      value={tab}
+      onValueChange={(value: string) => setTab(value as SidebarTab)}
+      className="rounded-[20px] border border-[#E8E8E8] bg-white p-5 shadow-none [&>div]:p-0"
+    >
+        {tab === "pools" ? <PoolsPanel detail={detail} /> : <AggregatorsPanel tab={tab} symbol={detail.hero.symbol} />}
+      </HeroSideCard>
     </div>
   )
 }
