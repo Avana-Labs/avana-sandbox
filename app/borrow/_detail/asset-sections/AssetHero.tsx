@@ -63,7 +63,7 @@ export function AssetHeroIdentity({
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="truncate text-[21px] font-medium leading-none tracking-[-0.02em] text-[#111111]">
+              <h1 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-[#111111]">
                 {detail.hero.name}
               </h1>
               <BadgeCheck className="h-[24px] w-[24px] shrink-0 -translate-y-[3px] fill-[#B8B8B8] text-white" aria-hidden="true" />
@@ -77,11 +77,11 @@ export function AssetHeroIdentity({
                 onClick={async () => {
                   await navigator.clipboard.writeText(detail.hero.contractAddress ?? metaLabel)
                 }}
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-[#111111]"
+                className="inline-flex items-center gap-1.5 text-[13px] font-normal leading-none text-[#9B9B9B] transition-colors hover:text-[#111111]"
                 aria-label="Copy contract"
               >
                 <Copy className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
-                <span className="text-[13px]">{metaLabel}</span>
+                <span>{metaLabel}</span>
               </button>
             </div>
           </div>
@@ -150,7 +150,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
 
       <div className="pt-6" data-testid="asset-hero-chart-card">
         <div className="mb-5">
-          <p className="font-data text-[30px] font-medium leading-none tracking-[-0.03em] text-[#111111]">
+          <p className="font-data text-[26px] font-normal leading-none tracking-[-0.03em] text-[#111111]">
             {displayPrice}
           </p>
           <p className="mt-2 flex items-center gap-2 text-[13px]">
