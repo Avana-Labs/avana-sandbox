@@ -8,7 +8,7 @@ export function AboutCard({ about, title = "About" }: Props) {
   return (
     <section className="rounded-2xl bg-white overflow-hidden">
       <div className="flex items-center justify-between gap-3 py-3">
-        <h2 className="text-title-sm text-text-extra-high truncate">{title}</h2>
+        <h2 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-text-extra-high">{title}</h2>
       </div>
       <div
         className="

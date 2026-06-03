@@ -194,17 +194,31 @@ function buildHero(asset: BorrowableAsset, fixture: AssetFixture | undefined): A
 
 function buildQuickStats(asset: BorrowableAsset, supplied: number, borrowed: number, fixture: AssetFixture | undefined): QuickStat[] {
   const utilization = borrowed / supplied
+  const heroPriceUsd =
+    fixture?.heroPriceUsd ??
+    (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+  const dexLiquidityUsd = BORROW_POOL_CATALOG.reduce((sum, pool) => {
+    const hasAsset = pool.borrowableTokens.some((token) => token.symbol.toUpperCase() === asset.symbol.toUpperCase())
+    return hasAsset ? sum + pool.availableUsd : sum
+  }, 0)
   const defaults: QuickStat[] = [
+    { id: "price", label: "Price", value: formatUsdPrice(heroPriceUsd), delta: deltaFromPct(-2.1) },
+    { id: "dexLiquidity", label: "Dex Liquidity", value: formatCompactUsd(dexLiquidityUsd), delta: deltaFromPct(1.2) },
     { id: "supplied", label: "Total Supplied", value: formatCompactUsd(supplied), delta: deltaFromPct(1.8) },
     { id: "borrowed", label: "Total Borrowed", value: formatCompactUsd(borrowed), delta: deltaFromPct(1.1) },
     { id: "utilization", label: "Utilization", value: formatPct(utilization * 100, 2), delta: deltaFromPct(-0.6) },
     { id: "supplyApy", label: "Supply APY", value: `${(asset.borrowApr * 0.85).toFixed(2)}%`, delta: deltaFromPct(0.1) },
     { id: "supplyApy90d", label: "Supply APY (90D Avg)", value: `${(asset.borrowApr * 0.83).toFixed(2)}%` },
     { id: "borrowApy", label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%`, delta: deltaFromPct(0.08) },
-    { id: "available", label: "Available", value: formatCompactUsd(asset.availableUsd) },
   ]
   if (!fixture?.quickStats) return defaults
   return defaults.map((stat) => ({ ...stat, ...(fixture.quickStats?.[stat.id] ?? {}) }))
+}
+
+function formatUsdPrice(value: number): string {
+  return value >= 100
+    ? `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : `$${value.toFixed(2)}`
 }
 
 function buildHeroSeries(
