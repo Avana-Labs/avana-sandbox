@@ -48,6 +48,8 @@ export type LightweightChartProps = {
   onHoverChange?: (hover: TokenChartHover | null) => void
   /** Active range — used for token chart axis labels. */
   timeRange?: TimeRangeId
+  /** Optional fixed visible price range for token hero charts. */
+  priceRange?: { min: number; max: number }
 }
 
 /**
@@ -71,6 +73,7 @@ export function LightweightChart({
   showEndDot = false,
   onHoverChange,
   timeRange,
+  priceRange,
 }: LightweightChartProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   const tooltipRef = React.useRef<HTMLDivElement | null>(null)
@@ -80,6 +83,13 @@ export function LightweightChart({
   const { resolvedTheme } = useTheme()
   const theme: ThemeMode = resolvedTheme === "dark" ? "dark" : "light"
   const accentKey = Array.isArray(accentClassName) ? accentClassName.join("|") : accentClassName ?? ""
+  const chartRangeKey = priceRange ? `${timeRange ?? ""}:${priceRange.min}:${priceRange.max}` : (timeRange ?? "")
+  const usesCustomTokenAxes = variant === "token" && !!priceRange
+  const tokenAxisColor = theme === "dark" ? "#a1a1aa" : "#A8A8A8"
+  const bottomAxisTicks = React.useMemo(
+    () => (usesCustomTokenAxes ? buildBottomAxisTicks(series.points, timeRange) : []),
+    [usesCustomTokenAxes, series.points, timeRange],
+  )
 
   React.useEffect(() => {
     const container = containerRef.current
@@ -92,31 +102,36 @@ export function LightweightChart({
       variant === "token"
         ? makeTokenChartPalette(theme)
         : makeChartPalette({ accentClassName, tone, theme })
-
     const chart = createChart(container, {
       width: container.clientWidth,
       height,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: variant === "token" ? (theme === "dark" ? "#a1a1aa" : "#A3A3A3") : mfColor(),
+        textColor: usesCustomTokenAxes ? "transparent" : variant === "token" ? tokenAxisColor : mfColor(),
         fontFamily:
           "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-        fontSize: variant === "token" ? 10 : 11,
+        fontSize: variant === "token" ? 13 : 11,
         attributionLogo: false,
       },
       rightPriceScale: {
-        visible: true,
+        visible: !usesCustomTokenAxes,
         borderVisible: false,
-        scaleMargins: { top: variant === "token" ? 0.1 : 0.18, bottom: variant === "token" ? 0.08 : 0.1 },
+        scaleMargins: { top: variant === "token" ? 0.08 : 0.18, bottom: variant === "token" ? 0.1 : 0.1 },
+        ...(variant === "token"
+          ? {
+              tickMarkDensity: 8,
+              ensureEdgeTickMarksVisible: true,
+            }
+          : {}),
       },
       leftPriceScale: { visible: false },
       timeScale: {
         borderVisible: false,
         fixLeftEdge: variant !== "token",
         fixRightEdge: variant !== "token",
-        rightOffset: variant === "token" ? 4 : 0,
-        ticksVisible: variant === "token",
-        ...(variant === "token"
+        rightOffset: variant === "token" ? 2 : 0,
+        ticksVisible: variant === "token" && !usesCustomTokenAxes,
+        ...(variant === "token" && !usesCustomTokenAxes
           ? {
               tickMarkFormatter: (time: unknown) => formatTokenTick(time, timeRange),
             }
@@ -125,9 +140,9 @@ export function LightweightChart({
       grid: {
         vertLines: { visible: false },
         horzLines: {
-          visible: variant !== "token",
-          color: variant === "token" ? "transparent" : mfColor(0.08),
-          style: LineStyle.Solid,
+          visible: true,
+          color: variant === "token" ? "rgba(0,0,0,0.055)" : mfColor(0.08),
+          style: variant === "token" ? LineStyle.Dotted : LineStyle.Solid,
         },
       },
       crosshair: {
@@ -172,7 +187,7 @@ export function LightweightChart({
               bottomColor: palette.fillBottom,
               lineWidth: 2 as const,
               priceLineVisible: false,
-              lastValueVisible: variant === "token",
+              lastValueVisible: false,
               priceFormat: customPriceFormat,
             }
 
@@ -180,6 +195,14 @@ export function LightweightChart({
     const data = toChartData(series, type)
     mainSeries.setData(data as never)
     chart.timeScale().fitContent()
+    if (variant === "token" && priceRange) {
+      const priceScale = chart.priceScale("right") as unknown as {
+        setAutoScale?: (on: boolean) => void
+        setVisibleRange?: (range: { from: number; to: number }) => void
+      }
+      priceScale.setAutoScale?.(false)
+      priceScale.setVisibleRange?.({ from: priceRange.min, to: priceRange.max })
+    }
 
     const lastPoint = data[data.length - 1]
     let hoverActive = false
@@ -277,7 +300,7 @@ export function LightweightChart({
       cancelAnimationFrame(rafId)
       chart.remove()
     }
-  }, [series, type, height, tone, accentKey, formatValue, formatTime, theme, showLastLabel, showEndDot, variant, onHoverChange, timeRange])
+  }, [series, type, height, tone, accentKey, formatValue, formatTime, theme, showLastLabel, showEndDot, variant, onHoverChange, chartRangeKey])
 
   return (
     <div
@@ -286,7 +309,17 @@ export function LightweightChart({
       aria-label={ariaLabel ?? `${series.label} chart`}
       style={{ height }}
     >
-      <div ref={containerRef} className="absolute inset-0" data-testid="lw-chart" />
+      <div
+        ref={containerRef}
+        className={cn("absolute inset-0", usesCustomTokenAxes ? "bottom-10 right-16" : undefined)}
+        data-testid="lw-chart"
+      />
+      {usesCustomTokenAxes ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0 bottom-9 z-[7] w-14 bg-gradient-to-r from-background via-background/90 to-transparent"
+        />
+      ) : null}
       {showLastLabel || showEndDot ? (
         <>
           <div
@@ -295,7 +328,7 @@ export function LightweightChart({
             className={cn(
               "pointer-events-none absolute left-0 top-0 size-2 rounded-full opacity-0 transition-opacity",
               variant === "token"
-                ? "bg-[#1A1A1A] shadow-[0_0_0_12px_rgba(0,0,0,0.055),0_0_0_3px_rgba(255,255,255,1)]"
+                ? "bg-[#5F5F5C] shadow-[0_0_0_8px_rgba(0,0,0,0.045),0_0_0_3px_rgba(255,255,255,1)]"
                 : "shadow-[0_0_0_3px_rgba(255,255,255,0.85)]",
             )}
             style={variant === "token" ? undefined : { backgroundColor: "currentColor", color: "hsl(var(--foreground))" }}
@@ -315,6 +348,32 @@ export function LightweightChart({
             </div>
           ) : null}
         </>
+      ) : null}
+      {usesCustomTokenAxes ? (
+        <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 z-[6] w-16">
+          {buildFixedAxisTicks(priceRange.min, priceRange.max, 40).map((tick) => (
+            <div
+              key={tick.value}
+              className="absolute right-0 translate-y-[-50%] text-right text-[11px] font-normal leading-none text-[#A8A8A8]"
+              style={{ top: `${tick.y}%` }}
+            >
+              {formatValue(tick.value)}
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {usesCustomTokenAxes ? (
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 right-16 z-[6] h-9">
+          {bottomAxisTicks.map((tick) => (
+            <div
+              key={`${tick.label}-${tick.left}`}
+              className="absolute bottom-0 translate-x-[-50%] text-[11px] font-normal leading-none text-[#A8A8A8]"
+              style={{ left: `${tick.left}%` }}
+            >
+              {tick.label}
+            </div>
+          ))}
+        </div>
       ) : null}
       {onHoverChange ? null : (
         <div
@@ -387,14 +446,48 @@ function defaultFormatTime(iso: string): string {
 }
 
 function makeTokenChartPalette(theme: ThemeMode) {
-  const stroke = theme === "dark" ? "#d4d4d8" : "#1A1A1A"
+  const stroke = theme === "dark" ? "#d4d4d8" : "#5F5F5C"
   return {
     accent: stroke,
     stroke,
-    fillTop: theme === "dark" ? "rgba(212,212,216,0.1)" : "rgba(0,0,0,0.06)",
+    fillTop: theme === "dark" ? "rgba(212,212,216,0.1)" : "rgba(0,0,0,0.035)",
     fillBottom: "rgba(255,255,255,0)",
     cursor: theme === "dark" ? "rgba(212,212,216,0.2)" : "rgba(0,0,0,0.06)",
   }
+}
+
+function buildFixedAxisTicks(min: number, max: number, step: number) {
+  const ticks: Array<{ value: number; y: number }> = []
+  const span = max - min || step
+  const topInset = 12
+  const bottomInset = 14
+  const usableHeight = 100 - topInset - bottomInset
+  for (let value = min; value <= max; value += step) {
+    const ratio = (max - value) / span
+    ticks.push({ value, y: topInset + ratio * usableHeight })
+  }
+  return ticks
+}
+
+function buildBottomAxisTicks(points: Series["points"], range?: TimeRangeId) {
+  const sorted = [...points]
+    .filter((point) => point.t)
+    .sort((a, b) => (a.t > b.t ? 1 : a.t < b.t ? -1 : 0))
+  if (!sorted.length) return []
+
+  const labels = new Map<string, string>()
+  for (const point of sorted) {
+    const iso = point.t.includes("T") ? point.t.slice(0, 10) : point.t
+    if (!labels.has(iso)) labels.set(iso, formatTokenTick(iso, range))
+  }
+
+  const unique = [...labels.entries()]
+  const trimmed = unique.length > 2 ? unique.slice(1, -1) : []
+  return trimmed.map(([iso, label], index) => ({
+    iso,
+    label,
+    left: (index + 1) * (100 / (trimmed.length + 1)),
+  }))
 }
 
 function formatTokenTick(time: unknown, range?: TimeRangeId) {

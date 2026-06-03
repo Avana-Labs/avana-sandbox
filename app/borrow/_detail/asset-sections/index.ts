@@ -1,4 +1,5 @@
 export { AssetHero, AssetHeroIdentity } from "./AssetHero"
+export { InterestRateModelCard } from "./InterestRateModelCard"
 export { SupplyBorrowCard } from "./SupplyBorrowCard"
 export { HistoricalUtilizationCard } from "./HistoricalUtilizationCard"
 export { CashflowTrendCard } from "./CashflowTrendCard"

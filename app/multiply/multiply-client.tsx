@@ -24,7 +24,7 @@ export function MultiplyClient() {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-[1152px]">
         {/* Top Balance Row */}
         <MultiplyBalanceRow />
 
