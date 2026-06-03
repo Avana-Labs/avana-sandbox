@@ -315,7 +315,7 @@ export type PoolDetail = {
 // Asset detail page
 // -------------------------------------------------------------------------
 
-export type AssetChartMetricId = "supply" | "borrow" | "utilization" | "apy"
+export type AssetChartMetricId = "price" | "supply" | "borrow" | "utilization" | "apy"
 
 /**
  * One row in the asset's allocation breakdown table.
@@ -363,6 +363,10 @@ export type AssetDetailHero = {
   subtitle: string
   chain: string
   category: "stable" | "crypto"
+  contractLabel?: string
+  contractAddress?: string
+  websiteUrl?: string
+  xUrl?: string
 }
 
 export type RelatedAssetSummary = {
@@ -428,4 +432,4 @@ export const ALL_KEY_METRICS: KeyMetricId[] = [
 ]
 export const ALL_PERF_TABS: PerfTab[] = ["fees", "pnl", "composition", "incentives"]
 export const ALL_PERF_PERIODS: PerfPeriod[] = ["weekly", "monthly", "quarterly"]
-export const ALL_ASSET_CHART_METRICS: AssetChartMetricId[] = ["supply", "borrow", "utilization", "apy"]
+export const ALL_ASSET_CHART_METRICS: AssetChartMetricId[] = ["price", "supply", "borrow", "utilization", "apy"]
