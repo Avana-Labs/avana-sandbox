@@ -12,7 +12,8 @@ import {
 } from "lightweight-charts"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import type { Series } from "@/app/lib/borrow-detail"
+import type { Series, TimeRangeId } from "@/app/lib/borrow-detail"
+import type { TokenChartHover } from "../TokenPriceChart"
 import { makeChartPalette, type ThemeMode } from "@/app/lib/chart-colors"
 
 export type LwChartType = "area" | "line" | "bar"
@@ -39,6 +40,14 @@ export type LightweightChartProps = {
   tone?: "neutral" | "positive" | "negative"
   /** When true, render a persistent "Today" value label at the last datapoint (Uniswap-style). */
   showLastLabel?: boolean
+  /** Minimal grayscale styling used on token-style asset hero charts. */
+  variant?: "default" | "token"
+  /** When true, render a dot on the latest datapoint (token pages). */
+  showEndDot?: boolean
+  /** When set, hover updates the parent (e.g. hero price) and hides the floating tooltip. */
+  onHoverChange?: (hover: TokenChartHover | null) => void
+  /** Active range — used for token chart axis labels. */
+  timeRange?: TimeRangeId
 }
 
 /**
@@ -58,6 +67,10 @@ export function LightweightChart({
   formatTime = defaultFormatTime,
   tone = "neutral",
   showLastLabel = false,
+  variant = "default",
+  showEndDot = false,
+  onHoverChange,
+  timeRange,
 }: LightweightChartProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   const tooltipRef = React.useRef<HTMLDivElement | null>(null)
@@ -75,29 +88,56 @@ export function LightweightChart({
     const styles = getComputedStyle(container)
     const mf = (styles.getPropertyValue("--muted-foreground") || "150 8% 42%").trim()
     const mfColor = (alpha = 1) => (alpha === 1 ? `hsl(${mf})` : `hsl(${mf} / ${alpha})`)
-    const palette = makeChartPalette({ accentClassName, tone, theme })
+    const palette =
+      variant === "token"
+        ? makeTokenChartPalette(theme)
+        : makeChartPalette({ accentClassName, tone, theme })
 
     const chart = createChart(container, {
       width: container.clientWidth,
       height,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: mfColor(),
+        textColor: variant === "token" ? (theme === "dark" ? "#a1a1aa" : "#A3A3A3") : mfColor(),
         fontFamily:
           "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-        fontSize: 11,
+        fontSize: variant === "token" ? 10 : 11,
         attributionLogo: false,
       },
-      rightPriceScale: { visible: true, borderVisible: false, scaleMargins: { top: 0.18, bottom: 0.1 } },
+      rightPriceScale: {
+        visible: true,
+        borderVisible: false,
+        scaleMargins: { top: variant === "token" ? 0.1 : 0.18, bottom: variant === "token" ? 0.08 : 0.1 },
+      },
       leftPriceScale: { visible: false },
-      timeScale: { borderVisible: false, fixLeftEdge: true, fixRightEdge: true },
+      timeScale: {
+        borderVisible: false,
+        fixLeftEdge: variant !== "token",
+        fixRightEdge: variant !== "token",
+        rightOffset: variant === "token" ? 4 : 0,
+        ticksVisible: variant === "token",
+        ...(variant === "token"
+          ? {
+              tickMarkFormatter: (time: unknown) => formatTokenTick(time, timeRange),
+            }
+          : {}),
+      },
       grid: {
         vertLines: { visible: false },
-        horzLines: { visible: true, color: mfColor(0.08) },
+        horzLines: {
+          visible: variant !== "token",
+          color: variant === "token" ? "transparent" : mfColor(0.08),
+          style: LineStyle.Solid,
+        },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
-        vertLine: { color: palette.cursor, width: 1, style: LineStyle.Solid, labelVisible: false },
+        vertLine: {
+          color: variant === "token" ? "#E0E0E0" : palette.cursor,
+          width: 1,
+          style: LineStyle.Solid,
+          labelVisible: false,
+        },
         horzLine: { visible: false },
       },
       handleScale: false,
@@ -108,7 +148,7 @@ export function LightweightChart({
     const customPriceFormat = {
       type: "custom" as const,
       formatter: (v: number) => formatValue(v),
-      minMove: 0.0001,
+      minMove: variant === "token" ? 20 : 0.0001,
     }
     const seriesOptions =
       type === "bar"
@@ -123,7 +163,7 @@ export function LightweightChart({
               color: palette.stroke,
               lineWidth: 2 as const,
               priceLineVisible: false,
-              lastValueVisible: true,
+              lastValueVisible: variant !== "token",
               priceFormat: customPriceFormat,
             }
           : {
@@ -132,19 +172,22 @@ export function LightweightChart({
               bottomColor: palette.fillBottom,
               lineWidth: 2 as const,
               priceLineVisible: false,
-              lastValueVisible: true,
+              lastValueVisible: variant === "token",
               priceFormat: customPriceFormat,
             }
 
     const mainSeries = chart.addSeries(definition as never, seriesOptions as never)
     const data = toChartData(series, type)
-    mainSeries.setData(data)
+    mainSeries.setData(data as never)
     chart.timeScale().fitContent()
 
     const lastPoint = data[data.length - 1]
+    let hoverActive = false
 
     const syncLastLabel = () => {
-      if (!showLastLabel || !lastPoint || !lastLabelRef.current || !lastDotRef.current) return
+      if ((!showLastLabel && !showEndDot) || !lastPoint || !lastDotRef.current) return
+      if (hoverActive && onHoverChange) return
+      if (showLastLabel && !lastLabelRef.current) return
       const ts = chart.timeScale() as unknown as {
         timeToCoordinate?: (t: never) => number | null
       }
@@ -156,23 +199,29 @@ export function LightweightChart({
       }
       const x = ts.timeToCoordinate(lastPoint.time as never)
       const y = ps.priceToCoordinate(lastPoint.value)
-      const label = lastLabelRef.current
       const dot = lastDotRef.current
       if (x == null || y == null) {
-        label.style.opacity = "0"
+        if (lastLabelRef.current) lastLabelRef.current.style.opacity = "0"
         dot.style.opacity = "0"
         return
       }
-      dot.style.transform = `translate(${x - 4}px, ${y - 4}px)`
+      if (variant === "token" && showEndDot) {
+        dot.style.transform = `translate(${x - 4}px, ${y - 4}px)`
+      } else {
+        dot.style.transform = `translate(${x - 4}px, ${y - 4}px)`
+      }
       dot.style.opacity = "1"
-      const w = label.offsetWidth || 72
-      const h = label.offsetHeight || 36
-      const pad = 10
-      const maxX = (containerRef.current?.clientWidth ?? 0) - w - pad
-      const labelX = Math.min(Math.max(pad, x - w / 2), maxX)
-      const labelY = Math.max(pad, y - h - 14)
-      label.style.transform = `translate(${labelX}px, ${labelY}px)`
-      label.style.opacity = "1"
+      if (showLastLabel && lastLabelRef.current) {
+        const label = lastLabelRef.current
+        const w = label.offsetWidth || 72
+        const h = label.offsetHeight || 36
+        const pad = 10
+        const maxX = (containerRef.current?.clientWidth ?? 0) - w - pad
+        const labelX = Math.min(Math.max(pad, x - w / 2), maxX)
+        const labelY = Math.max(pad, y - h - 14)
+        label.style.transform = `translate(${labelX}px, ${labelY}px)`
+        label.style.opacity = "1"
+      }
     }
 
     const handleResize = () => {
@@ -187,7 +236,10 @@ export function LightweightChart({
 
     chart.subscribeCrosshairMove((param) => {
       if (!param?.time || !param.point || param.point.x < 0 || param.point.y < 0) {
+        hoverActive = false
         setHover(null)
+        onHoverChange?.(null)
+        requestAnimationFrame(syncLastLabel)
         return
       }
       const price = param.seriesData.get(mainSeries as never) as
@@ -195,10 +247,23 @@ export function LightweightChart({
         | undefined
       const value = price?.value ?? price?.close
       if (value === undefined) {
+        hoverActive = false
         setHover(null)
+        onHoverChange?.(null)
+        requestAnimationFrame(syncLastLabel)
         return
       }
       const timeIso = timeToIso(param.time as unknown)
+      if (onHoverChange) {
+        hoverActive = true
+        onHoverChange({ value, time: timeIso, index: -1 })
+        setHover(null)
+        if (showEndDot && lastDotRef.current) {
+          lastDotRef.current.style.transform = `translate(${param.point.x - 4}px, ${param.point.y - 4}px)`
+          lastDotRef.current.style.opacity = "1"
+        }
+        return
+      }
       setHover({
         time: formatTime(timeIso),
         valueLabel: formatValue(value),
@@ -212,7 +277,7 @@ export function LightweightChart({
       cancelAnimationFrame(rafId)
       chart.remove()
     }
-  }, [series, type, height, tone, accentKey, formatValue, formatTime, theme, showLastLabel])
+  }, [series, type, height, tone, accentKey, formatValue, formatTime, theme, showLastLabel, showEndDot, variant, onHoverChange, timeRange])
 
   return (
     <div
@@ -222,57 +287,67 @@ export function LightweightChart({
       style={{ height }}
     >
       <div ref={containerRef} className="absolute inset-0" data-testid="lw-chart" />
-      {showLastLabel ? (
+      {showLastLabel || showEndDot ? (
         <>
           <div
             ref={lastDotRef}
             aria-hidden
-            className="pointer-events-none absolute left-0 top-0 size-2 rounded-full opacity-0 shadow-[0_0_0_3px_rgba(255,255,255,0.85)] transition-opacity"
-            style={{ backgroundColor: "currentColor", color: "hsl(var(--foreground))" }}
+            className={cn(
+              "pointer-events-none absolute left-0 top-0 size-2 rounded-full opacity-0 transition-opacity",
+              variant === "token"
+                ? "bg-[#1A1A1A] shadow-[0_0_0_12px_rgba(0,0,0,0.055),0_0_0_3px_rgba(255,255,255,1)]"
+                : "shadow-[0_0_0_3px_rgba(255,255,255,0.85)]",
+            )}
+            style={variant === "token" ? undefined : { backgroundColor: "currentColor", color: "hsl(var(--foreground))" }}
             data-testid="lw-last-dot"
           />
-          <div
-            ref={lastLabelRef}
-            aria-hidden
-            className="pointer-events-none absolute left-0 top-0 z-[5] rounded-md border border-border/60 bg-background/95 px-2 py-1 text-center text-[10px] font-medium opacity-0 shadow-sm backdrop-blur transition-opacity"
-            data-testid="lw-last-label"
-          >
-            <div className="uppercase tracking-wider text-muted-foreground">Today</div>
-            <div className="font-data text-[12px] font-semibold tabular-nums text-foreground">
-              {formatValue(series.points[series.points.length - 1]?.v ?? 0)}
+          {showLastLabel ? (
+            <div
+              ref={lastLabelRef}
+              aria-hidden
+              className="pointer-events-none absolute left-0 top-0 z-[5] rounded-md border border-border/60 bg-background/95 px-2 py-1 text-center text-[10px] font-medium opacity-0 shadow-sm backdrop-blur transition-opacity"
+              data-testid="lw-last-label"
+            >
+              <div className="uppercase tracking-wider text-muted-foreground">Today</div>
+              <div className="font-data text-[12px] font-semibold tabular-nums text-foreground">
+                {formatValue(series.points[series.points.length - 1]?.v ?? 0)}
+              </div>
             </div>
-          </div>
+          ) : null}
         </>
       ) : null}
-      <div
-        ref={tooltipRef}
-        role="tooltip"
-        aria-hidden={!hover}
-        className={cn(
-          "pointer-events-none absolute z-10 min-w-[120px] rounded-lg border border-border/60 bg-popover/95 px-2.5 py-1.5 text-xs shadow-md backdrop-blur transition-opacity",
-          hover ? "opacity-100" : "opacity-0",
-        )}
-        style={{ left: 0, top: 0 }}
-      >
-        {hover ? (
-          <>
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{hover.time}</div>
-            <div className="mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground">
-              {hover.valueLabel}
-            </div>
-            <div className="text-[10px] text-muted-foreground">{hover.seriesLabel}</div>
-          </>
-        ) : null}
-      </div>
+      {onHoverChange ? null : (
+        <div
+          ref={tooltipRef}
+          role="tooltip"
+          aria-hidden={!hover}
+          className={cn(
+            "pointer-events-none absolute z-10 min-w-[120px] rounded-lg border border-border/60 bg-popover/95 px-2.5 py-1.5 text-xs shadow-md backdrop-blur transition-opacity",
+            hover ? "opacity-100" : "opacity-0",
+          )}
+          style={{ left: 0, top: 0 }}
+        >
+          {hover ? (
+            <>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{hover.time}</div>
+              <div className="mt-0.5 font-data text-sm font-semibold tabular-nums text-foreground">
+                {hover.valueLabel}
+              </div>
+              <div className="text-[10px] text-muted-foreground">{hover.seriesLabel}</div>
+            </>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }
 
 function toChartData(series: Series, type: LwChartType) {
-  const deduped = new Map<string, number>()
+  const intraday = series.points.some((p) => p.t.includes("T"))
+  const deduped = new Map<number | string, number>()
   for (const point of series.points) {
     if (!Number.isFinite(point.v)) continue
-    deduped.set(toLwTime(point.t), point.v)
+    deduped.set(toLwTime(point.t, intraday), point.v)
   }
 
   return [...deduped.entries()]
@@ -280,13 +355,11 @@ function toChartData(series: Series, type: LwChartType) {
     .map(([time, value]) => (type === "bar" ? { time, value, color: undefined } : { time, value }))
 }
 
-function toLwTime(raw: string): string {
-  // Accept both ISO date (YYYY-MM-DD) and full ISO timestamp. Lightweight
-  // charts accepts business-day string when using the default time scale.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
-  const d = new Date(raw)
+function toLwTime(raw: string, intraday: boolean): number | string {
+  if (!intraday && /^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
+  const d = new Date(raw.includes("T") ? raw : `${raw}T12:00:00Z`)
   if (Number.isNaN(d.getTime())) return raw
-  return d.toISOString().slice(0, 10)
+  return intraday ? Math.floor(d.getTime() / 1000) : d.toISOString().slice(0, 10)
 }
 
 function timeToIso(t: unknown): string {
@@ -311,6 +384,30 @@ function defaultFormatTime(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+}
+
+function makeTokenChartPalette(theme: ThemeMode) {
+  const stroke = theme === "dark" ? "#d4d4d8" : "#1A1A1A"
+  return {
+    accent: stroke,
+    stroke,
+    fillTop: theme === "dark" ? "rgba(212,212,216,0.1)" : "rgba(0,0,0,0.06)",
+    fillBottom: "rgba(255,255,255,0)",
+    cursor: theme === "dark" ? "rgba(212,212,216,0.2)" : "rgba(0,0,0,0.06)",
+  }
+}
+
+function formatTokenTick(time: unknown, range?: TimeRangeId) {
+  const iso = timeToIso(time)
+  const d = new Date(iso.includes("T") ? iso : `${iso}T12:00:00`)
+  if (Number.isNaN(d.getTime())) return ""
+  if (range === "1D") {
+    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+  }
+  if (range === "1W" || range === "1M") {
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  }
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
 function positionTooltip(tooltip: HTMLDivElement | null, container: HTMLDivElement | null, point: { x: number; y: number }) {
