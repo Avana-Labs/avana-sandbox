@@ -90,12 +90,12 @@ export function AssetDetailClient({ detail }: Props) {
       />
 
       <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
-        <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[13px] text-[#9A9A9A]">
+        <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[13px] text-muted-foreground">
           <Link href="/borrow" className="transition-colors hover:text-foreground">
             Borrow
           </Link>
-          <span aria-hidden className="text-[#D0D0D0]">›</span>
-          <span className="font-normal text-[#1A1A1A]">{detail.hero.name}</span>
+          <span aria-hidden className="text-border">›</span>
+          <span className="font-normal text-foreground">{detail.hero.name}</span>
         </nav>
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
