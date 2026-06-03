@@ -46,7 +46,7 @@ export function AssetHeroIdentity({
             {leading}
             <span
               className={cn(
-                "inline-flex size-16 items-center justify-center overflow-hidden rounded-full bg-[#EEF0FF]",
+                "inline-flex size-14 items-center justify-center overflow-hidden rounded-full bg-[#EEF0FF]",
                 detail.hero.visual.bgClass,
                 detail.hero.visual.textClass,
               )}
@@ -54,7 +54,7 @@ export function AssetHeroIdentity({
             >
               {detail.hero.visual.iconUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={detail.hero.visual.iconUrl} alt="" className="size-11 object-contain" />
+                <img src={detail.hero.visual.iconUrl} alt="" className="size-9 object-contain" />
               ) : (
                 <span className="text-[11px] font-medium">{detail.hero.visual.shortLabel}</span>
               )}
@@ -63,12 +63,12 @@ export function AssetHeroIdentity({
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="truncate text-[24px] font-semibold leading-none tracking-[-0.02em] text-[#111111]">
+              <h1 className="truncate text-[21px] font-medium leading-none tracking-[-0.02em] text-[#111111]">
                 {detail.hero.name}
               </h1>
-              <BadgeCheck className="h-[17px] w-[17px] shrink-0 fill-[#B8B8B8] text-white" aria-hidden="true" />
+              <BadgeCheck className="h-[24px] w-[24px] shrink-0 -translate-y-[3px] fill-[#B8B8B8] text-white" aria-hidden="true" />
             </div>
-            <div className="mt-2.5 flex flex-wrap items-center gap-3 text-[13px] text-[#737373]">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px] text-[#737373]">
               <span className="inline-flex items-center rounded-full bg-[#F0F0F0] px-2.5 py-[3px] text-[12px] font-medium leading-none text-[#404040]">
                 ${detail.hero.symbol}
               </span>
@@ -87,7 +87,7 @@ export function AssetHeroIdentity({
           </div>
         </div>
 
-        <div className="hidden shrink-0 items-center gap-5 self-center border-l border-[#E8E8E8] pl-5 lg:flex">
+        <div className="hidden shrink-0 items-center gap-5 self-center pl-5 lg:flex">
           <HeroIcon label="Search" onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(`${detail.hero.name} ${detail.hero.symbol}`)}`, "_blank")}>
             <Search className="h-[18px] w-[18px]" strokeWidth={1.35} />
           </HeroIcon>
@@ -150,7 +150,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
 
       <div className="pt-6" data-testid="asset-hero-chart-card">
         <div className="mb-5">
-          <p className="font-data text-[36px] font-semibold leading-none tracking-[-0.035em] text-[#111111]">
+          <p className="font-data text-[30px] font-medium leading-none tracking-[-0.03em] text-[#111111]">
             {displayPrice}
           </p>
           <p className="mt-2 flex items-center gap-2 text-[13px]">
