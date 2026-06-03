@@ -1,7 +1,7 @@
 "use client"
 
 import { toast } from "sonner"
-import { PerpBalanceRow } from "./components/perp-balance-row"
+import { MultiplyBalanceRow } from "./components/multiply-balance-row"
 import { BalanceChart } from "./components/balance-chart"
 import { MarketsTable } from "./components/markets-table"
 import { AccountTabs } from "./components/account-tabs"
@@ -15,9 +15,9 @@ export const MOCK_MARKETS = [
   { symbol: "OP", name: "Optimism", price: 2.84, funding: 0.009, change: 3.7, volume: 95000000, maxLeverage: 10, longOi: 58, shortOi: 42 },
 ]
 
-export function PerpsClient() {
-  const handleTrade = (symbol: string, side: "long" | "short") => {
-    toast[side === "long" ? "success" : "info"](`${side === "long" ? "Long" : "Short"} ${symbol}-PERP`, {
+export function MultiplyClient() {
+  const handleMultiply = (symbol: string, side: "long" | "short") => {
+    toast[side === "long" ? "success" : "info"](`${side === "long" ? "Long" : "Short"} ${symbol}`, {
       description: "Order ticket would open here.",
     })
   }
@@ -26,7 +26,7 @@ export function PerpsClient() {
     <main className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-5xl">
         {/* Top Balance Row */}
-        <PerpBalanceRow />
+        <MultiplyBalanceRow />
 
         {/* HERO SECTION */}
         <div className="mt-8 mb-8 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-stretch">
@@ -40,7 +40,7 @@ export function PerpsClient() {
 
         {/* BOTTOM: Full-width Markets then Positions/History (incl. Tx History tab) */}
         <div className="mt-12 space-y-8">
-          <MarketsTable markets={MOCK_MARKETS} onTrade={handleTrade} />
+          <MarketsTable markets={MOCK_MARKETS} onMultiply={handleMultiply} />
           <AccountTabs />
         </div>
       </div>

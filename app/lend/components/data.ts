@@ -14,12 +14,12 @@ export const MARKETS = [
 ] as const
 
 export const ACTIVITY = [
-  { type: "deposit", asset: "USDC", amount: "+8,200", date: "Mar 19", icon: "↓", bg: "bg-emerald-500/10", color: "text-emerald-500" },
-  { type: "deposit", asset: "USDT", amount: "+2,000", date: "Mar 19", icon: "↓", bg: "bg-emerald-500/10", color: "text-emerald-500" },
+  { type: "deposit", asset: "USDC", amount: "+8,200", date: "Mar 19", icon: "↓", bg: "bg-[#01AACF]/10", color: "text-[#01AACF]" },
+  { type: "deposit", asset: "USDT", amount: "+2,000", date: "Mar 19", icon: "↓", bg: "bg-[#01AACF]/10", color: "text-[#01AACF]" },
   { type: "interest", asset: "Interest", amount: "+$12.40", date: "Mar 18", icon: "💰", bg: "bg-blue-500/10", color: "text-blue-500" },
-  { type: "deposit", asset: "ETH", amount: "+1.280", date: "Mar 17", icon: "↓", bg: "bg-indigo-500/10", color: "text-indigo-500" },
+  { type: "deposit", asset: "ETH", amount: "+1.280", date: "Mar 17", icon: "↓", bg: "bg-[#01AACF]/10", color: "text-[#01AACF]" },
   { type: "withdraw", asset: "USDC", amount: "-500", date: "Mar 16", icon: "↑", bg: "bg-rose-500/10", color: "text-rose-500" },
-  { type: "deposit", asset: "USDC", amount: "+500", date: "Mar 14", icon: "↓", bg: "bg-emerald-500/10", color: "text-emerald-500" },
+  { type: "deposit", asset: "USDC", amount: "+500", date: "Mar 14", icon: "↓", bg: "bg-[#01AACF]/10", color: "text-[#01AACF]" },
 ] as const
 
 export const mockChartData = [

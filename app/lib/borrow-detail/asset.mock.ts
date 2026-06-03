@@ -15,6 +15,7 @@ import {
   formatCompactUsd,
 } from "@/app/lib/borrow-sim"
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
+import { buildCuratedPriceFamily } from "./token-price-series"
 import {
   computeAssetAllocation,
   formatBpsAsPct,
@@ -47,6 +48,12 @@ import { ALL_ASSET_CHART_METRICS, ALL_KEY_METRICS, ALL_PERF_PERIODS } from "./ty
 
 type AssetFixture = {
   chain?: string
+  heroPriceUsd?: number
+  heroPriceChangePct?: number
+  contractLabel?: string
+  contractAddress?: string
+  websiteUrl?: string
+  xUrl?: string
   /** Base total-supplied USD used to seed the supply chart. */
   baseSuppliedUsd?: number
   /** Base total-borrowed USD used to seed the borrow chart. */
@@ -61,6 +68,12 @@ type AssetFixture = {
 const ASSET_FIXTURES: Record<string, AssetFixture> = {
   usdc: {
     chain: "Ethereum",
+    heroPriceUsd: 1,
+    heroPriceChangePct: 0.02,
+    contractLabel: "0xA0b8…6eB48",
+    contractAddress: "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    websiteUrl: "https://www.circle.com/usdc",
+    xUrl: "https://x.com/circle",
     baseSuppliedUsd: 205_670_000,
     baseBorrowedUsd: 166_240_000,
     subtitle: "The deepest stablecoin on the protocol — borrowed to lever up LP collateral and for stable-to-stable carry.",
@@ -104,18 +117,45 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
   },
   eth: {
     chain: "Ethereum",
+    heroPriceUsd: 2019.96,
+    heroPriceChangePct: -5.35,
+    contractLabel: "7vfC...voxs",
+    contractAddress: "7vfC2Jf2voxs",
+    websiteUrl: "https://ethereum.org",
+    xUrl: "https://x.com/ethereum",
     baseSuppliedUsd: 168_400_000,
     baseBorrowedUsd: 92_600_000,
     subtitle: "Native ETH — the primary volatile borrow asset for directional carry on LP collateral.",
+    about: {
+      description:
+        "Ethereum is a decentralized blockchain with smart contract functionality. Ether is the native cryptocurrency of the platform and is used to pay for transaction fees and computational services on the network. It is the second-largest cryptocurrency by market capitalization and powers the majority of decentralized finance activity.",
+      stats: [],
+      history: [
+        { date: "2015-07-30", title: "Mainnet launch", description: "Ethereum genesis block mined." },
+        { date: "2022-09-15", title: "The Merge", description: "Proof-of-stake consensus activated." },
+      ],
+    },
   },
   weth: {
     chain: "Ethereum",
+    heroPriceUsd: 2021.44,
+    heroPriceChangePct: -5.12,
+    contractLabel: "0xC02a…6Cc2",
+    contractAddress: "0xC02aaA39b223FE8D0A0E5C4F27eAD9083C756Cc2",
+    websiteUrl: "https://weth.io",
+    xUrl: "https://x.com/ethereum",
     baseSuppliedUsd: 204_100_000,
     baseBorrowedUsd: 118_300_000,
     subtitle: "Wrapped ETH is the canonical ERC-20 used by Uniswap/Balancer/Aerodrome pools.",
   },
   wbtc: {
     chain: "Ethereum",
+    heroPriceUsd: 68422.18,
+    heroPriceChangePct: -2.41,
+    contractLabel: "0x2260…C599",
+    contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    websiteUrl: "https://wbtc.network",
+    xUrl: "https://x.com/WrappedBTC",
     baseSuppliedUsd: 96_200_000,
     baseBorrowedUsd: 42_300_000,
     subtitle: "Wrapped BTC exposure — borrowed to short BTC against blue-chip LPs.",
@@ -140,7 +180,11 @@ function buildHero(asset: BorrowableAsset, fixture: AssetFixture | undefined): A
     symbol: asset.symbol,
     subtitle: fixture?.subtitle ?? `${asset.name} — ${asset.subtitle}.`,
     chain: fixture?.chain ?? "Ethereum",
-    category: asset.category,
+    category: asset.category === "stable" ? "stable" : "crypto",
+    contractLabel: fixture?.contractLabel,
+    contractAddress: fixture?.contractAddress,
+    websiteUrl: fixture?.websiteUrl,
+    xUrl: fixture?.xUrl,
   }
 }
 
@@ -163,10 +207,25 @@ function buildHeroSeries(
   asset: BorrowableAsset,
   supplied: number,
   borrowed: number,
+  fixture: AssetFixture | undefined,
 ): Record<AssetChartMetricId, Record<TimeRangeId, Series>> {
   const utilizationBase = Math.max(1, Math.min(95, (borrowed / supplied) * 100))
   const apyBase = asset.borrowApr
+  const priceBase =
+    fixture?.heroPriceUsd ??
+    (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+  const curatedPrice = buildCuratedPriceFamily(asset.id, "Price")
   return {
+    price:
+      curatedPrice ??
+      buildSeriesFamily(`${asset.id}:price`, "Price", {
+        base: priceBase,
+        driftMultiplier: 0.98,
+        noise: 0.02,
+        wave: 0.035,
+        nonNegative: true,
+        roundTo: 2,
+      }),
     supply: buildSeriesFamily(`${asset.id}:supply`, "Total Supplied", { base: supplied, driftMultiplier: 1.08, noise: 0.03, wave: 0.05, nonNegative: true, roundTo: 0 }),
     borrow: buildSeriesFamily(`${asset.id}:borrow`, "Total Borrowed", { base: borrowed, driftMultiplier: 1.06, noise: 0.04, wave: 0.06, nonNegative: true, roundTo: 0 }),
     utilization: buildSeriesFamily(`${asset.id}:util`, "Utilization", { base: utilizationBase, driftMultiplier: 1.02, noise: 0.05, wave: 0.08, nonNegative: true, roundTo: 2 }),
@@ -288,7 +347,7 @@ function buildCashflowTrend(asset: BorrowableAsset, _supplied: number, borrowed:
   }
 }
 
-function buildAssetEngagement(asset: BorrowableAsset, supplied: number, borrowed: number): EngagementTrend {
+function buildAssetEngagement(asset: BorrowableAsset, supplied: number): EngagementTrend {
   const rand = prngFromString(`${asset.id}:engagement`)
   const base = Math.max(800, Math.round(Math.sqrt(supplied) * 1.6))
   const now = Date.UTC(2026, 3, 22)
@@ -436,14 +495,18 @@ export function buildAssetDetail(asset: BorrowableAsset): AssetDetail {
   const supplied = fixture?.baseSuppliedUsd ?? Math.max(asset.totalBorrowedUsd + asset.availableUsd, 1)
   const borrowed = fixture?.baseBorrowedUsd ?? asset.totalBorrowedUsd
   const allocation: AllocationRow[] = computeAssetAllocation(asset, BORROW_POOL_CATALOG)
+  const heroPriceUsd =
+    fixture?.heroPriceUsd ??
+    (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+  const heroPriceChangePct = fixture?.heroPriceChangePct ?? -2.14
   return {
     id: asset.id,
     hero: buildHero(asset, fixture),
     heroMetric: {
-      metricId: "supply",
-      valueLabel: formatCompactUsd(supplied),
-      delta: deltaFromPct(2.1),
-      series: buildHeroSeries(asset, supplied, borrowed),
+      metricId: "price",
+      valueLabel: heroPriceUsd >= 100 ? `$${heroPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$${heroPriceUsd.toFixed(2)}`,
+      delta: deltaFromPct(heroPriceChangePct),
+      series: buildHeroSeries(asset, supplied, borrowed, fixture),
     },
     quickStats: buildQuickStats(asset, supplied, borrowed, fixture),
     supplyBorrow: buildSupplyBorrow(asset, supplied, borrowed),
@@ -459,7 +522,7 @@ export function buildAssetDetail(asset: BorrowableAsset): AssetDetail {
     allocation,
     keyMetrics: buildAssetKeyMetrics(asset, supplied, borrowed),
     cashflow: buildAssetCashflow(asset, supplied, borrowed),
-    engagement: buildAssetEngagement(asset, supplied, borrowed),
+    engagement: buildAssetEngagement(asset, supplied),
     risk: buildAssetRisk(asset, fixture),
     about: buildAssetAbout(asset, fixture),
     transactions: buildTransactions(asset),

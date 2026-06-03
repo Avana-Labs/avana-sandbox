@@ -3,6 +3,8 @@
 import * as React from "react"
 import { toast } from "sonner"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
+import { NewsCard } from "@/app/borrow/_detail/ui"
+import { AboutCard } from "@/app/borrow/_detail/pool-sections"
 import {
   calculateBorrowPreview,
   formatCompactUsd,
@@ -59,10 +61,7 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
 
   return (
     <>
-      <aside
-        className={cn("flex w-full flex-col gap-3", className)}
-        aria-label={`Borrow against ${detail.hero.name}`}
-      >
+      <aside className={cn("flex w-full flex-col gap-4", className)} aria-label={`Borrow against ${detail.hero.name}`}>
         <CompactBorrowCard
           pool={pool}
           token={token}
@@ -74,6 +73,18 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
           onQuickTokenSelect={(id) => setTokenId(id)}
           onSetMax={() => setAmount(String(pool.borrowPowerUsd))}
           onSubmit={handleSubmit}
+        />
+
+        <AboutCard about={detail.about} />
+        <NewsCard
+          items={detail.about.history.slice(0, 3).map((entry, index) => ({
+            title: entry.title,
+            description: entry.description,
+            source: index === 0 ? "Latest update" : "Protocol note",
+            time: entry.date,
+            imageUrl: detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined,
+            imageLabel: detail.hero.name,
+          }))}
         />
       </aside>
 
