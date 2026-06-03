@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { TrendingDown, TrendingUp } from "lucide-react"
 import { useTheme } from "next-themes"
 import type { EngagementTrend } from "@/app/lib/borrow-detail"
 import { resolveChartAccent, toRgba, type ThemeMode } from "@/app/lib/chart-colors"
@@ -37,11 +36,9 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
         </h2>
       </div>
 
-      <div className="mt-5 grid grid-cols-[auto_1px_auto] items-start gap-x-6 gap-y-1">
-        <Kpi label={engagement.primary.label} value={engagement.primary.valueLabel} delta={engagement.primary.delta} />
-        <span aria-hidden className="h-10 self-center bg-border" />
-        <Kpi label={engagement.secondary.label} value={engagement.secondary.valueLabel} delta={engagement.secondary.delta} />
-      </div>
+      <p className="mt-3 max-w-[36rem] text-[13px] leading-5 text-muted-foreground">
+        Active wallets track unique wallets with activity over the last 30 days.
+      </p>
 
       <div className="relative mt-5">
         {hasData ? (
@@ -64,40 +61,6 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
         />
       </div>
     </section>
-  )
-}
-
-function Kpi({
-  label,
-  value,
-  delta,
-}: {
-  label: string
-  value: string
-  delta: { value: number; direction: "up" | "down" | "flat"; label: string }
-}) {
-  const isUp = delta.direction === "up"
-  const isDown = delta.direction === "down"
-  return (
-    <div>
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      <div className="mt-1 flex items-baseline gap-2">
-        <span className="font-data text-[22px] font-medium tabular-nums text-foreground sm:text-[24px]">{value}</span>
-        {delta.direction !== "flat" ? (
-          <span
-            className={cn(
-              "inline-flex items-center gap-0.5 text-[11.5px] font-medium tabular-nums",
-              isUp && "text-emerald-600 dark:text-emerald-400",
-              isDown && "text-rose-600 dark:text-rose-400",
-            )}
-          >
-            {isUp ? <TrendingUp className="h-3 w-3" aria-hidden /> : null}
-            {isDown ? <TrendingDown className="h-3 w-3" aria-hidden /> : null}
-            {delta.label.replace("+", "").replace("−", "")}
-          </span>
-        ) : null}
-      </div>
-    </div>
   )
 }
 
