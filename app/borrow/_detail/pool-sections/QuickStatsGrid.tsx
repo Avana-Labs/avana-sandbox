@@ -25,7 +25,7 @@ export function QuickStatsGrid({ detail, className }: Props) {
           <div
             key={stat.id}
             className={cn(
-              "min-h-[114px] border-border-light px-4 py-5 md:px-3 md:py-5",
+              "min-h-[114px] border-border px-4 py-5 md:px-3 md:py-5",
               !isMobileFirstCol && "border-l",
               isMobileSecondRow && "border-t md:border-t-0",
               !isDesktopFirstCol && "md:border-l",

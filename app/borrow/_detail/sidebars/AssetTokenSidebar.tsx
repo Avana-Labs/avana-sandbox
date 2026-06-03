@@ -61,7 +61,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
       ]}
       value={tab}
       onValueChange={(value: string) => setTab(value as SidebarTab)}
-      className="rounded-[20px] border border-[#E8E8E8] bg-white p-5 shadow-none [&>div]:p-0"
+      className="rounded-[20px] border border-border/60 bg-surface-raised p-5 shadow-elev-1 [&>div]:p-0"
     >
         {tab === "pools" ? <PoolsPanel detail={detail} /> : <AggregatorsPanel tab={tab} symbol={detail.hero.symbol} />}
       </HeroSideCard>
@@ -74,7 +74,7 @@ function AggregatorsPanel({ tab, symbol }: { tab: Exclude<SidebarTab, "pools">; 
 
   return (
     <div className="space-y-3 pt-1">
-      <div className="text-[12px] font-medium text-[#9A9A9A]">{heading}</div>
+      <div className="text-[12px] font-medium text-muted-foreground">{heading}</div>
       <ol className="space-y-0">
         {AGGREGATORS.map((venue, index) => (
           <li key={venue.id}>
@@ -82,9 +82,9 @@ function AggregatorsPanel({ tab, symbol }: { tab: Exclude<SidebarTab, "pools">; 
               href={`${venue.href}?inputMint=${symbol}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-3 rounded-xl px-1 py-3 transition-colors hover:bg-[#F7F7F7]"
+              className="group flex items-center gap-3 rounded-xl px-1 py-3 transition-colors hover:bg-surface-inset/60"
             >
-              <span className="w-5 shrink-0 text-[13px] font-medium tabular-nums text-[#B0B0B0]">{index + 1}</span>
+              <span className="w-5 shrink-0 text-[13px] font-medium tabular-nums text-muted-foreground">{index + 1}</span>
               <span
                 className={cn(
                   "inline-flex size-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white",
@@ -94,9 +94,9 @@ function AggregatorsPanel({ tab, symbol }: { tab: Exclude<SidebarTab, "pools">; 
               >
                 {venue.name.slice(0, 1)}
               </span>
-              <span className="min-w-0 flex-1 text-[13px] font-medium text-[#1A1A1A]">{venue.name}</span>
+              <span className="min-w-0 flex-1 text-[13px] font-medium text-foreground">{venue.name}</span>
               <ArrowUpRight
-                className="size-4 shrink-0 text-[#B8B8B8] transition-colors group-hover:text-foreground"
+                className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
                 aria-hidden
               />
             </a>
@@ -104,7 +104,7 @@ function AggregatorsPanel({ tab, symbol }: { tab: Exclude<SidebarTab, "pools">; 
         ))}
       </ol>
       {tab === "perps" ? (
-        <p className="text-[12px] leading-relaxed text-[#8A8A8A]">
+        <p className="text-[12px] leading-relaxed text-muted-foreground">
           Perpetual routes are surfaced for discovery only. Execution opens on the selected venue.
         </p>
       ) : null}

@@ -41,14 +41,14 @@ export function AssetHeroIdentity({
   const metaLabel = detail.hero.contractLabel ?? detail.hero.chain
 
   return (
-    <header className={cn("border-b border-[#E8E8E8] pb-5", className)}>
+    <header className={cn("border-b border-border pb-5", className)}>
       <div className="flex items-center justify-between gap-6">
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative shrink-0">
             {leading}
             <span
               className={cn(
-                "inline-flex size-14 items-center justify-center overflow-hidden rounded-full bg-[#EEF0FF]",
+                "inline-flex size-14 items-center justify-center overflow-hidden rounded-full bg-surface-inset",
                 detail.hero.visual.bgClass,
                 detail.hero.visual.textClass,
               )}
@@ -65,13 +65,13 @@ export function AssetHeroIdentity({
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-[#111111]">
+              <h1 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">
                 {detail.hero.name}
               </h1>
-              <BadgeCheck className="h-[24px] w-[24px] shrink-0 -translate-y-[3px] fill-[#B8B8B8] text-white" aria-hidden="true" />
+              <BadgeCheck className="h-[24px] w-[24px] shrink-0 -translate-y-[3px] fill-muted-foreground text-background" aria-hidden="true" />
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px] text-[#737373]">
-              <span className="inline-flex items-center rounded-full bg-[#F0F0F0] px-2.5 py-[3px] text-[12px] font-medium leading-none text-[#404040]">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px] text-muted-foreground">
+              <span className="inline-flex items-center rounded-full bg-surface-inset px-2.5 py-[3px] text-[12px] font-medium leading-none text-foreground">
                 ${detail.hero.symbol}
               </span>
               <button
@@ -79,7 +79,7 @@ export function AssetHeroIdentity({
                 onClick={async () => {
                   await navigator.clipboard.writeText(detail.hero.contractAddress ?? metaLabel)
                 }}
-                className="inline-flex items-center gap-1.5 text-[13px] font-normal leading-none text-[#9B9B9B] transition-colors hover:text-[#111111]"
+                className="inline-flex items-center gap-1.5 text-[13px] font-normal leading-none text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="Copy contract"
               >
                 <Copy className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
@@ -152,14 +152,14 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
 
       <div className="pt-4" data-testid="asset-hero-chart-card">
         <div className="mb-8">
-          <p className="font-data text-[26px] font-normal leading-none tracking-[-0.03em] text-[#111111]">
+      <p className="font-data text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground">
             {displayPrice}
           </p>
           <p className="mt-2 flex items-center gap-2 text-[13px]">
-            <span className={cn("tabular-nums font-normal", deltaDir === "down" ? "text-[#E45C4C]" : "text-[#22A06B]")}>
+            <span className={cn("tabular-nums font-normal", deltaDir === "down" ? "text-rose-500" : "text-emerald-500")}>
               {deltaDir === "down" ? "▼" : "▲"} {formatPct(deltaPct, 2)}
             </span>
-            <span className="font-normal text-[#9B9B9B]">{displayDate}</span>
+            <span className="font-normal text-muted-foreground">{displayDate}</span>
           </p>
         </div>
 
@@ -184,7 +184,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
                 series={series}
                 type={chartType}
                 height={TOKEN_CHART_HEIGHT}
-                accentClassName="text-zinc-700"
+                accentClassName="text-foreground"
                 ariaLabel={`${labelForAssetMetric(metric)} over ${range}`}
                 formatValue={formatHeroValue}
                 formatTime={formatHeroTime}
@@ -197,7 +197,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
           <div
             role="tablist"
             aria-label="Time range"
-            className="inline-flex items-center rounded-full bg-[#EFEFEF] p-[3px]"
+            className="inline-flex items-center rounded-full bg-surface-inset p-[3px]"
           >
             {RANGE_OPTIONS.map((option) => {
               const active = option.value === range
@@ -211,8 +211,8 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
                   className={cn(
                     "rounded-full px-3.5 py-1.5 text-[11.5px] font-medium transition-all",
                     active
-                      ? "bg-white text-[#111111] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-                      : "text-[#8C8C8C] hover:text-[#111111]",
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {option.label}
@@ -223,7 +223,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
           <button
             type="button"
             aria-label="Expand chart"
-            className="inline-flex size-11 items-center justify-center rounded-full border border-[#E2E2E2] bg-white text-[#7A7A7A] transition-colors hover:border-[#D4D4D4] hover:bg-[#FAFAFA] hover:text-[#444444]"
+            className="inline-flex size-11 items-center justify-center rounded-full border border-border bg-surface-raised text-muted-foreground transition-colors hover:border-border/80 hover:bg-surface-inset hover:text-foreground"
           >
             <LoginCameraIcon />
           </button>
@@ -239,7 +239,7 @@ function HeroIcon({ label, onClick, children }: { label: string; onClick: () => 
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="size-7 flex items-center justify-center rounded-full text-text-medium transition-colors hover:bg-gray-50 hover:text-text-high"
+      className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
     >
       {children}
     </button>
