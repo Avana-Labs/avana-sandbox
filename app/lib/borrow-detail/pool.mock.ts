@@ -42,7 +42,7 @@ import type {
   TimeRangeId,
   TxHistoryRow,
 } from "./types"
-import { ALL_CHART_METRICS, ALL_KEY_METRICS, ALL_PERF_PERIODS, ALL_PERF_TABS } from "./types"
+import { ALL_KEY_METRICS, ALL_PERF_PERIODS, ALL_PERF_TABS } from "./types"
 
 // -------------------------------------------------------------------------
 // Home-page id → catalog mapping
@@ -187,6 +187,24 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
         { id: "deps", label: "Dependencies", value: "BitGo, Chainlink" },
       ],
       lastReviewed: "2026-03-11",
+    },
+  },
+  "uni-v2-weth-dai": {
+    chain: "Ethereum",
+    feeTier: "0.30%",
+    subtitle: "WETH/DAI LP positions accepted as collateral in the Uniswap v2 spoke.",
+    about: {
+      description:
+        "WETH/DAI is a standard Uniswap v2 ETH/stable pair and a straightforward LP structure for collateral evaluation. The Uniswap v2 spoke admits it under conservative parameters because the pair still carries ETH volatility, while the stable quote side keeps the market easy to reason about.",
+      stats: [],
+      history: [
+        { date: "2025-01-14", title: "Onboarded", description: "Added to the Uniswap v2 LPs." },
+        { date: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV." },
+      ],
+      news: [
+        { time: "2025-01-14", title: "Onboarded", description: "Added to the Uniswap v2 LPs.", source: "Latest update" },
+        { time: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV.", source: "Protocol note" },
+      ],
     },
   },
   "uni-v3-stable-usdc-usdt": {

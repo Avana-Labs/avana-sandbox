@@ -275,6 +275,7 @@ export type AboutCard = {
   description: string
   stats: Array<{ label: string; value: string }>
   history: Array<{ date: string; title: string; description?: string }>
+  news?: Array<{ title: string; description?: string; source: string; time: string }>
 }
 
 export type RelatedPoolSummary = {
