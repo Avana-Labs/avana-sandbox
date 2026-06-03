@@ -9,7 +9,7 @@ type Props = { detail: AssetDetail }
 export function RelatedAssetsRow({ detail }: Props) {
   if (detail.related.length === 0) return null
   return (
-    <section className="min-w-0">
+    <section id="related-markets" className="min-w-0">
       <div className="mb-3">
         <h2 className="text-[18px] font-medium tracking-tight leading-tight text-foreground">Related markets</h2>
       </div>

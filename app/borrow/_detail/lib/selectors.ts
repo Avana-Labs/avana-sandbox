@@ -46,6 +46,7 @@ const KEY_METRIC_LABELS: Record<KeyMetricId, string> = {
 }
 
 const ASSET_CHART_LABELS: Record<AssetChartMetricId, string> = {
+  price: "Price",
   supply: "Supplied",
   borrow: "Borrowed",
   utilization: "Utilization",
@@ -76,7 +77,7 @@ export function assetHeroChips(detail: AssetDetail, range: TimeRangeId): AssetCh
     return {
       id,
       label: ASSET_CHART_LABELS[id],
-      hint: id === "utilization" || id === "apy" ? formatPct(last, 2) : formatCompactUsd(last),
+      hint: id === "price" ? formatPrice(last) : id === "utilization" || id === "apy" ? formatPct(last, 2) : formatCompactUsd(last),
     }
   })
 }
