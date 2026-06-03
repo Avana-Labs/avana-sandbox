@@ -68,13 +68,15 @@ export function AssetDetailClient({ detail }: Props) {
           </div>
         }
         actions={
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-3 text-[12px] font-medium sm:flex">
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Borrow APY</span>
-                <span className="font-data text-emerald-600 dark:text-emerald-400">{detail.quickStats[5]?.value || "--"}</span>
+            <div className="flex items-center gap-3">
+              <div className="hidden items-center gap-3 text-[12px] font-medium sm:flex">
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Borrow APY</span>
+                  <span className="font-data text-emerald-600 dark:text-emerald-400">
+                    {detail.quickStats.find((stat) => stat.id === "borrowApy")?.value || "--"}
+                  </span>
+                </div>
               </div>
-            </div>
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -103,8 +105,11 @@ export function AssetDetailClient({ detail }: Props) {
           <div ref={heroRef} className="min-w-0 lg:col-start-1 lg:row-start-2">
             <AssetHero detail={detail} hideIdentity className="mb-6" />
 
-            <section aria-label="Market analytics" className="space-y-10 border-t border-[#ECECEC] pt-12">
-              <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Market data</h2>
+            <section
+              aria-label="Market analytics"
+              className="space-y-8 border-t border-[#ECECEC] pt-8 md:-ml-4 md:w-[calc(100%+1rem)]"
+            >
+              <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">Market data</h2>
               <QuickStatsGrid detail={detail} />
               <SupplyBorrowCard detail={detail} />
               <HistoricalUtilizationCard detail={detail} />
