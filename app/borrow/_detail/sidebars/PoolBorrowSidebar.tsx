@@ -33,6 +33,35 @@ type Props = {
  * - Submission opens the shared borrow modal so the flow matches home.
  */
 export function PoolBorrowSidebar({ detail, className }: Props) {
+  return (
+    <div className={cn("flex w-full flex-col gap-4", className)}>
+      <BorrowControls detail={detail} />
+      <AboutCard about={detail.about} />
+      <NewsCard
+        items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
+          title: entry.title,
+          description: entry.description,
+          source: index === 0 ? "Latest update" : "Protocol note",
+          time: entry.date,
+        }))).map((item) => ({
+          ...item,
+          imageUrl: detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined,
+          imageLabel: detail.hero.name,
+        }))}
+      />
+    </div>
+  )
+}
+
+export function PoolBorrowActions({ detail, className }: Props) {
+  return (
+    <div className={cn("flex w-full flex-col gap-4", className)} aria-label={`Borrow against ${detail.hero.name}`}>
+      <BorrowControls detail={detail} />
+    </div>
+  )
+}
+
+function BorrowControls({ detail }: { detail: PoolDetail }) {
   const pool = React.useMemo(() => resolvePool(detail), [detail])
 
   const [tokenId, setTokenId] = React.useState<string | null>(null)
@@ -61,7 +90,7 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
 
   return (
     <>
-      <aside className={cn("flex w-full flex-col gap-4", className)} aria-label={`Borrow against ${detail.hero.name}`}>
+      <aside className="flex w-full flex-col gap-4" aria-label={`Borrow against ${detail.hero.name}`}>
         <CompactBorrowCard
           pool={pool}
           token={token}
@@ -73,20 +102,6 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
           onQuickTokenSelect={(id) => setTokenId(id)}
           onSetMax={() => setAmount(String(pool.borrowPowerUsd))}
           onSubmit={handleSubmit}
-        />
-
-        <AboutCard about={detail.about} />
-        <NewsCard
-          items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
-            title: entry.title,
-            description: entry.description,
-            source: index === 0 ? "Latest update" : "Protocol note",
-            time: entry.date,
-          }))).map((item) => ({
-            ...item,
-            imageUrl: detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined,
-            imageLabel: detail.hero.name,
-          }))}
         />
       </aside>
 
