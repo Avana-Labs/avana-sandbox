@@ -637,7 +637,7 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
     label: "Aerodrome Slipstream Blue-Chip LPs",
     description: "Concentrated liquidity NFT positions",
     eMode: false,
-    borrowableTokens: [v("USDC"), v("DAI"), v("WETH")],
+    borrowableTokens: [v("USDC"), v("DAI"), v("WETH"), v("cbBTC")],
     maxLtv: 76,
     aprApprox: 6.2,
     riskPremiumBps: 80,
@@ -1147,6 +1147,17 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     category: "crypto",
   },
 ]
+
+const BORROWABLE_ASSET_BY_SYMBOL = new Map(BORROWABLE_ASSETS.map((asset) => [asset.symbol.toUpperCase(), asset]))
+
+export function getBorrowAssetsForSpoke(spokeId: BorrowSpokeId): BorrowableAsset[] {
+  const spoke = SPOKE_BY_ID[spokeId]
+  if (!spoke) return []
+
+  return spoke.borrowableTokens
+    .map((token) => BORROWABLE_ASSET_BY_SYMBOL.get(token.symbol.toUpperCase()))
+    .filter((asset): asset is BorrowableAsset => Boolean(asset))
+}
 
 // ----- Supply meta (unchanged, still keyed to HOME_COLLATERAL_POOLS ids) ---
 

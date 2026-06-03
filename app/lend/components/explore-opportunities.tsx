@@ -5,17 +5,17 @@ import { BipolarBar, DeltaPill, FlashValue } from "@/app/components/ui/live"
 import { MARKETS, TOKENS } from "./data"
 
 interface ExploreOpportunitiesProps {
-  openDeposit: (token: typeof TOKENS[number] | typeof MARKETS[number]) => void;
+  openDeposit?: (token: typeof TOKENS[number] | typeof MARKETS[number]) => void;
 }
 
 export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps) {
   return (
     <div>
       <div className="mb-3">
-        <h2 className="text-[14px] font-medium tracking-tight text-foreground">Explore opportunities</h2>
+        <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">Explore opportunities</h2>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {MARKETS.map(m => {
           const borrowed = m.utilization
           const available = Math.max(0, 100 - borrowed)
@@ -23,7 +23,7 @@ export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps)
             <Card
               key={m.symbol}
               className={`border-border bg-surface-raised shadow-elev-1 transition-colors hover:bg-surface-inset cursor-pointer ${m.soon ? "opacity-60 cursor-default hover:bg-surface-raised" : ""}`}
-              onClick={() => !m.soon && openDeposit(m)}
+              onClick={() => !m.soon && openDeposit?.(m)}
             >
               <CardContent className="p-3.5">
                 <div className="flex items-start justify-between">
@@ -50,7 +50,7 @@ export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps)
                         <FlashValue
                           value={m.apy}
                           goodDirection="up"
-                          className="font-data text-[28px] font-medium leading-none tabular-nums text-emerald-600 dark:text-emerald-400"
+                          className="font-data text-[28px] font-medium leading-none tabular-nums text-[#01AACF]"
                         >
                           {m.apy.toFixed(2)}
                           <span className="ml-0.5 text-[18px]">%</span>
@@ -65,14 +65,14 @@ export function ExploreOpportunities({ openDeposit }: ExploreOpportunitiesProps)
                         <span>Utilization</span>
                         <span>TVL <span className="font-data font-medium text-foreground">{m.tvl}</span></span>
                       </div>
-                      <BipolarBar
-                        leftValue={borrowed}
-                        rightValue={available}
-                        leftLabel={`Borrowed ${borrowed}%`}
-                        rightLabel={`Idle ${available}%`}
-                        leftClass={borrowed >= 85 ? "bg-rose-500" : borrowed >= 60 ? "bg-amber-500" : "bg-emerald-500"}
+                        <BipolarBar
+                          leftValue={borrowed}
+                          rightValue={available}
+                          leftLabel={`Borrowed ${borrowed}%`}
+                          rightLabel={`Idle ${available}%`}
+                        leftClass={borrowed >= 85 ? "bg-rose-500" : borrowed >= 60 ? "bg-amber-500" : "bg-[#01AACF]"}
                         rightClass="bg-muted-foreground/20"
-                        leftLabelClass={borrowed >= 85 ? "text-rose-600" : borrowed >= 60 ? "text-amber-600" : "text-emerald-600"}
+                        leftLabelClass={borrowed >= 85 ? "text-rose-600" : borrowed >= 60 ? "text-amber-600" : "text-[#01AACF]"}
                         rightLabelClass="text-muted-foreground"
                         heightClass="h-1.5"
                       />

@@ -31,7 +31,7 @@ export function RecentActivity() {
                 </p>
                 <p className="text-[10.5px] text-muted-foreground/60 mt-0.5">{act.date}</p>
               </div>
-              <span className={`font-data text-[13px] font-medium tabular-nums ${act.amount.startsWith('+') ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+              <span className={`font-data text-[13px] font-medium tabular-nums ${act.amount.startsWith('+') ? 'text-[#01AACF]' : 'text-foreground'}`}>
                 {act.amount} {act.asset !== 'Interest' && act.asset}
               </span>
             </div>

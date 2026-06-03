@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { StickyDetailHeader, RiskLevelPill, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { StickyDetailHeader, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
 import {
   AssetHero,
   AssetHeroIdentity,
@@ -16,11 +16,11 @@ import {
   TransactionHistoryCard,
   RelatedAssetsRow,
 } from "@/app/borrow/_detail/asset-sections"
-import { RiskSection, AboutCard, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
-import { AssetDepositSidebar } from "@/app/borrow/_detail/sidebars"
+import { RiskSection, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { cn } from "@/lib/utils"
 
-function TokenAvatar({ visual, className }: { visual: any; className?: string }) {
+function TokenAvatar({ visual, className }: { visual: AssetDetail["hero"]["visual"]; className?: string }) {
   return (
     <span
       className={cn(
@@ -42,12 +42,15 @@ function TokenAvatar({ visual, className }: { visual: any; className?: string })
 
 type Props = { detail: AssetDetail }
 
+/** Desktop content max width — 10% narrower than the original 1280px layout. */
+const PAGE_MAX_W = "max-w-[1152px]"
+
 export function AssetDetailClient({ detail }: Props) {
   const heroRef = React.useRef<HTMLDivElement | null>(null)
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
   return (
-    <div className="bg-background">
+    <div className="min-h-screen bg-white text-foreground dark:bg-background">
       <StickyDetailHeader
         heroRef={heroRef}
         sparkline={{ series: detail.heroMetric.series[detail.heroMetric.metricId]["1M"] }}
@@ -83,21 +86,25 @@ export function AssetDetailClient({ detail }: Props) {
         }
       />
 
-      <main className="container mx-auto px-4 pb-24 pt-6 md:pb-10">
-        <div className="mx-auto max-w-5xl">
-          <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-            <Link href="/borrow" className="transition-colors hover:text-foreground">
-              Borrow
-            </Link>
-            <span aria-hidden className="text-border">/</span>
-            <span className="font-medium text-foreground">{detail.hero.name}</span>
-          </nav>
+      <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
+        <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[12px] text-[#9A9A9A]">
+          <Link href="/borrow" className="transition-colors hover:text-foreground">
+            Borrow
+          </Link>
+          <span aria-hidden className="text-[#D0D0D0]">›</span>
+          <span className="font-normal text-[#1A1A1A]">{detail.hero.name}</span>
+        </nav>
 
-          <AssetHeroIdentity detail={detail} className="mb-6" />
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-[auto_1fr] lg:gap-x-10">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+            <AssetHeroIdentity detail={detail} />
+          </div>
 
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div ref={heroRef} className="flex min-w-0 flex-col space-y-10">
-              <AssetHero detail={detail} hideIdentity />
+          <div ref={heroRef} className="min-w-0 lg:col-start-1 lg:row-start-2">
+            <AssetHero detail={detail} hideIdentity className="mb-6" />
+
+            <section aria-label="Market analytics" className="space-y-10 border-t border-[#ECECEC] pt-12">
+              <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Market data</h2>
               <QuickStatsGrid detail={detail} />
               <SupplyBorrowCard detail={detail} />
               <HistoricalUtilizationCard detail={detail} />
@@ -110,16 +117,15 @@ export function AssetDetailClient({ detail }: Props) {
               <AssetCashflowCard detail={detail} />
               <RiskSection detail={detail} />
               <TransactionHistoryCard transactions={detail.transactions} />
-              <AboutCard about={detail.about} />
               <RelatedAssetsRow detail={detail} />
-            </div>
-
-            <div className="hidden lg:block">
-              <div className="sticky top-20">
-                <AssetDepositSidebar detail={detail} />
-              </div>
-            </div>
+            </section>
           </div>
+
+          <aside className="hidden lg:col-start-2 lg:row-start-2 lg:block lg:self-start">
+            <div className="sticky top-20">
+              <AssetTokenSidebar detail={detail} />
+            </div>
+          </aside>
         </div>
       </main>
 
@@ -128,7 +134,7 @@ export function AssetDetailClient({ detail }: Props) {
         onToggle={() => setMobileOpen((v) => !v)}
         label={`Deposit ${detail.hero.symbol}`}
       >
-        <AssetDepositSidebar detail={detail} />
+        <AssetTokenSidebar detail={detail} />
       </MobileDepositDock>
     </div>
   )

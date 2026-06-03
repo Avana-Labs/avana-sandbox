@@ -9,14 +9,14 @@ const MOCK_BALANCE = 48_250
 const MOCK_PNL_USD = 1_240.5
 const MOCK_PNL_PCT = 2.6
 
-export function PerpBalanceRow() {
+export function MultiplyBalanceRow() {
   const { showDollarAmounts } = useDisplayPreferences()
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div className="space-y-1">
         <div className="flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-          <h2 className="m-0 leading-none">My perp balance</h2>
+          <h2 className="m-0 leading-none">My multiply balance</h2>
         </div>
         <div className="flex items-baseline gap-3">
           <FlashValue
