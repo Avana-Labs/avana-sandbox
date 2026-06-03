@@ -8,6 +8,7 @@ import { AboutNewsSection, StickyDetailHeader, EngagementTrendsCard } from "@/ap
 import {
   AssetHero,
   AssetHeroIdentity,
+  InterestRateModelCard,
   SupplyBorrowCard,
   HistoricalUtilizationCard,
   CashflowTrendCard,
@@ -108,6 +109,7 @@ export function AssetDetailClient({ detail }: Props) {
             <section aria-label="Market analytics" className="space-y-8 pt-8">
               <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">Market data</h2>
               <QuickStatsGrid detail={detail} />
+              <InterestRateModelCard detail={detail} />
               <SupplyBorrowCard detail={detail} />
               <HistoricalUtilizationCard detail={detail} />
               <CashflowTrendCard detail={detail} />
