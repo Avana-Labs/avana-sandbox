@@ -129,7 +129,24 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
     about: {
       description:
         "Ethereum is a decentralized blockchain with smart contract functionality. Ether is the native cryptocurrency of the platform and is used to pay for transaction fees and computational services on the network. It is the second-largest cryptocurrency by market capitalization and powers the majority of decentralized finance activity.",
-      stats: [],
+      stats: [
+        {
+          label: "Vault Contract Address",
+          value: "0x1828...47E8",
+          href: "https://etherscan.io/address/0x182847E8",
+        },
+        {
+          label: "Token Contract Address",
+          value: "0xdC03...384F",
+          href: "https://etherscan.io/address/0xDC03384F",
+        },
+        {
+          label: "Staking Contract Address",
+          value: "0xd57a...7B15",
+          href: "https://etherscan.io/address/0xd57a7B15",
+        },
+        { label: "Deployed On", value: "October 7, 2024" },
+      ],
       history: [
         { date: "2015-07-30", title: "Mainnet launch", description: "Ethereum genesis block mined." },
         { date: "2022-09-15", title: "The Merge", description: "Proof-of-stake consensus activated." },
