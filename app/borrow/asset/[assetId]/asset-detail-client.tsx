@@ -87,7 +87,7 @@ export function AssetDetailClient({ detail }: Props) {
       />
 
       <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
-        <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[12px] text-[#9A9A9A]">
+        <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[13px] text-[#9A9A9A]">
           <Link href="/borrow" className="transition-colors hover:text-foreground">
             Borrow
           </Link>
