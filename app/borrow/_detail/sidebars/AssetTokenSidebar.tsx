@@ -27,8 +27,10 @@ export function AssetTokenSidebar({ detail, className }: Props) {
   return (
     <div className={cn("flex w-full flex-col gap-6", className)}>
       <TokenRail detail={detail} />
-      <AboutCard about={detail.about} title={`About ${detail.hero.name}`} compact />
+      <AboutCard about={detail.about} title={`About ${detail.hero.name}`} compact plain />
       <NewsCard
+        plain
+        mediaVariant="icon"
         items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
           title: entry.title,
           description: entry.description,
