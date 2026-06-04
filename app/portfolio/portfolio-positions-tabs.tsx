@@ -9,6 +9,10 @@ import { TransactionHistoryList } from "../multiply/components/sidebar"
 
 const TABS = ["LP Collaterals", "Positions", "Open Orders", "TWAP", "History"] as const
 type Tab = typeof TABS[number]
+type PortfolioPositionsTabsProps = {
+  allowedTabs?: Tab[]
+  initialTab?: Tab
+}
 
 function PositionRow({
   symbol,
@@ -52,8 +56,11 @@ function PositionRow({
   )
 }
 
-export function PortfolioPositionsTabs() {
-  const [activeTab, setActiveTab] = useState<Tab>("Positions")
+export function PortfolioPositionsTabs({
+  allowedTabs = [...TABS],
+  initialTab = "Positions",
+}: PortfolioPositionsTabsProps) {
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab)
 
   return (
     <section className="mb-8">
@@ -63,7 +70,7 @@ export function PortfolioPositionsTabs() {
       <Card className="border-border bg-surface-raised shadow-elev-1">
         <div className="flex flex-col gap-3 border-b border-border px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="no-scrollbar flex space-x-4 overflow-x-auto">
-            {TABS.map((tab) => (
+            {allowedTabs.map((tab) => (
               <PillTabButton key={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)}>
                 {tab}
               </PillTabButton>
