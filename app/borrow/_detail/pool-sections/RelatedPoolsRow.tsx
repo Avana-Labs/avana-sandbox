@@ -20,6 +20,20 @@ export function RelatedPoolsRow({ detail }: Props) {
               href={`/borrow/pool/${rel.id}`}
               className="group relative flex h-[120px] w-60 flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
             >
+              {rel.visuals[0].iconUrl || rel.visuals[1].iconUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  width="160"
+                  height="160"
+                  className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-3xl saturate-150 mix-blend-screen"
+                  loading="lazy"
+                  decoding="async"
+                  src={rel.visuals[0].iconUrl ?? rel.visuals[1].iconUrl}
+                />
+              ) : null}
+
               <div className="pointer-events-none absolute right-2 top-2 flex size-7 items-center justify-center rounded-full border border-border bg-background/80 shadow-sm backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

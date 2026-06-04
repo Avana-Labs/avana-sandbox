@@ -1,11 +1,7 @@
 "use client"
 
-import { toast } from "sonner"
-import { MultiplyBalanceRow } from "./components/multiply-balance-row"
-import { BalanceChart } from "./components/balance-chart"
-import { MarketsTable } from "./components/markets-table"
-import { AccountTabs } from "./components/account-tabs"
-import { HallOfFame } from "./components/hall-of-fame"
+import { MultiplyHero } from "./components/multiply-hero"
+import { ExploreLoopsMarketsTable } from "./components/explore-loops-markets-table"
 
 export const MOCK_MARKETS = [
   { symbol: "ETH", name: "Ethereum", price: 3482, funding: 0.012, change: 2.4, volume: 1520000000, maxLeverage: 25, longOi: 62, shortOi: 38 },
@@ -16,33 +12,11 @@ export const MOCK_MARKETS = [
 ]
 
 export function MultiplyClient() {
-  const handleMultiply = (symbol: string, side: "long" | "short") => {
-    toast[side === "long" ? "success" : "info"](`${side === "long" ? "Long" : "Short"} ${symbol}`, {
-      description: "Order ticket would open here.",
-    })
-  }
-
   return (
     <main className="container mx-auto px-4 py-8">
-      <div className="mx-auto max-w-[1152px]">
-        {/* Top Balance Row */}
-        <MultiplyBalanceRow />
-
-        {/* HERO SECTION */}
-        <div className="mt-8 mb-8 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-stretch">
-          <div className="flex flex-col overflow-hidden">
-            <BalanceChart symbols={MOCK_MARKETS.slice(0, 3).map((market) => market.symbol)} />
-          </div>
-          <div className="flex flex-col">
-            <HallOfFame />
-          </div>
-        </div>
-
-        {/* BOTTOM: Full-width Markets then Positions/History (incl. Tx History tab) */}
-        <div className="mt-12 space-y-8">
-          <MarketsTable markets={MOCK_MARKETS} onMultiply={handleMultiply} />
-          <AccountTabs />
-        </div>
+      <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
+        <MultiplyHero markets={MOCK_MARKETS} />
+        <ExploreLoopsMarketsTable />
       </div>
     </main>
   )

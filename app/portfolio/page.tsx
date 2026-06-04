@@ -1,27 +1,17 @@
 import type { Metadata } from "next"
-import { StakeBalanceHero } from "../stake/components/stake-balance-hero"
-import { StakeWarningCard } from "../stake/components/stake-warning-card"
-import { StakeWizard } from "../stake/stake-wizard"
-import { PortfolioPositions } from "./portfolio-positions"
-import { PortfolioStrategies } from "./portfolio-strategies"
-import { RecentActivity } from "../lend/components/recent-activity"
+import { PortfolioDashboard } from "./portfolio-dashboard"
 
 export const metadata: Metadata = {
   title: "Portfolio",
-  description: "Stake assets into Avana pools across pools, assets, amounts, and lock periods.",
+  description: "Track portfolio balance, positions, strategies, and recent activity.",
 }
 
 export default function PortfolioPage() {
   return (
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-[1152px]">
-          <StakeBalanceHero />
-          <StakeWarningCard />
-          <PortfolioPositions />
-          <PortfolioStrategies />
-          <RecentActivity />
-          <StakeWizard />
+        <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
+          <PortfolioDashboard />
         </div>
       </main>
     </div>
