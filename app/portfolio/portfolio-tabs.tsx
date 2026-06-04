@@ -25,6 +25,14 @@ const TAB_DETAILS: Record<
   {
     headlineValue: string
     headlineDelta: string
+    primaryActionLabel: string
+    secondaryActionLabel: string
+    statOneLabel: string
+    statOneValue: string
+    statOneHelpText: string
+    statTwoLabel: string
+    statTwoValue: string
+    statTwoHelpText: string
     rangeData: {
       "1D": number[]
       "1W": number[]
@@ -38,6 +46,14 @@ const TAB_DETAILS: Record<
   overview: {
     headlineValue: "$14,400.00",
     headlineDelta: "-$312.96 (-3.80%) Today",
+    primaryActionLabel: "Deposit",
+    secondaryActionLabel: "Withdraw",
+    statOneLabel: "Average APY",
+    statOneValue: "4.52%",
+    statOneHelpText: "Weighted average APY across all your deposited assets.",
+    statTwoLabel: "Interest earned",
+    statTwoValue: "+$12.46",
+    statTwoHelpText: "Total yield earned from all active positions over time.",
     rangeData: {
       "1D": [99, 97, 96, 94, 95, 93, 82, 79, 63, 61, 66, 83, 66, 88, 84, 90, 92, 91, 98, 84, 69, 78, 79, 85, 85, 90, 82, 80, 74, 72, 73, 64, 75, 75, 80, 80, 83, 76, 77, 76, 81, 78, 79, 77, 72, 81, 81, 81, 77, 82, 84, 86, 87, 82, 84, 79, 72, 67, 65, 52, 46, 49, 41],
       "1W": [103, 102, 100, 97, 98, 95, 88, 84, 73, 71, 76, 90, 76, 93, 90, 95, 97, 96, 101, 93, 79, 87, 88, 92, 93, 96, 91, 89, 84, 82, 83, 76, 86, 86, 90, 90, 93, 86, 87, 86, 91, 88, 89, 87, 83, 91, 91, 91, 87, 92, 95, 97, 98, 94, 96, 91, 85, 80, 78, 67, 61, 63, 57],
@@ -50,26 +66,66 @@ const TAB_DETAILS: Record<
   collateral: {
     headlineValue: "$84,200.00",
     headlineDelta: "+$5,360.00 (+6.80%) This week",
+    primaryActionLabel: "Add collateral",
+    secondaryActionLabel: "Reduce risk",
+    statOneLabel: "Avg leverage",
+    statOneValue: "3.4x",
+    statOneHelpText: "Average leverage across active collateral-backed positions.",
+    statTwoLabel: "Risk level",
+    statTwoValue: "Moderate",
+    statTwoHelpText: "Current portfolio risk state based on leverage and liquidation distance.",
     rangeData: buildRangeData([61, 64, 63, 68, 71, 69, 74]),
   },
   borrowing: {
     headlineValue: "$28,600.00",
     headlineDelta: "-$1,140.00 (-3.83%) Debt reduced",
+    primaryActionLabel: "Borrow more",
+    secondaryActionLabel: "Repay debt",
+    statOneLabel: "Health factor",
+    statOneValue: "2.8",
+    statOneHelpText: "Distance from liquidation across your active borrowed positions.",
+    statTwoLabel: "Repayment runway",
+    statTwoValue: "18d",
+    statTwoHelpText: "Estimated time to fully repay at the current repayment pace.",
     rangeData: buildRangeData([42, 44, 41, 39, 37, 35, 34]),
   },
   lending: {
     headlineValue: "$96,400.00",
     headlineDelta: "+$4,410.00 (+4.79%) Yield earned",
+    primaryActionLabel: "Supply assets",
+    secondaryActionLabel: "Withdraw yield",
+    statOneLabel: "Average APY",
+    statOneValue: "4.92%",
+    statOneHelpText: "Weighted average APY across supplied assets in the lending book.",
+    statTwoLabel: "Borrow capacity",
+    statTwoValue: "$31.2K",
+    statTwoHelpText: "Estimated available borrowing power from your supplied assets.",
     rangeData: buildRangeData([78, 80, 79, 83, 84, 86, 87]),
   },
   looping: {
     headlineValue: "$19,800.00",
     headlineDelta: "+$1,680.00 (+9.27%) Net carry",
+    primaryActionLabel: "Increase loop",
+    secondaryActionLabel: "Unwind loop",
+    statOneLabel: "Utilization",
+    statOneValue: "84%",
+    statOneHelpText: "Share of available loop capacity currently in use.",
+    statTwoLabel: "Net carry",
+    statTwoValue: "+2.1%",
+    statTwoHelpText: "Net yield after funding and borrowing costs across looped positions.",
     rangeData: buildRangeData([53, 56, 58, 60, 63, 65, 68]),
   },
   activity: {
     headlineValue: "42",
     headlineDelta: "12 settled, 4 pending today",
+    primaryActionLabel: "View fills",
+    secondaryActionLabel: "Export log",
+    statOneLabel: "Orders",
+    statOneValue: "21",
+    statOneHelpText: "Total order events captured in the current activity window.",
+    statTwoLabel: "Settled actions",
+    statTwoValue: "12",
+    statTwoHelpText: "Completed deposits, withdrawals, and fills in the selected period.",
     rangeData: buildRangeData([8, 12, 6, 11, 10, 14, 9]),
   },
 }
@@ -90,13 +146,15 @@ export function PortfolioTabs() {
   const activeTabConfig = TAB_DETAILS[activeTab]
 
   const tabBar = (
-    <TabsList className="flex w-full max-w-full justify-start overflow-x-auto no-scrollbar">
-      {PORTFOLIO_TABS.map((tab) => (
-        <TabsTrigger key={tab.value} value={tab.value} className="shrink-0 text-[14px] font-normal">
-          {tab.label}
-        </TabsTrigger>
-      ))}
-    </TabsList>
+    <div className="max-w-full overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <TabsList className="inline-flex w-max min-w-max justify-start">
+        {PORTFOLIO_TABS.map((tab) => (
+          <TabsTrigger key={tab.value} value={tab.value} className="shrink-0 text-[14px] font-normal">
+            {tab.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </div>
   )
 
   return (
@@ -106,6 +164,14 @@ export function PortfolioTabs() {
           tabs={tabBar}
           headlineValue={activeTabConfig.headlineValue}
           headlineDelta={activeTabConfig.headlineDelta}
+          primaryActionLabel={activeTabConfig.primaryActionLabel}
+          secondaryActionLabel={activeTabConfig.secondaryActionLabel}
+          statOneLabel={activeTabConfig.statOneLabel}
+          statOneValue={activeTabConfig.statOneValue}
+          statOneHelpText={activeTabConfig.statOneHelpText}
+          statTwoLabel={activeTabConfig.statTwoLabel}
+          statTwoValue={activeTabConfig.statTwoValue}
+          statTwoHelpText={activeTabConfig.statTwoHelpText}
           rangeData={activeTabConfig.rangeData}
         />
       </Tabs>
