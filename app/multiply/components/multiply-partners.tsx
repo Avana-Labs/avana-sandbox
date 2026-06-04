@@ -46,7 +46,7 @@ function PartnerCard({ partner }: { partner: Partner }) {
   return (
     <div className="shrink-0">
       <div className="flex h-full w-[108px] flex-col items-center justify-center gap-1.5 px-2 py-1.5">
-        <div className="flex size-16 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
+        <div className="flex size-[18px] items-center justify-center overflow-hidden rounded-full border border-border bg-background">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={partner.logoSrc} alt="" aria-hidden="true" className="h-full w-full object-cover" />
         </div>
