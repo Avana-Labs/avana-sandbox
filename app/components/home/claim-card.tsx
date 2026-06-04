@@ -13,6 +13,7 @@ import { PrimaryCardButton } from "./shared"
 export function CompactClaimCard({
   amount,
   preview,
+  positions = HOME_CLAIM_POSITIONS,
   claimableTotals,
   selections,
   submitLabel,
@@ -23,6 +24,7 @@ export function CompactClaimCard({
 }: {
   amount: string
   preview: ReturnType<typeof calculateClaimPreview>
+  positions?: typeof HOME_CLAIM_POSITIONS
   claimableTotals: Record<string, number>
   selections: Record<string, boolean>
   submitLabel?: string
@@ -64,7 +66,7 @@ export function CompactClaimCard({
       </div>
 
       <div className="flex flex-col gap-2">
-        {HOME_CLAIM_POSITIONS.map((position) => {
+        {positions.map((position) => {
           const isSelected = selections[position.id]
 
           return (
