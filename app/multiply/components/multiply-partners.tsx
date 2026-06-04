@@ -32,7 +32,7 @@ export function MultiplyPartnersSection() {
       </div>
 
       <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex min-w-max gap-2">
+        <div className="flex min-w-max gap-1">
           {PARTNERS.map((partner) => (
             <PartnerCard key={partner.label} partner={partner} />
           ))}
