@@ -5,16 +5,18 @@ import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { BorrowModal } from "@/app/borrow/components/borrow-modal"
+import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
 import { LendModals } from "@/app/lend/components/lend-modals"
+import { CompactRepayCard } from "@/app/components/home/repay-card"
 import { MARKETS, TOKENS } from "@/app/lend/components/data"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
-import { HOME_BORROW_TOKENS, HOME_COLLATERAL_POOLS } from "@/app/lib/home-sim"
+import { HOME_BORROW_TOKENS, HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS, calculateRepayPreview } from "@/app/lib/home-sim"
 import { PickerSurface, PrimaryCardButton } from "@/app/components/home/shared"
 
 type Props = { detail: AssetDetail; className?: string }
 
-type SidebarTab = "deposit" | "withdraw" | "borrow"
+type SidebarTab = "deposit" | "withdraw" | "borrow" | "repay"
 type LendToken = (typeof TOKENS)[number] | (typeof MARKETS)[number]
 type ModalState = {
   isOpen: boolean
@@ -58,10 +60,19 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
   const [amount, setAmount] = React.useState("")
   const [modalState, setModalState] = React.useState<ModalState>(INITIAL_MODAL)
   const [borrowOpen, setBorrowOpen] = React.useState(false)
+  const [repayOpen, setRepayOpen] = React.useState(false)
 
   const token = React.useMemo(() => toLendToken(detail), [detail])
   const borrowContext = React.useMemo(() => resolveBorrowContext(detail), [detail])
   const borrowTokenId = React.useMemo(() => resolveBorrowTokenId(detail), [detail])
+  const repayDebtUsd = React.useMemo(
+    () => resolveCurrentDebtUsd(borrowContext.id, borrowContext.borrowPowerUsd),
+    [borrowContext.borrowPowerUsd, borrowContext.id],
+  )
+  const repayPreview = React.useMemo(
+    () => calculateRepayPreview(borrowContext, repayDebtUsd, Number.parseFloat(amount) || 0, detail.row.borrowApr),
+    [amount, borrowContext, detail.row.borrowApr, repayDebtUsd],
+  )
   const borrowAprLabel =
     detail.quickStats.find((stat) => stat.id === "borrowApy")?.value ?? `${detail.row.borrowApr.toFixed(2)}%`
 
@@ -79,7 +90,9 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
           ? "Review deposit"
           : tab === "withdraw"
             ? "Review withdrawal"
-            : "Review borrow"
+            : tab === "borrow"
+              ? "Review borrow"
+              : "Review repayment"
 
   const openLend = (action: "deposit" | "withdraw") => {
     setModalState({
@@ -100,6 +113,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
               { id: "deposit", label: "Deposit" },
               { id: "withdraw", label: "Withdraw" },
               { id: "borrow", label: "Borrow" },
+              { id: "repay", label: "Repay" },
             ].map((actionTab) => {
               const active = actionTab.id === tab
               return (
@@ -126,95 +140,111 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
           </div>
 
           <div className="flex flex-col gap-3 pt-1">
-            <div className="relative flex flex-col divide-y divide-border overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
-              <PickerSurface label={tab === "borrow" ? "Asset" : "Market"} tier="top" seamless>
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="font-data text-[20px] font-medium tracking-tight text-foreground">
-                      {tab === "borrow" ? detail.hero.symbol : detail.row.walletBalanceLabel}
+            {tab === "repay" ? (
+              <CompactRepayCard
+                pool={borrowContext}
+                debtUsd={repayDebtUsd}
+                amount={amount}
+                preview={repayPreview}
+                submitLabel={primaryLabel}
+                flatHero
+                onOpenPoolDialog={() => {}}
+                onAmountChange={setAmount}
+                onSetMax={() => setAmount(String(repayDebtUsd))}
+                onSubmit={() => setRepayOpen(true)}
+              />
+            ) : (
+              <>
+                <div className="relative flex flex-col divide-y divide-border overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
+                  <PickerSurface label={tab === "borrow" ? "Asset" : "Market"} tier="top" seamless>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="font-data text-[20px] font-medium tracking-tight text-foreground">
+                          {tab === "borrow" ? detail.hero.symbol : detail.row.walletBalanceLabel}
+                        </div>
+                        <div className="mt-0.5 text-[11.5px] text-muted-foreground">
+                          {tab === "borrow"
+                            ? detail.hero.name
+                            : tab === "deposit"
+                              ? `${token.apy.toFixed(2)}% supply APY`
+                              : `${tokenBalance.toLocaleString()} available`}
+                        </div>
+                      </div>
+                      <span className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-inset px-2 text-foreground">
+                        <TokenIcon symbol={detail.hero.symbol} size="sm" />
+                        <span className="text-[12px] font-medium">{detail.hero.symbol}</span>
+                      </span>
                     </div>
-                    <div className="mt-0.5 text-[11.5px] text-muted-foreground">
-                      {tab === "borrow"
-                        ? detail.hero.name
-                        : tab === "deposit"
-                          ? `${token.apy.toFixed(2)}% supply APY`
-                          : `${tokenBalance.toLocaleString()} available`}
+                  </PickerSurface>
+
+                  <PickerSurface
+                    label={tab === "deposit" ? "Deposit" : tab === "withdraw" ? "Withdraw" : "Borrow"}
+                    tier="bottom"
+                    seamless
+                    footer={
+                      <div className="flex items-center justify-between gap-3">
+                        <span>
+                          {tab === "borrow"
+                            ? `${borrowAprLabel} borrow APY`
+                            : tab === "deposit"
+                              ? `${token.apy.toFixed(2)}% supply APY`
+                              : `${tokenBalance.toLocaleString()} available`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (tab === "withdraw") {
+                              setAmount(tokenBalance.toString())
+                              return
+                            }
+                            if (tab === "borrow") {
+                              setAmount(String(Math.round(borrowContext.borrowPowerUsd)))
+                              return
+                            }
+                            setAmount("0")
+                          }}
+                          className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                        >
+                          Max
+                        </button>
+                      </div>
+                    }
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="flex min-w-0 flex-1 flex-col">
+                        <span className="sr-only">{tab} amount</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={amount}
+                          onChange={(e) => setAmount(sanitizeNumericInput(e.target.value))}
+                          className="no-number-spinner w-full bg-transparent font-data text-[28px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
+                        />
+                        <span className="text-[11px] text-muted-foreground">{amount ? `≈ $${(parsedAmount * tokenPrice).toFixed(2)}` : "$0"}</span>
+                      </label>
+                      <span className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-raised px-2 text-[12px] font-medium text-foreground">
+                        <TokenIcon symbol={detail.hero.symbol} size="sm" />
+                        {detail.hero.symbol}
+                      </span>
                     </div>
-                  </div>
-                  <span className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-inset px-2 text-foreground">
-                    <TokenIcon symbol={detail.hero.symbol} size="sm" />
-                    <span className="text-[12px] font-medium">{detail.hero.symbol}</span>
-                  </span>
+                  </PickerSurface>
                 </div>
-              </PickerSurface>
 
-              <PickerSurface
-                label={tab === "deposit" ? "Deposit" : tab === "withdraw" ? "Withdraw" : "Borrow"}
-                tier="bottom"
-                seamless
-                footer={
-                  <div className="flex items-center justify-between gap-3">
-                    <span>
-                      {tab === "borrow"
-                        ? `${borrowAprLabel} borrow APY`
-                        : tab === "deposit"
-                          ? `${token.apy.toFixed(2)}% supply APY`
-                          : `${tokenBalance.toLocaleString()} available`}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (tab === "withdraw") {
-                          setAmount(tokenBalance.toString())
-                          return
-                        }
-                        if (tab === "borrow") {
-                          setAmount(String(Math.round(borrowContext.borrowPowerUsd)))
-                          return
-                        }
-                        setAmount("0")
-                      }}
-                      className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:text-foreground hover:underline"
-                    >
-                      Max
-                    </button>
-                  </div>
-                }
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <label className="flex min-w-0 flex-1 flex-col">
-                    <span className="sr-only">{tab} amount</span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="0"
-                      value={amount}
-                      onChange={(e) => setAmount(sanitizeNumericInput(e.target.value))}
-                      className="no-number-spinner w-full bg-transparent font-data text-[28px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
-                    />
-                    <span className="text-[11px] text-muted-foreground">{amount ? `≈ $${(parsedAmount * tokenPrice).toFixed(2)}` : "$0"}</span>
-                  </label>
-                  <span className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-raised px-2 text-[12px] font-medium text-foreground">
-                    <TokenIcon symbol={detail.hero.symbol} size="sm" />
-                    {detail.hero.symbol}
-                  </span>
-                </div>
-              </PickerSurface>
-            </div>
-
-            <PrimaryCardButton
-              disabled={isInvalidAmount || exceedsBalance}
-              onClick={() => {
-                if (tab === "borrow") {
-                  setBorrowOpen(true)
-                  return
-                }
-                openLend(tab)
-              }}
-            >
-              {primaryLabel}
-            </PrimaryCardButton>
-
+                <PrimaryCardButton
+                  disabled={isInvalidAmount || exceedsBalance}
+                  onClick={() => {
+                    if (tab === "borrow") {
+                      setBorrowOpen(true)
+                      return
+                    }
+                    openLend(tab)
+                  }}
+                >
+                  {primaryLabel}
+                </PrimaryCardButton>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -237,6 +267,18 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
         startStage={amount ? "review" : "entry"}
         onClose={() => setBorrowOpen(false)}
         onConfirm={() => setBorrowOpen(false)}
+      />
+
+      <RepayRemoveModal
+        open={repayOpen}
+        context={{
+          pool: borrowContext,
+          currentDebtUsd: repayDebtUsd,
+          mode: "repay",
+          borrowApr: detail.row.borrowApr,
+        }}
+        onClose={() => setRepayOpen(false)}
+        onConfirm={() => {}}
       />
     </>
   )
@@ -274,4 +316,8 @@ function resolveBorrowContext(detail: AssetDetail) {
   if (symbol === "ETH" || symbol === "WETH") return bluechipPool ?? HOME_COLLATERAL_POOLS[0]
 
   return bluechipPool ?? HOME_COLLATERAL_POOLS[0]
+}
+
+function resolveCurrentDebtUsd(poolId: string, borrowPowerUsd: number) {
+  return HOME_INITIAL_DEBTS[poolId] ?? Math.round(borrowPowerUsd * 0.45)
 }

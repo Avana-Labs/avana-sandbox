@@ -20,6 +20,20 @@ export function RelatedAssetsRow({ detail }: Props) {
               href={`/borrow/asset/${rel.id}`}
               className="group relative flex h-[120px] w-60 flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
             >
+              {rel.visual.iconUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  width="96"
+                  height="96"
+                  className="pointer-events-none absolute -left-5 -top-5 size-[274px] rounded-full object-cover opacity-10 blur-2xl saturate-150"
+                  loading="lazy"
+                  decoding="async"
+                  src={rel.visual.iconUrl}
+                />
+              ) : null}
+
               <div className="pointer-events-none absolute right-2 top-2 flex size-7 items-center justify-center rounded-full border border-border bg-background/80 shadow-sm backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
