@@ -4,7 +4,7 @@ import { PortfolioPositions } from "./portfolio-positions"
 import { PortfolioStrategies } from "./portfolio-strategies"
 import { RecentActivity } from "../lend/components/recent-activity"
 import { PortfolioHero } from "./portfolio-hero"
-import { PortfolioLPCollaterals } from "./portfolio-lp-collaterals"
+import { PortfolioInvestments } from "./portfolio-investments"
 
 export const metadata: Metadata = {
   title: "Portfolio",
@@ -17,7 +17,7 @@ export default function PortfolioPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-[1152px]">
           <PortfolioHero />
-          <PortfolioLPCollaterals />
+          <PortfolioInvestments />
           <PortfolioPositions />
           <PortfolioStrategies />
           <RecentActivity />
