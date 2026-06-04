@@ -25,9 +25,9 @@ export function RelatedPoolsRow({ detail }: Props) {
                 <img
                   alt=""
                   aria-hidden="true"
-                  width="96"
-                  height="96"
-                  className="pointer-events-none absolute -left-5 -top-5 size-[274px] rounded-full object-cover opacity-10 blur-2xl saturate-150"
+                  width="160"
+                  height="160"
+                  className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-3xl saturate-150 mix-blend-screen"
                   loading="lazy"
                   decoding="async"
                   src={rel.visuals[0].iconUrl ?? rel.visuals[1].iconUrl}
