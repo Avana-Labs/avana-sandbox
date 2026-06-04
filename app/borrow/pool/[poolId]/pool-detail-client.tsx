@@ -134,6 +134,7 @@ export function PoolDetailClient({ detail }: Props) {
                 about={detail.about}
                 newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
                 newsImageLabel={detail.hero.name}
+                mediaVariant="icon"
               />
               <RelatedPoolsRow detail={detail} />
             </div>

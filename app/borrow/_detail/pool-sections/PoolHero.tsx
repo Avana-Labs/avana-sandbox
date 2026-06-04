@@ -280,7 +280,7 @@ function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number]
     >
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={visual.iconUrl} alt="" className="size-6 rounded-full" />
+        <img src={visual.iconUrl} alt="" className="size-6 rounded-full" width={24} height={24} fetchPriority="high" />
       ) : (
         <span className="text-[12px] font-medium">{visual.shortLabel}</span>
       )}

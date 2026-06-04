@@ -49,7 +49,14 @@ export function AssetHeroIdentity({
             <span className={cn("inline-flex size-14 items-center justify-center", detail.hero.visual.textClass)} aria-label={detail.hero.symbol}>
               {detail.hero.visual.iconUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={detail.hero.visual.iconUrl} alt="" className="size-14 object-contain" />
+                <img
+                  src={detail.hero.visual.iconUrl}
+                  alt=""
+                  className="size-14 object-contain"
+                  width={56}
+                  height={56}
+                  fetchPriority="high"
+                />
               ) : (
                 <span className="text-[13px] font-medium">{detail.hero.visual.shortLabel}</span>
               )}
