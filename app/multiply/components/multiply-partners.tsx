@@ -32,7 +32,7 @@ export function MultiplyPartnersSection() {
       </div>
 
       <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex min-w-max gap-3">
+        <div className="flex min-w-max gap-2">
           {PARTNERS.map((partner) => (
             <PartnerCard key={partner.label} partner={partner} />
           ))}
@@ -45,15 +45,12 @@ export function MultiplyPartnersSection() {
 function PartnerCard({ partner }: { partner: Partner }) {
   return (
     <div className="shrink-0">
-      <div className="flex h-full w-[128px] flex-col items-center justify-center gap-2 px-3 py-2">
-        <div className="flex size-20 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
+      <div className="flex h-full w-[108px] flex-col items-center justify-center gap-1.5 px-2 py-1.5">
+        <div className="flex size-16 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={partner.logoSrc} alt="" aria-hidden="true" className="h-full w-full object-cover" />
         </div>
         <p className="max-w-full truncate text-center text-[12px] font-medium text-foreground">{partner.label}</p>
-        {partner.noActiveRewards ? (
-          <span className="text-[10px] text-muted-foreground">No active rewards</span>
-        ) : null}
       </div>
     </div>
   )
