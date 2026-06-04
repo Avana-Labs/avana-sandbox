@@ -23,7 +23,7 @@ export function NewsCard({ items, title = "News", plain = false, mediaVariant = 
   return (
     <section className={plain ? "space-y-4" : "overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-elev-1"}>
       <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
-        <h2 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-text-extra-high">{title}</h2>
+        <h2 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]">{title}</h2>
       </div>
       <ul className={plain ? "space-y-0 divide-y divide-border/70" : "divide-y divide-border/70"}>
         {items.map((item, index) => {

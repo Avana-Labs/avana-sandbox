@@ -26,7 +26,7 @@ export function AboutNewsSection({
   className,
 }: Props) {
   return (
-    <section className={cn("space-y-4 pt-10", className)}>
+    <section className={cn("space-y-8 pt-10", className)}>
       <AboutCard about={about} title={aboutTitle} compact={compactAboutTitle} plain />
       <NewsCard items={buildNewsItems(about, newsImageUrl, newsImageLabel)} plain mediaVariant={mediaVariant} />
     </section>
