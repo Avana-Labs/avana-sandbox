@@ -15,7 +15,7 @@ import {
   CollateralHistoryCard,
   RelatedPoolsRow,
 } from "@/app/borrow/_detail/pool-sections"
-import { PoolBorrowActions, PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
+import { PoolBorrowActions } from "@/app/borrow/_detail/sidebars"
 import { cn } from "@/lib/utils"
 
 function TokenAvatar({
@@ -117,32 +117,28 @@ export function PoolDetailClient({ detail }: Props) {
 
           <PoolHeroIdentity detail={detail} className="mb-6" />
 
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div ref={heroRef} className="flex min-w-0 flex-col space-y-10">
-              <PoolHero detail={detail} hideIdentity />
-              <QuickStatsGrid detail={detail} />
-              <KeyMetricsCard detail={detail} />
-              <CashflowCard detail={detail} />
-              <EngagementTrendsCard
-                engagement={detail.engagement}
-                accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
-              />
-              <RiskSection detail={detail} />
-              <CollateralHistoryCard transactions={detail.transactions} />
-              <AboutNewsSection
-                className="lg:hidden"
-                about={detail.about}
-                newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
-                newsImageLabel={detail.hero.name}
-                mediaVariant="icon"
-              />
-              <RelatedPoolsRow detail={detail} />
-            </div>
-
+          <div ref={heroRef} className="flex min-w-0 flex-col space-y-10">
+            <PoolBorrowActions detail={detail} className="lg:hidden" />
+            <PoolHero detail={detail} hideIdentity />
+            <QuickStatsGrid detail={detail} />
+            <KeyMetricsCard detail={detail} />
+            <CashflowCard detail={detail} />
+            <EngagementTrendsCard
+              engagement={detail.engagement}
+              accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
+            />
+            <RiskSection detail={detail} />
+            <CollateralHistoryCard transactions={detail.transactions} />
+            <AboutNewsSection
+              className="lg:hidden"
+              about={detail.about}
+              newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
+              newsImageLabel={detail.hero.name}
+              mediaVariant="icon"
+            />
+            <RelatedPoolsRow detail={detail} />
             <div className="hidden lg:block">
-              <div className="sticky top-20">
-                <PoolBorrowSidebar detail={detail} />
-              </div>
+              <PoolBorrowActions detail={detail} />
             </div>
           </div>
         </div>
