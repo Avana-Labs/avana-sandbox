@@ -17,9 +17,9 @@ type Market = {
 }
 
 const HERO_STATS = [
+  { label: "24h Volume", tone: "emerald" },
   { label: "Average Funding", tone: "emerald" },
   { label: "Average Max Lev", tone: "violet" },
-  { label: "Net Long Bias", tone: "amber" },
 ] as const
 
 function formatUsd(value: number) {
@@ -34,25 +34,32 @@ export function MultiplyHero({ markets }: { markets: Market[] }) {
   const metrics = useMemo(() => {
     const activeMarkets = markets.filter((market) => market.volume > 0)
     const totalVolume = activeMarkets.reduce((sum, market) => sum + market.volume, 0)
+    const totalTvl = activeMarkets.reduce((sum, market) => sum + market.volume / Math.max(1, market.maxLeverage), 0)
     const averageFunding = activeMarkets.length > 0 ? activeMarkets.reduce((sum, market) => sum + market.funding, 0) / activeMarkets.length : 0
     const averageMaxLeverage =
       activeMarkets.length > 0 ? activeMarkets.reduce((sum, market) => sum + market.maxLeverage, 0) / activeMarkets.length : 0
-    const longBias =
-      totalVolume > 0 ? activeMarkets.reduce((sum, market) => sum + market.longOi * market.volume, 0) / totalVolume : 0
     const totalChange =
       totalVolume > 0 ? activeMarkets.reduce((sum, market) => sum + market.change * market.volume, 0) / totalVolume : 0
 
-    return { totalVolume, averageFunding, averageMaxLeverage, longBias, totalChange }
+    return { totalVolume, totalTvl, averageFunding, averageMaxLeverage, totalChange }
   }, [markets])
+
+  const metricValue = (label: string) => {
+    if (!showDollarAmounts) return "••••••••"
+    if (label === "24h Volume") return formatUsd(metrics.totalVolume)
+    if (label === "Average Funding") return `${metrics.averageFunding.toFixed(2)}%`
+    if (label === "Average Max Lev") return `${metrics.averageMaxLeverage.toFixed(0)}x`
+    return "••••••••"
+  }
 
   return (
     <section className="mb-8 px-1 md:px-2">
       <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total 24h Volume</p>
+            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total TVL</p>
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
-              {showDollarAmounts ? formatUsd(metrics.totalVolume) : "••••••••"}
+              {showDollarAmounts ? formatUsd(metrics.totalTvl) : "••••••••"}
             </p>
             <span className={cn("inline-flex items-center gap-1 font-data text-[11px] font-medium tabular-nums", metrics.totalChange >= 0 ? "text-emerald-600" : "text-rose-600")}>
               <span aria-hidden className="text-[9px] leading-none">
@@ -84,15 +91,7 @@ export function MultiplyHero({ markets }: { markets: Market[] }) {
                 />
                 {metric.label}
               </div>
-              <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-                {showDollarAmounts
-                  ? metric.label === "Average Funding"
-                    ? `${metrics.averageFunding.toFixed(2)}%`
-                    : metric.label === "Average Max Lev"
-                      ? `${metrics.averageMaxLeverage.toFixed(0)}x`
-                      : `${metrics.longBias.toFixed(1)}%`
-                  : "••••••••"}
-              </p>
+              <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">{metricValue(metric.label)}</p>
             </div>
           ))}
         </div>
