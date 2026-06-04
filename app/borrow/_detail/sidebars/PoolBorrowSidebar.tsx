@@ -33,11 +33,13 @@ type Props = {
  */
 export function PoolBorrowSidebar({ detail, className }: Props) {
   return (
-    <div className={cn("flex w-full flex-col gap-4", className)}>
+    <div className={cn("flex w-full flex-col gap-6", className)}>
       <BorrowControls detail={detail} />
       <AboutNewsSection
         className="pt-0"
         about={detail.about}
+        aboutTitle={`About ${detail.hero.name}`}
+        compactAboutTitle
         newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
         newsImageLabel={detail.hero.name}
         mediaVariant="icon"
