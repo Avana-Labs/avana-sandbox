@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { TokenIcon } from "@/app/components/token-icon"
 
 type LendAsset = {
@@ -57,13 +58,17 @@ const ASSET_GROUPS: Array<{
 ]
 
 function AssetCard({ asset }: { asset: LendAsset }) {
+  const href = `/borrow/asset/${asset.symbol.toLowerCase()}`
+
   return (
-    <button
-      type="button"
-      className="group relative flex h-[120px] w-full shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border-light bg-white p-3 shadow-[0_8px_40px_rgba(0,0,0,0.03)] transition-all hover:border-border-medium hover:shadow-[0_12px_48px_rgba(0,0,0,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-medium md:w-auto md:min-w-0"
+    <Link
+      href={href}
+      prefetch
+      aria-label={`Open ${asset.name} details`}
+      className="group relative flex h-[120px] w-full shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border hover:bg-surface-inset hover:shadow-elev-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-medium md:w-auto md:min-w-0"
     >
-      <div className="pointer-events-none absolute right-2 top-2 flex size-7 items-center justify-center rounded-full border border-border-light bg-white/80 shadow-sm backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-text-extra-low transition-colors group-hover:text-text-low" aria-hidden="true">
+      <div className="pointer-events-none absolute right-2 top-2 flex size-7 items-center justify-center rounded-full border border-border bg-surface-raised/80 shadow-sm backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted-foreground/60 transition-colors group-hover:text-foreground" aria-hidden="true">
           <path d="M7 7h10v10" />
           <path d="M7 17 17 7" />
         </svg>
@@ -85,9 +90,9 @@ function AssetCard({ asset }: { asset: LendAsset }) {
       <div className="relative z-10 flex h-full flex-col">
         <div className="flex items-start gap-3">
           <div className="relative shrink-0">
-            <TokenIcon symbol={asset.symbol} size="lg" ring className="bg-gray-50" />
+            <TokenIcon symbol={asset.symbol} size="lg" ring className="bg-surface-inset" />
             <div className="absolute bottom-0 right-0 translate-x-1.5 translate-y-1.5">
-              <div className="flex size-5 items-center justify-center rounded-md border-2 border-white bg-[#CD7F32]" aria-hidden="true">
+              <div className="flex size-5 items-center justify-center rounded-md border-2 border-background bg-[#CD7F32]" aria-hidden="true">
                 <span className="text-[8px] font-bold text-white">{asset.rank}</span>
               </div>
             </div>
@@ -95,11 +100,11 @@ function AssetCard({ asset }: { asset: LendAsset }) {
 
           <div className="min-w-0 flex-1 pr-8">
             <div className="flex min-w-0 items-baseline gap-1">
-              <span className="truncate text-[13px] font-semibold text-text-extra-high">{asset.name}</span>
-              <span className="shrink-0 text-[11px] text-text-low tabular-nums">{asset.symbol}</span>
+              <span className="truncate text-[13px] font-semibold text-foreground">{asset.name}</span>
+              <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{asset.symbol}</span>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-1">
-              <span className="rounded-full border border-border-light bg-gray-50 px-2 py-0.5 text-[10px] text-text-medium">
+              <span className="rounded-full border border-border bg-surface-inset px-2 py-0.5 text-[10px] text-muted-foreground">
                 {asset.category}
               </span>
             </div>
@@ -108,16 +113,16 @@ function AssetCard({ asset }: { asset: LendAsset }) {
 
         <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
           <div>
-            <div className="text-[9px] text-text-extra-low">APY</div>
-            <div className="mt-0.5 text-[12px] tabular-nums text-text-extra-high">{asset.apy.toFixed(2)}%</div>
+            <div className="text-[9px] text-muted-foreground/60">APY</div>
+            <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{asset.apy.toFixed(2)}%</div>
           </div>
           <div>
-            <div className="text-[9px] text-text-extra-low">TVL</div>
-            <div className="mt-0.5 text-[12px] tabular-nums text-text-extra-high">{asset.tvl}</div>
+            <div className="text-[9px] text-muted-foreground/60">TVL</div>
+            <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{asset.tvl}</div>
           </div>
         </div>
       </div>
-    </button>
+    </Link>
   )
 }
 
@@ -128,7 +133,7 @@ export function LendAssetSpokes() {
         {ASSET_GROUPS.map((group) => (
           <div key={group.title}>
             <div className="mb-3">
-              <h3 className="text-[18px] font-medium tracking-tight text-text-extra-high md:text-[20px]">
+              <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
                 {group.title}
               </h3>
             </div>

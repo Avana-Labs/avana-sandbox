@@ -16,12 +16,14 @@ type Props = {
   transactions: TxHistoryRow[]
   title?: string
   subtitle?: string
+  kindLabelMap?: Partial<Record<TxHistoryRow["kind"], string>>
 }
 
 export function TransactionHistoryCard({
   transactions,
   title = "Transaction history",
   subtitle = "Recent activity for this market.",
+  kindLabelMap,
 }: Props) {
   return (
     <SectionCard title={title} subtitle={subtitle} bodyClassName="p-0">
@@ -40,7 +42,7 @@ export function TransactionHistoryCard({
               <tr key={tx.id} className="group transition-colors hover:bg-surface-inset/50">
                 <td className="border-b border-border/70 px-5 py-4">
                   <div className="flex min-w-0 items-center gap-1.5 text-[13px] font-normal leading-6">
-                    <span className="text-foreground">{KIND_LABEL[tx.kind]}</span>
+                    <span className="text-foreground">{kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind]}</span>
                     {tx.counterpartyLabel ? (
                       <span className="min-w-0 truncate text-muted-foreground">{tx.counterpartyLabel}</span>
                     ) : null}
