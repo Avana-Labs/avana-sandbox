@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { TokenIcon } from "@/app/components/token-icon"
 
 type LendAsset = {
@@ -57,9 +58,13 @@ const ASSET_GROUPS: Array<{
 ]
 
 function AssetCard({ asset }: { asset: LendAsset }) {
+  const href = `/borrow/asset/${asset.symbol.toLowerCase()}`
+
   return (
-    <button
-      type="button"
+    <Link
+      href={href}
+      prefetch
+      aria-label={`Open ${asset.name} details`}
       className="group relative flex h-[120px] w-full shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border-light bg-white p-3 shadow-[0_8px_40px_rgba(0,0,0,0.03)] transition-all hover:border-border-medium hover:shadow-[0_12px_48px_rgba(0,0,0,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-medium md:w-auto md:min-w-0"
     >
       <div className="pointer-events-none absolute right-2 top-2 flex size-7 items-center justify-center rounded-full border border-border-light bg-white/80 shadow-sm backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
@@ -117,7 +122,7 @@ function AssetCard({ asset }: { asset: LendAsset }) {
           </div>
         </div>
       </div>
-    </button>
+    </Link>
   )
 }
 
