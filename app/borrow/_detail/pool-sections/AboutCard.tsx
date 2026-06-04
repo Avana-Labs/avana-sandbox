@@ -14,7 +14,11 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
     >
       <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
         <h2
-          className={compact ? "truncate text-[18px] font-normal leading-none tracking-[-0.02em] text-text-extra-high" : "truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-text-extra-high"}
+          className={
+            compact
+              ? "truncate text-[18px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]"
+              : "truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]"
+          }
         >
           {title}
         </h2>
