@@ -4,8 +4,7 @@ import * as React from "react"
 import { ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { AboutCard } from "@/app/borrow/_detail/pool-sections"
-import { HeroSideCard, NewsCard } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection, HeroSideCard } from "@/app/borrow/_detail/ui"
 import { AssetDepositSidebar } from "./AssetDepositSidebar"
 
 type Props = { detail: AssetDetail; className?: string }
@@ -27,20 +26,14 @@ export function AssetTokenSidebar({ detail, className }: Props) {
   return (
     <div className={cn("flex w-full flex-col gap-6", className)}>
       <TokenRail detail={detail} />
-      <AboutCard about={detail.about} title={`About ${detail.hero.name}`} compact plain />
-      <NewsCard
-        plain
+      <AboutNewsSection
+        className="pt-0"
+        about={detail.about}
+        aboutTitle={`About ${detail.hero.name}`}
+        compactAboutTitle
+        newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
+        newsImageLabel={detail.hero.symbol}
         mediaVariant="icon"
-        items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
-          title: entry.title,
-          description: entry.description,
-          source: index === 0 ? "Latest update" : "Protocol note",
-          time: entry.date,
-        }))).map((item) => ({
-          ...item,
-          imageUrl: detail.hero.visual.iconUrl ?? undefined,
-          imageLabel: detail.hero.symbol,
-        }))}
       />
     </div>
   )
