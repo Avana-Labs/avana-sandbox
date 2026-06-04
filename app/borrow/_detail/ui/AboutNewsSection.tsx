@@ -10,14 +10,24 @@ type Props = {
   about: AboutCardData
   newsImageUrl?: string
   newsImageLabel?: string
+  aboutTitle?: string
+  compactAboutTitle?: boolean
   mediaVariant?: "card" | "icon"
   className?: string
 }
 
-export function AboutNewsSection({ about, newsImageUrl, newsImageLabel, mediaVariant = "card", className }: Props) {
+export function AboutNewsSection({
+  about,
+  newsImageUrl,
+  newsImageLabel,
+  aboutTitle = "About",
+  compactAboutTitle = false,
+  mediaVariant = "card",
+  className,
+}: Props) {
   return (
     <section className={cn("space-y-4 pt-10", className)}>
-      <AboutCard about={about} plain />
+      <AboutCard about={about} title={aboutTitle} compact={compactAboutTitle} plain />
       <NewsCard items={buildNewsItems(about, newsImageUrl, newsImageLabel)} plain mediaVariant={mediaVariant} />
     </section>
   )
