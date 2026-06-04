@@ -110,20 +110,22 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
 
       {embedded ? null : (
         <div className={cn("mt-4 flex w-full flex-col gap-4", className)}>
-        <AboutCard about={detail.about} />
-        <NewsCard
-          items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
-            title: entry.title,
-            description: entry.description,
-            source: index === 0 ? "Latest update" : "Protocol note",
-            time: entry.date,
-          }))).map((item) => ({
-            ...item,
-            imageUrl: detail.hero.visual.iconUrl ?? undefined,
-            imageLabel: detail.hero.symbol,
-          }))}
-        />
-      </div>
+          <AboutCard about={detail.about} plain />
+          <NewsCard
+            plain
+            mediaVariant="icon"
+            items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
+              title: entry.title,
+              description: entry.description,
+              source: index === 0 ? "Latest update" : "Protocol note",
+              time: entry.date,
+            }))).map((item) => ({
+              ...item,
+              imageUrl: detail.hero.visual.iconUrl ?? undefined,
+              imageLabel: detail.hero.symbol,
+            }))}
+          />
+        </div>
       )}
 
       <LendModals modalState={modalState} setModalState={setModalState} closeModal={close} />

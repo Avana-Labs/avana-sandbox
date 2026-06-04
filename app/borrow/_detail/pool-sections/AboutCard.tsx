@@ -3,12 +3,16 @@
 import { ArrowUpRight } from "lucide-react"
 import type { AboutCard as AboutCardData } from "@/app/lib/borrow-detail"
 
-type Props = { about: AboutCardData; title?: string; compact?: boolean }
+type Props = { about: AboutCardData; title?: string; compact?: boolean; plain?: boolean }
 
-export function AboutCard({ about, title = "About", compact = false }: Props) {
+export function AboutCard({ about, title = "About", compact = false, plain = false }: Props) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-elev-1">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
+    <section
+      className={
+        plain ? "space-y-4" : "overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-elev-1"
+      }
+    >
+      <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
         <h2
           className={compact ? "truncate text-[18px] font-normal leading-none tracking-[-0.02em] text-text-extra-high" : "truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-text-extra-high"}
         >
@@ -32,7 +36,7 @@ export function AboutCard({ about, title = "About", compact = false }: Props) {
         {about.description}
       </div>
       {about.stats.length > 0 ? (
-        <dl className="mt-4 space-y-1.5 text-[12.5px]">
+        <dl className={plain ? "space-y-1.5 text-[12.5px]" : "mt-4 space-y-1.5 text-[12.5px]"}>
           {about.stats.map((s) => (
             <div key={s.label} className="border-b border-border/70 py-2 last:border-b-0">
               {s.href ? (
