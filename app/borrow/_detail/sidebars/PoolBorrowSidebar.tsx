@@ -4,17 +4,27 @@ import * as React from "react"
 import { toast } from "sonner"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
+import { SupplyCollateralModal } from "@/app/borrow/components/supply-collateral-modal"
+import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
+import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/components/transaction-flow"
+import { CompactClaimCard } from "@/app/components/home/claim-card"
+import { CompactRemoveCard } from "@/app/components/home/remove-card"
+import { PairVisual } from "@/app/components/home-workspace-primitives"
 import {
-  calculateBorrowPreview,
+  HOME_INITIAL_CLAIMABLE_TOTALS,
+  HOME_INITIAL_DEBTS,
+  calculateClaimPreview,
+  calculateRemovePreview,
   formatCompactUsd,
-  getBorrowTokenById,
+  formatUsd,
+  getClaimBreakdownLabel,
   getPoolById,
   type HomeAssetVisual,
+  type HomeClaimPosition,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
-import { CompactBorrowCard } from "@/app/components/home/borrow-card"
-import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
-import { BorrowModal } from "@/app/borrow/components/borrow-modal"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -22,19 +32,13 @@ type Props = {
   className?: string
 }
 
-/**
- * Right-column sidebar on the pool detail page. Reuses the home-page
- * `CompactBorrowCard` as-is (no styling forks) and only feeds it props:
- *
- * - The pool is LOCKED to the current detail page (home catalog entry if
- *   available, otherwise an adapter built from PoolDetail).
- * - The borrow token picker reuses the home `TokenPickerDialog`.
- * - Submission opens the shared borrow modal so the flow matches home.
- */
+type SidebarTab = "pledge" | "remove" | "claim"
+type ClaimStage = "entry" | TransactionFlowStage
+
 export function PoolBorrowSidebar({ detail, className }: Props) {
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
-      <BorrowControls detail={detail} />
+      <PoolActionRail detail={detail} />
       <AboutNewsSection
         className="pt-4"
         about={detail.about}
@@ -50,83 +54,277 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
 
 export function PoolBorrowActions({ detail, className }: Props) {
   return (
-    <div className={cn("flex w-full flex-col gap-4", className)} aria-label={`Borrow against ${detail.hero.name}`}>
-      <BorrowControls detail={detail} />
+    <div className={cn("flex w-full flex-col gap-4", className)} aria-label={`Manage ${detail.hero.name}`}>
+      <PoolActionRail detail={detail} />
     </div>
   )
 }
 
-function BorrowControls({ detail }: { detail: PoolDetail }) {
+function PoolActionRail({ detail, className }: Props) {
+  const [tab, setTab] = React.useState<SidebarTab>("pledge")
+  const [removePercent, setRemovePercent] = React.useState(25)
+  const [claimAmount, setClaimAmount] = React.useState("")
+  const [claimStage, setClaimStage] = React.useState<ClaimStage>("entry")
+  const [supplyOpen, setSupplyOpen] = React.useState(false)
+  const [removeOpen, setRemoveOpen] = React.useState(false)
+  const [claimOpen, setClaimOpen] = React.useState(false)
+
   const pool = React.useMemo(() => resolvePool(detail), [detail])
+  const currentDebtUsd = React.useMemo(() => resolveCurrentDebtUsd(pool.id, pool.borrowPowerUsd), [pool.id, pool.borrowPowerUsd])
+  const claimPosition = React.useMemo(() => resolveClaimPosition(detail, pool), [detail, pool])
 
-  const [tokenId, setTokenId] = React.useState<string | null>(null)
-  const [amount, setAmount] = React.useState("")
-  const [tokenDialogOpen, setTokenDialogOpen] = React.useState(false)
-  const [borrowModalOpen, setBorrowModalOpen] = React.useState(false)
+  const claimableTotals = React.useMemo(
+    () => ({ [claimPosition.id]: HOME_INITIAL_CLAIMABLE_TOTALS[claimPosition.id] ?? claimPosition.totalUsd }),
+    [claimPosition],
+  )
+  const claimSelections = React.useMemo(() => ({ [claimPosition.id]: true }), [claimPosition.id])
+  const claimPositions = React.useMemo(() => [claimPosition], [claimPosition])
+  const claimPreview = React.useMemo(
+    () => calculateClaimPreview(claimPositions, claimableTotals, claimSelections, Number.parseFloat(claimAmount) || null),
+    [claimAmount, claimPositions, claimSelections, claimableTotals],
+  )
+  const removePreview = React.useMemo(
+    () => calculateRemovePreview(pool, currentDebtUsd, removePercent),
+    [currentDebtUsd, pool, removePercent],
+  )
 
-  const token = React.useMemo(() => (tokenId ? getBorrowTokenById(tokenId) : null), [tokenId])
+  React.useEffect(() => {
+    setRemovePercent(25)
+    setClaimAmount("")
+    setClaimStage("entry")
+  }, [detail.id])
 
-  const preview = React.useMemo(() => {
-    const p = calculateBorrowPreview(pool, Number.parseFloat(amount) || 0, token?.symbol ?? "Tokens")
-    if (!token) {
-      p.isValid = false
-      p.ctaLabel = "Select token"
-    }
-    return p
-  }, [amount, pool, token])
-
-  const handleSubmit = () => {
-    if (!preview.isValid || preview.isEmpty || !token) {
-      if (!token) toast.warning("Select a token to borrow")
+  React.useEffect(() => {
+    if (!claimOpen) {
+      setClaimStage("entry")
       return
     }
-    setBorrowModalOpen(true)
-  }
+    if (claimStage !== "processing") return
+
+    const timer = window.setTimeout(() => {
+      setClaimStage("success")
+      toast.success(`Claimed ${formatUsd(claimPreview.effectiveClaimUsd)} in fees`)
+    }, 5000)
+
+    return () => window.clearTimeout(timer)
+  }, [claimOpen, claimPreview.effectiveClaimUsd, claimStage])
+
+  const claimRows = React.useMemo(
+    () =>
+      Object.entries(claimPreview.tokenTotals)
+        .filter(([, value]) => value > 0)
+        .map(([symbol, value]) => ({
+          label: `${symbol} received`,
+          value: getClaimBreakdownLabel(symbol, value),
+          tone: "positive" as const,
+        })),
+    [claimPreview.tokenTotals],
+  )
 
   return (
     <>
-      <aside className="flex w-full flex-col gap-4" aria-label={`Borrow against ${detail.hero.name}`}>
-        <CompactBorrowCard
-          pool={pool}
-          token={token}
-          amount={amount}
-          preview={preview}
-          onAmountChange={setAmount}
-          onOpenPoolDialog={() => undefined}
-          onOpenTokenDialog={() => setTokenDialogOpen(true)}
-          onQuickTokenSelect={(id) => setTokenId(id)}
-          onSetMax={() => setAmount(String(pool.borrowPowerUsd))}
-          onSubmit={handleSubmit}
-        />
-      </aside>
+      <div className={cn("flex w-full flex-col gap-6", className)}>
+        <div className="space-y-4">
+          <div role="tablist" aria-label="Pool actions" className="flex items-center gap-5 border-b border-border">
+            {[
+              { id: "pledge", label: "Pledge" },
+              { id: "remove", label: "Remove" },
+              { id: "claim", label: "Claim" },
+            ].map((actionTab) => {
+              const active = actionTab.id === tab
+              return (
+                <button
+                  key={actionTab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTab(actionTab.id as SidebarTab)}
+                  className={cn(
+                    "border-b-[1.5px] -mb-px pb-4 text-[13px] font-medium transition-colors",
+                    active
+                      ? "border-accent-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {actionTab.label}
+                </button>
+              )
+            })}
+          </div>
 
-      <BorrowModal
-        open={borrowModalOpen}
+          <div className="pt-1">
+            {tab === "pledge" ? (
+              <PledgeCard pool={pool} onSubmit={() => setSupplyOpen(true)} />
+            ) : null}
+
+            {tab === "remove" ? (
+              <CompactRemoveCard
+                pool={pool}
+                percent={removePercent}
+                preview={removePreview}
+                submitLabel="Review removal"
+                flatHero
+                onOpenPoolDialog={() => {}}
+                onPercentChange={setRemovePercent}
+                onSubmit={() => setRemoveOpen(true)}
+              />
+            ) : null}
+
+            {tab === "claim" ? (
+              <CompactClaimCard
+                amount={claimAmount}
+                positions={claimPositions}
+                preview={claimPreview}
+                claimableTotals={claimableTotals}
+                selections={claimSelections}
+                submitLabel="Review claim"
+                onToggleSelection={() => {}}
+                onAmountChange={setClaimAmount}
+                onSetAll={() => setClaimAmount(claimPreview.selectedTotalUsd.toFixed(2))}
+                onSubmit={() => setClaimOpen(true)}
+              />
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <SupplyCollateralModal
+        open={supplyOpen}
+        context={{ pool: toBorrowPoolRow(detail) }}
+        onClose={() => setSupplyOpen(false)}
+        onConfirm={() => {
+          setSupplyOpen(false)
+          toast.success(`Pledged ${formatCompactUsd(pool.collateralUsd)} of ${pool.name}`)
+        }}
+      />
+
+      <RepayRemoveModal
+        open={removeOpen}
         context={{
           pool,
-          currentDebtUsd: 0,
-          defaultTokenId: token?.id ?? undefined,
+          currentDebtUsd,
+          mode: "remove",
         }}
-        initialAmount={amount}
-        initialTokenId={token?.id ?? null}
-        startStage="review"
-        onClose={() => setBorrowModalOpen(false)}
+        onClose={() => setRemoveOpen(false)}
         onConfirm={(result) => {
-          toast.success(`Borrowed ${formatCompactUsd(result.amountUsd)} ${result.token.symbol}`)
-          setAmount("")
+          setRemoveOpen(false)
+          toast.success(`Removed ${result.percent ?? removePercent}% from ${pool.name}`)
         }}
       />
 
-      <TokenPickerDialog
-        open={tokenDialogOpen}
-        onOpenChange={setTokenDialogOpen}
-        selectedTokenId={tokenId}
-        onSelect={(id) => {
-          setTokenId(id)
-          setTokenDialogOpen(false)
+      <Dialog
+        open={claimOpen}
+        onOpenChange={(next) => {
+          if (!next && claimStage !== "processing") {
+            setClaimOpen(false)
+            setClaimStage("entry")
+          }
         }}
-      />
+      >
+        <DialogContent
+          fullScreenOnMobile
+          hideMobileHandle
+          className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md overflow-y-auto rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
+        >
+          <DialogTitle className="sr-only">Claim fees</DialogTitle>
+          {claimStage === "entry" ? (
+            <div className="flex h-full min-h-0 flex-col bg-background sm:h-auto">
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:px-8 sm:pb-5 sm:pt-6">
+                <CompactClaimCard
+                  amount={claimAmount}
+                  positions={claimPositions}
+                  preview={claimPreview}
+                  claimableTotals={claimableTotals}
+                  selections={claimSelections}
+                  submitLabel="Review claim"
+                  onToggleSelection={() => {}}
+                  onAmountChange={setClaimAmount}
+                  onSetAll={() => setClaimAmount(claimPreview.selectedTotalUsd.toFixed(2))}
+                  onSubmit={() => setClaimStage("review")}
+                />
+              </div>
+            </div>
+          ) : (
+            <TransactionFlowPanel
+              stage={claimStage}
+              actionLabel="claim"
+              amountLabel={formatUsd(claimPreview.effectiveClaimUsd)}
+              title="Claim successful"
+              subtitle="Fees claimed."
+              visual={
+                <div className="flex items-center">
+                  <span className="scale-[1.8]">
+                    <PairVisual visuals={pool.visuals} className="w-10" />
+                  </span>
+                </div>
+              }
+              rows={claimRows}
+              footerNote={undefined}
+              primaryLabel={claimStage === "review" ? "Claim fees" : claimStage === "approve" ? "Approve wallet" : "Done"}
+              onPrimary={() => {
+                if (claimStage === "review") {
+                  setClaimStage("approve")
+                } else if (claimStage === "approve") {
+                  setClaimStage("processing")
+                } else {
+                  setClaimOpen(false)
+                  setClaimStage("entry")
+                  setClaimAmount("")
+                }
+              }}
+              onBack={() => setClaimStage("entry")}
+              onClose={() => {
+                if (claimStage === "processing") return
+                setClaimOpen(false)
+                setClaimStage("entry")
+              }}
+              className="rounded-none border-0 bg-transparent shadow-none"
+              variant="bare"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
+  )
+}
+
+function PledgeCard({ pool, onSubmit }: { pool: HomeCollateralPool; onSubmit: () => void }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="relative flex flex-col divide-y divide-border overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
+        <div className="px-5 py-4">
+          <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))]">Collateral</span>
+          <div className="mt-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="font-data text-[20px] font-medium tracking-tight text-foreground">{formatCompactUsd(pool.collateralUsd)}</div>
+              <div className="mt-0.5 text-[11.5px] text-muted-foreground">{pool.name}</div>
+            </div>
+            <span className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-inset px-2 text-foreground">
+              <PairVisual visuals={pool.visuals} className="w-10" />
+            </span>
+          </div>
+        </div>
+
+        <div className="px-5 py-4">
+          <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))]">Pledge</span>
+          <div className="mt-3 flex items-end justify-between gap-4">
+            <div className="min-w-0">
+              <div className="font-data text-[28px] font-medium tracking-tight text-foreground">{formatCompactUsd(pool.borrowPowerUsd)}</div>
+              <div className="mt-0.5 text-[11.5px] text-muted-foreground">Borrow power unlocked at {pool.maxLtv}% max LTV</div>
+            </div>
+            <span className="text-[11.5px] text-muted-foreground">{pool.pairApr.toFixed(1)}% LP APY</span>
+          </div>
+        </div>
+      </div>
+
+      <Button
+        type="button"
+        className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90"
+        onClick={onSubmit}
+      >
+        Review pledge
+      </Button>
+    </div>
   )
 }
 
@@ -145,6 +343,41 @@ function resolvePool(detail: PoolDetail): HomeCollateralPool {
     pairApr: (detail.row.aprMin + detail.row.aprMax) / 2,
     visuals: [toHomeVisual(detail.hero.visuals[0]), toHomeVisual(detail.hero.visuals[1])],
   }
+}
+
+function resolveCurrentDebtUsd(poolId: string, borrowPowerUsd: number) {
+  return HOME_INITIAL_DEBTS[poolId] ?? Math.round(borrowPowerUsd * 0.45)
+}
+
+function resolveClaimPosition(detail: PoolDetail, pool: HomeCollateralPool): HomeClaimPosition {
+  const totalUsd = Math.max(24, Math.round(pool.pairApr * 12))
+  return {
+    id: `claim-${pool.id}`,
+    poolId: pool.id,
+    name: detail.hero.name,
+    subtitle: `${detail.hero.venue} · ${detail.hero.feeTier ?? detail.hero.chain}`,
+    totalUsd,
+    breakdown: [
+      {
+        id: `${pool.id}-${detail.hero.visuals[0].symbol.toLowerCase()}`,
+        symbol: detail.hero.visuals[0].symbol,
+        amountLabel: `${(totalUsd * 0.55).toFixed(2)} ${detail.hero.visuals[0].symbol}`,
+        usdValue: Number((totalUsd * 0.55).toFixed(2)),
+        visual: toHomeVisual(detail.hero.visuals[0]),
+      },
+      {
+        id: `${pool.id}-${detail.hero.visuals[1].symbol.toLowerCase()}`,
+        symbol: detail.hero.visuals[1].symbol,
+        amountLabel: `${(totalUsd * 0.45).toFixed(2)} ${detail.hero.visuals[1].symbol}`,
+        usdValue: Number((totalUsd * 0.45).toFixed(2)),
+        visual: toHomeVisual(detail.hero.visuals[1]),
+      },
+    ],
+  }
+}
+
+function toBorrowPoolRow(detail: PoolDetail) {
+  return detail.row
 }
 
 function toHomeVisual(v: PoolDetail["hero"]["visuals"][number]): HomeAssetVisual {
