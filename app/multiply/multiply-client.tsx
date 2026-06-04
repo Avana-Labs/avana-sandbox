@@ -1,10 +1,7 @@
 "use client"
 
-import { toast } from "sonner"
 import { MultiplyHero } from "./components/multiply-hero"
-import { MultiplyPartnersSection } from "./components/multiply-partners"
-import { MultiplyLendSection } from "./components/multiply-lend-section"
-import { MarketsTable } from "./components/markets-table"
+import { ExploreLoopsMarketsTable } from "./components/explore-loops-markets-table"
 
 export const MOCK_MARKETS = [
   { symbol: "ETH", name: "Ethereum", price: 3482, funding: 0.012, change: 2.4, volume: 1520000000, maxLeverage: 25, longOi: 62, shortOi: 38 },
@@ -15,23 +12,11 @@ export const MOCK_MARKETS = [
 ]
 
 export function MultiplyClient() {
-  const handleMultiply = (symbol: string, side: "long" | "short") => {
-    toast[side === "long" ? "success" : "info"](`${side === "long" ? "Long" : "Short"} ${symbol}`, {
-      description: "Order ticket would open here.",
-    })
-  }
-
   return (
     <main className="container mx-auto px-4 py-8">
-      <div className="mx-auto max-w-[1152px]">
+      <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
         <MultiplyHero markets={MOCK_MARKETS} />
-        <MultiplyPartnersSection />
-        <MultiplyLendSection />
-
-        {/* BOTTOM: Full-width Markets then Positions/History (incl. Tx History tab) */}
-        <div className="mt-12 space-y-8">
-          <MarketsTable markets={MOCK_MARKETS} onMultiply={handleMultiply} />
-        </div>
+        <ExploreLoopsMarketsTable />
       </div>
     </main>
   )
