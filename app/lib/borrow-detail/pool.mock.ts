@@ -279,12 +279,14 @@ function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
   const spoke = getSpokeById(row.spoke)
   const totalSupplied = spoke.liquidityUsd
   const totalBorrowed = Math.round(totalSupplied * (row.ltv / 100))
+  const oraclePrice = pairReferencePrice(row)
   return [
+    { id: "oraclePrice", label: "Oracle price", value: formatOraclePrice(oraclePrice) },
     { id: "totalSupplied", label: "Total Supplied", value: formatCompactUsd(totalSupplied), delta: deltaUp(1.8) },
     { id: "totalBorrowed", label: "Total Borrowed", value: formatCompactUsd(totalBorrowed), delta: deltaUp(2.9) },
-    { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
-    { id: "apr", label: "Supply APY", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
     { id: "utilization", label: "Utilization", value: formatPct(spoke.maxLtv * 0.82, 1) },
+    { id: "apr", label: "Supply APY", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
+    { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
     { id: "maxLtv", label: "Max LTV", value: formatPct(spoke.maxLtv, 1) },
     { id: "available", label: "Available to borrow", value: formatCompactUsd(row.availableUsd) },
   ]
@@ -336,6 +338,12 @@ function pairReferencePrice(row: BorrowPoolRow): number {
   if (a.includes("BTC") && b.includes("ETH")) return 15.8
   if (b === "USDC" || b === "USDT" || b === "DAI") return 1_200
   return 1
+}
+
+function formatOraclePrice(v: number): string {
+  if (v >= 100) return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  if (v >= 1) return `$${v.toFixed(4)}`
+  return `$${v.toFixed(6)}`
 }
 
 function buildKeyMetrics(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Record<KeyMetricId, Record<TimeRangeId, Series>> {
