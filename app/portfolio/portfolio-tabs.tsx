@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PortfolioHero } from "./portfolio-hero"
 
-type PortfolioTab = "overview" | "collateral" | "borrowing" | "lending" | "looping" | "activity"
+export type PortfolioTab = "overview" | "collateral" | "borrowing" | "lending" | "looping" | "activity"
 
 type TabConfig = {
   value: PortfolioTab
@@ -141,8 +140,12 @@ function buildRangeData(week: number[]) {
   }
 }
 
-export function PortfolioTabs() {
-  const [activeTab, setActiveTab] = useState<PortfolioTab>("overview")
+type PortfolioTabsProps = {
+  activeTab: PortfolioTab
+  onTabChange: (tab: PortfolioTab) => void
+}
+
+export function PortfolioTabs({ activeTab, onTabChange }: PortfolioTabsProps) {
   const activeTabConfig = TAB_DETAILS[activeTab]
 
   const tabBar = (
@@ -159,7 +162,7 @@ export function PortfolioTabs() {
 
   return (
     <section className="mb-8">
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PortfolioTab)}>
+      <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as PortfolioTab)}>
         <PortfolioHero
           tabs={tabBar}
           headlineValue={activeTabConfig.headlineValue}
