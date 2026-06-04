@@ -5,6 +5,7 @@ import { PortfolioStrategies } from "./portfolio-strategies"
 import { RecentActivity } from "../lend/components/recent-activity"
 import { PortfolioHero } from "./portfolio-hero"
 import { PortfolioInvestments } from "./portfolio-investments"
+import { PortfolioPositionsTabs } from "./portfolio-positions-tabs"
 
 export const metadata: Metadata = {
   title: "Portfolio",
@@ -18,6 +19,7 @@ export default function PortfolioPage() {
         <div className="mx-auto max-w-[1152px]">
           <PortfolioHero />
           <PortfolioInvestments />
+          <PortfolioPositionsTabs />
           <PortfolioPositions />
           <PortfolioStrategies />
           <RecentActivity />
