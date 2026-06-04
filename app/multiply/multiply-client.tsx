@@ -3,6 +3,7 @@
 import { toast } from "sonner"
 import { MultiplyHero } from "./components/multiply-hero"
 import { MultiplyPartnersSection } from "./components/multiply-partners"
+import { MultiplyLendSection } from "./components/multiply-lend-section"
 import { MarketsTable } from "./components/markets-table"
 
 export const MOCK_MARKETS = [
@@ -25,6 +26,7 @@ export function MultiplyClient() {
       <div className="mx-auto max-w-[1152px]">
         <MultiplyHero markets={MOCK_MARKETS} />
         <MultiplyPartnersSection />
+        <MultiplyLendSection />
 
         {/* BOTTOM: Full-width Markets then Positions/History (incl. Tx History tab) */}
         <div className="mt-12 space-y-8">
