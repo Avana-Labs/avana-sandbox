@@ -1,7 +1,7 @@
 "use client"
 
 import { toast } from "sonner"
-import { MultiplyBalanceRow } from "./components/multiply-balance-row"
+import { MultiplyHero } from "./components/multiply-hero"
 import { BalanceChart } from "./components/balance-chart"
 import { MarketsTable } from "./components/markets-table"
 import { AccountTabs } from "./components/account-tabs"
@@ -25,8 +25,7 @@ export function MultiplyClient() {
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-[1152px]">
-        {/* Top Balance Row */}
-        <MultiplyBalanceRow />
+        <MultiplyHero markets={MOCK_MARKETS} />
 
         {/* HERO SECTION */}
         <div className="mt-8 mb-8 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-stretch">
