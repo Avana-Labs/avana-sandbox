@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -385,7 +384,8 @@ export function MultiplyLendSection() {
                 <TableRow key={row.href}>
                   <TableCell className="p-0 align-middle">
                     <TableLink href={row.href} className="flex items-center gap-2 px-3 py-3">
-                      <Image src={row.protocolLogo} alt="" aria-hidden width={20} height={20} className="size-5 shrink-0 rounded-full object-cover" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-5 shrink-0 rounded-full object-cover" />
                       <span className="text-[13px] font-normal text-foreground">{row.protocol}</span>
                       {row.kind === "Borrow" ? <Badge className="ml-2 h-5 rounded-xs px-1.5 text-[10px]">Borrow</Badge> : null}
                     </TableLink>
