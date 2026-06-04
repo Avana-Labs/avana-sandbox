@@ -41,6 +41,14 @@ interface PortfolioHeroProps {
   headlineValue?: string
   headlineDelta?: string
   rangeData?: typeof RANGE_DATA
+  primaryActionLabel?: string
+  secondaryActionLabel?: string
+  statOneLabel?: string
+  statOneValue?: string
+  statOneHelpText?: string
+  statTwoLabel?: string
+  statTwoValue?: string
+  statTwoHelpText?: string
 }
 
 export function PortfolioHero({
@@ -50,6 +58,14 @@ export function PortfolioHero({
   headlineValue,
   headlineDelta,
   rangeData = RANGE_DATA,
+  primaryActionLabel = "Deposit",
+  secondaryActionLabel = "Withdraw",
+  statOneLabel = "Average APY",
+  statOneValue,
+  statOneHelpText = "Weighted average APY across all your deposited assets.",
+  statTwoLabel = "Interest earned",
+  statTwoValue,
+  statTwoHelpText = "Total yield earned from all active positions over time.",
 }: PortfolioHeroProps) {
   const [activeRange, setActiveRange] = useState("1D")
   const { showDollarAmounts } = useDisplayPreferences()
@@ -76,9 +92,9 @@ export function PortfolioHero({
   )
 
   return (
-    <section className="mb-8 grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
-      <div className="bg-background px-1 py-2">
-        <div className="max-w-[840px]">
+    <section className="mb-8 grid min-w-0 gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+      <div className="min-w-0 bg-background px-1 py-2">
+        <div className="max-w-[840px] min-w-0 max-w-full">
           <div className="space-y-1">
             <div className="flex flex-col gap-1.5">
               <span className="font-data text-[22px] font-medium tracking-tight md:text-[28px]">
@@ -162,7 +178,7 @@ export function PortfolioHero({
             <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
               <ArrowUp className="h-3.5 w-3.5 rotate-45" />
             </div>
-            <span className="font-medium text-[13px]">Deposit</span>
+            <span className="font-medium text-[13px]">{primaryActionLabel}</span>
           </button>
           <button
             type="button"
@@ -172,25 +188,25 @@ export function PortfolioHero({
             <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
               <ArrowDown className="h-3.5 w-3.5" />
             </div>
-            <span className="font-medium text-[13px]">Withdraw</span>
+            <span className="font-medium text-[13px]">{secondaryActionLabel}</span>
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-radius-md border border-border bg-border">
           <div className="bg-surface-raised p-3.5">
             <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              Average APY <InfoTip text="Weighted average APY across all your deposited assets." />
+              {statOneLabel} <InfoTip text={statOneHelpText} />
             </div>
             <div className="font-data text-[18px] font-medium tabular-nums text-[#01AACF]">
-              {rangeStats[activeRange as keyof typeof rangeStats]?.apy.toFixed(2) || "4.18"}%
+              {statOneValue ?? `${rangeStats[activeRange as keyof typeof rangeStats]?.apy.toFixed(2) || "4.18"}%`}
             </div>
           </div>
           <div className="bg-surface-raised p-3.5">
             <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              Interest earned <InfoTip text="Total yield earned from all active positions over time." />
+              {statTwoLabel} <InfoTip text={statTwoHelpText} />
             </div>
             <div className="font-data text-[18px] font-medium tabular-nums text-[#01AACF]">
-              +${(498.2 * (rangeStats[activeRange as keyof typeof rangeStats]?.earnedFraction || 1)).toFixed(2)}
+              {statTwoValue ?? `+$${(498.2 * (rangeStats[activeRange as keyof typeof rangeStats]?.earnedFraction || 1)).toFixed(2)}`}
             </div>
           </div>
         </div>
