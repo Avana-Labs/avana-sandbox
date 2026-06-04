@@ -3,13 +3,14 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection, HeroSideCard } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { BorrowModal } from "@/app/borrow/components/borrow-modal"
 import { LendModals } from "@/app/lend/components/lend-modals"
 import { MARKETS, TOKENS } from "@/app/lend/components/data"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { HOME_BORROW_TOKENS, HOME_COLLATERAL_POOLS } from "@/app/lib/home-sim"
+import { PickerSurface, PrimaryCardButton } from "@/app/components/home/shared"
 
 type Props = { detail: AssetDetail; className?: string }
 
@@ -69,6 +70,16 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
   const parsedAmount = Number.parseFloat(amount) || 0
   const exceedsBalance = tab === "withdraw" && parsedAmount > tokenBalance
   const isInvalidAmount = !parsedAmount || parsedAmount <= 0
+  const primaryLabel =
+    isInvalidAmount
+      ? "Enter an amount"
+      : exceedsBalance
+        ? "Exceeds balance"
+        : tab === "deposit"
+          ? "Review deposit"
+          : tab === "withdraw"
+            ? "Review withdrawal"
+            : "Review borrow"
 
   const openLend = (action: "deposit" | "withdraw") => {
     setModalState({
@@ -83,87 +94,115 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
   return (
     <>
       <div className={cn("flex w-full flex-col gap-6", className)}>
-        <HeroSideCard
-          tabs={[
-            { id: "deposit", label: "Deposit" },
-            { id: "withdraw", label: "Withdraw" },
-            { id: "borrow", label: "Borrow" },
-          ]}
-          value={tab}
-          onValueChange={(value) => {
-            setTab(value as SidebarTab)
-            setAmount("")
-          }}
-          className="rounded-[20px] border border-border/60 bg-surface-raised p-5 shadow-elev-1 [&>div]:p-0"
-        >
-          <div className="space-y-4 pt-1">
-            <div className="px-1 py-2">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium text-[hsl(var(--brand))]">
-                  {tab === "deposit" ? "You're depositing" : tab === "withdraw" ? "You're withdrawing" : "You're borrowing"}
-                </span>
+        <div className="space-y-4">
+          <div role="tablist" aria-label="Asset actions" className="flex items-center gap-5 border-b border-border">
+            {[
+              { id: "deposit", label: "Deposit" },
+              { id: "withdraw", label: "Withdraw" },
+              { id: "borrow", label: "Borrow" },
+            ].map((actionTab) => {
+              const active = actionTab.id === tab
+              return (
                 <button
+                  key={actionTab.id}
                   type="button"
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => {
-                    if (tab === "withdraw") {
-                      setAmount(tokenBalance.toString())
-                      return
-                    }
-                    if (tab === "borrow") {
-                      setAmount(String(Math.round(borrowContext.borrowPowerUsd)))
-                      return
-                    }
-                    setAmount("0")
+                    setTab(actionTab.id as SidebarTab)
+                    setAmount("")
                   }}
-                  className="text-[12px] font-medium text-[hsl(var(--brand))] transition-colors hover:opacity-80"
+                  className={cn(
+                    "pb-4 text-[13px] font-medium transition-colors border-b-[1.5px] -mb-px",
+                    active
+                      ? "text-foreground border-accent-primary"
+                      : "text-muted-foreground border-transparent hover:text-foreground",
+                  )}
                 >
-                  Max
+                  {actionTab.label}
                 </button>
-              </div>
+              )
+            })}
+          </div>
 
-              <div className="flex min-h-[128px] flex-col items-center justify-center gap-3 py-2 text-center">
-                <label className="flex w-full justify-center">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={amount}
-                    onChange={(e) => setAmount(sanitizeNumericInput(e.target.value))}
-                    className="no-number-spinner w-[min(100%,12ch)] bg-transparent text-center font-compact text-[clamp(3.2rem,9vw,4.8rem)] font-medium leading-none tracking-[-0.05em] text-foreground outline-none placeholder:text-muted-foreground/20"
-                  />
-                </label>
-                <div className="text-[12px] text-muted-foreground">
-                  {amount
-                    ? `≈ $${(parsedAmount * tokenPrice).toFixed(2)}`
-                    : tab === "deposit"
-                      ? "Start earning from LP Hub deposits"
-                      : tab === "withdraw"
-                        ? "Choose how much to withdraw"
-                        : "Borrow against supported LP collateral"}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <MetricTile
-                title={tab === "borrow" ? "Borrow asset" : tab === "deposit" ? "Deposit asset" : "Withdraw asset"}
-                value={detail.hero.symbol}
-                icon={<TokenIcon symbol={detail.hero.symbol} size="lg" />}
-              />
-
-              <MetricTile
-                title={tab === "borrow" ? "Borrow APY" : tab === "deposit" ? "Supply APY" : "Available balance"}
-                value={tab === "borrow" ? borrowAprLabel : tab === "deposit" ? `${token.apy.toFixed(2)}%` : `${tokenBalance.toLocaleString()}`}
-                icon={
-                  <span className="font-compact text-[28px] leading-none text-[hsl(var(--brand))]">
-                    {tab === "withdraw" ? "$" : "%"}
+          <div className="flex flex-col gap-3 pt-1">
+            <div className="relative flex flex-col divide-y divide-border overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
+              <PickerSurface label={tab === "borrow" ? "Asset" : "Market"} tier="top" seamless>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="font-data text-[20px] font-medium tracking-tight text-foreground">
+                      {tab === "borrow" ? detail.hero.symbol : detail.row.walletBalanceLabel}
+                    </div>
+                    <div className="mt-0.5 text-[11.5px] text-muted-foreground">
+                      {tab === "borrow"
+                        ? detail.hero.name
+                        : tab === "deposit"
+                          ? `${token.apy.toFixed(2)}% supply APY`
+                          : `${tokenBalance.toLocaleString()} available`}
+                    </div>
+                  </div>
+                  <span className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-inset px-2 text-foreground">
+                    <TokenIcon symbol={detail.hero.symbol} size="sm" />
+                    <span className="text-[12px] font-medium">{detail.hero.symbol}</span>
                   </span>
+                </div>
+              </PickerSurface>
+
+              <PickerSurface
+                label={tab === "deposit" ? "Deposit" : tab === "withdraw" ? "Withdraw" : "Borrow"}
+                tier="bottom"
+                seamless
+                footer={
+                  <div className="flex items-center justify-between gap-3">
+                    <span>
+                      {tab === "borrow"
+                        ? `${borrowAprLabel} borrow APY`
+                        : tab === "deposit"
+                          ? `${token.apy.toFixed(2)}% supply APY`
+                          : `${tokenBalance.toLocaleString()} available`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (tab === "withdraw") {
+                          setAmount(tokenBalance.toString())
+                          return
+                        }
+                        if (tab === "borrow") {
+                          setAmount(String(Math.round(borrowContext.borrowPowerUsd)))
+                          return
+                        }
+                        setAmount("0")
+                      }}
+                      className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                    >
+                      Max
+                    </button>
+                  </div>
                 }
-              />
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <label className="flex min-w-0 flex-1 flex-col">
+                    <span className="sr-only">{tab} amount</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={amount}
+                      onChange={(e) => setAmount(sanitizeNumericInput(e.target.value))}
+                      className="no-number-spinner w-full bg-transparent font-data text-[28px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
+                    />
+                    <span className="text-[11px] text-muted-foreground">{amount ? `≈ $${(parsedAmount * tokenPrice).toFixed(2)}` : "$0"}</span>
+                  </label>
+                  <span className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-raised px-2 text-[12px] font-medium text-foreground">
+                    <TokenIcon symbol={detail.hero.symbol} size="sm" />
+                    {detail.hero.symbol}
+                  </span>
+                </div>
+              </PickerSurface>
             </div>
 
-            <button
-              type="button"
+            <PrimaryCardButton
               disabled={isInvalidAmount || exceedsBalance}
               onClick={() => {
                 if (tab === "borrow") {
@@ -172,32 +211,12 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                 }
                 openLend(tab)
               }}
-              className={cn(
-                "h-10 w-full rounded-radius-sm text-[13px] font-medium transition-colors",
-                isInvalidAmount || exceedsBalance
-                  ? "cursor-not-allowed bg-surface-inset text-muted-foreground"
-                  : "bg-accent-primary text-accent-primary-foreground shadow-elev-1 hover:bg-accent-primary-hover",
-              )}
             >
-              {isInvalidAmount
-                ? "Enter an amount"
-                : exceedsBalance
-                  ? "Exceeds balance"
-                  : tab === "deposit"
-                    ? "Review deposit"
-                    : tab === "withdraw"
-                      ? "Review withdrawal"
-                      : "Review borrow"}
-            </button>
+              {primaryLabel}
+            </PrimaryCardButton>
 
-            <div className="text-center text-[12px] text-muted-foreground">
-              Powered by Aave v4.{" "}
-              <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
-                Learn More
-              </a>
-            </div>
           </div>
-        </HeroSideCard>
+        </div>
       </div>
 
       <LendModals
@@ -220,26 +239,6 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
         onConfirm={() => setBorrowOpen(false)}
       />
     </>
-  )
-}
-
-function MetricTile({
-  title,
-  value,
-  icon,
-}: {
-  title: string
-  value: string
-  icon: React.ReactNode
-}) {
-  return (
-    <div className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)] items-center gap-2.5 rounded-radius-md border border-border bg-surface-raised px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)] md:gap-2.5 md:px-3.5">
-      <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">{icon}</span>
-      <span className="flex min-w-0 flex-col leading-tight">
-        <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">{title}</span>
-        <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">{value}</span>
-      </span>
-    </div>
   )
 }
 
