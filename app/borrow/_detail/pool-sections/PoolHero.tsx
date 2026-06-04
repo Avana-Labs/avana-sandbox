@@ -1,9 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { Copy, ExternalLink, Share2, ChevronDown } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Copy, ExternalLink, Share2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { PoolDetail, ChartMetricId, TimeRangeId } from "@/app/lib/borrow-detail"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
@@ -39,12 +37,11 @@ export function PoolHeroIdentity({
   actions?: React.ReactNode
   className?: string
 }) {
-  const relatedCount = Math.max(detail.related.length, 1)
   return (
-    <div className={cn("border-b border-border-light pb-4", className)}>
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-0 sm:gap-5">
-        <div className="flex cols-span-1 items-start flex-col sm:flex-row sm:col-span-8 gap-2 sm:items-end">
-          <div className="relative flex-shrink-0 mr-2">
+    <header className={cn("border-b border-border pb-5", className)}>
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="relative shrink-0">
             {leading}
             <div className="flex -space-x-2">
               <TokenAvatar visual={detail.hero.visuals[0]} />
@@ -56,85 +53,79 @@ export function PoolHeroIdentity({
               </div>
             </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-title-md text-text-extra-high font-semibold truncate">{detail.hero.name}</h1>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h1 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">
+                {detail.hero.name}
+              </h1>
               <button
                 type="button"
                 aria-label="View risk score"
-                className="inline-flex items-center justify-center text-text-medium hover:text-text-high transition-colors"
+                className="inline-flex items-center justify-center text-text-medium transition-colors hover:text-text-high"
               >
                 <RiskScoreIcon className="shrink-0" />
               </button>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="rounded-full border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-150 ease-out motion-reduce:transition-none border-transparent bg-[var(--badge-default-bg)] backdrop-blur-sm hover:cursor-crosshair px-2 py-1 text-[var(--badge-default-text)] font-medium text-xs inline-flex items-center gap-1">
-                <span className="font-sans tabular-nums">{detail.hero.feeTier || detail.hero.venue}</span>
-              </div>
-              <div className="rounded-full border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-150 ease-out motion-reduce:transition-none border-transparent bg-[var(--badge-default-bg)] backdrop-blur-sm hover:cursor-crosshair px-2 py-1 text-[var(--badge-default-text)] font-medium text-xs inline-flex items-center gap-1">
-                <span className="font-sans tabular-nums">{detail.hero.chain}</span>
-              </div>
-              <Link
-                href="#related-pools"
-                className="bg-[var(--badge-default-bg)] backdrop-blur-sm hover:cursor-crosshair px-2 py-1 text-[var(--badge-default-text)] font-medium text-xs inline-flex items-center gap-1 transition-colors cursor-crosshair rounded-full"
-              >
-                <span className="font-sans tabular-nums">{relatedCount}+</span>RELATED
-                <ChevronDown className="ml-0.5 size-3 text-[var(--badge-default-text)]/80 transition-transform duration-150 ease-out motion-reduce:transition-none" />
-              </Link>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px] text-muted-foreground">
+              <span className="inline-flex items-center rounded-full bg-surface-inset px-2.5 py-[3px] text-[12px] font-medium leading-none text-foreground">
+                {detail.hero.feeTier || detail.hero.venue}
+              </span>
+              <span className="inline-flex items-center rounded-full bg-surface-inset px-2.5 py-[3px] text-[12px] font-medium leading-none text-foreground">
+                {detail.hero.chain}
+              </span>
             </div>
-            <p className="mt-2 text-[13px] text-text-medium">{detail.hero.subtitle}</p>
+            <p className="mt-1.5 text-[13px] text-muted-foreground">{detail.hero.subtitle}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="hidden sm:flex items-center gap-2">
+
+        <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
+          <HeroIconButton
+            label="Copy link"
+            onClick={async () => {
+              await navigator.clipboard.writeText(window.location.href)
+            }}
+          >
+            <Copy className="h-4 w-4" aria-hidden="true" />
+          </HeroIconButton>
+          <HeroIconButton
+            label="Share page"
+            onClick={async () => {
+              if (navigator.share) {
+                await navigator.share({ title: detail.hero.name, url: window.location.href })
+                return
+              }
+              await navigator.clipboard.writeText(window.location.href)
+            }}
+          >
+            <Share2 className="h-4 w-4" aria-hidden="true" />
+          </HeroIconButton>
+          {detail.hero.explorerUrl ? (
             <HeroIconButton
-              label="Copy link"
-              onClick={async () => {
-                await navigator.clipboard.writeText(window.location.href)
-              }}
+              label="Open in block explorer"
+              onClick={() => window.open(detail.hero.explorerUrl, "_blank", "noopener,noreferrer")}
             >
-              <Copy className="h-4 w-4" aria-hidden="true" />
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </HeroIconButton>
-            <HeroIconButton
-              label="Share page"
-              onClick={async () => {
-                if (navigator.share) {
-                  await navigator.share({ title: detail.hero.name, url: window.location.href })
-                  return
-                }
-                await navigator.clipboard.writeText(window.location.href)
-              }}
-            >
-              <Share2 className="h-4 w-4" aria-hidden="true" />
-            </HeroIconButton>
-            {detail.hero.explorerUrl ? (
-              <HeroIconButton
-                label="Open in block explorer"
-                onClick={() => window.open(detail.hero.explorerUrl, "_blank", "noopener,noreferrer")}
-              >
-                <ExternalLink className="h-4 w-4" aria-hidden="true" />
-              </HeroIconButton>
-            ) : null}
-          </div>
-          <div className="sm:hidden absolute top-0 right-12">
-            <HeroIconButton
-              label="Open links"
-              onClick={() => {
-                document.querySelector("#related-pools")?.scrollIntoView({ behavior: "smooth", block: "start" })
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-                <circle cx="12" cy="12" r="1" />
-                <circle cx="19" cy="12" r="1" />
-                <circle cx="5" cy="12" r="1" />
-              </svg>
-            </HeroIconButton>
-          </div>
+          ) : null}
           {actions}
         </div>
-        <div className="col-span-4" />
+        <div className="sm:hidden absolute top-0 right-12">
+          <HeroIconButton
+            label="Open links"
+            onClick={() => {
+              document.querySelector("#related-pools")?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="19" cy="12" r="1" />
+              <circle cx="5" cy="12" r="1" />
+            </svg>
+          </HeroIconButton>
+        </div>
       </div>
-    </div>
+    </header>
   )
 }
 
@@ -145,15 +136,15 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
 
   const series = detail.heroMetric.series[metric][range]
   const points = series.points
-  const last = points[points.length - 1]?.v ?? 0
-  const first = points[0]?.v ?? last
-  const absChange = last - first
   const pctChange = detail.heroMetric.delta.value
   const formatValue = React.useCallback(
     (v: number) => (metric === "price" ? formatPrice(v) : formatCompactUsd(v)),
     [metric],
   )
   const valueLabel = detail.heroMetric.valueLabel
+  const displayDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(
+    new Date(points[points.length - 1]?.t ?? "2026-05-28"),
+  )
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="pool-hero">
@@ -161,39 +152,35 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
         <PoolHeroIdentity detail={detail} leading={leading} actions={actions} />
       )}
 
-      {/* ── 2. Chart card with overlayed value + delta ── */}
-      <Card
-        className="relative overflow-hidden border-border/40 bg-background/70 shadow-none"
-        data-testid="pool-hero-chart-card"
-      >
-        <CardContent className="relative p-0">
-          <div className="h-[380px] w-full md:h-[460px]">
+      <div className="pt-4" data-testid="pool-hero-chart-card">
+        <div className="mb-8">
+          <p className="font-data text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground">
+            {valueLabel}
+          </p>
+          <p className="mt-2 flex items-center gap-2 text-[13px]">
+            <span className={cn("tabular-nums font-normal", pctChange < 0 ? "text-rose-500" : "text-emerald-500")}>
+              {pctChange < 0 ? "▼" : "▲"} {formatPct(Math.abs(pctChange), 2)}
+            </span>
+            <span className="font-normal text-muted-foreground">{displayDate}</span>
+          </p>
+        </div>
+
+        <div className="relative w-full">
+          <div style={{ height: TOKEN_CHART_HEIGHT }}>
             <LightweightChart
               series={series}
               type={chartType}
-              height={460}
+              height={TOKEN_CHART_HEIGHT}
               accentClassName={detail.hero.visuals.map((visual) => visual.textClass)}
               ariaLabel={`${labelForPoolMetric(metric)} over ${range}`}
               formatValue={formatValue}
               showLastLabel
             />
           </div>
-          <div className="pointer-events-none absolute left-5 top-5 z-[2]">
-            <div className="font-data text-[20px] font-medium leading-none tabular-nums text-foreground md:text-[22px]">
-              {valueLabel}
-            </div>
-            <InlineDelta
-              pct={pctChange}
-              abs={absChange}
-              formatAbs={metric === "price" ? formatPrice : formatCompactUsd}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* ── 4. Controls BELOW chart ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label="Time range" className="inline-flex items-center rounded-full bg-surface-inset p-1">
+        <div className="mt-8 flex items-center justify-between gap-3">
+          <div role="tablist" aria-label="Time range" className="inline-flex items-center rounded-full bg-surface-inset p-1">
           {RANGE_OPTIONS.map((option) => {
             const active = option.value === range
             return (
@@ -214,36 +201,10 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
               </button>
             )
           })}
+          </div>
         </div>
       </div>
     </section>
-  )
-}
-
-function InlineDelta({
-  pct,
-  abs,
-  formatAbs,
-}: {
-  pct: number
-  abs: number
-  formatAbs: (v: number) => string
-}) {
-  const direction = pct > 0.005 ? "up" : pct < -0.005 ? "down" : "flat"
-  const color =
-    direction === "up"
-      ? "text-emerald-600 dark:text-emerald-400"
-      : direction === "down"
-        ? "text-rose-600 dark:text-rose-400"
-        : "text-muted-foreground"
-  const arrow = direction === "up" ? "▲" : direction === "down" ? "▼" : "•"
-  const absLabel = Number.isFinite(abs) ? formatAbs(Math.abs(abs)) : null
-  return (
-    <div className={cn("mt-1 inline-flex items-center gap-1.5 text-xs font-medium tabular-nums md:text-sm", color)}>
-      <span aria-hidden className="text-[10px]">{arrow}</span>
-      {absLabel ? <span>{absLabel}</span> : null}
-      <span className="text-muted-foreground">({Math.abs(pct).toFixed(2)}%)</span>
-    </div>
   )
 }
 
