@@ -1,9 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { Copy, ExternalLink, Share2, ChevronDown } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { BadgeCheck, Copy, Globe, MessageSquare, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { PoolDetail, ChartMetricId, TimeRangeId } from "@/app/lib/borrow-detail"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
@@ -27,6 +25,7 @@ const RANGE_OPTIONS: Array<{ value: TimeRangeId; label: string }> = [
   { value: "3M", label: "90D" },
   { value: "1Y", label: "1Y" },
 ]
+const TOKEN_CHART_HEIGHT = 320
 
 export function PoolHeroIdentity({
   detail,
@@ -39,102 +38,80 @@ export function PoolHeroIdentity({
   actions?: React.ReactNode
   className?: string
 }) {
-  const relatedCount = Math.max(detail.related.length, 1)
+  const metaLabel = detail.hero.chain
+
   return (
-    <div className={cn("border-b border-border-light pb-4", className)}>
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-0 sm:gap-5">
-        <div className="flex cols-span-1 items-start flex-col sm:flex-row sm:col-span-8 gap-2 sm:items-end">
-          <div className="relative flex-shrink-0 mr-2">
+    <header className={cn("border-b border-border pb-5", className)}>
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="relative shrink-0">
             {leading}
-            <div className="flex -space-x-2">
+            <div className="flex -space-x-2.5">
               <TokenAvatar visual={detail.hero.visuals[0]} />
               <TokenAvatar visual={detail.hero.visuals[1]} />
             </div>
-            <div className="absolute bottom-0 right-0 translate-x-1.5 translate-y-1.5">
-              <div className="flex size-6 items-center justify-center rounded-lg border-2 border-border-extra-light bg-white">
-                <RiskScoreIcon />
-              </div>
-            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-title-md text-text-extra-high font-semibold truncate">{detail.hero.name}</h1>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h1 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">
+                {detail.hero.name}
+              </h1>
+              <BadgeCheck
+                className="h-[24px] w-[24px] shrink-0 -translate-y-[3px] fill-muted-foreground text-background"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px] text-muted-foreground">
+              <span className="inline-flex items-center rounded-full bg-surface-inset px-2.5 py-[3px] text-[12px] font-medium leading-none text-foreground">
+                {detail.hero.feeTier || detail.hero.venue}
+              </span>
               <button
                 type="button"
-                aria-label="View risk score"
-                className="inline-flex items-center justify-center text-text-medium hover:text-text-high transition-colors"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(metaLabel)
+                }}
+                className="inline-flex items-center gap-1.5 text-[13px] font-normal leading-none text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Copy chain"
               >
-                <RiskScoreIcon className="shrink-0" />
+                <Copy className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
+                <span>{metaLabel}</span>
               </button>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="rounded-full border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-150 ease-out motion-reduce:transition-none border-transparent bg-[var(--badge-default-bg)] backdrop-blur-sm hover:cursor-crosshair px-2 py-1 text-[var(--badge-default-text)] font-medium text-xs inline-flex items-center gap-1">
-                <span className="font-sans tabular-nums">{detail.hero.feeTier || detail.hero.venue}</span>
-              </div>
-              <div className="rounded-full border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-150 ease-out motion-reduce:transition-none border-transparent bg-[var(--badge-default-bg)] backdrop-blur-sm hover:cursor-crosshair px-2 py-1 text-[var(--badge-default-text)] font-medium text-xs inline-flex items-center gap-1">
-                <span className="font-sans tabular-nums">{detail.hero.chain}</span>
-              </div>
-              <Link
-                href="#related-pools"
-                className="bg-[var(--badge-default-bg)] backdrop-blur-sm hover:cursor-crosshair px-2 py-1 text-[var(--badge-default-text)] font-medium text-xs inline-flex items-center gap-1 transition-colors cursor-crosshair rounded-full"
-              >
-                <span className="font-sans tabular-nums">{relatedCount}+</span>RELATED
-                <ChevronDown className="ml-0.5 size-3 text-[var(--badge-default-text)]/80 transition-transform duration-150 ease-out motion-reduce:transition-none" />
-              </Link>
-            </div>
-            <p className="mt-2 text-[13px] text-text-medium">{detail.hero.subtitle}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="hidden sm:flex items-center gap-2">
-            <HeroIconButton
-              label="Copy link"
-              onClick={async () => {
-                await navigator.clipboard.writeText(window.location.href)
-              }}
-            >
-              <Copy className="h-4 w-4" aria-hidden="true" />
-            </HeroIconButton>
-            <HeroIconButton
-              label="Share page"
-              onClick={async () => {
-                if (navigator.share) {
-                  await navigator.share({ title: detail.hero.name, url: window.location.href })
-                  return
-                }
-                await navigator.clipboard.writeText(window.location.href)
-              }}
-            >
-              <Share2 className="h-4 w-4" aria-hidden="true" />
-            </HeroIconButton>
-            {detail.hero.explorerUrl ? (
-              <HeroIconButton
-                label="Open in block explorer"
-                onClick={() => window.open(detail.hero.explorerUrl, "_blank", "noopener,noreferrer")}
-              >
-                <ExternalLink className="h-4 w-4" aria-hidden="true" />
-              </HeroIconButton>
-            ) : null}
-          </div>
-          <div className="sm:hidden absolute top-0 right-12">
-            <HeroIconButton
-              label="Open links"
-              onClick={() => {
-                document.querySelector("#related-pools")?.scrollIntoView({ behavior: "smooth", block: "start" })
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-                <circle cx="12" cy="12" r="1" />
-                <circle cx="19" cy="12" r="1" />
-                <circle cx="5" cy="12" r="1" />
-              </svg>
-            </HeroIconButton>
-          </div>
+
+        <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
+          <HeroIcon
+            label="Search"
+            onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")}
+          >
+            <Search className="h-3.5 w-3.5" />
+          </HeroIcon>
+          <HeroIcon
+            label="Website"
+            onClick={() =>
+              window.open(
+                detail.hero.explorerUrl ?? `https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`,
+                "_blank",
+              )
+            }
+          >
+            <Globe className="h-3.5 w-3.5" />
+          </HeroIcon>
+          <HeroIcon
+            label="X"
+            onClick={() => window.open(`https://x.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")}
+          >
+            <XIcon />
+          </HeroIcon>
+          <HeroIcon label="Share" onClick={() => navigator.clipboard.writeText(window.location.href)}>
+            <MessageSquare className="h-3.5 w-3.5" />
+          </HeroIcon>
           {actions}
         </div>
-        <div className="col-span-4" />
       </div>
-    </div>
+    </header>
   )
 }
 
@@ -145,15 +122,15 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
 
   const series = detail.heroMetric.series[metric][range]
   const points = series.points
-  const last = points[points.length - 1]?.v ?? 0
-  const first = points[0]?.v ?? last
-  const absChange = last - first
   const pctChange = detail.heroMetric.delta.value
   const formatValue = React.useCallback(
     (v: number) => (metric === "price" ? formatPrice(v) : formatCompactUsd(v)),
     [metric],
   )
   const valueLabel = detail.heroMetric.valueLabel
+  const displayDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(
+    new Date(points[points.length - 1]?.t ?? "2026-05-28"),
+  )
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="pool-hero">
@@ -161,126 +138,79 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
         <PoolHeroIdentity detail={detail} leading={leading} actions={actions} />
       )}
 
-      {/* ── 2. Chart card with overlayed value + delta ── */}
-      <Card
-        className="relative overflow-hidden border-border/40 bg-background/70 shadow-none"
-        data-testid="pool-hero-chart-card"
-      >
-        <CardContent className="relative p-0">
-          <div className="h-[380px] w-full md:h-[460px]">
+      <div className="pt-4" data-testid="pool-hero-chart-card">
+        <div className="mb-8">
+          <p className="font-data text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground">
+            {valueLabel}
+          </p>
+          <p className="mt-2 flex items-center gap-2 text-[13px]">
+            <span className={cn("tabular-nums font-normal", pctChange < 0 ? "text-rose-500" : "text-emerald-500")}>
+              {pctChange < 0 ? "▼" : "▲"} {formatPct(Math.abs(pctChange), 2)}
+            </span>
+            <span className="font-normal text-muted-foreground">{displayDate}</span>
+          </p>
+        </div>
+
+        <div className="relative w-full">
+          <div style={{ height: TOKEN_CHART_HEIGHT }}>
             <LightweightChart
               series={series}
               type={chartType}
-              height={460}
+              height={TOKEN_CHART_HEIGHT}
               accentClassName={detail.hero.visuals.map((visual) => visual.textClass)}
               ariaLabel={`${labelForPoolMetric(metric)} over ${range}`}
               formatValue={formatValue}
               showLastLabel
             />
           </div>
-          <div className="pointer-events-none absolute left-5 top-5 z-[2]">
-            <div className="font-data text-[20px] font-medium leading-none tabular-nums text-foreground md:text-[22px]">
-              {valueLabel}
-            </div>
-            <InlineDelta
-              pct={pctChange}
-              abs={absChange}
-              formatAbs={metric === "price" ? formatPrice : formatCompactUsd}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* ── 4. Controls BELOW chart ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label="Time range" className="inline-flex items-center rounded-full bg-surface-inset p-1">
-          {RANGE_OPTIONS.map((option) => {
-            const active = option.value === range
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setRange(option.value)}
-                className={cn(
-                  "rounded-full px-4 py-2 text-[12px] font-medium transition-colors",
-                  active
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {option.label}
-              </button>
-            )
-          })}
+        <div className="mt-8 flex items-center justify-between gap-3">
+          <div
+            role="tablist"
+            aria-label="Time range"
+            className="inline-flex items-center rounded-full bg-surface-inset p-[3px]"
+          >
+            {RANGE_OPTIONS.map((option) => {
+              const active = option.value === range
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setRange(option.value)}
+                  className={cn(
+                    "rounded-full px-3.5 py-1.5 text-[11.5px] font-medium transition-all",
+                    active
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            type="button"
+            aria-label="Expand chart"
+            className="inline-flex size-11 items-center justify-center rounded-full border border-border bg-surface-raised text-muted-foreground transition-colors hover:border-border/80 hover:bg-surface-inset hover:text-foreground"
+          >
+            <LoginCameraIcon />
+          </button>
         </div>
       </div>
     </section>
   )
 }
 
-function InlineDelta({
-  pct,
-  abs,
-  formatAbs,
-}: {
-  pct: number
-  abs: number
-  formatAbs: (v: number) => string
-}) {
-  const direction = pct > 0.005 ? "up" : pct < -0.005 ? "down" : "flat"
-  const color =
-    direction === "up"
-      ? "text-emerald-600 dark:text-emerald-400"
-      : direction === "down"
-        ? "text-rose-600 dark:text-rose-400"
-        : "text-muted-foreground"
-  const arrow = direction === "up" ? "▲" : direction === "down" ? "▼" : "•"
-  const absLabel = Number.isFinite(abs) ? formatAbs(Math.abs(abs)) : null
-  return (
-    <div className={cn("mt-1 inline-flex items-center gap-1.5 text-xs font-medium tabular-nums md:text-sm", color)}>
-      <span aria-hidden className="text-[10px]">{arrow}</span>
-      {absLabel ? <span>{absLabel}</span> : null}
-      <span className="text-muted-foreground">({Math.abs(pct).toFixed(2)}%)</span>
-    </div>
-  )
-}
-
-function RiskScoreIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      width="19"
-      height="19"
-      viewBox="0 0 19 19"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={cn("shrink-0", className)}
-      aria-hidden="true"
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M7.99665 0.397911C8.34164 0.132367 8.7542 -0.000101085 9.16667 5.7874e-08C9.57914 -0.000101085 9.9917 0.132367 10.3367 0.397911L11.3147 1.14887L12.5404 0.987587C13.4029 0.873917 14.2327 1.35456 14.5655 2.15666L15.0363 3.29722L16.1752 3.76741L16.1768 3.76809C16.9789 4.10087 17.4594 4.93111 17.3457 5.79362L17.1846 7.01824L17.936 7.99688C18.1345 8.25543 18.2588 8.5521 18.3085 8.85832C18.3447 9.0816 18.3413 9.30997 18.2983 9.53234C18.2429 9.81819 18.1221 10.0941 17.936 10.3364L17.1846 11.3151L17.3457 12.5397C17.4594 13.4022 16.9789 14.2325 16.1768 14.5652L16.1752 14.5659L15.0363 15.0361L14.5655 16.1767C14.2327 16.9788 13.4029 17.4594 12.5404 17.3457L11.3147 17.1845L10.3367 17.9354C9.9917 18.201 9.57914 18.3334 9.16667 18.3333C8.7542 18.3334 8.34164 18.201 7.99665 17.9354L7.01863 17.1845L5.79296 17.3457C4.9304 17.4594 4.10061 16.9788 3.76787 16.1767L3.29702 15.0361L2.15816 14.5659L2.15653 14.5652C1.35443 14.2325 0.873935 13.4022 0.987585 12.5397L1.14871 11.3151L0.397352 10.3364C0.181227 10.055 0.0531547 9.7284 0.0134099 9.39348C-0.0442376 8.90785 0.0840222 8.40491 0.397352 7.99688L1.14871 7.01824L0.987585 5.79362C0.873935 4.93111 1.35443 4.10087 2.15653 3.76809L2.15816 3.76741L3.29702 3.29722L3.76787 2.15666C4.10061 1.35456 4.9304 0.873917 5.79296 0.987587L7.01863 1.14887L7.99665 0.397911ZM12.6726 7.67259C12.998 7.34715 12.998 6.81951 12.6726 6.49408C12.3472 6.16864 11.8195 6.16864 11.4941 6.49408L8.33333 9.65482L7.25592 8.57741C6.93049 8.25197 6.40285 8.25197 6.07741 8.57741C5.75197 8.90285 5.75197 9.43049 6.07741 9.75592L7.74408 11.4226C8.06952 11.748 8.59715 11.748 8.92259 11.4226L12.6726 7.67259Z"
-        className="fill-current opacity-[0.72]"
-      />
-    </svg>
-  )
-}
-
 function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number] }) {
   return (
-    <span
-      className={cn(
-        "inline-flex size-9 items-center justify-center rounded-full border-2 border-background ring-1 ring-border",
-        visual.bgClass,
-        visual.textClass,
-      )}
-      aria-label={visual.symbol}
-    >
+    <span className={cn("inline-flex size-12 items-center justify-center", visual.textClass)} aria-label={visual.symbol}>
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={visual.iconUrl} alt="" className="size-6 rounded-full" />
+        <img src={visual.iconUrl} alt="" className="size-12 object-contain" width={48} height={48} fetchPriority="high" />
       ) : (
         <span className="text-[12px] font-medium">{visual.shortLabel}</span>
       )}
@@ -288,24 +218,38 @@ function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number]
   )
 }
 
-function HeroIconButton({
-  label,
-  onClick,
-  children,
-}: {
-  label: string
-  onClick: () => void
-  children: React.ReactNode
-}) {
+function HeroIcon({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="inline-flex size-8 items-center justify-center rounded-full text-text-medium transition-colors hover:bg-gray-50 hover:text-text-high"
+      className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
     >
       {children}
     </button>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 28 28" aria-hidden="true">
+      <path d="M16.093 12.7389L24.283 3H22.3422L15.2308 11.4562L9.55101 3H3L11.589 15.7872L3 26H4.94088L12.4507 17.07L18.449 26H25L16.0925 12.7389H16.093ZM13.4347 15.8999L12.5644 14.6266L5.6402 4.49462H8.62127L14.2092 12.6714L15.0795 13.9448L22.3431 24.5733H19.3621L13.4347 15.9004V15.8999Z" />
+    </svg>
+  )
+}
+
+function LoginCameraIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 7.5A2.5 2.5 0 0 1 6.5 5h2.086a1.5 1.5 0 0 0 1.06-.44l.708-.706A1.5 1.5 0 0 1 11.414 3h1.172a1.5 1.5 0 0 1 1.06.44l.708.706a1.5 1.5 0 0 0 1.06.44H17.5A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M17.2 8.1h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
   )
 }
 

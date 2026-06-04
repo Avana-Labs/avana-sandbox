@@ -3,8 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { AboutCard } from "@/app/borrow/_detail/pool-sections"
-import { NewsCard } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { LendModals } from "@/app/lend/components/lend-modals"
 import { TOKENS, MARKETS } from "@/app/lend/components/data"
 
@@ -110,20 +109,14 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
 
       {embedded ? null : (
         <div className={cn("mt-4 flex w-full flex-col gap-4", className)}>
-        <AboutCard about={detail.about} />
-        <NewsCard
-          items={(detail.about.news ?? detail.about.history.slice(0, 3).map((entry, index) => ({
-            title: entry.title,
-            description: entry.description,
-            source: index === 0 ? "Latest update" : "Protocol note",
-            time: entry.date,
-          }))).map((item) => ({
-            ...item,
-            imageUrl: detail.hero.visual.iconUrl ?? undefined,
-            imageLabel: detail.hero.symbol,
-          }))}
-        />
-      </div>
+          <AboutNewsSection
+            className="pt-0"
+            about={detail.about}
+            newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
+            newsImageLabel={detail.hero.symbol}
+            mediaVariant="icon"
+          />
+        </div>
       )}
 
       <LendModals modalState={modalState} setModalState={setModalState} closeModal={close} />
