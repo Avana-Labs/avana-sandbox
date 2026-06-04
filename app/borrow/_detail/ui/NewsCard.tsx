@@ -15,28 +15,47 @@ type NewsItem = {
 type Props = {
   items: NewsItem[]
   title?: string
+  plain?: boolean
+  mediaVariant?: "card" | "icon"
 }
 
-export function NewsCard({ items, title = "News" }: Props) {
+export function NewsCard({ items, title = "News", plain = false, mediaVariant = "card" }: Props) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-elev-1">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
+    <section className={plain ? "space-y-4" : "overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-elev-1"}>
+      <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
         <h2 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-text-extra-high">{title}</h2>
       </div>
-      <ul className="divide-y divide-border/70">
+      <ul className={plain ? "space-y-0 divide-y divide-border/70" : "divide-y divide-border/70"}>
         {items.map((item, index) => {
           const content = (
-            <div className="group flex items-stretch gap-3 px-4 py-3 focus-visible:outline-none">
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-inset ring-1 ring-border">
-                {item.imageUrl ? (
+            <div className={plain ? "group flex items-stretch gap-3 focus-visible:outline-none" : "group flex items-stretch gap-3 px-4 py-3 focus-visible:outline-none"}>
+              {mediaVariant === "card" ? (
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-inset ring-1 ring-border">
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" src={item.imageUrl} />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-surface-inset text-[10px] font-medium text-text-low">
+                      {item.imageLabel ?? item.source.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+              ) : mediaVariant === "icon" ? (
+                item.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" src={item.imageUrl} />
+                  <img
+                    alt=""
+                    className="size-10 shrink-0 rounded-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    src={item.imageUrl}
+                  />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-surface-inset text-[10px] font-medium text-text-low">
+                  <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-inset text-[10px] font-medium text-text-low">
                     {item.imageLabel ?? item.source.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-              </div>
+                  </span>
+                )
+              ) : null}
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-text-extra-high text-pretty line-clamp-3 underline-offset-2 group-hover:underline group-focus-visible:underline">
                   {item.title}

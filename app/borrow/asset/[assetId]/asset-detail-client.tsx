@@ -23,17 +23,10 @@ import { cn } from "@/lib/utils"
 
 function TokenAvatar({ visual, className }: { visual: AssetDetail["hero"]["visual"]; className?: string }) {
   return (
-    <span
-      className={cn(
-        "inline-flex size-6 items-center justify-center rounded-full border-2 border-background ring-1 ring-border",
-        visual.bgClass,
-        visual.textClass,
-        className,
-      )}
-    >
+    <span className={cn("inline-flex size-6 items-center justify-center", visual.textClass, className)}>
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={visual.iconUrl} alt="" className="size-full rounded-full" />
+        <img src={visual.iconUrl} alt="" className="size-full object-contain" />
       ) : (
         <span className="text-[10px] font-medium">{visual.shortLabel}</span>
       )}
@@ -128,6 +121,7 @@ export function AssetDetailClient({ detail }: Props) {
                 about={detail.about}
                 newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
                 newsImageLabel={detail.hero.symbol}
+                mediaVariant="icon"
               />
               <RelatedAssetsRow detail={detail} />
             </section>
