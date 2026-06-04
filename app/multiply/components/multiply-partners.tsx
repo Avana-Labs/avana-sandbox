@@ -45,8 +45,8 @@ export function MultiplyPartnersSection() {
 function PartnerCard({ partner }: { partner: Partner }) {
   return (
     <div className="shrink-0">
-      <div className="flex h-full w-[128px] flex-col items-center justify-center gap-2 rounded-radius-md border border-border bg-surface-raised px-3 py-4 shadow-elev-1 transition-colors hover:bg-surface-inset">
-        <div className="flex size-14 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
+      <div className="flex h-full w-[128px] flex-col items-center justify-center gap-2 px-3 py-2">
+        <div className="flex size-20 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={partner.logoSrc} alt="" aria-hidden="true" className="h-full w-full object-cover" />
         </div>
