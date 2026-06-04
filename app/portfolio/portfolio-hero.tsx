@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 import { ArrowUp, ArrowDown, Info } from "lucide-react"
 import { ResponsiveContainer, Line, LineChart, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
@@ -36,9 +37,20 @@ function InfoTip({ text }: { text: string }) {
 interface PortfolioHeroProps {
   openDeposit?: (token: typeof TOKENS[number]) => void
   openWithdraw?: (token: typeof TOKENS[number]) => void
+  tabs?: ReactNode
+  headlineValue?: string
+  headlineDelta?: string
+  rangeData?: typeof RANGE_DATA
 }
 
-export function PortfolioHero({ openDeposit, openWithdraw }: PortfolioHeroProps) {
+export function PortfolioHero({
+  openDeposit,
+  openWithdraw,
+  tabs,
+  headlineValue,
+  headlineDelta,
+  rangeData = RANGE_DATA,
+}: PortfolioHeroProps) {
   const [activeRange, setActiveRange] = useState("1D")
   const { showDollarAmounts } = useDisplayPreferences()
 
@@ -56,11 +68,11 @@ export function PortfolioHero({ openDeposit, openWithdraw }: PortfolioHeroProps)
 
   const displayChartData = useMemo(
     () =>
-      RANGE_DATA[activeRange as keyof typeof RANGE_DATA].map((value, index) => ({
+      rangeData[activeRange as keyof typeof rangeData].map((value, index) => ({
         time: index,
         value,
       })),
-    [activeRange],
+    [activeRange, rangeData],
   )
 
   return (
@@ -70,23 +82,22 @@ export function PortfolioHero({ openDeposit, openWithdraw }: PortfolioHeroProps)
           <div className="space-y-1">
             <div className="flex flex-col gap-1.5">
               <span className="font-data text-[22px] font-medium tracking-tight md:text-[28px]">
-                {showDollarAmounts
-                  ? `$${14400.0.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                  : "••••••••"}
+                {showDollarAmounts ? (headlineValue ?? `$${14400.0.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : "••••••••"}
               </span>
               <span className="font-data text-[12.5px] font-medium tabular-nums text-foreground/90">
                 {showDollarAmounts
-                  ? `-$${rangeStats[activeRange as keyof typeof rangeStats]?.changeUsd.toFixed(2) || "312.96"} (-${
+                  ? (headlineDelta ??
+                    `-$${rangeStats[activeRange as keyof typeof rangeStats]?.changeUsd.toFixed(2) || "312.96"} (-${
                       rangeStats[activeRange as keyof typeof rangeStats]?.changePct.toFixed(2) || "3.80"
-                    }%) Today`
+                    }%) Today`)
                   : "••••••••"}
               </span>
             </div>
           </div>
 
-          <div className="mt-10 border-t border-dotted border-zinc-300/90 dark:border-zinc-700/90" />
+          {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-          <div className="mt-7 h-[182px]">
+          <div className="mt-6 h-[182px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={displayChartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                 <XAxis dataKey="time" hide />

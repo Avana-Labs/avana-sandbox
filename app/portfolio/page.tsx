@@ -3,9 +3,9 @@ import { StakeWizard } from "../stake/stake-wizard"
 import { PortfolioPositions } from "./portfolio-positions"
 import { PortfolioStrategies } from "./portfolio-strategies"
 import { RecentActivity } from "../lend/components/recent-activity"
-import { PortfolioHero } from "./portfolio-hero"
 import { PortfolioInvestments } from "./portfolio-investments"
 import { PortfolioPositionsTabs } from "./portfolio-positions-tabs"
+import { PortfolioTabs } from "./portfolio-tabs"
 
 export const metadata: Metadata = {
   title: "Portfolio",
@@ -17,7 +17,7 @@ export default function PortfolioPage() {
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
-          <PortfolioHero />
+          <PortfolioTabs />
           <PortfolioInvestments />
           <PortfolioPositionsTabs />
           <PortfolioPositions />
