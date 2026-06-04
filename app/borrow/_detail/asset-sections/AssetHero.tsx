@@ -46,19 +46,19 @@ export function AssetHeroIdentity({
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative shrink-0">
             {leading}
-            <span
-              className={cn(
-                "inline-flex size-14 items-center justify-center overflow-hidden rounded-full bg-surface-inset",
-                detail.hero.visual.bgClass,
-                detail.hero.visual.textClass,
-              )}
-              aria-label={detail.hero.symbol}
-            >
+            <span className={cn("inline-flex size-14 items-center justify-center", detail.hero.visual.textClass)} aria-label={detail.hero.symbol}>
               {detail.hero.visual.iconUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={detail.hero.visual.iconUrl} alt="" className="size-9 object-contain" />
+                <img
+                  src={detail.hero.visual.iconUrl}
+                  alt=""
+                  className="size-14 object-contain"
+                  width={56}
+                  height={56}
+                  fetchPriority="high"
+                />
               ) : (
-                <span className="text-[11px] font-medium">{detail.hero.visual.shortLabel}</span>
+                <span className="text-[13px] font-medium">{detail.hero.visual.shortLabel}</span>
               )}
             </span>
           </div>

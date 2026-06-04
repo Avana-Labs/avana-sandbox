@@ -279,12 +279,14 @@ function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
   const spoke = getSpokeById(row.spoke)
   const totalSupplied = spoke.liquidityUsd
   const totalBorrowed = Math.round(totalSupplied * (row.ltv / 100))
+  const oraclePrice = pairReferencePrice(row)
   return [
+    { id: "oraclePrice", label: "Oracle price", value: formatOraclePrice(oraclePrice) },
     { id: "totalSupplied", label: "Total Supplied", value: formatCompactUsd(totalSupplied), delta: deltaUp(1.8) },
     { id: "totalBorrowed", label: "Total Borrowed", value: formatCompactUsd(totalBorrowed), delta: deltaUp(2.9) },
-    { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
-    { id: "apr", label: "Supply APY", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
     { id: "utilization", label: "Utilization", value: formatPct(spoke.maxLtv * 0.82, 1) },
+    { id: "apr", label: "Supply APY", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
+    { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
     { id: "maxLtv", label: "Max LTV", value: formatPct(spoke.maxLtv, 1) },
     { id: "available", label: "Available to borrow", value: formatCompactUsd(row.availableUsd) },
   ]
@@ -336,6 +338,12 @@ function pairReferencePrice(row: BorrowPoolRow): number {
   if (a.includes("BTC") && b.includes("ETH")) return 15.8
   if (b === "USDC" || b === "USDT" || b === "DAI") return 1_200
   return 1
+}
+
+function formatOraclePrice(v: number): string {
+  if (v >= 100) return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  if (v >= 1) return `$${v.toFixed(4)}`
+  return `$${v.toFixed(6)}`
 }
 
 function buildKeyMetrics(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Record<KeyMetricId, Record<TimeRangeId, Series>> {
@@ -538,18 +546,49 @@ function buildRisk(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Ri
 }
 
 function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): AboutCard {
-  if (fixture?.about) return fixture.about
+  if (fixture?.about) {
+    return {
+      ...fixture.about,
+      stats: fixture.about.stats.length > 0 ? fixture.about.stats : buildAboutStats(row),
+    }
+  }
   const spoke = getSpokeById(row.spoke)
   return {
     description:
       `${row.name} on ${getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue} is treated as LP collateral inside the ${spoke.label}. ` +
       `The pool's depth, fee tier, and pair composition determine how much it can support, while the spoke's max LTV keeps the borrow power anchored to the market's actual risk. ` +
       `That gives this page a single source of truth for how the pool should be understood: what it is, how much capital it can safely support, and what kind of downside the protocol is underwriting.`,
-    stats: [],
+    stats: buildAboutStats(row),
     history: [
       { date: "2025-01-14", title: "Onboarded", description: `Added to the ${spoke.label}.` },
       { date: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV." },
     ],
+  }
+}
+
+function buildAboutStats(row: BorrowPoolRow): AboutCard["stats"] {
+  const vaultHash = fakeAddressSeed(`${row.id}:vault`)
+  const tokenHash = fakeAddressSeed(`${row.id}:token`)
+  const stakingHash = fakeAddressSeed(`${row.id}:staking`)
+
+  return [
+    { label: "Vault Contract Address", value: vaultHash.short, href: `https://etherscan.io/address/${vaultHash.full}` },
+    { label: "Token Contract Address", value: tokenHash.short, href: `https://etherscan.io/address/${tokenHash.full}` },
+    { label: "Staking Contract Address", value: stakingHash.short, href: `https://etherscan.io/address/${stakingHash.full}` },
+    { label: "Deployed On", value: "March 18, 2024" },
+  ]
+}
+
+function fakeAddressSeed(seed: string) {
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  }
+  const hex = hash.toString(16).padStart(8, "0").toUpperCase()
+  const full = hex.repeat(5).slice(0, 40)
+  return {
+    short: `0x${hex.slice(0, 4)}...${hex.slice(4)}`,
+    full: `0x${full}`,
   }
 }
 
@@ -583,10 +622,7 @@ function buildCollateralHistory(row: BorrowPoolRow): TxHistoryRow[] {
       at,
       kind,
       amountLabel: `${prefix}${formatCompactUsd(amount)}`,
-      counterpartyLabel:
-        kind === "rewards"
-          ? `Fee claim · ${row.venue}`
-          : `${kind === "supply" ? "Added" : "Removed"} collateral · ${row.name}`,
+      counterpartyLabel: undefined,
       txHashShort: `0x${Math.floor(seed() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(seed() * 0xffff).toString(16).padStart(4, "0")}`,
     })
   }
