@@ -51,7 +51,7 @@ function sortByBorrowedDesc(rows: DebtRowContext[]) {
   return [...rows].sort((left, right) => right.borrowedUsd - left.borrowedUsd)
 }
 
-export function PortfolioPositions() {
+export function PortfolioPositions({ section = "all" }: { section?: "all" | "supplies" | "debts" }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const [debts, setDebts] = useState<DebtsState>(() => ({ ...HOME_INITIAL_DEBTS }))
   const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
@@ -182,21 +182,25 @@ export function PortfolioPositions() {
   return (
     <section className="space-y-8">
       <div className="flex flex-col gap-8">
-        <SuppliesPanel
-          rows={sortedSupplies}
-          totals={supplyTotals}
-          onBorrowMore={handleSupplyBorrowMore}
-          onAddCollateral={handleSupplyAddCollateral}
-          onRemove={handleSupplyRemove}
-          showBalance={showDollarAmounts}
-        />
-        <DebtsPanel
-          rows={sortedDebts}
-          totals={debtTotals}
-          onRepay={handleDebtRepay}
-          onManage={handleDebtManage}
-          showBalance={showDollarAmounts}
-        />
+        {section !== "debts" ? (
+          <SuppliesPanel
+            rows={sortedSupplies}
+            totals={supplyTotals}
+            onBorrowMore={handleSupplyBorrowMore}
+            onAddCollateral={handleSupplyAddCollateral}
+            onRemove={handleSupplyRemove}
+            showBalance={showDollarAmounts}
+          />
+        ) : null}
+        {section !== "supplies" ? (
+          <DebtsPanel
+            rows={sortedDebts}
+            totals={debtTotals}
+            onRepay={handleDebtRepay}
+            onManage={handleDebtManage}
+            showBalance={showDollarAmounts}
+          />
+        ) : null}
       </div>
 
       <BorrowModal
