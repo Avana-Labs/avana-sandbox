@@ -120,7 +120,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
   return (
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-[1152px]">
+        <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
           <section className={heroSectionClassName}>
             <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
               <div className="min-w-0">
