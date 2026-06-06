@@ -37,7 +37,7 @@ export function LendClient() {
           <LendHero />
 
           <div className="mt-12 space-y-8">
-            <HotMarkets onSelect={(market) => openDeposit(market)} />
+            <HotMarkets />
           </div>
 
           <div className="mt-8">
