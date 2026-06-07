@@ -16,7 +16,7 @@ import {
   type PendingMarketRow,
 } from "@/app/lib/borrow-sim"
 import { AssetsPanel } from "./assets-table"
-import { DexChipRow, PillButton, TokenPairCell, TrendSpark } from "./atoms"
+import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
 
@@ -94,6 +94,193 @@ function EModePill() {
   )
 }
 
+function SortIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 12 16" fill="none" className="size-[14px] text-muted-foreground/70 dark:text-white/60">
+      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
+  return (
+    <div className="flex min-w-0 items-center gap-4">
+      <div className="flex items-center">
+        <span className="relative z-[1]">
+          <TokenBubble visual={pool.visuals[0]} size="xl" ring={false} className="bg-transparent" />
+        </span>
+        <span className="-ml-3">
+          <TokenBubble visual={pool.visuals[1]} size="xl" ring={false} className="bg-transparent" />
+        </span>
+      </div>
+      <div className="min-w-0">
+        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
+          {pool.visuals[0].symbol} / {pool.visuals[1].symbol}
+        </div>
+        <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+          {pool.feeTier} fee · {formatCompactUsd(pool.tvlUsd)} TVL
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CollateralDesktopTable({
+  rows,
+  pending,
+  onUseAsCollateral,
+}: {
+  rows: BorrowPoolRow[]
+  pending: PendingMarketRow[]
+  onUseAsCollateral: (pool: BorrowPoolRow) => void
+}) {
+  const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "risk" | "supplied">("asset")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+
+  const toggleSort = (nextKey: typeof sortKey) => {
+    if (sortKey === nextKey) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
+      return
+    }
+
+    setSortKey(nextKey)
+    setSortDirection(nextKey === "asset" ? "asc" : "desc")
+  }
+
+  const sortedRows = useMemo(() => {
+    const direction = sortDirection === "asc" ? 1 : -1
+
+    return [...rows].sort((a, b) => {
+      switch (sortKey) {
+        case "apy":
+          return (((a.aprMin + a.aprMax) / 2) - ((b.aprMin + b.aprMax) / 2)) * direction
+        case "ltv":
+          return (a.ltv - b.ltv) * direction
+        case "risk":
+          return (a.riskPremiumBps - b.riskPremiumBps) * direction
+        case "supplied":
+          return (a.availableUsd - b.availableUsd) * direction
+        case "asset":
+        default:
+          return `${a.visuals[0].symbol}/${a.visuals[1].symbol}`.localeCompare(`${b.visuals[0].symbol}/${b.visuals[1].symbol}`) * direction
+      }
+    })
+  }, [rows, sortDirection, sortKey])
+
+  return (
+    <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[920px] text-[12px]">
+          <thead>
+            <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
+              <th className="pb-3 pt-4 pl-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("asset")}
+                  className={cn(
+                    "flex items-center gap-2 transition-colors",
+                    sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                  )}
+                >
+                  <span>ASSET</span>
+                  <SortIcon />
+                </button>
+              </th>
+              <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("apy")}
+                  className={cn(
+                    "flex items-center gap-2 transition-colors",
+                    sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                  )}
+                >
+                  <span>TRADING APY</span>
+                  <SortIcon />
+                </button>
+              </th>
+              <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("ltv")}
+                  className={cn(
+                    "flex items-center gap-2 transition-colors",
+                    sortKey === "ltv" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                  )}
+                >
+                  <span>MAX LTV</span>
+                  <SortIcon />
+                </button>
+              </th>
+              <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("risk")}
+                  className={cn(
+                    "flex items-center gap-2 transition-colors",
+                    sortKey === "risk" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                  )}
+                >
+                  <span>RISK PREMIUM</span>
+                  <SortIcon />
+                </button>
+              </th>
+              <th className="pb-3 pt-4 pr-6 text-right text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("supplied")}
+                  className={cn(
+                    "ml-auto flex items-center gap-2 transition-colors",
+                    sortKey === "supplied" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                  )}
+                >
+                  <span>TOTAL SUPPLIED</span>
+                  <SortIcon />
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`} className="divide-y divide-border dark:divide-white/6">
+            {sortedRows.map((pool, index) => (
+              <tr
+                key={pool.id}
+                className="asset-swap group cursor-pointer border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]"
+                onClick={() => onUseAsCollateral(pool)}
+                style={{ animationDelay: `${index * 40}ms` }}
+              >
+                <td className="py-4 pl-6 pr-4">
+                  <CollateralAssetCell pool={pool} />
+                </td>
+                <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                  <span className="tabular-nums">{((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%</span>
+                </td>
+                <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                  <span className="tabular-nums">{pool.ltv}%</span>
+                </td>
+                <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                  <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
+                </td>
+                <td className="py-4 px-6 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                  <span className="tabular-nums">{formatCompactUsd(pool.availableUsd)}</span>
+                </td>
+              </tr>
+            ))}
+            {pending.map((row) => (
+              <tr key={row.id}>
+                <td className="px-6 py-4 text-[12px] text-muted-foreground" colSpan={5}>
+                  {row.label}
+                  <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral, onBorrowAssetDesktop }: PoolsTableProps) {
   return (
     <div className="hidden space-y-10 md:block">
@@ -140,108 +327,7 @@ function SpokeDesktopSection({
 
       <div className="mt-4">
         {activeTab === "collateral" ? (
-          <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] text-[13px]">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">Pool</th>
-                    <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Max LTV</th>
-                    <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">APY</th>
-                    <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Supplied</th>
-                    <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Risk Premium</th>
-                    <th className="w-20 pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">7D</th>
-                    <th className="w-44 pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {rows.map((pool) => (
-                    <tr
-                      key={pool.id}
-                      className="cursor-pointer transition-colors hover:bg-surface-inset/60"
-                      onClick={() => onUseAsCollateral(pool)}
-                    >
-                      <td className="py-2.5 pl-5">
-                        <TokenPairCell
-                          visuals={pool.visuals}
-                          name={pool.name}
-                          subtitle={`${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`}
-                          size="md"
-                        />
-                        <EventTagList events={pool.events} />
-                      </td>
-                      <td className="py-2.5 pl-4 text-right">
-                        <span className="font-data text-[13px] font-medium tabular-nums text-foreground">{pool.ltv}%</span>
-                      </td>
-                      <td className="py-2.5 pl-4 text-right">
-                        <FlashValue
-                          value={(pool.aprMin + pool.aprMax) / 2}
-                          goodDirection="down"
-                          className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}
-                        >
-                          {`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
-                        </FlashValue>
-                      </td>
-                      <td className="py-2.5 pl-4 text-right">
-                        <FlashValue value={pool.availableUsd} goodDirection="up" className="font-data text-[13px] tabular-nums text-foreground">
-                          {formatCompactUsd(pool.availableUsd)}
-                        </FlashValue>
-                      </td>
-                      <td className="py-2.5 pl-4 text-right">
-                        <span
-                          className={cn(
-                            "font-data text-[13px] font-medium tabular-nums",
-                            pool.riskPremiumBps >= 100 ? "text-rose-600" : pool.riskPremiumBps >= 60 ? "text-amber-600" : "text-emerald-600",
-                          )}
-                        >
-                          {formatRiskPremium(pool.riskPremiumBps)}
-                        </span>
-                      </td>
-                      <td className="py-2.5 pl-4 text-right">
-                        <div className="inline-flex align-middle">
-                          <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} />
-                        </div>
-                      </td>
-                      <td className="py-2.5 pl-4 pr-5 text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          <Link
-                            href={`/borrow/pool/${pool.id}`}
-                            onClick={(event) => event.stopPropagation()}
-                            className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-                          >
-                            Details
-                          </Link>
-                          <PillButton
-                            variant="primary"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              onUseAsCollateral(pool)
-                            }}
-                          >
-                            Supply
-                          </PillButton>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {pending.map((row) => (
-                    <tr key={row.id}>
-                      <td className="py-3 pl-6 text-xs text-muted-foreground" />
-                      <td className="py-3 text-sm text-muted-foreground" colSpan={6}>
-                        {row.label}
-                        <span className="ml-2 text-xs text-muted-foreground">· {row.subLabel}</span>
-                      </td>
-                      <td className="py-3 pr-6 text-right">
-                        <PillButton variant="ghost" disabled>
-                          Vote →
-                        </PillButton>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <CollateralDesktopTable rows={rows} pending={pending} onUseAsCollateral={onUseAsCollateral} />
         ) : (
           <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
         )}
