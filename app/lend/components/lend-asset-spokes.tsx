@@ -683,7 +683,7 @@ export function LendAssetSpokes() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Filter assets"
-              className="w-full bg-transparent text-[12px] font-normal tracking-[-0.03em] text-foreground outline-none placeholder:text-muted-foreground/70 dark:text-white/88 dark:placeholder:text-white/38"
+              className="lend-filter-input w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none md:text-[15px] md:font-normal"
             />
         </label>
 
@@ -693,7 +693,7 @@ export function LendAssetSpokes() {
               aria-label="Filter hub"
               value={selectedHub}
               onChange={(event) => setSelectedHub(event.target.value)}
-              className="h-9 appearance-none rounded-full border border-border bg-white px-2.5 pr-7 text-[11px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/88 dark:hover:bg-[#2b2b2b] md:h-10 md:px-3 md:pr-9 md:text-[12px]"
+              className="h-9 appearance-none rounded-full border border-border bg-white px-2.5 pr-7 text-[13px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/88 dark:hover:bg-[#2b2b2b] md:h-10 md:px-5 md:pr-11 md:text-[14px]"
             >
               {HUB_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -701,7 +701,7 @@ export function LendAssetSpokes() {
                 </option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60 md:right-2.5">
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60 md:right-3">
               <ChevronDownIcon />
             </span>
           </div>
@@ -711,7 +711,7 @@ export function LendAssetSpokes() {
               aria-label="Filter market"
               value={selectedMarket}
               onChange={(event) => setSelectedMarket(event.target.value)}
-              className="h-9 appearance-none rounded-full border border-border bg-white px-2.5 pr-7 text-[11px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/88 dark:hover:bg-[#2b2b2b] md:h-10 md:px-3 md:pr-9 md:text-[12px]"
+              className="h-9 appearance-none rounded-full border border-border bg-white px-2.5 pr-7 text-[13px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/88 dark:hover:bg-[#2b2b2b] md:h-10 md:px-5 md:pr-11 md:text-[14px]"
             >
               {MARKET_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -719,7 +719,7 @@ export function LendAssetSpokes() {
                 </option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60 md:right-2.5">
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60 md:right-3">
               <ChevronDownIcon />
             </span>
           </div>
