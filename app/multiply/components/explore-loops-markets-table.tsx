@@ -56,7 +56,7 @@ export function ExploreLoopsMarketsTable() {
     <section className="mt-1 space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="mt-1 text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">Explore</h2>
+          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">Explore</h2>
         </div>
       </div>
 
