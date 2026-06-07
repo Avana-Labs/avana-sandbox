@@ -460,10 +460,10 @@ function AssetIcon({ row }: { row: AssetRow }) {
 function AssetRowView({ row, delay }: { row: AssetRow; delay: number }) {
   return (
     <tr
-      className="asset-swap group border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]"
+      className="asset-swap group border-t border-border transition-colors hover:bg-surface-inset/60"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <td className="py-4 pl-6 pr-4">
+      <td className="py-2.5 pl-6 pr-4">
         <div className="flex min-w-0 items-center gap-4">
           <AssetIcon row={row} />
           <div className="min-w-0">
@@ -477,14 +477,14 @@ function AssetRowView({ row, delay }: { row: AssetRow; delay: number }) {
         </div>
       </td>
 
-      <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
+      <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
         <div className={cn("flex items-center gap-2", row.apyAccent && "text-[#6d6afb] dark:text-white")}>
           <YieldsBadge accent={row.apyAccent} />
           <span className="tabular-nums">{row.apy}</span>
         </div>
       </td>
 
-      <td className="py-4 px-4">
+      <td className="py-2.5 px-4">
         <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
           {row.totalDepositsPrimary}
         </div>
@@ -493,7 +493,7 @@ function AssetRowView({ row, delay }: { row: AssetRow; delay: number }) {
         </div>
       </td>
 
-      <td className="py-4 px-6">
+      <td className="py-2.5 px-6">
         <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
           {row.availableLiquidityPrimary}
         </div>
@@ -563,7 +563,7 @@ function AssetSection({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
+      <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] text-[12px]">
             <thead>
