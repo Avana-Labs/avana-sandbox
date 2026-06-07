@@ -313,7 +313,7 @@ export function HotMarkets() {
   return (
     <section>
       <div className="w-full">
-        <h2 className="mb-5 mt-1 text-[24px] font-medium tracking-[-0.03em] text-foreground md:text-[28px]">
+        <h2 className="mb-5 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
           Featured
         </h2>
 
