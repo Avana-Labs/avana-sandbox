@@ -51,7 +51,8 @@ type PoolsTableProps = {
   groups: DexGroup[]
   pending?: PendingMarketRow[]
   onUseAsCollateral: (pool: BorrowPoolRow) => void
-  onBorrowAsset: (asset: BorrowableAsset) => void
+  onBorrowAssetDesktop: (asset: BorrowableAsset) => void
+  onBorrowAssetMobile: (asset: BorrowableAsset) => void
 }
 
 type SectionTabId = "collateral" | "borrow"
@@ -93,7 +94,7 @@ function EModePill() {
   )
 }
 
-export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral, onBorrowAsset }: PoolsTableProps) {
+export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral, onBorrowAssetDesktop }: PoolsTableProps) {
   return (
     <div className="hidden space-y-10 md:block">
       {groups.flatMap((group) =>
@@ -104,7 +105,7 @@ export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUse
             rows={entry.rows}
             pending={pending.filter((row) => row.spoke === entry.spoke.id)}
             onUseAsCollateral={onUseAsCollateral}
-            onBorrowAsset={onBorrowAsset}
+            onBorrowAsset={onBorrowAssetDesktop}
           />
         )),
       )}
@@ -249,7 +250,7 @@ function SpokeDesktopSection({
   )
 }
 
-export function PoolsList({ groups, pending = [], onUseAsCollateral, onBorrowAsset }: PoolsTableProps) {
+export function PoolsList({ groups, pending = [], onUseAsCollateral, onBorrowAssetMobile }: PoolsTableProps) {
   return (
     <div className="space-y-8 md:hidden">
       {groups.flatMap((group) =>
@@ -260,7 +261,7 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral, onBorrowAss
             rows={entry.rows}
             pending={pending.filter((row) => row.spoke === entry.spoke.id)}
             onUseAsCollateral={onUseAsCollateral}
-            onBorrowAsset={onBorrowAsset}
+            onBorrowAsset={onBorrowAssetMobile}
           />
         )),
       )}
