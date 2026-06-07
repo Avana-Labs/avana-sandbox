@@ -49,8 +49,47 @@ const PARTNERS: ExploreLoopsMarketsPartner[] = [
 
 export function ExploreLoopsMarketsTable() {
   const [page, setPage] = React.useState(0)
+  const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
+  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
   const pageCount = Math.max(1, Math.ceil(LEND_ROWS.length / PAGE_SIZE))
-  const visibleRows = LEND_ROWS.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
+  const sortedRows = React.useMemo(() => {
+    const direction = sortDirection === "asc" ? 1 : -1
+    const parseValue = (value?: string) => {
+      if (!value) return Number.NEGATIVE_INFINITY
+      const numeric = Number.parseFloat(value.replace(/[^0-9.-]/g, ""))
+      return Number.isFinite(numeric) ? numeric : Number.NEGATIVE_INFINITY
+    }
+
+    return [...LEND_ROWS].sort((a, b) => {
+      switch (sortKey) {
+        case "asset":
+          return a.asset.localeCompare(b.asset) * direction
+        case "apy":
+          return (parseValue(a.apy) - parseValue(b.apy)) * direction
+        case "rewards":
+          return (
+            parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
+            parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)
+          ) * direction
+        case "points":
+          return (parseValue(a.points) - parseValue(b.points)) * direction
+        case "protocol":
+        default:
+          return a.protocol.localeCompare(b.protocol) * direction
+      }
+    })
+  }, [sortDirection, sortKey])
+  const visibleRows = sortedRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
+
+  const toggleSort = (nextKey: typeof sortKey) => {
+    if (sortKey === nextKey) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
+      return
+    }
+
+    setSortKey(nextKey)
+    setSortDirection(nextKey === "protocol" || nextKey === "asset" ? "asc" : "desc")
+  }
 
   return (
     <section className="mt-1 space-y-4">
@@ -73,73 +112,133 @@ export function ExploreLoopsMarketsTable() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
+      <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] text-[13px]">
+          <table className="w-full min-w-[1120px] text-[12px]">
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
-                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">Protocol</th>
-                <th className="pb-2 pt-3 pl-4 text-left text-[10.5px] font-medium uppercase tracking-[0.06em]">Asset</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">APY</th>
-                <th className="pb-2 pt-3 pl-4 text-left text-[10.5px] font-medium uppercase tracking-[0.06em]">Partner Rewards</th>
-                <th className="pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Points</th>
+              <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
+                <th className="pb-3 pt-4 pl-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("protocol")}
+                    className={cn(
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "protocol" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>PROTOCOL</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("asset")}
+                    className={cn(
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>ASSET</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("apy")}
+                    className={cn(
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>APY</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("rewards")}
+                    className={cn(
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "rewards" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>PARTNER REWARDS</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 pr-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("points")}
+                    className={cn(
+                      "flex w-full items-center gap-2 transition-colors",
+                      sortKey === "points" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>POINTS</span>
+                    <SortIcon />
+                  </button>
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`} className="divide-y divide-border dark:divide-white/6">
               {visibleRows.map((row, index) => (
-                <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="transition-colors hover:bg-surface-inset/60">
-                  <td className="py-2.5 pl-5">
+                <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="asset-swap border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]" style={{ animationDelay: `${index * 40}ms` }}>
+                  <td className="py-4 pl-6 pr-4">
                     <CellLink href={row.href} className="flex items-center gap-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={row.protocolLogo}
                         alt=""
                         aria-hidden="true"
-                        className="size-9 shrink-0 rounded-full bg-card object-cover ring-2 ring-background"
+                        className="size-11 shrink-0 rounded-full bg-card object-cover"
                       />
                       <span className="min-w-0">
-                        <span className="block text-[14px] font-medium leading-tight text-foreground">{row.protocol}</span>
-                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">{row.kind}</span>
+                        <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.protocol}</span>
+                        <span className="mt-1 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.kind}</span>
                       </span>
                     </CellLink>
                   </td>
-                  <td className="py-2.5 pl-4">
+                  <td className="py-4 px-4">
                     <CellLink href={row.href} className="min-w-0">
-                      <span className="block text-[14px] font-medium leading-tight text-foreground">{row.asset}</span>
-                      <span className="mt-0.5 block truncate text-xs text-muted-foreground">{row.apyLabel}</span>
+                      <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.asset}</span>
+                      <span className="mt-1 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.apyLabel}</span>
                     </CellLink>
                   </td>
-                  <td className="py-2.5 pl-4 text-right">
+                  <td className="py-4 px-4">
                     <CellLink
                       href={row.href}
                       className={cn(
-                        "font-data text-[13px] font-medium tabular-nums",
+                        "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
                         row.apy ? (row.apy.startsWith("-") ? "text-rose-600" : "text-emerald-600") : "text-muted-foreground",
                       )}
                     >
                       {row.apy || "—"}
                     </CellLink>
                   </td>
-                  <td className="py-2.5 pl-4">
+                  <td className="py-4 px-4">
                     <CellLink href={row.href} className="text-foreground">
                       {row.rewardRows?.[1] ? (
-                        <span className="inline-flex items-center gap-1">
-                          <span className="text-muted-foreground">{row.rewardRows[1].label}</span>
-                          <span className="font-data tabular-nums text-foreground">{row.rewardRows[1].value}</span>
+                        <span className="block">
+                          <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.rewardRows[1].value}</span>
+                          <span className="mt-1 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.rewardRows[1].label}</span>
                         </span>
                       ) : row.rewardRows?.[0] ? (
-                        <span className="inline-flex items-center gap-1">
-                          <span className="text-muted-foreground">{row.rewardRows[0].label}</span>
-                          <span className="font-data tabular-nums text-foreground">{row.rewardRows[0].value}</span>
+                        <span className="block">
+                          <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.rewardRows[0].value}</span>
+                          <span className="mt-1 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.rewardRows[0].label}</span>
                         </span>
                       ) : row.partnerRewards ? (
-                        row.partnerRewards
+                        <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.partnerRewards}</span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">—</span>
                       )}
                     </CellLink>
                   </td>
-                  <td className="py-2.5 pl-4 pr-5 text-right">
+                  <td className="py-4 px-4 pr-6">
                     {row.waitlistHref ? (
                       <div className="inline-flex items-center">
                         <Button asChild size="sm" className="h-7 rounded-xs px-2.5 text-[12px]">
@@ -149,7 +248,7 @@ export function ExploreLoopsMarketsTable() {
                         </Button>
                       </div>
                     ) : (
-                      <CellLink href={row.href} className="inline-flex items-center justify-end gap-1 font-medium text-foreground">
+                      <CellLink href={row.href} className="inline-flex items-center gap-1 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                         <Star className="h-3 w-3" />
                         <span>{row.points ?? "—"}</span>
                       </CellLink>
@@ -188,6 +287,15 @@ export function ExploreLoopsMarketsTable() {
         </div>
       </div>
     </section>
+  )
+}
+
+function SortIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 12 16" fill="none" className="size-[14px] text-muted-foreground/70 dark:text-white/60">
+      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 
