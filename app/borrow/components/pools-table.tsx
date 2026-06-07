@@ -242,7 +242,7 @@ function SpokeDesktopSection({
             </div>
           </div>
         ) : (
-          <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} />
+          <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
         )}
       </div>
     </section>
@@ -367,7 +367,7 @@ function SpokeMobileSection({
             </ul>
           </div>
         ) : (
-          <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} />
+          <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
         )}
       </div>
     </section>
