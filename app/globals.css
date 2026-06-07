@@ -209,6 +209,30 @@
   @apply [&_td]:py-2 [&_th]:py-2;
 }
 
+.lend-filter-input {
+  color: #161c18 !important;
+  caret-color: #01aacf;
+}
+
+.lend-filter-input::placeholder {
+  color: #7a877f !important;
+  opacity: 1 !important;
+}
+
+.dark .lend-filter-input {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.dark .lend-filter-input::placeholder {
+  color: rgba(255, 255, 255, 0.38) !important;
+}
+
+.asset-swap {
+  animation: asset-swap 720ms cubic-bezier(0.22, 0.8, 0.22, 1) both;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
 @keyframes loading-shimmer {
   100% {
     transform: translateX(100%);
@@ -238,6 +262,28 @@
   50% {
     transform: scale(1.15);
     opacity: 1;
+  }
+}
+
+@keyframes asset-swap {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.985);
+  }
+
+  35% {
+    opacity: 0.55;
+    transform: translate3d(0, 8px, 0) scale(0.995);
+  }
+
+  68% {
+    opacity: 1;
+    transform: translate3d(0, -1px, 0) scale(1.002);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 

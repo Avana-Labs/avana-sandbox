@@ -86,11 +86,13 @@ const TOKEN_MAP: Record<string, TokenIconMeta> = {
   },
   GHO: {
     symbol: "GHO",
+    iconUrl: "https://assets.coingecko.com/coins/images/31824/large/GHO.png",
     bgClass: "bg-violet-100",
     textClass: "text-violet-700",
   },
   USDe: {
     symbol: "USDe",
+    iconUrl: "https://assets.coingecko.com/coins/images/33613/large/usde.png",
     bgClass: "bg-muted",
     textClass: "text-foreground",
   },
