@@ -61,7 +61,7 @@ const ASSETS: Record<AssetId, FeaturedAsset> = {
 
 const FEATURED_SEQUENCE: AssetId[] = ["usdt", "usdc", "gho"]
 const TIME_LABELS = ["12:00 AM", "1:00 AM", "2:00 AM", "3:00 AM", "4:00 AM", "5:00 AM", "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM"]
-const MARQUEE_DURATION_SECONDS = 62
+const MARQUEE_DURATION_SECONDS = 38
 const GRAPH_WIDTH = 396
 const GRAPH_HEIGHT = 72
 const GRAPH_PADDING_Y = 8
