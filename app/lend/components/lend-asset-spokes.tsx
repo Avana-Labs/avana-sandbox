@@ -467,17 +467,17 @@ function AssetRowView({ row, delay }: { row: AssetRow; delay: number }) {
         <div className="flex min-w-0 items-center gap-4">
           <AssetIcon row={row} />
           <div className="min-w-0">
-            <div className="truncate text-[16px] font-medium tracking-[-0.03em] text-foreground dark:text-white/96 md:text-[16px]">
+            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88 md:text-[15px]">
               {row.name}
             </div>
-            <div className="mt-1 text-[14px] font-medium tracking-[-0.03em] text-muted-foreground dark:text-white/44 md:text-[14px]">
+            <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
               {row.symbol}
             </div>
           </div>
         </div>
       </td>
 
-      <td className="py-4 px-4 text-[16px] font-normal tracking-[-0.03em] text-foreground dark:text-white/90 md:text-[16px]">
+      <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
         <div className={cn("flex items-center gap-2", row.apyAccent && "text-[#6d6afb] dark:text-white")}>
           <YieldsBadge accent={row.apyAccent} />
           <span className="tabular-nums">{row.apy}</span>
@@ -485,19 +485,19 @@ function AssetRowView({ row, delay }: { row: AssetRow; delay: number }) {
       </td>
 
       <td className="py-4 px-4">
-        <div className="text-[16px] font-normal tracking-[-0.03em] text-foreground dark:text-white/90 md:text-[16px]">
+        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
           {row.totalDepositsPrimary}
         </div>
-        <div className="mt-1 text-[14px] font-medium tracking-[-0.03em] text-muted-foreground dark:text-white/44 md:text-[14px]">
+        <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
           {row.totalDepositsSecondary}
         </div>
       </td>
 
       <td className="py-4 px-6 text-right">
-        <div className="text-[16px] font-normal tracking-[-0.03em] text-foreground dark:text-white/90 md:text-[16px]">
+        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
           {row.availableLiquidityPrimary}
         </div>
-        <div className="mt-1 text-[14px] font-medium tracking-[-0.03em] text-muted-foreground dark:text-white/44 md:text-[14px]">
+        <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
           {row.availableLiquiditySecondary}
         </div>
       </td>
@@ -551,8 +551,8 @@ function AssetSection({
         <div>
           <h2
             className={cn(
-              "text-[24px] font-medium tracking-[-0.03em] text-foreground dark:text-white",
-              title === "Ethereum-Based" ? "md:text-[26px]" : "md:text-[28px]",
+              "text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]",
+              title === "Ethereum-Based" ? "md:text-[23px]" : "",
             )}
           >
             {title}
@@ -565,29 +565,65 @@ function AssetSection({
 
       <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-[13px]">
+          <table className="w-full min-w-[920px] text-[12px]">
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-            <th className="pb-3 pt-4 pl-6 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => toggleSort("asset")} className="flex items-center gap-2">
+                <th className="pb-3 pt-4 pl-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("asset")}
+                    className={cn(
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "asset"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
                     <span>ASSET</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => toggleSort("apy")} className="flex items-center gap-2">
+                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("apy")}
+                    className={cn(
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "apy"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
                     <span>APY</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => toggleSort("deposits")} className="flex items-center gap-2">
+                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("deposits")}
+                    className={cn(
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "deposits"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
                     <span>TOTAL DEPOSITS</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 pr-6 text-right text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => toggleSort("liquidity")} className="ml-auto flex items-center gap-2">
+                <th className="pb-3 pt-4 pr-6 text-right text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("liquidity")}
+                    className={cn(
+                      "ml-auto flex items-center gap-2 transition-colors",
+                      sortKey === "liquidity"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
                     <span>AVAILABLE LIQUIDITY</span>
                     <SortIcon />
                   </button>
@@ -601,7 +637,7 @@ function AssetSection({
                 ))
               ) : (
                 <tr>
-                  <td className="px-6 py-10 text-[13px] text-muted-foreground dark:text-white/60" colSpan={4}>
+                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={4}>
                     No assets match these filters.
                   </td>
                 </tr>
@@ -647,7 +683,7 @@ export function LendAssetSpokes() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Filter assets"
-              className="w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] text-foreground outline-none placeholder:text-muted-foreground/70 dark:text-white/88 dark:placeholder:text-white/38"
+              className="w-full bg-transparent text-[12px] font-normal tracking-[-0.03em] text-foreground outline-none placeholder:text-muted-foreground/70 dark:text-white/88 dark:placeholder:text-white/38"
             />
         </label>
 
@@ -657,7 +693,7 @@ export function LendAssetSpokes() {
               aria-label="Filter hub"
               value={selectedHub}
               onChange={(event) => setSelectedHub(event.target.value)}
-              className="h-9 appearance-none rounded-full border border-border bg-white px-2.5 pr-7 text-[11px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b] md:h-10 md:px-3 md:pr-9 md:text-[13px]"
+              className="h-9 appearance-none rounded-full border border-border bg-white px-2.5 pr-7 text-[11px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/88 dark:hover:bg-[#2b2b2b] md:h-10 md:px-3 md:pr-9 md:text-[12px]"
             >
               {HUB_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -675,7 +711,7 @@ export function LendAssetSpokes() {
               aria-label="Filter market"
               value={selectedMarket}
               onChange={(event) => setSelectedMarket(event.target.value)}
-              className="h-9 appearance-none rounded-full border border-border bg-white px-2.5 pr-7 text-[11px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b] md:h-10 md:px-3 md:pr-9 md:text-[13px]"
+              className="h-9 appearance-none rounded-full border border-border bg-white px-2.5 pr-7 text-[11px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/88 dark:hover:bg-[#2b2b2b] md:h-10 md:px-3 md:pr-9 md:text-[12px]"
             >
               {MARKET_OPTIONS.map((option) => (
                 <option key={option} value={option}>
