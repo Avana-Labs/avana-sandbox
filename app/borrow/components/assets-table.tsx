@@ -5,7 +5,6 @@ import {
   BORROWABLE_CATEGORIES,
   aprToneClass,
   formatCompactUsd,
-  formatUsdExact,
   utilizationToneClass,
   type BorrowableAsset,
 } from "@/app/lib/borrow-sim"
@@ -19,6 +18,10 @@ type AssetsTableProps = {
   onViewMarket?: (asset: BorrowableAsset) => void
   groupByCategory?: boolean
   variant?: "default" | "loan"
+}
+
+function formatAssetAmount(value: number, symbol: string) {
+  return `${formatCompactUsd(value).replace(/^\$/, "")} ${symbol}`
 }
 
 export function AssetsPanel({ rows, onBorrow, onViewMarket, groupByCategory = true, variant = "default" }: AssetsTableProps) {
@@ -266,18 +269,18 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
                   </td>
                   <td className="py-4 px-4">
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
-                      {formatCompactUsd(asset.totalBorrowedUsd)}
+                      {formatAssetAmount(asset.totalBorrowedUsd, asset.symbol)}
                     </div>
                     <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
-                      {formatUsdExact(asset.totalBorrowedUsd)}
+                      {formatCompactUsd(asset.totalBorrowedUsd)}
                     </div>
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
-                      {formatCompactUsd(asset.availableUsd)}
+                      {formatAssetAmount(asset.availableUsd, asset.symbol)}
                     </div>
                     <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
-                      {formatUsdExact(asset.availableUsd)}
+                      {formatCompactUsd(asset.availableUsd)}
                     </div>
                   </td>
                 </tr>
