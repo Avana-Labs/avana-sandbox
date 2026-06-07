@@ -112,7 +112,7 @@ export function ExploreLoopsMarketsTable() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
+      <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1120px] text-[12px]">
             <thead>
@@ -186,8 +186,8 @@ export function ExploreLoopsMarketsTable() {
             </thead>
             <tbody key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`} className="divide-y divide-border dark:divide-white/6">
               {visibleRows.map((row, index) => (
-                <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="asset-swap border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]" style={{ animationDelay: `${index * 40}ms` }}>
-                  <td className="py-4 pl-6 pr-4">
+                <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="asset-swap border-t border-border transition-colors hover:bg-surface-inset/60" style={{ animationDelay: `${index * 40}ms` }}>
+                  <td className="py-2.5 pl-6 pr-4">
                     <CellLink href={row.href} className="flex items-center gap-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -202,13 +202,13 @@ export function ExploreLoopsMarketsTable() {
                       </span>
                     </CellLink>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-2.5 px-4">
                     <CellLink href={row.href} className="min-w-0">
                       <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.asset}</span>
                       <span className="mt-1 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.apyLabel}</span>
                     </CellLink>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-2.5 px-4">
                     <CellLink
                       href={row.href}
                       className={cn(
@@ -219,7 +219,7 @@ export function ExploreLoopsMarketsTable() {
                       {row.apy || "—"}
                     </CellLink>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-2.5 px-4">
                     <CellLink href={row.href} className="text-foreground">
                       {row.rewardRows?.[1] ? (
                         <span className="block">
@@ -238,7 +238,7 @@ export function ExploreLoopsMarketsTable() {
                       )}
                     </CellLink>
                   </td>
-                  <td className="py-4 px-4 pr-6">
+                  <td className="py-2.5 px-4 pr-6">
                     {row.waitlistHref ? (
                       <div className="inline-flex items-center">
                         <Button asChild size="sm" className="h-7 rounded-xs px-2.5 text-[12px]">

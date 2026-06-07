@@ -173,7 +173,7 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
 
   return (
     <section className="space-y-5">
-      <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
+      <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] text-[12px]">
             <thead>
@@ -245,11 +245,11 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
               {sortedAssets.map((asset, index) => (
                 <tr
                   key={asset.id}
-                  className="asset-swap group cursor-pointer border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]"
+                  className="asset-swap group cursor-pointer border-t border-border transition-colors hover:bg-surface-inset/60"
                   onClick={() => onBorrow(asset)}
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
-                  <td className="py-4 pl-6 pr-4">
+                  <td className="py-2.5 pl-6 pr-4">
                     <div className="flex min-w-0 items-center gap-4">
                       <TokenBubble visual={asset.visual} size="xl" ring={false} className="bg-transparent" />
                       <div className="min-w-0">
@@ -262,12 +262,12 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
+                  <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
                     <div className="flex items-center gap-2">
                       <span className="tabular-nums">{asset.borrowApr.toFixed(2)}%</span>
                     </div>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-2.5 px-4">
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
                       {formatAssetAmount(asset.totalBorrowedUsd, asset.symbol)}
                     </div>
@@ -275,7 +275,7 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
                       {formatCompactUsd(asset.totalBorrowedUsd)}
                     </div>
                   </td>
-                  <td className="py-4 px-6">
+                  <td className="py-2.5 px-6">
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
                       {formatAssetAmount(asset.availableUsd, asset.symbol)}
                     </div>
