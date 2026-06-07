@@ -460,7 +460,7 @@ function AssetIcon({ row }: { row: AssetRow }) {
 function AssetRowView({ row, delay }: { row: AssetRow; delay: number }) {
   return (
     <tr
-      className="asset-rise group border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]"
+      className="asset-swap group border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]"
       style={{ animationDelay: `${delay}ms` }}
     >
       <td className="py-4 pl-6 pr-4">
@@ -509,15 +509,42 @@ function AssetSection({
   title,
   subtitle,
   rows,
-  animationKey,
-  onSort,
 }: {
   title: string
   subtitle?: string
   rows: AssetRow[]
-  animationKey: string
-  onSort: (nextKey: "asset" | "apy" | "deposits" | "liquidity") => void
 }) {
+  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "liquidity">("asset")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+
+  const toggleSort = (nextKey: typeof sortKey) => {
+    if (sortKey === nextKey) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
+      return
+    }
+
+    setSortKey(nextKey)
+    setSortDirection(nextKey === "asset" ? "asc" : "desc")
+  }
+
+  const sortedRows = useMemo(() => {
+    const direction = sortDirection === "asc" ? 1 : -1
+
+    return [...rows].sort((a, b) => {
+      switch (sortKey) {
+        case "apy":
+          return (a.apyValue - b.apyValue) * direction
+        case "deposits":
+          return (a.totalDepositsValue - b.totalDepositsValue) * direction
+        case "liquidity":
+          return (a.availableLiquidityValue - b.availableLiquidityValue) * direction
+        case "asset":
+        default:
+          return a.name.localeCompare(b.name) * direction
+      }
+    })
+  }, [rows, sortDirection, sortKey])
+
   return (
     <section className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -541,36 +568,36 @@ function AssetSection({
           <table className="w-full min-w-[920px] text-[13px]">
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-                <th className="pb-3 pt-4 pl-6 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => onSort("asset")} className="flex items-center gap-2">
+            <th className="pb-3 pt-4 pl-6 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
+                  <button type="button" onClick={() => toggleSort("asset")} className="flex items-center gap-2">
                     <span>ASSET</span>
                     <SortIcon />
                   </button>
                 </th>
                 <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => onSort("apy")} className="flex items-center gap-2">
+                  <button type="button" onClick={() => toggleSort("apy")} className="flex items-center gap-2">
                     <span>APY</span>
                     <SortIcon />
                   </button>
                 </th>
                 <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => onSort("deposits")} className="flex items-center gap-2">
+                  <button type="button" onClick={() => toggleSort("deposits")} className="flex items-center gap-2">
                     <span>TOTAL DEPOSITS</span>
                     <SortIcon />
                   </button>
                 </th>
                 <th className="pb-3 pt-4 pr-6 text-right text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => onSort("liquidity")} className="ml-auto flex items-center gap-2">
+                  <button type="button" onClick={() => toggleSort("liquidity")} className="ml-auto flex items-center gap-2">
                     <span>AVAILABLE LIQUIDITY</span>
                     <SortIcon />
                   </button>
                 </th>
               </tr>
             </thead>
-            <tbody key={animationKey} className="divide-y divide-border dark:divide-white/6">
-              {rows.length > 0 ? (
-                rows.map((row, index) => (
-                  <AssetRowView key={row.symbol} row={row} delay={index * 28} />
+            <tbody key={`${title}-${sortKey}-${sortDirection}-${rows.length}`} className="divide-y divide-border dark:divide-white/6">
+              {sortedRows.length > 0 ? (
+                sortedRows.map((row, index) => (
+                  <AssetRowView key={row.symbol} row={row} delay={index * 40} />
                 ))
               ) : (
                 <tr>
@@ -591,51 +618,24 @@ export function LendAssetSpokes() {
   const [search, setSearch] = useState("")
   const [selectedHub, setSelectedHub] = useState("All Hubs")
   const [selectedMarket, setSelectedMarket] = useState("All Markets")
-  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "liquidity">("asset")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-
-  const toggleSort = (nextKey: typeof sortKey) => {
-    if (sortKey === nextKey) {
-      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
-      return
-    }
-
-    setSortKey(nextKey)
-    setSortDirection(nextKey === "asset" ? "asc" : "desc")
-  }
 
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase()
-    const direction = sortDirection === "asc" ? 1 : -1
 
     return ASSET_GROUPS.map((group) => {
-      const rows = group.rows
-        .filter((row) => {
-          const matchesSearch =
-            query.length === 0 ||
-            row.name.toLowerCase().includes(query) ||
-            row.symbol.toLowerCase().includes(query)
-          const matchesHub = selectedHub === "All Hubs" || row.hub === selectedHub
-          const matchesMarket = selectedMarket === "All Markets" || row.market === selectedMarket
-          return matchesSearch && matchesHub && matchesMarket
-        })
-        .sort((a, b) => {
-          switch (sortKey) {
-            case "apy":
-              return (a.apyValue - b.apyValue) * direction
-            case "deposits":
-              return (a.totalDepositsValue - b.totalDepositsValue) * direction
-            case "liquidity":
-              return (a.availableLiquidityValue - b.availableLiquidityValue) * direction
-            case "asset":
-            default:
-              return a.name.localeCompare(b.name) * direction
-          }
-        })
+      const rows = group.rows.filter((row) => {
+        const matchesSearch =
+          query.length === 0 ||
+          row.name.toLowerCase().includes(query) ||
+          row.symbol.toLowerCase().includes(query)
+        const matchesHub = selectedHub === "All Hubs" || row.hub === selectedHub
+        const matchesMarket = selectedMarket === "All Markets" || row.market === selectedMarket
+        return matchesSearch && matchesHub && matchesMarket
+      })
 
       return { ...group, rows }
     }).filter((group) => group.rows.length > 0)
-  }, [search, selectedHub, selectedMarket, sortDirection, sortKey])
+  }, [search, selectedHub, selectedMarket])
 
   return (
     <section className="mt-16 space-y-8">
@@ -698,8 +698,6 @@ export function LendAssetSpokes() {
                 title={group.title}
                 subtitle={group.subtitle}
                 rows={group.rows}
-                animationKey={`${search}-${selectedHub}-${selectedMarket}-${sortKey}-${sortDirection}-${group.title}`}
-                onSort={toggleSort}
               />
               {group.title === "Ethereum-Based" ? (
                 <div className="flex justify-center">
