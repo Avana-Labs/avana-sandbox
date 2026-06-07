@@ -181,8 +181,8 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
             <div className="mt-6 space-y-3">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="mt-1 text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-                    Top pools trending today
+                  <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
+                    Trending
                   </h2>
                 </div>
               </div>
@@ -196,11 +196,6 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
               </div>
             </div>
 
-            <div className="mt-8 mb-3">
-              <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-                Explore more pools collateral
-              </h2>
-            </div>
           </section>
 
         <BorrowWorkspace />

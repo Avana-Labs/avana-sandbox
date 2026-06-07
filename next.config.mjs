@@ -20,6 +20,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "cryptologos.cc" },
+      { protocol: "https", hostname: "token-logos.family.co" },
       { protocol: "https", hostname: "raw.githubusercontent.com" },
       { protocol: "https", hostname: "cdn.prod.website-files.com" },
       { protocol: "https", hostname: "avatars.githubusercontent.com" },

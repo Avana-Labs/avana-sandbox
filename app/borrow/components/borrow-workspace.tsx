@@ -1,23 +1,22 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   BORROW_PENDING_ROWS,
   BORROW_POOL_CATALOG,
   filterPools,
   groupByDex,
-  sortPools,
   type BorrowDexId,
   type BorrowPoolRow,
   type BorrowableAsset,
-  type PoolSortKey,
 } from "@/app/lib/borrow-sim"
 import {
   HOME_COLLATERAL_POOLS,
   HOME_INITIAL_DEBTS,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
-import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId, type SortOption } from "./tabs-bar"
+import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { PoolsList, PoolsTable } from "./pools-table"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./borrow-modal"
 import { SupplyCollateralModal, type SupplyCollateralContext, type SupplyCollateralResult } from "./supply-collateral-modal"
@@ -25,13 +24,6 @@ import { type SupplyRowContext } from "./supplies-table"
 import { useLiveBorrowMarket } from "./use-live-borrow-market"
 
 type DebtsState = Record<string, number>
-
-const POOL_SORT_OPTIONS: SortOption[] = [
-  { key: "apr", label: "APY" },
-  { key: "ltv", label: "Max LTV" },
-  { key: "available", label: "Supplied" },
-  { key: "riskPremium", label: "Risk premium" },
-]
 
 function computeHealthFactor(pool: HomeCollateralPool, debt: number): number | null {
   if (debt <= 0) return Number.POSITIVE_INFINITY
@@ -88,13 +80,11 @@ export type BorrowWorkspaceProps = {
 }
 
 export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
+  const router = useRouter()
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
-  const filterText = ""
+  const [search, setSearch] = useState("")
   const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
   const [debts, setDebts] = useState<DebtsState>({ ...HOME_INITIAL_DEBTS })
-
-  const [poolSortKey, setPoolSortKey] = useState<PoolSortKey>("apr")
-  const [poolSortDirection, setPoolSortDirection] = useState<"asc" | "desc">("desc")
 
   const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
   const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
@@ -103,15 +93,6 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
   })
   const { livePools, liveSupplyMetrics } = useLiveBorrowMarket(debts)
   const livePoolById = useMemo(() => new Map(livePools.map((pool) => [pool.id, pool])), [livePools])
-
-  const toggleDex = useCallback((dex: BorrowDexId) => {
-    setSelectedDexes((previous) => {
-      const next = new Set(previous)
-      if (next.has(dex)) next.delete(dex)
-      else next.add(dex)
-      return next
-    })
-  }, [])
 
   // Data for each tab
   const supplies = useMemo<SupplyRowContext[]>(() => {
@@ -126,30 +107,16 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
   }, [debts, liveSupplyMetrics])
 
   const filteredPools = useMemo(() => {
-    const filtered = filterPools(BORROW_POOL_CATALOG, { text: filterText, dexes: selectedDexes })
+    const filtered = filterPools(BORROW_POOL_CATALOG, { text: search, dexes: selectedDexes })
     return filtered.map((pool) => livePoolById.get(pool.id) ?? pool)
-  }, [filterText, livePoolById, selectedDexes])
-
-  const sortedPools = useMemo(() => sortPools(filteredPools, poolSortKey, poolSortDirection), [filteredPools, poolSortKey, poolSortDirection])
+  }, [livePoolById, search, selectedDexes])
 
   const visiblePools = useMemo(() => {
     if (!isPoolTab(currentTab)) return []
-    return sortedPools.filter((pool) => poolMatchesTab(pool, currentTab))
-  }, [currentTab, sortedPools])
+    return filteredPools.filter((pool) => poolMatchesTab(pool, currentTab))
+  }, [currentTab, filteredPools])
 
   const poolGroups = useMemo(() => groupByDex(visiblePools), [visiblePools])
-
-  const poolTabCounts = useMemo(() => {
-    const count = (tab: PoolTabId) => sortedPools.filter((pool) => poolMatchesTab(pool, tab)).length
-    return {
-      "all-markets": count("all-markets"),
-      btc: count("btc"),
-      eth: count("eth"),
-      forex: count("forex"),
-      governance: count("governance"),
-      "smart-pools": count("smart-pools"),
-    }
-  }, [sortedPools])
 
   useEffect(() => {
     onTabChange?.(currentTab)
@@ -159,9 +126,15 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
     setSupplyModal({ open: true, context: { pool } })
   }, [])
 
-  const handleAssetBorrow = useCallback(
+  const handleAssetBorrowDesktop = useCallback(
     (asset: BorrowableAsset) => {
-      // Pick best-HF supply (highest HF = safest)
+      router.push(`/borrow/asset/${asset.id}`)
+    },
+    [router],
+  )
+
+  const handleAssetBorrowMobile = useCallback(
+    (asset: BorrowableAsset) => {
       const best = supplies
         .filter((row) => Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0)
         .reduce<SupplyRowContext | null>((acc, row) => {
@@ -192,44 +165,15 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
     setDebts((previous) => ({ ...previous, [result.pool.id]: (previous[result.pool.id] ?? 0) + result.amountUsd }))
   }, [])
 
-  // Sort options per tab
-  const activeSortOptions =
-    POOL_SORT_OPTIONS
-
-  const activeSortKey = poolSortKey
-
-  const activeSortDirection = poolSortDirection
-
-  const onSortKeyChange = (key: string) => {
-    setPoolSortKey(key as PoolSortKey)
-  }
-
-  const onSortDirectionChange = (direction: "asc" | "desc") => {
-    setPoolSortDirection(direction)
-  }
-
-  const counts: Record<BorrowTabId, number> = {
-    "all-markets": poolTabCounts["all-markets"],
-    btc: poolTabCounts.btc,
-    eth: poolTabCounts.eth,
-    forex: poolTabCounts.forex,
-    governance: poolTabCounts.governance,
-    "smart-pools": poolTabCounts["smart-pools"],
-  }
-
   return (
     <section className="pb-16">
       <TabsBar
         currentTab={currentTab}
         onTabChange={(tab) => setCurrentTab(tab)}
-        counts={counts}
+        search={search}
+        onSearchChange={setSearch}
         selectedDexes={selectedDexes}
-        onToggleDex={toggleDex}
-        sortKey={activeSortKey}
-        sortOptions={activeSortOptions}
-        sortDirection={activeSortDirection}
-        onSortKeyChange={onSortKeyChange}
-        onSortDirectionChange={onSortDirectionChange}
+        onDexChange={(dex) => setSelectedDexes(dex ? new Set([dex]) : new Set())}
       />
 
       <div className="pt-3 pb-6">
@@ -239,13 +183,15 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
               groups={poolGroups}
               pending={BORROW_PENDING_ROWS}
               onUseAsCollateral={handlePoolsSupply}
-              onBorrowAsset={handleAssetBorrow}
+              onBorrowAssetDesktop={handleAssetBorrowDesktop}
+              onBorrowAssetMobile={handleAssetBorrowMobile}
             />
             <PoolsList
               groups={poolGroups}
               pending={BORROW_PENDING_ROWS}
               onUseAsCollateral={handlePoolsSupply}
-              onBorrowAsset={handleAssetBorrow}
+              onBorrowAssetDesktop={handleAssetBorrowDesktop}
+              onBorrowAssetMobile={handleAssetBorrowMobile}
             />
           </>
         ) : null}
