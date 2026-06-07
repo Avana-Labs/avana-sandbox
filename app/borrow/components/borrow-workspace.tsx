@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   BORROW_PENDING_ROWS,
   BORROW_POOL_CATALOG,
@@ -79,6 +80,7 @@ export type BorrowWorkspaceProps = {
 }
 
 export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
+  const router = useRouter()
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
   const [search, setSearch] = useState("")
   const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
@@ -124,9 +126,15 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
     setSupplyModal({ open: true, context: { pool } })
   }, [])
 
-  const handleAssetBorrow = useCallback(
+  const handleAssetBorrowDesktop = useCallback(
     (asset: BorrowableAsset) => {
-      // Pick best-HF supply (highest HF = safest)
+      router.push(`/borrow/asset/${asset.id}`)
+    },
+    [router],
+  )
+
+  const handleAssetBorrowMobile = useCallback(
+    (asset: BorrowableAsset) => {
       const best = supplies
         .filter((row) => Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0)
         .reduce<SupplyRowContext | null>((acc, row) => {
@@ -175,13 +183,15 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
               groups={poolGroups}
               pending={BORROW_PENDING_ROWS}
               onUseAsCollateral={handlePoolsSupply}
-              onBorrowAsset={handleAssetBorrow}
+              onBorrowAssetDesktop={handleAssetBorrowDesktop}
+              onBorrowAssetMobile={handleAssetBorrowMobile}
             />
             <PoolsList
               groups={poolGroups}
               pending={BORROW_PENDING_ROWS}
               onUseAsCollateral={handlePoolsSupply}
-              onBorrowAsset={handleAssetBorrow}
+              onBorrowAssetDesktop={handleAssetBorrowDesktop}
+              onBorrowAssetMobile={handleAssetBorrowMobile}
             />
           </>
         ) : null}
