@@ -1,150 +1,381 @@
-import Link from "next/link"
-import { TokenIcon } from "@/app/components/token-icon"
+"use client"
 
-type LendAsset = {
+import Image from "next/image"
+import { useMemo, useState } from "react"
+import { cn } from "@/lib/utils"
+
+type StableAssetRow = {
   symbol: string
   name: string
-  protocol: string
-  category: string
-  apy: number
-  tvl: string
-  rank: number
-  glowSrc?: string
+  apy: string
+  apyValue: number
+  totalDepositsPrimary: string
+  totalDepositsSecondary: string
+  totalDepositsValue: number
+  availableLiquidityPrimary: string
+  availableLiquiditySecondary: string
+  availableLiquidityValue: number
+  icon: "eurc" | "frxusd" | "gho" | "usdg" | "rlusd"
+  hub: string
+  market: string
+  apyAccent?: boolean
 }
 
-const ASSET_GROUPS: Array<{
-  title: string
-  assets: LendAsset[]
-}> = [
+const HUB_OPTIONS = ["All Hubs", "Aave", "Circle", "Frax", "Paxos", "Ripple"] as const
+const MARKET_OPTIONS = ["All Markets", "Core", "Stable", "Prime"] as const
+
+const STABLE_ASSETS: StableAssetRow[] = [
   {
-    title: "Stable Assets",
-    assets: [
-      { rank: 1, symbol: "USDC", name: "USD Coin", protocol: "Circle", category: "Stable", apy: 5.2, tvl: "$24.8M", glowSrc: "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png" },
-      { rank: 2, symbol: "USDT", name: "Tether USD", protocol: "Tether", category: "Stable", apy: 4.8, tvl: "$18.2M", glowSrc: "https://assets.coingecko.com/coins/images/325/large/Tether.png" },
-      { rank: 3, symbol: "USDe", name: "Ethena USDe", protocol: "Ethena", category: "Stable", apy: 12.5, tvl: "$15.2M", glowSrc: "https://assets.coingecko.com/coins/images/33613/large/USDe.png" },
-      { rank: 4, symbol: "DAI", name: "Dai Stablecoin", protocol: "MakerDAO", category: "Stable", apy: 4.01, tvl: "$12.4M", glowSrc: "https://assets.coingecko.com/coins/images/9956/large/Badge_Dai.png" },
-      { rank: 5, symbol: "GHO", name: "Aave GHO", protocol: "Aave", category: "Stable", apy: 0.0, tvl: "$9.1M", glowSrc: "https://assets.coingecko.com/coins/images/31824/large/GHO.png" },
-      { rank: 6, symbol: "PYUSD", name: "PayPal USD", protocol: "PayPal", category: "Stable", apy: 3.9, tvl: "$6.7M", glowSrc: "https://assets.coingecko.com/coins/images/39786/large/pyusd-logo.png" },
-      { rank: 7, symbol: "FDUSD", name: "First Digital USD", protocol: "First Digital", category: "Stable", apy: 4.3, tvl: "$5.4M", glowSrc: "https://assets.coingecko.com/coins/images/35199/large/fdusd.png" },
-      { rank: 8, symbol: "FRAX", name: "Frax", protocol: "Frax", category: "Stable", apy: 5.6, tvl: "$4.2M", glowSrc: "https://assets.coingecko.com/coins/images/13422/large/frax.png" },
-    ],
+    symbol: "EURC",
+    name: "Euro Coin",
+    apy: "0.49%",
+    apyValue: 0.49,
+    totalDepositsPrimary: "85.73K EURC",
+    totalDepositsSecondary: "$98.60K",
+    totalDepositsValue: 85.73,
+    availableLiquidityPrimary: "60.18K EURC",
+    availableLiquiditySecondary: "$69.22K",
+    availableLiquidityValue: 60.18,
+    icon: "eurc",
+    hub: "Circle",
+    market: "Core",
   },
   {
-    title: "Blueship Assets",
-    assets: [
-      { rank: 1, symbol: "ETH", name: "Ethereum", protocol: "Ethereum", category: "Bluechip", apy: 3.82, tvl: "$31.5M", glowSrc: "https://assets.coingecko.com/coins/images/279/large/ethereum.png" },
-      { rank: 2, symbol: "WBTC", name: "Wrapped Bitcoin", protocol: "WBTC", category: "Bluechip", apy: 3.48, tvl: "$0.9M", glowSrc: "https://assets.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png" },
-      { rank: 3, symbol: "SOL", name: "Solana", protocol: "Solana", category: "Bluechip", apy: 6.12, tvl: "$9.6M", glowSrc: "https://assets.coingecko.com/coins/images/4128/large/solana.png" },
-      { rank: 4, symbol: "cbBTC", name: "Coinbase Wrapped BTC", protocol: "Coinbase", category: "Bluechip", apy: 4.25, tvl: "$2.1M", glowSrc: "https://assets.coingecko.com/coins/images/40143/large/cbbtc.png" },
-      { rank: 5, symbol: "wstETH", name: "Wrapped stETH", protocol: "Lido", category: "Bluechip", apy: 5.14, tvl: "$8.4M", glowSrc: "https://assets.coingecko.com/coins/images/13442/large/steth_logo.png" },
-      { rank: 6, symbol: "mETH", name: "Mantle Staked Ether", protocol: "Mantle", category: "Bluechip", apy: 4.87, tvl: "$3.6M", glowSrc: "https://assets.coingecko.com/coins/images/30980/large/meth.png" },
-      { rank: 7, symbol: "rsETH", name: "Kelp rsETH", protocol: "Kelp DAO", category: "Bluechip", apy: 5.31, tvl: "$2.8M", glowSrc: "https://assets.coingecko.com/coins/images/37459/large/rsETH.png" },
-      { rank: 8, symbol: "cbETH", name: "Coinbase Wrapped Staked ETH", protocol: "Coinbase", category: "Bluechip", apy: 4.62, tvl: "$1.9M", glowSrc: "https://assets.coingecko.com/coins/images/27008/large/cbeth.png" },
-    ],
+    symbol: "frxUSD",
+    name: "Frax USD",
+    apy: "6.20%",
+    apyValue: 6.2,
+    totalDepositsPrimary: "30.00M frxUSD",
+    totalDepositsSecondary: "$29.98M",
+    totalDepositsValue: 30000,
+    availableLiquidityPrimary: "25.39M frxUSD",
+    availableLiquiditySecondary: "$25.37M",
+    availableLiquidityValue: 25390,
+    icon: "frxusd",
+    hub: "Frax",
+    market: "Stable",
+    apyAccent: true,
   },
   {
-    title: "DeFi Assets",
-    assets: [
-      { rank: 1, symbol: "AAVE", name: "Aave", protocol: "Aave", category: "DeFi", apy: 7.6, tvl: "$4.7M", glowSrc: "https://assets.coingecko.com/coins/images/12645/large/AAVE.png" },
-      { rank: 2, symbol: "UNI", name: "Uniswap", protocol: "Uniswap", category: "DeFi", apy: 6.4, tvl: "$3.2M", glowSrc: "https://assets.coingecko.com/coins/images/12504/large/uniswap-uni.png" },
-      { rank: 3, symbol: "MKR", name: "Maker", protocol: "MakerDAO", category: "DeFi", apy: 5.9, tvl: "$2.8M", glowSrc: "https://assets.coingecko.com/coins/images/1364/large/Mark_Maker.png" },
-      { rank: 4, symbol: "LDO", name: "Lido DAO", protocol: "Lido", category: "DeFi", apy: 6.8, tvl: "$5.1M", glowSrc: "https://assets.coingecko.com/coins/images/13573/large/Lido_DAO.png" },
-      { rank: 5, symbol: "JUP", name: "Jupiter", protocol: "Jupiter", category: "DeFi", apy: 8.2, tvl: "$6.3M", glowSrc: "https://assets.coingecko.com/coins/images/34184/large/jup.png" },
-      { rank: 6, symbol: "PENDLE", name: "Pendle", protocol: "Pendle", category: "DeFi", apy: 9.15, tvl: "$2.4M", glowSrc: "https://assets.coingecko.com/coins/images/15069/large/Pendle.png" },
-      { rank: 7, symbol: "CRV", name: "Curve DAO", protocol: "Curve", category: "DeFi", apy: 5.45, tvl: "$1.8M", glowSrc: "https://assets.coingecko.com/coins/images/12124/large/Curve.png" },
-      { rank: 8, symbol: "COMP", name: "Compound", protocol: "Compound", category: "DeFi", apy: 4.95, tvl: "$1.6M", glowSrc: "https://assets.coingecko.com/coins/images/10775/large/COMP.png" },
-    ],
+    symbol: "GHO",
+    name: "Gho Token",
+    apy: "0.21% - 2.99%",
+    apyValue: 2.99,
+    totalDepositsPrimary: "1.27M GHO",
+    totalDepositsSecondary: "$1.27M",
+    totalDepositsValue: 1270,
+    availableLiquidityPrimary: "455.75K GHO",
+    availableLiquiditySecondary: "$455.75K",
+    availableLiquidityValue: 455.75,
+    icon: "gho",
+    hub: "Aave",
+    market: "Prime",
+  },
+  {
+    symbol: "USDG",
+    name: "Global Dollar",
+    apy: "8.00%",
+    apyValue: 8,
+    totalDepositsPrimary: "30.00M USDG",
+    totalDepositsSecondary: "$30.00M",
+    totalDepositsValue: 30000,
+    availableLiquidityPrimary: "25.07M USDG",
+    availableLiquiditySecondary: "$25.07M",
+    availableLiquidityValue: 25070,
+    icon: "usdg",
+    hub: "Paxos",
+    market: "Stable",
+    apyAccent: true,
+  },
+  {
+    symbol: "RLUSD",
+    name: "RLUSD",
+    apy: "30.10%",
+    apyValue: 30.1,
+    totalDepositsPrimary: "0.15 RLUSD",
+    totalDepositsSecondary: "$0.15",
+    totalDepositsValue: 0.15,
+    availableLiquidityPrimary: "<0.01 RLUSD",
+    availableLiquiditySecondary: "$0.00",
+    availableLiquidityValue: 0.01,
+    icon: "rlusd",
+    hub: "Ripple",
+    market: "Stable",
   },
 ]
 
-function AssetCard({ asset }: { asset: LendAsset }) {
-  const href = `/borrow/asset/${asset.symbol.toLowerCase()}`
+function SearchIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-6 text-muted-foreground/70 dark:text-white/40">
+      <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  )
+}
+
+function SortIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 12 16" fill="none" className="size-[14px] text-muted-foreground/70 dark:text-white/60">
+      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" className="size-3 text-muted-foreground/70 dark:text-white/60">
+      <path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function YieldsBadge({ accent }: { accent?: boolean }) {
+  if (!accent) return null
 
   return (
-    <Link
-      href={href}
-      prefetch
-      aria-label={`Open ${asset.name} details`}
-      className="group relative flex h-[120px] w-full shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border hover:bg-surface-inset hover:shadow-elev-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-medium md:w-auto md:min-w-0"
-    >
-      <div className="pointer-events-none absolute right-2 top-2 flex size-7 items-center justify-center rounded-full border border-border bg-surface-raised/80 shadow-sm backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted-foreground/60 transition-colors group-hover:text-foreground" aria-hidden="true">
-          <path d="M7 7h10v10" />
-          <path d="M7 17 17 7" />
-        </svg>
-      </div>
-
-      {asset.glowSrc ? (
-        <img
-          alt=""
-          aria-hidden="true"
-          width="96"
-          height="96"
-          className="pointer-events-none absolute -left-5 -top-5 size-[274px] rounded-full object-cover opacity-10 blur-2xl saturate-150"
-          loading="lazy"
-          decoding="async"
-          src={asset.glowSrc}
+    <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-[#8f8cff]/70 text-[#8f8cff]">
+      <svg aria-hidden="true" viewBox="0 0 14 14" fill="none" className="size-[8px]">
+        <path
+          d="M2.5 7c0-2.485 2.015-4.5 4.5-4.5S11.5 4.515 11.5 7 9.485 11.5 7 11.5 2.5 9.485 2.5 7Z"
+          stroke="currentColor"
+          strokeWidth="1.4"
         />
-      ) : null}
+        <path
+          d="M5.1 7.05c.37-.92 1.08-1.47 1.9-1.47.82 0 1.53.56 1.9 1.47"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+      </svg>
+    </span>
+  )
+}
 
-      <div className="relative z-10 flex h-full flex-col">
-        <div className="flex items-start gap-3">
-          <div className="relative shrink-0">
-            <TokenIcon symbol={asset.symbol} size="lg" ring className="bg-surface-inset" />
-            <div className="absolute bottom-0 right-0 translate-x-1.5 translate-y-1.5">
-              <div className="flex size-5 items-center justify-center rounded-md border-2 border-background bg-[#CD7F32]" aria-hidden="true">
-                <span className="text-[8px] font-bold text-white">{asset.rank}</span>
-              </div>
-            </div>
-          </div>
+function AssetIcon({ icon }: { icon: StableAssetRow["icon"] }) {
+  const base = "relative flex size-[44px] shrink-0 items-center justify-center overflow-hidden rounded-full"
+  const logos: Record<StableAssetRow["icon"], { src: string; alt: string }> = {
+    eurc: {
+      src: "https://token-logos.family.co/asset?id=1:0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c&token=EURC",
+      alt: "EURC logo",
+    },
+    frxusd: {
+      src: "https://token-logos.family.co/asset?id=1:0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29&token=frxUSD",
+      alt: "frxUSD logo",
+    },
+    gho: {
+      src: "https://token-logos.family.co/asset?id=1:0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f&token=GHO",
+      alt: "GHO logo",
+    },
+    usdg: {
+      src: "https://token-logos.family.co/asset?id=1:0xe343167631d89B6Ffc58B88d6b7fB0228795491D&token=USDG",
+      alt: "USDG logo",
+    },
+    rlusd: {
+      src: "https://token-logos.family.co/asset?id=1:0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD&token=RLUSD",
+      alt: "RLUSD logo",
+    },
+  }
 
-          <div className="min-w-0 flex-1 pr-8">
-            <div className="flex min-w-0 items-baseline gap-1">
-              <span className="truncate text-[13px] font-semibold text-foreground">{asset.name}</span>
-              <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{asset.symbol}</span>
+  const logo = logos[icon]
+  return (
+    <span className={cn(base, "bg-transparent")}>
+      <Image alt={logo.alt} src={logo.src} width={44} height={44} className="h-full w-full object-contain" unoptimized />
+    </span>
+  )
+}
+
+function StableAssetRowView({ row }: { row: StableAssetRow }) {
+  return (
+    <tr className="group border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]">
+      <td className="py-4 pl-6 pr-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <AssetIcon icon={row.icon} />
+          <div className="min-w-0">
+            <div className="truncate text-[16px] font-medium tracking-[-0.03em] text-foreground dark:text-white/96 md:text-[16px]">
+              {row.name}
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-1">
-              <span className="rounded-full border border-border bg-surface-inset px-2 py-0.5 text-[10px] text-muted-foreground">
-                {asset.category}
-              </span>
+            <div className="mt-1 text-[14px] font-medium tracking-[-0.03em] text-muted-foreground dark:text-white/44 md:text-[14px]">
+              {row.symbol}
             </div>
           </div>
         </div>
+      </td>
 
-        <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
-          <div>
-            <div className="text-[9px] text-muted-foreground/60">APY</div>
-            <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{asset.apy.toFixed(2)}%</div>
-          </div>
-          <div>
-            <div className="text-[9px] text-muted-foreground/60">TVL</div>
-            <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{asset.tvl}</div>
-          </div>
+      <td className="py-4 px-4 text-[16px] font-normal tracking-[-0.03em] text-foreground dark:text-white/90 md:text-[16px]">
+        <div className={cn("flex items-center gap-2", row.apyAccent && "text-[#6d6afb] dark:text-white")}>
+          <YieldsBadge accent={row.apyAccent} />
+          <span className="tabular-nums">{row.apy}</span>
         </div>
-      </div>
-    </Link>
+      </td>
+
+      <td className="py-4 px-4">
+        <div className="text-[16px] font-normal tracking-[-0.03em] text-foreground dark:text-white/90 md:text-[16px]">
+          {row.totalDepositsPrimary}
+        </div>
+        <div className="mt-1 text-[14px] font-medium tracking-[-0.03em] text-muted-foreground dark:text-white/44 md:text-[14px]">
+          {row.totalDepositsSecondary}
+        </div>
+      </td>
+
+      <td className="py-4 px-6 text-right">
+        <div className="text-[16px] font-normal tracking-[-0.03em] text-foreground dark:text-white/90 md:text-[16px]">
+          {row.availableLiquidityPrimary}
+        </div>
+        <div className="mt-1 text-[14px] font-medium tracking-[-0.03em] text-muted-foreground dark:text-white/44 md:text-[14px]">
+          {row.availableLiquiditySecondary}
+        </div>
+      </td>
+    </tr>
   )
 }
 
 export function LendAssetSpokes() {
-  return (
-    <section>
-      <div className="space-y-8">
-        {ASSET_GROUPS.map((group) => (
-          <div key={group.title}>
-            <div className="mb-3">
-              <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-                {group.title}
-              </h3>
-            </div>
+  const [search, setSearch] = useState("")
+  const [selectedHub, setSelectedHub] = useState<(typeof HUB_OPTIONS)[number]>("All Hubs")
+  const [selectedMarket, setSelectedMarket] = useState<(typeof MARKET_OPTIONS)[number]>("All Markets")
+  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "liquidity">("asset")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
-            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:overflow-visible md:pb-0 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {group.assets.map((asset) => (
-                <AssetCard key={`${group.title}-${asset.symbol}`} asset={asset} />
+  const toggleSort = (nextKey: typeof sortKey) => {
+    if (sortKey === nextKey) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
+      return
+    }
+    setSortKey(nextKey)
+    setSortDirection(nextKey === "asset" ? "asc" : "desc")
+  }
+
+  const filteredAssets = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    const rows = STABLE_ASSETS.filter((row) => {
+      const matchesSearch =
+        query.length === 0 ||
+        row.name.toLowerCase().includes(query) ||
+        row.symbol.toLowerCase().includes(query)
+      const matchesHub = selectedHub === "All Hubs" || row.hub === selectedHub
+      const matchesMarket = selectedMarket === "All Markets" || row.market === selectedMarket
+      return matchesSearch && matchesHub && matchesMarket
+    })
+
+    const direction = sortDirection === "asc" ? 1 : -1
+    return rows.sort((a, b) => {
+      switch (sortKey) {
+        case "apy":
+          return (a.apyValue - b.apyValue) * direction
+        case "deposits":
+          return (a.totalDepositsValue - b.totalDepositsValue) * direction
+        case "liquidity":
+          return (a.availableLiquidityValue - b.availableLiquidityValue) * direction
+        case "asset":
+        default:
+          return a.name.localeCompare(b.name) * direction
+      }
+    })
+  }, [search, selectedHub, selectedMarket, sortKey, sortDirection])
+
+  return (
+    <section className="mt-16">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <label className="flex h-12 w-full max-w-[420px] items-center gap-3 rounded-full border border-border bg-white px-4 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] dark:focus-within:border-white/18 md:px-5">
+          <SearchIcon />
+          <input
+            aria-label="Filter assets"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Filter assets"
+            className="w-full bg-transparent text-[14px] font-normal tracking-[-0.03em] text-foreground outline-none placeholder:text-muted-foreground/70 dark:text-white/88 dark:placeholder:text-white/38"
+          />
+        </label>
+
+        <div className="flex flex-wrap items-center gap-2 md:shrink-0">
+          <div className="relative">
+            <select
+              aria-label="Filter hub"
+              value={selectedHub}
+              onChange={(event) => setSelectedHub(event.target.value as (typeof HUB_OPTIONS)[number])}
+              className="h-12 appearance-none rounded-full border border-border bg-white px-4 pr-10 text-[14px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]"
+            >
+              {HUB_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
-            </div>
+            </select>
+            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60">
+              <ChevronDownIcon />
+            </span>
           </div>
-        ))}
+
+          <div className="relative">
+            <select
+              aria-label="Filter market"
+              value={selectedMarket}
+              onChange={(event) =>
+                setSelectedMarket(event.target.value as (typeof MARKET_OPTIONS)[number])
+              }
+              className="h-12 appearance-none rounded-full border border-border bg-white px-4 pr-10 text-[14px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]"
+            >
+              {MARKET_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60">
+              <ChevronDownIcon />
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      <h2 className="mt-16 text-[24px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[32px]">Stablecoins</h2>
+
+      <div className="mt-10 overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px] text-[13px]">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
+                <th className="pb-3 pt-4 pl-6 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
+                  <button type="button" onClick={() => toggleSort("asset")} className="flex items-center gap-2">
+                    <span>ASSET</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
+                  <button type="button" onClick={() => toggleSort("apy")} className="flex items-center gap-2">
+                    <span>APY</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
+                  <button type="button" onClick={() => toggleSort("deposits")} className="flex items-center gap-2">
+                    <span>TOTAL DEPOSITS</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 pr-6 text-right text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
+                  <button type="button" onClick={() => toggleSort("liquidity")} className="ml-auto flex items-center gap-2">
+                    <span>AVAILABLE LIQUIDITY</span>
+                    <SortIcon />
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border dark:divide-white/6">
+              {filteredAssets.length > 0 ? (
+                filteredAssets.map((row) => <StableAssetRowView key={row.symbol} row={row} />)
+              ) : (
+                <tr>
+                  <td className="px-6 py-10 text-[13px] text-muted-foreground dark:text-white/60" colSpan={4}>
+                    No assets match these filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   )
