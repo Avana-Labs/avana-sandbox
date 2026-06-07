@@ -130,7 +130,7 @@ function SpokeDesktopSection({
 
   return (
     <section className="mb-2">
-      <div className="sticky top-[112px] z-20 mb-3 flex flex-wrap items-center justify-between gap-2 bg-background/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 py-2">
         <h3 className="text-[18px] font-medium tracking-tight md:text-[20px]">{spoke.label}</h3>
         {spoke.eMode ? <EModePill /> : null}
       </div>

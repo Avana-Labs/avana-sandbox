@@ -196,11 +196,6 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
               </div>
             </div>
 
-            <div className="mt-8 mb-3">
-              <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-                Explore more pools collateral
-              </h2>
-            </div>
           </section>
 
         <BorrowWorkspace />
