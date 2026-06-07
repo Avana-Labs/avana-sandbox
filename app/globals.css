@@ -209,9 +209,10 @@
   @apply [&_td]:py-2 [&_th]:py-2;
 }
 
-.asset-rise {
-  animation: asset-rise 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity, filter;
+.asset-swap {
+  animation: asset-swap 720ms cubic-bezier(0.22, 0.8, 0.22, 1) both;
+  transform-origin: center;
+  will-change: transform, opacity;
 }
 
 @keyframes loading-shimmer {
@@ -246,17 +247,25 @@
   }
 }
 
-@keyframes asset-rise {
+@keyframes asset-swap {
   0% {
     opacity: 0;
-    transform: translateY(12px);
-    filter: blur(2px);
+    transform: translate3d(0, 20px, 0) scale(0.985);
+  }
+
+  35% {
+    opacity: 0.55;
+    transform: translate3d(0, 8px, 0) scale(0.995);
+  }
+
+  68% {
+    opacity: 1;
+    transform: translate3d(0, -1px, 0) scale(1.002);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
