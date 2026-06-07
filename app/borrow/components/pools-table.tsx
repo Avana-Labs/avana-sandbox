@@ -67,7 +67,7 @@ function SectionTabs({
     <div className="flex flex-wrap gap-8 border-b border-border/50">
       {[
         { id: "collateral", label: "Collateral" },
-        { id: "borrow", label: "Borrow" },
+        { id: "borrow", label: "Loan" },
       ].map((tab) => (
         <button
           key={tab.id}
