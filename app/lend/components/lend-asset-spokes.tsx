@@ -1,10 +1,12 @@
 "use client"
 
 import Image from "next/image"
+import { AnimatePresence, motion } from "framer-motion"
 import { useMemo, useState } from "react"
+import { TokenIcon } from "@/app/components/token-icon"
 import { cn } from "@/lib/utils"
 
-type StableAssetRow = {
+type AssetRow = {
   symbol: string
   name: string
   apy: string
@@ -15,94 +17,380 @@ type StableAssetRow = {
   availableLiquidityPrimary: string
   availableLiquiditySecondary: string
   availableLiquidityValue: number
-  icon: "eurc" | "frxusd" | "gho" | "usdg" | "rlusd"
   hub: string
   market: string
+  logoSrc?: string
+  logoAlt?: string
   apyAccent?: boolean
 }
 
-const HUB_OPTIONS = ["All Hubs", "Aave", "Circle", "Frax", "Paxos", "Ripple"] as const
-const MARKET_OPTIONS = ["All Markets", "Core", "Stable", "Prime"] as const
+type AssetGroup = {
+  title: string
+  subtitle?: string
+  rows: AssetRow[]
+}
 
-const STABLE_ASSETS: StableAssetRow[] = [
+const ASSET_GROUPS: AssetGroup[] = [
   {
-    symbol: "EURC",
-    name: "Euro Coin",
-    apy: "0.49%",
-    apyValue: 0.49,
-    totalDepositsPrimary: "85.73K EURC",
-    totalDepositsSecondary: "$98.60K",
-    totalDepositsValue: 85.73,
-    availableLiquidityPrimary: "60.18K EURC",
-    availableLiquiditySecondary: "$69.22K",
-    availableLiquidityValue: 60.18,
-    icon: "eurc",
-    hub: "Circle",
-    market: "Core",
+    title: "Stablecoins",
+    rows: [
+      {
+        symbol: "EURC",
+        name: "Euro Coin",
+        apy: "0.49%",
+        apyValue: 0.49,
+        totalDepositsPrimary: "85.73K EURC",
+        totalDepositsSecondary: "$98.60K",
+        totalDepositsValue: 85.73,
+        availableLiquidityPrimary: "60.18K EURC",
+        availableLiquiditySecondary: "$69.22K",
+        availableLiquidityValue: 60.18,
+        logoSrc: "https://token-logos.family.co/asset?id=1:0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c&token=EURC",
+        logoAlt: "EURC logo",
+        hub: "Circle",
+        market: "Core",
+      },
+      {
+        symbol: "frxUSD",
+        name: "Frax USD",
+        apy: "6.20%",
+        apyValue: 6.2,
+        totalDepositsPrimary: "30.00M frxUSD",
+        totalDepositsSecondary: "$29.98M",
+        totalDepositsValue: 30000,
+        availableLiquidityPrimary: "25.39M frxUSD",
+        availableLiquiditySecondary: "$25.37M",
+        availableLiquidityValue: 25390,
+        logoSrc: "https://token-logos.family.co/asset?id=1:0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29&token=frxUSD",
+        logoAlt: "frxUSD logo",
+        hub: "Frax",
+        market: "Stable",
+        apyAccent: true,
+      },
+      {
+        symbol: "GHO",
+        name: "Gho Token",
+        apy: "0.21% - 2.99%",
+        apyValue: 2.99,
+        totalDepositsPrimary: "1.27M GHO",
+        totalDepositsSecondary: "$1.27M",
+        totalDepositsValue: 1270,
+        availableLiquidityPrimary: "455.75K GHO",
+        availableLiquiditySecondary: "$455.75K",
+        availableLiquidityValue: 455.75,
+        logoSrc: "https://token-logos.family.co/asset?id=1:0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f&token=GHO",
+        logoAlt: "GHO logo",
+        hub: "Aave",
+        market: "Prime",
+      },
+      {
+        symbol: "USDG",
+        name: "Global Dollar",
+        apy: "8.00%",
+        apyValue: 8,
+        totalDepositsPrimary: "30.00M USDG",
+        totalDepositsSecondary: "$30.00M",
+        totalDepositsValue: 30000,
+        availableLiquidityPrimary: "25.07M USDG",
+        availableLiquiditySecondary: "$25.07M",
+        availableLiquidityValue: 25070,
+        logoSrc: "https://token-logos.family.co/asset?id=1:0xe343167631d89B6Ffc58B88d6b7fB0228795491D&token=USDG",
+        logoAlt: "USDG logo",
+        hub: "Paxos",
+        market: "Stable",
+        apyAccent: true,
+      },
+      {
+        symbol: "RLUSD",
+        name: "RLUSD",
+        apy: "30.10%",
+        apyValue: 30.1,
+        totalDepositsPrimary: "0.15 RLUSD",
+        totalDepositsSecondary: "$0.15",
+        totalDepositsValue: 0.15,
+        availableLiquidityPrimary: "<0.01 RLUSD",
+        availableLiquiditySecondary: "$0.00",
+        availableLiquidityValue: 0.01,
+        logoSrc: "https://token-logos.family.co/asset?id=1:0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD&token=RLUSD",
+        logoAlt: "RLUSD logo",
+        hub: "Ripple",
+        market: "Stable",
+      },
+    ],
   },
   {
-    symbol: "frxUSD",
-    name: "Frax USD",
-    apy: "6.20%",
-    apyValue: 6.2,
-    totalDepositsPrimary: "30.00M frxUSD",
-    totalDepositsSecondary: "$29.98M",
-    totalDepositsValue: 30000,
-    availableLiquidityPrimary: "25.39M frxUSD",
-    availableLiquiditySecondary: "$25.37M",
-    availableLiquidityValue: 25390,
-    icon: "frxusd",
-    hub: "Frax",
-    market: "Stable",
-    apyAccent: true,
+    title: "Ethereum-Based",
+    rows: [
+      {
+        symbol: "ETH",
+        name: "Ethereum",
+        apy: "3.82%",
+        apyValue: 3.82,
+        totalDepositsPrimary: "31.50M ETH",
+        totalDepositsSecondary: "$103.20M",
+        totalDepositsValue: 31500,
+        availableLiquidityPrimary: "12.18M ETH",
+        availableLiquiditySecondary: "$39.89M",
+        availableLiquidityValue: 12180,
+        hub: "Ethereum",
+        market: "Native",
+      },
+      {
+        symbol: "stETH",
+        name: "Lido Staked ETH",
+        apy: "4.14%",
+        apyValue: 4.14,
+        totalDepositsPrimary: "8.44M stETH",
+        totalDepositsSecondary: "$27.68M",
+        totalDepositsValue: 8440,
+        availableLiquidityPrimary: "3.98M stETH",
+        availableLiquiditySecondary: "$13.05M",
+        availableLiquidityValue: 3980,
+        hub: "Lido",
+        market: "Liquid Staking",
+      },
+      {
+        symbol: "wstETH",
+        name: "Wrapped stETH",
+        apy: "5.14%",
+        apyValue: 5.14,
+        totalDepositsPrimary: "8.40M wstETH",
+        totalDepositsSecondary: "$27.53M",
+        totalDepositsValue: 8400,
+        availableLiquidityPrimary: "2.88M wstETH",
+        availableLiquiditySecondary: "$9.44M",
+        availableLiquidityValue: 2880,
+        hub: "Lido",
+        market: "Liquid Staking",
+      },
+      {
+        symbol: "cbETH",
+        name: "Coinbase Wrapped ETH",
+        apy: "4.62%",
+        apyValue: 4.62,
+        totalDepositsPrimary: "1.90M cbETH",
+        totalDepositsSecondary: "$6.24M",
+        totalDepositsValue: 1900,
+        availableLiquidityPrimary: "0.84M cbETH",
+        availableLiquiditySecondary: "$2.75M",
+        availableLiquidityValue: 840,
+        hub: "Coinbase",
+        market: "Liquid Staking",
+      },
+      {
+        symbol: "rETH",
+        name: "Rocket Pool ETH",
+        apy: "4.87%",
+        apyValue: 4.87,
+        totalDepositsPrimary: "2.80M rETH",
+        totalDepositsSecondary: "$9.18M",
+        totalDepositsValue: 2800,
+        availableLiquidityPrimary: "1.14M rETH",
+        availableLiquiditySecondary: "$3.74M",
+        availableLiquidityValue: 1140,
+        hub: "Rocket Pool",
+        market: "Liquid Staking",
+      },
+      {
+        symbol: "weETH",
+        name: "Wrapped eETH",
+        apy: "5.31%",
+        apyValue: 5.31,
+        totalDepositsPrimary: "2.10M weETH",
+        totalDepositsSecondary: "$6.88M",
+        totalDepositsValue: 2100,
+        availableLiquidityPrimary: "0.95M weETH",
+        availableLiquiditySecondary: "$3.11M",
+        availableLiquidityValue: 950,
+        hub: "EtherFi",
+        market: "Liquid Restaking",
+      },
+    ],
   },
   {
-    symbol: "GHO",
-    name: "Gho Token",
-    apy: "0.21% - 2.99%",
-    apyValue: 2.99,
-    totalDepositsPrimary: "1.27M GHO",
-    totalDepositsSecondary: "$1.27M",
-    totalDepositsValue: 1270,
-    availableLiquidityPrimary: "455.75K GHO",
-    availableLiquiditySecondary: "$455.75K",
-    availableLiquidityValue: 455.75,
-    icon: "gho",
-    hub: "Aave",
-    market: "Prime",
+    title: "Bitcoin Based",
+    rows: [
+      {
+        symbol: "BTC",
+        name: "Bitcoin",
+        apy: "2.91%",
+        apyValue: 2.91,
+        totalDepositsPrimary: "0.84M BTC",
+        totalDepositsSecondary: "$56.44M",
+        totalDepositsValue: 840,
+        availableLiquidityPrimary: "0.42M BTC",
+        availableLiquiditySecondary: "$28.22M",
+        availableLiquidityValue: 420,
+        hub: "Bitcoin",
+        market: "Native",
+      },
+      {
+        symbol: "WBTC",
+        name: "Wrapped Bitcoin",
+        apy: "3.48%",
+        apyValue: 3.48,
+        totalDepositsPrimary: "0.90M WBTC",
+        totalDepositsSecondary: "$60.65M",
+        totalDepositsValue: 900,
+        availableLiquidityPrimary: "0.29M WBTC",
+        availableLiquiditySecondary: "$19.54M",
+        availableLiquidityValue: 290,
+        hub: "Wrapped BTC",
+        market: "Wrapped",
+      },
+      {
+        symbol: "cbBTC",
+        name: "Coinbase Wrapped BTC",
+        apy: "4.25%",
+        apyValue: 4.25,
+        totalDepositsPrimary: "2.10M cbBTC",
+        totalDepositsSecondary: "$141.68M",
+        totalDepositsValue: 2100,
+        availableLiquidityPrimary: "0.77M cbBTC",
+        availableLiquiditySecondary: "$51.88M",
+        availableLiquidityValue: 770,
+        hub: "Coinbase",
+        market: "Wrapped",
+      },
+    ],
   },
   {
-    symbol: "USDG",
-    name: "Global Dollar",
-    apy: "8.00%",
-    apyValue: 8,
-    totalDepositsPrimary: "30.00M USDG",
-    totalDepositsSecondary: "$30.00M",
-    totalDepositsValue: 30000,
-    availableLiquidityPrimary: "25.07M USDG",
-    availableLiquiditySecondary: "$25.07M",
-    availableLiquidityValue: 25070,
-    icon: "usdg",
-    hub: "Paxos",
-    market: "Stable",
-    apyAccent: true,
-  },
-  {
-    symbol: "RLUSD",
-    name: "RLUSD",
-    apy: "30.10%",
-    apyValue: 30.1,
-    totalDepositsPrimary: "0.15 RLUSD",
-    totalDepositsSecondary: "$0.15",
-    totalDepositsValue: 0.15,
-    availableLiquidityPrimary: "<0.01 RLUSD",
-    availableLiquiditySecondary: "$0.00",
-    availableLiquidityValue: 0.01,
-    icon: "rlusd",
-    hub: "Ripple",
-    market: "Stable",
+    title: "Other Assets",
+    subtitle: "Governance tokens",
+    rows: [
+      {
+        symbol: "AAVE",
+        name: "Aave",
+        apy: "7.60%",
+        apyValue: 7.6,
+        totalDepositsPrimary: "4.70M AAVE",
+        totalDepositsSecondary: "$449.46M",
+        totalDepositsValue: 4700,
+        availableLiquidityPrimary: "1.95M AAVE",
+        availableLiquiditySecondary: "$186.57M",
+        availableLiquidityValue: 1950,
+        hub: "Aave",
+        market: "Governance",
+      },
+      {
+        symbol: "UNI",
+        name: "Uniswap",
+        apy: "6.40%",
+        apyValue: 6.4,
+        totalDepositsPrimary: "3.20M UNI",
+        totalDepositsSecondary: "$34.40M",
+        totalDepositsValue: 3200,
+        availableLiquidityPrimary: "1.24M UNI",
+        availableLiquiditySecondary: "$13.33M",
+        availableLiquidityValue: 1240,
+        hub: "Uniswap",
+        market: "Governance",
+      },
+      {
+        symbol: "CRV",
+        name: "Curve DAO",
+        apy: "5.45%",
+        apyValue: 5.45,
+        totalDepositsPrimary: "1.80M CRV",
+        totalDepositsSecondary: "$2.74M",
+        totalDepositsValue: 1800,
+        availableLiquidityPrimary: "0.92M CRV",
+        availableLiquiditySecondary: "$1.40M",
+        availableLiquidityValue: 920,
+        hub: "Curve",
+        market: "Governance",
+      },
+      {
+        symbol: "LDO",
+        name: "Lido DAO",
+        apy: "6.80%",
+        apyValue: 6.8,
+        totalDepositsPrimary: "5.10M LDO",
+        totalDepositsSecondary: "$9.98M",
+        totalDepositsValue: 5100,
+        availableLiquidityPrimary: "2.11M LDO",
+        availableLiquiditySecondary: "$4.13M",
+        availableLiquidityValue: 2110,
+        hub: "Lido",
+        market: "Governance",
+      },
+      {
+        symbol: "BAL",
+        name: "Balancer",
+        apy: "4.95%",
+        apyValue: 4.95,
+        totalDepositsPrimary: "1.60M BAL",
+        totalDepositsSecondary: "$5.30M",
+        totalDepositsValue: 1600,
+        availableLiquidityPrimary: "0.70M BAL",
+        availableLiquiditySecondary: "$2.32M",
+        availableLiquidityValue: 700,
+        hub: "Balancer",
+        market: "Governance",
+      },
+      {
+        symbol: "GNO",
+        name: "Gnosis",
+        apy: "5.31%",
+        apyValue: 5.31,
+        totalDepositsPrimary: "2.80M GNO",
+        totalDepositsSecondary: "$621.48M",
+        totalDepositsValue: 2800,
+        availableLiquidityPrimary: "1.15M GNO",
+        availableLiquiditySecondary: "$255.45M",
+        availableLiquidityValue: 1150,
+        hub: "Gnosis",
+        market: "Governance",
+      },
+      {
+        symbol: "AERO",
+        name: "Aerodrome",
+        apy: "8.20%",
+        apyValue: 8.2,
+        totalDepositsPrimary: "6.30M AERO",
+        totalDepositsSecondary: "$14.15M",
+        totalDepositsValue: 6300,
+        availableLiquidityPrimary: "2.70M AERO",
+        availableLiquiditySecondary: "$6.06M",
+        availableLiquidityValue: 2700,
+        hub: "Aerodrome",
+        market: "Governance",
+      },
+      {
+        symbol: "ARB",
+        name: "Arbitrum",
+        apy: "3.90%",
+        apyValue: 3.9,
+        totalDepositsPrimary: "12.40M ARB",
+        totalDepositsSecondary: "$7.43M",
+        totalDepositsValue: 12400,
+        availableLiquidityPrimary: "4.90M ARB",
+        availableLiquiditySecondary: "$2.94M",
+        availableLiquidityValue: 4900,
+        hub: "Arbitrum",
+        market: "Governance",
+      },
+      {
+        symbol: "OP",
+        name: "Optimism",
+        apy: "4.10%",
+        apyValue: 4.1,
+        totalDepositsPrimary: "9.50M OP",
+        totalDepositsSecondary: "$13.87M",
+        totalDepositsValue: 9500,
+        availableLiquidityPrimary: "3.85M OP",
+        availableLiquiditySecondary: "$5.62M",
+        availableLiquidityValue: 3850,
+        hub: "Optimism",
+        market: "Governance",
+      },
+    ],
   },
 ]
+
+const ALL_ROWS = ASSET_GROUPS.flatMap((group) => group.rows)
+const HUB_OPTIONS = ["All Hubs", ...Array.from(new Set(ALL_ROWS.map((row) => row.hub)))]
+const MARKET_OPTIONS = ["All Markets", ...Array.from(new Set(ALL_ROWS.map((row) => row.market)))]
 
 function SearchIcon() {
   return (
@@ -152,45 +440,38 @@ function YieldsBadge({ accent }: { accent?: boolean }) {
   )
 }
 
-function AssetIcon({ icon }: { icon: StableAssetRow["icon"] }) {
-  const base = "relative flex size-[44px] shrink-0 items-center justify-center overflow-hidden rounded-full"
-  const logos: Record<StableAssetRow["icon"], { src: string; alt: string }> = {
-    eurc: {
-      src: "https://token-logos.family.co/asset?id=1:0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c&token=EURC",
-      alt: "EURC logo",
-    },
-    frxusd: {
-      src: "https://token-logos.family.co/asset?id=1:0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29&token=frxUSD",
-      alt: "frxUSD logo",
-    },
-    gho: {
-      src: "https://token-logos.family.co/asset?id=1:0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f&token=GHO",
-      alt: "GHO logo",
-    },
-    usdg: {
-      src: "https://token-logos.family.co/asset?id=1:0xe343167631d89B6Ffc58B88d6b7fB0228795491D&token=USDG",
-      alt: "USDG logo",
-    },
-    rlusd: {
-      src: "https://token-logos.family.co/asset?id=1:0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD&token=RLUSD",
-      alt: "RLUSD logo",
-    },
+function AssetIcon({ row }: { row: AssetRow }) {
+  if (row.logoSrc) {
+    return (
+      <span className="relative flex size-[44px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent">
+        <Image
+          alt={row.logoAlt ?? `${row.symbol} logo`}
+          src={row.logoSrc}
+          width={44}
+          height={44}
+          className="h-full w-full object-contain"
+          unoptimized
+        />
+      </span>
+    )
   }
 
-  const logo = logos[icon]
-  return (
-    <span className={cn(base, "bg-transparent")}>
-      <Image alt={logo.alt} src={logo.src} width={44} height={44} className="h-full w-full object-contain" unoptimized />
-    </span>
-  )
+  return <TokenIcon symbol={row.symbol} size="xl" ring className="bg-white dark:bg-[#111111]" />
 }
 
-function StableAssetRowView({ row }: { row: StableAssetRow }) {
+function AssetRowView({ row }: { row: AssetRow }) {
   return (
-    <tr className="group border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]">
+    <motion.tr
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="group border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]"
+    >
       <td className="py-4 pl-6 pr-4">
         <div className="flex min-w-0 items-center gap-4">
-          <AssetIcon icon={row.icon} />
+          <AssetIcon row={row} />
           <div className="min-w-0">
             <div className="truncate text-[16px] font-medium tracking-[-0.03em] text-foreground dark:text-white/96 md:text-[16px]">
               {row.name}
@@ -226,14 +507,14 @@ function StableAssetRowView({ row }: { row: StableAssetRow }) {
           {row.availableLiquiditySecondary}
         </div>
       </td>
-    </tr>
+    </motion.tr>
   )
 }
 
-export function LendAssetSpokes() {
+function AssetSection({ title, subtitle, rows }: { title: string; subtitle?: string; rows: AssetRow[] }) {
   const [search, setSearch] = useState("")
-  const [selectedHub, setSelectedHub] = useState<(typeof HUB_OPTIONS)[number]>("All Hubs")
-  const [selectedMarket, setSelectedMarket] = useState<(typeof MARKET_OPTIONS)[number]>("All Markets")
+  const [selectedHub, setSelectedHub] = useState("All Hubs")
+  const [selectedMarket, setSelectedMarket] = useState("All Markets")
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "liquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
@@ -246,55 +527,65 @@ export function LendAssetSpokes() {
     setSortDirection(nextKey === "asset" ? "asc" : "desc")
   }
 
-  const filteredAssets = useMemo(() => {
+  const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase()
-    const rows = STABLE_ASSETS.filter((row) => {
-      const matchesSearch =
-        query.length === 0 ||
-        row.name.toLowerCase().includes(query) ||
-        row.symbol.toLowerCase().includes(query)
-      const matchesHub = selectedHub === "All Hubs" || row.hub === selectedHub
-      const matchesMarket = selectedMarket === "All Markets" || row.market === selectedMarket
-      return matchesSearch && matchesHub && matchesMarket
-    })
-
     const direction = sortDirection === "asc" ? 1 : -1
-    return rows.sort((a, b) => {
-      switch (sortKey) {
-        case "apy":
-          return (a.apyValue - b.apyValue) * direction
-        case "deposits":
-          return (a.totalDepositsValue - b.totalDepositsValue) * direction
-        case "liquidity":
-          return (a.availableLiquidityValue - b.availableLiquidityValue) * direction
-        case "asset":
-        default:
-          return a.name.localeCompare(b.name) * direction
-      }
-    })
-  }, [search, selectedHub, selectedMarket, sortKey, sortDirection])
+
+    return [...rows]
+      .filter((row) => {
+        const matchesSearch =
+          query.length === 0 ||
+          row.name.toLowerCase().includes(query) ||
+          row.symbol.toLowerCase().includes(query)
+        const matchesHub = selectedHub === "All Hubs" || row.hub === selectedHub
+        const matchesMarket = selectedMarket === "All Markets" || row.market === selectedMarket
+        return matchesSearch && matchesHub && matchesMarket
+      })
+      .sort((a, b) => {
+        switch (sortKey) {
+          case "apy":
+            return (a.apyValue - b.apyValue) * direction
+          case "deposits":
+            return (a.totalDepositsValue - b.totalDepositsValue) * direction
+          case "liquidity":
+            return (a.availableLiquidityValue - b.availableLiquidityValue) * direction
+          case "asset":
+          default:
+            return a.name.localeCompare(b.name) * direction
+        }
+      })
+  }, [rows, search, selectedHub, selectedMarket, sortDirection, sortKey])
 
   return (
-    <section className="mt-16">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <label className="flex h-12 w-full max-w-[420px] items-center gap-3 rounded-full border border-border bg-white px-4 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] dark:focus-within:border-white/18 md:px-5">
-          <SearchIcon />
-          <input
-            aria-label="Filter assets"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Filter assets"
-            className="w-full bg-transparent text-[14px] font-normal tracking-[-0.03em] text-foreground outline-none placeholder:text-muted-foreground/70 dark:text-white/88 dark:placeholder:text-white/38"
-          />
-        </label>
+    <section className="space-y-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-[24px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[28px]">
+            {title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">{subtitle}</p>
+          ) : null}
+        </div>
 
-        <div className="flex flex-wrap items-center gap-2 md:shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex h-10 w-[220px] items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18">
+            <SearchIcon />
+            <input
+              aria-label={`${title} filter assets`}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Filter assets"
+              className="w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] text-foreground outline-none placeholder:text-muted-foreground/70 dark:text-white/88 dark:placeholder:text-white/38"
+            />
+          </label>
+
           <div className="relative">
             <select
-              aria-label="Filter hub"
+              aria-label={`${title} filter hub`}
               value={selectedHub}
-              onChange={(event) => setSelectedHub(event.target.value as (typeof HUB_OPTIONS)[number])}
-              className="h-12 appearance-none rounded-full border border-border bg-white px-4 pr-10 text-[14px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]"
+              onChange={(event) => setSelectedHub(event.target.value)}
+              className="h-10 appearance-none rounded-full border border-border bg-white px-3 pr-9 text-[13px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b]"
             >
               {HUB_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -302,19 +593,17 @@ export function LendAssetSpokes() {
                 </option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60">
+            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60">
               <ChevronDownIcon />
             </span>
           </div>
 
           <div className="relative">
             <select
-              aria-label="Filter market"
+              aria-label={`${title} filter market`}
               value={selectedMarket}
-              onChange={(event) =>
-                setSelectedMarket(event.target.value as (typeof MARKET_OPTIONS)[number])
-              }
-              className="h-12 appearance-none rounded-full border border-border bg-white px-4 pr-10 text-[14px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]"
+              onChange={(event) => setSelectedMarket(event.target.value)}
+              className="h-10 appearance-none rounded-full border border-border bg-white px-3 pr-9 text-[13px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b]"
             >
               {MARKET_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -322,17 +611,14 @@ export function LendAssetSpokes() {
                 </option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60">
+            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 dark:text-white/60">
               <ChevronDownIcon />
             </span>
           </div>
-
         </div>
       </div>
 
-      <h2 className="mt-16 text-[24px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[32px]">Stablecoins</h2>
-
-      <div className="mt-10 overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
+      <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] text-[13px]">
             <thead>
@@ -363,20 +649,44 @@ export function LendAssetSpokes() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border dark:divide-white/6">
-              {filteredAssets.length > 0 ? (
-                filteredAssets.map((row) => <StableAssetRowView key={row.symbol} row={row} />)
-              ) : (
-                <tr>
-                  <td className="px-6 py-10 text-[13px] text-muted-foreground dark:text-white/60" colSpan={4}>
-                    No assets match these filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
+
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.tbody
+                key={`${title}-${search}-${selectedHub}-${selectedMarket}-${sortKey}-${sortDirection}`}
+                className="divide-y divide-border dark:divide-white/6"
+              >
+                {filteredRows.length > 0 ? (
+                  filteredRows.map((row) => <AssetRowView key={row.symbol} row={row} />)
+                ) : (
+                  <tr>
+                    <td className="px-6 py-10 text-[13px] text-muted-foreground dark:text-white/60" colSpan={4}>
+                      No assets match these filters.
+                    </td>
+                  </tr>
+                )}
+              </motion.tbody>
+            </AnimatePresence>
           </table>
         </div>
       </div>
+    </section>
+  )
+}
+
+export function LendAssetSpokes() {
+  return (
+    <section className="mt-16 space-y-14">
+      {ASSET_GROUPS.map((group, index) => (
+        <div key={group.title}>
+          <AssetSection title={group.title} subtitle={group.subtitle} rows={group.rows} />
+          {group.title === "Ethereum-Based" ? (
+            <div className="my-8 flex justify-center">
+              <div className="h-px w-full max-w-[980px] bg-gradient-to-r from-transparent via-border/80 to-transparent dark:via-white/10" />
+            </div>
+          ) : null}
+          {index === 0 ? null : null}
+        </div>
+      ))}
     </section>
   )
 }
