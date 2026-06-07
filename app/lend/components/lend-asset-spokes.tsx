@@ -1,7 +1,6 @@
 "use client"
 
 import Image from "next/image"
-import { AnimatePresence, motion } from "framer-motion"
 import { useMemo, useState } from "react"
 import { TokenIcon } from "@/app/components/token-icon"
 import { cn } from "@/lib/utils"
@@ -459,15 +458,11 @@ function AssetIcon({ row }: { row: AssetRow }) {
   return <TokenIcon symbol={row.symbol} size="xl" ring className="bg-white dark:bg-[#111111]" />
 }
 
-function AssetRowView({ row }: { row: AssetRow }) {
+function AssetRowView({ row, delay }: { row: AssetRow; delay: number }) {
   return (
-    <motion.tr
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
-      className="group border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]"
+    <tr
+      className="asset-rise group border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]"
+      style={{ animationDelay: `${delay}ms` }}
     >
       <td className="py-4 pl-6 pr-4">
         <div className="flex min-w-0 items-center gap-4">
@@ -507,11 +502,93 @@ function AssetRowView({ row }: { row: AssetRow }) {
           {row.availableLiquiditySecondary}
         </div>
       </td>
-    </motion.tr>
+    </tr>
   )
 }
 
-function AssetSection({ title, subtitle, rows }: { title: string; subtitle?: string; rows: AssetRow[] }) {
+function AssetSection({
+  title,
+  subtitle,
+  rows,
+  animationKey,
+  onSort,
+}: {
+  title: string
+  subtitle?: string
+  rows: AssetRow[]
+  animationKey: string
+  onSort: (nextKey: "asset" | "apy" | "deposits" | "liquidity") => void
+}) {
+  return (
+    <section className="space-y-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2
+            className={cn(
+              "text-[24px] font-medium tracking-[-0.03em] text-foreground dark:text-white",
+              title === "Ethereum-Based" ? "md:text-[26px]" : "md:text-[28px]",
+            )}
+          >
+            {title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">{subtitle}</p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px] text-[13px]">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
+                <th className="pb-3 pt-4 pl-6 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
+                  <button type="button" onClick={() => onSort("asset")} className="flex items-center gap-2">
+                    <span>ASSET</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
+                  <button type="button" onClick={() => onSort("apy")} className="flex items-center gap-2">
+                    <span>APY</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
+                  <button type="button" onClick={() => onSort("deposits")} className="flex items-center gap-2">
+                    <span>TOTAL DEPOSITS</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 pr-6 text-right text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
+                  <button type="button" onClick={() => onSort("liquidity")} className="ml-auto flex items-center gap-2">
+                    <span>AVAILABLE LIQUIDITY</span>
+                    <SortIcon />
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody key={animationKey} className="divide-y divide-border dark:divide-white/6">
+              {rows.length > 0 ? (
+                rows.map((row, index) => (
+                  <AssetRowView key={row.symbol} row={row} delay={index * 28} />
+                ))
+              ) : (
+                <tr>
+                  <td className="px-6 py-10 text-[13px] text-muted-foreground dark:text-white/60" colSpan={4}>
+                    No assets match these filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function LendAssetSpokes() {
   const [search, setSearch] = useState("")
   const [selectedHub, setSelectedHub] = useState("All Hubs")
   const [selectedMarket, setSelectedMarket] = useState("All Markets")
@@ -523,56 +600,52 @@ function AssetSection({ title, subtitle, rows }: { title: string; subtitle?: str
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
       return
     }
+
     setSortKey(nextKey)
     setSortDirection(nextKey === "asset" ? "asc" : "desc")
   }
 
-  const filteredRows = useMemo(() => {
+  const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase()
     const direction = sortDirection === "asc" ? 1 : -1
 
-    return [...rows]
-      .filter((row) => {
-        const matchesSearch =
-          query.length === 0 ||
-          row.name.toLowerCase().includes(query) ||
-          row.symbol.toLowerCase().includes(query)
-        const matchesHub = selectedHub === "All Hubs" || row.hub === selectedHub
-        const matchesMarket = selectedMarket === "All Markets" || row.market === selectedMarket
-        return matchesSearch && matchesHub && matchesMarket
-      })
-      .sort((a, b) => {
-        switch (sortKey) {
-          case "apy":
-            return (a.apyValue - b.apyValue) * direction
-          case "deposits":
-            return (a.totalDepositsValue - b.totalDepositsValue) * direction
-          case "liquidity":
-            return (a.availableLiquidityValue - b.availableLiquidityValue) * direction
-          case "asset":
-          default:
-            return a.name.localeCompare(b.name) * direction
-        }
-      })
-  }, [rows, search, selectedHub, selectedMarket, sortDirection, sortKey])
+    return ASSET_GROUPS.map((group) => {
+      const rows = group.rows
+        .filter((row) => {
+          const matchesSearch =
+            query.length === 0 ||
+            row.name.toLowerCase().includes(query) ||
+            row.symbol.toLowerCase().includes(query)
+          const matchesHub = selectedHub === "All Hubs" || row.hub === selectedHub
+          const matchesMarket = selectedMarket === "All Markets" || row.market === selectedMarket
+          return matchesSearch && matchesHub && matchesMarket
+        })
+        .sort((a, b) => {
+          switch (sortKey) {
+            case "apy":
+              return (a.apyValue - b.apyValue) * direction
+            case "deposits":
+              return (a.totalDepositsValue - b.totalDepositsValue) * direction
+            case "liquidity":
+              return (a.availableLiquidityValue - b.availableLiquidityValue) * direction
+            case "asset":
+            default:
+              return a.name.localeCompare(b.name) * direction
+          }
+        })
+
+      return { ...group, rows }
+    }).filter((group) => group.rows.length > 0)
+  }, [search, selectedHub, selectedMarket, sortDirection, sortKey])
 
   return (
-    <section className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-[24px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[28px]">
-            {title}
-          </h2>
-          {subtitle ? (
-            <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">{subtitle}</p>
-          ) : null}
-        </div>
-
+    <section className="mt-16 space-y-8">
+      <div className="rounded-[20px] border border-border bg-white px-4 py-3 shadow-elev-1 dark:border-white/6 dark:bg-[#171717]">
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex h-10 w-[220px] items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18">
             <SearchIcon />
             <input
-              aria-label={`${title} filter assets`}
+              aria-label="Filter assets"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Filter assets"
@@ -582,7 +655,7 @@ function AssetSection({ title, subtitle, rows }: { title: string; subtitle?: str
 
           <div className="relative">
             <select
-              aria-label={`${title} filter hub`}
+              aria-label="Filter hub"
               value={selectedHub}
               onChange={(event) => setSelectedHub(event.target.value)}
               className="h-10 appearance-none rounded-full border border-border bg-white px-3 pr-9 text-[13px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b]"
@@ -600,7 +673,7 @@ function AssetSection({ title, subtitle, rows }: { title: string; subtitle?: str
 
           <div className="relative">
             <select
-              aria-label={`${title} filter market`}
+              aria-label="Filter market"
               value={selectedMarket}
               onChange={(event) => setSelectedMarket(event.target.value)}
               className="h-10 appearance-none rounded-full border border-border bg-white px-3 pr-9 text-[13px] font-medium tracking-[-0.03em] text-foreground shadow-elev-1 outline-none transition-colors hover:bg-surface-1 dark:border-white/6 dark:bg-[#242424] dark:text-white/94 dark:hover:bg-[#2b2b2b]"
@@ -618,75 +691,30 @@ function AssetSection({ title, subtitle, rows }: { title: string; subtitle?: str
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-[13px]">
-            <thead>
-              <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-                <th className="pb-3 pt-4 pl-6 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => toggleSort("asset")} className="flex items-center gap-2">
-                    <span>ASSET</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => toggleSort("apy")} className="flex items-center gap-2">
-                    <span>APY</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => toggleSort("deposits")} className="flex items-center gap-2">
-                    <span>TOTAL DEPOSITS</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 pr-6 text-right text-[10.5px] font-medium uppercase tracking-[0.06em] text-foreground dark:text-white/88">
-                  <button type="button" onClick={() => toggleSort("liquidity")} className="ml-auto flex items-center gap-2">
-                    <span>AVAILABLE LIQUIDITY</span>
-                    <SortIcon />
-                  </button>
-                </th>
-              </tr>
-            </thead>
-
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.tbody
-                key={`${title}-${search}-${selectedHub}-${selectedMarket}-${sortKey}-${sortDirection}`}
-                className="divide-y divide-border dark:divide-white/6"
-              >
-                {filteredRows.length > 0 ? (
-                  filteredRows.map((row) => <AssetRowView key={row.symbol} row={row} />)
-                ) : (
-                  <tr>
-                    <td className="px-6 py-10 text-[13px] text-muted-foreground dark:text-white/60" colSpan={4}>
-                      No assets match these filters.
-                    </td>
-                  </tr>
-                )}
-              </motion.tbody>
-            </AnimatePresence>
-          </table>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-export function LendAssetSpokes() {
-  return (
-    <section className="mt-16 space-y-14">
-      {ASSET_GROUPS.map((group, index) => (
-        <div key={group.title}>
-          <AssetSection title={group.title} subtitle={group.subtitle} rows={group.rows} />
-          {group.title === "Ethereum-Based" ? (
-            <div className="my-8 flex justify-center">
-              <div className="h-px w-full max-w-[980px] bg-gradient-to-r from-transparent via-border/80 to-transparent dark:via-white/10" />
+      <div className="space-y-14">
+        {filteredGroups.length > 0 ? (
+          filteredGroups.map((group) => (
+            <div key={group.title} className="space-y-8">
+              <AssetSection
+                title={group.title}
+                subtitle={group.subtitle}
+                rows={group.rows}
+                animationKey={`${search}-${selectedHub}-${selectedMarket}-${sortKey}-${sortDirection}-${group.title}`}
+                onSort={toggleSort}
+              />
+              {group.title === "Ethereum-Based" ? (
+                <div className="flex justify-center">
+                  <div className="h-px w-full max-w-[980px] bg-gradient-to-r from-transparent via-border/80 to-transparent dark:via-white/10" />
+                </div>
+              ) : null}
             </div>
-          ) : null}
-          {index === 0 ? null : null}
-        </div>
-      ))}
+          ))
+        ) : (
+          <div className="rounded-[20px] border border-border bg-white px-6 py-10 text-[13px] text-muted-foreground shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:text-white/60">
+            No assets match these filters.
+          </div>
+        )}
+      </div>
     </section>
   )
 }
