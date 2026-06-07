@@ -230,12 +230,12 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
-              <th className="pb-3 pt-4 pr-6 text-right text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 px-4 pr-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("supplied")}
                   className={cn(
-                    "ml-auto flex items-center gap-2 transition-colors",
+                    "flex w-full items-center gap-2 transition-colors",
                     sortKey === "supplied" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
@@ -265,7 +265,7 @@ function CollateralDesktopTable({
                 <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                   <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
                 </td>
-                <td className="py-4 px-6 text-right">
+                <td className="py-4 px-6">
                   <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                     <span className="tabular-nums">{formatPairAmount(pool.availableUsd, pool)}</span>
                   </div>
