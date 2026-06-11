@@ -35,16 +35,16 @@ export function PortfolioDashboard() {
     <>
       <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {activeTab === "overview" ? <PortfolioSectionTitle title="Credit Lines" /> : null}
       {activeTab === "overview" ? (
-        <PortfolioSection title="Credit Markets">
-          <PortfolioPositions section="all" />
-        </PortfolioSection>
-      ) : null}
-      {activeTab === "overview" ? (
-        <PortfolioSection title="Credit Analysis">
-          <StakeWizard />
-        </PortfolioSection>
+        <div className="mt-12 space-y-8">
+          <PortfolioSectionTitle title="Credit Lines" />
+          <PortfolioSection title="Credit Markets">
+            <PortfolioPositions section="all" />
+          </PortfolioSection>
+          <PortfolioSection title="Credit Analysis">
+            <StakeWizard />
+          </PortfolioSection>
+        </div>
       ) : null}
       {activeTab === "lending" ? <PortfolioInvestments /> : null}
       {activeTab === "lending" ? <PortfolioStrategies /> : null}
