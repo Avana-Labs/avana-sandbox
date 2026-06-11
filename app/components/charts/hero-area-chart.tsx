@@ -136,10 +136,10 @@ export function HeroAreaChart({
             dot={(props) => {
               const { cx, cy, index } = props
               if (index !== data.length - 1 || cx == null || cy == null) {
-                return <g />
+                return null
               }
               return (
-                <g>
+                <g key={`hero-area-dot-${index}`}>
                   <circle cx={cx} cy={cy} fill={color.stroke} opacity={0.45}>
                     <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
                     <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
