@@ -3,7 +3,15 @@
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 import { Info } from "lucide-react"
-import { ArrowDownload24Filled, ArrowUpload24Filled } from "@fluentui/react-icons"
+import {
+  ArrowCircleDown24Filled,
+  ArrowCircleUp24Filled,
+  ArrowDownload24Filled,
+  BuildingBank24Filled,
+  ClipboardMore24Filled,
+  Receipt24Filled,
+  Wallet24Filled,
+} from "@fluentui/react-icons"
 import {
   buildRangeData,
   HeroBalanceDisplay,
@@ -40,6 +48,7 @@ type PortfolioHeroProps = {
   headlineValue?: string
   headlineDelta?: string
   rangeData?: ChartRangeData
+  actionLabels?: string[]
   primaryActionLabel?: string
   secondaryActionLabel?: string
   statOneLabel?: string
@@ -54,18 +63,45 @@ type PortfolioHeroProps = {
 function buildActions({
   openDeposit,
   openWithdraw,
+  actionLabels,
   primaryActionLabel,
   secondaryActionLabel,
 }: {
   openDeposit?: (token: typeof TOKENS[number]) => void
   openWithdraw?: (token: typeof TOKENS[number]) => void
+  actionLabels?: string[]
   primaryActionLabel: string
   secondaryActionLabel: string
 }): PortfolioHeroAction[] {
-  return [
-    { id: "primary", label: primaryActionLabel, icon: ArrowUpload24Filled, onClick: () => openDeposit?.(TOKENS[0]) },
-    { id: "secondary", label: secondaryActionLabel, icon: ArrowDownload24Filled, onClick: () => openWithdraw?.(TOKENS[0]) },
-  ]
+  const labels = actionLabels?.length ? actionLabels : [primaryActionLabel, secondaryActionLabel]
+
+  const resolveIcon = (label: string) => {
+    const normalized = label.toLowerCase()
+    if (normalized.includes("supply") || normalized.includes("deposit")) return Wallet24Filled
+    if (normalized.includes("withdraw") || normalized.includes("unwind")) return ArrowCircleDown24Filled
+    if (normalized.includes("increase")) return ArrowCircleUp24Filled
+    if (normalized.includes("borrow")) return BuildingBank24Filled
+    if (normalized.includes("view")) return Receipt24Filled
+    if (normalized.includes("export")) return ClipboardMore24Filled
+    return ArrowDownload24Filled
+  }
+
+  return labels.map((label, index) => {
+    const lower = label.toLowerCase()
+    const onClick =
+      lower.includes("deposit") || lower.includes("supply")
+        ? () => openDeposit?.(TOKENS[0])
+        : lower.includes("withdraw") || lower.includes("unwind")
+          ? () => openWithdraw?.(TOKENS[0])
+          : undefined
+
+    return {
+      id: `${index}-${label.toLowerCase().replace(/\s+/g, "-")}`,
+      label,
+      icon: resolveIcon(label),
+      onClick,
+    }
+  })
 }
 
 function InfoTip({ text }: { text: string }) {
@@ -85,11 +121,11 @@ function InfoTip({ text }: { text: string }) {
 
 function StatCard({ label, value, helpText }: { label: string; value: string; helpText: string }) {
   return (
-    <div className="bg-surface-raised p-3.5">
-      <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+    <div className="bg-background p-3.5 dark:bg-[#0f141b]">
+      <div className="mb-0.5 flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
         {label} <InfoTip text={helpText} />
       </div>
-      <div className="font-data text-[18px] font-medium tabular-nums text-[#01AACF]">{value}</div>
+      <div className="font-data text-[17px] font-medium tabular-nums text-[#01AACF] dark:text-[#7DDCFF]">{value}</div>
     </div>
   )
 }
@@ -101,6 +137,7 @@ export function PortfolioHero({
   headlineValue,
   headlineDelta,
   rangeData = DEFAULT_RANGE_DATA,
+  actionLabels,
   primaryActionLabel = "Deposit",
   secondaryActionLabel = "Withdraw",
   statOneLabel = "Average APY",
@@ -149,6 +186,7 @@ export function PortfolioHero({
   const actions = buildActions({
     openDeposit,
     openWithdraw,
+    actionLabels,
     primaryActionLabel,
     secondaryActionLabel,
   })
@@ -163,7 +201,7 @@ export function PortfolioHero({
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-      <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
+      <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
         <div className="min-w-0 space-y-2.5 sm:space-y-3">
           <HeroBalanceDisplay
             value={resolvedHeadlineValue}
@@ -180,12 +218,14 @@ export function PortfolioHero({
           />
         </div>
 
-        <div className="flex min-w-0 flex-col gap-3 lg:pt-[28px]">
+        <div className="flex min-w-0 flex-col gap-3 lg:pt-0">
           <PortfolioHeroActions actions={actions} />
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-radius-md border border-border bg-border">
-            <StatCard label={statOneLabel} value={statOneValue} helpText={statOneHelpText} />
-            <StatCard label={statTwoLabel} value={statTwoValue} helpText={statTwoHelpText} />
-          </div>
+          {statOneLabel && statOneValue && statOneHelpText && statTwoLabel && statTwoValue && statTwoHelpText ? (
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-white/10">
+              <StatCard label={statOneLabel} value={statOneValue} helpText={statOneHelpText} />
+              <StatCard label={statTwoLabel} value={statTwoValue} helpText={statTwoHelpText} />
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

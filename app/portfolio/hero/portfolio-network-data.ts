@@ -1,4 +1,4 @@
-import type { NetworkConfig, NetworkId } from "./types"
+import type { NetworkConfig } from "./types"
 
 export const PORTFOLIO_NETWORKS: NetworkConfig[] = [
   { id: "all", label: "All networks", balance: "$883.74", delta: "$6.89 (0.78%) today", chartBase: 880, chartVariance: 14 },
@@ -10,13 +10,3 @@ export const PORTFOLIO_NETWORKS: NetworkConfig[] = [
   { id: "monad", label: "Monad", balance: "$10.18", delta: "$0.07 (0.69%) today", chartBase: 10, chartVariance: 1 },
   { id: "solana", label: "Solana", balance: "$5.18", delta: "$0.04 (0.78%) today", chartBase: 5, chartVariance: 1 },
 ]
-
-export const NETWORK_VISUAL: Record<Exclude<NetworkId, "all">, { background: string; letter: string }> = {
-  ethereum: { background: "#627EEA", letter: "Ξ" },
-  unichain: { background: "#F50DB4", letter: "U" },
-  base: { background: "#0052FF", letter: "B" },
-  arbitrum: { background: "#12AAFF", letter: "A" },
-  tempo: { background: "#0A0A0A", letter: "T" },
-  monad: { background: "#836EF9", letter: "M" },
-  solana: { background: "linear-gradient(135deg, #9945FF 0%, #14F195 100%)", letter: "S" },
-}
