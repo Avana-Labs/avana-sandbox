@@ -34,6 +34,8 @@ type DebtsTableProps = {
   onRepay: (context: DebtRowContext) => void
   onManage: (context: DebtRowContext) => void
   showBalance?: boolean
+  showSummary?: boolean
+  showHeading?: boolean
 }
 
 const MASK = "••••"
@@ -43,7 +45,15 @@ function usdcVisual() {
   return HOME_BORROW_TOKENS.find((token) => token.id === "usdc") ?? HOME_BORROW_TOKENS[0]
 }
 
-export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true }: DebtsTableProps) {
+export function DebtsPanel({
+  rows,
+  totals,
+  onRepay,
+  onManage,
+  showBalance = true,
+  showSummary = true,
+  showHeading = true,
+}: DebtsTableProps) {
   const m = (value: string) => (showBalance ? value : MASK)
   if (rows.length === 0) {
     return (
@@ -58,10 +68,14 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
   const usdc = usdcVisual()
   return (
     <section className="mb-2">
-      <CurrentLtvCard borrowedUsd={totals.totalBorrowed} collateralUsd={totals.totalCollateral} showBalance={showBalance} />
-      <div className="mb-3">
-        <h3 className="text-[14px] font-medium tracking-tight">My Borrows</h3>
-      </div>
+      {showSummary ? (
+        <CurrentLtvCard borrowedUsd={totals.totalBorrowed} collateralUsd={totals.totalCollateral} showBalance={showBalance} />
+      ) : null}
+      {showHeading ? (
+        <div className="mb-3">
+          <h3 className="text-[14px] font-medium tracking-tight">My Borrows</h3>
+        </div>
+      ) : null}
       <div className="hidden md:block">
         <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
           <div className="overflow-x-auto">
@@ -207,7 +221,7 @@ function DebtStatLine({ label, value, tone }: { label: string; value: string; to
   )
 }
 
-function CurrentLtvCard({
+export function CurrentLtvCard({
   borrowedUsd,
   collateralUsd,
   showBalance,
