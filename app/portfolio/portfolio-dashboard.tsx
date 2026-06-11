@@ -16,11 +16,11 @@ export function PortfolioDashboard() {
     <>
       <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
+      {activeTab === "overview" ? <StakeWizard /> : null}
+      {activeTab === "overview" ? <PortfolioPositions section="supplies" /> : null}
+      {activeTab === "overview" ? <PortfolioPositions section="debts" /> : null}
       {activeTab === "lending" ? <PortfolioInvestments /> : null}
       {activeTab === "lending" ? <PortfolioStrategies /> : null}
-      {activeTab === "collateral" ? <StakeWizard /> : null}
-      {activeTab === "collateral" ? <PortfolioPositions section="supplies" /> : null}
-      {activeTab === "borrowing" ? <PortfolioPositions section="debts" /> : null}
       {activeTab === "looping" ? (
         <PortfolioPositionsTabs allowedTabs={["Positions", "Open Orders", "TWAP", "History"]} initialTab="Positions" />
       ) : null}

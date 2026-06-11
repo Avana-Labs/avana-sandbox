@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Eye, EyeOff, Globe2, MoreHorizontal, MoonStar, Shield, SunMedium } from "lucide-react"
 import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -232,6 +232,8 @@ function PreferencesMenu() {
 export function Header() {
   const pathname = usePathname()
   const desktopLinks = personalDesktopHeaderLinks
+  const [showDivider, setShowDivider] = useState(false)
+  const headerRef = useRef<HTMLElement | null>(null)
   const renderMobileBrand = () => <BrandIcon className="h-8 w-8" />
   const renderMobileActions = () => (
     <>
@@ -247,10 +249,40 @@ export function Header() {
     </>
   )
 
+  useEffect(() => {
+    const resolveThreshold = () => headerRef.current?.offsetHeight ?? 68
+
+    const readScrollOffset = (target?: EventTarget | null) => {
+      if (target instanceof HTMLElement) {
+        return target.scrollTop
+      }
+
+      return Math.max(window.scrollY, document.documentElement.scrollTop, document.body.scrollTop)
+    }
+
+    const updateDivider = (event?: Event) => {
+      setShowDivider(readScrollOffset(event?.target) > resolveThreshold())
+    }
+
+    updateDivider()
+    window.addEventListener("scroll", updateDivider, { passive: true })
+    document.addEventListener("scroll", updateDivider, { capture: true, passive: true })
+
+    return () => {
+      window.removeEventListener("scroll", updateDivider)
+      document.removeEventListener("scroll", updateDivider, true)
+    }
+  }, [])
+
   return (
-    <header className="sticky top-0 z-40 bg-background/95 text-foreground backdrop-blur">
+    <header
+      ref={headerRef}
+      className={`sticky top-0 z-40 bg-background/95 text-foreground backdrop-blur transition-[box-shadow] duration-200 ${
+        showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
+      }`}
+    >
       <div className="hidden lg:block">
-          <div className="relative flex h-[68px] w-full -translate-y-2 items-center justify-between px-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
+          <div className="relative flex h-[68px] w-full items-center justify-between px-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
             <div className="flex shrink-0 items-center gap-2.5">
               <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
                 <BrandLogo />
@@ -264,10 +296,15 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+                      className={`group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
                         isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
+                      {link.icon ? (
+                        <span className="inline-flex h-7 w-7 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
+                          <link.icon className="h-6 w-6 shrink-0" />
+                        </span>
+                      ) : null}
                       {link.label}
                     </Link>
                   )
@@ -275,7 +312,7 @@ export function Header() {
               </nav>
             </div>
 
-            <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4">
+            <div className="absolute left-1/2 flex w-full max-w-[410px] -translate-x-1/2 justify-center px-4">
               <SearchCommand />
             </div>
 
@@ -288,10 +325,15 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+                      className={`group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
                         isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
+                      {link.icon ? (
+                        <span className="inline-flex h-7 w-7 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
+                          <link.icon className="h-6 w-6 shrink-0" />
+                        </span>
+                      ) : null}
                       {link.label}
                     </Link>
                   )
@@ -311,7 +353,7 @@ export function Header() {
         </div>
 
         <div className="lg:hidden">
-          <div className="flex h-16 w-full items-center justify-between border-b border-border bg-background px-4 text-foreground sm:px-6">
+          <div className="relative flex h-16 w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
             <div className="flex items-center gap-3">
               <Link href="/" aria-label="Home" title="Home" className="inline-flex items-center">
                 {renderMobileBrand()}

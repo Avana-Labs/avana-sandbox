@@ -1,5 +1,6 @@
 "use client"
 
+import { Info } from "lucide-react"
 import {
   BORROW_SUPPLY_META,
   formatCompactUsd,
@@ -9,8 +10,8 @@ import {
   homePoolSpoke,
   homeVisualToBorrowVisual,
 } from "@/app/lib/borrow-sim"
-import { HOME_COLLATERAL_POOLS, formatHealthFactor, type HomeCollateralPool } from "@/app/lib/home-sim"
-import { HfNumber, PillButton, SpokeDot, TokenBubble, TokenPairCell } from "./atoms"
+import { HOME_COLLATERAL_POOLS, formatHealthFactor, getHealthStatus, type HomeCollateralPool } from "@/app/lib/home-sim"
+import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { cn } from "@/lib/utils"
 
 export type SupplyRowContext = {
@@ -32,6 +33,11 @@ type SuppliesTableProps = {
 }
 
 const MASK = "••••"
+const HF_ZONES = [
+  { id: "danger", label: "Liquidation", min: 0, max: 1.5, widthPct: 30, color: "bg-rose-500" },
+  { id: "warn", label: "Caution", min: 1.5, max: 3, widthPct: 40, color: "bg-amber-500" },
+  { id: "safe", label: "Safe", min: 3, max: Infinity, widthPct: 30, color: "bg-emerald-500" },
+] as const
 
 export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onRemove, showBalance = true }: SuppliesTableProps) {
   const m = (value: string) => (showBalance ? value : MASK)
@@ -44,6 +50,7 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
   }
   return (
     <section className="mb-2">
+      <SuppliesHealthFactorCard averageHealthFactor={totals.averageHf} showBalance={showBalance} />
       <div className="mb-3">
         <h3 className="text-[14px] font-medium tracking-tight">My LP Collaterals</h3>
       </div>
@@ -109,7 +116,6 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
         {rows.map((row) => {
           const spoke = getSpokeById(homePoolSpoke(row.pool.category))
           const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
-          const meta = BORROW_SUPPLY_META[row.pool.id]
           const hf = row.healthFactor
           const hfLabel = hf === null || Number.isNaN(hf) ? "—" : !Number.isFinite(hf) ? "∞" : hf.toFixed(1)
           const hfTone = hfBarTone(hf)
@@ -237,6 +243,75 @@ function hfBarFill(hf: number | null): number {
   if (hf === null || Number.isNaN(hf)) return 0
   if (!Number.isFinite(hf)) return 96
   return Math.min(96, Math.max(6, hf * 17))
+}
+
+function SuppliesHealthFactorCard({
+  averageHealthFactor,
+  showBalance,
+}: {
+  averageHealthFactor: number | null
+  showBalance: boolean
+}) {
+  const safeHf = averageHealthFactor ?? Number.POSITIVE_INFINITY
+  const status = getHealthStatus(safeHf)
+  const hfLabel = formatHealthFactor(averageHealthFactor)
+  const masked = !showBalance
+
+  const activeZoneIdx = (() => {
+    if (averageHealthFactor === null) return -1
+    if (!Number.isFinite(averageHealthFactor)) return HF_ZONES.length - 1
+    return HF_ZONES.findIndex((zone) => averageHealthFactor >= zone.min && averageHealthFactor < zone.max)
+  })()
+
+  return (
+    <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
+      <div className="flex h-6 items-center justify-between gap-3">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[13px] font-semibold text-foreground">Health factor</span>
+          <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
+          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
+            {masked ? "••" : hfLabel}
+          </span>
+        </div>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+            status.textClass,
+          )}
+        >
+          <span className={cn("inline-block size-1.5 rounded-full", status.dotClass)} />
+          {masked ? "••" : status.label}
+        </span>
+      </div>
+
+      <div className="mt-9">
+        <div className="flex h-2.5 w-full items-stretch gap-1">
+          {HF_ZONES.map((zone, index) => {
+            const isActive = index === activeZoneIdx
+            return (
+              <div
+                key={zone.id}
+                className={cn("rounded-full transition-colors", isActive ? zone.color : "bg-muted")}
+                style={{ width: `${zone.widthPct}%` }}
+              />
+            )
+          })}
+        </div>
+
+        <div className="mt-4 flex h-4 items-center justify-between text-[11px] font-medium text-muted-foreground">
+          {HF_ZONES.map((zone, index) => {
+            const isActive = index === activeZoneIdx
+            return (
+              <span key={zone.id} className={cn("inline-flex items-center gap-1.5", isActive && "text-foreground")}>
+                <span className={cn("size-1.5 rounded-full", isActive ? zone.color : "bg-muted-foreground/40")} />
+                {zone.label}
+              </span>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export { HOME_COLLATERAL_POOLS }
