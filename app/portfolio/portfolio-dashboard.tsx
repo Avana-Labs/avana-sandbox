@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { useState } from "react"
 import { StakeWizard } from "../stake/stake-wizard"
 import { RecentActivity } from "../lend/components/recent-activity"
 import { PortfolioInvestments } from "./portfolio-investments"
