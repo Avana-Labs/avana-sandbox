@@ -40,6 +40,25 @@ function InfoTip({ text }: { text: string }) {
   )
 }
 
+function HeroDeltaBadge({
+  value,
+  tone,
+}: {
+  value: string
+  tone: "positive" | "negative"
+}) {
+  return (
+    <span
+      className={[
+        "inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[0.72rem] font-medium leading-none tabular-nums",
+        tone === "positive" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-500",
+      ].join(" ")}
+    >
+      {value}
+    </span>
+  )
+}
+
 interface PortfolioHeroProps {
   openDeposit?: (token: typeof TOKENS[number]) => void
   openWithdraw?: (token: typeof TOKENS[number]) => void
@@ -99,23 +118,23 @@ export function PortfolioHero({
     [activeRange, rangeData],
   )
 
+  const resolvedHeadlineDelta =
+    headlineDelta ??
+    `-$${rangeStats[activeRange as keyof typeof rangeStats]?.changeUsd.toFixed(2) || "312.96"} (-${
+      rangeStats[activeRange as keyof typeof rangeStats]?.changePct.toFixed(2) || "3.80"
+    }%)`
+  const headlineDeltaTone: "positive" | "negative" = resolvedHeadlineDelta.trim().startsWith("-") ? "negative" : "positive"
+
   return (
     <section className="mb-8 grid min-w-0 gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
       <div className="min-w-0 bg-background px-1 py-2">
         <div className="max-w-[840px] min-w-0 max-w-full">
           <div className="space-y-1">
-            <div className="flex flex-col gap-1.5">
-              <span className="font-data text-[22px] font-medium tracking-tight md:text-[28px]">
+            <div className="flex flex-wrap items-end gap-2">
+              <span className="font-data text-[22px] font-medium leading-none tracking-[-0.04em] text-foreground md:text-[28px]">
                 {showDollarAmounts ? (headlineValue ?? `$${14400.0.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : "••••••••"}
               </span>
-              <span className="font-data text-[12.5px] font-medium tabular-nums text-foreground/90">
-                {showDollarAmounts
-                  ? (headlineDelta ??
-                    `-$${rangeStats[activeRange as keyof typeof rangeStats]?.changeUsd.toFixed(2) || "312.96"} (-${
-                      rangeStats[activeRange as keyof typeof rangeStats]?.changePct.toFixed(2) || "3.80"
-                    }%) Today`)
-                  : "••••••••"}
-              </span>
+              {showDollarAmounts ? <HeroDeltaBadge value={resolvedHeadlineDelta} tone={headlineDeltaTone} /> : <span>••••••••</span>}
             </div>
           </div>
 

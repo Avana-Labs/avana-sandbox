@@ -33,14 +33,14 @@ function StoryMetric({
   deltaTone?: "positive" | "negative"
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       <div className="flex flex-wrap items-end gap-2">
-        <div className="font-data text-[clamp(1.55rem,2.2vw,2.35rem)] font-semibold leading-none tracking-[-0.04em] text-foreground">
+        <div className="font-data text-[clamp(1.3rem,1.7vw,1.85rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
           {value}
         </div>
         {delta && deltaTone ? <DeltaBadge value={delta} tone={deltaTone} /> : null}
       </div>
-      <div className="text-[clamp(0.78rem,0.85vw,0.92rem)] font-normal leading-tight tracking-tight text-muted-foreground">
+      <div className="text-[12px] font-normal leading-tight tracking-tight text-muted-foreground">
         {label}
       </div>
     </div>
@@ -62,8 +62,8 @@ export function CreditLinesCard() {
   const approvedUsd = HOME_PORTFOLIO_SUMMARY.availableUsd
 
   return (
-    <section className="w-full space-y-5">
-      <div className="grid w-full grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4 md:gap-x-10 md:gap-y-6">
+    <section className="w-full space-y-4">
+      <div className="grid w-full grid-cols-2 gap-x-5 gap-y-4 md:grid-cols-4 md:gap-x-8 md:gap-y-5">
         <StoryMetric
           value={`$${approvedUsd.toLocaleString("en-US")}`}
           label="You&apos;re approved for"
