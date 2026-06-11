@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import localFont from "next/font/local"
 import type React from "react"
 import { Header } from "./components/header"
+import { DesktopHelpBubble } from "./components/desktop-help-bubble"
 import { Toaster } from "sonner"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
@@ -161,6 +162,7 @@ export default function RootLayout({
             <div className="flex min-h-screen flex-col">
               <Header />
               <div className="flex-1">{children}</div>
+              <DesktopHelpBubble />
               <Toaster />
               <ExternalLinkGuard />
             </div>
