@@ -55,8 +55,8 @@ export function StakeWizard() {
     <>
       <StakeProgressTracker currentStep={currentStep} />
 
-      <div className="grid md:grid-cols-7 gap-8">
-        <div className="md:col-span-5 space-y-6">
+      <div className="grid gap-7 md:grid-cols-7">
+        <div className="space-y-5 md:col-span-5">
           <AnimatePresence mode="wait">
             {currentStep === 0 && (
               <motion.div
@@ -64,9 +64,9 @@ export function StakeWizard() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="space-y-4"
+                className="space-y-3.5"
               >
-                <h2 className="text-[14px] font-medium tracking-tight text-foreground mb-3">
+                <h2 className="mb-2 text-[13px] font-medium tracking-tight text-foreground">
                   Select pool to stake into
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -88,9 +88,9 @@ export function StakeWizard() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="space-y-6"
+                className="space-y-5"
               >
-                <h2 className="text-[14px] font-medium tracking-tight text-foreground mb-3">Choose asset to stake</h2>
+                <h2 className="mb-2 text-[13px] font-medium tracking-tight text-foreground">Choose asset to stake</h2>
                 <Card>
                   <CardContent className="p-6 space-y-4">
                     <Select value={selectedToken || ""} onValueChange={setSelectedToken}>
@@ -119,9 +119,9 @@ export function StakeWizard() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="space-y-6"
+                className="space-y-5"
               >
-                <h2 className="text-[14px] font-medium tracking-tight text-foreground mb-3">
+                <h2 className="mb-2 text-[13px] font-medium tracking-tight text-foreground">
                   Set stake amount & lock period
                 </h2>
                 <Card>
@@ -158,9 +158,9 @@ export function StakeWizard() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="space-y-6"
+                className="space-y-5"
               >
-                <h2 className="text-[14px] font-medium tracking-tight text-foreground mb-3">Review & confirm</h2>
+                <h2 className="mb-2 text-[13px] font-medium tracking-tight text-foreground">Review & confirm</h2>
                 <Card>
                   <CardContent className="p-5">
                     <div className="space-y-5">
@@ -199,7 +199,7 @@ export function StakeWizard() {
             )}
           </AnimatePresence>
 
-          <div className="flex justify-between pt-6">
+          <div className="flex justify-between pt-4">
             <Button variant="outline" onClick={handleBack} disabled={currentStep === 0}>
               Back
             </Button>
