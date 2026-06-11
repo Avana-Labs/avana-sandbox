@@ -79,8 +79,6 @@ export function CreditLinesCard() {
         <StoryMetric value={`${currentLtv.toFixed(2)}%`} label="Current LTV" delta="-2.1 pts" deltaTone="negative" />
         <StoryMetric value={`$${totalBorrowed.toLocaleString("en-US")}`} label="You borrowed" delta="+4.4%" deltaTone="negative" />
       </div>
-
-      <div className="w-full border-t border-border/80 pt-1" />
     </section>
   )
 }
