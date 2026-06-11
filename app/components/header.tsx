@@ -296,10 +296,15 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+                      className={`group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
                         isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
+                      {link.icon ? (
+                        <span className="inline-flex h-7 w-7 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
+                          <link.icon className="h-6 w-6 shrink-0" />
+                        </span>
+                      ) : null}
                       {link.label}
                     </Link>
                   )
@@ -320,10 +325,15 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+                      className={`group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
                         isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
+                      {link.icon ? (
+                        <span className="inline-flex h-7 w-7 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
+                          <link.icon className="h-6 w-6 shrink-0" />
+                        </span>
+                      ) : null}
                       {link.label}
                     </Link>
                   )
