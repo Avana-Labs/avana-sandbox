@@ -10,6 +10,7 @@ type HeroChartSectionProps = {
   defaultRange?: ChartRangeOption
   activeRange?: ChartRangeOption
   onRangeChange?: (range: ChartRangeOption) => void
+  onActiveIndexChange?: (index: number | null) => void
   height?: number
   formatValue?: (value: number) => string
   formatYAxis?: (value: number) => string
@@ -22,6 +23,7 @@ export function HeroChartSection({
   defaultRange = "1D",
   activeRange: controlledRange,
   onRangeChange,
+  onActiveIndexChange,
   height,
   formatValue,
   formatYAxis,
@@ -50,6 +52,7 @@ export function HeroChartSection({
         formatYAxis={formatYAxis}
         gradientId={gradientId}
         tone={tone}
+        onActiveIndexChange={onActiveIndexChange}
       />
       <ChartRangeSelector activeRange={activeRange} onRangeChange={handleRangeChange} />
     </div>
