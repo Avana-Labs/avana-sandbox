@@ -1,89 +1,144 @@
 "use client"
 
-import { Info } from "lucide-react"
+import type { ReactNode } from "react"
+import { BarChart3, CircleDollarSign, Info, Landmark } from "lucide-react"
 import { HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS, HOME_PORTFOLIO_SUMMARY } from "@/app/lib/home-sim"
 import { cn } from "@/lib/utils"
 
-type RingTone = "safe" | "caution"
+type GaugeTone = "safe" | "caution"
 
-type RingProps = {
+type GaugeProps = {
   value: number
   max: number
-  label: string
-  helper: string
-  valueLabel: string
-  tone: RingTone
+  headline: string
+  title: string
+  delta: string
+  status: string
+  tone: GaugeTone
 }
 
-const RING_TONE_CLASS: Record<RingTone, string> = {
-  safe: "text-emerald-500",
+const TONE_CLASS: Record<GaugeTone, string> = {
+  safe: "text-[#2f9427]",
   caution: "text-[#01AACF]",
 }
 
-function CreditRing({ value, max, label, helper, valueLabel, tone }: RingProps) {
-  const size = 176
-  const stroke = 14
-  const radius = (size - stroke) / 2
-  const circumference = 2 * Math.PI * radius
-  const progress = Math.max(0.08, Math.min(1, value / max))
-  const dashOffset = circumference * (1 - progress)
+function arcPath(cx: number, cy: number, r: number) {
+  return `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`
+}
+
+function pointOnArc(cx: number, cy: number, r: number, progress: number) {
+  const angle = Math.PI * (1 - progress)
+  return {
+    x: cx + Math.cos(angle) * r,
+    y: cy - Math.sin(angle) * r,
+  }
+}
+
+function CreditGauge({ value, max, headline, title, delta, status, tone }: GaugeProps) {
+  const width = 360
+  const height = 226
+  const cx = width / 2
+  const cy = 168
+  const radius = 132
+  const progress = Math.max(0.08, Math.min(0.92, value / max))
+  const end = pointOnArc(cx, cy, radius, progress)
 
   return (
-    <div className="flex flex-col items-center rounded-[28px] border border-border/70 bg-white px-5 py-6 text-center shadow-[0_8px_28px_rgba(15,23,42,0.05)]">
-      <div className="relative size-44">
-        <svg viewBox={`0 0 ${size} ${size}`} className="size-full -rotate-90">
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="hsl(var(--border))"
-            strokeWidth={stroke}
-            className="opacity-35"
-          />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={dashOffset}
-            className={cn("transition-all", RING_TONE_CLASS[tone])}
-          />
-        </svg>
+    <div className="flex flex-col items-center text-center">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full max-w-[360px] overflow-visible">
+        <path
+          d={arcPath(cx, cy, radius)}
+          fill="none"
+          stroke="hsl(var(--border))"
+          strokeWidth="18"
+          strokeLinecap="round"
+          className="opacity-5"
+        />
+        <path
+          d={arcPath(cx, cy, radius)}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="18"
+          strokeLinecap="round"
+          pathLength={100}
+          strokeDasharray={`${progress * 100} 100`}
+          className={cn("transition-all duration-500", TONE_CLASS[tone])}
+        />
+        <circle cx={end.x} cy={end.y} r="7" className={cn("fill-current", TONE_CLASS[tone])} />
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
-          <div className="font-data text-[36px] font-bold leading-none tracking-[-0.05em] text-foreground">
-            {valueLabel}
-          </div>
-          <div className="mt-2 text-[18px] font-medium tracking-tight text-foreground">{label}</div>
-          <div className="mt-1 text-[13px] leading-snug text-muted-foreground">{helper}</div>
+        <text
+          x={cx}
+          y="125"
+          textAnchor="middle"
+          className="fill-foreground font-data font-bold tracking-[-0.05em]"
+          style={{ fontSize: 54 }}
+        >
+          {headline}
+        </text>
+        <text
+          x={cx}
+          y="161"
+          textAnchor="middle"
+          className="fill-foreground"
+          style={{ fontSize: 18, fontWeight: 600 }}
+        >
+          {title}
+        </text>
+        <text
+          x={cx - 6}
+          y="193"
+          textAnchor="end"
+          className={cn("fill-current", TONE_CLASS[tone])}
+          style={{ fontSize: 17, fontWeight: 700 }}
+        >
+          {delta}
+        </text>
+        <text
+          x={cx}
+          y="193"
+          textAnchor="start"
+          className="fill-foreground"
+          style={{ fontSize: 17 }}
+        >
+          • {status}
+        </text>
+        <text
+          x={cx}
+          y="218"
+          textAnchor="middle"
+          className="fill-muted-foreground"
+          style={{ fontSize: 15 }}
+        >
+          Checked daily
+        </text>
+      </svg>
+    </div>
+  )
+}
+
+function MetricRow({
+  icon,
+  title,
+  subtitle,
+  value,
+}: {
+  icon: ReactNode
+  title: string
+  subtitle?: string
+  value: string
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-t border-border/80 py-5 first:border-t-0 first:pt-0">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 text-[#2f9427]">{icon}</div>
+        <div>
+          <div className="text-[15px] font-medium tracking-tight text-foreground">{title}</div>
+          {subtitle ? <div className="mt-0.5 text-[13px] text-muted-foreground">{subtitle}</div> : null}
         </div>
       </div>
+      <div className="font-data text-[16px] font-medium tabular-nums text-foreground">{value}</div>
     </div>
   )
-}
-
-function InlineStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-surface-raised px-4 py-3">
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</div>
-      <div className="mt-1 font-data text-[18px] font-medium tabular-nums text-foreground">{value}</div>
-    </div>
-  )
-}
-
-function creditHealthTone(score: number): RingTone {
-  if (score >= 2) return "safe"
-  return "caution"
-}
-
-function ltvTone(ltvPct: number): RingTone {
-  if (ltvPct <= 35) return "safe"
-  return "caution"
 }
 
 export function CreditLinesCard() {
@@ -94,49 +149,57 @@ export function CreditLinesCard() {
   const currentLtvPct = totalCollateral > 0 ? (totalBorrowed / totalCollateral) * 100 : 0
 
   return (
-    <section className="overflow-hidden rounded-[32px] border border-border bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfd_100%)] shadow-[0_18px_48px_rgba(15,23,42,0.06)]">
-      <div className="border-b border-border/70 px-6 py-5 md:px-8">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#01AACF]/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#01AACF]">
-              Credit Overview
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-              <span>You are approved for</span>
-              <span className="font-data text-[30px] font-bold tabular-nums tracking-[-0.04em] text-[#01AACF]">
-                ${approvedUsd.toLocaleString("en-US")}
-              </span>
-              <Info className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="max-w-[40rem] text-[13px] leading-snug text-muted-foreground">
-              A quick view of your borrowing capacity and overall position health.
-            </p>
-          </div>
+    <section className="space-y-7">
+      <div className="text-[16px] font-semibold tracking-tight text-foreground">Today</div>
 
-          <div className="grid grid-cols-3 gap-3 md:min-w-[360px]">
-            <InlineStat label="Collateral" value={`$${totalCollateral.toLocaleString("en-US")}`} />
-            <InlineStat label="Borrowed" value={`$${totalBorrowed.toLocaleString("en-US")}`} />
-            <InlineStat label="Available" value={`$${approvedUsd.toLocaleString("en-US")}`} />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-5 px-6 py-6 md:px-8 lg:grid-cols-2">
-        <CreditRing
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:gap-10">
+        <CreditGauge
           value={creditHealthScore}
           max={5}
-          label="Credit Health"
-          helper="Higher is safer"
-          valueLabel={creditHealthScore.toFixed(1)}
-          tone={creditHealthTone(creditHealthScore)}
+          headline={creditHealthScore.toFixed(1)}
+          title="Credit Health"
+          delta="+0.2 pts"
+          status="Safe"
+          tone="safe"
         />
-        <CreditRing
+        <CreditGauge
           value={currentLtvPct}
           max={100}
-          label="Current LTV"
-          helper="Borrow power used"
-          valueLabel={`${currentLtvPct.toFixed(2)}%`}
-          tone={ltvTone(currentLtvPct)}
+          headline={`${currentLtvPct.toFixed(2)}%`}
+          title="Current LTV"
+          delta="-2.1 pts"
+          status="Low usage"
+          tone="caution"
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-3 text-center">
+        <span className="rounded-xl bg-[#2f9427]/12 px-3 py-1 text-[14px] font-medium text-[#2f9427]">New</span>
+        <span className="text-[15px] text-foreground">Daily borrowing profile checks from Avana</span>
+      </div>
+
+      <div className="flex items-center justify-center gap-2 text-center text-[14px] text-muted-foreground">
+        <span>Borrowing metrics checked daily with live collateral tracking</span>
+        <Info className="h-4 w-4" />
+      </div>
+
+      <div className="max-w-[840px]">
+        <MetricRow
+          icon={<BarChart3 className="h-5 w-5" />}
+          title="Approved to borrow"
+          value={`$${approvedUsd.toLocaleString("en-US")}`}
+        />
+        <MetricRow
+          icon={<Landmark className="h-5 w-5" />}
+          title="LP collateral value"
+          subtitle="Across all supplied LP positions"
+          value={`$${totalCollateral.toLocaleString("en-US")}`}
+        />
+        <MetricRow
+          icon={<CircleDollarSign className="h-5 w-5" />}
+          title="Outstanding borrows"
+          subtitle="Current borrowed balance"
+          value={`$${totalBorrowed.toLocaleString("en-US")}`}
         />
       </div>
     </section>
