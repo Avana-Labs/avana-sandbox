@@ -1,0 +1,39 @@
+type HeroBalanceDisplayProps = {
+  value: string
+  delta: string
+  deltaTone?: "positive" | "negative"
+  /** Muted text shown after the delta (e.g. a date). */
+  meta?: string
+  hidden?: boolean
+}
+
+function HeroDeltaText({ value, tone, meta }: { value: string; tone: "positive" | "negative"; meta?: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className={tone === "positive" ? "flex items-center gap-1 text-[#40B66B]" : "flex items-center gap-1 text-rose-500"}>
+        <span className="text-[9px] leading-none">{tone === "positive" ? "▲" : "▼"}</span>
+        <span className="text-[12px] font-normal tabular-nums">{value}</span>
+      </div>
+      {meta ? <span className="text-[12px] font-normal text-muted-foreground">{meta}</span> : null}
+    </div>
+  )
+}
+
+export function HeroBalanceDisplay({ value, delta, deltaTone = "positive", meta, hidden = false }: HeroBalanceDisplayProps) {
+  return (
+    <div className="space-y-1.5">
+      <span className="text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
+        {hidden ? "••••••••" : value}
+      </span>
+      {hidden ? (
+        <span className="text-[13px] text-muted-foreground">••••••••</span>
+      ) : (
+        <HeroDeltaText value={delta} tone={deltaTone} meta={meta} />
+      )}
+    </div>
+  )
+}
+
+export function resolveDeltaTone(delta: string): "positive" | "negative" {
+  return delta.trim().startsWith("-") || delta.includes("-$") ? "negative" : "positive"
+}
