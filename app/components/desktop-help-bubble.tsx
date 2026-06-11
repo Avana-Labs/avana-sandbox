@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { ArrowUpRight, BookOpen, CircleHelp, FileText, LifeBuoy, Mail, ShieldCheck, X } from "lucide-react"
+import { ArrowUpRight, BookOpen, CircleHelp, FileText, LifeBuoy, Mail, ShieldCheck } from "lucide-react"
 
 type HelpLink = {
   href: string
@@ -133,20 +133,6 @@ export function DesktopHelpBubble() {
             className="pointer-events-none absolute bottom-full left-0 mb-3 w-full origin-bottom-left"
           >
             <div className="pointer-events-auto rounded-[14px] border border-border bg-background p-2 shadow-[0_18px_48px_rgba(15,23,42,0.16)]">
-              <div className="mb-0.5 flex items-center justify-between px-1">
-                <span className="text-[12px] font-medium text-muted-foreground">Help</span>
-                <motion.button
-                  type="button"
-                  aria-label="Close help menu"
-                  onClick={() => setOpen(false)}
-                  whileHover={{ rotate: 90 }}
-                  whileTap={{ scale: 0.92 }}
-                  transition={{ duration: 0.15 }}
-                  className="inline-flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-                >
-                  <X className="h-4 w-4" strokeWidth={1.8} />
-                </motion.button>
-              </div>
               <motion.div
                 initial="hidden"
                 animate="show"
