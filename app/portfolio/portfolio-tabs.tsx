@@ -23,28 +23,24 @@ const TAB_DETAILS: Record<
   {
     headlineValue: string
     headlineDelta: string
+    actionLabels?: string[]
     primaryActionLabel: string
     secondaryActionLabel: string
-    statOneLabel: string
-    statOneValue: string
-    statOneHelpText: string
-    statTwoLabel: string
-    statTwoValue: string
-    statTwoHelpText: string
+    statOneLabel?: string
+    statOneValue?: string
+    statOneHelpText?: string
+    statTwoLabel?: string
+    statTwoValue?: string
+    statTwoHelpText?: string
     rangeData: Record<ChartRangeOption, ChartPoint[]>
   }
 > = {
   overview: {
     headlineValue: "$883.74",
     headlineDelta: "$6.89 (0.78%) today",
+    actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
     primaryActionLabel: "Deposit",
     secondaryActionLabel: "Withdraw",
-    statOneLabel: "Average APY",
-    statOneValue: "4.52%",
-    statOneHelpText: "Weighted average APY across all your deposited assets.",
-    statTwoLabel: "Interest earned",
-    statTwoValue: "+$12.46",
-    statTwoHelpText: "Total yield earned from all active positions over time.",
     rangeData: buildRangeData(880, 14),
   },
   lending: {
@@ -119,6 +115,7 @@ export function PortfolioTabs({ activeTab, onTabChange }: PortfolioTabsProps) {
           tabs={tabBar}
           headlineValue={activeTabConfig.headlineValue}
           headlineDelta={activeTabConfig.headlineDelta}
+          actionLabels={activeTabConfig.actionLabels}
           primaryActionLabel={activeTabConfig.primaryActionLabel}
           secondaryActionLabel={activeTabConfig.secondaryActionLabel}
           statOneLabel={activeTabConfig.statOneLabel}
