@@ -15,12 +15,14 @@ function PortfolioSection({
   title,
   children,
 }: {
-  title: string
+  title?: string
   children: ReactNode
 }) {
   return (
     <section className="space-y-5">
-      <h2 className="mb-5 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h2>
+      {title ? (
+        <h2 className="mb-5 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h2>
+      ) : null}
       {children}
     </section>
   )
@@ -39,9 +41,9 @@ export function PortfolioDashboard() {
 
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-8">
-          <PortfolioSectionTitle title="Credit Lines" />
+          <PortfolioSectionTitle title="Credit Limits" />
           <CreditLinesCard />
-          <PortfolioSection title="Credit Markets">
+          <PortfolioSection>
             <PortfolioPositions section="all" />
           </PortfolioSection>
           <PortfolioSection title="Credit Analysis">
