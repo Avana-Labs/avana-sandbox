@@ -1,5 +1,6 @@
 "use client"
 
+import { Info } from "lucide-react"
 import {
   BORROW_SUPPLY_META,
   aprToneClass,
@@ -8,7 +9,7 @@ import {
   healthFactorToneClass,
   homeVisualToBorrowVisual,
 } from "@/app/lib/borrow-sim"
-import { HOME_BORROW_TOKENS, formatHealthFactor, type HomeCollateralPool } from "@/app/lib/home-sim"
+import { HOME_BORROW_TOKENS, LIQUIDATION_LTV, MAX_LTV, formatHealthFactor, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { cn } from "@/lib/utils"
 
@@ -36,6 +37,7 @@ type DebtsTableProps = {
 }
 
 const MASK = "••••"
+const TICK_COUNT = 28
 
 function usdcVisual() {
   return HOME_BORROW_TOKENS.find((token) => token.id === "usdc") ?? HOME_BORROW_TOKENS[0]
@@ -53,6 +55,7 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
   const usdc = usdcVisual()
   return (
     <section className="mb-2">
+      <CurrentLtvCard borrowedUsd={totals.totalBorrowed} collateralUsd={totals.totalCollateral} showBalance={showBalance} />
       <div className="mb-3">
         <h3 className="text-[14px] font-medium tracking-tight">My Borrows</h3>
       </div>
@@ -197,6 +200,81 @@ function DebtStatLine({ label, value, tone }: { label: string; value: string; to
     <div className="flex items-center justify-between py-2">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
+    </div>
+  )
+}
+
+function CurrentLtvCard({
+  borrowedUsd,
+  collateralUsd,
+  showBalance,
+}: {
+  borrowedUsd: number
+  collateralUsd: number
+  showBalance: boolean
+}) {
+  const ltv = collateralUsd > 0 ? Math.min(1, borrowedUsd / collateralUsd) : 0
+  const ltvPct = ltv * 100
+  const liquidationPct = LIQUIDATION_LTV * 100
+  const ltvLabel = `${ltvPct.toFixed(2)}%`
+  const masked = !showBalance
+  const maxUsd = collateralUsd * MAX_LTV
+  const usedLabel = masked ? "••" : formatCompactUsd(borrowedUsd)
+  const maxLabel = masked ? "••" : formatCompactUsd(maxUsd)
+  const usedTicks = Math.max(1, Math.round((ltvPct / 100) * TICK_COUNT))
+  const tone = "bg-emerald-500"
+
+  return (
+    <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
+      <div className="flex h-6 items-center justify-between gap-3">
+        <div className="flex min-w-0 items-baseline gap-2">
+        <span className="text-[13px] font-semibold text-foreground">Current LTV</span>
+        <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
+          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">{masked ? "••" : ltvLabel}</span>
+        </div>
+        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">borrow power used</span>
+      </div>
+
+      <div className="relative mt-9">
+        <div
+          className="pointer-events-none absolute bottom-full z-10 -translate-x-1/2 pb-1 text-center"
+          style={{ left: `${ltvPct}%` }}
+        >
+          <div className="rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-bold text-background">
+            {masked ? "••" : ltvLabel}
+          </div>
+          <div className="-mt-px text-[10px] leading-none text-foreground">▼</div>
+        </div>
+
+        <div className="flex h-8 w-full items-end gap-[3px]">
+          {Array.from({ length: TICK_COUNT }).map((_, index) => {
+            const cls = index < usedTicks ? tone : "bg-muted"
+            const isCurrent = index === Math.max(0, usedTicks - 1)
+            return (
+              <span
+                key={index}
+                className={cn(
+                  "flex-1 rounded-[2px] transition-all",
+                  isCurrent ? "h-full ring-2 ring-foreground ring-offset-1 ring-offset-surface-inset" : "h-[75%]",
+                  cls,
+                )}
+              />
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+        <span>
+          Used <span className="font-semibold text-foreground">{usedLabel}</span>
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span>
+            Max <span className="font-semibold text-foreground">{maxLabel}</span>
+          </span>
+          <span className="text-rose-500">{liquidationPct.toFixed(0)}% liq</span>
+        </span>
+      </div>
     </div>
   )
 }
