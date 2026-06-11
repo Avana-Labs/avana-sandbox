@@ -26,6 +26,7 @@ const TAB_DETAILS: Record<
     headlineDelta: string
     primaryActionLabel: string
     secondaryActionLabel: string
+    rightRailButtons?: readonly [string, string, string, string]
     statOneLabel: string
     statOneValue: string
     statOneHelpText: string
@@ -47,6 +48,7 @@ const TAB_DETAILS: Record<
     headlineDelta: "-$312.96 (-3.80%) Today",
     primaryActionLabel: "Deposit",
     secondaryActionLabel: "Withdraw",
+    rightRailButtons: ["Borrow", "Repay", "Deposit", "Withdraw"],
     statOneLabel: "Average APY",
     statOneValue: "4.52%",
     statOneHelpText: "Weighted average APY across all your deposited assets.",
@@ -169,6 +171,7 @@ export function PortfolioTabs({ activeTab, onTabChange }: PortfolioTabsProps) {
           headlineDelta={activeTabConfig.headlineDelta}
           primaryActionLabel={activeTabConfig.primaryActionLabel}
           secondaryActionLabel={activeTabConfig.secondaryActionLabel}
+          rightRailButtons={activeTabConfig.rightRailButtons}
           statOneLabel={activeTabConfig.statOneLabel}
           statOneValue={activeTabConfig.statOneValue}
           statOneHelpText={activeTabConfig.statOneHelpText}
