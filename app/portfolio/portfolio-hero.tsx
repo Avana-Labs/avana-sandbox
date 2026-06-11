@@ -2,7 +2,13 @@
 
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
-import { ArrowDown, ArrowDownLeft, ArrowUp, ArrowUpRight, CircleMinus, CirclePlus, Info } from "lucide-react"
+import {
+  AddCircle24Regular,
+  ArrowCircleUp24Regular,
+  ArrowClockwise24Regular,
+  SubtractCircle24Regular,
+} from "@fluentui/react-icons"
+import { Info } from "lucide-react"
 import { ResponsiveContainer, Line, LineChart, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
 import { TOKENS } from "../lend/components/data"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -177,26 +183,25 @@ export function PortfolioHero({
               const isBorrow = label === "Borrow"
               const isRepay = label === "Repay"
               const isDeposit = label === "Deposit"
-              const isWithdraw = label === "Withdraw"
               return (
                 <button
                   key={label}
                   type="button"
                   onClick={() => {
                     if (isDeposit) openDeposit?.(TOKENS[0])
-                    if (isWithdraw) openWithdraw?.(TOKENS[0])
+                    if (label === "Withdraw") openWithdraw?.(TOKENS[0])
                   }}
                   className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
                 >
                   <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
                     {isBorrow ? (
-                      <ArrowUpRight className="h-3.5 w-3.5" />
+                      <ArrowCircleUp24Regular className="h-3.5 w-3.5" />
                     ) : isRepay ? (
-                      <ArrowDownLeft className="h-3.5 w-3.5" />
-                    ) : isWithdraw ? (
-                      <CircleMinus className="h-3.5 w-3.5" />
+                      <ArrowClockwise24Regular className="h-3.5 w-3.5" />
+                    ) : label === "Withdraw" ? (
+                      <SubtractCircle24Regular className="h-3.5 w-3.5" />
                     ) : (
-                      <CirclePlus className="h-3.5 w-3.5" />
+                      <AddCircle24Regular className="h-3.5 w-3.5" />
                     )}
                   </div>
                   <span className="font-medium text-[13px]">{label}</span>
@@ -213,7 +218,7 @@ export function PortfolioHero({
                 className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
               >
                 <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
-                  <ArrowUp className="h-3.5 w-3.5 rotate-45" />
+                  <AddCircle24Regular className="h-3.5 w-3.5" />
                 </div>
                 <span className="font-medium text-[13px]">{primaryActionLabel}</span>
               </button>
@@ -223,7 +228,7 @@ export function PortfolioHero({
                 className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
               >
                 <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
-                  <ArrowDown className="h-3.5 w-3.5" />
+                  <SubtractCircle24Regular className="h-3.5 w-3.5" />
                 </div>
                 <span className="font-medium text-[13px]">{secondaryActionLabel}</span>
               </button>
