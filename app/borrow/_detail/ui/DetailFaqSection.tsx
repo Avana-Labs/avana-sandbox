@@ -25,7 +25,7 @@ export function DetailFaqSection({ title, items, className, id }: DetailFaqSecti
 
       <Accordion type="single" collapsible className="w-full">
         {items.map((item, index) => (
-          <AccordionItem key={item.question} value={`faq-${index}`} className={cn("border-border", index === 0 ? "border-t" : "")}>
+          <AccordionItem key={item.question} value={`faq-${index}`} className="border-0">
             <AccordionTrigger className="py-6 text-left text-[15px] font-medium tracking-[-0.03em] text-foreground transition-colors hover:text-foreground dark:text-white/92 dark:hover:text-white md:py-7 md:text-[18px]">
               <span className="max-w-[calc(100%-20px)]">{item.question}</span>
             </AccordionTrigger>
