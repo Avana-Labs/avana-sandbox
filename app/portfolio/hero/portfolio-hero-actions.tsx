@@ -21,6 +21,7 @@ export function PortfolioHeroActions({ actions }: PortfolioHeroActionsProps) {
             label={action.label}
             icon={action.icon}
             onClick={action.onClick}
+            className={action.className}
           />
         ))}
       </div>
