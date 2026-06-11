@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
-import { ArrowUp, ArrowDown, Info } from "lucide-react"
+import { ArrowDown, ArrowDownLeft, ArrowUp, ArrowUpRight, CircleMinus, CirclePlus, Info } from "lucide-react"
 import { ResponsiveContainer, Line, LineChart, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
 import { TOKENS } from "../lend/components/data"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -43,6 +43,7 @@ interface PortfolioHeroProps {
   rangeData?: typeof RANGE_DATA
   primaryActionLabel?: string
   secondaryActionLabel?: string
+  rightRailButtons?: readonly [string, string, string, string]
   statOneLabel?: string
   statOneValue?: string
   statOneHelpText?: string
@@ -60,6 +61,7 @@ export function PortfolioHero({
   rangeData = RANGE_DATA,
   primaryActionLabel = "Deposit",
   secondaryActionLabel = "Withdraw",
+  rightRailButtons,
   statOneLabel = "Average APY",
   statOneValue,
   statOneHelpText = "Weighted average APY across all your deposited assets.",
@@ -169,47 +171,84 @@ export function PortfolioHero({
       </div>
 
       <div className="flex flex-col gap-3 lg:pt-[128px]">
-        <div className="grid grid-cols-2 gap-2.5">
-          <button
-            type="button"
-            onClick={() => openDeposit?.(TOKENS[0])}
-            className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
-          >
-            <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
-              <ArrowUp className="h-3.5 w-3.5 rotate-45" />
+        {rightRailButtons ? (
+          <div className="grid grid-cols-2 gap-2.5">
+            {rightRailButtons.map((label) => {
+              const isBorrow = label === "Borrow"
+              const isRepay = label === "Repay"
+              const isDeposit = label === "Deposit"
+              const isWithdraw = label === "Withdraw"
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    if (isDeposit) openDeposit?.(TOKENS[0])
+                    if (isWithdraw) openWithdraw?.(TOKENS[0])
+                  }}
+                  className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
+                >
+                  <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
+                    {isBorrow ? (
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    ) : isRepay ? (
+                      <ArrowDownLeft className="h-3.5 w-3.5" />
+                    ) : isWithdraw ? (
+                      <CircleMinus className="h-3.5 w-3.5" />
+                    ) : (
+                      <CirclePlus className="h-3.5 w-3.5" />
+                    )}
+                  </div>
+                  <span className="font-medium text-[13px]">{label}</span>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => openDeposit?.(TOKENS[0])}
+                className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
+                  <ArrowUp className="h-3.5 w-3.5 rotate-45" />
+                </div>
+                <span className="font-medium text-[13px]">{primaryActionLabel}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => openWithdraw?.(TOKENS[0])}
+                className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </div>
+                <span className="font-medium text-[13px]">{secondaryActionLabel}</span>
+              </button>
             </div>
-            <span className="font-medium text-[13px]">{primaryActionLabel}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => openWithdraw?.(TOKENS[0])}
-            className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
-          >
-            <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
-              <ArrowDown className="h-3.5 w-3.5" />
-            </div>
-            <span className="font-medium text-[13px]">{secondaryActionLabel}</span>
-          </button>
-        </div>
 
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-radius-md border border-border bg-border">
-          <div className="bg-surface-raised p-3.5">
-            <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              {statOneLabel} <InfoTip text={statOneHelpText} />
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-radius-md border border-border bg-border">
+              <div className="bg-surface-raised p-3.5">
+                <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                  {statOneLabel} <InfoTip text={statOneHelpText} />
+                </div>
+                <div className="font-data text-[18px] font-medium tabular-nums text-[#01AACF]">
+                  {statOneValue ?? `${rangeStats[activeRange as keyof typeof rangeStats]?.apy.toFixed(2) || "4.18"}%`}
+                </div>
+              </div>
+              <div className="bg-surface-raised p-3.5">
+                <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                  {statTwoLabel} <InfoTip text={statTwoHelpText} />
+                </div>
+                <div className="font-data text-[18px] font-medium tabular-nums text-[#01AACF]">
+                  {statTwoValue ?? `+$${(498.2 * (rangeStats[activeRange as keyof typeof rangeStats]?.earnedFraction || 1)).toFixed(2)}`}
+                </div>
+              </div>
             </div>
-            <div className="font-data text-[18px] font-medium tabular-nums text-[#01AACF]">
-              {statOneValue ?? `${rangeStats[activeRange as keyof typeof rangeStats]?.apy.toFixed(2) || "4.18"}%`}
-            </div>
-          </div>
-          <div className="bg-surface-raised p-3.5">
-            <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              {statTwoLabel} <InfoTip text={statTwoHelpText} />
-            </div>
-            <div className="font-data text-[18px] font-medium tabular-nums text-[#01AACF]">
-              {statTwoValue ?? `+$${(498.2 * (rangeStats[activeRange as keyof typeof rangeStats]?.earnedFraction || 1)).toFixed(2)}`}
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </section>
   )
