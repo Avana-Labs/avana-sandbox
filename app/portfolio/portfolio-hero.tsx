@@ -5,7 +5,7 @@ import { useMemo, useState } from "react"
 import {
   ArrowClockwise24Regular,
   ArrowTrendingDown24Regular,
-  ArrowTrendingUp24Regular,
+  ArrowTrending24Regular,
   Money24Regular,
 } from "@fluentui/react-icons"
 import { Info } from "lucide-react"
@@ -194,7 +194,7 @@ export function PortfolioHero({
                   className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
                 >
                   {isBorrow ? (
-                    <ArrowTrendingUp24Regular className="h-5 w-5" />
+                    <ArrowTrending24Regular className="h-5 w-5" />
                   ) : isRepay ? (
                     <ArrowClockwise24Regular className="h-5 w-5" />
                   ) : label === "Withdraw" ? (

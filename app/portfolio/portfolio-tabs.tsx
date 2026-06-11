@@ -3,7 +3,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PortfolioHero } from "./portfolio-hero"
 
-export type PortfolioTab = "overview" | "collateral" | "borrowing" | "lending" | "looping" | "activity"
+export type PortfolioTab = "overview" | "lending" | "looping" | "activity"
 
 type TabConfig = {
   value: PortfolioTab
@@ -12,8 +12,6 @@ type TabConfig = {
 
 const PORTFOLIO_TABS: TabConfig[] = [
   { value: "overview", label: "Borrow" },
-  { value: "collateral", label: "Your Collaterals" },
-  { value: "borrowing", label: "Your Borrows" },
   { value: "lending", label: "Lend" },
   { value: "looping", label: "Multiply" },
   { value: "activity", label: "Activity" },
@@ -63,32 +61,6 @@ const TAB_DETAILS: Record<
       "1Y": [132, 128, 125, 121, 122, 119, 114, 109, 98, 95, 101, 117, 103, 118, 115, 121, 123, 122, 127, 117, 105, 113, 114, 118, 119, 122, 117, 115, 110, 109, 110, 104, 113, 113, 116, 117, 120, 113, 114, 114, 118, 116, 116, 115, 110, 118, 118, 118, 114, 119, 122, 124, 125, 121, 123, 117, 111, 106, 103, 93, 86, 88, 82],
       ALL: [142, 139, 136, 132, 133, 130, 123, 118, 107, 103, 109, 126, 110, 127, 123, 129, 131, 130, 135, 124, 112, 120, 122, 126, 127, 130, 126, 123, 118, 116, 117, 110, 121, 121, 124, 124, 128, 121, 122, 121, 126, 123, 124, 122, 117, 126, 126, 126, 122, 127, 130, 132, 133, 129, 130, 125, 118, 113, 110, 100, 93, 95, 89],
     },
-  },
-  collateral: {
-    headlineValue: "$84,200.00",
-    headlineDelta: "+$5,360.00 (+6.80%) This week",
-    primaryActionLabel: "Add collateral",
-    secondaryActionLabel: "Reduce risk",
-    statOneLabel: "Avg leverage",
-    statOneValue: "3.4x",
-    statOneHelpText: "Average leverage across active collateral-backed positions.",
-    statTwoLabel: "Risk level",
-    statTwoValue: "Moderate",
-    statTwoHelpText: "Current portfolio risk state based on leverage and liquidation distance.",
-    rangeData: buildRangeData([61, 64, 63, 68, 71, 69, 74]),
-  },
-  borrowing: {
-    headlineValue: "$28,600.00",
-    headlineDelta: "-$1,140.00 (-3.83%) Debt reduced",
-    primaryActionLabel: "Borrow more",
-    secondaryActionLabel: "Repay debt",
-    statOneLabel: "Health factor",
-    statOneValue: "2.8",
-    statOneHelpText: "Distance from liquidation across your active borrowed positions.",
-    statTwoLabel: "Repayment runway",
-    statTwoValue: "18d",
-    statTwoHelpText: "Estimated time to fully repay at the current repayment pace.",
-    rangeData: buildRangeData([42, 44, 41, 39, 37, 35, 34]),
   },
   lending: {
     headlineValue: "$96,400.00",
