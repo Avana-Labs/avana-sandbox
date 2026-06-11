@@ -1,10 +1,8 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useState } from "react"
 import { StakeWizard } from "../stake/stake-wizard"
 import { RecentActivity } from "../lend/components/recent-activity"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PortfolioInvestments } from "./portfolio-investments"
 import { PortfolioPositions } from "./portfolio-positions"
 import { PortfolioPositionsTabs } from "./portfolio-positions-tabs"
@@ -32,7 +30,6 @@ function PortfolioSectionTitle({ title }: { title: string }) {
 
 export function PortfolioDashboard() {
   const [activeTab, setActiveTab] = useState<PortfolioTab>("overview")
-  const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">("supplies")
 
   return (
     <>
@@ -41,21 +38,7 @@ export function PortfolioDashboard() {
       {activeTab === "overview" ? <PortfolioSectionTitle title="Credit Lines" /> : null}
       {activeTab === "overview" ? (
         <PortfolioSection title="Credit Markets">
-          <Tabs value={marketsTab} onValueChange={(value) => setMarketsTab(value as "supplies" | "debts")}>
-            <TabsList className="inline-flex w-max min-w-max justify-start">
-              <TabsTrigger value="supplies" className="shrink-0 text-[14px] font-normal">
-                My LP Collaterals
-              </TabsTrigger>
-              <TabsTrigger value="debts" className="shrink-0 text-[14px] font-normal">
-                My Borrows
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <div className="pt-5">
-            {marketsTab === "supplies" ? <PortfolioPositions section="supplies" /> : null}
-            {marketsTab === "debts" ? <PortfolioPositions section="debts" /> : null}
-          </div>
+          <PortfolioPositions section="all" />
         </PortfolioSection>
       ) : null}
       {activeTab === "overview" ? (
