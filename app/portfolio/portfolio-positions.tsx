@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   homePoolSpoke,
   homeVisualToBorrowVisual,
@@ -21,8 +22,8 @@ import {
   type SupplyCollateralContext,
   type SupplyCollateralResult,
 } from "@/app/borrow/components/supply-collateral-modal"
-import { DebtsPanel, type DebtRowContext } from "@/app/borrow/components/debts-table"
-import { SuppliesPanel, type SupplyRowContext } from "@/app/borrow/components/supplies-table"
+import { CurrentLtvCard, DebtsPanel, type DebtRowContext } from "@/app/borrow/components/debts-table"
+import { SuppliesHealthFactorCard, SuppliesPanel, type SupplyRowContext } from "@/app/borrow/components/supplies-table"
 
 type DebtsState = Record<string, number>
 
@@ -53,6 +54,7 @@ function sortByBorrowedDesc(rows: DebtRowContext[]) {
 
 export function PortfolioPositions({ section = "all" }: { section?: "all" | "supplies" | "debts" }) {
   const { showDollarAmounts } = useDisplayPreferences()
+  const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">(section === "debts" ? "debts" : "supplies")
   const [debts, setDebts] = useState<DebtsState>(() => ({ ...HOME_INITIAL_DEBTS }))
   const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
   const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
@@ -181,27 +183,77 @@ export function PortfolioPositions({ section = "all" }: { section?: "all" | "sup
 
   return (
     <section className="space-y-8">
-      <div className="flex flex-col gap-8">
-        {section !== "debts" ? (
-          <SuppliesPanel
-            rows={sortedSupplies}
-            totals={supplyTotals}
-            onBorrowMore={handleSupplyBorrowMore}
-            onAddCollateral={handleSupplyAddCollateral}
-            onRemove={handleSupplyRemove}
-            showBalance={showDollarAmounts}
-          />
-        ) : null}
-        {section !== "supplies" ? (
-          <DebtsPanel
-            rows={sortedDebts}
-            totals={debtTotals}
-            onRepay={handleDebtRepay}
-            onManage={handleDebtManage}
-            showBalance={showDollarAmounts}
-          />
-        ) : null}
-      </div>
+      {section === "all" ? (
+        <>
+          <div className="grid gap-4 xl:grid-cols-2">
+            <SuppliesHealthFactorCard averageHealthFactor={supplyTotals.averageHf} showBalance={showDollarAmounts} />
+            <CurrentLtvCard
+              borrowedUsd={debtTotals.totalBorrowed}
+              collateralUsd={debtTotals.totalCollateral}
+              showBalance={showDollarAmounts}
+            />
+          </div>
+
+          <Tabs value={marketsTab} onValueChange={(value) => setMarketsTab(value as "supplies" | "debts")}>
+            <TabsList className="inline-flex w-max min-w-max justify-start">
+              <TabsTrigger value="supplies" className="shrink-0 text-[14px] font-normal">
+                My LP Collaterals
+              </TabsTrigger>
+              <TabsTrigger value="debts" className="shrink-0 text-[14px] font-normal">
+                My Borrows
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div>
+            {marketsTab === "supplies" ? (
+              <SuppliesPanel
+                rows={sortedSupplies}
+                totals={supplyTotals}
+                onBorrowMore={handleSupplyBorrowMore}
+                onAddCollateral={handleSupplyAddCollateral}
+                onRemove={handleSupplyRemove}
+                showBalance={showDollarAmounts}
+                showSummary={false}
+                showHeading={false}
+              />
+            ) : null}
+            {marketsTab === "debts" ? (
+              <DebtsPanel
+                rows={sortedDebts}
+                totals={debtTotals}
+                onRepay={handleDebtRepay}
+                onManage={handleDebtManage}
+                showBalance={showDollarAmounts}
+                showSummary={false}
+                showHeading={false}
+              />
+            ) : null}
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col gap-8">
+          {section !== "debts" ? (
+            <SuppliesPanel
+              rows={sortedSupplies}
+              totals={supplyTotals}
+              onBorrowMore={handleSupplyBorrowMore}
+              onAddCollateral={handleSupplyAddCollateral}
+              onRemove={handleSupplyRemove}
+              showBalance={showDollarAmounts}
+            />
+          ) : null}
+          {section !== "supplies" ? (
+            <DebtsPanel
+              rows={sortedDebts}
+              totals={debtTotals}
+              onRepay={handleDebtRepay}
+              onManage={handleDebtManage}
+              showBalance={showDollarAmounts}
+            />
+          ) : null}
+        </div>
+      )}
 
       <BorrowModal
         open={borrowModal.open}
