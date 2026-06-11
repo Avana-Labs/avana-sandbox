@@ -42,7 +42,7 @@ export function RewardsBalanceHero({ completedPools, totalPools, progressPercent
 
   return (
     <div className="mb-8 grid gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
-      <section className="relative overflow-hidden rounded-radius-md border border-border/70 bg-card px-5 py-3 md:h-[174px]">
+      <section className="relative overflow-hidden rounded-radius-md border border-border/70 bg-card px-5 py-4 md:h-[174px]">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
         <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
           <Image
@@ -55,16 +55,16 @@ export function RewardsBalanceHero({ completedPools, totalPools, progressPercent
           />
         </div>
 
-        <div className="relative flex min-h-[120px] flex-col gap-2 md:h-full md:min-h-0">
-          <div className="flex items-start justify-between gap-3">
+        <div className="relative flex min-h-[120px] flex-col gap-3 md:h-full md:min-h-0">
+          <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[28px]">
+                <span className="text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
                   {showDollarAmounts ? formatTokenAmount(REWARDS_BALANCE_TOTAL) : "••••••••"}
-                  <span className="ml-1.5 align-middle text-[0.9em]">AVA</span>
+                  <span className="ml-1.5 align-middle text-[0.78em]">AVA</span>
                 </span>
 
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20">
                   <Image
                     src="/Avana Icon (Personal) PNG.png"
                     alt="Avana token"
@@ -76,21 +76,23 @@ export function RewardsBalanceHero({ completedPools, totalPools, progressPercent
                 </div>
               </div>
 
-              <div className="mt-0.5 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+              <div className="mt-1 flex items-center gap-1.5 text-[11px] font-normal tracking-[0.14em] text-muted-foreground">
                 <span>Rewards earned</span>
-                <Info className="h-3.5 w-3.5" />
+                <Info className="h-3 w-3" />
               </div>
             </div>
 
-            <Button variant="outline" className="h-9 shrink-0 rounded-[14px] px-4 text-[12px] font-medium shadow-none">
+            <Button variant="outline" className="h-8 shrink-0 rounded-[14px] px-3.5 text-[11px] font-medium shadow-none">
               Collect rewards
             </Button>
           </div>
 
-          <div className="relative mt-auto space-y-1">
+          <div className="relative mt-auto space-y-1.5">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[12px] font-medium text-muted-foreground">Your progress</span>
-              <span className="text-[12px] font-medium text-muted-foreground">
+              <span className="text-[11px] font-normal uppercase tracking-[0.14em] text-muted-foreground">
+                Your progress
+              </span>
+              <span className="text-[11px] font-normal text-muted-foreground">
                 {completedPools}/{totalPools} completed
               </span>
             </div>
