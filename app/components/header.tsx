@@ -317,21 +317,26 @@ export function Header() {
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
-              <div className="mr-1 flex items-center gap-0.5">
+              <div className="mr-0.5 flex items-center gap-0.5">
                 {desktopLinks.slice(4).map((link) => {
                   const isActive = pathname.startsWith(link.href)
+                  const isUtilityLink = link.href === "/portfolio" || link.href === "/rewards"
 
                   return (
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+                      className={`group inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
                         isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {link.icon ? (
-                        <span className="inline-flex h-7 w-7 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
-                          <link.icon className="h-6 w-6 shrink-0" />
+                        <span
+                          className={`inline-flex items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px] ${
+                            isUtilityLink ? "mr-1 h-6 w-6" : "mr-2 h-7 w-7"
+                          }`}
+                        >
+                          <link.icon className={isUtilityLink ? "h-5 w-5 shrink-0" : "h-6 w-6 shrink-0"} />
                         </span>
                       ) : null}
                       {link.label}

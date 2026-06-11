@@ -30,30 +30,46 @@ type SuppliesTableProps = {
   onAddCollateral: (context: SupplyRowContext) => void
   onRemove: (context: SupplyRowContext) => void
   showBalance?: boolean
+  showSummary?: boolean
+  showHeading?: boolean
 }
 
 const MASK = "••••"
 const HF_ZONES = [
-  { id: "danger", label: "Liquidation", min: 0, max: 1.5, widthPct: 30, color: "bg-rose-500" },
-  { id: "warn", label: "Caution", min: 1.5, max: 3, widthPct: 40, color: "bg-amber-500" },
   { id: "safe", label: "Safe", min: 3, max: Infinity, widthPct: 30, color: "bg-emerald-500" },
+  { id: "warn", label: "Caution", min: 1.5, max: 3, widthPct: 40, color: "bg-amber-500" },
+  { id: "danger", label: "Liquidation", min: 0, max: 1.5, widthPct: 30, color: "bg-rose-500" },
 ] as const
 
-export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onRemove, showBalance = true }: SuppliesTableProps) {
+export function SuppliesPanel({
+  rows,
+  totals,
+  onBorrowMore,
+  onAddCollateral,
+  onRemove,
+  showBalance = true,
+  showSummary = true,
+  showHeading = true,
+}: SuppliesTableProps) {
   const m = (value: string) => (showBalance ? value : MASK)
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
-        You don&apos;t have any supply positions yet. Provide liquidity on the <span className="font-medium text-foreground">Collaterals</span> tab to unlock borrow power.
+        <div className="text-[20px] font-medium leading-snug tracking-tight text-[#01AACF]">
+          Nothing supplied yet
+        </div>
+        <div className="mt-1 text-[15px] leading-snug">To borrow you need to supply any LPs to be used as collateral</div>
       </div>
     )
   }
   return (
     <section className="mb-2">
-      <SuppliesHealthFactorCard averageHealthFactor={totals.averageHf} showBalance={showBalance} />
-      <div className="mb-3">
-        <h3 className="text-[14px] font-medium tracking-tight">My LP Collaterals</h3>
-      </div>
+      {showSummary ? <SuppliesHealthFactorCard averageHealthFactor={totals.averageHf} showBalance={showBalance} /> : null}
+      {showHeading ? (
+        <div className="mb-3">
+          <h3 className="text-[14px] font-medium tracking-tight">My LP Collaterals</h3>
+        </div>
+      ) : null}
       <div className="hidden md:block">
         <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
           <div className="overflow-x-auto">
@@ -166,6 +182,7 @@ export function SuppliesPanel({ rows, totals, onBorrowMore, onAddCollateral, onR
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>Safe</span>
+                  <span>Caution</span>
                   <span>Liquidation</span>
                 </div>
                 <div className="flex items-center justify-between border-t border-border pt-2 text-[12.5px]">
@@ -245,7 +262,7 @@ function hfBarFill(hf: number | null): number {
   return Math.min(96, Math.max(6, hf * 17))
 }
 
-function SuppliesHealthFactorCard({
+export function SuppliesHealthFactorCard({
   averageHealthFactor,
   showBalance,
 }: {
