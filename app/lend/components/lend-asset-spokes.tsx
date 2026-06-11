@@ -472,14 +472,14 @@ function MultiSelectDropdown({
   useEffect(() => {
     if (!open) return
 
-    const handlePointerDown = (event: MouseEvent) => {
+    const handlePointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false)
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown)
-    return () => document.removeEventListener("mousedown", handlePointerDown)
+    document.addEventListener("pointerdown", handlePointerDown, true)
+    return () => document.removeEventListener("pointerdown", handlePointerDown, true)
   }, [open])
 
   useEffect(() => {
@@ -542,7 +542,7 @@ function MultiSelectDropdown({
   }
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative z-[81]">
       <button
         type="button"
         aria-label={ariaLabel}
@@ -562,67 +562,83 @@ function MultiSelectDropdown({
       </button>
 
       {open ? (
-        <div
-          ref={panelRef}
-          className={cn(
-            "fixed z-[80] overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-            isDark ? "border-white/8 bg-[#232323] text-white" : "border-border bg-white text-foreground",
-          )}
-          style={
-            panelStyle
-              ? {
-                  left: panelStyle.left,
-                  top: panelStyle.top,
-                  width: panelStyle.width,
-                  maxHeight: panelStyle.maxHeight,
-                }
-              : undefined
-          }
-        >
+        <>
           <button
             type="button"
-            onClick={() => {
-              onChange([])
-              setOpen(false)
-            }}
+            aria-label={`Close ${ariaLabel}`}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-[79] cursor-default bg-transparent"
+          />
+
+          <div
+            ref={panelRef}
             className={cn(
-              "flex h-10 w-full items-center gap-3 border-b px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
-              isDark
-                ? "border-white/24 text-white hover:bg-white/5"
-                : "border-black/18 text-foreground hover:bg-black/[0.04]",
+              "fixed z-[80] overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
+              isDark ? "border-white/8 bg-[#232323] text-white" : "border-border bg-white text-foreground",
             )}
+            style={
+              panelStyle
+                ? {
+                    left: panelStyle.left,
+                    top: panelStyle.top,
+                    width: panelStyle.width,
+                    maxHeight: panelStyle.maxHeight,
+                  }
+                : undefined
+            }
           >
-            <FilterCheckIcon checked={isAllSelected} dark={isDark} />
-            <span>{allLabel}</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                onChange([])
+                setOpen(false)
+              }}
+              className={cn(
+                "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
+                isDark
+                  ? "text-white hover:bg-white/5"
+                  : "text-foreground hover:bg-black/[0.04]",
+              )}
+            >
+              <FilterCheckIcon checked={isAllSelected} dark={isDark} />
+              <span>{allLabel}</span>
+            </button>
 
-          <div className="overflow-y-auto py-1" style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}>
-            {options.map((option) => {
-              const checked = selectedValues.includes(option)
+            <div
+              className={cn(
+                "h-px w-full",
+                isDark ? "bg-white/30" : "bg-black/18",
+              )}
+            />
 
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => toggleOption(option, !checked)}
-                  className={cn(
-                    "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors",
-                    isDark
-                      ? checked
-                        ? "bg-white/6 font-medium text-white"
-                        : "text-white/82 hover:bg-white/5"
-                      : checked
-                        ? "bg-black/[0.05] font-medium text-foreground"
-                        : "text-foreground/82 hover:bg-black/[0.04]",
-                  )}
-                >
-                  <FilterCheckIcon checked={checked} dark={isDark} />
-                  <span className="truncate">{option}</span>
-                </button>
-              )
-            })}
+            <div className="overflow-y-auto py-1" style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}>
+              {options.map((option) => {
+                const checked = selectedValues.includes(option)
+
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => toggleOption(option, !checked)}
+                    className={cn(
+                      "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors",
+                      isDark
+                        ? checked
+                          ? "bg-white/6 font-medium text-white"
+                          : "text-white/82 hover:bg-white/5"
+                        : checked
+                          ? "bg-black/[0.05] font-medium text-foreground"
+                          : "text-foreground/82 hover:bg-black/[0.04]",
+                    )}
+                  >
+                    <FilterCheckIcon checked={checked} dark={isDark} />
+                    <span className="truncate">{option}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
     </div>
   )
