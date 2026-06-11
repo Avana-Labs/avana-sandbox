@@ -21,7 +21,7 @@ function PortfolioSection({
   return (
     <section className="space-y-5">
       {title ? (
-        <h2 className="mb-5 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h2>
+        <h2 className="mb-4 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h2>
       ) : null}
       {children}
     </section>
@@ -29,7 +29,15 @@ function PortfolioSection({
 }
 
 function PortfolioSectionTitle({ title }: { title: string }) {
-  return <h2 className="mb-5 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h2>
+  return <h2 className="mb-4 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h2>
+}
+
+function SectionDivider() {
+  return (
+    <div className="py-4 md:py-5" aria-hidden="true">
+      <div className="h-px w-full bg-border/80 dark:bg-white/10" />
+    </div>
+  )
 }
 
 export function PortfolioDashboard() {
@@ -40,12 +48,14 @@ export function PortfolioDashboard() {
       <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === "overview" ? (
-        <div className="mt-12 space-y-8">
+        <div className="mt-14 space-y-6">
           <PortfolioSectionTitle title="Credit Limits" />
           <CreditLinesCard />
-          <PortfolioSection>
+          <SectionDivider />
+          <PortfolioSection title="Credit Markets">
             <PortfolioPositions section="all" />
           </PortfolioSection>
+          <SectionDivider />
           <PortfolioSection title="Credit Analysis">
             <StakeWizard />
           </PortfolioSection>
