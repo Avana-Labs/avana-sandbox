@@ -48,7 +48,10 @@ export function DebtsPanel({ rows, totals, onRepay, onManage, showBalance = true
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
-        You don&apos;t have any active borrows. Use an LP position from <span className="font-medium text-foreground">Positions</span> as collateral to start a loan.
+        <div className="text-[20px] font-medium leading-snug tracking-tight text-[#01AACF]">
+          Nothing borrowed yet
+        </div>
+        <div className="mt-1 text-[15px] leading-snug">To borrow you need to supply any LPs to be used as collateral</div>
       </div>
     )
   }
