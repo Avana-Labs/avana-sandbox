@@ -39,7 +39,10 @@ export function PortfolioDashboard() {
       {activeTab === "overview" ? <PortfolioSectionTitle title="Credit Lines" /> : null}
       {activeTab === "overview" ? (
         <PortfolioSection title="Credit Markets">
-          <PortfolioPositions section="all" />
+          <div className="grid gap-4 xl:grid-cols-2">
+            <PortfolioPositions section="supplies" />
+            <PortfolioPositions section="debts" />
+          </div>
         </PortfolioSection>
       ) : null}
       {activeTab === "overview" ? (
