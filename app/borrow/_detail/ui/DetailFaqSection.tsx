@@ -20,16 +20,16 @@ export function DetailFaqSection({ title, items, className, id }: DetailFaqSecti
   if (items.length === 0) return null
 
   return (
-    <section id={id} className={cn("min-w-0 space-y-5", className)}>
+    <section id={id} className={cn("min-w-0 space-y-3", className)}>
       <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]">{title}</h2>
 
       <Accordion type="single" collapsible className="w-full">
         {items.map((item, index) => (
           <AccordionItem key={item.question} value={`faq-${index}`} className="border-0">
-            <AccordionTrigger className="py-6 text-left text-[15px] font-medium tracking-[-0.03em] text-foreground transition-colors hover:text-foreground dark:text-white/92 dark:hover:text-white md:py-7 md:text-[18px]">
+            <AccordionTrigger className="py-4 text-left text-[14px] font-medium tracking-[-0.03em] text-foreground transition-colors hover:text-foreground dark:text-white/92 dark:hover:text-white md:py-5 md:text-[15px]">
               <span className="max-w-[calc(100%-20px)]">{item.question}</span>
             </AccordionTrigger>
-            <AccordionContent className="pb-6 text-[13px] leading-6 text-muted-foreground dark:text-white/68 md:text-[14px]">
+            <AccordionContent className="pb-4 text-[13px] leading-6 text-muted-foreground dark:text-white/68 md:text-[13px]">
               {item.answer}
             </AccordionContent>
           </AccordionItem>
