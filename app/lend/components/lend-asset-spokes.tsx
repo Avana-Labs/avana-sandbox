@@ -456,6 +456,12 @@ function MultiSelectDropdown({
 }) {
   const [open, setOpen] = useState(false)
   const [openUpward, setOpenUpward] = useState(false)
+  const [panelStyle, setPanelStyle] = useState<{
+    left: number
+    top: number
+    width: number
+    maxHeight: number
+  } | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
   const { resolvedTheme } = useTheme()
@@ -479,24 +485,51 @@ function MultiSelectDropdown({
   useEffect(() => {
     if (!open) return
 
-    const updateDirection = () => {
+    const updatePanelPosition = () => {
       if (!rootRef.current || !panelRef.current) return
 
       const triggerRect = rootRef.current.getBoundingClientRect()
       const panelHeight = panelRef.current.offsetHeight
       const spaceBelow = window.innerHeight - triggerRect.bottom
       const spaceAbove = triggerRect.top
+      const nextOpenUpward = spaceBelow < panelHeight + 12 && spaceAbove > spaceBelow
+      const width = Math.min(216, window.innerWidth - 16)
+      const left = Math.max(8, triggerRect.right - width)
+      const maxHeight = Math.max(140, Math.min(220, (nextOpenUpward ? spaceAbove : spaceBelow) - 12))
+      const top = nextOpenUpward
+        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
+        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
 
-      setOpenUpward(spaceBelow < panelHeight + 12 && spaceAbove > spaceBelow)
+      setOpenUpward(nextOpenUpward)
+      setPanelStyle({ left, top, width, maxHeight })
     }
 
-    updateDirection()
-    window.addEventListener("resize", updateDirection)
+    updatePanelPosition()
+
+    const updateAnchoredPosition = () => {
+      if (!rootRef.current || !panelRef.current) return
+
+      const triggerRect = rootRef.current.getBoundingClientRect()
+      const panelHeight = panelRef.current.offsetHeight
+      const width = Math.min(216, window.innerWidth - 16)
+      const left = Math.max(8, triggerRect.right - width)
+      const availableSpace = openUpward ? triggerRect.top : window.innerHeight - triggerRect.bottom
+      const maxHeight = Math.max(140, Math.min(220, availableSpace - 12))
+      const top = openUpward
+        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
+        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
+
+      setPanelStyle({ left, top, width, maxHeight })
+    }
+
+    window.addEventListener("resize", updateAnchoredPosition)
+    window.addEventListener("scroll", updateAnchoredPosition, true)
 
     return () => {
-      window.removeEventListener("resize", updateDirection)
+      window.removeEventListener("resize", updateAnchoredPosition)
+      window.removeEventListener("scroll", updateAnchoredPosition, true)
     }
-  }, [open, options.length])
+  }, [open, openUpward, options.length])
 
   const toggleOption = (option: string, checked: boolean) => {
     if (!checked) {
@@ -532,10 +565,19 @@ function MultiSelectDropdown({
         <div
           ref={panelRef}
           className={cn(
-            "absolute right-0 z-[80] w-[min(13.5rem,calc(100vw-2rem))] overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-            openUpward ? "bottom-full mb-2" : "top-full mt-2",
+            "fixed z-[80] overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
             isDark ? "border-white/8 bg-[#232323] text-white" : "border-border bg-white text-foreground",
           )}
+          style={
+            panelStyle
+              ? {
+                  left: panelStyle.left,
+                  top: panelStyle.top,
+                  width: panelStyle.width,
+                  maxHeight: panelStyle.maxHeight,
+                }
+              : undefined
+          }
         >
           <button
             type="button"
@@ -546,15 +588,15 @@ function MultiSelectDropdown({
             className={cn(
               "flex h-10 w-full items-center gap-3 border-b px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
               isDark
-                ? "border-white/16 text-white hover:bg-white/5"
-                : "border-black/12 text-foreground hover:bg-black/[0.04]",
+                ? "border-white/24 text-white hover:bg-white/5"
+                : "border-black/18 text-foreground hover:bg-black/[0.04]",
             )}
           >
             <FilterCheckIcon checked={isAllSelected} dark={isDark} />
             <span>{allLabel}</span>
           </button>
 
-          <div className="max-h-[220px] overflow-y-auto py-1">
+          <div className="overflow-y-auto py-1" style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}>
             {options.map((option) => {
               const checked = selectedValues.includes(option)
 
