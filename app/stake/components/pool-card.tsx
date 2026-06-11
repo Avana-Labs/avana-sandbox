@@ -21,7 +21,7 @@ export function PoolCard({ pool, isSelected = false, onClick }: PoolCardProps) {
       onClick={onClick}
     >
       <CardContent className="p-3.5">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
               {pool.protocol}
@@ -37,10 +37,10 @@ export function PoolCard({ pool, isSelected = false, onClick }: PoolCardProps) {
           </div>
         </div>
 
-        <h3 className="text-[13px] font-medium mb-3 text-foreground">{pool.name}</h3>
+        <h3 className="mb-2.5 text-[12.5px] font-medium text-foreground">{pool.name}</h3>
 
         <div className="relative mb-3">
-          <div className="font-data text-[22px] font-medium tabular-nums text-foreground mb-1">
+          <div className="mb-1 font-data text-[19px] font-medium tabular-nums text-foreground">
             {pool.currentApy.toFixed(1)}%
           </div>
           <div className="h-[32px] -mx-1">
@@ -51,7 +51,7 @@ export function PoolCard({ pool, isSelected = false, onClick }: PoolCardProps) {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-0.5">
             <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">TVL</span>
-            <div className="font-data text-[13px] font-medium tabular-nums text-foreground">
+            <div className="font-data text-[12.5px] font-medium tabular-nums text-foreground">
               ${(pool.tvl / 1_000_000).toFixed(1)}M
             </div>
           </div>
@@ -59,7 +59,7 @@ export function PoolCard({ pool, isSelected = false, onClick }: PoolCardProps) {
             <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
               Your position
             </span>
-            <div className="font-data text-[13px] font-medium tabular-nums text-foreground">
+            <div className="font-data text-[12.5px] font-medium tabular-nums text-foreground">
               ${(pool.userPosition / 1_000).toFixed(1)}K
             </div>
           </div>

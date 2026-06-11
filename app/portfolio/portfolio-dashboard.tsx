@@ -19,9 +19,9 @@ function PortfolioSection({
   children: ReactNode
 }) {
   return (
-    <section className="space-y-5">
+    <section className="space-y-4">
       {title ? (
-        <h2 className="mb-4 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h2>
+        <h2 className="mb-3 mt-1 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       ) : null}
       {children}
     </section>
@@ -29,12 +29,12 @@ function PortfolioSection({
 }
 
 function PortfolioSectionTitle({ title }: { title: string }) {
-  return <h2 className="mb-4 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h2>
+  return <h2 className="mb-3 mt-1 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
 }
 
 function SectionDivider() {
   return (
-    <div className="py-4 md:py-5" aria-hidden="true">
+    <div className="py-3 md:py-4" aria-hidden="true">
       <div className="h-px w-full bg-border/80 dark:bg-white/10" />
     </div>
   )
@@ -48,7 +48,7 @@ export function PortfolioDashboard() {
       <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === "overview" ? (
-        <div className="mt-14 space-y-6">
+        <div className="mt-12 space-y-5">
           <PortfolioSectionTitle title="Credit Limits" />
           <CreditLinesCard />
           <SectionDivider />

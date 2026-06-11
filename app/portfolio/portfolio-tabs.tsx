@@ -43,7 +43,7 @@ const TAB_DETAILS: Record<
 > = {
   overview: {
     headlineValue: "$14,400.00",
-    headlineDelta: "-$312.96 (-3.80%) Today",
+    headlineDelta: "-$312.96 (-3.80%)",
     primaryActionLabel: "Deposit",
     secondaryActionLabel: "Withdraw",
     rightRailButtons: ["Borrow", "Repay", "Deposit", "Withdraw"],
