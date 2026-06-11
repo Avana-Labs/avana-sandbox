@@ -145,7 +145,7 @@ export function PoolDetailClient({ detail }: Props) {
                 mediaVariant="icon"
               />
               <DetailFaqSection
-                title={`${detail.hero.name} FAQ`}
+                title="General FAQs"
                 items={[
                   {
                     question: `What is ${detail.hero.name}?`,
