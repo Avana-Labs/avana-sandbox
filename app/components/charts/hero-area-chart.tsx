@@ -44,6 +44,24 @@ export function HeroAreaChart({
 
   const xTickIndexes = useMemo(() => getChartTickIndexes(activeRange, data.length), [activeRange, data.length])
 
+  const yTickValues = useMemo(() => {
+    if (isMobile || data.length === 0) {
+      return []
+    }
+
+    const values = data.map((point) => point.value)
+    const min = Math.min(...values)
+    const max = Math.max(...values)
+    const tickCount = 4
+
+    if (min === max) {
+      return [min]
+    }
+
+    const step = (max - min) / (tickCount - 1)
+    return Array.from({ length: tickCount }, (_, index) => Math.round((min + step * index) * 100) / 100)
+  }, [data, isMobile])
+
   // On mobile, thin the x-axis labels so they don't collide while keeping the middle ones
   // (first, two evenly spaced middles, last).
   const visibleXTicks = useMemo(() => {
@@ -65,7 +83,7 @@ export function HeroAreaChart({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
-          margin={{ top: 12, right: isMobile ? 8 : 4, bottom: 20, left: 0 }}
+          margin={{ top: 12, right: isMobile ? 8 : 4, bottom: 30, left: 0 }}
           onMouseMove={
             onActiveIndexChange
               ? (state: { activeTooltipIndex?: number; isTooltipActive?: boolean }) => {
@@ -108,6 +126,7 @@ export function HeroAreaChart({
             width={isMobile ? 0 : 52}
             tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
             tickFormatter={formatYAxis}
+            ticks={yTickValues}
             domain={[(dataMin: number) => dataMin - 4, (dataMax: number) => dataMax + 4]}
           />
           <RechartsTooltip
