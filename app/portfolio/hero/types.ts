@@ -1,6 +1,6 @@
 import type { ComponentType, SVGProps } from "react"
 
-export type PortfolioHeroActionId = "primary" | "secondary"
+export type PortfolioHeroActionId = string
 
 type PortfolioHeroIcon = ComponentType<SVGProps<SVGSVGElement>>
 
