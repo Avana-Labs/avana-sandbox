@@ -60,7 +60,7 @@ export function SupplyBorrowCard({ detail, id }: Props) {
           ))}
         </div>
       </div>
-      <div className="relative w-full pt-4">
+      <div className="w-full pt-4">
         <LightweightChart
           series={series}
           type="area"
@@ -69,10 +69,6 @@ export function SupplyBorrowCard({ detail, id }: Props) {
           accentClassName={accentClassName}
           ariaLabel={`${VIEW_LABEL[view]} over time`}
           formatValue={(v) => (view === "utilization" ? formatPct(v, 2) : formatCompactUsd(v))}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-0 top-4 bottom-0 z-[7] w-14 bg-gradient-to-r from-background via-background/90 to-transparent"
         />
       </div>
     </section>
