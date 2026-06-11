@@ -250,7 +250,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 bg-background/95 text-foreground backdrop-blur">
       <div className="hidden lg:block">
-          <div className="relative flex h-[68px] w-full -translate-y-2 items-center justify-between px-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
+          <div className="relative flex h-[68px] w-full items-center justify-between px-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
             <div className="flex shrink-0 items-center gap-2.5">
               <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
                 <BrandLogo />
@@ -275,7 +275,7 @@ export function Header() {
               </nav>
             </div>
 
-            <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4">
+            <div className="absolute left-1/2 flex w-full max-w-[410px] -translate-x-1/2 justify-center px-4">
               <SearchCommand />
             </div>
 
