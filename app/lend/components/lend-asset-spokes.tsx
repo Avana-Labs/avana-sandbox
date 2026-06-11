@@ -426,7 +426,7 @@ function FilterCheckIcon({ checked, dark }: { checked: boolean; dark: boolean })
       className={cn(
         "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
         checked
-          ? "border-[#8f8cff] bg-[#8f8cff] text-white"
+          ? "border-[#01AACF] bg-[#01AACF] text-white"
           : dark
             ? "border-white/55 bg-transparent text-transparent"
             : "border-black/35 bg-transparent text-transparent",
@@ -611,7 +611,7 @@ function MultiSelectDropdown({
               )}
             />
 
-            <div className="overflow-y-auto py-1" style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}>
+            <div className="overflow-y-auto py-1 pb-3" style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}>
               {options.map((option) => {
                 const checked = selectedValues.includes(option)
 
