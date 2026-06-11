@@ -3,10 +3,10 @@
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 import {
-  AddCircle24Regular,
-  ArrowCircleUp24Regular,
   ArrowClockwise24Regular,
-  SubtractCircle24Regular,
+  ArrowTrendingDown24Regular,
+  ArrowTrendingUp24Regular,
+  Money24Regular,
 } from "@fluentui/react-icons"
 import { Info } from "lucide-react"
 import { ResponsiveContainer, Line, LineChart, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
@@ -193,17 +193,15 @@ export function PortfolioHero({
                   }}
                   className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
-                    {isBorrow ? (
-                      <ArrowCircleUp24Regular className="h-3.5 w-3.5" />
-                    ) : isRepay ? (
-                      <ArrowClockwise24Regular className="h-3.5 w-3.5" />
-                    ) : label === "Withdraw" ? (
-                      <SubtractCircle24Regular className="h-3.5 w-3.5" />
-                    ) : (
-                      <AddCircle24Regular className="h-3.5 w-3.5" />
-                    )}
-                  </div>
+                  {isBorrow ? (
+                    <ArrowTrendingUp24Regular className="h-5 w-5" />
+                  ) : isRepay ? (
+                    <ArrowClockwise24Regular className="h-5 w-5" />
+                  ) : label === "Withdraw" ? (
+                    <ArrowTrendingDown24Regular className="h-5 w-5" />
+                  ) : (
+                    <Money24Regular className="h-5 w-5" />
+                  )}
                   <span className="font-medium text-[13px]">{label}</span>
                 </button>
               )
@@ -217,9 +215,7 @@ export function PortfolioHero({
                 onClick={() => openDeposit?.(TOKENS[0])}
                 className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
-                  <AddCircle24Regular className="h-3.5 w-3.5" />
-                </div>
+                <Money24Regular className="h-5 w-5" />
                 <span className="font-medium text-[13px]">{primaryActionLabel}</span>
               </button>
               <button
@@ -227,9 +223,7 @@ export function PortfolioHero({
                 onClick={() => openWithdraw?.(TOKENS[0])}
                 className="flex flex-col items-start gap-3 rounded-radius-md border border-[#01AACF]/20 bg-[#01AACF]/10 p-3.5 text-[#01AACF] transition-colors hover:bg-[#01AACF]/15"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#01AACF]/25 bg-background/60">
-                  <SubtractCircle24Regular className="h-3.5 w-3.5" />
-                </div>
+                <ArrowTrendingDown24Regular className="h-5 w-5" />
                 <span className="font-medium text-[13px]">{secondaryActionLabel}</span>
               </button>
             </div>
