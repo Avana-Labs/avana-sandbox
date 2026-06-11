@@ -606,8 +606,8 @@ function MultiSelectDropdown({
 
             <div
               className={cn(
-                "h-px w-full",
-                isDark ? "bg-white/30" : "bg-black/18",
+                "w-full border-t",
+                isDark ? "border-white/20" : "border-black/12",
               )}
             />
 
@@ -858,7 +858,7 @@ function AssetSection({
                 </th>
               </tr>
             </thead>
-            <tbody key={`${title}-${sortKey}-${sortDirection}-${rows.length}`} className="divide-y divide-border dark:divide-white/6">
+            <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
                   <AssetRowView key={row.symbol} row={row} delay={index * 40} />
@@ -902,7 +902,7 @@ export function LendAssetSpokes() {
   }, [search, selectedHubs, selectedMarkets])
 
   return (
-    <section className="mt-16 space-y-8">
+    <section className="mt-16 space-y-8" style={{ overflowAnchor: "none" }}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18 md:flex-none md:w-[280px]">
             <SearchIcon />
