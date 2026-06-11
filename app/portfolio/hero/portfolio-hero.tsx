@@ -75,6 +75,23 @@ function buildActions({
 }): PortfolioHeroAction[] {
   const labels = actionLabels?.length ? actionLabels : [primaryActionLabel, secondaryActionLabel]
 
+  const resolveClasses = (label: string) => {
+    const normalized = label.toLowerCase()
+    if (normalized.includes("borrow")) {
+      return "!border-border/70 !bg-background !text-[#0B9BC9] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-[#7DDCFF] dark:hover:!bg-[#142331]"
+    }
+    if (normalized.includes("repay")) {
+      return "!border-border/70 !bg-background !text-black hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-white dark:hover:!bg-[#142331]"
+    }
+    if (normalized.includes("deposit") || normalized.includes("supply")) {
+      return "!border-border/70 !bg-background !text-[#16A34A] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-[#74d79c] dark:hover:!bg-[#142331]"
+    }
+    if (normalized.includes("withdraw") || normalized.includes("unwind")) {
+      return "!border-border/70 !bg-background !text-[#E11D48] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-[#f38aa3] dark:hover:!bg-[#142331]"
+    }
+    return "!border-border/70 !bg-background !text-[#01AACF] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-[#7DDCFF] dark:hover:!bg-[#142331]"
+  }
+
   const resolveIcon = (label: string) => {
     const normalized = label.toLowerCase()
     if (normalized.includes("supply") || normalized.includes("deposit")) return Wallet24Filled
@@ -100,6 +117,7 @@ function buildActions({
       label,
       icon: resolveIcon(label),
       onClick,
+      className: resolveClasses(label),
     }
   })
 }
