@@ -173,7 +173,7 @@ function CollateralDesktopTable({
   }, [rows, sortDirection, sortKey])
 
   return (
-    <div className="overflow-hidden rounded-[20px] border border-border bg-white shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:shadow-[0_1px_0_rgba(255,255,255,0.03),inset_0_1px_0_rgba(255,255,255,0.02)]">
+    <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[920px] text-[12px]">
           <thead>
@@ -249,23 +249,23 @@ function CollateralDesktopTable({
             {sortedRows.map((pool, index) => (
               <tr
                 key={pool.id}
-                className="asset-swap group cursor-pointer border-t border-border transition-colors hover:bg-surface-1 dark:border-white/6 dark:hover:bg-white/[0.015]"
+                className="asset-swap group cursor-pointer border-t border-border transition-colors hover:bg-surface-inset/60"
                 onClick={() => onUseAsCollateral(pool)}
                 style={{ animationDelay: `${index * 40}ms` }}
               >
-                <td className="py-4 pl-6 pr-4">
+                <td className="py-2.5 pl-6 pr-4">
                   <CollateralAssetCell pool={pool} />
                 </td>
-                <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                   <span className="tabular-nums">{((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%</span>
                 </td>
-                <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                   <span className="tabular-nums">{pool.ltv}%</span>
                 </td>
-                <td className="py-4 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                   <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
                 </td>
-                <td className="py-4 px-6">
+                <td className="py-2.5 px-6">
                   <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                     <span className="tabular-nums">{formatPairAmount(pool.availableUsd, pool)}</span>
                   </div>
@@ -277,7 +277,7 @@ function CollateralDesktopTable({
             ))}
             {pending.map((row) => (
               <tr key={row.id}>
-                <td className="px-6 py-4 text-[12px] text-muted-foreground" colSpan={5}>
+                <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={5}>
                   {row.label}
                   <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
                 </td>

@@ -19,7 +19,7 @@ type Props = {
   mediaVariant?: "card" | "icon"
 }
 
-export function NewsCard({ items, title = "News", plain = false, mediaVariant = "card" }: Props) {
+export function NewsCard({ items, title = "Parameter Changes", plain = false, mediaVariant = "card" }: Props) {
   return (
     <section className={plain ? "space-y-4" : "overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-elev-1"}>
       <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
