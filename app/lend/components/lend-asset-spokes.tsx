@@ -492,11 +492,9 @@ function MultiSelectDropdown({
 
     updateDirection()
     window.addEventListener("resize", updateDirection)
-    window.addEventListener("scroll", updateDirection, true)
 
     return () => {
       window.removeEventListener("resize", updateDirection)
-      window.removeEventListener("scroll", updateDirection, true)
     }
   }, [open, options.length])
 
@@ -546,15 +544,15 @@ function MultiSelectDropdown({
               setOpen(false)
             }}
             className={cn(
-              "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
-              isDark ? "text-white hover:bg-white/5" : "text-foreground hover:bg-black/[0.04]",
+              "flex h-10 w-full items-center gap-3 border-b px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
+              isDark
+                ? "border-white/16 text-white hover:bg-white/5"
+                : "border-black/12 text-foreground hover:bg-black/[0.04]",
             )}
           >
             <FilterCheckIcon checked={isAllSelected} dark={isDark} />
             <span>{allLabel}</span>
           </button>
-
-          <div className={cn("mx-3.5 h-px", isDark ? "bg-white/18" : "bg-black/14")} />
 
           <div className="max-h-[220px] overflow-y-auto py-1">
             {options.map((option) => {
