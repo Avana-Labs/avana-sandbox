@@ -18,7 +18,7 @@ export function PortfolioDashboard() {
 
       {activeTab === "overview" ? <StakeWizard /> : null}
       {activeTab === "overview" ? <PortfolioPositions section="supplies" /> : null}
-      {activeTab === "borrowing" ? <PortfolioPositions section="debts" /> : null}
+      {activeTab === "overview" ? <PortfolioPositions section="debts" /> : null}
       {activeTab === "lending" ? <PortfolioInvestments /> : null}
       {activeTab === "lending" ? <PortfolioStrategies /> : null}
       {activeTab === "looping" ? (
