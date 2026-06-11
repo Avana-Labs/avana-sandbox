@@ -9,6 +9,7 @@ export type PortfolioHeroAction = {
   label: string
   icon: PortfolioHeroIcon
   onClick?: () => void
+  className?: string
 }
 
 export type NetworkId =
