@@ -16,6 +16,7 @@ import {
   buildRangeData,
   HeroBalanceDisplay,
   HeroChartSection,
+  formatChartValue,
   resolveSeriesChange,
   resolveSeriesTone,
   type ChartRangeData,
@@ -167,6 +168,7 @@ export function PortfolioHero({
   walletName = "Demo wallet",
 }: PortfolioHeroProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkId>("all")
   const { showDollarAmounts } = useDisplayPreferences()
 
@@ -190,16 +192,29 @@ export function PortfolioHero({
     return networkFeed.rangeData
   }, [networkFeed.rangeData, rangeData, selectedNetwork])
 
-  const resolvedHeadlineValue = selectedNetwork === "all" ? (headlineValue ?? activeNetwork.balance) : activeNetwork.balance
-
   // Delta + color track the active range's real trend, so a dip turns red.
   const activePoints = displayRangeData[activeRange]
   const trendTone = resolveSeriesTone(activePoints)
   const trendChange = resolveSeriesChange(activePoints)
-  const resolvedHeadlineDelta = `$${trendChange.changeAbs.toLocaleString(undefined, {
+  const hoverPoint = hoverIndex == null ? null : activePoints[hoverIndex] ?? null
+  const firstPoint = activePoints[0]
+  const displayPoint = hoverPoint ?? activePoints[activePoints.length - 1]
+  const displayTone = hoverPoint
+    ? hoverPoint.value >= (firstPoint?.value ?? hoverPoint.value)
+      ? "positive"
+      : "negative"
+    : trendTone
+  const displayDelta = hoverPoint ? (() => {
+    const baseValue = firstPoint?.value ?? hoverPoint.value
+    const changeAbs = Math.abs(hoverPoint.value - baseValue)
+    const pct = baseValue ? ((hoverPoint.value - baseValue) / baseValue) * 100 : 0
+    return `${formatChartValue("usd", changeAbs)} (${Math.abs(pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
+  })() : `$${trendChange.changeAbs.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })} (${Math.abs(trendChange.pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
+  const resolvedHeadlineValue = selectedNetwork === "all" ? (headlineValue ?? activeNetwork.balance) : activeNetwork.balance
+  const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
 
   const actions = buildActions({
     openDeposit,
@@ -222,15 +237,19 @@ export function PortfolioHero({
       <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
         <div className="min-w-0 space-y-2.5 sm:space-y-3">
           <HeroBalanceDisplay
-            value={resolvedHeadlineValue}
-            delta={headlineDelta ?? resolvedHeadlineDelta}
-            deltaTone={trendTone}
+            value={resolvedDisplayValue}
+            delta={hoverPoint ? displayDelta : (headlineDelta ?? displayDelta)}
+            deltaTone={displayTone}
             hidden={!showDollarAmounts}
           />
           <HeroChartSection
             rangeData={displayRangeData}
             activeRange={activeRange}
-            onRangeChange={setActiveRange}
+            onRangeChange={(range) => {
+              setHoverIndex(null)
+              setActiveRange(range)
+            }}
+            onActiveIndexChange={setHoverIndex}
             gradientId="portfolioHeroFill"
             tone={trendTone}
           />
