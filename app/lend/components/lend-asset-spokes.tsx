@@ -542,7 +542,7 @@ function MultiSelectDropdown({
   }
 
   return (
-    <div ref={rootRef} className="relative z-[81]">
+    <div ref={rootRef} className="relative z-20">
       <button
         type="button"
         aria-label={ariaLabel}
@@ -567,13 +567,13 @@ function MultiSelectDropdown({
             type="button"
             aria-label={`Close ${ariaLabel}`}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[79] cursor-default bg-transparent"
+            className="fixed inset-0 z-10 cursor-default bg-transparent"
           />
 
           <div
             ref={panelRef}
             className={cn(
-              "fixed z-[80] overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
+              "fixed z-30 overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
               isDark ? "border-white/8 bg-[#232323] text-white" : "border-border bg-white text-foreground",
             )}
             style={
