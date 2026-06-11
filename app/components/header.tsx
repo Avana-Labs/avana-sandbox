@@ -333,10 +333,10 @@ export function Header() {
                       {link.icon ? (
                         <span
                           className={`inline-flex items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px] ${
-                            isUtilityLink ? "mr-1 h-5 w-5" : "mr-2 h-7 w-7"
+                            isUtilityLink ? "mr-1 h-6 w-6" : "mr-2 h-7 w-7"
                           }`}
                         >
-                          <link.icon className={isUtilityLink ? "h-4 w-4 shrink-0" : "h-6 w-6 shrink-0"} />
+                          <link.icon className={isUtilityLink ? "h-5 w-5 shrink-0" : "h-6 w-6 shrink-0"} />
                         </span>
                       ) : null}
                       {link.label}
