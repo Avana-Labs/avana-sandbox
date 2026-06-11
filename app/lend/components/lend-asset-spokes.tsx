@@ -455,7 +455,9 @@ function MultiSelectDropdown({
   ariaLabel: string
 }) {
   const [open, setOpen] = useState(false)
+  const [openUpward, setOpenUpward] = useState(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const panelRef = useRef<HTMLDivElement | null>(null)
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const isAllSelected = selectedValues.length === 0 || selectedValues.length === options.length
@@ -473,6 +475,30 @@ function MultiSelectDropdown({
     document.addEventListener("mousedown", handlePointerDown)
     return () => document.removeEventListener("mousedown", handlePointerDown)
   }, [open])
+
+  useEffect(() => {
+    if (!open) return
+
+    const updateDirection = () => {
+      if (!rootRef.current || !panelRef.current) return
+
+      const triggerRect = rootRef.current.getBoundingClientRect()
+      const panelHeight = panelRef.current.offsetHeight
+      const spaceBelow = window.innerHeight - triggerRect.bottom
+      const spaceAbove = triggerRect.top
+
+      setOpenUpward(spaceBelow < panelHeight + 12 && spaceAbove > spaceBelow)
+    }
+
+    updateDirection()
+    window.addEventListener("resize", updateDirection)
+    window.addEventListener("scroll", updateDirection, true)
+
+    return () => {
+      window.removeEventListener("resize", updateDirection)
+      window.removeEventListener("scroll", updateDirection, true)
+    }
+  }, [open, options.length])
 
   const toggleOption = (option: string, checked: boolean) => {
     if (!checked) {
@@ -506,8 +532,10 @@ function MultiSelectDropdown({
 
       {open ? (
         <div
+          ref={panelRef}
           className={cn(
-            "absolute right-0 top-full z-[80] mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)] md:w-[264px]",
+            "absolute right-0 z-[80] w-[min(13.5rem,calc(100vw-2rem))] overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
+            openUpward ? "bottom-full mb-2" : "top-full mt-2",
             isDark ? "border-white/8 bg-[#232323] text-white" : "border-border bg-white text-foreground",
           )}
         >
@@ -526,9 +554,9 @@ function MultiSelectDropdown({
             <span>{allLabel}</span>
           </button>
 
-          <div className={cn("mx-4 h-px", isDark ? "bg-white/10" : "bg-black/8")} />
+          <div className={cn("mx-3.5 h-px", isDark ? "bg-white/18" : "bg-black/14")} />
 
-          <div className="max-h-[280px] overflow-y-auto py-1 md:max-h-[320px]">
+          <div className="max-h-[220px] overflow-y-auto py-1">
             {options.map((option) => {
               const checked = selectedValues.includes(option)
 
@@ -538,7 +566,7 @@ function MultiSelectDropdown({
                   type="button"
                   onClick={() => toggleOption(option, !checked)}
                   className={cn(
-                    "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
+                    "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors",
                     isDark
                       ? checked
                         ? "bg-white/6 font-medium text-white"
