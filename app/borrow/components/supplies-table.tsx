@@ -36,9 +36,9 @@ type SuppliesTableProps = {
 
 const MASK = "••••"
 const HF_ZONES = [
-  { id: "danger", label: "Liquidation", min: 0, max: 1.5, widthPct: 30, color: "bg-rose-500" },
-  { id: "warn", label: "Caution", min: 1.5, max: 3, widthPct: 40, color: "bg-amber-500" },
   { id: "safe", label: "Safe", min: 3, max: Infinity, widthPct: 30, color: "bg-emerald-500" },
+  { id: "warn", label: "Caution", min: 1.5, max: 3, widthPct: 40, color: "bg-amber-500" },
+  { id: "danger", label: "Liquidation", min: 0, max: 1.5, widthPct: 30, color: "bg-rose-500" },
 ] as const
 
 export function SuppliesPanel({
@@ -182,6 +182,7 @@ export function SuppliesPanel({
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>Safe</span>
+                  <span>Caution</span>
                   <span>Liquidation</span>
                 </div>
                 <div className="flex items-center justify-between border-t border-border pt-2 text-[12.5px]">
