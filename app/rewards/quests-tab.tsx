@@ -33,9 +33,9 @@ type AvanaQuest = {
 }
 
 const PROMO_TABS = [
-  { id: "new-users", label: "New Users Exclusive" },
-  { id: "challenge-tasks", label: "Challenge Tasks" },
-  { id: "refer-a-friend", label: "Refer a Friend" },
+  { id: "new-users", label: "New users" },
+  { id: "challenge-tasks", label: "Challenge tasks" },
+  { id: "refer-a-friend", label: "Refer a friend" },
 ] as const
 
 const NEW_USER_QUESTS: AvanaQuest[] = [
@@ -435,8 +435,9 @@ function PromoTabButton({
     <button
       type="button"
       onClick={onClick}
+      data-state={active ? "active" : "inactive"}
       className={[
-        "border-b-2 pb-2 text-left text-[16px] font-medium tracking-[-0.02em] transition-colors md:text-[18px]",
+        "h-auto flex-1 shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[16px] font-normal after:inset-x-0 after:h-[3px] data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:shadow-none sm:flex-none sm:pb-4 sm:text-[15px]",
         active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground/80",
       ].join(" ")}
     >
@@ -449,40 +450,41 @@ function AvanaQuestCard({ quest, accent = "default" }: { quest: AvanaQuest; acce
   const Icon = quest.icon
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden rounded-[18px] border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="flex h-full flex-col p-5">
+    <Card className="flex h-full flex-col overflow-hidden rounded-[14px] border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex h-full flex-col p-3.5">
         <div className="flex items-start justify-between gap-3">
-          <div className={`flex h-11 w-11 items-center justify-center rounded-[12px] ${accent === "challenge" ? "bg-[#EAFF72]/90" : "bg-[#9CDD4C]/14"}`}>
-            <Icon className={`h-5 w-5 ${accent === "challenge" ? "text-[#7D8D24]" : "text-[#4E9D73]"}`} strokeWidth={1.9} />
+          <div className={`flex h-9 w-9 items-center justify-center rounded-[11px] ${accent === "challenge" ? "bg-[#EAFF72]/90" : "bg-[#9CDD4C]/14"}`}>
+            <Icon className={`h-4 w-4 ${accent === "challenge" ? "text-[#7D8D24]" : "text-[#4E9D73]"}`} strokeWidth={1.9} />
           </div>
-          <span className="rounded-full border border-border bg-surface-inset px-2.5 py-1 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+          <span className="rounded-full border border-border bg-surface-inset px-2.5 py-0.5 text-[9px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
             {quest.category}
           </span>
         </div>
 
-        <div className="mt-5">
-          <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-foreground">{quest.title}</h3>
-          <p className={`mt-2 text-[14px] leading-6 ${accent === "challenge" ? "text-[#4E9D73]" : "text-muted-foreground"}`}>
+        <div className="mt-3.5 min-h-[132px] space-y-2">
+          <h3 className="line-clamp-2 text-[14px] font-medium leading-5 tracking-[-0.03em] text-foreground md:text-[15px]">
+            {quest.title}
+          </h3>
+          <p className={`line-clamp-2 text-[12px] font-normal leading-5 ${accent === "challenge" ? "text-[#4E9D73]/90" : "text-muted-foreground"}`}>
             {quest.description}
           </p>
+          <div className="pt-1 font-data text-[14px] font-medium tracking-tight text-foreground md:text-[15px]">{quest.reward}</div>
         </div>
 
-        <div className="mt-5 font-data text-[18px] font-semibold tracking-tight text-foreground">{quest.reward}</div>
-
-        <div className="mt-auto pt-6">
+        <div className="mt-auto pt-3.5">
           {quest.expiration ? (
-            <div className="mb-4 flex items-center justify-between gap-3 border-t border-dashed border-border pt-4">
-              <span className="text-[12px] text-muted-foreground">Expiration</span>
-              <span className="font-data text-[12px] font-medium tracking-tight text-foreground">{quest.expiration}</span>
+            <div className="mb-3.5 flex items-center justify-between gap-3 border-t border-dashed border-border pt-3">
+              <span className="text-[10px] font-normal text-muted-foreground">Expiration</span>
+              <span className="font-data text-[10px] font-normal tracking-tight text-foreground">{quest.expiration}</span>
             </div>
           ) : null}
 
           <button
             type="button"
-            className="inline-flex h-11 w-full items-center justify-center gap-1 rounded-[12px] bg-muted px-4 text-[14px] font-medium text-foreground transition-colors hover:bg-muted/80"
+            className="inline-flex h-9 w-full items-center justify-center gap-1 rounded-[11px] bg-muted px-3.5 text-[12px] font-medium text-foreground transition-colors hover:bg-muted/80"
           >
             {quest.cta}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -495,26 +497,23 @@ function RewardsPromoPanel() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap gap-8 border-b border-border/50">
-        {PROMO_TABS.map((tab) => (
-          <PromoTabButton
-            key={tab.id}
-            active={activePromoTab === tab.id}
-            onClick={() => setActivePromoTab(tab.id)}
-          >
-            {tab.label}
-          </PromoTabButton>
-        ))}
+      <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex h-auto w-full justify-between gap-2 border-0 bg-transparent p-0 sm:inline-flex sm:w-max sm:min-w-max sm:justify-start sm:gap-9">
+          {PROMO_TABS.map((tab) => (
+            <PromoTabButton
+              key={tab.id}
+              active={activePromoTab === tab.id}
+              onClick={() => setActivePromoTab(tab.id)}
+            >
+              {tab.label}
+            </PromoTabButton>
+          ))}
+        </div>
       </div>
 
       {activePromoTab === "new-users" ? (
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-3 text-[16px] font-semibold tracking-[-0.03em] text-foreground md:text-[18px]">
-            <Sparkles className="h-4.5 w-4.5 text-[#01AACF]" />
-            <span>Starter path: complete onboarding, first-position, and first-rewards quests on Avana.</span>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
             {NEW_USER_QUESTS.map((quest) => (
               <AvanaQuestCard key={quest.id} quest={quest} />
             ))}
@@ -524,12 +523,7 @@ function RewardsPromoPanel() {
 
       {activePromoTab === "challenge-tasks" ? (
         <div className="space-y-6">
-          <div className="flex items-center gap-3 text-[16px] font-semibold tracking-[-0.03em] text-foreground md:text-[18px]">
-            <Trophy className="h-4.5 w-4.5 text-[#D7A33D]" />
-            <span>Time-boxed growth, volume, and cross-chain quests for power users.</span>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
             {CHALLENGE_QUESTS.map((quest) => (
               <AvanaQuestCard key={quest.id} quest={quest} accent="challenge" />
             ))}
@@ -539,12 +533,7 @@ function RewardsPromoPanel() {
 
       {activePromoTab === "refer-a-friend" ? (
         <div className="space-y-6">
-          <div className="flex items-center gap-3 text-[16px] font-semibold tracking-[-0.03em] text-foreground md:text-[18px]">
-            <Link2 className="h-4.5 w-4.5 text-[#01AACF]" />
-            <span>Referral quests for growing your Avana network and activating new wallets.</span>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
             {REFERRAL_QUESTS.map((quest) => (
               <AvanaQuestCard key={quest.id} quest={quest} />
             ))}
