@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { useState } from "react"
+import { CreditLinesCard } from "./credit-lines-card"
 import { StakeWizard } from "../stake/stake-wizard"
 import { RecentActivity } from "../lend/components/recent-activity"
 import { PortfolioInvestments } from "./portfolio-investments"
@@ -39,6 +40,7 @@ export function PortfolioDashboard() {
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-8">
           <PortfolioSectionTitle title="Credit Lines" />
+          <CreditLinesCard />
           <PortfolioSection title="Credit Markets">
             <PortfolioPositions section="all" />
           </PortfolioSection>
