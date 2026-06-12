@@ -796,7 +796,7 @@ function AssetSection({
           <table className="w-full min-w-[920px] text-[12px]">
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-                <th className="pb-3 pt-4 pl-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -811,7 +811,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
@@ -826,7 +826,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("deposits")}
@@ -841,7 +841,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 pr-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("liquidity")}
@@ -903,19 +903,52 @@ export function LendAssetSpokes() {
 
   return (
     <section className="mt-16 space-y-8" style={{ overflowAnchor: "none" }}>
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+      <div className="hidden items-center gap-2 py-2.5 md:flex">
         <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18 md:flex-none md:w-[280px]">
-            <SearchIcon />
-            <input
-              aria-label="Filter assets"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Filter assets"
-              className="lend-filter-input w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none md:text-[15px] md:font-normal"
-            />
+          <SearchIcon />
+          <input
+            aria-label="Filter assets"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Filter assets"
+            className="lend-filter-input w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none md:text-[15px] md:font-normal"
+          />
         </label>
 
-        <div className="flex min-w-0 flex-wrap justify-end gap-2 md:ml-auto md:flex-nowrap">
+        <div className="ml-auto flex min-w-0 flex-nowrap gap-2">
+          <MultiSelectDropdown
+            allLabel={ALL_HUBS_LABEL}
+            countLabel="Markets"
+            options={HUB_OPTIONS}
+            selectedValues={selectedHubs}
+            onChange={setSelectedHubs}
+            ariaLabel="Filter hubs"
+          />
+
+          <MultiSelectDropdown
+            allLabel={ALL_MARKETS_LABEL}
+            countLabel="Hubs"
+            options={MARKET_OPTIONS}
+            selectedValues={selectedMarkets}
+            onChange={setSelectedMarkets}
+            ariaLabel="Filter markets"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 overflow-x-auto py-2.5 md:hidden">
+        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18">
+          <SearchIcon />
+          <input
+            aria-label="Filter assets"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Filter assets"
+            className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none"
+          />
+        </label>
+
+        <div className="flex shrink-0 items-center gap-2">
           <MultiSelectDropdown
             allLabel={ALL_HUBS_LABEL}
             countLabel="Markets"
