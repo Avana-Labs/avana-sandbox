@@ -178,7 +178,7 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
           <table className="w-full min-w-[920px] text-[12px]">
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-                <th className="pb-3 pt-4 pl-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -193,7 +193,7 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
@@ -208,7 +208,7 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("borrows")}
@@ -223,7 +223,7 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 pr-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("liquidity")}
