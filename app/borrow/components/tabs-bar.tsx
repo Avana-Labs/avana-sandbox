@@ -351,7 +351,7 @@ export function TabsBar({
 
   return (
     <div className="z-30">
-      <div className="hidden items-center gap-4 py-2.5 md:flex">
+      <div className="hidden items-center gap-4 py-7 md:flex">
         <div className="min-w-0 flex-1 overflow-x-auto">
           <div className="flex min-w-max items-center gap-6">
             {TAB_ORDER.map((tab) => (
