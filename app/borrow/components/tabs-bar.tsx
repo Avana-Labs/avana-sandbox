@@ -360,7 +360,7 @@ export function TabsBar({
                 type="button"
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "whitespace-nowrap text-[22px] font-normal tracking-[-0.03em] transition-colors md:text-[24px]",
+                  "whitespace-nowrap text-[20px] font-normal tracking-[-0.03em] transition-colors md:text-[22px]",
                   currentTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
                 )}
               >
