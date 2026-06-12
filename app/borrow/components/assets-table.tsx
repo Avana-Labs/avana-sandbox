@@ -44,7 +44,7 @@ export function AssetsPanel({ rows, onBorrow, onViewMarket, groupByCategory = tr
     <div>
       {variant === "loan" && !groupByCategory ? (
         <div className="hidden md:block">
-          <LoanAssetsSection assets={rows} onBorrow={onBorrow} />
+          <LoanAssetsSection assets={rows} onBorrow={onBorrow} embedded />
         </div>
       ) : (
         <div className="hidden space-y-8 md:block">
@@ -139,7 +139,15 @@ function SortIcon() {
   )
 }
 
-function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; onBorrow: (asset: BorrowableAsset) => void }) {
+function LoanAssetsSection({
+  assets,
+  onBorrow,
+  embedded = false,
+}: {
+  assets: BorrowableAsset[]
+  onBorrow: (asset: BorrowableAsset) => void
+  embedded?: boolean
+}) {
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "borrows" | "liquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
@@ -171,11 +179,9 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
     })
   }, [assets, sortDirection, sortKey])
 
-  return (
-    <section className="space-y-5">
-      <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-[12px]">
+  const table = (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[920px] text-[12px]">
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
                 <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -288,7 +294,15 @@ function LoanAssetsSection({ assets, onBorrow }: { assets: BorrowableAsset[]; on
             </tbody>
           </table>
         </div>
-      </div>
+  )
+
+  if (embedded) {
+    return table
+  }
+
+  return (
+    <section className="space-y-5">
+      <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">{table}</div>
     </section>
   )
 }
