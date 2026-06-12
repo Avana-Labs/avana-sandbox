@@ -119,7 +119,7 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
           {pool.visuals[0].symbol} / {pool.visuals[1].symbol}
         </div>
         <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-          {pool.feeTier} fee · {formatCompactUsd(pool.tvlUsd)} TVL
+          {formatCompactUsd(pool.tvlUsd)} TVL
         </div>
       </div>
     </div>
@@ -178,7 +178,7 @@ function CollateralDesktopTable({
         <table className="w-full min-w-[920px] text-[12px]">
           <thead>
             <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-              <th className="pb-3 pt-4 pl-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("asset")}
@@ -191,7 +191,7 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
-              <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("apy")}
@@ -204,7 +204,7 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
-              <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("ltv")}
@@ -217,7 +217,7 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
-              <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("risk")}
@@ -230,7 +230,7 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
-              <th className="pb-3 pt-4 px-4 pr-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("supplied")}
@@ -399,7 +399,7 @@ function SpokeMobileSection({
                     <TokenPairCell
                       visuals={pool.visuals}
                       name={pool.name}
-                      subtitle={`${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`}
+                      subtitle={`${formatCompactUsd(pool.tvlUsd)} TVL`}
                       size="md"
                     />
                     <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
