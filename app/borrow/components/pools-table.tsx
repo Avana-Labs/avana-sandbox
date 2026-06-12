@@ -65,7 +65,7 @@ function SectionTabs({
   onTabChange: (tab: SectionTabId) => void
 }) {
   return (
-    <div className="flex flex-wrap gap-8 border-b border-border/50">
+    <div className="flex flex-wrap gap-8 border-b border-border/50 md:border-b-0">
       {[
         { id: "collateral", label: "Collateral" },
         { id: "borrow", label: "Loan" },
@@ -75,7 +75,7 @@ function SectionTabs({
           type="button"
           onClick={() => onTabChange(tab.id as SectionTabId)}
           className={[
-            "border-b-2 pb-2 text-left text-[16px] font-medium tracking-[-0.03em] transition-colors md:text-[18px]",
+            "border-b-2 pb-2 text-left text-[15px] font-medium tracking-[-0.03em] transition-colors md:text-[17px]",
             activeTab === tab.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground/80",
           ].join(" ")}
         >
@@ -126,10 +126,12 @@ function CollateralDesktopTable({
   rows,
   pending,
   onUseAsCollateral,
+  embedded = false,
 }: {
   rows: BorrowPoolRow[]
   pending: PendingMarketRow[]
   onUseAsCollateral: (pool: BorrowPoolRow) => void
+  embedded?: boolean
 }) {
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "risk" | "supplied">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
@@ -164,10 +166,9 @@ function CollateralDesktopTable({
     })
   }, [rows, sortDirection, sortKey])
 
-  return (
-    <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[920px] text-[12px]">
+  const table = (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[920px] text-[12px]">
           <thead>
             <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
               <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -275,11 +276,16 @@ function CollateralDesktopTable({
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
+        </tbody>
+      </table>
     </div>
   )
+
+  if (embedded) {
+    return table
+  }
+
+  return <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">{table}</div>
 }
 
 export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral, onBorrowAssetDesktop }: PoolsTableProps) {
@@ -319,17 +325,18 @@ function SpokeDesktopSection({
 
   return (
     <section className="mb-2">
-      <div className="mb-3 flex flex-col gap-3 px-1 py-2 md:flex-row md:items-center md:justify-between">
-        <h3 className="text-[17px] font-medium tracking-tight md:text-[19px]">{spoke.label}</h3>
-        <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
-
-      <div className="mt-4">
-        {activeTab === "collateral" ? (
-          <CollateralDesktopTable rows={rows} pending={pending} onUseAsCollateral={onUseAsCollateral} />
-        ) : (
-          <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
-        )}
+      <div className="mt-4 overflow-hidden rounded-b-[20px] rounded-t-none border border-black/5 bg-[#f7f7f5] md:shadow-none">
+        <div className="flex flex-col gap-3 px-1 py-2 md:flex-row md:items-center md:gap-4 md:px-4 md:py-3">
+          <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <h3 className="text-[16px] font-medium tracking-tight md:ml-auto md:text-[18px]">{spoke.label}</h3>
+        </div>
+        <div className="border-t border-black/5 bg-surface-raised">
+          {activeTab === "collateral" ? (
+            <CollateralDesktopTable rows={rows} pending={pending} onUseAsCollateral={onUseAsCollateral} embedded />
+          ) : (
+            <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
+          )}
+        </div>
       </div>
     </section>
   )
@@ -372,9 +379,9 @@ function SpokeMobileSection({
 
   return (
     <section className="space-y-2">
-      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h3 className="text-[17px] font-medium tracking-tight md:text-[19px]">{spoke.label}</h3>
+      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:rounded-[18px] md:border md:border-black/5 md:bg-[#f7f7f5] md:px-4 md:py-2 md:shadow-none">
         <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <h3 className="text-[16px] font-medium tracking-tight md:text-[18px] md:ml-auto">{spoke.label}</h3>
       </div>
 
       <div className="mt-4">
