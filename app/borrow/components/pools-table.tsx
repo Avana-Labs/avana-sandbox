@@ -325,14 +325,14 @@ function SpokeDesktopSection({
 
   return (
     <section className="mb-2">
-      <div className="mt-4 overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
+      <div className="mt-4 overflow-hidden rounded-[20px] border border-black/5 bg-[#f7f7f5] dark:border-white/10 dark:bg-[#171717] md:shadow-none">
         <div className="flex flex-col gap-3 px-1 py-2 md:flex-row md:items-center md:gap-4 md:px-4 md:py-3">
           <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
           <h3 className="text-[16px] font-medium tracking-tight text-foreground dark:text-white md:ml-auto md:text-[18px]">
             {spoke.label}
           </h3>
         </div>
-        <div className="border-t border-border bg-surface-raised">
+        <div className="border-t border-black/5 bg-surface-raised dark:border-white/10 dark:bg-[#1b1b1b]">
           {activeTab === "collateral" ? (
             <CollateralDesktopTable rows={rows} pending={pending} onUseAsCollateral={onUseAsCollateral} embedded />
           ) : (
@@ -381,7 +381,7 @@ function SpokeMobileSection({
 
   return (
     <section className="space-y-2">
-      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:rounded-[18px] md:border md:border-border md:bg-surface-raised md:px-4 md:py-2 md:shadow-none">
+      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:rounded-[18px] md:border md:border-black/5 md:bg-[#f7f7f5] md:px-4 md:py-2 md:shadow-none dark:md:border-white/10 dark:md:bg-[#171717]">
         <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
         <h3 className="text-[16px] font-medium tracking-tight text-foreground dark:text-white md:ml-auto md:text-[18px]">
           {spoke.label}
