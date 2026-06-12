@@ -75,7 +75,7 @@ function SectionTabs({
           type="button"
           onClick={() => onTabChange(tab.id as SectionTabId)}
           className={[
-            "border-b-2 pb-2 text-left text-[14px] font-medium tracking-[-0.02em] transition-colors md:text-[14px]",
+            "border-b-2 pb-2 text-left text-[16px] font-medium tracking-[-0.03em] transition-colors md:text-[18px]",
             activeTab === tab.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground/80",
           ].join(" ")}
         >
@@ -83,14 +83,6 @@ function SectionTabs({
         </button>
       ))}
     </div>
-  )
-}
-
-function EModePill() {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-xs border border-accent-emphasis/30 bg-accent-emphasis-soft px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-accent-emphasis dark:text-accent-emphasis">
-      E-Mode
-    </span>
   )
 }
 
@@ -327,12 +319,10 @@ function SpokeDesktopSection({
 
   return (
     <section className="mb-2">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 py-2">
-        <h3 className="text-[18px] font-medium tracking-tight md:text-[20px]">{spoke.label}</h3>
-        {spoke.eMode ? <EModePill /> : null}
+      <div className="mb-3 flex flex-col gap-3 px-1 py-2 md:flex-row md:items-center md:justify-between">
+        <h3 className="text-[17px] font-medium tracking-tight md:text-[19px]">{spoke.label}</h3>
+        <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
-
-      <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="mt-4">
         {activeTab === "collateral" ? (
@@ -382,12 +372,10 @@ function SpokeMobileSection({
 
   return (
     <section className="space-y-2">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[18px] font-medium tracking-tight md:text-[20px]">{spoke.label}</h3>
-        {spoke.eMode ? <EModePill /> : null}
+      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <h3 className="text-[17px] font-medium tracking-tight md:text-[19px]">{spoke.label}</h3>
+        <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
-
-      <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="mt-4">
         {activeTab === "collateral" ? (
