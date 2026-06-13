@@ -387,11 +387,15 @@ const ASSET_GROUPS: AssetGroup[] = [
   },
 ]
 
-const ALL_ROWS = ASSET_GROUPS.flatMap((group) => group.rows)
-const ALL_HUBS_LABEL = "All Markets"
-const ALL_MARKETS_LABEL = "All Hubs"
-const HUB_OPTIONS = Array.from(new Set(ALL_ROWS.map((row) => row.hub)))
-const MARKET_OPTIONS = Array.from(new Set(ALL_ROWS.map((row) => row.market)))
+const STABLE_SYMBOLS = new Set(ASSET_GROUPS[0]?.rows.map((row) => row.symbol) ?? [])
+const ALL_HUBS_LABEL = "All Hubs"
+const ALL_MARKETS_LABEL = "All Markets"
+const HUB_OPTIONS = ["Stable", "Volatile"]
+const MARKET_OPTIONS = ASSET_GROUPS.map((group) => group.title)
+
+function getHubBucket(row: AssetRow) {
+  return STABLE_SYMBOLS.has(row.symbol) ? "Stable" : "Volatile"
+}
 
 function SearchIcon() {
   return (
@@ -887,13 +891,14 @@ export function LendAssetSpokes() {
     const query = search.trim().toLowerCase()
 
     return ASSET_GROUPS.map((group) => {
+      const matchesMarketGroup = selectedMarkets.length === 0 || selectedMarkets.includes(group.title)
       const rows = group.rows.filter((row) => {
         const matchesSearch =
           query.length === 0 ||
           row.name.toLowerCase().includes(query) ||
           row.symbol.toLowerCase().includes(query)
-        const matchesHub = selectedHubs.length === 0 || selectedHubs.includes(row.hub)
-        const matchesMarket = selectedMarkets.length === 0 || selectedMarkets.includes(row.market)
+        const matchesHub = selectedHubs.length === 0 || selectedHubs.includes(getHubBucket(row))
+        const matchesMarket = matchesMarketGroup
         return matchesSearch && matchesHub && matchesMarket
       })
 
@@ -918,7 +923,7 @@ export function LendAssetSpokes() {
         <div className="ml-auto flex min-w-0 flex-nowrap gap-2">
           <MultiSelectDropdown
             allLabel={ALL_HUBS_LABEL}
-            countLabel="Markets"
+            countLabel="Hubs"
             options={HUB_OPTIONS}
             selectedValues={selectedHubs}
             onChange={setSelectedHubs}
@@ -927,7 +932,7 @@ export function LendAssetSpokes() {
 
           <MultiSelectDropdown
             allLabel={ALL_MARKETS_LABEL}
-            countLabel="Hubs"
+            countLabel="Markets"
             options={MARKET_OPTIONS}
             selectedValues={selectedMarkets}
             onChange={setSelectedMarkets}
@@ -951,7 +956,7 @@ export function LendAssetSpokes() {
         <div className="flex shrink-0 items-center gap-2">
           <MultiSelectDropdown
             allLabel={ALL_HUBS_LABEL}
-            countLabel="Markets"
+            countLabel="Hubs"
             options={HUB_OPTIONS}
             selectedValues={selectedHubs}
             onChange={setSelectedHubs}
@@ -960,7 +965,7 @@ export function LendAssetSpokes() {
 
           <MultiSelectDropdown
             allLabel={ALL_MARKETS_LABEL}
-            countLabel="Hubs"
+            countLabel="Markets"
             options={MARKET_OPTIONS}
             selectedValues={selectedMarkets}
             onChange={setSelectedMarkets}
