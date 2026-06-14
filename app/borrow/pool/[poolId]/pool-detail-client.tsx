@@ -117,8 +117,8 @@ export function PoolDetailClient({ detail }: Props) {
         </nav>
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
-          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-            <PoolHeroIdentity detail={detail} className="mb-6" />
+          <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
+            <PoolHeroIdentity detail={detail} className="pb-0" />
           </div>
 
           <div ref={heroRef} className="min-w-0 lg:col-start-1 lg:row-start-2">
