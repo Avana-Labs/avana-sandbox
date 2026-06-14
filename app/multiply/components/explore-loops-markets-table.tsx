@@ -117,7 +117,7 @@ export function ExploreLoopsMarketsTable() {
           <table className="w-full min-w-[1120px] text-[12px]">
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-                <th className="pb-3 pt-4 pl-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("protocol")}
@@ -130,7 +130,7 @@ export function ExploreLoopsMarketsTable() {
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -143,7 +143,7 @@ export function ExploreLoopsMarketsTable() {
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
@@ -156,7 +156,7 @@ export function ExploreLoopsMarketsTable() {
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("rewards")}
@@ -169,7 +169,7 @@ export function ExploreLoopsMarketsTable() {
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 pr-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("points")}

@@ -83,7 +83,7 @@ export function AssetDetailClient({ detail }: Props) {
       />
 
       <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
-        <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+        <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
           <Link href="/borrow" className="transition-colors hover:text-foreground">
             Borrow
           </Link>
@@ -92,8 +92,8 @@ export function AssetDetailClient({ detail }: Props) {
         </nav>
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
-          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-            <AssetHeroIdentity detail={detail} />
+          <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
+            <AssetHeroIdentity detail={detail} className="pb-0" />
           </div>
 
           <div ref={heroRef} className="min-w-0 lg:col-start-1 lg:row-start-2">

@@ -13,7 +13,7 @@ export default async function RewardsPage() {
 
   return (
     <div className="bg-background">
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 md:py-10">
         <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
           <RewardsBalanceHero
             completedPools={completedPools}
