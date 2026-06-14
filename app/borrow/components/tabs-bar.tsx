@@ -25,17 +25,17 @@ export type TabsBarProps = {
 }
 
 const TAB_ORDER: Array<{ id: BorrowTabId; label: string }> = [
-  { id: "all-markets", label: "All Markets" },
-  { id: "btc", label: "BTC" },
-  { id: "eth", label: "ETH" },
-  { id: "forex", label: "Forex" },
-  { id: "governance", label: "Governance" },
+  { id: "all-markets", label: "All" },
+  { id: "btc", label: "BTC Based" },
+  { id: "eth", label: "ETH Based" },
+  { id: "forex", label: "Forex Based" },
+  { id: "governance", label: "Utility Based" },
   { id: "smart-pools", label: "Smart Pools" },
 ]
 
-function SearchIcon() {
+function SearchIcon({ className }: { className?: string } = {}) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-6 text-muted-foreground/70 dark:text-white/40">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-muted-foreground/70 dark:text-white/40", className)}>
       <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
     </svg>
@@ -47,6 +47,87 @@ function ChevronDownIcon() {
     <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" className="size-3 text-muted-foreground/70 dark:text-white/60">
       <path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  )
+}
+
+function ExpandableDesktopSearch({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (nextValue: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const isExpanded = open || value.length > 0
+
+  useEffect(() => {
+    if (open) {
+      inputRef.current?.focus()
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown, true)
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative hidden md:block">
+      <div
+        className={cn(
+          "flex h-10 items-center overflow-hidden border shadow-elev-1 transition-[width,border-radius,background-color,border-color] duration-200",
+          isExpanded ? "w-[240px] rounded-[12px] px-3" : "w-10 cursor-pointer justify-center rounded-[12px]",
+          "border-border bg-white text-foreground dark:border-white/7 dark:bg-[#111111] dark:text-white/96",
+        )}
+        onClick={() => {
+          if (!isExpanded) setOpen(true)
+        }}
+      >
+        <button
+          type="button"
+          aria-label="Filter assets"
+          className={cn(
+            "flex shrink-0 items-center justify-center",
+            isExpanded ? "pointer-events-none mr-2 size-5" : "size-10",
+          )}
+          onClick={() => setOpen(true)}
+        >
+          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6")} />
+        </button>
+
+        {isExpanded ? (
+          <input
+            ref={inputRef}
+            aria-label="Filter assets"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="Filter assets"
+            className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:placeholder:text-white/35"
+          />
+        ) : null}
+      </div>
+    </div>
   )
 }
 
@@ -167,7 +248,7 @@ function SingleSelectDropdown({
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
+          "inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
           isDark
             ? "border border-white/8 bg-[#1f1f1f] text-white hover:bg-[#262626] focus-visible:ring-white/10"
             : "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10",
@@ -191,7 +272,7 @@ function SingleSelectDropdown({
           <div
             ref={panelRef}
             className={cn(
-              "fixed z-30 overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
+              "fixed z-30 overflow-hidden rounded-[14px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
               isDark ? "border-white/8 bg-[#232323] text-white" : "border-border bg-white text-foreground",
             )}
             style={
@@ -270,19 +351,54 @@ export function TabsBar({
 
   return (
     <div className="z-30">
-      <div className="flex flex-col gap-3 py-2.5 md:flex-row md:items-center">
-        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18 md:flex-none md:w-[280px]">
+      <div className="hidden items-center gap-4 py-7 md:flex">
+        <div className="min-w-0 flex-1 overflow-x-auto">
+          <div className="flex min-w-max items-center gap-6">
+            {TAB_ORDER.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onTabChange(tab.id)}
+                className={cn(
+                  "whitespace-nowrap text-[20px] font-normal tracking-[-0.03em] transition-colors md:text-[22px]",
+                  currentTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <SingleSelectDropdown
+            allLabel="All DEX"
+            value={selectedDex}
+            options={BORROW_DEXES.map((dex) => ({ label: dex.label, value: dex.id }))}
+            onChange={(nextValue) => {
+              const nextDex = (nextValue as BorrowDexId | null) ?? null
+              onDexChange(nextDex)
+            }}
+            ariaLabel="Filter DEX"
+          />
+
+          <ExpandableDesktopSearch value={search} onChange={onSearchChange} />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 overflow-x-auto py-2.5 md:hidden">
+        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18">
           <SearchIcon />
           <input
             aria-label="Filter assets"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Filter assets"
-            className="w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none md:text-[15px] md:font-normal"
+            className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none"
           />
         </label>
 
-        <div className="flex min-w-0 flex-wrap justify-end gap-2 md:ml-auto md:flex-nowrap">
+        <div className="flex shrink-0 items-center gap-2">
           <SingleSelectDropdown
             allLabel="All Markets"
             value={currentTab}

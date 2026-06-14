@@ -23,8 +23,8 @@ export function ChartRangeSelector({ activeRange, onRangeChange, className }: Ch
           onClick={() => onRangeChange(range)}
           className={`flex-1 rounded-full px-2 py-1.5 text-[12px] font-medium transition-colors sm:flex-none sm:px-3.5 sm:py-1.5 sm:text-[13px] ${
             activeRange === range
-              ? "bg-[#f0f0f0] text-foreground sm:bg-white sm:shadow-[0_1px_2px_rgba(15,23,42,0.08)] dark:sm:bg-background"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-[#f0f0f0] text-foreground sm:bg-white sm:shadow-[0_1px_2px_rgba(15,23,42,0.08)] dark:bg-[#1f2937] dark:text-foreground dark:sm:bg-background"
+              : "text-muted-foreground hover:text-foreground dark:text-[#a3a3a3] dark:hover:text-foreground"
           }`}
         >
           {range}
