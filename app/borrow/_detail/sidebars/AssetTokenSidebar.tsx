@@ -37,7 +37,7 @@ const INITIAL_MODAL: ModalState = {
 export function AssetTokenSidebar({ detail, className }: Props) {
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
-      <TokenRail detail={detail} />
+      <TokenRail detail={detail} className="mt-6" />
       <AboutNewsSection
         className="pt-4"
         about={detail.about}
