@@ -65,17 +65,17 @@ function SectionTabs({
   onTabChange: (tab: SectionTabId) => void
 }) {
   return (
-    <div className="flex flex-wrap gap-8 border-b border-border/50">
+    <div className="flex flex-wrap gap-8 border-b border-border/50 md:border-b-0">
       {[
         { id: "collateral", label: "Collateral" },
-        { id: "borrow", label: "Loan" },
+        { id: "borrow", label: "Borrowable" },
       ].map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onTabChange(tab.id as SectionTabId)}
           className={[
-            "border-b-2 pb-2 text-left text-[14px] font-medium tracking-[-0.02em] transition-colors md:text-[14px]",
+            "border-b-2 pb-2 text-left text-[15px] font-medium tracking-[-0.03em] transition-colors md:text-[17px]",
             activeTab === tab.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground/80",
           ].join(" ")}
         >
@@ -83,14 +83,6 @@ function SectionTabs({
         </button>
       ))}
     </div>
-  )
-}
-
-function EModePill() {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-xs border border-accent-emphasis/30 bg-accent-emphasis-soft px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-accent-emphasis dark:text-accent-emphasis">
-      E-Mode
-    </span>
   )
 }
 
@@ -119,7 +111,7 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
           {pool.visuals[0].symbol} / {pool.visuals[1].symbol}
         </div>
         <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-          {pool.feeTier} fee · {formatCompactUsd(pool.tvlUsd)} TVL
+          {formatCompactUsd(pool.tvlUsd)} TVL
         </div>
       </div>
     </div>
@@ -134,10 +126,12 @@ function CollateralDesktopTable({
   rows,
   pending,
   onUseAsCollateral,
+  embedded = false,
 }: {
   rows: BorrowPoolRow[]
   pending: PendingMarketRow[]
   onUseAsCollateral: (pool: BorrowPoolRow) => void
+  embedded?: boolean
 }) {
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "risk" | "supplied">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
@@ -172,13 +166,12 @@ function CollateralDesktopTable({
     })
   }, [rows, sortDirection, sortKey])
 
-  return (
-    <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[920px] text-[12px]">
+  const table = (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[920px] text-[12px]">
           <thead>
             <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-              <th className="pb-3 pt-4 pl-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("asset")}
@@ -191,7 +184,7 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
-              <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("apy")}
@@ -204,7 +197,7 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
-              <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("ltv")}
@@ -217,7 +210,7 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
-              <th className="pb-3 pt-4 px-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("risk")}
@@ -230,7 +223,7 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
-              <th className="pb-3 pt-4 px-4 pr-6 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("supplied")}
@@ -283,11 +276,16 @@ function CollateralDesktopTable({
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
+        </tbody>
+      </table>
     </div>
   )
+
+  if (embedded) {
+    return table
+  }
+
+  return <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">{table}</div>
 }
 
 export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral, onBorrowAssetDesktop }: PoolsTableProps) {
@@ -327,19 +325,20 @@ function SpokeDesktopSection({
 
   return (
     <section className="mb-2">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 py-2">
-        <h3 className="text-[18px] font-medium tracking-tight md:text-[20px]">{spoke.label}</h3>
-        {spoke.eMode ? <EModePill /> : null}
-      </div>
-
-      <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-      <div className="mt-4">
-        {activeTab === "collateral" ? (
-          <CollateralDesktopTable rows={rows} pending={pending} onUseAsCollateral={onUseAsCollateral} />
-        ) : (
-          <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
-        )}
+      <div className="mt-4 overflow-hidden rounded-[20px] border border-black/5 bg-[#f7f7f5] dark:border-white/10 dark:bg-[#171717] md:shadow-none">
+        <div className="flex flex-col gap-3 px-1 py-2 md:flex-row md:items-center md:gap-4 md:px-4 md:py-3">
+          <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <h3 className="text-[16px] font-medium tracking-tight text-foreground dark:text-white md:ml-auto md:text-[18px]">
+            {spoke.label}
+          </h3>
+        </div>
+        <div className="border-t border-black/5 bg-surface-raised dark:border-white/10 dark:bg-[#1b1b1b]">
+          {activeTab === "collateral" ? (
+            <CollateralDesktopTable rows={rows} pending={pending} onUseAsCollateral={onUseAsCollateral} embedded />
+          ) : (
+            <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
+          )}
+        </div>
       </div>
     </section>
   )
@@ -382,12 +381,12 @@ function SpokeMobileSection({
 
   return (
     <section className="space-y-2">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[18px] font-medium tracking-tight md:text-[20px]">{spoke.label}</h3>
-        {spoke.eMode ? <EModePill /> : null}
+      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:rounded-[18px] md:border md:border-black/5 md:bg-[#f7f7f5] md:px-4 md:py-2 md:shadow-none dark:md:border-white/10 dark:md:bg-[#171717]">
+        <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <h3 className="text-[16px] font-medium tracking-tight text-foreground dark:text-white md:ml-auto md:text-[18px]">
+          {spoke.label}
+        </h3>
       </div>
-
-      <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="mt-4">
         {activeTab === "collateral" ? (
@@ -399,7 +398,7 @@ function SpokeMobileSection({
                     <TokenPairCell
                       visuals={pool.visuals}
                       name={pool.name}
-                      subtitle={`${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`}
+                      subtitle={`${formatCompactUsd(pool.tvlUsd)} TVL`}
                       size="md"
                     />
                     <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />

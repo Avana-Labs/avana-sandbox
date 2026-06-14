@@ -29,7 +29,7 @@ export function PoolHeroIdentity({
   const metaLabel = detail.hero.chain
 
   return (
-    <header className={cn("border-b border-border pb-5", className)}>
+    <header className={cn("pb-5", className)}>
       <div className="flex items-center justify-between gap-6">
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative shrink-0">
@@ -150,4 +150,3 @@ function XIcon() {
     </svg>
   )
 }
-

@@ -38,7 +38,7 @@ type ClaimStage = "entry" | TransactionFlowStage
 export function PoolBorrowSidebar({ detail, className }: Props) {
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
-      <PoolActionRail detail={detail} />
+      <PoolActionRail detail={detail} className="mt-6" />
       <AboutNewsSection
         className="pt-4"
         about={detail.about}
