@@ -425,8 +425,8 @@ export function ExploreLoopsMarketsTable() {
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="grid min-w-max grid-flow-col gap-4 md:min-w-0 md:grid-flow-row md:grid-cols-2 xl:grid-cols-4">
+      <div className="pb-1">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {trendingRows.map((row) => (
             <TrendingLoopCard
               key={`${row.protocol}-${row.asset}`}
@@ -704,7 +704,7 @@ function TrendingLoopCard({
   return (
     <Link
       href={row.href}
-      className="block min-w-[18.5rem] max-w-[18.5rem] shrink-0 rounded-radius-md border border-border/70 bg-background p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:bg-background"
+      className="block w-full rounded-radius-md border border-border/70 bg-background p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:bg-background"
     >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex items-center">
