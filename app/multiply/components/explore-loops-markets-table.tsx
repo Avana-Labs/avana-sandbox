@@ -38,6 +38,8 @@ const PARTNERS: ExploreLoopsMarketsPartner[] = [
   { label: "ETH", logoSrc: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
   { label: "stETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png" },
   { label: "wstETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png" },
+  { label: "rETH", logoSrc: "https://cryptologos.cc/logos/rocket-pool-rpl-logo.png" },
+  { label: "cbETH", logoSrc: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
   { label: "USDC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png" },
   { label: "USDT", logoSrc: "https://cryptologos.cc/logos/tether-usdt-logo.png" },
   { label: "DAI", logoSrc: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png" },
@@ -45,6 +47,9 @@ const PARTNERS: ExploreLoopsMarketsPartner[] = [
   { label: "EURC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png" },
   { label: "WBTC", logoSrc: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png" },
   { label: "cbBTC", logoSrc: "https://cryptologos.cc/logos/bitcoin-btc-logo.png" },
+  { label: "AAVE", logoSrc: "https://cryptologos.cc/logos/aave-aave-logo.png" },
+  { label: "UNI", logoSrc: "https://cryptologos.cc/logos/uniswap-uni-logo.png" },
+  { label: "CRV", logoSrc: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png" },
 ]
 
 export function ExploreLoopsMarketsTable() {
@@ -64,7 +69,8 @@ export function ExploreLoopsMarketsTable() {
       const matchesUtility = hasAnySymbol(UTILITY_SYMBOLS, protocol, asset)
       const matchesSmartLoop =
         (hasAnySymbol(ETH_SYMBOLS, protocol) && hasAnySymbol(ETH_SYMBOLS, asset)) ||
-        (hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset))
+        (hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)) ||
+        (hasAnySymbol(BTC_SYMBOLS, protocol) && hasAnySymbol(BTC_SYMBOLS, asset))
 
       if (currentTab === "all-markets") return true
       if (currentTab === "btc") return matchesBtc

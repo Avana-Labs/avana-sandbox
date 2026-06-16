@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -29,6 +30,8 @@ export const TOKEN_LOGOS = {
   ETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
   stETH: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
   wstETH: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
+  rETH: "https://cryptologos.cc/logos/rocket-pool-rpl-logo.png",
+  cbETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
   USDT: "https://cryptologos.cc/logos/tether-usdt-logo.png",
   USDC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
   DAI: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png",
@@ -37,12 +40,17 @@ export const TOKEN_LOGOS = {
   EURC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
   WBTC: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png",
   cbBTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+  AAVE: "https://cryptologos.cc/logos/aave-aave-logo.png",
+  UNI: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+  CRV: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
 } as const
 
 export const TOKEN_SUPPLY_APYS: Partial<Record<keyof typeof TOKEN_LOGOS, string>> = {
   ETH: "3.82%",
   stETH: "4.14%",
   wstETH: "5.14%",
+  rETH: "4.87%",
+  cbETH: "4.62%",
   USDC: "5.20%",
   USDT: "4.80%",
   DAI: "4.01%",
@@ -51,12 +59,17 @@ export const TOKEN_SUPPLY_APYS: Partial<Record<keyof typeof TOKEN_LOGOS, string>
   EURC: "0.49%",
   WBTC: "3.48%",
   cbBTC: "4.25%",
+  AAVE: "7.60%",
+  UNI: "6.40%",
+  CRV: "5.45%",
 }
 
 export const TOKEN_BORROW_APYS: Partial<Record<keyof typeof TOKEN_LOGOS, string>> = {
   ETH: "4.00%",
   stETH: "3.40%",
   wstETH: "3.40%",
+  rETH: "3.50%",
+  cbETH: "3.60%",
   USDC: "5.20%",
   USDT: "4.80%",
   DAI: "5.70%",
@@ -65,219 +78,152 @@ export const TOKEN_BORROW_APYS: Partial<Record<keyof typeof TOKEN_LOGOS, string>
   EURC: "4.10%",
   WBTC: "3.70%",
   cbBTC: "3.90%",
+  AAVE: "4.50%",
+  UNI: "4.20%",
+  CRV: "5.10%",
 }
 
-export const LEND_ROWS: LendRow[] = [
-  {
-    href: "/borrow/asset/eth",
-    protocol: "ETH",
-    protocolLogo: TOKEN_LOGOS.ETH,
-    asset: "wstETH",
-    kind: "Loop",
-    apy: "17.00%",
-    apyLabel: "ETH correlated",
-    points: "$1.56B",
-    rewardRows: [{ label: "CF 91% · LT 93%", value: "11.11x" }],
-  },
-  {
-    href: "/borrow/asset/eth",
-    protocol: "ETH",
-    protocolLogo: TOKEN_LOGOS.ETH,
-    asset: "USDT",
-    kind: "Loop",
-    apy: "-4.14%",
-    apyLabel: "Long ETH carry",
-    points: "$281.3M",
-    rewardRows: [{ label: "CF 77% · LT 83%", value: "4.35x" }],
-  },
-  {
-    href: "/borrow/asset/eth",
-    protocol: "ETH",
-    protocolLogo: TOKEN_LOGOS.ETH,
-    asset: "GHO",
-    kind: "Loop",
-    apy: "-6.12%",
-    apyLabel: "Long ETH carry",
-    points: "$45.5M",
-    rewardRows: [{ label: "CF 77% · LT 83%", value: "4.35x" }],
-  },
-  {
-    href: "/borrow/asset/steth",
-    protocol: "stETH",
-    protocolLogo: TOKEN_LOGOS.stETH,
-    asset: "ETH",
-    kind: "Loop",
-    apy: "12.84%",
-    apyLabel: "ETH correlated",
-    points: "$522.4M",
-    rewardRows: [{ label: "CF 88% · LT 90%", value: "8.33x" }],
-  },
-  {
-    href: "/borrow/asset/wsteth",
-    protocol: "wstETH",
-    protocolLogo: TOKEN_LOGOS.wstETH,
-    asset: "ETH",
-    kind: "Loop",
-    apy: "14.92%",
-    apyLabel: "ETH correlated",
-    points: "$522.4M",
-    rewardRows: [{ label: "CF 91% · LT 93%", value: "11.11x" }],
-  },
-  {
-    href: "/borrow/asset/wsteth",
-    protocol: "wstETH",
-    protocolLogo: TOKEN_LOGOS.wstETH,
-    asset: "USDT",
-    kind: "Loop",
-    apy: "-1.83%",
-    apyLabel: "Defensive ETH carry",
-    points: "$281.3M",
-    rewardRows: [{ label: "CF 77% · LT 83%", value: "4.35x" }],
-  },
-  {
-    href: "/borrow/asset/usdc",
-    protocol: "USDC",
-    protocolLogo: TOKEN_LOGOS.USDC,
-    asset: "USDT",
-    kind: "Loop",
-    apy: "2.77%",
-    apyLabel: "Stable carry",
-    points: "$281.3M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/usdc",
-    protocol: "USDC",
-    protocolLogo: TOKEN_LOGOS.USDC,
-    asset: "GHO",
-    kind: "Loop",
-    apy: "1.24%",
-    apyLabel: "GHO funding loop",
-    points: "$45.5M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/usdc",
-    protocol: "USDC",
-    protocolLogo: TOKEN_LOGOS.USDC,
-    asset: "DAI",
-    kind: "Loop",
-    apy: "2.35%",
-    apyLabel: "Stable carry",
-    points: "$12.7M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/usdc",
-    protocol: "USDC",
-    protocolLogo: TOKEN_LOGOS.USDC,
-    asset: "ETH",
-    kind: "Loop",
-    apy: "5.44%",
-    apyLabel: "Short ETH carry",
-    points: "$522.4M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/usdt",
-    protocol: "USDT",
-    protocolLogo: TOKEN_LOGOS.USDT,
-    asset: "ETH",
-    kind: "Loop",
-    apy: "1.91%",
-    apyLabel: "Short ETH carry",
-    points: "$522.4M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/usdt",
-    protocol: "USDT",
-    protocolLogo: TOKEN_LOGOS.USDT,
-    asset: "GHO",
-    kind: "Loop",
-    apy: "-2.32%",
-    apyLabel: "Stable funding",
-    points: "$45.5M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/crvusd",
-    protocol: "crvUSD",
-    protocolLogo: TOKEN_LOGOS.crvUSD,
-    asset: "USDT",
-    kind: "Loop",
-    apy: "1.96%",
-    apyLabel: "Stable carry",
-    points: "$281.3M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/eurc",
-    protocol: "EURC",
-    protocolLogo: TOKEN_LOGOS.EURC,
-    asset: "GHO",
-    kind: "Loop",
-    apy: "0.88%",
-    apyLabel: "Euro carry",
-    points: "$45.5M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/dai",
-    protocol: "DAI",
-    protocolLogo: TOKEN_LOGOS.DAI,
-    asset: "USDT",
-    kind: "Loop",
-    apy: "3.20%",
-    apyLabel: "Stable carry",
-    points: "$281.3M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/dai",
-    protocol: "DAI",
-    protocolLogo: TOKEN_LOGOS.DAI,
-    asset: "ETH",
-    kind: "Loop",
-    apy: "5.87%",
-    apyLabel: "Short ETH carry",
-    points: "$522.4M",
-    rewardRows: [{ label: "CF 72% · LT 78%", value: "3.57x" }],
-  },
-  {
-    href: "/borrow/asset/wbtc",
-    protocol: "WBTC",
-    protocolLogo: TOKEN_LOGOS.WBTC,
-    asset: "USDT",
-    kind: "Loop",
-    apy: "2.45%",
-    apyLabel: "Short BTC carry",
-    points: "$281.3M",
-    rewardRows: [{ label: "CF 70% · LT 75%", value: "3.33x" }],
-  },
-  {
-    href: "/borrow/asset/wbtc",
-    protocol: "WBTC",
-    protocolLogo: TOKEN_LOGOS.WBTC,
-    asset: "GHO",
-    kind: "Loop",
-    apy: "0.94%",
-    apyLabel: "BTC funding loop",
-    points: "$45.5M",
-    rewardRows: [{ label: "CF 70% · LT 75%", value: "3.33x" }],
-  },
-  {
-    href: "/borrow/asset/cbbtc",
-    protocol: "cbBTC",
-    protocolLogo: TOKEN_LOGOS.cbBTC,
-    asset: "USDT",
-    kind: "Loop",
-    apy: "2.30%",
-    apyLabel: "Short BTC carry",
-    points: "$281.3M",
-    rewardRows: [{ label: "CF 70% · LT 75%", value: "3.33x" }],
-  },
+const TOKEN_IDS: Partial<Record<keyof typeof TOKEN_LOGOS, string>> = {
+  ETH: "eth",
+  stETH: "steth",
+  wstETH: "wsteth",
+  rETH: "reth",
+  cbETH: "cbeth",
+  USDT: "usdt",
+  USDC: "usdc",
+  DAI: "dai",
+  GHO: "gho",
+  crvUSD: "crvusd",
+  EURC: "eurc",
+  WBTC: "wbtc",
+  cbBTC: "cbbtc",
+  AAVE: "aave",
+  UNI: "uni",
+  CRV: "crv",
+}
+
+const TOKEN_AVAILABLE_USD: Partial<Record<keyof typeof TOKEN_LOGOS, number>> = {
+  ETH: 5_000_000,
+  stETH: 7_500_000,
+  wstETH: 6_600_000,
+  rETH: 3_100_000,
+  cbETH: 2_400_000,
+  USDT: 7_200_000,
+  USDC: 9_900_000,
+  DAI: 6_600_000,
+  GHO: 9_100_000,
+  crvUSD: 5_100_000,
+  EURC: 2_500_000,
+  WBTC: 6_100_000,
+  cbBTC: 3_400_000,
+  AAVE: 3_500_000,
+  UNI: 2_800_000,
+  CRV: 1_900_000,
+}
+
+const COLLATERAL_FACTORS: Partial<Record<keyof typeof TOKEN_LOGOS, number>> = {
+  ETH: 0.8,
+  stETH: 0.88,
+  wstETH: 0.91,
+  rETH: 0.89,
+  cbETH: 0.86,
+  USDT: 0.85,
+  USDC: 0.87,
+  DAI: 0.85,
+  GHO: 0.78,
+  crvUSD: 0.8,
+  EURC: 0.75,
+  WBTC: 0.8,
+  cbBTC: 0.78,
+  AAVE: 0.7,
+  UNI: 0.68,
+  CRV: 0.6,
+}
+
+const LIQUIDATION_THRESHOLDS: Partial<Record<keyof typeof TOKEN_LOGOS, number>> = {
+  ETH: 0.83,
+  stETH: 0.9,
+  wstETH: 0.93,
+  rETH: 0.91,
+  cbETH: 0.89,
+  USDT: 0.88,
+  USDC: 0.9,
+  DAI: 0.88,
+  GHO: 0.82,
+  crvUSD: 0.84,
+  EURC: 0.8,
+  WBTC: 0.83,
+  cbBTC: 0.81,
+  AAVE: 0.75,
+  UNI: 0.73,
+  CRV: 0.68,
+}
+
+const LOOP_DEFINITIONS: Array<{ collateral: keyof typeof TOKEN_LOGOS; borrowable: keyof typeof TOKEN_LOGOS }> = [
+  { collateral: "wstETH", borrowable: "ETH" },
+  { collateral: "stETH", borrowable: "ETH" },
+  { collateral: "rETH", borrowable: "ETH" },
+  { collateral: "cbETH", borrowable: "ETH" },
+  { collateral: "ETH", borrowable: "wstETH" },
+  { collateral: "ETH", borrowable: "USDT" },
+  { collateral: "ETH", borrowable: "GHO" },
+  { collateral: "USDC", borrowable: "USDT" },
+  { collateral: "USDC", borrowable: "GHO" },
+  { collateral: "DAI", borrowable: "USDT" },
+  { collateral: "DAI", borrowable: "GHO" },
+  { collateral: "crvUSD", borrowable: "USDT" },
+  { collateral: "EURC", borrowable: "GHO" },
+  { collateral: "WBTC", borrowable: "cbBTC" },
+  { collateral: "WBTC", borrowable: "USDT" },
+  { collateral: "cbBTC", borrowable: "WBTC" },
+  { collateral: "cbBTC", borrowable: "USDT" },
+  { collateral: "AAVE", borrowable: "GHO" },
+  { collateral: "UNI", borrowable: "USDC" },
+  { collateral: "CRV", borrowable: "crvUSD" },
 ]
+
+function parsePct(value?: string) {
+  if (!value) return 0
+  return Number.parseFloat(value.replace("%", "")) || 0
+}
+
+function formatPct(value: number) {
+  return `${value.toFixed(2)}%`
+}
+
+function formatFactor(value: number) {
+  return `${value.toFixed(2)}x`
+}
+
+function buildLoopRow(collateral: keyof typeof TOKEN_LOGOS, borrowable: keyof typeof TOKEN_LOGOS): LendRow | null {
+  const supplyApy = parsePct(TOKEN_SUPPLY_APYS[collateral])
+  const borrowApy = parsePct(TOKEN_BORROW_APYS[borrowable])
+  const cf = COLLATERAL_FACTORS[collateral]
+  const lt = LIQUIDATION_THRESHOLDS[collateral]
+  const collateralId = TOKEN_IDS[collateral]
+  const availableUsd = TOKEN_AVAILABLE_USD[borrowable]
+
+  if (!cf || !lt || !collateralId || !availableUsd) return null
+
+  const maxLeverage = 1 / (1 - cf)
+  const maxLoopApy = maxLeverage * supplyApy - (maxLeverage - 1) * borrowApy
+
+  return {
+    href: `/borrow/asset/${collateralId}`,
+    protocol: collateral,
+    protocolLogo: TOKEN_LOGOS[collateral],
+    asset: borrowable,
+    kind: "Loop",
+    apy: formatPct(maxLoopApy),
+    apyLabel: "APY derived from supply and borrow APRs",
+    points: formatCompactUsd(availableUsd),
+    rewardRows: [{ label: `CF ${Math.round(cf * 100)}% · LT ${Math.round(lt * 100)}%`, value: formatFactor(maxLeverage) }],
+  }
+}
+
+export const LEND_ROWS: LendRow[] = LOOP_DEFINITIONS.map(({ collateral, borrowable }) => buildLoopRow(collateral, borrowable)).filter(
+  (row): row is LendRow => Boolean(row),
+)
 
 export const PAGE_SIZE = 12
 
