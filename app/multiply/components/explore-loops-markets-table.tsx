@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { LEND_ROWS, PAGE_SIZE, TOKEN_LOGOS } from "./multiply-lend-section"
+import { LEND_ROWS, PAGE_SIZE, TOKEN_BORROW_APYS, TOKEN_LOGOS, TOKEN_SUPPLY_APYS } from "./multiply-lend-section"
 
 type Partner = {
   label: string
@@ -84,6 +84,8 @@ export function ExploreLoopsMarketsTable() {
   }
 
   const getAssetLogo = (asset: string) => TOKEN_LOGOS[asset as keyof typeof TOKEN_LOGOS]
+  const getSupplyApy = (asset: string) => TOKEN_SUPPLY_APYS[asset as keyof typeof TOKEN_SUPPLY_APYS]
+  const getBorrowApy = (asset: string) => TOKEN_BORROW_APYS[asset as keyof typeof TOKEN_BORROW_APYS]
 
   return (
     <section className="mt-1 space-y-4">
@@ -199,7 +201,12 @@ export function ExploreLoopsMarketsTable() {
                       />
                       <span className="min-w-0">
                         <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.protocol}</span>
-                        <span className="mt-1 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.kind}</span>
+                        <span className="mt-1 inline-flex items-center gap-1.5 truncate text-[13px] font-normal tracking-[-0.03em]">
+                          <span className="text-muted-foreground dark:text-white/38">APY</span>
+                          <span className="font-data tabular-nums text-emerald-600 dark:text-emerald-400">
+                            {getSupplyApy(row.protocol) ?? "—"}
+                          </span>
+                        </span>
                       </span>
                     </CellLink>
                   </td>
@@ -218,7 +225,12 @@ export function ExploreLoopsMarketsTable() {
                       ) : null}
                       <span className="min-w-0">
                         <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.asset}</span>
-                        <span className="mt-1 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.apyLabel}</span>
+                        <span className="mt-1 inline-flex items-center gap-1.5 truncate text-[13px] font-normal tracking-[-0.03em]">
+                          <span className="text-muted-foreground dark:text-white/38">APY</span>
+                          <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">
+                            {getBorrowApy(row.asset) ?? "—"}
+                          </span>
+                        </span>
                       </span>
                     </CellLink>
                   </td>
