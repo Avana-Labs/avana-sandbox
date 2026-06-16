@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { LEND_ROWS, PAGE_SIZE } from "./multiply-lend-section"
@@ -26,25 +26,17 @@ LEND_ROWS.forEach((row, index) => {
 })
 
 const PARTNERS: ExploreLoopsMarketsPartner[] = [
-  { label: "All", logoSrc: "https://bridgesplit-app.s3.amazonaws.com/logo/loopscale-icon-light.svg", targetPage: 0 },
-  { label: "Bulk", logoSrc: "https://bridgesplit-app.s3.us-east-1.amazonaws.com/logo/bulk.png", targetPage: PROTOCOL_PAGE_INDEX.get("Bulk") },
-  {
-    label: "Collector Crypt",
-    logoSrc: "https://bridgesplit-app.s3.us-east-1.amazonaws.com/organizations/collector-crypto-logo-two.png",
-    targetPage: PROTOCOL_PAGE_INDEX.get("Collector Crypt"),
-  },
-  { label: "Fragmetric", logoSrc: "https://bridgesplit-app.s3.amazonaws.com/organizations/fragmetric-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("Fragmetric") },
-  { label: "Hylo", logoSrc: "https://bridgesplit-app.s3.amazonaws.com/logo/hylo.png", targetPage: PROTOCOL_PAGE_INDEX.get("Hylo") },
-  { label: "OnRe", logoSrc: "https://bridgesplit-app.s3.amazonaws.com/logo/onre_general.jpeg", targetPage: PROTOCOL_PAGE_INDEX.get("OnRe") },
-  { label: "Oro", logoSrc: "https://bridgesplit-app.s3.us-east-1.amazonaws.com/organizations/oro-logo.jpg", targetPage: PROTOCOL_PAGE_INDEX.get("Oro") },
-  { label: "Solstice", logoSrc: "https://bridgesplit-app.s3.us-east-1.amazonaws.com/organizations/solstice-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("Solstice") },
-  { label: "Etherfuse", logoSrc: "https://bridgesplit-app.s3.us-east-1.amazonaws.com/organizations/etherfuse-logo.jpg", noActiveRewards: true },
-  { label: "Exponent", logoSrc: "https://bridgesplit-app.s3.us-east-1.amazonaws.com/organizations/exponent-logo-v1.png", noActiveRewards: true },
-  { label: "Flash", logoSrc: "https://bridgesplit-app.s3.amazonaws.com/organizations/flash-trade-logo.jpeg", noActiveRewards: true },
-  { label: "RateX", logoSrc: "https://bridgesplit-app.s3.amazonaws.com/organizations/rate-x-logo.jpeg", noActiveRewards: true },
-  { label: "xStocks", logoSrc: "https://bridgesplit-app.s3.us-east-1.amazonaws.com/organizations/xstocks-logo.jpg", noActiveRewards: true },
-  { label: "Zenrock", logoSrc: "https://bridgesplit-app.s3.us-east-1.amazonaws.com/organizations/zenrock-logo.png", noActiveRewards: true },
-  { label: "Zeus", logoSrc: "https://bridgesplit-app.s3.us-east-1.amazonaws.com/organizations/zeus-logo.jpg", noActiveRewards: true },
+  { label: "All", logoSrc: "https://cryptologos.cc/logos/aave-aave-logo.png", targetPage: 0 },
+  { label: "ETH", logoSrc: "https://cryptologos.cc/logos/ethereum-eth-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("ETH") },
+  { label: "stETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("stETH") },
+  { label: "wstETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("wstETH") },
+  { label: "USDC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("USDC") },
+  { label: "USDT", logoSrc: "https://cryptologos.cc/logos/tether-usdt-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("USDT") },
+  { label: "DAI", logoSrc: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("DAI") },
+  { label: "crvUSD", logoSrc: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("crvUSD") },
+  { label: "EURC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("EURC") },
+  { label: "WBTC", logoSrc: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("WBTC") },
+  { label: "cbBTC", logoSrc: "https://cryptologos.cc/logos/bitcoin-btc-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("cbBTC") },
 ]
 
 export function ExploreLoopsMarketsTable() {
@@ -255,8 +247,7 @@ export function ExploreLoopsMarketsTable() {
                         </Button>
                       </div>
                     ) : (
-                      <CellLink href={row.href} className="inline-flex items-center gap-1 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
-                        <Star className="h-3 w-3" />
+                      <CellLink href={row.href} className="inline-flex items-center text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                         <span>{row.points ?? "—"}</span>
                       </CellLink>
                     )}
