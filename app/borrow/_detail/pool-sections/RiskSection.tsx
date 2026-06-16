@@ -1,12 +1,12 @@
 "use client"
 
 import * as React from "react"
-import type { PoolDetail, AssetDetail } from "@/app/lib/borrow-detail"
+import type { RiskAssessment } from "@/app/lib/borrow-detail"
 import { formatBpsAsPct, riskLevelLabel } from "@/app/lib/borrow-detail"
 import { RiskGauge, RiskLevelPill, SectionCard } from "../ui"
 import { DeltaPill } from "@/app/components/ui/live/delta-pill"
 
-type Props = { detail: PoolDetail | AssetDetail }
+type Props = { detail: { risk: RiskAssessment } }
 
 export function RiskSection({ detail }: Props) {
   const { risk } = detail

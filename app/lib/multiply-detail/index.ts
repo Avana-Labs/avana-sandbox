@@ -52,12 +52,27 @@ export type MultiplyMarketRelatedSummary = {
 export type MultiplyMarketDetail = {
   id: string
   hero: MultiplyMarketHero
+  supplyBorrow: {
+    supplied: Series
+    borrowed: Series
+    utilization: Series
+  }
+  transactions: MultiplyTxHistoryRow[]
   quickStats: QuickStat[]
   engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
   related: MultiplyMarketRelatedSummary[]
   row: MultiplyMarketRow
+}
+
+export type MultiplyTxHistoryRow = {
+  id: string
+  at: string
+  kind: "open" | "add" | "reduce" | "close" | "interest" | "rebalance"
+  amountLabel: string
+  counterpartyLabel?: string
+  txHashShort: string
 }
 
 function deltaUp(pct: number): DeltaStat {
@@ -136,6 +151,18 @@ function buildSeries(seedKey: string, base: number, volatility: number): Series 
     points,
     aggregate: points[points.length - 1]?.v ?? base,
     unit: "$",
+  }
+}
+
+function buildSupplyBorrow(row: MultiplyMarketRow) {
+  const seedBase = `multiply:${row.protocol}-${row.asset}`
+  return {
+    supplied: buildSeries(`${seedBase}:supplied`, 1_400_000, 90_000),
+    borrowed: buildSeries(`${seedBase}:borrowed`, 860_000, 75_000),
+    utilization: {
+      ...buildSeries(`${seedBase}:utilization`, 48, 4.4),
+      unit: "%",
+    },
   }
 }
 
@@ -233,6 +260,31 @@ function buildAbout(row: MultiplyMarketRow): AboutCard {
   }
 }
 
+function buildTransactions(row: MultiplyMarketRow): MultiplyTxHistoryRow[] {
+  const seed = prngFromString(`multiply:${row.protocol}-${row.asset}:tx`)
+  const kinds: MultiplyTxHistoryRow["kind"][] = ["open", "add", "reduce", "interest", "rebalance", "close"]
+  const now = Date.UTC(2026, 4, 18)
+  const out: MultiplyTxHistoryRow[] = []
+
+  for (let i = 0; i < 12; i += 1) {
+    const kind = kinds[Math.floor(seed() * kinds.length)]
+    const amountBase = kind === "interest" ? 150 + seed() * 4_500 : 40_000 + seed() * 1_250_000
+    const amount = Math.round(amountBase / 100) * 100
+    const at = new Date(now - i * 4 * 60 * 60 * 1000 - Math.floor(seed() * 86_400_000)).toISOString()
+    const prefix = kind === "reduce" || kind === "close" ? "-" : "+"
+    out.push({
+      id: `${row.protocol}-${row.asset}-tx-${i}`,
+      at,
+      kind,
+      amountLabel: `${prefix}${formatCompactUsd(amount)}`,
+      counterpartyLabel: kind === "open" ? `${row.protocol} collateral` : undefined,
+      txHashShort: `0x${Math.floor(seed() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(seed() * 0xffff).toString(16).padStart(4, "0")}`,
+    })
+  }
+
+  return out
+}
+
 function buildRelated(row: MultiplyMarketRow): MultiplyMarketRelatedSummary[] {
   const sameCollateral = MULTIPLY_MARKET_ROWS.filter((other) => other.protocol === row.protocol && other.asset !== row.asset)
   const sameBorrowable = MULTIPLY_MARKET_ROWS.filter((other) => other.asset === row.asset && other.protocol !== row.protocol)
@@ -255,6 +307,8 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
   return {
     id,
     hero: buildHero(row),
+    supplyBorrow: buildSupplyBorrow(row),
+    transactions: buildTransactions(row),
     quickStats: buildQuickStats(row),
     engagement: buildEngagement(row),
     risk: buildRisk(row),
