@@ -721,7 +721,7 @@ function TrendingLoopCard({
             </div>
           </div>
         </div>
-        <span className="inline-flex h-8 items-center rounded-full bg-indigo-500/10 px-3 text-[13px] font-medium text-indigo-600 dark:text-indigo-300">
+        <span className="inline-flex h-8 items-center rounded-full bg-[hsl(var(--brand-soft))] px-3 text-[13px] font-medium text-[hsl(var(--brand))] dark:bg-[hsl(var(--brand-soft))]/20">
           {leverage}
         </span>
       </div>
