@@ -704,45 +704,47 @@ function TrendingLoopCard({
   return (
     <Link
       href={row.href}
-      className="block w-[336px] rounded-[24px] border border-border bg-background px-6 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition-transform duration-150 hover:-translate-y-0.5 dark:bg-surface-raised md:w-auto"
+      className="block min-w-[18.5rem] max-w-[18.5rem] shrink-0 rounded-radius-md border border-border/70 bg-background p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:bg-background"
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex items-center">
-          <div className="relative flex h-12 w-[76px] items-center">
-            <div className="absolute left-0 top-0 z-10 flex size-11 items-center justify-center overflow-hidden rounded-full border border-border bg-card shadow-sm">
+          <div className="relative flex h-10 w-[62px] items-center">
+            <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
             </div>
-            <div className="absolute left-7 top-0 flex size-11 items-center justify-center overflow-hidden rounded-full border border-border bg-card shadow-sm">
+            <div className="absolute left-5 top-0 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={borrowLogo ?? row.protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-8 items-center rounded-full bg-indigo-500/10 px-3 text-[14px] font-medium text-indigo-600 dark:text-indigo-300">
-            {leverage}
-          </span>
-          <span className="inline-flex h-8 items-center rounded-full bg-emerald-500/10 px-3 text-[14px] font-medium text-emerald-600 dark:text-emerald-400">
-            {row.kind}
-          </span>
-        </div>
+        <span className="inline-flex h-8 items-center rounded-full bg-indigo-500/10 px-3 text-[13px] font-medium text-indigo-600 dark:text-indigo-300">
+          {leverage}
+        </span>
       </div>
 
-      <div className="mt-4 space-y-4">
-        <div>
-          <h3 className="text-[24px] font-medium tracking-[-0.04em] text-foreground dark:text-white/92">
-            {row.protocol}-{row.asset}
-          </h3>
-        </div>
+      <div className="space-y-3">
+        <h3 className="font-compact text-[15px] font-medium tracking-tight text-foreground">{row.protocol}-{row.asset}</h3>
 
-        <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1.5 text-[15px]">
-          <span className="text-muted-foreground">Available</span>
-          <span className="font-data tabular-nums text-foreground dark:text-white/88">{row.points ?? "—"}</span>
-          <span className="text-muted-foreground">Max APY</span>
-          <span className={cn("font-data tabular-nums", row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400")}>
-            {row.apy}
-          </span>
+        <div className="space-y-2.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-[12px] leading-none text-muted-foreground">APY</span>
+            <span
+              className={cn(
+                "font-data text-[14px] font-medium tabular-nums leading-none",
+                row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400",
+              )}
+            >
+              {row.apy}
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-[12px] leading-none text-muted-foreground">Available</span>
+            <span className="font-data text-[14px] font-medium tabular-nums leading-none text-foreground dark:text-white/88">
+              {row.points ?? "—"}
+            </span>
+          </div>
         </div>
       </div>
     </Link>
