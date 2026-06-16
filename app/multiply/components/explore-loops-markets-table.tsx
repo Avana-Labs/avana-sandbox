@@ -114,7 +114,14 @@ export function ExploreLoopsMarketsTable() {
 
       <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] text-[12px]">
+          <table className="w-full min-w-[920px] table-fixed text-[12px] lg:min-w-full">
+            <colgroup>
+              <col className="w-[24%]" />
+              <col className="w-[22%]" />
+              <col className="w-[18%]" />
+              <col className="w-[18%]" />
+              <col className="w-[18%]" />
+            </colgroup>
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
                 <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -122,11 +129,11 @@ export function ExploreLoopsMarketsTable() {
                     type="button"
                     onClick={() => toggleSort("protocol")}
                     className={cn(
-                      "flex items-center gap-2 transition-colors",
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "protocol" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>PROTOCOL</span>
+                    <span>COLLATERAL</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -135,11 +142,11 @@ export function ExploreLoopsMarketsTable() {
                     type="button"
                     onClick={() => toggleSort("asset")}
                     className={cn(
-                      "flex items-center gap-2 transition-colors",
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>ASSET</span>
+                    <span>BORROWABLE</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -148,11 +155,11 @@ export function ExploreLoopsMarketsTable() {
                     type="button"
                     onClick={() => toggleSort("apy")}
                     className={cn(
-                      "flex items-center gap-2 transition-colors",
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>APY</span>
+                    <span>MAX APY</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -161,11 +168,11 @@ export function ExploreLoopsMarketsTable() {
                     type="button"
                     onClick={() => toggleSort("rewards")}
                     className={cn(
-                      "flex items-center gap-2 transition-colors",
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "rewards" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>PARTNER REWARDS</span>
+                    <span>MAX LEVERAGE</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -174,11 +181,11 @@ export function ExploreLoopsMarketsTable() {
                     type="button"
                     onClick={() => toggleSort("points")}
                     className={cn(
-                      "flex w-full items-center gap-2 transition-colors",
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "points" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>POINTS</span>
+                    <span>AVAILABLE</span>
                     <SortIcon />
                   </button>
                 </th>
