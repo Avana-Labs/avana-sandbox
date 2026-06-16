@@ -25,7 +25,7 @@ export type LendRow = {
   waitlistHref?: string
 }
 
-const TOKEN_LOGOS = {
+export const TOKEN_LOGOS = {
   ETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
   stETH: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
   wstETH: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",

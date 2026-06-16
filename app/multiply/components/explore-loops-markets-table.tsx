@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { LEND_ROWS, PAGE_SIZE } from "./multiply-lend-section"
+import { LEND_ROWS, PAGE_SIZE, TOKEN_LOGOS } from "./multiply-lend-section"
 
 type Partner = {
   label: string
@@ -82,6 +82,8 @@ export function ExploreLoopsMarketsTable() {
     setSortKey(nextKey)
     setSortDirection(nextKey === "protocol" || nextKey === "asset" ? "asc" : "desc")
   }
+
+  const getAssetLogo = (asset: string) => TOKEN_LOGOS[asset as keyof typeof TOKEN_LOGOS]
 
   return (
     <section className="mt-1 space-y-4">
@@ -202,9 +204,22 @@ export function ExploreLoopsMarketsTable() {
                     </CellLink>
                   </td>
                   <td className="py-2.5 px-4">
-                    <CellLink href={row.href} className="min-w-0">
-                      <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.asset}</span>
-                      <span className="mt-1 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.apyLabel}</span>
+                    <CellLink href={row.href} className="flex min-w-0 items-center gap-3">
+                      {getAssetLogo(row.asset) ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={getAssetLogo(row.asset)}
+                            alt=""
+                            aria-hidden="true"
+                            className="size-11 shrink-0 rounded-full bg-card object-cover"
+                          />
+                        </>
+                      ) : null}
+                      <span className="min-w-0">
+                        <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.asset}</span>
+                        <span className="mt-1 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.apyLabel}</span>
+                      </span>
                     </CellLink>
                   </td>
                   <td className="py-2.5 px-4">
