@@ -3,11 +3,17 @@
 import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
-import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard, StickyDetailHeader } from "@/app/borrow/_detail/ui"
 import { QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
 import { cn } from "@/lib/utils"
-import { MarketHero, MarketHeroIdentity, RelatedMarketsRow, MarketSidebar } from "@/app/multiply/_detail"
+import {
+  MarketHero,
+  MarketHeroIdentity,
+  RelatedMarketsRow,
+  MarketSidebar,
+  SupplyBorrowCard,
+  TransactionHistoryCard,
+} from "@/app/multiply/_detail"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 
 type Props = { detail: MultiplyMarketDetail }
@@ -73,12 +79,13 @@ export function MarketDetailClient({ detail }: Props) {
 
             <section aria-label="Multiply market analytics" className="space-y-8 pt-8">
               <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]">Market data</h2>
-              <QuickStatsGrid detail={detail as unknown as PoolDetail} />
+              <QuickStatsGrid detail={detail} />
+              <SupplyBorrowCard detail={detail} />
               <EngagementTrendsCard
                 engagement={detail.engagement}
                 accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
               />
-              <RiskSection detail={detail as unknown as PoolDetail} />
+              <RiskSection detail={detail} />
               <AboutNewsSection
                 className="lg:hidden"
                 about={detail.about}
@@ -127,6 +134,7 @@ export function MarketDetailClient({ detail }: Props) {
                   },
                 ]}
               />
+              <TransactionHistoryCard transactions={detail.transactions} />
               <RelatedMarketsRow detail={detail} />
             </section>
           </div>
