@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { LEND_ROWS, PAGE_SIZE, TOKEN_BORROW_APYS, TOKEN_LOGOS, TOKEN_SUPPLY_APYS } from "./multiply-lend-section"
+import { LEND_ROWS, TOKEN_BORROW_APYS, TOKEN_LOGOS, TOKEN_SUPPLY_APYS } from "./multiply-lend-section"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -19,6 +19,14 @@ const CATEGORY_TABS = [
   { id: "forex", label: "Forex Based" },
   { id: "governance", label: "Utility Based" },
   { id: "smart-loops", label: "Smart Loops" },
+] as const
+
+const SORT_PRESETS = [
+  { label: "Collateral A-Z", value: "protocol:asc" },
+  { label: "Borrowable A-Z", value: "asset:asc" },
+  { label: "Highest APY", value: "apy:desc" },
+  { label: "Highest Leverage", value: "rewards:desc" },
+  { label: "Most Available", value: "points:desc" },
 ] as const
 
 type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
@@ -463,15 +471,19 @@ export function ExploreLoopsMarketsTable() {
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <SingleSelectDropdown
-            allLabel="All LOOP"
-            triggerLabel="More"
-            value={currentTab === "all-markets" ? null : currentTab}
-            options={CATEGORY_TABS.filter((tab) => tab.id !== "all-markets").map((tab) => ({
-              label: tab.label,
-              value: tab.id,
+            allLabel="Sort"
+            value={`${sortKey}:${sortDirection}`}
+            options={SORT_PRESETS.map((preset) => ({
+              label: preset.label,
+              value: preset.value,
             }))}
-            onChange={(nextValue) => setCurrentTab((nextValue ?? "all-markets") as MultiplyCategoryTabId)}
-            ariaLabel="Filter loops"
+            onChange={(nextValue) => {
+              if (!nextValue) return
+              const [nextSortKey, nextSortDirection] = nextValue.split(":") as [typeof sortKey, typeof sortDirection]
+              setSortKey(nextSortKey)
+              setSortDirection(nextSortDirection)
+            }}
+            ariaLabel="Sort loops"
           />
           <ExpandableDesktopSearch value={search} onChange={setSearch} />
         </div>
@@ -710,8 +722,13 @@ function TrendingLoopCard({
   return (
     <Link
       href={row.href}
-      className="block w-full rounded-radius-md border border-border/70 bg-background p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:bg-background"
+      className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-surface-raised p-3.5 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
     >
+      <div className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-3xl saturate-150 mix-blend-screen">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-full rounded-full object-cover" />
+      </div>
+
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex items-center">
           <div className="relative flex h-10 w-[62px] items-center">
