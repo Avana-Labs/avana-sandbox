@@ -17,33 +17,64 @@ type ExploreLoopsMarketsPartner = Partner & {
   targetPage?: number
 }
 
-const PROTOCOL_PAGE_INDEX = new Map<string, number>()
+const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
+const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
+const FOREX_SYMBOLS = new Set(["USDC", "USDT", "DAI", "CRVUSD", "GHO", "EURC", "USD+", "SDAI", "FRAX", "USDE", "USDS", "USDP", "LUSD", "TUSD", "MIM", "PYUSD", "EURS"])
+const UTILITY_SYMBOLS = new Set(["AAVE", "UNI", "CRV", "LDO", "BAL", "AURA", "GNO", "ARB", "OP", "LINK", "MKR"])
 
-LEND_ROWS.forEach((row, index) => {
-  if (!PROTOCOL_PAGE_INDEX.has(row.protocol)) {
-    PROTOCOL_PAGE_INDEX.set(row.protocol, Math.floor(index / PAGE_SIZE))
-  }
-})
+const CATEGORY_TABS = [
+  { id: "all-markets", label: "All" },
+  { id: "btc", label: "BTC Based" },
+  { id: "eth", label: "ETH Based" },
+  { id: "forex", label: "Forex Based" },
+  { id: "governance", label: "Utility Based" },
+  { id: "smart-loops", label: "Smart Loops" },
+] as const
+
+type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
 
 const PARTNERS: ExploreLoopsMarketsPartner[] = [
-  { label: "All", logoSrc: "https://cryptologos.cc/logos/aave-aave-logo.png", targetPage: 0 },
-  { label: "ETH", logoSrc: "https://cryptologos.cc/logos/ethereum-eth-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("ETH") },
-  { label: "stETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("stETH") },
-  { label: "wstETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("wstETH") },
-  { label: "USDC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("USDC") },
-  { label: "USDT", logoSrc: "https://cryptologos.cc/logos/tether-usdt-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("USDT") },
-  { label: "DAI", logoSrc: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("DAI") },
-  { label: "crvUSD", logoSrc: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("crvUSD") },
-  { label: "EURC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("EURC") },
-  { label: "WBTC", logoSrc: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("WBTC") },
-  { label: "cbBTC", logoSrc: "https://cryptologos.cc/logos/bitcoin-btc-logo.png", targetPage: PROTOCOL_PAGE_INDEX.get("cbBTC") },
+  { label: "All", logoSrc: "https://cryptologos.cc/logos/aave-aave-logo.png" },
+  { label: "ETH", logoSrc: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
+  { label: "stETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png" },
+  { label: "wstETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png" },
+  { label: "USDC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png" },
+  { label: "USDT", logoSrc: "https://cryptologos.cc/logos/tether-usdt-logo.png" },
+  { label: "DAI", logoSrc: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png" },
+  { label: "crvUSD", logoSrc: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png" },
+  { label: "EURC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png" },
+  { label: "WBTC", logoSrc: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png" },
+  { label: "cbBTC", logoSrc: "https://cryptologos.cc/logos/bitcoin-btc-logo.png" },
 ]
 
 export function ExploreLoopsMarketsTable() {
   const [page, setPage] = React.useState(0)
+  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all-markets")
   const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
-  const pageCount = Math.max(1, Math.ceil(LEND_ROWS.length / PAGE_SIZE))
+  const filteredRows = React.useMemo(() => {
+    const hasAnySymbol = (symbols: Set<string>, ...values: string[]) => values.some((value) => symbols.has(value.toUpperCase()))
+
+    return LEND_ROWS.filter((row) => {
+      const protocol = row.protocol.toUpperCase()
+      const asset = row.asset.toUpperCase()
+      const matchesBtc = hasAnySymbol(BTC_SYMBOLS, protocol, asset)
+      const matchesEth = hasAnySymbol(ETH_SYMBOLS, protocol, asset)
+      const matchesForex = hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)
+      const matchesUtility = hasAnySymbol(UTILITY_SYMBOLS, protocol, asset)
+      const matchesSmartLoop =
+        (hasAnySymbol(ETH_SYMBOLS, protocol) && hasAnySymbol(ETH_SYMBOLS, asset)) ||
+        (hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset))
+
+      if (currentTab === "all-markets") return true
+      if (currentTab === "btc") return matchesBtc
+      if (currentTab === "eth") return matchesEth
+      if (currentTab === "forex") return matchesForex
+      if (currentTab === "governance") return matchesUtility
+      if (currentTab === "smart-loops") return matchesSmartLoop
+      return true
+    })
+  }, [currentTab])
   const sortedRows = React.useMemo(() => {
     const direction = sortDirection === "asc" ? 1 : -1
     const parseValue = (value?: string) => {
@@ -52,7 +83,7 @@ export function ExploreLoopsMarketsTable() {
       return Number.isFinite(numeric) ? numeric : Number.NEGATIVE_INFINITY
     }
 
-    return [...LEND_ROWS].sort((a, b) => {
+    return [...filteredRows].sort((a, b) => {
       switch (sortKey) {
         case "asset":
           return a.asset.localeCompare(b.asset) * direction
@@ -70,7 +101,17 @@ export function ExploreLoopsMarketsTable() {
           return a.protocol.localeCompare(b.protocol) * direction
       }
     })
-  }, [sortDirection, sortKey])
+  }, [filteredRows, sortDirection, sortKey])
+  const protocolPageIndex = React.useMemo(() => {
+    const index = new Map<string, number>()
+    sortedRows.forEach((row, rowIndex) => {
+      if (!index.has(row.protocol)) {
+        index.set(row.protocol, Math.floor(rowIndex / PAGE_SIZE))
+      }
+    })
+    return index
+  }, [sortedRows])
+  const pageCount = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE))
   const visibleRows = sortedRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -87,6 +128,10 @@ export function ExploreLoopsMarketsTable() {
   const getSupplyApy = (asset: string) => TOKEN_SUPPLY_APYS[asset as keyof typeof TOKEN_SUPPLY_APYS]
   const getBorrowApy = (asset: string) => TOKEN_BORROW_APYS[asset as keyof typeof TOKEN_BORROW_APYS]
 
+  React.useEffect(() => {
+    setPage(0)
+  }, [currentTab, sortDirection, sortKey])
+
   return (
     <section className="mt-1 space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -100,10 +145,28 @@ export function ExploreLoopsMarketsTable() {
           {PARTNERS.map((partner) => (
             <PartnerCard
               key={partner.label}
-              partner={partner}
-              active={partner.targetPage !== undefined && page === partner.targetPage}
-              onClick={() => setPage(partner.targetPage ?? 0)}
+              partner={{ ...partner, targetPage: partner.label === "All" ? 0 : protocolPageIndex.get(partner.label) }}
+              active={(partner.label === "All" ? 0 : protocolPageIndex.get(partner.label)) !== undefined && page === (partner.label === "All" ? 0 : protocolPageIndex.get(partner.label))}
+              onClick={() => setPage(partner.label === "All" ? 0 : (protocolPageIndex.get(partner.label) ?? 0))}
             />
+          ))}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex min-w-max items-center gap-6 py-1">
+          {CATEGORY_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setCurrentTab(tab.id)}
+              className={cn(
+                "whitespace-nowrap text-[20px] font-normal tracking-[-0.03em] transition-colors md:text-[22px]",
+                currentTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
+              )}
+            >
+              {tab.label}
+            </button>
           ))}
         </div>
       </div>
@@ -188,7 +251,7 @@ export function ExploreLoopsMarketsTable() {
               </tr>
             </thead>
             <tbody key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`} className="divide-y divide-border dark:divide-white/6">
-              {visibleRows.map((row, index) => (
+              {visibleRows.length ? visibleRows.map((row, index) => (
                 <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="asset-swap border-t border-border transition-colors hover:bg-surface-inset/60" style={{ animationDelay: `${index * 40}ms` }}>
                   <td className="py-2.5 pl-6 pr-4">
                     <CellLink href={row.href} className="flex items-center gap-3">
@@ -280,7 +343,13 @@ export function ExploreLoopsMarketsTable() {
                     )}
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-10 text-center text-[14px] text-muted-foreground dark:text-white/38">
+                    No loops in this category yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
