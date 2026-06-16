@@ -22,11 +22,10 @@ const CATEGORY_TABS = [
 ] as const
 
 const SORT_PRESETS = [
-  { label: "Collateral A-Z", value: "protocol:asc" },
-  { label: "Borrowable A-Z", value: "asset:asc" },
-  { label: "Highest APY", value: "apy:desc" },
   { label: "Highest Leverage", value: "rewards:desc" },
+  { label: "Highest APY", value: "apy:desc" },
   { label: "Most Available", value: "points:desc" },
+  { label: "Collateral A-Z", value: "protocol:asc" },
 ] as const
 
 type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
@@ -325,8 +324,8 @@ export function ExploreLoopsMarketsTable() {
   const [page, setPage] = React.useState(0)
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all-markets")
   const [search, setSearch] = React.useState("")
-  const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
-  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
+  const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("rewards")
+  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("desc")
   const searchQuery = search.trim().toLowerCase()
   const buildSearchText = (row: (typeof LEND_ROWS)[number]) =>
     [
@@ -471,7 +470,7 @@ export function ExploreLoopsMarketsTable() {
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <SingleSelectDropdown
-            allLabel="Sort"
+            allLabel="Sort by"
             value={`${sortKey}:${sortDirection}`}
             options={SORT_PRESETS.map((preset) => ({
               label: preset.label,
@@ -724,12 +723,12 @@ function TrendingLoopCard({
       href={row.href}
       className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-surface-raised p-3.5 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
     >
-      <div className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-3xl saturate-150 mix-blend-screen">
+      <div className="pointer-events-none absolute -left-5 -top-5 size-[274px] rounded-full opacity-7 blur-xl saturate-150">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-full rounded-full object-cover" />
       </div>
 
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <div className="relative z-10 mb-3 flex items-start justify-between gap-3">
         <div className="flex items-center">
           <div className="relative flex h-10 w-[62px] items-center">
             <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
@@ -747,7 +746,7 @@ function TrendingLoopCard({
         </span>
       </div>
 
-      <div className="space-y-3">
+      <div className="relative z-10 space-y-3">
         <h3 className="font-compact text-[15px] font-medium tracking-tight text-foreground">{row.protocol}-{row.asset}</h3>
 
         <div className="space-y-2.5">
