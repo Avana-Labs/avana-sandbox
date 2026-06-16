@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
+import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { cn } from "@/lib/utils"
 
 type Props = { detail: MultiplyMarketDetail; className?: string }
@@ -59,6 +60,15 @@ export function MarketSidebar({ detail, className }: Props) {
           </p>
         </CardContent>
       </Card>
+
+      <AboutNewsSection
+        about={detail.about}
+        aboutTitle={`About ${detail.hero.name}`}
+        compactAboutTitle
+        newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
+        newsImageLabel={detail.hero.name}
+        mediaVariant="icon"
+      />
     </aside>
   )
 }
