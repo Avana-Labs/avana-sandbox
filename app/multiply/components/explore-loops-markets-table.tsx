@@ -418,7 +418,7 @@ export function ExploreLoopsMarketsTable() {
   }, [currentTab, searchQuery, sortDirection, sortKey])
 
   return (
-    <section className="mt-1 space-y-4">
+    <section className="mt-6 space-y-5">
       <div>
         <div>
           <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">Trending</h2>
@@ -436,6 +436,8 @@ export function ExploreLoopsMarketsTable() {
           ))}
         </div>
       </div>
+
+      <div aria-hidden className="h-1" />
 
       <div className="flex items-center gap-4">
         <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

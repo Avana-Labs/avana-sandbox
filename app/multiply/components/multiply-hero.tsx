@@ -53,7 +53,7 @@ export function MultiplyHero({ markets }: { markets: Market[] }) {
   }
 
   return (
-    <section className="mb-8 px-1 md:px-2">
+    <section className="mb-4 px-1 md:px-2">
       <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

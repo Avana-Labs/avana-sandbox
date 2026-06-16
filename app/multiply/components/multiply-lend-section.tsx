@@ -205,7 +205,7 @@ function buildLoopRow(collateral: keyof typeof TOKEN_LOGOS, borrowable: keyof ty
 
   if (!cf || !lt || !collateralId || !availableUsd) return null
 
-  const maxLeverage = 1 / (1 - cf)
+  const maxLeverage = 1 / (1 - lt)
   const maxLoopApy = maxLeverage * supplyApy - (maxLeverage - 1) * borrowApy
 
   return {
