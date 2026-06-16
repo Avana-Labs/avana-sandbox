@@ -312,7 +312,7 @@ export function Header() {
               </nav>
             </div>
 
-            <div className="absolute left-1/2 flex w-full max-w-[410px] -translate-x-1/2 justify-center px-4">
+            <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4 xl:max-w-[410px]">
               <SearchCommand />
             </div>
 
