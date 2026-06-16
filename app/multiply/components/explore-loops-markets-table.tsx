@@ -723,7 +723,7 @@ function TrendingLoopCard({
       href={row.href}
       className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-surface-raised p-3.5 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
     >
-      <div className="pointer-events-none absolute -left-5 -top-5 size-[274px] rounded-full opacity-7 blur-xl saturate-150">
+      <div className="pointer-events-none absolute -left-3 -top-3 size-[240px] rounded-full opacity-[0.06] blur-xl saturate-140">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-full rounded-full object-cover" />
       </div>
