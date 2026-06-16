@@ -44,12 +44,14 @@ function ChevronDownIcon() {
 
 function SingleSelectDropdown({
   allLabel,
+  triggerLabel,
   value,
   options,
   onChange,
   ariaLabel,
 }: {
   allLabel: string
+  triggerLabel?: string
   value: string | null
   options: Array<{ label: string; value: string }>
   onChange: (nextValue: string | null) => void
@@ -66,7 +68,8 @@ function SingleSelectDropdown({
   const rootRef = React.useRef<HTMLDivElement | null>(null)
   const panelRef = React.useRef<HTMLDivElement | null>(null)
 
-  const triggerLabel = options.find((option) => option.value === value)?.label ?? allLabel
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? allLabel
+  const displayLabel = triggerLabel ?? selectedLabel
 
   React.useEffect(() => {
     if (!open) return
@@ -137,12 +140,12 @@ function SingleSelectDropdown({
         aria-label={ariaLabel}
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className={cn(
+          className={cn(
           "inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
           "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:bg-[#1f1f1f] dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
         )}
       >
-        <span className="whitespace-nowrap">{triggerLabel}</span>
+        <span className="whitespace-nowrap">{displayLabel}</span>
         <span className="text-foreground/55 dark:text-white/70">
           <ChevronDownIcon />
         </span>
@@ -461,6 +464,7 @@ export function ExploreLoopsMarketsTable() {
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <SingleSelectDropdown
             allLabel="All LOOP"
+            triggerLabel="More"
             value={currentTab === "all-markets" ? null : currentTab}
             options={CATEGORY_TABS.filter((tab) => tab.id !== "all-markets").map((tab) => ({
               label: tab.label,
