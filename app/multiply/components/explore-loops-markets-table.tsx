@@ -2,20 +2,10 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { LEND_ROWS, PAGE_SIZE, TOKEN_BORROW_APYS, TOKEN_LOGOS, TOKEN_SUPPLY_APYS } from "./multiply-lend-section"
-
-type Partner = {
-  label: string
-  logoSrc: string
-  noActiveRewards?: boolean
-}
-
-type ExploreLoopsMarketsPartner = Partner & {
-  targetPage?: number
-}
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -33,30 +23,314 @@ const CATEGORY_TABS = [
 
 type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
 
-const PARTNERS: ExploreLoopsMarketsPartner[] = [
-  { label: "All", logoSrc: "https://cryptologos.cc/logos/aave-aave-logo.png" },
-  { label: "ETH", logoSrc: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
-  { label: "stETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png" },
-  { label: "wstETH", logoSrc: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png" },
-  { label: "rETH", logoSrc: "https://cryptologos.cc/logos/rocket-pool-rpl-logo.png" },
-  { label: "cbETH", logoSrc: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
-  { label: "USDC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png" },
-  { label: "USDT", logoSrc: "https://cryptologos.cc/logos/tether-usdt-logo.png" },
-  { label: "DAI", logoSrc: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png" },
-  { label: "crvUSD", logoSrc: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png" },
-  { label: "EURC", logoSrc: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png" },
-  { label: "WBTC", logoSrc: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png" },
-  { label: "cbBTC", logoSrc: "https://cryptologos.cc/logos/bitcoin-btc-logo.png" },
-  { label: "AAVE", logoSrc: "https://cryptologos.cc/logos/aave-aave-logo.png" },
-  { label: "UNI", logoSrc: "https://cryptologos.cc/logos/uniswap-uni-logo.png" },
-  { label: "CRV", logoSrc: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png" },
-]
+function FilterCheckIcon({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={cn(
+        "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+        checked ? "border-[#01AACF] bg-[#01AACF] text-white" : "border-black/35 bg-transparent text-transparent dark:border-white/55",
+      )}
+    >
+      <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" className="size-3">
+        <path d="M2.5 6.2 4.8 8.5 9.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  )
+}
+
+function ChevronDownIcon() {
+  return <ChevronDown className="size-3.5" />
+}
+
+function SingleSelectDropdown({
+  allLabel,
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  allLabel: string
+  value: string | null
+  options: Array<{ label: string; value: string }>
+  onChange: (nextValue: string | null) => void
+  ariaLabel: string
+}) {
+  const [open, setOpen] = React.useState(false)
+  const [openUpward, setOpenUpward] = React.useState(false)
+  const [panelStyle, setPanelStyle] = React.useState<{
+    left: number
+    top: number
+    width: number
+    maxHeight: number
+  } | null>(null)
+  const rootRef = React.useRef<HTMLDivElement | null>(null)
+  const panelRef = React.useRef<HTMLDivElement | null>(null)
+
+  const triggerLabel = options.find((option) => option.value === value)?.label ?? allLabel
+
+  React.useEffect(() => {
+    if (!open) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown, true)
+    return () => document.removeEventListener("pointerdown", handlePointerDown, true)
+  }, [open])
+
+  React.useEffect(() => {
+    if (!open) return
+
+    const updatePanelPosition = () => {
+      if (!rootRef.current || !panelRef.current) return
+
+      const triggerRect = rootRef.current.getBoundingClientRect()
+      const panelHeight = panelRef.current.offsetHeight
+      const spaceBelow = window.innerHeight - triggerRect.bottom
+      const spaceAbove = triggerRect.top
+      const nextOpenUpward = spaceBelow < panelHeight + 12 && spaceAbove > spaceBelow
+      const width = Math.min(216, window.innerWidth - 16)
+      const left = Math.max(8, triggerRect.right - width)
+      const maxHeight = Math.max(140, Math.min(220, (nextOpenUpward ? spaceAbove : spaceBelow) - 12))
+      const top = nextOpenUpward
+        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
+        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
+
+      setOpenUpward(nextOpenUpward)
+      setPanelStyle({ left, top, width, maxHeight })
+    }
+
+    updatePanelPosition()
+
+    const updateAnchoredPosition = () => {
+      if (!rootRef.current || !panelRef.current) return
+
+      const triggerRect = rootRef.current.getBoundingClientRect()
+      const panelHeight = panelRef.current.offsetHeight
+      const width = Math.min(216, window.innerWidth - 16)
+      const left = Math.max(8, triggerRect.right - width)
+      const availableSpace = openUpward ? triggerRect.top : window.innerHeight - triggerRect.bottom
+      const maxHeight = Math.max(140, Math.min(220, availableSpace - 12))
+      const top = openUpward
+        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
+        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
+
+      setPanelStyle({ left, top, width, maxHeight })
+    }
+
+    window.addEventListener("resize", updateAnchoredPosition)
+    window.addEventListener("scroll", updateAnchoredPosition, true)
+
+    return () => {
+      window.removeEventListener("resize", updateAnchoredPosition)
+      window.removeEventListener("scroll", updateAnchoredPosition, true)
+    }
+  }, [open, openUpward, options.length])
+
+  return (
+    <div ref={rootRef} className="relative z-20">
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className={cn(
+          "inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
+          "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:bg-[#1f1f1f] dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
+        )}
+      >
+        <span className="whitespace-nowrap">{triggerLabel}</span>
+        <span className="text-foreground/55 dark:text-white/70">
+          <ChevronDownIcon />
+        </span>
+      </button>
+
+      {open ? (
+        <>
+          <button
+            type="button"
+            aria-label={`Close ${ariaLabel}`}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-10 cursor-default bg-transparent"
+          />
+
+          <div
+            ref={panelRef}
+            className={cn(
+              "fixed z-30 overflow-hidden rounded-[14px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
+              "border-border bg-white text-foreground dark:border-white/8 dark:bg-[#232323] dark:text-white",
+            )}
+            style={
+              panelStyle
+                ? {
+                    left: panelStyle.left,
+                    top: panelStyle.top,
+                    width: panelStyle.width,
+                    maxHeight: panelStyle.maxHeight,
+                  }
+                : undefined
+            }
+          >
+            <button
+              type="button"
+              onClick={() => {
+                onChange(null)
+                setOpen(false)
+              }}
+              className={cn(
+                "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
+                "text-foreground hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
+              )}
+            >
+              <FilterCheckIcon checked={value === null} />
+              <span>{allLabel}</span>
+            </button>
+
+            <div className="w-full border-t border-black/12 dark:border-white/20" />
+
+            <div className="overflow-y-auto py-1 pb-3" style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}>
+              {options.map((option) => {
+                const checked = value === option.value
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(option.value)
+                      setOpen(false)
+                    }}
+                    className={cn(
+                      "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors md:h-10 md:px-4 md:text-[14px]",
+                      checked
+                        ? "bg-black/[0.05] font-medium text-foreground dark:bg-white/6 dark:text-white"
+                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
+                    )}
+                  >
+                    <FilterCheckIcon checked={checked} />
+                    <span className="truncate">{option.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+function SearchIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-muted-foreground/70 dark:text-white/40", className)}>
+      <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  )
+}
+
+function ExpandableDesktopSearch({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (nextValue: string) => void
+}) {
+  const [open, setOpen] = React.useState(false)
+  const rootRef = React.useRef<HTMLDivElement | null>(null)
+  const inputRef = React.useRef<HTMLInputElement | null>(null)
+  const isExpanded = open || value.length > 0
+
+  React.useEffect(() => {
+    if (open) {
+      inputRef.current?.focus()
+    }
+  }, [open])
+
+  React.useEffect(() => {
+    if (!open) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown, true)
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative hidden md:block">
+      <div
+        className={cn(
+          "flex h-10 items-center overflow-hidden border shadow-elev-1 transition-[width,border-radius,background-color,border-color] duration-200",
+          isExpanded ? "w-[240px] rounded-[12px] px-3" : "w-10 cursor-pointer justify-center rounded-[12px]",
+          "border-border bg-white text-foreground dark:border-white/7 dark:bg-[#111111] dark:text-white/96",
+        )}
+        onClick={() => {
+          if (!isExpanded) setOpen(true)
+        }}
+      >
+        <button
+          type="button"
+          aria-label="Search loops"
+          className={cn("flex shrink-0 items-center justify-center", isExpanded ? "pointer-events-none mr-2 size-5" : "size-10")}
+          onClick={() => setOpen(true)}
+        >
+          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6")} />
+        </button>
+
+        {isExpanded ? (
+          <input
+            ref={inputRef}
+            aria-label="Search loops"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="Search loops"
+            className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:placeholder:text-white/35"
+          />
+        ) : null}
+      </div>
+    </div>
+  )
+}
 
 export function ExploreLoopsMarketsTable() {
   const [page, setPage] = React.useState(0)
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all-markets")
+  const [search, setSearch] = React.useState("")
   const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
+  const searchQuery = search.trim().toLowerCase()
+  const buildSearchText = (row: (typeof LEND_ROWS)[number]) =>
+    [
+      row.protocol,
+      row.asset,
+      row.kind,
+      row.apy,
+      row.apyLabel,
+      row.partnerRewards ?? "",
+      row.points ?? "",
+      ...(row.rewardRows?.flatMap((reward) => [reward.label, reward.value]) ?? []),
+    ]
+      .join(" ")
+      .toLowerCase()
+
   const filteredRows = React.useMemo(() => {
     const hasAnySymbol = (symbols: Set<string>, ...values: string[]) => values.some((value) => symbols.has(value.toUpperCase()))
 
@@ -80,7 +354,8 @@ export function ExploreLoopsMarketsTable() {
       if (currentTab === "smart-loops") return matchesSmartLoop
       return true
     })
-  }, [currentTab])
+      .filter((row) => searchQuery.length === 0 || buildSearchText(row).includes(searchQuery))
+  }, [currentTab, searchQuery])
   const sortedRows = React.useMemo(() => {
     const direction = sortDirection === "asc" ? 1 : -1
     const parseValue = (value?: string) => {
@@ -108,15 +383,6 @@ export function ExploreLoopsMarketsTable() {
       }
     })
   }, [filteredRows, sortDirection, sortKey])
-  const protocolPageIndex = React.useMemo(() => {
-    const index = new Map<string, number>()
-    sortedRows.forEach((row, rowIndex) => {
-      if (!index.has(row.protocol)) {
-        index.set(row.protocol, Math.floor(rowIndex / PAGE_SIZE))
-      }
-    })
-    return index
-  }, [sortedRows])
   const pageCount = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE))
   const visibleRows = sortedRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
 
@@ -133,47 +399,75 @@ export function ExploreLoopsMarketsTable() {
   const getAssetLogo = (asset: string) => TOKEN_LOGOS[asset as keyof typeof TOKEN_LOGOS]
   const getSupplyApy = (asset: string) => TOKEN_SUPPLY_APYS[asset as keyof typeof TOKEN_SUPPLY_APYS]
   const getBorrowApy = (asset: string) => TOKEN_BORROW_APYS[asset as keyof typeof TOKEN_BORROW_APYS]
+  const trendingRows = React.useMemo(() => {
+    const parsePct = (value?: string) => Number.parseFloat(value?.replace("%", "") ?? "")
+    const parseLeverage = (value?: string) => Number.parseFloat(value?.replace("x", "") ?? "")
+
+    return [...LEND_ROWS]
+      .filter((row) => parseLeverage(row.rewardRows?.[0]?.value) > 8)
+      .sort((a, b) => {
+        const apyDiff = parsePct(b.apy) - parsePct(a.apy)
+        if (apyDiff !== 0) return apyDiff
+        return parseLeverage(b.rewardRows?.[0]?.value) - parseLeverage(a.rewardRows?.[0]?.value)
+      })
+      .slice(0, 4)
+  }, [])
 
   React.useEffect(() => {
     setPage(0)
-  }, [currentTab, sortDirection, sortKey])
+  }, [currentTab, searchQuery, sortDirection, sortKey])
 
   return (
     <section className="mt-1 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div>
         <div>
-          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">Explore</h2>
+          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">Trending</h2>
         </div>
       </div>
 
       <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex min-w-max gap-1">
-          {PARTNERS.map((partner) => (
-            <PartnerCard
-              key={partner.label}
-              partner={{ ...partner, targetPage: partner.label === "All" ? 0 : protocolPageIndex.get(partner.label) }}
-              active={(partner.label === "All" ? 0 : protocolPageIndex.get(partner.label)) !== undefined && page === (partner.label === "All" ? 0 : protocolPageIndex.get(partner.label))}
-              onClick={() => setPage(partner.label === "All" ? 0 : (protocolPageIndex.get(partner.label) ?? 0))}
+        <div className="grid min-w-max grid-flow-col gap-4 md:min-w-0 md:grid-flow-row md:grid-cols-2 xl:grid-cols-4">
+          {trendingRows.map((row) => (
+            <TrendingLoopCard
+              key={`${row.protocol}-${row.asset}`}
+              row={row}
+              borrowLogo={getAssetLogo(row.asset)}
             />
           ))}
         </div>
       </div>
 
-      <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex min-w-max items-center gap-6 py-1">
-          {CATEGORY_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setCurrentTab(tab.id)}
-              className={cn(
-                "whitespace-nowrap text-[20px] font-normal tracking-[-0.03em] transition-colors md:text-[22px]",
-                currentTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <div className="flex items-center gap-4">
+        <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max items-center gap-6 py-1">
+            {CATEGORY_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setCurrentTab(tab.id)}
+                className={cn(
+                  "whitespace-nowrap text-[20px] font-normal tracking-[-0.03em] transition-colors md:text-[22px]",
+                  currentTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <SingleSelectDropdown
+            allLabel="All LOOP"
+            value={currentTab === "all-markets" ? null : currentTab}
+            options={CATEGORY_TABS.filter((tab) => tab.id !== "all-markets").map((tab) => ({
+              label: tab.label,
+              value: tab.id,
+            }))}
+            onChange={(nextValue) => setCurrentTab((nextValue ?? "all-markets") as MultiplyCategoryTabId)}
+            ariaLabel="Filter loops"
+          />
+          <ExpandableDesktopSearch value={search} onChange={setSearch} />
         </div>
       </div>
 
@@ -399,39 +693,59 @@ function SortIcon() {
   )
 }
 
-function PartnerCard({
-  partner,
-  active,
-  onClick,
+function TrendingLoopCard({
+  row,
+  borrowLogo,
 }: {
-  partner: Partner
-  active: boolean
-  onClick: () => void
+  row: (typeof LEND_ROWS)[number]
+  borrowLogo?: string
 }) {
+  const leverage = row.rewardRows?.[0]?.value ?? "—"
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "shrink-0 bg-transparent px-0.5 py-0.5 transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98]",
-      )}
-      aria-pressed={active}
+    <Link
+      href={row.href}
+      className="block w-[336px] rounded-[24px] border border-border bg-background px-6 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition-transform duration-150 hover:-translate-y-0.5 dark:bg-surface-raised md:w-auto"
     >
-      <div className="flex h-full w-[108px] flex-col items-center justify-center gap-1.5 px-2 py-1.5">
-        <div
-          className={cn(
-            "flex size-20 items-center justify-center overflow-hidden rounded-full border border-border bg-background transition-transform duration-150",
-            active ? "scale-[1.02]" : "",
-          )}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={partner.logoSrc} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center">
+          <div className="relative flex h-12 w-[76px] items-center">
+            <div className="absolute left-0 top-0 z-10 flex size-11 items-center justify-center overflow-hidden rounded-full border border-border bg-card shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+            </div>
+            <div className="absolute left-7 top-0 flex size-11 items-center justify-center overflow-hidden rounded-full border border-border bg-card shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={borrowLogo ?? row.protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+            </div>
+          </div>
         </div>
-        <p className={cn("max-w-full truncate text-center text-[12px] font-medium", active ? "text-foreground" : "text-muted-foreground")}>
-          {partner.label}
-        </p>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-8 items-center rounded-full bg-indigo-500/10 px-3 text-[14px] font-medium text-indigo-600 dark:text-indigo-300">
+            {leverage}
+          </span>
+          <span className="inline-flex h-8 items-center rounded-full bg-emerald-500/10 px-3 text-[14px] font-medium text-emerald-600 dark:text-emerald-400">
+            {row.kind}
+          </span>
+        </div>
       </div>
-    </button>
+
+      <div className="mt-4 space-y-4">
+        <div>
+          <h3 className="text-[24px] font-medium tracking-[-0.04em] text-foreground dark:text-white/92">
+            {row.protocol}-{row.asset}
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1.5 text-[15px]">
+          <span className="text-muted-foreground">Available</span>
+          <span className="font-data tabular-nums text-foreground dark:text-white/88">{row.points ?? "—"}</span>
+          <span className="text-muted-foreground">Max APY</span>
+          <span className={cn("font-data tabular-nums", row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400")}>
+            {row.apy}
+          </span>
+        </div>
+      </div>
+    </Link>
   )
 }
 
