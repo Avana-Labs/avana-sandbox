@@ -39,6 +39,34 @@ export const TOKEN_LOGOS = {
   cbBTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
 } as const
 
+export const TOKEN_SUPPLY_APYS: Partial<Record<keyof typeof TOKEN_LOGOS, string>> = {
+  ETH: "3.82%",
+  stETH: "4.14%",
+  wstETH: "5.14%",
+  USDC: "5.20%",
+  USDT: "4.80%",
+  DAI: "4.01%",
+  GHO: "2.99%",
+  crvUSD: "4.40%",
+  EURC: "0.49%",
+  WBTC: "3.48%",
+  cbBTC: "4.25%",
+}
+
+export const TOKEN_BORROW_APYS: Partial<Record<keyof typeof TOKEN_LOGOS, string>> = {
+  ETH: "4.00%",
+  stETH: "3.40%",
+  wstETH: "3.40%",
+  USDC: "5.20%",
+  USDT: "4.80%",
+  DAI: "5.70%",
+  GHO: "3.90%",
+  crvUSD: "4.40%",
+  EURC: "4.10%",
+  WBTC: "3.70%",
+  cbBTC: "3.90%",
+}
+
 export const LEND_ROWS: LendRow[] = [
   {
     href: "/borrow/asset/eth",
