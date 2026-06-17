@@ -1,0 +1,211 @@
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
+
+export const MULTIPLY_TOKEN_LOGOS = {
+  ETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+  stETH: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
+  wstETH: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
+  rETH: "https://cryptologos.cc/logos/rocket-pool-rpl-logo.png",
+  cbETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+  USDT: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+  USDC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+  DAI: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png",
+  GHO: "https://cryptologos.cc/logos/aave-aave-logo.png",
+  crvUSD: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
+  EURC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+  WBTC: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png",
+  cbBTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+  AAVE: "https://cryptologos.cc/logos/aave-aave-logo.png",
+  UNI: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+  CRV: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
+} as const
+
+export const MULTIPLY_TOKEN_SUPPLY_APYS: Partial<Record<keyof typeof MULTIPLY_TOKEN_LOGOS, string>> = {
+  ETH: "3.82%",
+  stETH: "4.14%",
+  wstETH: "5.14%",
+  rETH: "4.87%",
+  cbETH: "4.62%",
+  USDC: "5.20%",
+  USDT: "4.80%",
+  DAI: "4.01%",
+  GHO: "2.99%",
+  crvUSD: "4.40%",
+  EURC: "0.49%",
+  WBTC: "3.48%",
+  cbBTC: "4.25%",
+  AAVE: "7.60%",
+  UNI: "6.40%",
+  CRV: "5.45%",
+}
+
+export const MULTIPLY_TOKEN_BORROW_APYS: Partial<Record<keyof typeof MULTIPLY_TOKEN_LOGOS, string>> = {
+  ETH: "4.00%",
+  stETH: "3.40%",
+  wstETH: "3.40%",
+  rETH: "3.50%",
+  cbETH: "3.60%",
+  USDC: "5.20%",
+  USDT: "4.80%",
+  DAI: "5.70%",
+  GHO: "3.90%",
+  crvUSD: "4.40%",
+  EURC: "4.10%",
+  WBTC: "3.70%",
+  cbBTC: "3.90%",
+  AAVE: "4.50%",
+  UNI: "4.20%",
+  CRV: "5.10%",
+}
+
+export const MULTIPLY_TOKEN_AVAILABLE_USD: Partial<Record<keyof typeof MULTIPLY_TOKEN_LOGOS, number>> = {
+  ETH: 5_000_000,
+  stETH: 7_500_000,
+  wstETH: 6_600_000,
+  rETH: 3_100_000,
+  cbETH: 2_400_000,
+  USDT: 7_200_000,
+  USDC: 9_900_000,
+  DAI: 6_600_000,
+  GHO: 9_100_000,
+  crvUSD: 5_100_000,
+  EURC: 2_500_000,
+  WBTC: 6_100_000,
+  cbBTC: 3_400_000,
+  AAVE: 3_500_000,
+  UNI: 2_800_000,
+  CRV: 1_900_000,
+}
+
+export const MULTIPLY_COLLATERAL_FACTORS: Partial<Record<keyof typeof MULTIPLY_TOKEN_LOGOS, number>> = {
+  ETH: 0.8,
+  stETH: 0.88,
+  wstETH: 0.91,
+  rETH: 0.89,
+  cbETH: 0.86,
+  USDT: 0.85,
+  USDC: 0.87,
+  DAI: 0.85,
+  GHO: 0.78,
+  crvUSD: 0.8,
+  EURC: 0.75,
+  WBTC: 0.8,
+  cbBTC: 0.78,
+  AAVE: 0.7,
+  UNI: 0.68,
+  CRV: 0.6,
+}
+
+export const MULTIPLY_LIQUIDATION_THRESHOLDS: Partial<Record<keyof typeof MULTIPLY_TOKEN_LOGOS, number>> = {
+  ETH: 0.83,
+  stETH: 0.9,
+  wstETH: 0.93,
+  rETH: 0.91,
+  cbETH: 0.89,
+  USDT: 0.88,
+  USDC: 0.9,
+  DAI: 0.88,
+  GHO: 0.82,
+  crvUSD: 0.84,
+  EURC: 0.8,
+  WBTC: 0.83,
+  cbBTC: 0.81,
+  AAVE: 0.75,
+  UNI: 0.73,
+  CRV: 0.68,
+}
+
+export const MULTIPLY_LOOP_DEFINITIONS: Array<{ collateral: keyof typeof MULTIPLY_TOKEN_LOGOS; borrowable: keyof typeof MULTIPLY_TOKEN_LOGOS }> = [
+  { collateral: "wstETH", borrowable: "ETH" },
+  { collateral: "stETH", borrowable: "ETH" },
+  { collateral: "rETH", borrowable: "ETH" },
+  { collateral: "cbETH", borrowable: "ETH" },
+  { collateral: "ETH", borrowable: "wstETH" },
+  { collateral: "ETH", borrowable: "USDT" },
+  { collateral: "ETH", borrowable: "GHO" },
+  { collateral: "USDC", borrowable: "USDT" },
+  { collateral: "USDC", borrowable: "GHO" },
+  { collateral: "DAI", borrowable: "USDT" },
+  { collateral: "DAI", borrowable: "GHO" },
+  { collateral: "crvUSD", borrowable: "USDT" },
+  { collateral: "EURC", borrowable: "GHO" },
+  { collateral: "WBTC", borrowable: "cbBTC" },
+  { collateral: "WBTC", borrowable: "USDT" },
+  { collateral: "cbBTC", borrowable: "WBTC" },
+  { collateral: "cbBTC", borrowable: "USDT" },
+  { collateral: "AAVE", borrowable: "GHO" },
+  { collateral: "UNI", borrowable: "USDC" },
+  { collateral: "CRV", borrowable: "crvUSD" },
+]
+
+export type MultiplyRewardRow = {
+  label: string
+  value: string
+}
+
+export type MultiplyMarketRow = {
+  href: string
+  protocol: string
+  protocolLogo: string
+  asset: string
+  kind: "Loop"
+  apy: string
+  apyLabel: string
+  partnerRewards?: string
+  points?: string
+  rewardRows?: MultiplyRewardRow[]
+  waitlistHref?: string
+  collateralFactor: number
+  liquidationThreshold: number
+}
+
+function parsePct(value?: string) {
+  if (!value) return 0
+  return Number.parseFloat(value.replace("%", "")) || 0
+}
+
+function formatPct(value: number) {
+  return `${value.toFixed(2)}%`
+}
+
+function formatFactor(value: number) {
+  return `${value.toFixed(2)}x`
+}
+
+function buildMultiplyMarketRow(
+  collateral: keyof typeof MULTIPLY_TOKEN_LOGOS,
+  borrowable: keyof typeof MULTIPLY_TOKEN_LOGOS,
+): MultiplyMarketRow | null {
+  const supplyApy = parsePct(MULTIPLY_TOKEN_SUPPLY_APYS[collateral])
+  const borrowApy = parsePct(MULTIPLY_TOKEN_BORROW_APYS[borrowable])
+  const cf = MULTIPLY_COLLATERAL_FACTORS[collateral]
+  const lt = MULTIPLY_LIQUIDATION_THRESHOLDS[collateral]
+  const availableUsd = MULTIPLY_TOKEN_AVAILABLE_USD[borrowable]
+
+  if (!cf || !lt || !availableUsd) return null
+
+  const maxLeverage = 1 / (1 - lt)
+  const maxLoopApy = maxLeverage * supplyApy - (maxLeverage - 1) * borrowApy
+  const id = `${collateral}-${borrowable}`
+
+  return {
+    href: `/multiply/markets/${id}`,
+    protocol: collateral,
+    protocolLogo: MULTIPLY_TOKEN_LOGOS[collateral],
+    asset: borrowable,
+    kind: "Loop",
+    apy: formatPct(maxLoopApy),
+    apyLabel: "APY derived from supply and borrow APRs",
+    points: formatCompactUsd(availableUsd),
+    rewardRows: [{ label: `CF ${Math.round(cf * 100)}% · LT ${Math.round(lt * 100)}%`, value: formatFactor(maxLeverage) }],
+    collateralFactor: cf,
+    liquidationThreshold: lt,
+  }
+}
+
+export const MULTIPLY_MARKET_ROWS: MultiplyMarketRow[] = MULTIPLY_LOOP_DEFINITIONS.map(({ collateral, borrowable }) =>
+  buildMultiplyMarketRow(collateral, borrowable),
+).filter((row): row is MultiplyMarketRow => Boolean(row))
+
+export function getMultiplyMarketRow(id: string): MultiplyMarketRow | null {
+  return MULTIPLY_MARKET_ROWS.find((row) => row.href.endsWith(`/multiply/markets/${id}`) || `${row.protocol}-${row.asset}` === id) ?? null
+}

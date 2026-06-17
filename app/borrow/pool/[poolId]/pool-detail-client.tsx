@@ -136,7 +136,10 @@ export function PoolDetailClient({ detail }: Props) {
                 />
               </div>
               <RiskSection detail={detail} />
-              <CollateralHistoryCard transactions={detail.transactions} />
+              <CollateralHistoryCard
+                transactions={detail.transactions}
+                tokenLabels={[detail.hero.visuals[0].symbol, detail.hero.visuals[1].symbol]}
+              />
               <AboutNewsSection
                 className="lg:hidden"
                 about={detail.about}
