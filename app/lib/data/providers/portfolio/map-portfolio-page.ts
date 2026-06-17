@@ -211,6 +211,8 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
   const heroByTab: Record<PortfolioTabKey, PortfolioHeroData> = {
     overview: buildHero(
       {
+        headlineValue: formatUsd(availableToBorrowUsd),
+        headlineDelta: `▲ ${currentLtvPct.toFixed(2)}% current LTV`,
       },
     ),
     lending: buildHero(
@@ -232,7 +234,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       ),
       {
         headlineValue: formatUsd(totalExposureUsd),
-        headlineDelta: `${netCarryPct >= 0 ? "+" : ""}${netCarryPct.toFixed(2)}% net carry`,
+        headlineDelta: `▲ ${netCarryPct >= 0 ? "+" : ""}${netCarryPct.toFixed(2)}% net carry`,
         statOneValue: `${openPositionCount}`,
         statTwoValue: `${netCarryPct >= 0 ? "+" : ""}${netCarryPct.toFixed(2)}%`,
       },
