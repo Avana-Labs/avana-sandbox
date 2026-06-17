@@ -8,6 +8,7 @@ import { Toaster } from "sonner"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { ExternalLinkGuard } from "./components/external-link-guard"
+import { PageLoadingBar } from "./components/page-loading-bar"
 
 const themeBootstrapScript = `
 (() => {
@@ -160,6 +161,7 @@ export default function RootLayout({
         >
           <DisplayPreferencesProvider>
             <div className="flex min-h-screen flex-col">
+              <PageLoadingBar />
               <Header />
               <div className="flex-1">{children}</div>
               <DesktopHelpBubble />

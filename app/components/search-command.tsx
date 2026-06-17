@@ -10,6 +10,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { triggerPageLoading } from "@/app/lib/page-loading"
 import { BORROWABLE_ASSETS, BORROW_POOL_CATALOG, type BorrowAssetVisual } from "@/app/lib/borrow-sim"
 import { MARKETS, TOKENS } from "@/app/lend/components/data"
 import { cn } from "@/lib/utils"
@@ -206,6 +207,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
   const goToResult = (href: string) => {
     setOpen(false)
     setQuery("")
+    triggerPageLoading()
     router.push(href)
   }
 
