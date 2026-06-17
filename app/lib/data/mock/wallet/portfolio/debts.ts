@@ -1,14 +1,6 @@
-export type WalletDebtRecord = {
-  id: string
-  walletProfileId: string
-  poolId: string
-  borrowedUsd: number
-  borrowAprPct: number
-  accruedInterestUsd: number
-  dailyInterestUsd: number
-}
+import type { PortfolioDebtRecord } from "@/app/lib/data/providers/portfolio/source"
 
-export const WALLET_DEBTS: WalletDebtRecord[] = [
+export const WALLET_DEBTS: PortfolioDebtRecord[] = [
   {
     id: "debt-weth-usdc",
     walletProfileId: "demo-wallet",
