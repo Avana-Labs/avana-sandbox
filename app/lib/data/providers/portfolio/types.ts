@@ -22,9 +22,9 @@ export type PortfolioWalletProfile = {
 }
 
 export type PortfolioHeroData = {
-  headlineValue: string
-  headlineDelta: string
-  rangeData: ChartRangeData
+  headlineValue?: string
+  headlineDelta?: string
+  rangeData?: ChartRangeData
   statOneValue?: string
   statTwoValue?: string
 }
