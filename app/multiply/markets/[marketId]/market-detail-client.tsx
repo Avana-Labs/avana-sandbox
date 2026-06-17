@@ -134,7 +134,11 @@ export function MarketDetailClient({ detail }: Props) {
                   },
                 ]}
               />
-              <TransactionHistoryCard transactions={detail.transactions} />
+              <TransactionHistoryCard
+                transactions={detail.transactions}
+                collateralSymbol={detail.row.protocol}
+                borrowableSymbol={detail.row.asset}
+              />
               <RelatedMarketsRow detail={detail} />
             </section>
           </div>
