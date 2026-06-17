@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
@@ -13,6 +13,7 @@ import {
 } from "@/app/borrow/components/supply-collateral-modal"
 import { CurrentLtvCard, DebtsPanel, type DebtRowContext } from "@/app/borrow/components/debts-table"
 import { SuppliesHealthFactorCard, SuppliesPanel, type SupplyRowContext } from "@/app/borrow/components/supplies-table"
+import type { BorrowSnapshot } from "./borrow-hero-state"
 
 type DebtsState = Record<string, number>
 
@@ -41,13 +42,16 @@ export function PortfolioPositions({
   section = "all",
   collateralPositions = [],
   debtPositions = [],
+  onSnapshotChange,
 }: {
   section?: "all" | "supplies" | "debts"
   collateralPositions?: SupplyRowContext[]
   debtPositions?: DebtRowContext[]
+  onSnapshotChange?: (snapshot: BorrowSnapshot) => void
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">(section === "debts" ? "debts" : "supplies")
+  const [collateralState, setCollateralState] = useState<SupplyRowContext[]>(() => collateralPositions)
   const [debtState, setDebtState] = useState<DebtsState>(() =>
     Object.fromEntries(debtPositions.map((row) => [row.pool.id, row.borrowedUsd])),
   )
@@ -61,13 +65,21 @@ export function PortfolioPositions({
     context: null,
   })
 
+  useEffect(() => {
+    setCollateralState(collateralPositions)
+  }, [collateralPositions])
+
+  useEffect(() => {
+    setDebtState(Object.fromEntries(debtPositions.map((row) => [row.pool.id, row.borrowedUsd])))
+  }, [debtPositions])
+
   const supplies = useMemo<SupplyRowContext[]>(() => {
-    return collateralPositions.map((row) => ({
+    return collateralState.map((row) => ({
       ...row,
       borrowedUsd: debtState[row.pool.id] ?? row.borrowedUsd,
       healthFactor: computeHealthFactor(row.pool, debtState[row.pool.id] ?? row.borrowedUsd),
     }))
-  }, [collateralPositions, debtState])
+  }, [collateralState, debtState])
 
   const debtsRows = useMemo<DebtRowContext[]>(() => {
     return debtPositions
@@ -155,7 +167,20 @@ export function PortfolioPositions({
   }, [])
 
   const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
-    void result
+    setCollateralState((previous) =>
+      previous.map((row) =>
+        row.pool.id === result.pool.id
+          ? {
+              ...row,
+              pool: {
+                ...row.pool,
+                collateralUsd: row.pool.collateralUsd + result.amountUsd,
+                borrowPowerUsd: row.pool.borrowPowerUsd + result.borrowPowerUsd,
+              },
+            }
+          : row,
+      ),
+    )
   }, [])
 
   const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
@@ -168,8 +193,43 @@ export function PortfolioPositions({
         ...previous,
         [result.pool.id]: Math.max(0, (previous[result.pool.id] ?? 0) - result.amountUsd),
       }))
+      return
     }
+
+    setCollateralState((previous) =>
+      previous.map((row) =>
+        row.pool.id === result.pool.id
+          ? {
+              ...row,
+              pool: {
+                ...row.pool,
+                collateralUsd: Math.max(0, row.pool.collateralUsd - result.amountUsd),
+                borrowPowerUsd: Math.max(0, row.pool.borrowPowerUsd - result.amountUsd * (row.pool.maxLtv / 100)),
+              },
+            }
+          : row,
+      ),
+    )
   }, [])
+
+  const borrowSnapshot = useMemo<BorrowSnapshot>(() => {
+    const totalCollateralUsd = supplies.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
+    const totalBorrowedUsd = debtTotals.totalBorrowed
+    const approvedUsd = supplies.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
+    const currentLtvPct = totalCollateralUsd > 0 ? (totalBorrowedUsd / totalCollateralUsd) * 100 : 0
+
+    return {
+      approvedUsd,
+      totalBorrowedUsd,
+      totalCollateralUsd,
+      averageHealthFactor: debtTotals.averageHf ?? supplyTotals.averageHf,
+      currentLtvPct,
+    }
+  }, [debtTotals.averageHf, debtTotals.totalBorrowed, supplies, supplyTotals.averageHf])
+
+  useEffect(() => {
+    onSnapshotChange?.(borrowSnapshot)
+  }, [borrowSnapshot, onSnapshotChange])
 
   return (
     <section className="space-y-8">
