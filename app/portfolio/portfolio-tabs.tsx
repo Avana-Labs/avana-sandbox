@@ -3,7 +3,6 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PortfolioHero } from "./hero/portfolio-hero"
 import type { PortfolioPageData, PortfolioTabKey } from "@/app/lib/data/providers/portfolio"
-import { buildBorrowHeroData, type BorrowSnapshot } from "./borrow-hero-state"
 
 export type PortfolioTab = PortfolioTabKey
 
@@ -23,11 +22,10 @@ type PortfolioTabsProps = {
   activeTab: PortfolioTab
   onTabChange: (tab: PortfolioTab) => void
   pageData: PortfolioPageData
-  borrowSnapshot: BorrowSnapshot
 }
 
-export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot }: PortfolioTabsProps) {
-  const activeHero = activeTab === "overview" ? buildBorrowHeroData(pageData.heroByTab.overview, borrowSnapshot) : pageData.heroByTab[activeTab]
+export function PortfolioTabs({ activeTab, onTabChange, pageData }: PortfolioTabsProps) {
+  const activeHero = pageData.heroByTab[activeTab]
 
   const tabBar = (
     <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">

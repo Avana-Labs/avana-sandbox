@@ -1,15 +1,11 @@
-import { CHART_RANGE_LABELS, type ChartRangeData, type ChartPoint, type ChartRangeOption } from "@/app/components/charts"
+import { CHART_RANGE_LABELS, type ChartPoint, type ChartRangeOption } from "@/app/components/charts"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import type { PortfolioPageData, PortfolioHeroData, PortfolioTabKey } from "./types"
 import type { PortfolioPageRecords, PortfolioSnapshotRecord } from "./source"
 
-function buildHero(rangeData: ChartRangeData, overrides: Partial<PortfolioHeroData>): PortfolioHeroData {
+function buildHero(overrides: Partial<PortfolioHeroData> = {}): PortfolioHeroData {
   return {
-    headlineValue: overrides.headlineValue ?? "$0.00",
-    headlineDelta: overrides.headlineDelta ?? "$0.00 (0.00%)",
-    rangeData,
-    statOneValue: overrides.statOneValue,
-    statTwoValue: overrides.statTwoValue,
+    ...overrides,
   }
 }
 
@@ -214,18 +210,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
 
   const heroByTab: Record<PortfolioTabKey, PortfolioHeroData> = {
     overview: buildHero(
-      getRangeData(
-        snapshots,
-        (snapshot) => snapshot.availableToBorrowUsd,
-        availableToBorrowUsd || 964,
-        Math.max(availableToBorrowUsd * 0.03, 750),
-        `${walletProfile.id}:overview`,
-      ),
       {
-        headlineValue: formatUsd(availableToBorrowUsd),
-        headlineDelta: `${currentLtvPct.toFixed(2)}% current LTV`,
-        statOneValue: formatUsd(totalDebtUsd),
-        statTwoValue: averageHealthFactor ? averageHealthFactor.toFixed(2) : "—",
       },
     ),
     lending: buildHero(

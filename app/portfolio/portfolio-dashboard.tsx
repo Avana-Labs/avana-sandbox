@@ -108,7 +108,7 @@ export function PortfolioDashboard({
 
   return (
     <>
-      <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} pageData={data} borrowSnapshot={borrowSnapshot} />
+      <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} pageData={data} />
 
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-5">

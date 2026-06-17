@@ -67,11 +67,9 @@ type HeroUiConfig = {
 const HERO_UI_CONFIG: Record<PortfolioHeroProps["tab"], HeroUiConfig> = {
   overview: {
     headlineMeta: "Approved credit",
+    hideChart: true,
     hideActions: true,
-    statOneLabel: "Current borrowed",
-    statOneHelpText: "Open debt across active borrow positions.",
-    statTwoLabel: "Credit health",
-    statTwoHelpText: "Average health factor across active borrow-linked collateral.",
+    hideStats: true,
   },
   lending: {
     actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
@@ -195,7 +193,7 @@ export function PortfolioHero({
   )
 
   const displayRangeData = useMemo(() => {
-    if (selectedNetwork === "all") {
+    if (selectedNetwork === "all" && rangeData) {
       return rangeData
     }
     return networkFeed.rangeData
