@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LEND_ROWS, TOKEN_BORROW_APYS, TOKEN_LOGOS, TOKEN_SUPPLY_APYS } from "./multiply-lend-section"
 
@@ -20,217 +19,7 @@ const CATEGORY_TABS = [
   { id: "smart-loops", label: "Smart Loops" },
 ] as const
 
-const SORT_PRESETS = [
-  { label: "Highest Leverage", value: "rewards:desc" },
-  { label: "Highest APY", value: "apy:desc" },
-  { label: "Most Available", value: "points:desc" },
-  { label: "Collateral A-Z", value: "protocol:asc" },
-] as const
-
 type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
-
-function FilterCheckIcon({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className={cn(
-        "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-        checked ? "border-[#01AACF] bg-[#01AACF] text-white" : "border-black/35 bg-transparent text-transparent dark:border-white/55",
-      )}
-    >
-      <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" className="size-3">
-        <path d="M2.5 6.2 4.8 8.5 9.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </span>
-  )
-}
-
-function ChevronDownIcon() {
-  return <ChevronDown className="size-3.5" />
-}
-
-function SingleSelectDropdown({
-  allLabel,
-  triggerLabel,
-  value,
-  options,
-  onChange,
-  ariaLabel,
-}: {
-  allLabel: string
-  triggerLabel?: string
-  value: string | null
-  options: Array<{ label: string; value: string }>
-  onChange: (nextValue: string | null) => void
-  ariaLabel: string
-}) {
-  const [open, setOpen] = React.useState(false)
-  const [openUpward, setOpenUpward] = React.useState(false)
-  const [panelStyle, setPanelStyle] = React.useState<{
-    left: number
-    top: number
-    width: number
-    maxHeight: number
-  } | null>(null)
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
-  const panelRef = React.useRef<HTMLDivElement | null>(null)
-
-  const selectedLabel = options.find((option) => option.value === value)?.label ?? allLabel
-  const displayLabel = triggerLabel ?? selectedLabel
-
-  React.useEffect(() => {
-    if (!open) return
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false)
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown, true)
-    return () => document.removeEventListener("pointerdown", handlePointerDown, true)
-  }, [open])
-
-  React.useEffect(() => {
-    if (!open) return
-
-    const updatePanelPosition = () => {
-      if (!rootRef.current || !panelRef.current) return
-
-      const triggerRect = rootRef.current.getBoundingClientRect()
-      const panelHeight = panelRef.current.offsetHeight
-      const spaceBelow = window.innerHeight - triggerRect.bottom
-      const spaceAbove = triggerRect.top
-      const nextOpenUpward = spaceBelow < panelHeight + 12 && spaceAbove > spaceBelow
-      const width = Math.min(216, window.innerWidth - 16)
-      const left = Math.max(8, triggerRect.right - width)
-      const maxHeight = Math.max(140, Math.min(220, (nextOpenUpward ? spaceAbove : spaceBelow) - 12))
-      const top = nextOpenUpward
-        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
-        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
-
-      setOpenUpward(nextOpenUpward)
-      setPanelStyle({ left, top, width, maxHeight })
-    }
-
-    updatePanelPosition()
-
-    const updateAnchoredPosition = () => {
-      if (!rootRef.current || !panelRef.current) return
-
-      const triggerRect = rootRef.current.getBoundingClientRect()
-      const panelHeight = panelRef.current.offsetHeight
-      const width = Math.min(216, window.innerWidth - 16)
-      const left = Math.max(8, triggerRect.right - width)
-      const availableSpace = openUpward ? triggerRect.top : window.innerHeight - triggerRect.bottom
-      const maxHeight = Math.max(140, Math.min(220, availableSpace - 12))
-      const top = openUpward
-        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
-        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
-
-      setPanelStyle({ left, top, width, maxHeight })
-    }
-
-    window.addEventListener("resize", updateAnchoredPosition)
-    window.addEventListener("scroll", updateAnchoredPosition, true)
-
-    return () => {
-      window.removeEventListener("resize", updateAnchoredPosition)
-      window.removeEventListener("scroll", updateAnchoredPosition, true)
-    }
-  }, [open, openUpward, options.length])
-
-  return (
-    <div ref={rootRef} className="relative z-20">
-      <button
-        type="button"
-        aria-label={ariaLabel}
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-          className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
-          "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:bg-[#1f1f1f] dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
-        )}
-      >
-        <span className="whitespace-nowrap">{displayLabel}</span>
-        <span className="text-foreground/55 dark:text-white/70">
-          <ChevronDownIcon />
-        </span>
-      </button>
-
-      {open ? (
-        <>
-          <button
-            type="button"
-            aria-label={`Close ${ariaLabel}`}
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-10 cursor-default bg-transparent"
-          />
-
-          <div
-            ref={panelRef}
-            className={cn(
-              "fixed z-30 overflow-hidden rounded-[14px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-              "border-border bg-white text-foreground dark:border-white/8 dark:bg-[#232323] dark:text-white",
-            )}
-            style={
-              panelStyle
-                ? {
-                    left: panelStyle.left,
-                    top: panelStyle.top,
-                    width: panelStyle.width,
-                    maxHeight: panelStyle.maxHeight,
-                  }
-                : undefined
-            }
-          >
-            <button
-              type="button"
-              onClick={() => {
-                onChange(null)
-                setOpen(false)
-              }}
-              className={cn(
-                "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
-                "text-foreground hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
-              )}
-            >
-              <FilterCheckIcon checked={value === null} />
-              <span>{allLabel}</span>
-            </button>
-
-            <div className="w-full border-t border-black/12 dark:border-white/20" />
-
-            <div className="overflow-y-auto py-1 pb-3" style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}>
-              {options.map((option) => {
-                const checked = value === option.value
-
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      onChange(option.value)
-                      setOpen(false)
-                    }}
-                    className={cn(
-                      "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors md:h-10 md:px-4 md:text-[14px]",
-                      checked
-                        ? "bg-black/[0.05] font-medium text-foreground dark:bg-white/6 dark:text-white"
-                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
-                    )}
-                  >
-                    <FilterCheckIcon checked={checked} />
-                    <span className="truncate">{option.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </>
-      ) : null}
-    </div>
-  )
-}
 
 function SearchIcon({ className }: { className?: string } = {}) {
   return (
@@ -322,8 +111,6 @@ function ExpandableDesktopSearch({
 export function ExploreLoopsMarketsTable() {
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all-markets")
   const [search, setSearch] = React.useState("")
-  const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("rewards")
-  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("desc")
   const searchQuery = search.trim().toLowerCase()
   const buildSearchText = (row: (typeof LEND_ROWS)[number]) =>
     [
@@ -361,36 +148,9 @@ export function ExploreLoopsMarketsTable() {
       if (currentTab === "governance") return matchesUtility
       if (currentTab === "smart-loops") return matchesSmartLoop
       return true
-    })
+      })
       .filter((row) => searchQuery.length === 0 || buildSearchText(row).includes(searchQuery))
   }, [currentTab, searchQuery])
-  const sortedRows = React.useMemo(() => {
-    const direction = sortDirection === "asc" ? 1 : -1
-    const parseValue = (value?: string) => {
-      if (!value) return Number.NEGATIVE_INFINITY
-      const numeric = Number.parseFloat(value.replace(/[^0-9.-]/g, ""))
-      return Number.isFinite(numeric) ? numeric : Number.NEGATIVE_INFINITY
-    }
-
-    return [...filteredRows].sort((a, b) => {
-      switch (sortKey) {
-        case "asset":
-          return a.asset.localeCompare(b.asset) * direction
-        case "apy":
-          return (parseValue(a.apy) - parseValue(b.apy)) * direction
-        case "rewards":
-          return (
-            parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
-            parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)
-          ) * direction
-        case "points":
-          return (parseValue(a.points) - parseValue(b.points)) * direction
-        case "protocol":
-        default:
-          return a.protocol.localeCompare(b.protocol) * direction
-      }
-    })
-  }, [filteredRows, sortDirection, sortKey])
 
   const sectionedRows = React.useMemo(() => {
     const sections = [
@@ -404,7 +164,7 @@ export function ExploreLoopsMarketsTable() {
     const isEth = (symbol: string) => ETH_SYMBOLS.has(symbol.toUpperCase())
     const isBtc = (symbol: string) => BTC_SYMBOLS.has(symbol.toUpperCase())
 
-    for (const row of sortedRows) {
+    for (const row of filteredRows) {
       const protocol = row.protocol
       if (isStable(protocol)) {
         sections[0].rows.push(row)
@@ -418,7 +178,7 @@ export function ExploreLoopsMarketsTable() {
     }
 
     return sections.filter((section) => section.rows.length > 0)
-  }, [sortedRows])
+  }, [filteredRows])
 
   const getAssetLogo = (asset: string) => TOKEN_LOGOS[asset as keyof typeof TOKEN_LOGOS]
   const getSupplyApy = (asset: string) => TOKEN_SUPPLY_APYS[asset as keyof typeof TOKEN_SUPPLY_APYS]
@@ -479,21 +239,6 @@ export function ExploreLoopsMarketsTable() {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <SingleSelectDropdown
-            allLabel="Sort by"
-            value={`${sortKey}:${sortDirection}`}
-            options={SORT_PRESETS.map((preset) => ({
-              label: preset.label,
-              value: preset.value,
-            }))}
-            onChange={(nextValue) => {
-              if (!nextValue) return
-              const [nextSortKey, nextSortDirection] = nextValue.split(":") as [typeof sortKey, typeof sortDirection]
-              setSortKey(nextSortKey)
-              setSortDirection(nextSortDirection)
-            }}
-            ariaLabel="Sort loops"
-          />
           <ExpandableDesktopSearch value={search} onChange={setSearch} />
         </div>
       </div>
@@ -527,6 +272,47 @@ function MarketSectionTable({
   getBorrowApy: (asset: string) => string | undefined
   getAssetLogo: (asset: string) => string | undefined
 }) {
+  const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("rewards")
+  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("desc")
+
+  const toggleSort = (nextKey: typeof sortKey) => {
+    if (sortKey === nextKey) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
+      return
+    }
+
+    setSortKey(nextKey)
+    setSortDirection(nextKey === "protocol" || nextKey === "asset" ? "asc" : "desc")
+  }
+
+  const sortedRows = React.useMemo(() => {
+    const direction = sortDirection === "asc" ? 1 : -1
+    const parseValue = (value?: string) => {
+      if (!value) return Number.NEGATIVE_INFINITY
+      const numeric = Number.parseFloat(value.replace(/[^0-9.-]/g, ""))
+      return Number.isFinite(numeric) ? numeric : Number.NEGATIVE_INFINITY
+    }
+
+    return [...rows].sort((a, b) => {
+      switch (sortKey) {
+        case "asset":
+          return a.asset.localeCompare(b.asset) * direction
+        case "apy":
+          return (parseValue(a.apy) - parseValue(b.apy)) * direction
+        case "rewards":
+          return (
+            parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
+            parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)
+          ) * direction
+        case "points":
+          return (parseValue(a.points) - parseValue(b.points)) * direction
+        case "protocol":
+        default:
+          return a.protocol.localeCompare(b.protocol) * direction
+      }
+    })
+  }, [rows, sortDirection, sortKey])
+
   return (
     <section className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -543,20 +329,52 @@ function MarketSectionTable({
       </div>
 
       <div className="hidden md:block">
-        <div className="border-b border-border text-left text-muted-foreground">
-          <div className="grid grid-cols-5">
-            <div className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Collateral</div>
-            <div className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Borrowable</div>
-            <div className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Max APY</div>
-            <div className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Max Leverage</div>
-            <div className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Available</div>
+        <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-sm">
+          <div className="overflow-x-auto">
+            <div className="grid min-w-[920px] grid-cols-[24%_22%_18%_18%_18%] text-left text-muted-foreground">
+              <HeaderSortButton
+                label="Collateral"
+                active={sortKey === "protocol"}
+                direction={sortKey === "protocol" ? sortDirection : undefined}
+                onClick={() => toggleSort("protocol")}
+                className="pl-6"
+              />
+              <HeaderSortButton
+                label="Borrowable"
+                active={sortKey === "asset"}
+                direction={sortKey === "asset" ? sortDirection : undefined}
+                onClick={() => toggleSort("asset")}
+                className="px-4"
+              />
+              <HeaderSortButton
+                label="Max APY"
+                active={sortKey === "apy"}
+                direction={sortKey === "apy" ? sortDirection : undefined}
+                onClick={() => toggleSort("apy")}
+                className="px-4"
+              />
+              <HeaderSortButton
+                label="Max Leverage"
+                active={sortKey === "rewards"}
+                direction={sortKey === "rewards" ? sortDirection : undefined}
+                onClick={() => toggleSort("rewards")}
+                className="px-4"
+              />
+              <HeaderSortButton
+                label="Available"
+                active={sortKey === "points"}
+                direction={sortKey === "points" ? sortDirection : undefined}
+                onClick={() => toggleSort("points")}
+                className="px-4 pr-6"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       <div className="space-y-3">
-        {rows.length ? (
-          rows.map((row, index) => (
+        {sortedRows.length ? (
+          sortedRows.map((row, index) => (
             <MarketSectionRow
               key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
               row={row}
@@ -566,12 +384,50 @@ function MarketSectionTable({
             />
           ))
         ) : (
-          <div className="rounded-[20px] border border-border bg-surface-raised px-6 py-10 text-center text-[14px] text-muted-foreground shadow-elev-1">
+          <div className="rounded-[20px] border border-border bg-surface-raised px-6 py-10 text-center text-[14px] text-muted-foreground shadow-sm">
             No loops in this category yet.
           </div>
         )}
       </div>
     </section>
+  )
+}
+
+function HeaderSortButton({
+  label,
+  active,
+  direction,
+  onClick,
+  className,
+}: {
+  label: string
+  active: boolean
+  direction?: "asc" | "desc"
+  onClick: () => void
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-1.5 pb-3 pt-4 text-[10.5px] font-medium uppercase tracking-[0.06em] transition-colors",
+        active ? "text-foreground dark:text-white/90" : "text-muted-foreground dark:text-white/58",
+        className,
+      )}
+    >
+      <span>{label}</span>
+      <SortIcon direction={direction} />
+    </button>
+  )
+}
+
+function SortIcon({ direction }: { direction?: "asc" | "desc" }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 12 16" fill="none" className={cn("size-[12px]", direction === "asc" ? "rotate-180" : "")}>
+      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 
@@ -587,7 +443,7 @@ function MarketSectionRow({
   getAssetLogo: (asset: string) => string | undefined
 }) {
   return (
-    <div className="rounded-[20px] border border-border bg-surface-raised shadow-elev-1 transition-colors hover:bg-surface-inset/40">
+    <div className="rounded-[12px] border border-border bg-surface-raised shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:bg-surface-inset/40">
       <div className="grid gap-0 md:grid-cols-[24%_22%_18%_18%_18%]">
         <MarketMetric value={row.protocol} subValue={getSupplyApy(row.protocol) ?? "—"} logo={row.protocolLogo} className="px-6 py-2.5" />
         <MarketMetric value={row.asset} subValue={getBorrowApy(row.asset) ?? "—"} logo={getAssetLogo(row.asset)} className="px-4 py-2.5" />
@@ -679,7 +535,7 @@ function TrendingLoopCard({
   return (
     <Link
       href={row.href}
-      className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-surface-raised p-3.5 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
+      className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-surface-raised p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:border-border/80 hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)]"
     >
       <div className="pointer-events-none absolute -left-5 top-16 size-[274px] rounded-full opacity-10 blur-2xl saturate-150">
         {/* eslint-disable-next-line @next/next/no-img-element */}
