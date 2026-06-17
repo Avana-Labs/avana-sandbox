@@ -1,6 +1,11 @@
-import type { HomeCollateralPool } from "@/app/lib/home-sim"
 import type { ChartRangeData } from "@/app/components/charts"
 import type { NetworkId } from "@/app/portfolio/hero/types"
+import type {
+  PortfolioActivityKind,
+  PortfolioActivityProduct,
+  PortfolioActivityStatus,
+  PortfolioStrategyTone,
+} from "./source"
 
 export type PortfolioTabKey = "overview" | "lending" | "looping" | "activity"
 
@@ -68,7 +73,7 @@ export type PortfolioBorrowTabData = {
     totalCollateralUsd: number
   }
   collateralPositions: Array<{
-    pool: HomeCollateralPool
+    pool: PortfolioPool
     borrowedUsd: number
     healthFactor: number | null
     pairApr: number
@@ -77,7 +82,7 @@ export type PortfolioBorrowTabData = {
   }>
   debtPositions: Array<{
     id: string
-    pool: HomeCollateralPool
+    pool: PortfolioPool
     borrowedUsd: number
     healthFactor: number | null
     borrowApr: number
@@ -98,10 +103,30 @@ export type PortfolioSupplyPosition = {
   apyPct: number
 }
 
+export type PortfolioPoolVisual = {
+  symbol: string
+  shortLabel: string
+  bgClassName: string
+  textClassName: string
+}
+
+export type PortfolioPool = {
+  id: string
+  name: string
+  venue: string
+  category: string
+  collateralUsd: number
+  maxLtv: number
+  borrowPowerUsd: number
+  liquidationUsd: number
+  pairApr: number
+  visuals: [PortfolioPoolVisual, PortfolioPoolVisual]
+}
+
 export type PortfolioStrategyPool = {
   name: string
-  apy: string
-  tvl: string
+  apyPct: number
+  tvlUsd: number
   isUp: boolean
   allocationUsd: number
 }
@@ -109,9 +134,8 @@ export type PortfolioStrategyPool = {
 export type PortfolioStrategyBucket = {
   title: string
   description: string
-  badgeClassName: string
-  badgeLabel: string
-  accentClassName: string
+  apyRangeLabel: string
+  tone: PortfolioStrategyTone
   pools: PortfolioStrategyPool[]
 }
 
@@ -162,28 +186,13 @@ export type PortfolioTwapOrder = {
 export type PortfolioActivityRow = {
   id: string
   at: string
-  product: "borrow" | "pool" | "lend" | "multiply"
-  kind:
-    | "supply"
-    | "withdraw"
-    | "borrow"
-    | "repay"
-    | "pledge"
-    | "claim"
-    | "open"
-    | "addCollateral"
-    | "reduce"
-    | "close"
-    | "rebalance"
-    | "interest"
-    | "liquidation"
-  status: "confirmed" | "pending" | "failed"
-  amountLabel: string
+  product: PortfolioActivityProduct
+  kind: PortfolioActivityKind
+  status: PortfolioActivityStatus
+  amountUsd: number
   primaryLabel: string
   secondaryLabel: string
   txHash: string
-  txHashShort: string
-  txHref: string
 }
 
 export type PortfolioActivityData = {

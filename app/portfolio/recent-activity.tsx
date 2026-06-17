@@ -87,6 +87,23 @@ const STATUS_TONE: Record<PortfolioActivityRow["status"], string> = {
   failed: "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 }
 
+function formatSignedUsd(amountUsd: number) {
+  const absoluteValue = Math.abs(amountUsd)
+  const formatted = `$${absoluteValue.toLocaleString("en-US", {
+    notation: "compact",
+    maximumFractionDigits: absoluteValue >= 100_000 ? 1 : 2,
+  })}`
+  return amountUsd > 0 ? `+${formatted}` : amountUsd < 0 ? `-${formatted}` : formatted
+}
+
+function shortHash(txHash: string) {
+  return `${txHash.slice(0, 6)}…${txHash.slice(-4)}`
+}
+
+function getTxnHref(txHash: string) {
+  return `https://etherscan.io/tx/${txHash}`
+}
+
 function formatRelativeTime(iso: string) {
   const elapsedMs = Math.max(0, Date.now() - new Date(iso).getTime())
   const totalSeconds = Math.max(1, Math.floor(elapsedMs / 1000))
@@ -106,7 +123,10 @@ function toggleValue<T extends string>(values: T[], value: T) {
 function matchesSearch(row: PortfolioActivityRow, query: string) {
   if (!query) return true
   const needle = query.toLowerCase()
-  return [row.amountLabel, row.kind, row.primaryLabel, row.product, row.secondaryLabel, row.status, row.txHash, row.txHashShort].join(" ").toLowerCase().includes(needle)
+  return [formatSignedUsd(row.amountUsd), row.kind, row.primaryLabel, row.product, row.secondaryLabel, row.status, row.txHash, shortHash(row.txHash)]
+    .join(" ")
+    .toLowerCase()
+    .includes(needle)
 }
 
 function SearchPill({
@@ -281,7 +301,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                         <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">{row.amountLabel}</td>
+                    <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">{formatSignedUsd(row.amountUsd)}</td>
                     <td className="px-5 py-4 align-middle">
                       <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium", STATUS_TONE[row.status])}>
                         {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
@@ -289,12 +309,12 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                     </td>
                     <td className="px-5 py-4 align-middle text-right font-data text-[13px] tabular-nums text-foreground">
                       <a
-                        href={row.txHref}
+                        href={getTxnHref(row.txHash)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-block whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
                       >
-                        {row.txHashShort}
+                        {shortHash(row.txHash)}
                       </a>
                     </td>
                   </tr>

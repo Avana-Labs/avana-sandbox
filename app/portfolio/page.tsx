@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { fetchPortfolioPage } from "@/app/lib/data/providers/portfolio"
+import { fetchPortfolioPage, resolvePortfolioWalletProfileId } from "@/app/lib/data/providers/portfolio"
 import { PortfolioDashboard } from "./portfolio-dashboard"
 
 export const metadata: Metadata = {
@@ -8,13 +8,14 @@ export const metadata: Metadata = {
 }
 
 export default async function PortfolioPage() {
-  const initialData = await fetchPortfolioPage({ walletProfileId: "demo-wallet" })
+  const walletProfileId = resolvePortfolioWalletProfileId()
+  const initialData = await fetchPortfolioPage({ walletProfileId })
 
   return (
     <div className="bg-background">
       <main className="container mx-auto px-4 py-4 sm:py-8">
         <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
-          <PortfolioDashboard initialData={initialData} />
+          <PortfolioDashboard initialData={initialData} walletProfileId={walletProfileId} />
         </div>
       </main>
     </div>

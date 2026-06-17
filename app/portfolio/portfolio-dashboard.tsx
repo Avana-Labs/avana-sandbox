@@ -45,12 +45,13 @@ function SectionDivider() {
 
 export function PortfolioDashboard({
   initialData,
-  walletProfileId = "demo-wallet",
+  walletProfileId,
 }: {
   initialData?: PortfolioPageData
   walletProfileId?: string
 }) {
-  const { data } = usePortfolioPage({ walletProfileId }, initialData)
+  const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
+  const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const [activeTab, setActiveTab] = useState<PortfolioTab>("overview")
   const [borrowSnapshot, setBorrowSnapshot] = useState<BorrowSnapshot>(() => ({
     approvedUsd: initialData?.borrow.creditLines.approvedUsd ?? data?.borrow.creditLines.approvedUsd ?? 0,
@@ -71,7 +72,7 @@ export function PortfolioDashboard({
     })
   }, [data])
 
-  if (!data) return null
+  if (!data || !resolvedWalletProfileId) return null
 
   return (
     <>

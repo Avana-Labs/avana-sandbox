@@ -1,12 +1,6 @@
-export type WalletRewardsRecord = {
-  walletProfileId: string
-  claimableUsd: number
-  earnedUsd: number
-  settledUsd: number
-  pendingUsd: number
-}
+import type { PortfolioRewardsRecord } from "@/app/lib/data/providers/portfolio/source"
 
-export const WALLET_REWARDS: WalletRewardsRecord[] = [
+export const WALLET_REWARDS: PortfolioRewardsRecord[] = [
   {
     walletProfileId: "demo-wallet",
     claimableUsd: 8_420,
