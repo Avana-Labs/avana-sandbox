@@ -60,7 +60,7 @@ function buildTxHash(seed: number, index: number) {
 }
 
 function shortHash(txHash: string) {
-  return `${txHash.slice(0, 6)}...${txHash.slice(-4)}`
+  return `${txHash.slice(0, 6)} ${txHash.slice(-4)}`
 }
 
 function buildMockRows(walletAddress: string): PortfolioActivityRow[] {
