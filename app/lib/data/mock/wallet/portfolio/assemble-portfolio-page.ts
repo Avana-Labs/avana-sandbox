@@ -44,6 +44,11 @@ function buildPortfolioRangeData(chartBase: number, chartVariance: number) {
   }).rangeData
 }
 
+function computeHealthFactor(collateralUsd: number, maxLtv: number, borrowedUsd: number) {
+  if (borrowedUsd <= 0) return null
+  return (collateralUsd * (maxLtv / 100)) / borrowedUsd
+}
+
 export function assemblePortfolioPage(walletProfileId: string): PortfolioPageData {
   const walletProfile = getWalletProfile(walletProfileId)
   const snapshots = getWalletSnapshots(walletProfileId)
@@ -59,7 +64,9 @@ export function assemblePortfolioPage(walletProfileId: string): PortfolioPageDat
   const totalCollateralUsd = collaterals.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
   const totalDebtUsd = debts.reduce((sum, row) => sum + row.borrowedUsd, 0)
   const availableToBorrowUsd = collaterals.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
-  const collateralHealthFactors = collaterals.map((row) => row.healthFactor).filter((value): value is number => value !== null && Number.isFinite(value))
+  const collateralHealthFactors = collaterals
+    .map((row) => computeHealthFactor(row.pool.collateralUsd, row.pool.maxLtv, row.borrowedUsd))
+    .filter((value): value is number => value !== null && Number.isFinite(value))
   const averageHealthFactor = collateralHealthFactors.length ? collateralHealthFactors.reduce((sum, value) => sum + value, 0) / collateralHealthFactors.length : null
   const totalSuppliedUsd = supplies.reduce((sum, row) => sum + row.suppliedUsd, 0)
   const totalEarnedUsd = supplies.reduce((sum, row) => sum + row.earnedUsd, 0)
@@ -162,17 +169,19 @@ export function assemblePortfolioPage(walletProfileId: string): PortfolioPageDat
         averageHealthFactor,
         currentLtvPct: totalCollateralUsd ? (totalDebtUsd / totalCollateralUsd) * 100 : 0,
         totalBorrowedUsd: totalDebtUsd,
+        totalCollateralUsd,
       },
       collateralPositions: collaterals,
       debtPositions: debts.map((debt, index) => {
         const matchingCollateral = collaterals.find((row) => row.pool.id === debt.poolId)
         const fallbackCollateral = collaterals[index % collaterals.length] ?? collaterals[0]
         const resolvedCollateral = matchingCollateral ?? fallbackCollateral
+        const healthFactor = computeHealthFactor(resolvedCollateral.pool.collateralUsd, resolvedCollateral.pool.maxLtv, debt.borrowedUsd)
         return {
           id: debt.id,
           pool: resolvedCollateral.pool,
           borrowedUsd: debt.borrowedUsd,
-          healthFactor: resolvedCollateral.healthFactor,
+          healthFactor,
           borrowApr: debt.borrowAprPct,
           accruedInterestUsd: debt.accruedInterestUsd,
           dailyInterestUsd: debt.dailyInterestUsd,
@@ -190,10 +199,10 @@ export function assemblePortfolioPage(walletProfileId: string): PortfolioPageDat
             "rounded-xs border border-blue-500/25 bg-blue-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-blue-700 dark:text-blue-400",
           accentClassName: "from-blue-500/[0.03]",
           pools: [
-            { name: "Uniswap USDC-USDT", apy: "4.2%", tvl: "$2.1B", isUp: true, allocationUsd: 18_400 },
-            { name: "Aave USDC", apy: "5.1%", tvl: "$1.8B", isUp: true, allocationUsd: 24_100 },
-            { name: "Convex USDT", apy: "6.3%", tvl: "$950M", isUp: true, allocationUsd: 11_200 },
-            { name: "Chainlink USDC", apy: "7.2%", tvl: "$750M", isUp: false, allocationUsd: 6_800 },
+            { name: "Uniswap USDC-USDT", apy: "4.2%", tvl: "$88.4K", isUp: true, allocationUsd: 18_400 },
+            { name: "Aave USDC", apy: "5.1%", tvl: "$76.2K", isUp: true, allocationUsd: 24_100 },
+            { name: "Convex USDT", apy: "6.3%", tvl: "$41.9K", isUp: true, allocationUsd: 11_200 },
+            { name: "Chainlink USDC", apy: "7.2%", tvl: "$28.5K", isUp: false, allocationUsd: 6_800 },
           ],
         },
         {
@@ -204,10 +213,10 @@ export function assemblePortfolioPage(walletProfileId: string): PortfolioPageDat
             "rounded-xs border border-indigo-500/25 bg-indigo-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-indigo-700 dark:text-indigo-400",
           accentClassName: "from-indigo-500/[0.03]",
           pools: [
-            { name: "Compound ETH-USDC", apy: "12.5%", tvl: "$890M", isUp: true, allocationUsd: 31_800 },
-            { name: "Rocket Pool stETH", apy: "9.8%", tvl: "$1.2B", isUp: true, allocationUsd: 15_300 },
-            { name: "Balancer ETH-DAI", apy: "14.2%", tvl: "$450M", isUp: false, allocationUsd: 8_400 },
-            { name: "Solana USDC", apy: "11.5%", tvl: "$680M", isUp: true, allocationUsd: 13_700 },
+            { name: "Compound ETH-USDC", apy: "12.5%", tvl: "$91.2K", isUp: true, allocationUsd: 31_800 },
+            { name: "Rocket Pool stETH", apy: "9.8%", tvl: "$64.7K", isUp: true, allocationUsd: 15_300 },
+            { name: "Balancer ETH-DAI", apy: "14.2%", tvl: "$53.8K", isUp: false, allocationUsd: 8_400 },
+            { name: "Solana USDC", apy: "11.5%", tvl: "$72.1K", isUp: true, allocationUsd: 13_700 },
           ],
         },
         {
@@ -218,10 +227,10 @@ export function assemblePortfolioPage(walletProfileId: string): PortfolioPageDat
             "rounded-xs border border-rose-500/25 bg-rose-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-rose-700 dark:text-rose-400",
           accentClassName: "from-rose-500/[0.03]",
           pools: [
-            { name: "Curve ETH-BTC", apy: "35.8%", tvl: "$120M", isUp: true, allocationUsd: 3_200 },
-            { name: "Balancer WETH-DAI", apy: "28.4%", tvl: "$85M", isUp: false, allocationUsd: 2_400 },
-            { name: "Pancakeswap BNB-USDT", apy: "42.1%", tvl: "$65M", isUp: true, allocationUsd: 1_500 },
-            { name: "Sushiswap ETH-USDC", apy: "31.6%", tvl: "$95M", isUp: false, allocationUsd: 2_800 },
+            { name: "Curve ETH-BTC", apy: "35.8%", tvl: "$39.6K", isUp: true, allocationUsd: 3_200 },
+            { name: "Balancer WETH-DAI", apy: "28.4%", tvl: "$31.8K", isUp: false, allocationUsd: 2_400 },
+            { name: "Pancakeswap BNB-USDT", apy: "42.1%", tvl: "$27.4K", isUp: true, allocationUsd: 1_500 },
+            { name: "Sushiswap ETH-USDC", apy: "31.6%", tvl: "$44.1K", isUp: false, allocationUsd: 2_800 },
           ],
         },
       ],
