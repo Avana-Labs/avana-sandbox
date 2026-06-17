@@ -528,19 +528,30 @@ function MarketSectionTable({
   getAssetLogo: (asset: string) => string | undefined
 }) {
   return (
-    <section className="space-y-3">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <section className="space-y-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h3 className="text-[22px] font-normal tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h3>
+          <h2
+            className={cn(
+              "text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]",
+              title === "Ethereum-Based" ? "md:text-[23px]" : "",
+            )}
+          >
+            {title}
+          </h2>
         </div>
       </div>
 
-      <div className="hidden md:grid md:grid-cols-5 md:gap-3 md:px-4 md:text-[11px] md:font-medium md:uppercase md:tracking-[0.08em] md:text-muted-foreground">
-        <div>Collateral</div>
-        <div>Borrowable</div>
-        <div>Max APY</div>
-        <div>Max leverage</div>
-        <div>Available</div>
+      <div className="hidden md:block">
+        <div className="border-b border-border text-left text-muted-foreground">
+          <div className="grid grid-cols-5">
+            <div className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Collateral</div>
+            <div className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Borrowable</div>
+            <div className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Max APY</div>
+            <div className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Max Leverage</div>
+            <div className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Available</div>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -576,13 +587,25 @@ function MarketSectionRow({
   getAssetLogo: (asset: string) => string | undefined
 }) {
   return (
-    <div className="rounded-[20px] border border-border bg-surface-raised px-4 py-4 shadow-elev-1 transition-colors hover:bg-surface-inset/40">
-      <div className="grid gap-4 md:grid-cols-5">
-        <MarketMetric value={row.protocol} subValue={getSupplyApy(row.protocol) ?? "—"} tone="positive" logo={row.protocolLogo} />
-        <MarketMetric value={row.asset} subValue={getBorrowApy(row.asset) ?? "—"} tone="negative" logo={getAssetLogo(row.asset)} />
-        <MarketMetric value={row.apy || "—"} tone={row.apy && row.apy.startsWith("-") ? "negative" : "positive"} />
-        <MarketMetric value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} subValue={row.rewardRows?.[1]?.label ?? row.rewardRows?.[0]?.label ?? " "} />
-        <MarketMetric value={row.waitlistHref ? "Waitlist" : row.points ?? "—"} subValue={row.waitlistHref ? "Not open yet" : " "} tone={row.waitlistHref ? "neutral" : "default"} cta={row.waitlistHref ? "Join waitlist" : undefined} />
+    <div className="rounded-[20px] border border-border bg-surface-raised shadow-elev-1 transition-colors hover:bg-surface-inset/40">
+      <div className="grid gap-0 md:grid-cols-[24%_22%_18%_18%_18%]">
+        <MarketMetric value={row.protocol} subValue={getSupplyApy(row.protocol) ?? "—"} logo={row.protocolLogo} className="px-6 py-2.5" />
+        <MarketMetric value={row.asset} subValue={getBorrowApy(row.asset) ?? "—"} logo={getAssetLogo(row.asset)} className="px-4 py-2.5" />
+        <MarketMetric value={row.apy || "—"} tone={row.apy && row.apy.startsWith("-") ? "negative" : "positive"} dense className="px-4 py-2.5" />
+        <MarketMetric
+          value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
+          subValue={row.rewardRows?.[1]?.label ?? row.rewardRows?.[0]?.label ?? " "}
+          dense
+          className="px-4 py-2.5"
+        />
+        <MarketMetric
+          value={row.waitlistHref ? "Waitlist" : row.points ?? "—"}
+          subValue={row.waitlistHref ? "Not open yet" : " "}
+          tone={row.waitlistHref ? "neutral" : "default"}
+          cta={row.waitlistHref ? "Join waitlist" : undefined}
+          dense
+          className="px-4 py-2.5 pr-6"
+        />
       </div>
     </div>
   )
@@ -594,12 +617,16 @@ function MarketMetric({
   tone = "default",
   logo,
   cta,
+  dense = false,
+  className,
 }: {
   value: string
   subValue?: string
   tone?: "default" | "positive" | "negative" | "neutral"
   logo?: string
   cta?: string
+  dense?: boolean
+  className?: string
 }) {
   const valueClass =
     tone === "positive"
@@ -611,16 +638,30 @@ function MarketMetric({
           : "text-foreground"
 
   return (
-    <div className="min-w-0">
+    <div className={cn("min-w-0", className)}>
       <div className="flex items-center gap-2">
         {logo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logo} alt="" aria-hidden="true" className="size-8 shrink-0 rounded-full bg-card object-cover" />
+          <img src={logo} alt="" aria-hidden="true" className="size-11 shrink-0 rounded-full bg-card object-cover ring-2 ring-background" />
         ) : null}
         <div className="min-w-0">
-          <div className={cn("truncate text-[15px] font-medium tracking-[-0.03em]", valueClass)}>{value}</div>
-          {subValue ? <div className="mt-0.5 text-[13px] text-muted-foreground">{subValue}</div> : null}
-          {cta ? <div className="mt-0.5 text-[13px] font-medium text-[#01AACF]">{cta}</div> : null}
+          <div
+            className={cn(
+              "truncate tracking-[-0.03em]",
+              dense
+                ? "text-[15px] font-normal tabular-nums text-foreground dark:text-white/84"
+                : "text-[15px] font-medium text-foreground dark:text-white/88",
+              valueClass,
+            )}
+          >
+            {value}
+          </div>
+          {subValue ? (
+            <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+              {subValue}
+            </div>
+          ) : null}
+          {cta ? <div className="mt-0.5 text-[12px] font-medium text-[#01AACF]">{cta}</div> : null}
         </div>
       </div>
     </div>
