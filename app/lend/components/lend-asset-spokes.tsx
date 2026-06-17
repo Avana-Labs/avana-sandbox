@@ -689,47 +689,50 @@ function AssetIcon({ row }: { row: AssetRow }) {
   return <TokenIcon symbol={row.symbol} size="xl" ring className="bg-white dark:bg-[#111111]" />
 }
 
-function AssetRowView({ row, delay }: { row: AssetRow; delay: number }) {
+function AssetRowView({ row, delay, index }: { row: AssetRow; delay: number; index: number }) {
   return (
     <tr
-      className="asset-swap group border-t border-border transition-colors hover:bg-surface-inset/60"
+      className="asset-swap group transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <td className="py-2.5 pl-6 pr-4">
-        <div className="flex min-w-0 items-center gap-4">
+      <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
+        {index + 1}
+      </td>
+      <td className="py-3 pl-6 pr-4">
+        <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88 md:text-[15px]">
+            <div className="truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88 md:text-[14px]">
               {row.name}
             </div>
-            <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
+            <div className="mt-0.5 text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[12px]">
               {row.symbol}
             </div>
           </div>
         </div>
       </td>
 
-      <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
+      <td className="py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
         <div className={cn("flex items-center gap-2", row.apyAccent && "text-[#6d6afb] dark:text-white")}>
           <YieldsBadge accent={row.apyAccent} />
           <span className="tabular-nums">{row.apy}</span>
         </div>
       </td>
 
-      <td className="py-2.5 px-4">
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
+      <td className="py-3 px-4">
+        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
           {row.totalDepositsPrimary}
         </div>
-        <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
+        <div className="mt-0.5 text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[12px]">
           {row.totalDepositsSecondary}
         </div>
       </td>
 
-      <td className="py-2.5 px-6">
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
+      <td className="py-3 px-6">
+        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
           {row.availableLiquidityPrimary}
         </div>
-        <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
+        <div className="mt-0.5 text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[12px]">
           {row.availableLiquiditySecondary}
         </div>
       </td>
@@ -795,12 +798,22 @@ function AssetSection({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
+      <div className="rounded-[18px] bg-white dark:bg-slate-950">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-[12px]">
+          <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px]">
+            <colgroup>
+              <col className="w-[5%]" />
+              <col className="w-[29%]" />
+              <col className="w-[17%]" />
+              <col className="w-[24%]" />
+              <col className="w-[25%]" />
+            </colgroup>
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-                <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  #
+                </th>
+                <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -815,7 +828,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
@@ -830,7 +843,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("deposits")}
@@ -845,7 +858,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("liquidity")}
@@ -865,11 +878,11 @@ function AssetSection({
             <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
-                  <AssetRowView key={row.symbol} row={row} delay={index * 40} />
+                  <AssetRowView key={row.symbol} row={row} delay={index * 40} index={index} />
                 ))
               ) : (
                 <tr>
-                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={4}>
+                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={5}>
                     No assets match these filters.
                   </td>
                 </tr>

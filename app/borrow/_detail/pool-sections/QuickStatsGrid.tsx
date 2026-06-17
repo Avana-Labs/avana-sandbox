@@ -1,10 +1,17 @@
 "use client"
 
-import * as React from "react"
-import type { PoolDetail, AssetDetail } from "@/app/lib/borrow-detail"
 import { cn } from "@/lib/utils"
 
-type Props = { detail: PoolDetail | AssetDetail; className?: string }
+type QuickStatLike = {
+  id: string
+  label: string
+  value: string
+}
+
+type Props = {
+  detail: { quickStats: QuickStatLike[] }
+  className?: string
+}
 
 export function QuickStatsGrid({ detail, className }: Props) {
   const stats = detail.quickStats.slice(0, 8)
