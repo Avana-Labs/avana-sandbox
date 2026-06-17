@@ -24,7 +24,6 @@ import {
 } from "@/app/components/charts"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { TOKENS } from "../../lend/components/data"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PortfolioHeroActions } from "./portfolio-hero-actions"
 import { PortfolioHeroHeader } from "./portfolio-hero-header"
@@ -43,9 +42,8 @@ const RANGE_PERIOD_WORD: Record<ChartRangeOption, string> = {
 }
 
 type PortfolioHeroProps = {
-  openDeposit?: (token: typeof TOKENS[number]) => void
-  openWithdraw?: (token: typeof TOKENS[number]) => void
   tabs?: ReactNode
+  initialNetwork?: NetworkId
   headlineValue?: string
   headlineDelta?: string
   rangeData?: ChartRangeData
@@ -65,14 +63,10 @@ type PortfolioHeroProps = {
 }
 
 function buildActions({
-  openDeposit,
-  openWithdraw,
   actionLabels,
   primaryActionLabel,
   secondaryActionLabel,
 }: {
-  openDeposit?: (token: typeof TOKENS[number]) => void
-  openWithdraw?: (token: typeof TOKENS[number]) => void
   actionLabels?: string[]
   primaryActionLabel: string
   secondaryActionLabel: string
@@ -108,19 +102,11 @@ function buildActions({
   }
 
   return labels.map((label, index) => {
-    const lower = label.toLowerCase()
-    const onClick =
-      lower.includes("deposit") || lower.includes("supply")
-        ? () => openDeposit?.(TOKENS[0])
-        : lower.includes("withdraw") || lower.includes("unwind")
-          ? () => openWithdraw?.(TOKENS[0])
-          : undefined
-
     return {
       id: `${index}-${label.toLowerCase().replace(/\s+/g, "-")}`,
       label,
       icon: resolveIcon(label),
-      onClick,
+      onClick: undefined,
       className: resolveClasses(label),
     }
   })
@@ -153,9 +139,8 @@ function StatCard({ label, value, helpText }: { label: string; value: string; he
 }
 
 export function PortfolioHero({
-  openDeposit,
-  openWithdraw,
   tabs,
+  initialNetwork = "all",
   headlineValue,
   headlineDelta,
   rangeData = DEFAULT_RANGE_DATA,
@@ -175,7 +160,7 @@ export function PortfolioHero({
 }: PortfolioHeroProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const [selectedNetwork, setSelectedNetwork] = useState<NetworkId>("all")
+  const [selectedNetwork, setSelectedNetwork] = useState<NetworkId>(initialNetwork)
   const { showDollarAmounts } = useDisplayPreferences()
 
   const activeNetwork = PORTFOLIO_NETWORKS.find((network) => network.id === selectedNetwork) ?? PORTFOLIO_NETWORKS[0]
@@ -223,8 +208,6 @@ export function PortfolioHero({
   const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
 
   const actions = buildActions({
-    openDeposit,
-    openWithdraw,
     actionLabels,
     primaryActionLabel,
     secondaryActionLabel,

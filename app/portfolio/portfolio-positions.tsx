@@ -2,19 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  homePoolSpoke,
-  homeVisualToBorrowVisual,
-  type BorrowPoolRow,
-} from "@/app/lib/borrow-sim"
-import {
-  HOME_BORROW_TOKENS,
-  HOME_COLLATERAL_POOLS,
-  HOME_INITIAL_DEBTS,
-  type HomeBorrowToken,
-  type HomeCollateralPool,
-} from "@/app/lib/home-sim"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "@/app/borrow/components/repay-remove-modal"
 import {
@@ -27,7 +16,7 @@ import { SuppliesHealthFactorCard, SuppliesPanel, type SupplyRowContext } from "
 
 type DebtsState = Record<string, number>
 
-function computeHealthFactor(pool: HomeCollateralPool, debt: number): number | null {
+function computeHealthFactor(pool: SupplyRowContext["pool"], debt: number): number | null {
   if (debt <= 0) return Number.POSITIVE_INFINITY
   return (pool.collateralUsd * (pool.maxLtv / 100)) / debt
 }
@@ -40,10 +29,6 @@ function averageHealthFactor(rows: Array<{ healthFactor: number | null }>): numb
   return finite.reduce((sum, value) => sum + value, 0) / finite.length
 }
 
-function getUsdcToken(): HomeBorrowToken {
-  return HOME_BORROW_TOKENS.find((token) => token.id === "usdc") ?? HOME_BORROW_TOKENS[1]
-}
-
 function sortByCollateralDesc(rows: SupplyRowContext[]) {
   return [...rows].sort((left, right) => right.pool.collateralUsd - left.pool.collateralUsd)
 }
@@ -52,10 +37,20 @@ function sortByBorrowedDesc(rows: DebtRowContext[]) {
   return [...rows].sort((left, right) => right.borrowedUsd - left.borrowedUsd)
 }
 
-export function PortfolioPositions({ section = "all" }: { section?: "all" | "supplies" | "debts" }) {
+export function PortfolioPositions({
+  section = "all",
+  collateralPositions = [],
+  debtPositions = [],
+}: {
+  section?: "all" | "supplies" | "debts"
+  collateralPositions?: SupplyRowContext[]
+  debtPositions?: DebtRowContext[]
+}) {
   const { showDollarAmounts } = useDisplayPreferences()
   const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">(section === "debts" ? "debts" : "supplies")
-  const [debts, setDebts] = useState<DebtsState>(() => ({ ...HOME_INITIAL_DEBTS }))
+  const [debtState, setDebtState] = useState<DebtsState>(() =>
+    Object.fromEntries(debtPositions.map((row) => [row.pool.id, row.borrowedUsd])),
+  )
   const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
   const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
     open: false,
@@ -67,26 +62,21 @@ export function PortfolioPositions({ section = "all" }: { section?: "all" | "sup
   })
 
   const supplies = useMemo<SupplyRowContext[]>(() => {
-    return HOME_COLLATERAL_POOLS.map((pool) => ({
-      pool,
-      borrowedUsd: debts[pool.id] ?? 0,
-      healthFactor: computeHealthFactor(pool, debts[pool.id] ?? 0),
-      pairApr: pool.pairApr,
-      feesUsd: 0,
-      feesLabel: "$0.00",
+    return collateralPositions.map((row) => ({
+      ...row,
+      borrowedUsd: debtState[row.pool.id] ?? row.borrowedUsd,
+      healthFactor: computeHealthFactor(row.pool, debtState[row.pool.id] ?? row.borrowedUsd),
     }))
-  }, [debts])
+  }, [collateralPositions, debtState])
 
   const debtsRows = useMemo<DebtRowContext[]>(() => {
-    return HOME_COLLATERAL_POOLS.map((pool) => ({
-      pool,
-      borrowedUsd: debts[pool.id] ?? 0,
-      healthFactor: computeHealthFactor(pool, debts[pool.id] ?? 0),
-      borrowApr: getUsdcToken().borrowApr,
-      accruedInterestUsd: 0,
-      dailyInterestUsd: 0,
-    })).filter((row) => row.borrowedUsd > 0)
-  }, [debts])
+    return debtPositions
+      .map((row) => ({
+        ...row,
+        borrowedUsd: debtState[row.pool.id] ?? row.borrowedUsd,
+      }))
+      .filter((row) => row.borrowedUsd > 0)
+  }, [debtPositions, debtState])
 
   const sortedSupplies = useMemo(() => sortByCollateralDesc(supplies), [supplies])
   const sortedDebts = useMemo(() => sortByBorrowedDesc(debtsRows), [debtsRows])
@@ -169,12 +159,12 @@ export function PortfolioPositions({ section = "all" }: { section?: "all" | "sup
   }, [])
 
   const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
-    setDebts((previous) => ({ ...previous, [result.pool.id]: (previous[result.pool.id] ?? 0) + result.amountUsd }))
+    setDebtState((previous) => ({ ...previous, [result.pool.id]: (previous[result.pool.id] ?? 0) + result.amountUsd }))
   }, [])
 
   const handleRepayRemoveConfirm = useCallback((result: RepayRemoveResult) => {
     if (result.mode === "repay") {
-      setDebts((previous) => ({
+      setDebtState((previous) => ({
         ...previous,
         [result.pool.id]: Math.max(0, (previous[result.pool.id] ?? 0) - result.amountUsd),
       }))

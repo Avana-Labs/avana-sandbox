@@ -10,22 +10,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  type PortfolioActivityKind,
-  type PortfolioActivityProduct,
-  type PortfolioActivityStatus,
-} from "@/app/lib/portfolio-activity"
+import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 import { cn } from "@/lib/utils"
-import { usePortfolioActivity } from "./use-portfolio-activity"
 
-const PRODUCT_OPTIONS: Array<{ id: PortfolioActivityProduct; label: string }> = [
+const PRODUCT_OPTIONS: Array<{ id: PortfolioActivityRow["product"]; label: string }> = [
   { id: "borrow", label: "Borrow" },
   { id: "pool", label: "Pools" },
   { id: "lend", label: "Lend" },
   { id: "multiply", label: "Multiply" },
 ]
 
-const ACTION_OPTIONS: Array<{ id: PortfolioActivityKind; label: string }> = [
+const ACTION_OPTIONS: Array<{ id: PortfolioActivityRow["kind"]; label: string }> = [
   { id: "supply", label: "Supply" },
   { id: "withdraw", label: "Withdraw" },
   { id: "borrow", label: "Borrow" },
@@ -41,20 +36,20 @@ const ACTION_OPTIONS: Array<{ id: PortfolioActivityKind; label: string }> = [
   { id: "liquidation", label: "Liquidation" },
 ]
 
-const STATUS_OPTIONS: Array<{ id: PortfolioActivityStatus; label: string }> = [
+const STATUS_OPTIONS: Array<{ id: PortfolioActivityRow["status"]; label: string }> = [
   { id: "confirmed", label: "Confirmed" },
   { id: "pending", label: "Pending" },
   { id: "failed", label: "Failed" },
 ]
 
-const PRODUCT_TONE: Record<PortfolioActivityProduct, string> = {
+const PRODUCT_TONE: Record<PortfolioActivityRow["product"], string> = {
   borrow: "text-sky-700 dark:text-sky-300",
   pool: "text-violet-700 dark:text-violet-300",
   lend: "text-emerald-700 dark:text-emerald-300",
   multiply: "text-amber-700 dark:text-amber-300",
 }
 
-const KIND_TONE: Record<PortfolioActivityKind, string> = {
+const KIND_TONE: Record<PortfolioActivityRow["kind"], string> = {
   supply: "text-emerald-600 dark:text-emerald-400",
   withdraw: "text-rose-600 dark:text-rose-400",
   borrow: "text-rose-600 dark:text-rose-400",
@@ -70,7 +65,7 @@ const KIND_TONE: Record<PortfolioActivityKind, string> = {
   liquidation: "text-amber-600 dark:text-amber-400",
 }
 
-const KIND_LABEL: Record<PortfolioActivityKind, string> = {
+const KIND_LABEL: Record<PortfolioActivityRow["kind"], string> = {
   supply: "Supply",
   withdraw: "Withdraw",
   borrow: "Borrow",
@@ -86,7 +81,7 @@ const KIND_LABEL: Record<PortfolioActivityKind, string> = {
   liquidation: "Liquidation",
 }
 
-const STATUS_TONE: Record<PortfolioActivityStatus, string> = {
+const STATUS_TONE: Record<PortfolioActivityRow["status"], string> = {
   confirmed: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   pending: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   failed: "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
@@ -108,32 +103,10 @@ function toggleValue<T extends string>(values: T[], value: T) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value]
 }
 
-function matchesSearch(row: {
-  amountLabel: string
-  kind: string
-  primaryLabel: string
-  product: string
-  secondaryLabel: string
-  status: string
-  txHash: string
-  txHashShort: string
-}, query: string) {
+function matchesSearch(row: PortfolioActivityRow, query: string) {
   if (!query) return true
-
   const needle = query.toLowerCase()
-  return [
-    row.amountLabel,
-    row.kind,
-    row.primaryLabel,
-    row.product,
-    row.secondaryLabel,
-    row.status,
-    row.txHash,
-    row.txHashShort,
-  ]
-    .join(" ")
-    .toLowerCase()
-    .includes(needle)
+  return [row.amountLabel, row.kind, row.primaryLabel, row.product, row.secondaryLabel, row.status, row.txHash, row.txHashShort].join(" ").toLowerCase().includes(needle)
 }
 
 function SearchPill({
@@ -222,24 +195,21 @@ function FilterMenu<T extends string>({
   )
 }
 
-export function RecentActivity({ walletAddress }: { walletAddress: string }) {
+export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
   const [search, setSearch] = React.useState("")
-  const [products, setProducts] = React.useState<PortfolioActivityProduct[]>([])
-  const [kinds, setKinds] = React.useState<PortfolioActivityKind[]>([])
-  const [statuses, setStatuses] = React.useState<PortfolioActivityStatus[]>([])
-
-  const { data, error, isLoading } = usePortfolioActivity({
-    walletAddress,
-    limit: 50,
-    products: products.length ? products : undefined,
-    kinds: kinds.length ? kinds : undefined,
-    statuses: statuses.length ? statuses : undefined,
-  })
+  const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])
+  const [kinds, setKinds] = React.useState<PortfolioActivityRow["kind"][]>([])
+  const [statuses, setStatuses] = React.useState<PortfolioActivityRow["status"][]>([])
 
   const hasFilters = products.length > 0 || kinds.length > 0 || statuses.length > 0
   const visibleItems = React.useMemo(
-    () => data?.items.filter((row) => matchesSearch(row, search)) ?? [],
-    [data?.items, search],
+    () =>
+      rows
+        .filter((row) => (products.length ? products.includes(row.product) : true))
+        .filter((row) => (kinds.length ? kinds.includes(row.kind) : true))
+        .filter((row) => (statuses.length ? statuses.includes(row.status) : true))
+        .filter((row) => matchesSearch(row, search)),
+    [kinds, products, rows, search, statuses],
   )
 
   return (
@@ -270,16 +240,16 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
       </div>
 
       <div className="overflow-x-auto rounded-[18px] bg-white dark:bg-slate-950 md:overflow-visible">
-        <div className="min-w-[1040px] md:min-w-0">
+        <div className="min-w-[920px] md:min-w-0">
           <table className="w-full table-fixed border-separate border-spacing-0 text-[14px]">
             <colgroup>
-              <col className="w-[88px] md:w-[72px]" />
-              <col className="w-[148px] md:w-[132px]" />
-              <col className="w-[112px] md:w-[100px]" />
-              <col className="w-[280px] md:w-[260px]" />
-              <col className="w-[120px] md:w-[96px]" />
-              <col className="w-[120px] md:w-[112px]" />
-              <col className="w-[132px] md:w-[104px]" />
+              <col className="w-[72px]" />
+              <col className="w-[124px]" />
+              <col className="w-[92px]" />
+              <col />
+              <col className="w-[116px]" />
+              <col className="w-[110px]" />
+              <col className="w-[132px]" />
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -293,34 +263,12 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
-                Array.from({ length: 8 }).map((_, index) => (
-                  <tr key={`loading-${index}`} className="animate-pulse">
-                    <td className="px-5 py-4"><div className="h-4 w-10 rounded bg-slate-200 dark:bg-slate-800" /></td>
-                    <td className="px-5 py-4"><div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-800" /></td>
-                    <td className="px-5 py-4"><div className="h-4 w-16 rounded bg-slate-200 dark:bg-slate-800" /></td>
-                    <td className="px-5 py-4"><div className="h-4 w-48 rounded bg-slate-200 dark:bg-slate-800" /></td>
-                    <td className="px-5 py-4"><div className="h-4 w-20 rounded bg-slate-200 dark:bg-slate-800" /></td>
-                    <td className="px-5 py-4"><div className="h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-800" /></td>
-                    <td className="px-5 py-4"><div className="ml-auto h-4 w-20 rounded bg-slate-200 dark:bg-slate-800" /></td>
-                  </tr>
-                ))
-              ) : error ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-[13px] text-rose-600 dark:text-rose-400">
-                    {error}
-                  </td>
-                </tr>
-              ) : visibleItems.length ? (
+              {visibleItems.length ? (
                 visibleItems.map((row) => (
                   <tr key={row.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-900/70">
-                    <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
-                      {formatRelativeTime(row.at)}
-                    </td>
+                    <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">{formatRelativeTime(row.at)}</td>
                     <td className="px-5 py-4 align-middle">
-                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium", KIND_TONE[row.kind])}>
-                        {KIND_LABEL[row.kind]}
-                      </span>
+                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium", KIND_TONE[row.kind])}>{KIND_LABEL[row.kind]}</span>
                     </td>
                     <td className="px-5 py-4 align-middle">
                       <span className={cn("text-[14px] font-medium", PRODUCT_TONE[row.product])}>
@@ -333,9 +281,7 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
                         <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">
-                      {row.amountLabel}
-                    </td>
+                    <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">{row.amountLabel}</td>
                     <td className="px-5 py-4 align-middle">
                       <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium", STATUS_TONE[row.status])}>
                         {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
