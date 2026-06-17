@@ -59,6 +59,7 @@ type PortfolioHeroProps = {
 type HeroUiConfig = {
   headlineMeta?: string
   actionLabels?: string[]
+  hideBalance?: boolean
   hideChart?: boolean
   hideActions?: boolean
   hideStats?: boolean
@@ -88,6 +89,7 @@ const HERO_UI_CONFIG: Record<PortfolioHeroProps["tab"], HeroUiConfig> = {
   },
   activity: {
     actionLabels: ["Product", "Action", "Status"],
+    hideBalance: true,
     hideChart: true,
     hideActions: true,
     hideStats: true,
@@ -184,6 +186,7 @@ export function PortfolioHero({
   const uiConfig = HERO_UI_CONFIG[tab]
   const isBorrowOverview = tab === "overview"
   const isLoopingOverview = tab === "looping"
+  const showBalance = !uiConfig.hideBalance
 
   const resolvedHeadlineValue = selectedNetwork === "all" ? (headlineValue ?? activeNetwork.balance) : activeNetwork.balance
   const showChart = !isBorrowOverview && !isLoopingOverview && !uiConfig.hideChart
@@ -279,7 +282,7 @@ export function PortfolioHero({
             </div>
           ) : null}
         </div>
-      ) : (
+      ) : showBalance ? (
         <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
             <HeroBalanceDisplay
@@ -322,7 +325,7 @@ export function PortfolioHero({
             </div>
           ) : null}
         </div>
-      )}
+      ) : null}
     </section>
   )
 }

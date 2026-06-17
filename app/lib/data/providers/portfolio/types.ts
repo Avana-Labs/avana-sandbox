@@ -48,8 +48,6 @@ export type PortfolioTabSummary = {
   }
   activity: {
     totalEvents: number
-    settledToday: number
-    pendingToday: number
   }
 }
 
