@@ -351,9 +351,15 @@ export type TxHistoryRow = {
   id: string
   /** ISO timestamp. */
   at: string
+  /** Short relative label shown in the transaction table. */
+  timeLabel?: string
   kind: "supply" | "withdraw" | "borrow" | "repay" | "liquidation" | "rewards"
   amountLabel: string
+  token0AmountLabel?: string
+  token1AmountLabel?: string
   counterpartyLabel?: string
+  walletLabel?: string
+  walletHref?: string
   txHashShort: string
 }
 
