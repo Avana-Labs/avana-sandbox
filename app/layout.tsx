@@ -2,6 +2,7 @@ import "./globals.css"
 import type { Metadata } from "next"
 import localFont from "next/font/local"
 import type React from "react"
+import { Suspense } from "react"
 import { Header } from "./components/header"
 import { DesktopHelpBubble } from "./components/desktop-help-bubble"
 import { Toaster } from "sonner"
@@ -161,7 +162,9 @@ export default function RootLayout({
         >
           <DisplayPreferencesProvider>
             <div className="flex min-h-screen flex-col">
-              <PageLoadingBar />
+              <Suspense fallback={null}>
+                <PageLoadingBar />
+              </Suspense>
               <Header />
               <div className="flex-1">{children}</div>
               <DesktopHelpBubble />
