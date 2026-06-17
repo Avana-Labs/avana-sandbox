@@ -17,6 +17,7 @@ export type DebtRowContext = {
   id?: string
   pool: HomeCollateralPool
   borrowedUsd: number
+  liquidationThresholdUsd: number
   healthFactor: number | null
   borrowApr: number
   accruedInterestUsd: number
@@ -147,7 +148,7 @@ export function DebtsPanel({
                         </div>
                       </td>
                       <td className="py-3 pl-4 text-left">
-                        <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.pool.liquidationUsd))}</div>
+                        <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.liquidationThresholdUsd))}</div>
                         <div className="text-[11px] text-muted-foreground">collateral value</div>
                       </td>
                       <td className="py-3 pl-4 pr-5 text-left">

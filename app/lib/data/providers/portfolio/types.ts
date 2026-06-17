@@ -56,6 +56,7 @@ export type PortfolioTabSummary = {
 export type PortfolioBorrowTabData = {
   creditLines: {
     approvedUsd: number
+    liquidationNumberUsd: number
     averageHealthFactor: number | null
     currentLtvPct: number
     totalBorrowedUsd: number
@@ -64,6 +65,8 @@ export type PortfolioBorrowTabData = {
   collateralPositions: Array<{
     pool: PortfolioPool
     borrowedUsd: number
+    remainingBorrowPowerUsd: number
+    liquidationThresholdUsd: number
     healthFactor: number | null
     pairApr: number
     feesUsd: number
@@ -72,6 +75,7 @@ export type PortfolioBorrowTabData = {
     id: string
     pool: PortfolioPool
     borrowedUsd: number
+    liquidationThresholdUsd: number
     healthFactor: number | null
     borrowApr: number
     accruedInterestUsd: number
