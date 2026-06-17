@@ -70,6 +70,27 @@ function formatRelativeTime(iso: string) {
   return `${Math.floor(totalHours / 24)}d`
 }
 
+function formatSignedUsd(amountUsd: number) {
+  const absoluteValue = Math.abs(amountUsd)
+  const formatted = `$${absoluteValue.toLocaleString("en-US", {
+    notation: "compact",
+    maximumFractionDigits: absoluteValue >= 100_000 ? 1 : 2,
+  })}`
+  return amountUsd > 0 ? `+${formatted}` : amountUsd < 0 ? `-${formatted}` : formatted
+}
+
+function shortHash(txHash: string) {
+  return `${txHash.slice(0, 6)}…${txHash.slice(-4)}`
+}
+
+function getTxnHref(txHash: string) {
+  return `https://etherscan.io/tx/${txHash}`
+}
+
+function formatKindLabel(kind: string) {
+  return kind === "addCollateral" ? "Add collateral" : kind.charAt(0).toUpperCase() + kind.slice(1)
+}
+
 export function PortfolioPositionsTabs({ allowedTabs = [...TABS], initialTab = "Positions", data }: PortfolioPositionsTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
 
@@ -201,8 +222,8 @@ export function PortfolioPositionsTabs({ allowedTabs = [...TABS], initialTab = "
                   {data.history.map((row) => (
                     <tr key={row.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-900/70">
                       <td className="px-4 py-4 font-data text-[13px] tabular-nums text-foreground">{formatRelativeTime(row.at)}</td>
-                      <td className="px-4 py-4 text-[13px] font-medium text-foreground">{row.kind}</td>
-                      <td className="px-4 py-4 font-data text-[13px] tabular-nums text-foreground">{row.amountLabel}</td>
+                      <td className="px-4 py-4 text-[13px] font-medium text-foreground">{formatKindLabel(row.kind)}</td>
+                      <td className="px-4 py-4 font-data text-[13px] tabular-nums text-foreground">{formatSignedUsd(row.amountUsd)}</td>
                       <td className="px-4 py-4">
                         <div className="min-w-0">
                           <div className="truncate text-[13px] font-medium text-foreground">{row.primaryLabel}</div>
@@ -215,8 +236,8 @@ export function PortfolioPositionsTabs({ allowedTabs = [...TABS], initialTab = "
                         </span>
                       </td>
                       <td className="px-4 py-4 text-right">
-                        <a href={row.txHref} target="_blank" rel="noreferrer" className="font-data text-[12px] tabular-nums text-foreground underline-offset-2 hover:underline">
-                          {row.txHashShort}
+                        <a href={getTxnHref(row.txHash)} target="_blank" rel="noreferrer" className="font-data text-[12px] tabular-nums text-foreground underline-offset-2 hover:underline">
+                          {shortHash(row.txHash)}
                         </a>
                       </td>
                     </tr>

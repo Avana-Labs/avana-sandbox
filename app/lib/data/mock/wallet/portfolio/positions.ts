@@ -1,49 +1,12 @@
-import type { HomeCollateralPool } from "@/app/lib/home-sim"
+import type {
+  PortfolioCollateralRecord,
+  PortfolioMultiplyPositionRecord,
+  PortfolioOpenOrderRecord,
+  PortfolioPoolRecord,
+  PortfolioTwapOrderRecord,
+} from "@/app/lib/data/providers/portfolio/source"
 
-export type WalletCollateralRecord = {
-  id: string
-  walletProfileId: string
-  pool: HomeCollateralPool
-  borrowedUsd: number
-  healthFactor: number | null
-  pairApr: number
-  feesUsd: number
-  feesLabel: string
-}
-
-export type WalletMultiplyPositionRecord = {
-  id: string
-  walletProfileId: string
-  symbol: string
-  label: string
-  side: "long" | "short"
-  leverage: number
-  collateralUsd: number
-  exposureUsd: number
-  pnlUsd: number
-  pnlPct: number
-  status: "open" | "closed"
-}
-
-export type WalletOpenOrderRecord = {
-  id: string
-  walletProfileId: string
-  label: string
-  status: "open" | "pending" | "filled"
-  sizeUsd: number
-  venue: string
-}
-
-export type WalletTwapOrderRecord = {
-  id: string
-  walletProfileId: string
-  label: string
-  interval: string
-  status: "active" | "paused" | "completed"
-  amountUsd: number
-}
-
-const ETH_USDC_POOL: HomeCollateralPool = {
+const ETH_USDC_POOL: PortfolioPoolRecord = {
   id: "uni-v3-bluechip-weth-usdc",
   name: "WETH / USDC",
   venue: "Uniswap v3 Bluechip",
@@ -69,7 +32,7 @@ const ETH_USDC_POOL: HomeCollateralPool = {
   ],
 }
 
-const WBTC_WETH_POOL: HomeCollateralPool = {
+const WBTC_WETH_POOL: PortfolioPoolRecord = {
   id: "aerodrome-wbtc-weth",
   name: "WBTC / WETH",
   venue: "Aerodrome",
@@ -95,7 +58,7 @@ const WBTC_WETH_POOL: HomeCollateralPool = {
   ],
 }
 
-const USDC_USDT_POOL: HomeCollateralPool = {
+const USDC_USDT_POOL: PortfolioPoolRecord = {
   id: "curve-usdc-usdt",
   name: "USDC / USDT",
   venue: "Curve",
@@ -121,7 +84,7 @@ const USDC_USDT_POOL: HomeCollateralPool = {
   ],
 }
 
-export const WALLET_COLLATERALS: WalletCollateralRecord[] = [
+export const WALLET_COLLATERALS: PortfolioCollateralRecord[] = [
   {
     id: "collateral-eth-usdc",
     walletProfileId: "demo-wallet",
@@ -130,7 +93,6 @@ export const WALLET_COLLATERALS: WalletCollateralRecord[] = [
     healthFactor: 2.60,
     pairApr: 5.3,
     feesUsd: 418,
-    feesLabel: "$418",
   },
   {
     id: "collateral-wbtc-weth",
@@ -140,7 +102,6 @@ export const WALLET_COLLATERALS: WalletCollateralRecord[] = [
     healthFactor: 2.26,
     pairApr: 4.9,
     feesUsd: 612,
-    feesLabel: "$612",
   },
   {
     id: "collateral-usdc-usdt",
@@ -150,11 +111,10 @@ export const WALLET_COLLATERALS: WalletCollateralRecord[] = [
     healthFactor: 2.50,
     pairApr: 3.1,
     feesUsd: 186,
-    feesLabel: "$186",
   },
 ]
 
-export const WALLET_MULTIPLY_POSITIONS: WalletMultiplyPositionRecord[] = [
+export const WALLET_MULTIPLY_POSITIONS: PortfolioMultiplyPositionRecord[] = [
   {
     id: "mult-eth-loop",
     walletProfileId: "demo-wallet",
@@ -196,7 +156,7 @@ export const WALLET_MULTIPLY_POSITIONS: WalletMultiplyPositionRecord[] = [
   },
 ]
 
-export const WALLET_OPEN_ORDERS: WalletOpenOrderRecord[] = [
+export const WALLET_OPEN_ORDERS: PortfolioOpenOrderRecord[] = [
   {
     id: "open-1",
     walletProfileId: "demo-wallet",
@@ -215,7 +175,7 @@ export const WALLET_OPEN_ORDERS: WalletOpenOrderRecord[] = [
   },
 ]
 
-export const WALLET_TWAP_ORDERS: WalletTwapOrderRecord[] = [
+export const WALLET_TWAP_ORDERS: PortfolioTwapOrderRecord[] = [
   {
     id: "twap-1",
     walletProfileId: "demo-wallet",

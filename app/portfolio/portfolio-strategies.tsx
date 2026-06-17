@@ -21,6 +21,27 @@ function getPoolLogo(poolName: string) {
   return "/placeholder.svg"
 }
 
+const TONE_STYLES: Record<
+  PortfolioStrategyBucket["tone"],
+  { badgeClassName: string; accentClassName: string }
+> = {
+  conservative: {
+    badgeClassName:
+      "rounded-xs border border-blue-500/25 bg-blue-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-blue-700 dark:text-blue-400",
+    accentClassName: "from-blue-500/[0.03]",
+  },
+  moderate: {
+    badgeClassName:
+      "rounded-xs border border-indigo-500/25 bg-indigo-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-indigo-700 dark:text-indigo-400",
+    accentClassName: "from-indigo-500/[0.03]",
+  },
+  aggressive: {
+    badgeClassName:
+      "rounded-xs border border-rose-500/25 bg-rose-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-rose-700 dark:text-rose-400",
+    accentClassName: "from-rose-500/[0.03]",
+  },
+}
+
 export function PortfolioStrategies({ buckets }: { buckets: PortfolioStrategyBucket[] }) {
   return (
     <section className="mb-8 space-y-6">
@@ -34,15 +55,15 @@ export function PortfolioStrategies({ buckets }: { buckets: PortfolioStrategyBuc
       <div className="grid gap-6">
         {buckets.map((strategy) => (
           <Card key={strategy.title} className="relative overflow-hidden border-border bg-surface-raised p-5 shadow-elev-1">
-            <div className={`absolute inset-0 bg-gradient-to-br ${strategy.accentClassName} via-transparent to-transparent`} />
+            <div className={`absolute inset-0 bg-gradient-to-br ${TONE_STYLES[strategy.tone].accentClassName} via-transparent to-transparent`} />
             <div className="relative space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-[14px] font-medium tracking-tight text-foreground">{strategy.title}</h3>
                   <p className="mt-0.5 text-[11.5px] text-muted-foreground">{strategy.description}</p>
                 </div>
-                <Badge variant="secondary" className={strategy.badgeClassName}>
-                  {strategy.badgeLabel}
+                <Badge variant="secondary" className={TONE_STYLES[strategy.tone].badgeClassName}>
+                  {strategy.apyRangeLabel}
                 </Badge>
               </div>
 
@@ -75,12 +96,12 @@ export function PortfolioStrategies({ buckets }: { buckets: PortfolioStrategyBuc
 
                       <div className="flex items-center justify-between text-[11.5px]">
                         <span className="text-muted-foreground">APY</span>
-                        <span className="font-data font-medium tabular-nums text-foreground">{pool.apy}</span>
+                        <span className="font-data font-medium tabular-nums text-foreground">{pool.apyPct.toFixed(1)}%</span>
                       </div>
 
                       <div className="flex items-center justify-between text-[11.5px]">
                         <span className="text-muted-foreground">TVL</span>
-                        <span className="font-data tabular-nums text-foreground">{pool.tvl}</span>
+                        <span className="font-data tabular-nums text-foreground">${pool.tvlUsd.toLocaleString()}</span>
                       </div>
 
                       <div className="-mx-1 h-[56px]">

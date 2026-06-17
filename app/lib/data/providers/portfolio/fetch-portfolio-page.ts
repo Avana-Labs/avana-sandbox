@@ -1,4 +1,5 @@
-import { assemblePortfolioPage } from "@/app/lib/data/mock/wallet/portfolio/assemble-portfolio-page"
+import { mockPortfolioPageSource } from "@/app/lib/data/mock/wallet/portfolio/source"
+import { mapPortfolioPage } from "./map-portfolio-page"
 import type { FetchPortfolioPageInput, PortfolioPageData } from "./types"
 
 function wait(ms: number, signal?: AbortSignal) {
@@ -24,7 +25,12 @@ export async function fetchPortfolioPage(
   options?: { signal?: AbortSignal },
 ): Promise<PortfolioPageData> {
   await wait(180, options?.signal)
-  return assemblePortfolioPage(input.walletProfileId)
+  const records = await mockPortfolioPageSource.getPortfolioPageRecords(input.walletProfileId)
+  return mapPortfolioPage(records)
+}
+
+export function resolvePortfolioWalletProfileId() {
+  return mockPortfolioPageSource.getDefaultWalletProfileId()
 }
 
 export type { FetchPortfolioPageInput, PortfolioPageData, PortfolioTabKey } from "./types"
