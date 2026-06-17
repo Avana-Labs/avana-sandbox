@@ -46,6 +46,7 @@ type PortfolioHeroProps = {
   initialNetwork?: NetworkId
   headlineValue?: string
   headlineDelta?: string
+  headlineMeta?: string
   rangeData?: ChartRangeData
   actionLabels?: string[]
   hideChart?: boolean
@@ -143,6 +144,7 @@ export function PortfolioHero({
   initialNetwork = "all",
   headlineValue,
   headlineDelta,
+  headlineMeta,
   rangeData = DEFAULT_RANGE_DATA,
   actionLabels,
   hideChart = false,
@@ -230,6 +232,7 @@ export function PortfolioHero({
               value={resolvedDisplayValue}
               delta={hoverPoint ? displayDelta : (headlineDelta ?? displayDelta)}
               deltaTone={displayTone}
+              meta={headlineMeta}
               hidden={!showDollarAmounts}
             />
             {hideChart ? null : (

@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { CreditLinesCard } from "./credit-lines-card"
 import { StakeWizard } from "../stake/stake-wizard"
@@ -11,6 +11,7 @@ import { PortfolioPositionsTabs } from "./portfolio-positions-tabs"
 import { RecentActivity } from "./recent-activity"
 import { PortfolioStrategies } from "./portfolio-strategies"
 import { PortfolioTabs, type PortfolioTab } from "./portfolio-tabs"
+import type { BorrowSnapshot } from "./borrow-hero-state"
 import { usePortfolioPage } from "./use-portfolio-page"
 
 function PortfolioSection({
@@ -51,23 +52,42 @@ export function PortfolioDashboard({
 }) {
   const { data } = usePortfolioPage({ walletProfileId }, initialData)
   const [activeTab, setActiveTab] = useState<PortfolioTab>("overview")
+  const [borrowSnapshot, setBorrowSnapshot] = useState<BorrowSnapshot>(() => ({
+    approvedUsd: initialData?.borrow.creditLines.approvedUsd ?? data?.borrow.creditLines.approvedUsd ?? 0,
+    totalBorrowedUsd: initialData?.borrow.creditLines.totalBorrowedUsd ?? data?.borrow.creditLines.totalBorrowedUsd ?? 0,
+    totalCollateralUsd: initialData?.borrow.creditLines.totalCollateralUsd ?? data?.borrow.creditLines.totalCollateralUsd ?? 0,
+    averageHealthFactor: initialData?.borrow.creditLines.averageHealthFactor ?? data?.borrow.creditLines.averageHealthFactor ?? null,
+    currentLtvPct: initialData?.borrow.creditLines.currentLtvPct ?? data?.borrow.creditLines.currentLtvPct ?? 0,
+  }))
+
+  useEffect(() => {
+    if (!data) return
+    setBorrowSnapshot({
+      approvedUsd: data.borrow.creditLines.approvedUsd,
+      totalBorrowedUsd: data.borrow.creditLines.totalBorrowedUsd,
+      totalCollateralUsd: data.borrow.creditLines.totalCollateralUsd,
+      averageHealthFactor: data.borrow.creditLines.averageHealthFactor,
+      currentLtvPct: data.borrow.creditLines.currentLtvPct,
+    })
+  }, [data])
 
   if (!data) return null
 
   return (
     <>
-      <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} pageData={data} />
+      <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} pageData={data} borrowSnapshot={borrowSnapshot} />
 
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-5">
           <PortfolioSectionTitle title="Credit Limits" />
-          <CreditLinesCard creditLines={data.borrow.creditLines} />
+          <CreditLinesCard creditLines={borrowSnapshot} />
           <SectionDivider />
           <PortfolioSection title="Credit Markets">
             <PortfolioPositions
               section="all"
               collateralPositions={data.borrow.collateralPositions}
               debtPositions={data.borrow.debtPositions}
+              onSnapshotChange={setBorrowSnapshot}
             />
           </PortfolioSection>
           <SectionDivider />
