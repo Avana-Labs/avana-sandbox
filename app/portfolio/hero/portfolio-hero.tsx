@@ -67,9 +67,6 @@ type HeroUiConfig = {
 const HERO_UI_CONFIG: Record<PortfolioHeroProps["tab"], HeroUiConfig> = {
   overview: {
     headlineMeta: "Approved credit",
-    hideChart: true,
-    hideActions: true,
-    hideStats: true,
   },
   lending: {
     actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
@@ -180,30 +177,41 @@ export function PortfolioHero({
 
   const activeNetwork = PORTFOLIO_NETWORKS.find((network) => network.id === selectedNetwork) ?? PORTFOLIO_NETWORKS[0]
   const uiConfig = HERO_UI_CONFIG[tab]
+  const isBorrowOverview = tab === "overview"
+  const isLoopingOverview = tab === "looping"
 
+  const resolvedHeadlineValue = selectedNetwork === "all" ? (headlineValue ?? activeNetwork.balance) : activeNetwork.balance
+  const showChart = !isBorrowOverview && !isLoopingOverview && !uiConfig.hideChart
+  const showActions = !uiConfig.hideActions
+  const showStats = !uiConfig.hideStats
   const networkFeed = useMemo(
     () =>
-      getPortfolioHeroFeed({
-        balance: activeNetwork.balance,
-        delta: activeNetwork.delta,
-        chartBase: activeNetwork.chartBase,
-        chartVariance: activeNetwork.chartVariance,
-      }),
-    [activeNetwork.balance, activeNetwork.delta, activeNetwork.chartBase, activeNetwork.chartVariance],
+      showChart
+        ? getPortfolioHeroFeed({
+            balance: activeNetwork.balance,
+            delta: activeNetwork.delta,
+            chartBase: activeNetwork.chartBase,
+            chartVariance: activeNetwork.chartVariance,
+          })
+        : null,
+    [activeNetwork.balance, activeNetwork.delta, activeNetwork.chartBase, activeNetwork.chartVariance, showChart],
   )
 
   const displayRangeData = useMemo(() => {
+    if (!showChart) {
+      return null
+    }
     if (selectedNetwork === "all" && rangeData) {
       return rangeData
     }
-    return networkFeed.rangeData
-  }, [networkFeed.rangeData, rangeData, selectedNetwork])
+    return networkFeed?.rangeData ?? DEFAULT_RANGE_DATA
+  }, [networkFeed?.rangeData, rangeData, selectedNetwork, showChart])
 
   // Delta + color track the active range's real trend, so a dip turns red.
-  const activePoints = displayRangeData[activeRange]
-  const trendTone = resolveSeriesTone(activePoints)
-  const trendChange = resolveSeriesChange(activePoints)
-  const hoverPoint = hoverIndex == null ? null : activePoints[hoverIndex] ?? null
+  const activePoints = displayRangeData?.[activeRange] ?? []
+  const trendTone = showChart ? resolveSeriesTone(activePoints) : "positive"
+  const trendChange = showChart ? resolveSeriesChange(activePoints) : null
+  const hoverPoint = showChart && hoverIndex != null ? activePoints[hoverIndex] ?? null : null
   const firstPoint = activePoints[0]
   const displayPoint = hoverPoint ?? activePoints[activePoints.length - 1]
   const displayTone = hoverPoint
@@ -211,25 +219,30 @@ export function PortfolioHero({
       ? "positive"
       : "negative"
     : trendTone
-  const displayDelta = hoverPoint ? (() => {
-    const baseValue = firstPoint?.value ?? hoverPoint.value
-    const changeAbs = Math.abs(hoverPoint.value - baseValue)
-    const pct = baseValue ? ((hoverPoint.value - baseValue) / baseValue) * 100 : 0
-    return `${formatChartValue("usd", changeAbs)} (${Math.abs(pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
-  })() : `$${trendChange.changeAbs.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} (${Math.abs(trendChange.pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
-  const resolvedHeadlineValue = selectedNetwork === "all" ? (headlineValue ?? activeNetwork.balance) : activeNetwork.balance
+  const displayDelta = showChart && trendChange
+    ? hoverPoint
+      ? (() => {
+          const baseValue = firstPoint?.value ?? hoverPoint.value
+          const changeAbs = Math.abs(hoverPoint.value - baseValue)
+          const pct = baseValue ? ((hoverPoint.value - baseValue) / baseValue) * 100 : 0
+          return `${formatChartValue("usd", changeAbs)} (${Math.abs(pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
+        })()
+      : `$${trendChange.changeAbs.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} (${Math.abs(trendChange.pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
+    : undefined
   const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
+  const resolvedHeadlineDelta = headlineDelta ?? displayDelta
+  const overviewDelta = headlineDelta ?? undefined
 
-  const actions = uiConfig.hideActions
-    ? []
-    : buildActions({
+  const actions = showActions
+    ? buildActions({
         actionLabels: uiConfig.actionLabels,
         primaryActionLabel: uiConfig.actionLabels?.[0] ?? "Deposit",
         secondaryActionLabel: uiConfig.actionLabels?.[1] ?? "Withdraw",
       })
+    : []
 
   return (
     <section className="mb-8">
@@ -241,17 +254,27 @@ export function PortfolioHero({
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-      {uiConfig.hideChart && uiConfig.hideActions && uiConfig.hideStats ? null : (
-        <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
+      {isBorrowOverview || isLoopingOverview ? (
+        <div className="mt-5">
+          <HeroBalanceDisplay
+            value={resolvedDisplayValue}
+            delta={headlineDelta ?? (isLoopingOverview ? undefined : overviewDelta)}
+            deltaTone={isLoopingOverview ? (headlineDelta?.includes("-") ? "negative" : "positive") : "positive"}
+            meta={uiConfig.headlineMeta}
+            hidden={!showDollarAmounts}
+          />
+        </div>
+      ) : (
+        <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
             <HeroBalanceDisplay
               value={resolvedDisplayValue}
-              delta={hoverPoint ? displayDelta : (headlineDelta ?? displayDelta)}
+              delta={resolvedHeadlineDelta}
               deltaTone={displayTone}
               meta={uiConfig.headlineMeta}
               hidden={!showDollarAmounts}
             />
-            {uiConfig.hideChart ? null : (
+            {showChart ? (
               <HeroChartSection
                 rangeData={displayRangeData}
                 activeRange={activeRange}
@@ -263,31 +286,26 @@ export function PortfolioHero({
                 gradientId="portfolioHeroFill"
                 tone={trendTone}
               />
-            )}
+            ) : null}
           </div>
 
-          {uiConfig.hideActions && uiConfig.hideStats ? null : (
+          {showActions || showStats ? (
             <div className="flex min-w-0 flex-col gap-3 lg:pt-0">
-              {uiConfig.hideActions ? null : <PortfolioHeroActions actions={actions} />}
-              {uiConfig.hideStats &&
+              {showActions ? <PortfolioHeroActions actions={actions} /> : null}
+              {showStats &&
               uiConfig.statOneLabel &&
               statOneValue &&
               uiConfig.statOneHelpText &&
               uiConfig.statTwoLabel &&
               statTwoValue &&
-              uiConfig.statTwoHelpText ? null : uiConfig.statOneLabel &&
-                statOneValue &&
-                uiConfig.statOneHelpText &&
-                uiConfig.statTwoLabel &&
-                statTwoValue &&
-                uiConfig.statTwoHelpText ? (
+              uiConfig.statTwoHelpText ? (
                 <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-white/10">
                   <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} />
                   <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} />
                 </div>
               ) : null}
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </section>
