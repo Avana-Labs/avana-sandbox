@@ -540,7 +540,8 @@ function buildTransactions(asset: BorrowableAsset): TxHistoryRow[] {
     const amount = Math.round((10_000 + rand() * 240_000) / 100) * 100
     const ageMs = i * 28_000 + Math.floor(rand() * 6_000)
     const at = new Date(now - ageMs).toISOString()
-    const walletLabel = `0x${Math.floor(rand() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(rand() * 0xffff).toString(16).padStart(4, "0")}`
+    const walletAddress = `0x${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}`
+    const walletLabel = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     out.push({
       id: `${asset.id}-tx-${i}`,
       at,
@@ -549,6 +550,7 @@ function buildTransactions(asset: BorrowableAsset): TxHistoryRow[] {
       amountLabel: `${kind === "borrow" || kind === "withdraw" ? "-" : "+"}${formatCompactUsd(amount)}`,
       counterpartyLabel: kind === "liquidation" ? "Liquidator" : undefined,
       walletLabel,
+      walletHref: `https://etherscan.io/address/${walletAddress}`,
       txHashShort: `0x${Math.floor(rand() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(rand() * 0xffff).toString(16).padStart(4, "0")}`,
     })
   }
