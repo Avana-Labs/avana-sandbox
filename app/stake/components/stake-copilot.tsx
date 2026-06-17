@@ -11,12 +11,6 @@ import {
   Zap,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 
 type StakeCopilotProps = {
   currentStep: number
@@ -95,49 +89,33 @@ export function StakeCopilot({ currentStep }: StakeCopilotProps) {
         </CardContent>
       </Card>
 
-      <TooltipProvider>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-[13px] font-medium">
-              <HelpCircle className="h-3.5 w-3.5 text-accent-primary" />
-              Quick tips
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="px-3 py-2 rounded-radius-sm border border-border bg-surface-inset cursor-help">
-                    <p className="text-[12.5px] font-medium text-foreground">Staking APR</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Estimated reward rate</p>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
-                    Illustrative APR from your stake size, lock length, and pool TVL—actual rewards depend on the live
-                    program.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="px-3 py-2 rounded-radius-sm border border-border bg-surface-inset cursor-help">
-                    <p className="text-[12.5px] font-medium text-foreground">Lock period</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Funds committed for the term</p>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
-                    While staked, principal may be unusable until the lock ends or you pay any early exit penalty the
-                    protocol defines.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-[13px] font-medium">
+            <HelpCircle className="h-3.5 w-3.5 text-accent-primary" />
+            Quick tips
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2">
+            <div
+              className="cursor-help rounded-radius-sm border border-border bg-surface-inset px-3 py-2"
+              title="Illustrative APR from your stake size, lock length, and pool TVL—actual rewards depend on the live program."
+            >
+              <p className="text-[12.5px] font-medium text-foreground">Staking APR</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">Estimated reward rate</p>
             </div>
-          </CardContent>
-        </Card>
-      </TooltipProvider>
+
+            <div
+              className="cursor-help rounded-radius-sm border border-border bg-surface-inset px-3 py-2"
+              title="While staked, principal may be unusable until the lock ends or you pay any early exit penalty the protocol defines."
+            >
+              <p className="text-[12.5px] font-medium text-foreground">Lock period</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">Funds committed for the term</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   )
 }
