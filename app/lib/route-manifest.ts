@@ -15,7 +15,6 @@ const STATIC_ROUTES: SiteRoute[] = [
   { route: "/rewards", priority: 0.72 },
   { route: "/portfolio", priority: 0.65 },
   { route: "/support-center", priority: 0.45 },
-  { route: "/risk-warning", priority: 0.5 },
 ]
 
 /** Caches server route metadata to avoid recalculating the route manifest on every request. */
