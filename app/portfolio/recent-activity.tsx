@@ -214,17 +214,17 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
         </div>
       </div>
 
-      <div className="max-w-[1040px] overflow-x-auto rounded-[18px] bg-white dark:bg-slate-950">
-        <div className="min-w-[1040px]">
+      <div className="overflow-x-auto rounded-[18px] bg-white dark:bg-slate-950 md:overflow-visible">
+        <div className="min-w-[1040px] md:min-w-0">
           <table className="w-full table-fixed border-separate border-spacing-0 text-[14px]">
             <colgroup>
-              <col className="w-[88px]" />
-              <col className="w-[148px]" />
-              <col className="w-[112px]" />
-              <col className="w-[280px]" />
-              <col className="w-[120px]" />
-              <col className="w-[120px]" />
-              <col className="w-[132px]" />
+              <col className="w-[88px] md:w-[72px]" />
+              <col className="w-[148px] md:w-[132px]" />
+              <col className="w-[112px] md:w-[100px]" />
+              <col className="w-[280px] md:w-[260px]" />
+              <col className="w-[120px] md:w-[96px]" />
+              <col className="w-[120px] md:w-[112px]" />
+              <col className="w-[132px] md:w-[104px]" />
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -232,7 +232,7 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
                 <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Type</th>
                 <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Product</th>
                 <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">For</th>
-                <th className="bg-slate-50 px-5 py-3.5 text-right dark:bg-slate-900/90">Amount</th>
+                <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Amount</th>
                 <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Status</th>
                 <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right dark:bg-slate-900/90">Txn</th>
               </tr>
@@ -245,7 +245,7 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
                     <td className="px-5 py-4"><div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-800" /></td>
                     <td className="px-5 py-4"><div className="h-4 w-16 rounded bg-slate-200 dark:bg-slate-800" /></td>
                     <td className="px-5 py-4"><div className="h-4 w-48 rounded bg-slate-200 dark:bg-slate-800" /></td>
-                    <td className="px-5 py-4"><div className="ml-auto h-4 w-20 rounded bg-slate-200 dark:bg-slate-800" /></td>
+                    <td className="px-5 py-4"><div className="h-4 w-20 rounded bg-slate-200 dark:bg-slate-800" /></td>
                     <td className="px-5 py-4"><div className="h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-800" /></td>
                     <td className="px-5 py-4"><div className="ml-auto h-4 w-20 rounded bg-slate-200 dark:bg-slate-800" /></td>
                   </tr>
@@ -278,7 +278,7 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
                         <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 align-middle text-right font-data text-[14px] font-medium tabular-nums text-foreground">
+                    <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">
                       {row.amountLabel}
                     </td>
                     <td className="px-5 py-4 align-middle">
@@ -291,7 +291,7 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
                         href={row.txHref}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
+                        className="inline-block whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
                       >
                         {row.txHashShort}
                       </a>
