@@ -50,13 +50,13 @@ export function CreditLinesCard({
 }: {
   creditLines: {
     approvedUsd: number
+    liquidationNumberUsd: number
     averageHealthFactor: number | null
     currentLtvPct: number
     totalBorrowedUsd: number
     totalCollateralUsd: number
   }
 }) {
-  const approvedUsd = creditLines.approvedUsd
   const averageHealthFactor = creditLines.averageHealthFactor
   const currentLtv = creditLines.currentLtvPct
   const totalBorrowed = creditLines.totalBorrowedUsd
@@ -65,10 +65,8 @@ export function CreditLinesCard({
     <section className="w-full space-y-4">
       <div className="grid w-full grid-cols-2 gap-x-5 gap-y-4 md:grid-cols-4 md:gap-x-8 md:gap-y-5">
         <StoryMetric
-          value={`$${approvedUsd.toLocaleString("en-US")}`}
-          label="You&apos;re approved for"
-          delta="+3.8%"
-          deltaTone="positive"
+          value={`$${creditLines.liquidationNumberUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+          label="Liquidation Number"
         />
         <StoryMetric
           value={averageHealthFactor ? averageHealthFactor.toFixed(2) : "—"}

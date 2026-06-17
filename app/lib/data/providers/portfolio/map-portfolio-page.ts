@@ -1,5 +1,6 @@
 import { CHART_RANGE_LABELS, type ChartPoint, type ChartRangeOption } from "@/app/components/charts"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
+import { calculateLiquidationNumberUsd } from "./liquidation"
 import type { PortfolioPageData, PortfolioHeroData, PortfolioTabKey } from "./types"
 import type { PortfolioPageRecords, PortfolioSnapshotRecord } from "./source"
 
@@ -193,6 +194,13 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
   const totalCollateralUsd = collaterals.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
   const totalDebtUsd = debts.reduce((sum, row) => sum + row.borrowedUsd, 0)
   const availableToBorrowUsd = collaterals.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
+  const liquidationNumberUsd = calculateLiquidationNumberUsd(
+    collaterals.map((row) => ({
+      borrowedUsd: row.borrowedUsd,
+      referenceBorrowedUsd: row.borrowedUsd,
+      referenceLiquidationUsd: row.pool.liquidationUsd,
+    })),
+  )
   const currentLtvPct = totalCollateralUsd ? (totalDebtUsd / totalCollateralUsd) * 100 : 0
   const collateralHealthFactors = collaterals
     .map((row) => computeHealthFactor(row.pool.collateralUsd, row.pool.maxLtv, row.borrowedUsd))
@@ -277,12 +285,17 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
     borrow: {
       creditLines: {
         approvedUsd: availableToBorrowUsd,
+        liquidationNumberUsd,
         averageHealthFactor,
         currentLtvPct,
         totalBorrowedUsd: totalDebtUsd,
         totalCollateralUsd,
       },
-      collateralPositions: collaterals,
+      collateralPositions: collaterals.map((row) => ({
+        ...row,
+        remainingBorrowPowerUsd: Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd),
+        liquidationThresholdUsd: row.pool.liquidationUsd,
+      })),
       debtPositions: debts.map((debt, index) => {
         const matchingCollateral = collaterals.find((row) => row.pool.id === debt.poolId)
         const fallbackCollateral = collaterals[index % collaterals.length] ?? collaterals[0]
@@ -293,6 +306,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
           id: debt.id,
           pool: resolvedCollateral.pool,
           borrowedUsd: debt.borrowedUsd,
+          liquidationThresholdUsd: resolvedCollateral.pool.liquidationUsd,
           healthFactor,
           borrowApr: debt.borrowAprPct,
           accruedInterestUsd: debt.accruedInterestUsd,

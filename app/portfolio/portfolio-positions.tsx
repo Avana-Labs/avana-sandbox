@@ -79,6 +79,12 @@ export function PortfolioPositions({
     return collateralState.map((row) => ({
       ...row,
       borrowedUsd: debtState[row.pool.id] ?? row.borrowedUsd,
+      remainingBorrowPowerUsd: Math.max(
+        0,
+        row.remainingBorrowPowerUsd + row.borrowedUsd - (debtState[row.pool.id] ?? row.borrowedUsd),
+      ),
+      liquidationThresholdUsd:
+        row.borrowedUsd > 0 ? (row.liquidationThresholdUsd / row.borrowedUsd) * (debtState[row.pool.id] ?? row.borrowedUsd) : 0,
       healthFactor: computeHealthFactor(row.pool, debtState[row.pool.id] ?? row.borrowedUsd),
     }))
   }, [collateralState, debtState])
@@ -88,6 +94,9 @@ export function PortfolioPositions({
       .map((row) => ({
         ...row,
         borrowedUsd: debtState[row.pool.id] ?? row.borrowedUsd,
+        liquidationThresholdUsd:
+          row.borrowedUsd > 0 ? (row.liquidationThresholdUsd / row.borrowedUsd) * (debtState[row.pool.id] ?? row.borrowedUsd) : 0,
+        healthFactor: computeHealthFactor(row.pool, debtState[row.pool.id] ?? row.borrowedUsd),
       }))
       .filter((row) => row.borrowedUsd > 0)
   }, [debtPositions, debtState])
@@ -98,7 +107,7 @@ export function PortfolioPositions({
   const supplyTotals = useMemo(() => {
     const collateral = supplies.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
     const borrowed = supplies.reduce((sum, row) => sum + row.borrowedUsd, 0)
-    const available = supplies.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
+    const available = supplies.reduce((sum, row) => sum + row.remainingBorrowPowerUsd, 0)
     const fees = supplies.reduce((sum, row) => sum + row.feesUsd, 0)
     const averageHf = averageHealthFactor(supplies.filter((row) => row.borrowedUsd > 0))
     return { collateral, borrowed, available, fees, averageHf }
@@ -217,17 +226,19 @@ export function PortfolioPositions({
   const borrowSnapshot = useMemo<BorrowSnapshot>(() => {
     const totalCollateralUsd = supplies.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
     const totalBorrowedUsd = debtTotals.totalBorrowed
-    const approvedUsd = supplies.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
+    const approvedUsd = supplies.reduce((sum, row) => sum + row.remainingBorrowPowerUsd, 0)
+    const liquidationNumberUsd = debtsRows.reduce((sum, row) => sum + row.liquidationThresholdUsd, 0)
     const currentLtvPct = totalCollateralUsd > 0 ? (totalBorrowedUsd / totalCollateralUsd) * 100 : 0
 
     return {
       approvedUsd,
+      liquidationNumberUsd,
       totalBorrowedUsd,
       totalCollateralUsd,
       averageHealthFactor: debtTotals.averageHf ?? supplyTotals.averageHf,
       currentLtvPct,
     }
-  }, [debtTotals.averageHf, debtTotals.totalBorrowed, supplies, supplyTotals.averageHf])
+  }, [debtTotals.averageHf, debtTotals.totalBorrowed, debtsRows, supplies, supplyTotals.averageHf])
 
   useEffect(() => {
     onSnapshotChange?.(borrowSnapshot)
