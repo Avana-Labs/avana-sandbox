@@ -14,6 +14,13 @@ import { PortfolioTabs, type PortfolioTab } from "./portfolio-tabs"
 import type { BorrowSnapshot } from "./borrow-hero-state"
 import { usePortfolioPage } from "./use-portfolio-page"
 
+function formatUsd(value: number) {
+  return `$${value.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: value >= 1000 ? 0 : 2,
+  })}`
+}
+
 function PortfolioSection({
   title,
   children,
@@ -86,7 +93,10 @@ export function PortfolioDashboard({
           <PortfolioSection title="Credit Markets">
             <PortfolioPositions
               section="all"
-              collateralPositions={data.borrow.collateralPositions}
+              collateralPositions={data.borrow.collateralPositions.map((position) => ({
+                ...position,
+                feesLabel: formatUsd(position.feesUsd),
+              }))}
               debtPositions={data.borrow.debtPositions}
               onSnapshotChange={setBorrowSnapshot}
             />

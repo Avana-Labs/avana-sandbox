@@ -42,25 +42,58 @@ const RANGE_PERIOD_WORD: Record<ChartRangeOption, string> = {
 }
 
 type PortfolioHeroProps = {
+  tab: "overview" | "lending" | "looping" | "activity"
   tabs?: ReactNode
   initialNetwork?: NetworkId
   headlineValue?: string
   headlineDelta?: string
-  headlineMeta?: string
   rangeData?: ChartRangeData
-  actionLabels?: string[]
+  statOneValue?: string
+  statTwoValue?: string
+  walletName?: string
+}
+
+type HeroUiConfig = {
+  headlineMeta?: string
+  actionLabels: string[]
   hideChart?: boolean
   hideActions?: boolean
   hideStats?: boolean
-  primaryActionLabel?: string
-  secondaryActionLabel?: string
   statOneLabel?: string
-  statOneValue?: string
   statOneHelpText?: string
   statTwoLabel?: string
-  statTwoValue?: string
   statTwoHelpText?: string
-  walletName?: string
+}
+
+const HERO_UI_CONFIG: Record<PortfolioHeroProps["tab"], HeroUiConfig> = {
+  overview: {
+    headlineMeta: "Approved credit",
+    actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
+    statOneLabel: "Current borrowed",
+    statOneHelpText: "Open debt across active borrow positions.",
+    statTwoLabel: "Credit health",
+    statTwoHelpText: "Average health factor across active borrow-linked collateral.",
+  },
+  lending: {
+    actionLabels: ["Supply assets", "Withdraw yield"],
+    statOneLabel: "Average APY",
+    statOneHelpText: "Weighted average APY across supplied assets in the wallet.",
+    statTwoLabel: "Earned",
+    statTwoHelpText: "Total yield already accrued by the portfolio.",
+  },
+  looping: {
+    actionLabels: ["Increase loop", "Unwind loop"],
+    statOneLabel: "Open positions",
+    statOneHelpText: "Open multiply positions in the wallet profile.",
+    statTwoLabel: "Net carry",
+    statTwoHelpText: "Average realized carry across the current multiply book.",
+  },
+  activity: {
+    actionLabels: ["Product", "Action", "Status"],
+    hideChart: true,
+    hideActions: true,
+    hideStats: true,
+  },
 }
 
 function buildActions({
@@ -140,24 +173,14 @@ function StatCard({ label, value, helpText }: { label: string; value: string; he
 }
 
 export function PortfolioHero({
+  tab,
   tabs,
   initialNetwork = "all",
   headlineValue,
   headlineDelta,
-  headlineMeta,
   rangeData = DEFAULT_RANGE_DATA,
-  actionLabels,
-  hideChart = false,
-  hideActions = false,
-  hideStats = false,
-  primaryActionLabel = "Deposit",
-  secondaryActionLabel = "Withdraw",
-  statOneLabel = "Average APY",
   statOneValue = "4.92%",
-  statOneHelpText = "Weighted average APY across all your deposited assets.",
-  statTwoLabel = "Interest earned",
   statTwoValue = "+$12.46",
-  statTwoHelpText = "Total yield earned from all active positions over time.",
   walletName = "Demo wallet",
 }: PortfolioHeroProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
@@ -166,6 +189,7 @@ export function PortfolioHero({
   const { showDollarAmounts } = useDisplayPreferences()
 
   const activeNetwork = PORTFOLIO_NETWORKS.find((network) => network.id === selectedNetwork) ?? PORTFOLIO_NETWORKS[0]
+  const uiConfig = HERO_UI_CONFIG[tab]
 
   const networkFeed = useMemo(
     () =>
@@ -210,9 +234,9 @@ export function PortfolioHero({
   const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
 
   const actions = buildActions({
-    actionLabels,
-    primaryActionLabel,
-    secondaryActionLabel,
+    actionLabels: uiConfig.actionLabels,
+    primaryActionLabel: uiConfig.actionLabels[0] ?? "Deposit",
+    secondaryActionLabel: uiConfig.actionLabels[1] ?? "Withdraw",
   })
 
   return (
@@ -225,17 +249,17 @@ export function PortfolioHero({
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-      {hideChart && hideActions && hideStats ? null : (
+      {uiConfig.hideChart && uiConfig.hideActions && uiConfig.hideStats ? null : (
         <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
             <HeroBalanceDisplay
               value={resolvedDisplayValue}
               delta={hoverPoint ? displayDelta : (headlineDelta ?? displayDelta)}
               deltaTone={displayTone}
-              meta={headlineMeta}
+              meta={uiConfig.headlineMeta}
               hidden={!showDollarAmounts}
             />
-            {hideChart ? null : (
+            {uiConfig.hideChart ? null : (
               <HeroChartSection
                 rangeData={displayRangeData}
                 activeRange={activeRange}
@@ -250,13 +274,24 @@ export function PortfolioHero({
             )}
           </div>
 
-          {hideActions && hideStats ? null : (
+          {uiConfig.hideActions && uiConfig.hideStats ? null : (
             <div className="flex min-w-0 flex-col gap-3 lg:pt-0">
-              {hideActions ? null : <PortfolioHeroActions actions={actions} />}
-              {hideStats && statOneLabel && statOneValue && statOneHelpText && statTwoLabel && statTwoValue && statTwoHelpText ? null : statOneLabel && statOneValue && statOneHelpText && statTwoLabel && statTwoValue && statTwoHelpText ? (
+              {uiConfig.hideActions ? null : <PortfolioHeroActions actions={actions} />}
+              {uiConfig.hideStats &&
+              uiConfig.statOneLabel &&
+              statOneValue &&
+              uiConfig.statOneHelpText &&
+              uiConfig.statTwoLabel &&
+              statTwoValue &&
+              uiConfig.statTwoHelpText ? null : uiConfig.statOneLabel &&
+                statOneValue &&
+                uiConfig.statOneHelpText &&
+                uiConfig.statTwoLabel &&
+                statTwoValue &&
+                uiConfig.statTwoHelpText ? (
                 <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-white/10">
-                  <StatCard label={statOneLabel} value={statOneValue} helpText={statOneHelpText} />
-                  <StatCard label={statTwoLabel} value={statTwoValue} helpText={statTwoHelpText} />
+                  <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} />
+                  <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} />
                 </div>
               ) : null}
             </div>

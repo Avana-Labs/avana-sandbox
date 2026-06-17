@@ -49,23 +49,13 @@ export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot
     <section className="mb-6 sm:mb-8">
       <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as PortfolioTab)}>
       <PortfolioHero
+          tab={activeTab}
           tabs={tabBar}
           initialNetwork={pageData.walletProfile.selectedNetwork}
           headlineValue={activeHero.headlineValue}
           headlineDelta={activeHero.headlineDelta}
-          headlineMeta={activeHero.headlineMeta}
-          actionLabels={activeHero.actionLabels}
-          hideChart={activeHero.hideChart}
-          hideActions={activeHero.hideActions}
-          hideStats={activeHero.hideStats}
-          primaryActionLabel={activeHero.primaryActionLabel}
-          secondaryActionLabel={activeHero.secondaryActionLabel}
-          statOneLabel={activeHero.statOneLabel}
           statOneValue={activeHero.statOneValue}
-          statOneHelpText={activeHero.statOneHelpText}
-          statTwoLabel={activeHero.statTwoLabel}
           statTwoValue={activeHero.statTwoValue}
-          statTwoHelpText={activeHero.statTwoHelpText}
           rangeData={activeHero.rangeData}
           walletName={pageData.walletProfile.displayName}
         />
