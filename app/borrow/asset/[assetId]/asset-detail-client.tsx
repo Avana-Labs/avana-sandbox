@@ -115,7 +115,10 @@ export function AssetDetailClient({ detail }: Props) {
                   accentClassName={detail.hero.visual.textClass}
                 />
               </div>
-              <TransactionHistoryCard transactions={detail.transactions} />
+              <TransactionHistoryCard
+                transactions={detail.transactions}
+                assetSymbol={detail.hero.symbol}
+              />
               <AboutNewsSection
                 className="lg:hidden"
                 about={detail.about}
