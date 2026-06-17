@@ -24,6 +24,9 @@ const TAB_DETAILS: Record<
     headlineValue: string
     headlineDelta: string
     actionLabels?: string[]
+    hideChart?: boolean
+    hideActions?: boolean
+    hideStats?: boolean
     primaryActionLabel: string
     secondaryActionLabel: string
     statOneLabel?: string
@@ -70,16 +73,13 @@ const TAB_DETAILS: Record<
     rangeData: buildRangeData(198, 18),
   },
   activity: {
-    headlineValue: "42",
-    headlineDelta: "12 settled, 4 pending today",
-    primaryActionLabel: "View fills",
-    secondaryActionLabel: "Export log",
-    statOneLabel: "Orders",
-    statOneValue: "21",
-    statOneHelpText: "Total order events captured in the current activity window.",
-    statTwoLabel: "Settled actions",
-    statTwoValue: "12",
-    statTwoHelpText: "Completed deposits, withdrawals, and fills in the selected period.",
+    headlineValue: "",
+    headlineDelta: "",
+    hideChart: true,
+    hideActions: true,
+    hideStats: true,
+    primaryActionLabel: "",
+    secondaryActionLabel: "",
     rangeData: buildRangeData(42, 6),
   },
 }
@@ -116,6 +116,9 @@ export function PortfolioTabs({ activeTab, onTabChange }: PortfolioTabsProps) {
           headlineValue={activeTabConfig.headlineValue}
           headlineDelta={activeTabConfig.headlineDelta}
           actionLabels={activeTabConfig.actionLabels}
+          hideChart={activeTabConfig.hideChart}
+          hideActions={activeTabConfig.hideActions}
+          hideStats={activeTabConfig.hideStats}
           primaryActionLabel={activeTabConfig.primaryActionLabel}
           secondaryActionLabel={activeTabConfig.secondaryActionLabel}
           statOneLabel={activeTabConfig.statOneLabel}
