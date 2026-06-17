@@ -240,12 +240,13 @@ export function Header() {
       <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">
         <SearchCommand iconOnly />
       </span>
-      <Link
-        href="/login"
+      <button
+        type="button"
+        aria-label="Connect"
         className="inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
       >
         Connect
-      </Link>
+      </button>
     </>
   )
 
@@ -312,7 +313,7 @@ export function Header() {
               </nav>
             </div>
 
-            <div className="absolute left-1/2 flex w-full max-w-[410px] -translate-x-1/2 justify-center px-4">
+            <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4 xl:max-w-[410px]">
               <SearchCommand />
             </div>
 
@@ -347,12 +348,14 @@ export function Header() {
 
               <PreferencesMenu />
 
-              <Link
-                href="/login"
+              <button
+                type="button"
+                aria-label="Connect"
                 className="inline-flex h-10 items-center justify-center rounded-full bg-brand px-4 font-sans text-[15px] font-medium text-brand-foreground shadow-none transition-colors hover:bg-brand/90"
               >
                 Connect
-              </Link>
+              </button>
+
             </div>
           </div>
         </div>

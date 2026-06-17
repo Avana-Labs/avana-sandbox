@@ -9,21 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import {
-  AlertTriangle,
-  ArrowUpRight,
-  CircleUserRound,
-  Code2,
-  Eye,
-  EyeOff,
-  FileText,
-  LifeBuoy,
-  Mail,
-  Moon,
-  Shield,
-  Sun,
-  type LucideIcon,
-} from "lucide-react"
+import { ArrowUpRight, CircleUserRound, Code2, Eye, EyeOff, FileText, LifeBuoy, Mail, Moon, Shield, Sun, type LucideIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
@@ -97,12 +83,6 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
   const menuContentClass = "rounded-radius-sm border border-border bg-popover p-1 shadow-elev-3"
 
   const topLinks: MenuLinkItem[] = [
-    {
-      href: "/risk-warning",
-      label: "Risk warning",
-      icon: AlertTriangle,
-      internal: true,
-    },
     {
       href: "https://avana-ashen.vercel.app/faq",
       label: "Support center",

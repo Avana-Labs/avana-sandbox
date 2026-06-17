@@ -6,6 +6,10 @@ import type { TimeRangeId } from "@/app/lib/borrow-detail"
 
 const ALL: TimeRangeId[] = ["1D", "1M", "3M", "1Y", "ALL"]
 
+function formatRangeLabel(range: TimeRangeId) {
+  return range === "ALL" ? "All" : range
+}
+
 type RangeTabsProps = {
   value: TimeRangeId
   onChange: (value: TimeRangeId) => void
@@ -21,7 +25,7 @@ export function RangeTabs({ value, onChange, ranges = ALL, className, ariaLabel 
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5",
+        "inline-flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5 dark:border-slate-800 dark:bg-slate-950",
         className,
       )}
     >
@@ -35,13 +39,13 @@ export function RangeTabs({ value, onChange, ranges = ALL, className, ariaLabel 
             type="button"
             onClick={() => onChange(r)}
             className={cn(
-              "h-6 rounded-[3px] px-2 text-[11px] font-medium tabular-nums transition-colors",
+              "h-6 rounded-[3px] px-2 text-[11px] font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               active
-                ? "bg-surface-raised text-foreground shadow-elev-1"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-surface-raised text-foreground shadow-elev-1 dark:bg-slate-100 dark:text-slate-950"
+                : "text-muted-foreground hover:text-foreground dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
             )}
           >
-            {r}
+            {formatRangeLabel(r)}
           </button>
         )
       })}

@@ -2,12 +2,14 @@ import "./globals.css"
 import type { Metadata } from "next"
 import localFont from "next/font/local"
 import type React from "react"
+import { Suspense } from "react"
 import { Header } from "./components/header"
 import { DesktopHelpBubble } from "./components/desktop-help-bubble"
 import { Toaster } from "sonner"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { ExternalLinkGuard } from "./components/external-link-guard"
+import { PageLoadingBar } from "./components/page-loading-bar"
 
 const themeBootstrapScript = `
 (() => {
@@ -160,6 +162,9 @@ export default function RootLayout({
         >
           <DisplayPreferencesProvider>
             <div className="flex min-h-screen flex-col">
+              <Suspense fallback={null}>
+                <PageLoadingBar />
+              </Suspense>
               <Header />
               <div className="flex-1">{children}</div>
               <DesktopHelpBubble />
