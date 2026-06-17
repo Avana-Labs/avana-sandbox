@@ -1,7 +1,8 @@
 "use client"
 
+import * as React from "react"
 import type { MultiplyTxHistoryRow } from "@/app/lib/multiply-detail"
-import { SectionCard } from "@/app/borrow/_detail/ui"
+import { cn } from "@/lib/utils"
 
 const KIND_LABEL: Record<MultiplyTxHistoryRow["kind"], string> = {
   open: "Open",
@@ -12,53 +13,142 @@ const KIND_LABEL: Record<MultiplyTxHistoryRow["kind"], string> = {
   rebalance: "Rebalance",
 }
 
-type Props = {
-  transactions: MultiplyTxHistoryRow[]
+const KIND_TONE: Record<MultiplyTxHistoryRow["kind"], string> = {
+  open: "text-emerald-600 dark:text-emerald-400",
+  add: "text-emerald-600 dark:text-emerald-400",
+  reduce: "text-rose-600 dark:text-rose-400",
+  close: "text-rose-600 dark:text-rose-400",
+  interest: "text-slate-700 dark:text-slate-300",
+  rebalance: "text-amber-600 dark:text-amber-400",
 }
 
-export function TransactionHistoryCard({ transactions }: Props) {
+type Props = {
+  transactions: MultiplyTxHistoryRow[]
+  collateralSymbol: string
+  borrowableSymbol: string
+}
+
+const FILTERS = [
+  { id: "all", label: "All" },
+  { id: "open", label: "Open" },
+  { id: "add", label: "Add" },
+  { id: "reduce", label: "Reduce" },
+  { id: "close", label: "Close" },
+  { id: "rebalance", label: "Rebalance" },
+] as const
+
+export function TransactionHistoryCard({ transactions, collateralSymbol, borrowableSymbol }: Props) {
+  const [activeFilter, setActiveFilter] = React.useState<(typeof FILTERS)[number]["id"]>("all")
+  const visibleTransactions =
+    activeFilter === "all" ? transactions : transactions.filter((tx) => tx.kind === activeFilter)
+
   return (
-    <SectionCard title="Transaction history" subtitle="Recent position activity for this market." bodyClassName="p-0">
-      <div className="overflow-x-auto">
-        <table className="min-w-[780px] w-full border-separate border-spacing-0 text-[13px]">
-          <thead className="bg-surface-raised/70">
-            <tr className="text-left text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-              <th className="sticky top-0 border-b border-border/80 px-5 py-3.5">Action</th>
-              <th className="sticky top-0 border-b border-border/80 px-5 py-3.5 text-right">Amount</th>
-              <th className="sticky top-0 border-b border-border/80 px-5 py-3.5 text-right">When</th>
-              <th className="sticky top-0 border-b border-border/80 px-5 py-3.5 text-right">Tx hash</th>
+    <section className="min-w-0">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">Transactions</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          {FILTERS.map((filter) => {
+            const active = filter.id === activeFilter
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => setActiveFilter(filter.id)}
+                className={cn(
+                  "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
+                  active
+                    ? "bg-foreground text-background"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900",
+                )}
+              >
+                {filter.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="max-w-[760px] overflow-hidden rounded-[18px] bg-white">
+        <table className="w-full table-fixed border-separate border-spacing-0 text-[14px]">
+          <colgroup>
+            <col className="w-[96px]" />
+            <col className="w-[118px]" />
+            <col className="w-[112px]" />
+            <col className="w-[132px]" />
+            <col />
+          </colgroup>
+          <thead>
+            <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+              <th className="rounded-l-2xl bg-slate-50 px-5 py-3.5">Time</th>
+              <th className="bg-slate-50 px-5 py-3.5">Type</th>
+              <th className="bg-slate-50 px-5 py-3.5">Amount</th>
+              <th className="bg-slate-50 px-5 py-3.5">For</th>
+              <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right">Wallet</th>
             </tr>
           </thead>
           <tbody>
-            {transactions.slice(0, 10).map((tx) => (
-              <tr key={tx.id} className="group transition-colors hover:bg-surface-inset/50">
-                <td className="border-b border-border/70 px-5 py-4">
-                  <div className="flex min-w-0 items-center gap-1.5 text-[13px] font-normal leading-6">
-                    <span className="text-foreground">{KIND_LABEL[tx.kind]}</span>
-                    {tx.counterpartyLabel ? <span className="min-w-0 truncate text-muted-foreground">{tx.counterpartyLabel}</span> : null}
-                  </div>
+            {visibleTransactions.map((tx) => (
+              <tr key={tx.id} className="transition-colors hover:bg-slate-50/80">
+                <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
+                  {tx.timeLabel}
                 </td>
-                <td className="border-b border-border/70 px-5 py-4 text-right font-data font-medium tabular-nums text-foreground">
+                <td className="px-5 py-4 align-middle">
+                  <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium", KIND_TONE[tx.kind])}>
+                    {KIND_LABEL[tx.kind]}
+                  </span>
+                </td>
+                <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">
                   {tx.amountLabel}
                 </td>
-                <td className="border-b border-border/70 px-5 py-4 text-right text-[11.5px] tabular-nums text-muted-foreground">
-                  {new Date(tx.at).toLocaleString(undefined, {
-                    month: "2-digit",
-                    day: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  })}
+                <td className="px-5 py-4 align-middle text-[14px] text-muted-foreground">
+                  <span className="inline-block whitespace-nowrap">
+                    {describeTransaction(tx.kind, collateralSymbol, borrowableSymbol)}
+                  </span>
                 </td>
-                <td className="border-b border-border/70 px-5 py-4 text-right font-data text-[11.5px] tabular-nums text-muted-foreground">
-                  {tx.txHashShort}
+                <td className="px-5 py-4 align-middle text-right font-data text-[14px] tabular-nums text-foreground">
+                  {tx.walletHref ? (
+                    <a
+                      href={tx.walletHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
+                    >
+                      {tx.walletLabel ?? tx.txHashShort}
+                    </a>
+                  ) : (
+                    <span className="inline-block max-w-full truncate whitespace-nowrap align-middle">
+                      {tx.walletLabel ?? tx.txHashShort}
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </SectionCard>
+    </section>
   )
+}
+
+function describeTransaction(
+  kind: MultiplyTxHistoryRow["kind"],
+  collateralSymbol: string,
+  borrowableSymbol: string,
+) {
+  switch (kind) {
+    case "open":
+      return `${collateralSymbol} position`
+    case "add":
+      return `${collateralSymbol} collateral`
+    case "reduce":
+      return `${collateralSymbol} collateral`
+    case "close":
+      return `${borrowableSymbol} debt`
+    case "interest":
+      return `${borrowableSymbol} funding`
+    case "rebalance":
+      return `${collateralSymbol}/${borrowableSymbol}`
+    default:
+      return borrowableSymbol
+  }
 }

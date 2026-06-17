@@ -69,9 +69,12 @@ export type MultiplyMarketDetail = {
 export type MultiplyTxHistoryRow = {
   id: string
   at: string
+  timeLabel?: string
   kind: "open" | "add" | "reduce" | "close" | "interest" | "rebalance"
   amountLabel: string
   counterpartyLabel?: string
+  walletLabel?: string
+  walletHref?: string
   txHashShort: string
 }
 
@@ -263,26 +266,41 @@ function buildAbout(row: MultiplyMarketRow): AboutCard {
 function buildTransactions(row: MultiplyMarketRow): MultiplyTxHistoryRow[] {
   const seed = prngFromString(`multiply:${row.protocol}-${row.asset}:tx`)
   const kinds: MultiplyTxHistoryRow["kind"][] = ["open", "add", "reduce", "interest", "rebalance", "close"]
-  const now = Date.UTC(2026, 4, 18)
+  const now = Date.now()
   const out: MultiplyTxHistoryRow[] = []
 
   for (let i = 0; i < 12; i += 1) {
     const kind = kinds[Math.floor(seed() * kinds.length)]
     const amountBase = kind === "interest" ? 150 + seed() * 4_500 : 40_000 + seed() * 1_250_000
     const amount = Math.round(amountBase / 100) * 100
-    const at = new Date(now - i * 4 * 60 * 60 * 1000 - Math.floor(seed() * 86_400_000)).toISOString()
+    const ageMs = i * 34_000 + Math.floor(seed() * 8_000)
+    const at = new Date(now - ageMs).toISOString()
     const prefix = kind === "reduce" || kind === "close" ? "-" : "+"
+    const walletAddress = `0x${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}`
     out.push({
       id: `${row.protocol}-${row.asset}-tx-${i}`,
       at,
+      timeLabel: formatRelativeAge(ageMs),
       kind,
       amountLabel: `${prefix}${formatCompactUsd(amount)}`,
       counterpartyLabel: kind === "open" ? `${row.protocol} collateral` : undefined,
+      walletLabel: `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+      walletHref: `https://etherscan.io/address/${walletAddress}`,
       txHashShort: `0x${Math.floor(seed() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(seed() * 0xffff).toString(16).padStart(4, "0")}`,
     })
   }
 
   return out
+}
+
+function formatRelativeAge(ageMs: number) {
+  const totalSeconds = Math.max(1, Math.floor(ageMs / 1000))
+  if (totalSeconds < 60) return `${totalSeconds}s`
+  const totalMinutes = Math.floor(totalSeconds / 60)
+  if (totalMinutes < 60) return `${totalMinutes}m`
+  const totalHours = Math.floor(totalMinutes / 60)
+  if (totalHours < 24) return `${totalHours}h`
+  return `${Math.floor(totalHours / 24)}d`
 }
 
 function buildRelated(row: MultiplyMarketRow): MultiplyMarketRelatedSummary[] {
