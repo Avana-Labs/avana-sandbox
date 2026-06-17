@@ -24,7 +24,6 @@ import {
 } from "@/app/components/charts"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PortfolioHeroActions } from "./portfolio-hero-actions"
 import { PortfolioHeroHeader } from "./portfolio-hero-header"
 import { PORTFOLIO_NETWORKS } from "./portfolio-network-data"
@@ -55,7 +54,7 @@ type PortfolioHeroProps = {
 
 type HeroUiConfig = {
   headlineMeta?: string
-  actionLabels: string[]
+  actionLabels?: string[]
   hideChart?: boolean
   hideActions?: boolean
   hideStats?: boolean
@@ -68,14 +67,14 @@ type HeroUiConfig = {
 const HERO_UI_CONFIG: Record<PortfolioHeroProps["tab"], HeroUiConfig> = {
   overview: {
     headlineMeta: "Approved credit",
-    actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
+    hideActions: true,
     statOneLabel: "Current borrowed",
     statOneHelpText: "Open debt across active borrow positions.",
     statTwoLabel: "Credit health",
     statTwoHelpText: "Average health factor across active borrow-linked collateral.",
   },
   lending: {
-    actionLabels: ["Supply assets", "Withdraw yield"],
+    actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
     statOneLabel: "Average APY",
     statOneHelpText: "Weighted average APY across supplied assets in the wallet.",
     statTwoLabel: "Earned",
@@ -148,16 +147,9 @@ function buildActions({
 
 function InfoTip({ text }: { text: string }) {
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Info className="inline h-3.5 w-3.5 cursor-help text-muted-foreground/60" />
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[220px] text-xs">
-          {text}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span className="inline-flex cursor-help text-muted-foreground/60" title={text} aria-label={text}>
+      <Info className="h-3.5 w-3.5" />
+    </span>
   )
 }
 
@@ -233,11 +225,13 @@ export function PortfolioHero({
   const resolvedHeadlineValue = selectedNetwork === "all" ? (headlineValue ?? activeNetwork.balance) : activeNetwork.balance
   const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
 
-  const actions = buildActions({
-    actionLabels: uiConfig.actionLabels,
-    primaryActionLabel: uiConfig.actionLabels[0] ?? "Deposit",
-    secondaryActionLabel: uiConfig.actionLabels[1] ?? "Withdraw",
-  })
+  const actions = uiConfig.hideActions
+    ? []
+    : buildActions({
+        actionLabels: uiConfig.actionLabels,
+        primaryActionLabel: uiConfig.actionLabels?.[0] ?? "Deposit",
+        secondaryActionLabel: uiConfig.actionLabels?.[1] ?? "Withdraw",
+      })
 
   return (
     <section className="mb-8">

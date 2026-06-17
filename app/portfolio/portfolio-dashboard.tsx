@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { CreditLinesCard } from "./credit-lines-card"
 import { StakeWizard } from "../stake/stake-wizard"
@@ -9,7 +9,6 @@ import { PortfolioInvestments } from "./portfolio-investments"
 import { PortfolioPositions } from "./portfolio-positions"
 import { PortfolioPositionsTabs } from "./portfolio-positions-tabs"
 import { RecentActivity } from "./recent-activity"
-import { PortfolioStrategies } from "./portfolio-strategies"
 import { PortfolioTabs, type PortfolioTab } from "./portfolio-tabs"
 import type { BorrowSnapshot } from "./borrow-hero-state"
 import { usePortfolioPage } from "./use-portfolio-page"
@@ -59,7 +58,7 @@ export function PortfolioDashboard({
 }) {
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
-  const [activeTab, setActiveTab] = useState<PortfolioTab>("overview")
+  const [activeTab, setActiveTab] = useState<PortfolioTab>("lending")
   const [borrowSnapshot, setBorrowSnapshot] = useState<BorrowSnapshot>(() => ({
     approvedUsd: initialData?.borrow.creditLines.approvedUsd ?? data?.borrow.creditLines.approvedUsd ?? 0,
     totalBorrowedUsd: initialData?.borrow.creditLines.totalBorrowedUsd ?? data?.borrow.creditLines.totalBorrowedUsd ?? 0,
@@ -79,6 +78,32 @@ export function PortfolioDashboard({
     })
   }, [data])
 
+  const handleSnapshotChange = useCallback((snapshot: BorrowSnapshot) => {
+    setBorrowSnapshot((previous) => {
+      if (
+        previous.approvedUsd === snapshot.approvedUsd &&
+        previous.totalBorrowedUsd === snapshot.totalBorrowedUsd &&
+        previous.totalCollateralUsd === snapshot.totalCollateralUsd &&
+        previous.averageHealthFactor === snapshot.averageHealthFactor &&
+        previous.currentLtvPct === snapshot.currentLtvPct
+      ) {
+        return previous
+      }
+      return snapshot
+    })
+  }, [])
+
+  const collateralPositions = useMemo(
+    () =>
+      data
+        ? data.borrow.collateralPositions.map((position) => ({
+            ...position,
+            feesLabel: formatUsd(position.feesUsd),
+          }))
+        : [],
+    [data],
+  )
+
   if (!data || !resolvedWalletProfileId) return null
 
   return (
@@ -93,12 +118,9 @@ export function PortfolioDashboard({
           <PortfolioSection title="Credit Markets">
             <PortfolioPositions
               section="all"
-              collateralPositions={data.borrow.collateralPositions.map((position) => ({
-                ...position,
-                feesLabel: formatUsd(position.feesUsd),
-              }))}
+              collateralPositions={collateralPositions}
               debtPositions={data.borrow.debtPositions}
-              onSnapshotChange={setBorrowSnapshot}
+              onSnapshotChange={handleSnapshotChange}
             />
           </PortfolioSection>
           <SectionDivider />
@@ -108,7 +130,6 @@ export function PortfolioDashboard({
         </div>
       ) : null}
       {activeTab === "lending" ? <PortfolioInvestments investments={data.lend.investments} /> : null}
-      {activeTab === "lending" ? <PortfolioStrategies buckets={data.lend.strategyBuckets} /> : null}
       {activeTab === "looping" ? (
         <PortfolioPositionsTabs
           allowedTabs={["LP Collaterals", "Positions", "Open Orders", "TWAP", "History"]}
