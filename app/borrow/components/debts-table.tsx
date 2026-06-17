@@ -14,6 +14,7 @@ import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { cn } from "@/lib/utils"
 
 export type DebtRowContext = {
+  id?: string
   pool: HomeCollateralPool
   borrowedUsd: number
   healthFactor: number | null
@@ -113,51 +114,55 @@ export function DebtsPanel({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">
-              {rows.map((row, index) => {
-                const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
-                const meta = BORROW_SUPPLY_META[row.pool.id]
-                const hfTone = healthFactorToneClass(row.healthFactor)
-                const tokenCount = (row.borrowedUsd).toFixed(0)
-                return (
-                  <tr key={row.pool.id} className="transition-colors hover:bg-slate-100 dark:hover:bg-white/5">
-                    <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
-                      {index + 1}
-                    </td>
-                    <td className="py-3 pl-5">
-                      <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
-                    </td>
-                    <td className="py-3 pl-4 text-left">
-                      <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatCompactUsd(row.borrowedUsd))}</div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {showBalance ? `${tokenCount} ${usdc.symbol}` : MASK}
-                      </div>
-                    </td>
-                    <td className="py-3 pl-4 text-left">
-                      <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
-                    </td>
-                    <td className="py-3 pl-4 text-left">
-                      <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.accruedInterestUsd))}</div>
-                      <div className={cn("font-data text-[11px] font-medium tabular-nums", aprToneClass(row.borrowApr))}>
-                        {row.borrowApr.toFixed(1)}% APR
-                      </div>
-                    </td>
-                    <td className="py-3 pl-4 text-left">
-                      <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.pool.liquidationUsd))}</div>
-                      <div className="text-[11px] text-muted-foreground">collateral value</div>
-                    </td>
-                    <td className="py-3 pl-4 pr-5 text-left">
-                      <div className="flex justify-start gap-1.5">
-                        <PillButton variant="ghost" onClick={() => onManage(row)}>
-                          Manage
-                        </PillButton>
-                        <PillButton variant="success" onClick={() => onRepay(row)}>
-                          Repay
-                        </PillButton>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                {rows.map((row, index) => {
+                  const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
+                    ReturnType<typeof homeVisualToBorrowVisual>,
+                    ReturnType<typeof homeVisualToBorrowVisual>,
+                  ]
+                  const meta = BORROW_SUPPLY_META[row.pool.id]
+                  const hfTone = healthFactorToneClass(row.healthFactor)
+                  const tokenCount = row.borrowedUsd.toFixed(0)
+                  const rowKey = row.id ?? `${row.pool.id}-${index}`
+                  return (
+                    <tr key={rowKey} className="transition-colors hover:bg-slate-100 dark:hover:bg-white/5">
+                      <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
+                        {index + 1}
+                      </td>
+                      <td className="py-3 pl-5">
+                        <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
+                      </td>
+                      <td className="py-3 pl-4 text-left">
+                        <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatCompactUsd(row.borrowedUsd))}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {showBalance ? `${tokenCount} ${usdc.symbol}` : MASK}
+                        </div>
+                      </td>
+                      <td className="py-3 pl-4 text-left">
+                        <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
+                      </td>
+                      <td className="py-3 pl-4 text-left">
+                        <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.accruedInterestUsd))}</div>
+                        <div className={cn("font-data text-[11px] font-medium tabular-nums", aprToneClass(row.borrowApr))}>
+                          {row.borrowApr.toFixed(1)}% APR
+                        </div>
+                      </td>
+                      <td className="py-3 pl-4 text-left">
+                        <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.pool.liquidationUsd))}</div>
+                        <div className="text-[11px] text-muted-foreground">collateral value</div>
+                      </td>
+                      <td className="py-3 pl-4 pr-5 text-left">
+                        <div className="flex justify-start gap-1.5">
+                          <PillButton variant="ghost" onClick={() => onManage(row)}>
+                            Manage
+                          </PillButton>
+                          <PillButton variant="success" onClick={() => onRepay(row)}>
+                            Repay
+                          </PillButton>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -165,12 +170,13 @@ export function DebtsPanel({
       </div>
 
       <ul className="space-y-5 md:hidden">
-        {rows.map((row) => {
+        {rows.map((row, index) => {
           const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
           const meta = BORROW_SUPPLY_META[row.pool.id]
           const pairLabel = `${row.pool.visuals[0].symbol} / ${row.pool.visuals[1].symbol} LP`
+          const rowKey = row.id ?? `${row.pool.id}-${index}`
           return (
-            <li key={row.pool.id} className="space-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1">
+            <li key={rowKey} className="space-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1">
               <div>
                 <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Active debt</div>
                 <div className="mt-1 flex items-baseline gap-2">
