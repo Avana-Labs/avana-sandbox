@@ -58,7 +58,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
                   "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
                   active
                     ? "bg-foreground text-background"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900",
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
                 )}
               >
                 {filter.label}
@@ -68,8 +68,8 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
         </div>
       </div>
 
-      <div className="max-w-[760px] overflow-hidden rounded-[18px] bg-white">
-        <table className="w-full table-fixed border-separate border-spacing-0 text-[14px]">
+      <div className="max-w-[760px] overflow-x-auto rounded-[18px] bg-white dark:bg-slate-950">
+        <table className="min-w-[760px] w-full table-fixed border-separate border-spacing-0 text-[14px]">
           <colgroup>
             <col className="w-[96px]" />
             <col className="w-[118px]" />
@@ -79,16 +79,16 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
           </colgroup>
           <thead>
             <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-              <th className="rounded-l-2xl bg-slate-50 px-5 py-3.5">Time</th>
-              <th className="bg-slate-50 px-5 py-3.5">Type</th>
-              <th className="bg-slate-50 px-5 py-3.5">Amount</th>
-              <th className="bg-slate-50 px-5 py-3.5">For</th>
-              <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right">Wallet</th>
+              <th className="rounded-l-2xl bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Time</th>
+              <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Type</th>
+              <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Amount</th>
+              <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">For</th>
+              <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right dark:bg-slate-900/90">Wallet</th>
             </tr>
           </thead>
           <tbody>
             {visibleTransactions.map((tx) => (
-              <tr key={tx.id} className="transition-colors hover:bg-slate-50/80">
+              <tr key={tx.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-900/70">
                 <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
                   {tx.timeLabel}
                 </td>
