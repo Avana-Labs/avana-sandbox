@@ -13,8 +13,8 @@ type TabConfig = {
 }
 
 const PORTFOLIO_TABS: TabConfig[] = [
-  { value: "overview", label: "Borrow" },
   { value: "lending", label: "Lend" },
+  { value: "overview", label: "Borrow" },
   { value: "looping", label: "Multiply" },
   { value: "activity", label: "Activity" },
 ]

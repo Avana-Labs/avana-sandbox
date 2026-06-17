@@ -118,12 +118,12 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       label: "Express",
     },
     {
-      href: "/borrow",
-      label: "Borrow",
-    },
-    {
       href: "/lend",
       label: "Lend",
+    },
+    {
+      href: "/borrow",
+      label: "Borrow",
     },
     {
       href: "/multiply",
