@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Search } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -108,6 +108,55 @@ function toggleValue<T extends string>(values: T[], value: T) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value]
 }
 
+function matchesSearch(row: {
+  amountLabel: string
+  kind: string
+  primaryLabel: string
+  product: string
+  secondaryLabel: string
+  status: string
+  txHash: string
+  txHashShort: string
+}, query: string) {
+  if (!query) return true
+
+  const needle = query.toLowerCase()
+  return [
+    row.amountLabel,
+    row.kind,
+    row.primaryLabel,
+    row.product,
+    row.secondaryLabel,
+    row.status,
+    row.txHash,
+    row.txHashShort,
+  ]
+    .join(" ")
+    .toLowerCase()
+    .includes(needle)
+}
+
+function SearchPill({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (nextValue: string) => void
+}) {
+  return (
+    <label className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-full border border-border bg-white px-4 text-[13px] shadow-elev-1 dark:border-white/7 dark:bg-slate-950">
+      <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <input
+        type="search"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="Search transactions"
+        className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground/70"
+      />
+    </label>
+  )
+}
+
 type FilterTriggerProps = React.ComponentPropsWithoutRef<"button"> & {
   label: string
   count: number
@@ -174,6 +223,7 @@ function FilterMenu<T extends string>({
 }
 
 export function RecentActivity({ walletAddress }: { walletAddress: string }) {
+  const [search, setSearch] = React.useState("")
   const [products, setProducts] = React.useState<PortfolioActivityProduct[]>([])
   const [kinds, setKinds] = React.useState<PortfolioActivityKind[]>([])
   const [statuses, setStatuses] = React.useState<PortfolioActivityStatus[]>([])
@@ -187,16 +237,15 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
   })
 
   const hasFilters = products.length > 0 || kinds.length > 0 || statuses.length > 0
+  const visibleItems = React.useMemo(
+    () => data?.items.filter((row) => matchesSearch(row, search)) ?? [],
+    [data?.items, search],
+  )
 
   return (
     <section className="min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">Recent activity</h2>
-          <p className="mt-1 text-[12px] text-muted-foreground">
-            Wallet-scoped history across borrow, pool collateral, lend, and multiply actions.
-          </p>
-        </div>
+        <SearchPill value={search} onChange={setSearch} />
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -262,8 +311,8 @@ export function RecentActivity({ walletAddress }: { walletAddress: string }) {
                     {error}
                   </td>
                 </tr>
-              ) : data?.items.length ? (
-                data.items.map((row) => (
+              ) : visibleItems.length ? (
+                visibleItems.map((row) => (
                   <tr key={row.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-900/70">
                     <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
                       {formatRelativeTime(row.at)}
