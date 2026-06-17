@@ -177,11 +177,7 @@ export function PortfolioPositions({
         <>
           <div className="grid gap-4 xl:grid-cols-2">
             <SuppliesHealthFactorCard averageHealthFactor={supplyTotals.averageHf} showBalance={showDollarAmounts} />
-            <CurrentLtvCard
-              borrowedUsd={debtTotals.totalBorrowed}
-              collateralUsd={debtTotals.totalCollateral}
-              showBalance={showDollarAmounts}
-            />
+            <CurrentLtvCard borrowedUsd={debtTotals.totalBorrowed} collateralUsd={debtTotals.totalCollateral} showBalance={showDollarAmounts} />
           </div>
 
           <Tabs value={marketsTab} onValueChange={(value) => setMarketsTab(value as "supplies" | "debts")}>

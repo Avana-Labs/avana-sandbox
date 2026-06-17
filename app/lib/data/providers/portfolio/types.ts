@@ -65,6 +65,7 @@ export type PortfolioBorrowTabData = {
     averageHealthFactor: number | null
     currentLtvPct: number
     totalBorrowedUsd: number
+    totalCollateralUsd: number
   }
   collateralPositions: Array<{
     pool: HomeCollateralPool

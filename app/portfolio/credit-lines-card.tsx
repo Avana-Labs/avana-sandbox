@@ -53,6 +53,7 @@ export function CreditLinesCard({
     averageHealthFactor: number | null
     currentLtvPct: number
     totalBorrowedUsd: number
+    totalCollateralUsd: number
   }
 }) {
   const approvedUsd = creditLines.approvedUsd
