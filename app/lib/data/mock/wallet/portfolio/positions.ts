@@ -1,5 +1,7 @@
 import type {
   PortfolioCollateralRecord,
+  PortfolioCreditLinesRecord,
+  PortfolioMultiplyCollateralRecord,
   PortfolioMultiplyPositionRecord,
   PortfolioOpenOrderRecord,
   PortfolioPoolRecord,
@@ -156,6 +158,57 @@ export const WALLET_MULTIPLY_POSITIONS: PortfolioMultiplyPositionRecord[] = [
   },
 ]
 
+export const WALLET_MULTIPLY_CREDIT_LINES: PortfolioCreditLinesRecord[] = [
+  {
+    walletProfileId: "demo-wallet",
+    approvedUsd: 64_400,
+    liquidationThresholdUsd: 72_957,
+    averageHealthFactor: 2.45,
+    currentLtvPct: 31.17,
+    totalBorrowedUsd: 27_400,
+    totalCollateralUsd: 87_900,
+  },
+]
+
+export const WALLET_MULTIPLY_COLLATERALS: PortfolioMultiplyCollateralRecord[] = [
+  {
+    id: "mult-collateral-weth-usdc",
+    walletProfileId: "demo-wallet",
+    label: "WETH / USDC",
+    collateralToken: "WETH",
+    borrowableToken: "USDC",
+    multiplier: 4,
+    protocol: "Uniswap v3 Bluechip",
+    healthFactor: 2.60,
+    collateralUsd: 36_000,
+    borrowPowerUsd: 27_800,
+  },
+  {
+    id: "mult-collateral-wbtc-weth",
+    walletProfileId: "demo-wallet",
+    label: "WBTC / WETH",
+    collateralToken: "WBTC",
+    borrowableToken: "WETH",
+    multiplier: 3,
+    protocol: "Aerodrome",
+    healthFactor: 2.18,
+    collateralUsd: 29_400,
+    borrowPowerUsd: 20_900,
+  },
+  {
+    id: "mult-collateral-usdc-usdt",
+    walletProfileId: "demo-wallet",
+    label: "USDC / USDT",
+    collateralToken: "USDC",
+    borrowableToken: "USDT",
+    multiplier: 2,
+    protocol: "Curve",
+    healthFactor: 2.49,
+    collateralUsd: 22_500,
+    borrowPowerUsd: 15_700,
+  },
+]
+
 export const WALLET_OPEN_ORDERS: PortfolioOpenOrderRecord[] = [
   {
     id: "open-1",
@@ -192,6 +245,14 @@ export function getWalletCollaterals(walletProfileId: string) {
 
 export function getWalletMultiplyPositions(walletProfileId: string) {
   return WALLET_MULTIPLY_POSITIONS.filter((record) => record.walletProfileId === walletProfileId)
+}
+
+export function getWalletMultiplyCreditLines(walletProfileId: string) {
+  return WALLET_MULTIPLY_CREDIT_LINES.find((record) => record.walletProfileId === walletProfileId) ?? WALLET_MULTIPLY_CREDIT_LINES[0]
+}
+
+export function getWalletMultiplyCollaterals(walletProfileId: string) {
+  return WALLET_MULTIPLY_COLLATERALS.filter((record) => record.walletProfileId === walletProfileId)
 }
 
 export function getWalletOpenOrders(walletProfileId: string) {

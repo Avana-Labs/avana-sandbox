@@ -91,6 +91,29 @@ export type PortfolioCollateralRecord = {
   feesUsd: number
 }
 
+export type PortfolioCreditLinesRecord = {
+  walletProfileId: string
+  approvedUsd: number
+  liquidationThresholdUsd: number
+  averageHealthFactor: number | null
+  currentLtvPct: number
+  totalBorrowedUsd: number
+  totalCollateralUsd: number
+}
+
+export type PortfolioMultiplyCollateralRecord = {
+  id: string
+  walletProfileId: string
+  label: string
+  collateralToken: string
+  borrowableToken: string
+  multiplier: number
+  protocol: string
+  healthFactor: number
+  collateralUsd: number
+  borrowPowerUsd: number
+}
+
 export type PortfolioMultiplyPositionRecord = {
   id: string
   walletProfileId: string
@@ -166,6 +189,8 @@ export type PortfolioPageRecords = {
   supplies: PortfolioSupplyRecord[]
   debts: PortfolioDebtRecord[]
   collaterals: PortfolioCollateralRecord[]
+  multiplyCreditLines: PortfolioCreditLinesRecord
+  multiplyCollaterals: PortfolioMultiplyCollateralRecord[]
   multiplyPositions: PortfolioMultiplyPositionRecord[]
   openOrders: PortfolioOpenOrderRecord[]
   twapOrders: PortfolioTwapOrderRecord[]

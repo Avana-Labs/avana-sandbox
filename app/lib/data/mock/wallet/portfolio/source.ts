@@ -3,6 +3,8 @@ import { getWalletActivity } from "./activity"
 import { getWalletDebts } from "./debts"
 import {
   getWalletCollaterals,
+  getWalletMultiplyCreditLines,
+  getWalletMultiplyCollaterals,
   getWalletMultiplyPositions,
   getWalletOpenOrders,
   getWalletTwapOrders,
@@ -26,6 +28,8 @@ export const mockPortfolioPageSource: PortfolioPageSource = {
       supplies: getWalletSupplies(walletProfile.id),
       debts: getWalletDebts(walletProfile.id),
       collaterals: getWalletCollaterals(walletProfile.id),
+      multiplyCreditLines: getWalletMultiplyCreditLines(walletProfile.id),
+      multiplyCollaterals: getWalletMultiplyCollaterals(walletProfile.id),
       multiplyPositions: getWalletMultiplyPositions(walletProfile.id),
       openOrders: getWalletOpenOrders(walletProfile.id),
       twapOrders: getWalletTwapOrders(walletProfile.id),
