@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils"
 export type SupplyRowContext = {
   pool: HomeCollateralPool
   borrowedUsd: number
+  remainingBorrowPowerUsd: number
+  liquidationThresholdUsd: number
   healthFactor: number | null
   pairApr: number
   feesUsd: number
@@ -123,7 +125,7 @@ export function SuppliesPanel({
                       {m(formatCompactUsd(row.pool.collateralUsd))}
                     </td>
                     <td className="py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground">
-                      {m(formatCompactUsd(row.pool.borrowPowerUsd))}
+                      {m(formatCompactUsd(row.remainingBorrowPowerUsd))}
                     </td>
                     <td className="py-3 text-right">
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
@@ -213,7 +215,7 @@ export function SuppliesPanel({
                 <div className="flex items-center justify-between border-t border-border pt-2 text-[12.5px]">
                   <span className="text-muted-foreground">Liquidation at</span>
                   <span className={cn("font-data font-medium tabular-nums", hfTone.text)}>
-                    {m(formatUsdExact(row.pool.liquidationUsd))} collateral
+                    {m(formatUsdExact(row.liquidationThresholdUsd))} collateral
                   </span>
                 </div>
               </div>

@@ -5,6 +5,7 @@ import type { PortfolioHeroData } from "@/app/lib/data/providers/portfolio"
 
 export type BorrowSnapshot = {
   approvedUsd: number
+  liquidationNumberUsd: number
   totalBorrowedUsd: number
   totalCollateralUsd: number
   averageHealthFactor: number | null
