@@ -2,8 +2,10 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { LEND_ROWS, TOKEN_BORROW_APYS, TOKEN_LOGOS, TOKEN_SUPPLY_APYS } from "./multiply-lend-section"
+import { LEND_ROWS, PAGE_SIZE, TOKEN_BORROW_APYS, TOKEN_LOGOS, TOKEN_SUPPLY_APYS } from "./multiply-lend-section"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -17,6 +19,13 @@ const CATEGORY_TABS = [
   { id: "forex", label: "Forex Based" },
   { id: "governance", label: "Utility Based" },
   { id: "smart-loops", label: "Smart Loops" },
+] as const
+
+const SORT_PRESETS = [
+  { label: "Highest Leverage", value: "rewards:desc" },
+  { label: "Highest APY", value: "apy:desc" },
+  { label: "Most Available", value: "points:desc" },
+  { label: "Collateral A-Z", value: "protocol:asc" },
 ] as const
 
 type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
@@ -108,9 +117,208 @@ function ExpandableDesktopSearch({
   )
 }
 
+function FilterCheckIcon({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={cn(
+        "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+        checked ? "border-[#01AACF] bg-[#01AACF] text-white" : "border-black/35 bg-transparent text-transparent dark:border-white/55",
+      )}
+    >
+      <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" className="size-3">
+        <path d="M2.5 6.2 4.8 8.5 9.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  )
+}
+
+function SingleSelectDropdown({
+  allLabel,
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  allLabel: string
+  value: string | null
+  options: Array<{ label: string; value: string }>
+  onChange: (nextValue: string | null) => void
+  ariaLabel: string
+}) {
+  const [open, setOpen] = React.useState(false)
+  const [openUpward, setOpenUpward] = React.useState(false)
+  const [panelStyle, setPanelStyle] = React.useState<{
+    left: number
+    top: number
+    width: number
+    maxHeight: number
+  } | null>(null)
+  const rootRef = React.useRef<HTMLDivElement | null>(null)
+  const panelRef = React.useRef<HTMLDivElement | null>(null)
+
+  const triggerLabel = options.find((option) => option.value === value)?.label ?? allLabel
+
+  React.useEffect(() => {
+    if (!open) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown, true)
+    return () => document.removeEventListener("pointerdown", handlePointerDown, true)
+  }, [open])
+
+  React.useEffect(() => {
+    if (!open) return
+
+    const updatePanelPosition = () => {
+      if (!rootRef.current || !panelRef.current) return
+
+      const triggerRect = rootRef.current.getBoundingClientRect()
+      const panelHeight = panelRef.current.offsetHeight
+      const spaceBelow = window.innerHeight - triggerRect.bottom
+      const spaceAbove = triggerRect.top
+      const nextOpenUpward = spaceBelow < panelHeight + 12 && spaceAbove > spaceBelow
+      const width = Math.min(216, window.innerWidth - 16)
+      const left = Math.max(8, triggerRect.right - width)
+      const maxHeight = Math.max(140, Math.min(220, (nextOpenUpward ? spaceAbove : spaceBelow) - 12))
+      const top = nextOpenUpward
+        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
+        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
+
+      setOpenUpward(nextOpenUpward)
+      setPanelStyle({ left, top, width, maxHeight })
+    }
+
+    updatePanelPosition()
+
+    const updateAnchoredPosition = () => {
+      if (!rootRef.current || !panelRef.current) return
+
+      const triggerRect = rootRef.current.getBoundingClientRect()
+      const panelHeight = panelRef.current.offsetHeight
+      const width = Math.min(216, window.innerWidth - 16)
+      const left = Math.max(8, triggerRect.right - width)
+      const availableSpace = openUpward ? triggerRect.top : window.innerHeight - triggerRect.bottom
+      const maxHeight = Math.max(140, Math.min(220, availableSpace - 12))
+      const top = openUpward
+        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
+        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
+
+      setPanelStyle({ left, top, width, maxHeight })
+    }
+
+    window.addEventListener("resize", updateAnchoredPosition)
+    window.addEventListener("scroll", updateAnchoredPosition, true)
+
+    return () => {
+      window.removeEventListener("resize", updateAnchoredPosition)
+      window.removeEventListener("scroll", updateAnchoredPosition, true)
+    }
+  }, [open, openUpward, options.length])
+
+  return (
+    <div ref={rootRef} className="relative z-20">
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className={cn(
+          "inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
+          "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:bg-[#1f1f1f] dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
+        )}
+      >
+        <span className="whitespace-nowrap">{triggerLabel}</span>
+        <span className="text-foreground/55 dark:text-white/70">
+          <ChevronDown className="size-3.5" />
+        </span>
+      </button>
+
+      {open ? (
+        <>
+          <button
+            type="button"
+            aria-label={`Close ${ariaLabel}`}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-10 cursor-default bg-transparent"
+          />
+
+          <div
+            ref={panelRef}
+            className={cn(
+              "fixed z-30 overflow-hidden rounded-[14px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
+              "border-border bg-white text-foreground dark:border-white/8 dark:bg-[#232323] dark:text-white",
+            )}
+            style={
+              panelStyle
+                ? {
+                    left: panelStyle.left,
+                    top: panelStyle.top,
+                    width: panelStyle.width,
+                    maxHeight: panelStyle.maxHeight,
+                  }
+                : undefined
+            }
+          >
+            <button
+              type="button"
+              onClick={() => {
+                onChange(null)
+                setOpen(false)
+              }}
+              className={cn(
+                "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
+                "text-foreground hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
+              )}
+            >
+              <FilterCheckIcon checked={value === null} />
+              <span>{allLabel}</span>
+            </button>
+
+            <div className="w-full border-t border-black/12 dark:border-white/20" />
+
+            <div className="overflow-y-auto py-1 pb-3" style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}>
+              {options.map((option) => {
+                const checked = value === option.value
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(option.value)
+                      setOpen(false)
+                    }}
+                    className={cn(
+                      "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors md:h-10 md:px-4 md:text-[14px]",
+                      checked
+                        ? "bg-black/[0.05] font-medium text-foreground dark:bg-white/6 dark:text-white"
+                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
+                    )}
+                  >
+                    <FilterCheckIcon checked={checked} />
+                    <span className="truncate">{option.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
 export function ExploreLoopsMarketsTable() {
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all-markets")
   const [search, setSearch] = React.useState("")
+  const [page, setPage] = React.useState(0)
+  const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
+  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
   const searchQuery = search.trim().toLowerCase()
   const buildSearchText = (row: (typeof LEND_ROWS)[number]) =>
     [
@@ -148,37 +356,50 @@ export function ExploreLoopsMarketsTable() {
       if (currentTab === "governance") return matchesUtility
       if (currentTab === "smart-loops") return matchesSmartLoop
       return true
-      })
+    })
       .filter((row) => searchQuery.length === 0 || buildSearchText(row).includes(searchQuery))
   }, [currentTab, searchQuery])
 
-  const sectionedRows = React.useMemo(() => {
-    const sections = [
-      { title: "Stablecoins", rows: [] as (typeof LEND_ROWS)[number][] },
-      { title: "Ethereum-Based", rows: [] as (typeof LEND_ROWS)[number][] },
-      { title: "Bitcoin Based", rows: [] as (typeof LEND_ROWS)[number][] },
-      { title: "Other Assets", rows: [] as (typeof LEND_ROWS)[number][] },
-    ]
-
-    const isStable = (symbol: string) => FOREX_SYMBOLS.has(symbol.toUpperCase())
-    const isEth = (symbol: string) => ETH_SYMBOLS.has(symbol.toUpperCase())
-    const isBtc = (symbol: string) => BTC_SYMBOLS.has(symbol.toUpperCase())
-
-    for (const row of filteredRows) {
-      const protocol = row.protocol
-      if (isStable(protocol)) {
-        sections[0].rows.push(row)
-      } else if (isEth(protocol)) {
-        sections[1].rows.push(row)
-      } else if (isBtc(protocol)) {
-        sections[2].rows.push(row)
-      } else {
-        sections[3].rows.push(row)
-      }
+  const sortedRows = React.useMemo(() => {
+    const direction = sortDirection === "asc" ? 1 : -1
+    const parseValue = (value?: string) => {
+      if (!value) return Number.NEGATIVE_INFINITY
+      const numeric = Number.parseFloat(value.replace(/[^0-9.-]/g, ""))
+      return Number.isFinite(numeric) ? numeric : Number.NEGATIVE_INFINITY
     }
 
-    return sections.filter((section) => section.rows.length > 0)
-  }, [filteredRows])
+    return [...filteredRows].sort((a, b) => {
+      switch (sortKey) {
+        case "asset":
+          return a.asset.localeCompare(b.asset) * direction
+        case "apy":
+          return (parseValue(a.apy) - parseValue(b.apy)) * direction
+        case "rewards":
+          return (
+            parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
+            parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)
+          ) * direction
+        case "points":
+          return (parseValue(a.points) - parseValue(b.points)) * direction
+        case "protocol":
+        default:
+          return a.protocol.localeCompare(b.protocol) * direction
+      }
+    })
+  }, [filteredRows, sortDirection, sortKey])
+
+  const pageCount = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE))
+  const visibleRows = sortedRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
+
+  const toggleSort = (nextKey: typeof sortKey) => {
+    if (sortKey === nextKey) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
+      return
+    }
+
+    setSortKey(nextKey)
+    setSortDirection(nextKey === "protocol" || nextKey === "asset" ? "asc" : "desc")
+  }
 
   const getAssetLogo = (asset: string) => TOKEN_LOGOS[asset as keyof typeof TOKEN_LOGOS]
   const getSupplyApy = (asset: string) => TOKEN_SUPPLY_APYS[asset as keyof typeof TOKEN_SUPPLY_APYS]
@@ -198,15 +419,15 @@ export function ExploreLoopsMarketsTable() {
   }, [])
 
   return (
-    <section className="mt-6 space-y-5">
+    <section className="mt-1 space-y-4">
       <div>
         <div>
           <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">Trending</h2>
         </div>
       </div>
 
-      <div className="pb-1">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="grid min-w-max grid-flow-col gap-4 md:min-w-0 md:grid-flow-row md:grid-cols-2 xl:grid-cols-4">
           {trendingRows.map((row) => (
             <TrendingLoopCard
               key={`${row.protocol}-${row.asset}`}
@@ -216,8 +437,6 @@ export function ExploreLoopsMarketsTable() {
           ))}
         </div>
       </div>
-
-      <div aria-hidden className="h-1" />
 
       <div className="flex items-center gap-4">
         <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -239,288 +458,235 @@ export function ExploreLoopsMarketsTable() {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
+          <SingleSelectDropdown
+            allLabel="Sort by"
+            value={`${sortKey}:${sortDirection}`}
+            options={SORT_PRESETS.map((preset) => ({
+              label: preset.label,
+              value: preset.value,
+            }))}
+            onChange={(nextValue) => {
+              if (!nextValue) return
+              const [nextSortKey, nextSortDirection] = nextValue.split(":") as [typeof sortKey, typeof sortDirection]
+              setSortKey(nextSortKey)
+              setSortDirection(nextSortDirection)
+            }}
+            ariaLabel="Sort loops"
+          />
           <ExpandableDesktopSearch value={search} onChange={setSearch} />
         </div>
       </div>
 
-      <div className="space-y-8">
-        {sectionedRows.map((section) => (
-            <MarketSectionTable
-              key={section.title}
-              title={section.title}
-              rows={section.rows}
-              getSupplyApy={getSupplyApy}
-              getBorrowApy={getBorrowApy}
-              getAssetLogo={getAssetLogo}
-          />
-        ))}
+      <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px] table-fixed text-[12px] lg:min-w-full">
+            <colgroup>
+              <col className="w-[24%]" />
+              <col className="w-[22%]" />
+              <col className="w-[18%]" />
+              <col className="w-[18%]" />
+              <col className="w-[18%]" />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
+                <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("protocol")}
+                    className={cn(
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
+                      sortKey === "protocol" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>COLLATERAL</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("asset")}
+                    className={cn(
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
+                      sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>BORROWABLE</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("apy")}
+                    className={cn(
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
+                      sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>MAX APY</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("rewards")}
+                    className={cn(
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
+                      sortKey === "rewards" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>MAX LEVERAGE</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("points")}
+                    className={cn(
+                      "flex items-center gap-2 whitespace-nowrap transition-colors",
+                      sortKey === "points" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    )}
+                  >
+                    <span>AVAILABLE</span>
+                    <SortIcon />
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`} className="divide-y divide-border dark:divide-white/6">
+              {visibleRows.length ? visibleRows.map((row, index) => (
+                <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="asset-swap border-t border-border transition-colors hover:bg-surface-inset/60" style={{ animationDelay: `${index * 40}ms` }}>
+                  <td className="py-2.5 pl-6 pr-4">
+                    <CellLink href={row.href} className="flex items-center gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={row.protocolLogo}
+                        alt=""
+                        aria-hidden="true"
+                        className="size-11 shrink-0 rounded-full bg-card object-cover"
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.protocol}</span>
+                        <span className="mt-1 inline-flex items-center gap-1.5 truncate text-[13px] font-normal tracking-[-0.03em]">
+                          <span className="text-muted-foreground dark:text-white/38">APY</span>
+                          <span className="font-data tabular-nums text-emerald-600 dark:text-emerald-400">
+                            {getSupplyApy(row.protocol) ?? "—"}
+                          </span>
+                        </span>
+                      </span>
+                    </CellLink>
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <CellLink href={row.href} className="flex min-w-0 items-center gap-3">
+                      {getAssetLogo(row.asset) ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={getAssetLogo(row.asset)}
+                            alt=""
+                            aria-hidden="true"
+                            className="size-11 shrink-0 rounded-full bg-card object-cover"
+                          />
+                        </>
+                      ) : null}
+                      <span className="min-w-0">
+                        <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.asset}</span>
+                        <span className="mt-1 inline-flex items-center gap-1.5 truncate text-[13px] font-normal tracking-[-0.03em]">
+                          <span className="text-muted-foreground dark:text-white/38">APY</span>
+                          <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">
+                            {getBorrowApy(row.asset) ?? "—"}
+                          </span>
+                        </span>
+                      </span>
+                    </CellLink>
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <CellLink
+                      href={row.href}
+                      className={cn(
+                        "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
+                        row.apy ? (row.apy.startsWith("-") ? "text-rose-600" : "text-emerald-600") : "text-muted-foreground",
+                      )}
+                    >
+                      {row.apy || "—"}
+                    </CellLink>
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <CellLink href={row.href} className="text-foreground">
+                      {row.rewardRows?.[1] ? (
+                        <span className="block">
+                          <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.rewardRows[1].value}</span>
+                          <span className="mt-1 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.rewardRows[1].label}</span>
+                        </span>
+                      ) : row.rewardRows?.[0] ? (
+                        <span className="block">
+                          <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.rewardRows[0].value}</span>
+                          <span className="mt-1 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.rewardRows[0].label}</span>
+                        </span>
+                      ) : row.partnerRewards ? (
+                        <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.partnerRewards}</span>
+                      ) : (
+                        <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">—</span>
+                      )}
+                    </CellLink>
+                  </td>
+                  <td className="py-2.5 px-4 pr-6">
+                    {row.waitlistHref ? (
+                      <div className="inline-flex items-center">
+                        <Button asChild size="sm" className="h-7 rounded-xs px-2.5 text-[12px]">
+                          <a href={row.waitlistHref} target="_blank" rel="noreferrer">
+                            Join waitlist
+                          </a>
+                        </Button>
+                      </div>
+                    ) : (
+                      <CellLink href={row.href} className="inline-flex items-center text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                        <span>{row.points ?? "—"}</span>
+                      </CellLink>
+                    )}
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-10 text-center text-[14px] text-muted-foreground dark:text-white/38">
+                    No loops in this category yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t border-border px-3 py-2.5">
+          <span className="text-[12px] text-muted-foreground">
+            {page + 1} of {pageCount}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Previous page"
+            disabled={page === 0}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Next page"
+            disabled={page >= pageCount - 1}
+            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </section>
-  )
-}
-
-function MarketSectionTable({
-  title,
-  rows,
-  getSupplyApy,
-  getBorrowApy,
-  getAssetLogo,
-}: {
-  title: string
-  rows: (typeof LEND_ROWS)[number][]
-  getSupplyApy: (asset: string) => string | undefined
-  getBorrowApy: (asset: string) => string | undefined
-  getAssetLogo: (asset: string) => string | undefined
-}) {
-  const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("rewards")
-  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("desc")
-
-  const toggleSort = (nextKey: typeof sortKey) => {
-    if (sortKey === nextKey) {
-      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
-      return
-    }
-
-    setSortKey(nextKey)
-    setSortDirection(nextKey === "protocol" || nextKey === "asset" ? "asc" : "desc")
-  }
-
-  const sortedRows = React.useMemo(() => {
-    const direction = sortDirection === "asc" ? 1 : -1
-    const parseValue = (value?: string) => {
-      if (!value) return Number.NEGATIVE_INFINITY
-      const numeric = Number.parseFloat(value.replace(/[^0-9.-]/g, ""))
-      return Number.isFinite(numeric) ? numeric : Number.NEGATIVE_INFINITY
-    }
-
-    return [...rows].sort((a, b) => {
-      switch (sortKey) {
-        case "asset":
-          return a.asset.localeCompare(b.asset) * direction
-        case "apy":
-          return (parseValue(a.apy) - parseValue(b.apy)) * direction
-        case "rewards":
-          return (
-            parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
-            parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)
-          ) * direction
-        case "points":
-          return (parseValue(a.points) - parseValue(b.points)) * direction
-        case "protocol":
-        default:
-          return a.protocol.localeCompare(b.protocol) * direction
-      }
-    })
-  }, [rows, sortDirection, sortKey])
-
-  return (
-    <section className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2
-            className={cn(
-              "text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]",
-              title === "Ethereum-Based" ? "md:text-[23px]" : "",
-            )}
-          >
-            {title}
-          </h2>
-        </div>
-      </div>
-
-      <div className="hidden md:block">
-        <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-sm">
-          <div className="overflow-x-auto">
-            <div className="grid min-w-[920px] grid-cols-[24%_22%_18%_18%_18%] text-left text-muted-foreground">
-              <HeaderSortButton
-                label="Collateral"
-                active={sortKey === "protocol"}
-                direction={sortKey === "protocol" ? sortDirection : undefined}
-                onClick={() => toggleSort("protocol")}
-                className="pl-6"
-              />
-              <HeaderSortButton
-                label="Borrowable"
-                active={sortKey === "asset"}
-                direction={sortKey === "asset" ? sortDirection : undefined}
-                onClick={() => toggleSort("asset")}
-                className="px-4"
-              />
-              <HeaderSortButton
-                label="Max APY"
-                active={sortKey === "apy"}
-                direction={sortKey === "apy" ? sortDirection : undefined}
-                onClick={() => toggleSort("apy")}
-                className="px-4"
-              />
-              <HeaderSortButton
-                label="Max Leverage"
-                active={sortKey === "rewards"}
-                direction={sortKey === "rewards" ? sortDirection : undefined}
-                onClick={() => toggleSort("rewards")}
-                className="px-4"
-              />
-              <HeaderSortButton
-                label="Available"
-                active={sortKey === "points"}
-                direction={sortKey === "points" ? sortDirection : undefined}
-                onClick={() => toggleSort("points")}
-                className="px-4 pr-6"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {sortedRows.length ? (
-          sortedRows.map((row, index) => (
-            <MarketSectionRow
-              key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
-              row={row}
-              getSupplyApy={getSupplyApy}
-              getBorrowApy={getBorrowApy}
-              getAssetLogo={getAssetLogo}
-            />
-          ))
-        ) : (
-          <div className="rounded-[20px] border border-border bg-surface-raised px-6 py-10 text-center text-[14px] text-muted-foreground shadow-sm">
-            No loops in this category yet.
-          </div>
-        )}
-      </div>
-    </section>
-  )
-}
-
-function HeaderSortButton({
-  label,
-  active,
-  direction,
-  onClick,
-  className,
-}: {
-  label: string
-  active: boolean
-  direction?: "asc" | "desc"
-  onClick: () => void
-  className?: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-1.5 pb-3 pt-4 text-[10.5px] font-medium uppercase tracking-[0.06em] transition-colors",
-        active ? "text-foreground dark:text-white/90" : "text-muted-foreground dark:text-white/58",
-        className,
-      )}
-    >
-      <span>{label}</span>
-      <SortIcon direction={direction} />
-    </button>
-  )
-}
-
-function SortIcon({ direction }: { direction?: "asc" | "desc" }) {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 12 16" fill="none" className={cn("size-[12px]", direction === "asc" ? "rotate-180" : "")}>
-      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function MarketSectionRow({
-  row,
-  getSupplyApy,
-  getBorrowApy,
-  getAssetLogo,
-}: {
-  row: (typeof LEND_ROWS)[number]
-  getSupplyApy: (asset: string) => string | undefined
-  getBorrowApy: (asset: string) => string | undefined
-  getAssetLogo: (asset: string) => string | undefined
-}) {
-  return (
-    <div className="rounded-[12px] border border-border bg-surface-raised shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:bg-surface-inset/40">
-      <div className="grid gap-0 md:grid-cols-[24%_22%_18%_18%_18%]">
-        <MarketMetric value={row.protocol} subValue={getSupplyApy(row.protocol) ?? "—"} logo={row.protocolLogo} className="px-6 py-2.5" />
-        <MarketMetric value={row.asset} subValue={getBorrowApy(row.asset) ?? "—"} logo={getAssetLogo(row.asset)} className="px-4 py-2.5" />
-        <MarketMetric value={row.apy || "—"} tone={row.apy && row.apy.startsWith("-") ? "negative" : "positive"} dense className="px-4 py-2.5" />
-        <MarketMetric
-          value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
-          subValue={row.rewardRows?.[1]?.label ?? row.rewardRows?.[0]?.label ?? " "}
-          dense
-          className="px-4 py-2.5"
-        />
-        <MarketMetric
-          value={row.waitlistHref ? "Waitlist" : row.points ?? "—"}
-          subValue={row.waitlistHref ? "Not open yet" : " "}
-          tone={row.waitlistHref ? "neutral" : "default"}
-          cta={row.waitlistHref ? "Join waitlist" : undefined}
-          dense
-          className="px-4 py-2.5 pr-6"
-        />
-      </div>
-    </div>
-  )
-}
-
-function MarketMetric({
-  value,
-  subValue,
-  tone = "default",
-  logo,
-  cta,
-  dense = false,
-  className,
-}: {
-  value: string
-  subValue?: string
-  tone?: "default" | "positive" | "negative" | "neutral"
-  logo?: string
-  cta?: string
-  dense?: boolean
-  className?: string
-}) {
-  const valueClass =
-    tone === "positive"
-      ? "text-emerald-600 dark:text-emerald-400"
-      : tone === "negative"
-        ? "text-rose-600 dark:text-rose-400"
-        : tone === "neutral"
-          ? "text-muted-foreground"
-          : "text-foreground"
-
-  return (
-    <div className={cn("min-w-0", className)}>
-      <div className="flex items-center gap-2">
-        {logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logo} alt="" aria-hidden="true" className="size-11 shrink-0 rounded-full bg-card object-cover ring-2 ring-background" />
-        ) : null}
-        <div className="min-w-0">
-          <div
-            className={cn(
-              "truncate tracking-[-0.03em]",
-              dense
-                ? "text-[15px] font-normal tabular-nums text-foreground dark:text-white/84"
-                : "text-[15px] font-medium text-foreground dark:text-white/88",
-              valueClass,
-            )}
-          >
-            {value}
-          </div>
-          {subValue ? (
-            <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-              {subValue}
-            </div>
-          ) : null}
-          {cta ? <div className="mt-0.5 text-[12px] font-medium text-[#01AACF]">{cta}</div> : null}
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -583,6 +749,23 @@ function TrendingLoopCard({
           </div>
         </div>
       </div>
+    </Link>
+  )
+}
+
+function SortIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 12 16" fill="none" className="size-[14px] text-muted-foreground/70 dark:text-white/60">
+      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function CellLink({ href, className, children }: { href: string; className?: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className={cn("block text-left", className)}>
+      {children}
     </Link>
   )
 }
