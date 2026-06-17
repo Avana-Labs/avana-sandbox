@@ -140,7 +140,7 @@ export function PortfolioPositionsTabs({ allowedTabs = [...TABS], initialTab = "
                       <p className="font-medium text-[13px] text-foreground">
                         {collateral.label} ({collateral.protocol})
                       </p>
-                      <p className="mt-0.5 text-[11.5px] text-muted-foreground">Health: {collateral.healthFactor.toFixed(0)}%</p>
+                      <p className="mt-0.5 text-[11.5px] text-muted-foreground">Health: {collateral.healthFactor.toFixed(2)}x</p>
                     </div>
                   </div>
                   <div className="text-right">
