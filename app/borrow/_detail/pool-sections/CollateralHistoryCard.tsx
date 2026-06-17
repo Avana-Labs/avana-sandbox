@@ -60,7 +60,7 @@ export function CollateralHistoryCard({
                   "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
                   active
                     ? "bg-foreground text-background"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900",
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
                 )}
               >
                 {filter.label}
@@ -70,8 +70,8 @@ export function CollateralHistoryCard({
         </div>
       </div>
 
-      <div className="max-w-[760px] overflow-hidden rounded-[18px] bg-white">
-        <table className="w-full table-fixed border-separate border-spacing-0 text-[14px]">
+      <div className="max-w-[760px] overflow-x-auto rounded-[18px] bg-white dark:bg-slate-950">
+        <table className="min-w-[760px] w-full table-fixed border-separate border-spacing-0 text-[14px]">
           <colgroup>
             <col className="w-[96px]" />
             <col className="w-[118px]" />
@@ -81,7 +81,7 @@ export function CollateralHistoryCard({
             <col />
           </colgroup>
           <thead>
-            <tr className="bg-slate-50 text-left text-[11.5px] font-medium text-muted-foreground">
+            <tr className="bg-slate-50 text-left text-[11.5px] font-medium text-muted-foreground dark:bg-slate-900/90">
               <th className="rounded-l-2xl px-5 py-3.5">Time</th>
               <th className="px-5 py-3.5">Type</th>
               <th className="px-5 py-3.5 text-right">USD</th>
@@ -92,7 +92,7 @@ export function CollateralHistoryCard({
           </thead>
           <tbody>
             {visibleTransactions.map((tx) => (
-              <tr key={tx.id} className="transition-colors hover:bg-slate-50/80">
+              <tr key={tx.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-900/70">
                 <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
                   {tx.timeLabel}
                 </td>
