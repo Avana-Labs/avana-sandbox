@@ -108,31 +108,37 @@ function toggleValue<T extends string>(values: T[], value: T) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value]
 }
 
-function FilterTrigger({
-  label,
-  count,
-}: {
+type FilterTriggerProps = React.ComponentPropsWithoutRef<"button"> & {
   label: string
   count: number
-}) {
+}
+
+const FilterTrigger = React.forwardRef<HTMLButtonElement, FilterTriggerProps>(function FilterTrigger(
+  { label, count, className, ...props },
+  ref,
+) {
   const active = count > 0
 
   return (
     <button
+      ref={ref}
       type="button"
       className={cn(
         "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
         active
           ? "bg-foreground text-background"
           : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
+        className,
       )}
+      {...props}
     >
       <span>{label}</span>
       {active ? <span className="text-[11px] opacity-80">{count}</span> : null}
       <ChevronDown className="h-3.5 w-3.5" />
     </button>
   )
-}
+})
+FilterTrigger.displayName = "FilterTrigger"
 
 function FilterMenu<T extends string>({
   label,
@@ -146,7 +152,7 @@ function FilterMenu<T extends string>({
   onChange: (next: T[]) => void
 }) {
   return (
-      <DropdownMenu>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <FilterTrigger label={label} count={values.length} />
       </DropdownMenuTrigger>
