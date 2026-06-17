@@ -3,7 +3,6 @@
 import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { LEND_ROWS, TOKEN_BORROW_APYS, TOKEN_LOGOS, TOKEN_SUPPLY_APYS } from "./multiply-lend-section"
 
@@ -421,16 +420,6 @@ export function ExploreLoopsMarketsTable() {
     return sections.filter((section) => section.rows.length > 0)
   }, [sortedRows])
 
-  const toggleSort = (nextKey: typeof sortKey) => {
-    if (sortKey === nextKey) {
-      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
-      return
-    }
-
-    setSortKey(nextKey)
-    setSortDirection(nextKey === "protocol" || nextKey === "asset" ? "asc" : "desc")
-  }
-
   const getAssetLogo = (asset: string) => TOKEN_LOGOS[asset as keyof typeof TOKEN_LOGOS]
   const getSupplyApy = (asset: string) => TOKEN_SUPPLY_APYS[asset as keyof typeof TOKEN_SUPPLY_APYS]
   const getBorrowApy = (asset: string) => TOKEN_BORROW_APYS[asset as keyof typeof TOKEN_BORROW_APYS]
@@ -511,15 +500,13 @@ export function ExploreLoopsMarketsTable() {
 
       <div className="space-y-8">
         {sectionedRows.map((section) => (
-          <MarketSectionTable
-            key={section.title}
-            title={section.title}
-            rows={section.rows}
-            sortKey={sortKey}
-            onToggleSort={toggleSort}
-            getSupplyApy={getSupplyApy}
-            getBorrowApy={getBorrowApy}
-            getAssetLogo={getAssetLogo}
+            <MarketSectionTable
+              key={section.title}
+              title={section.title}
+              rows={section.rows}
+              getSupplyApy={getSupplyApy}
+              getBorrowApy={getBorrowApy}
+              getAssetLogo={getAssetLogo}
           />
         ))}
       </div>
@@ -527,136 +514,51 @@ export function ExploreLoopsMarketsTable() {
   )
 }
 
-function SortIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 12 16" fill="none" className="size-[14px] text-muted-foreground/70 dark:text-white/60">
-      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 function MarketSectionTable({
   title,
   rows,
-  sortKey,
-  onToggleSort,
   getSupplyApy,
   getBorrowApy,
   getAssetLogo,
 }: {
   title: string
   rows: (typeof LEND_ROWS)[number][]
-  sortKey: "protocol" | "asset" | "apy" | "rewards" | "points"
-  onToggleSort: (nextKey: "protocol" | "asset" | "apy" | "rewards" | "points") => void
   getSupplyApy: (asset: string) => string | undefined
   getBorrowApy: (asset: string) => string | undefined
   getAssetLogo: (asset: string) => string | undefined
 }) {
   return (
     <section className="space-y-3">
-      <h3 className="text-[22px] font-normal tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h3>
-
-      <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] table-fixed text-[12px] lg:min-w-full">
-            <colgroup>
-              <col className="w-[24%]" />
-              <col className="w-[22%]" />
-              <col className="w-[18%]" />
-              <col className="w-[18%]" />
-              <col className="w-[18%]" />
-            </colgroup>
-            <thead>
-              <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-                <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <button
-                    type="button"
-                    onClick={() => onToggleSort("protocol")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "protocol" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
-                    )}
-                  >
-                    <span>COLLATERAL</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <button
-                    type="button"
-                    onClick={() => onToggleSort("asset")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
-                    )}
-                  >
-                    <span>BORROWABLE</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <button
-                    type="button"
-                    onClick={() => onToggleSort("apy")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
-                    )}
-                  >
-                    <span>MAX APY</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <button
-                    type="button"
-                    onClick={() => onToggleSort("rewards")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "rewards" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
-                    )}
-                  >
-                    <span>MAX LEVERAGE</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <button
-                    type="button"
-                    onClick={() => onToggleSort("points")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "points" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
-                    )}
-                  >
-                    <span>AVAILABLE</span>
-                    <SortIcon />
-                  </button>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border dark:divide-white/6">
-              {rows.length ? (
-                rows.map((row, index) => (
-                  <MarketSectionRow
-                    key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
-                    row={row}
-                    getSupplyApy={getSupplyApy}
-                    getBorrowApy={getBorrowApy}
-                    getAssetLogo={getAssetLogo}
-                  />
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-[14px] text-muted-foreground dark:text-white/38">
-                    No loops in this category yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h3 className="text-[22px] font-normal tracking-[-0.03em] text-foreground md:text-[24px]">{title}</h3>
         </div>
+      </div>
+
+      <div className="hidden md:grid md:grid-cols-5 md:gap-3 md:px-4 md:text-[11px] md:font-medium md:uppercase md:tracking-[0.08em] md:text-muted-foreground">
+        <div>Collateral</div>
+        <div>Borrowable</div>
+        <div>Max APY</div>
+        <div>Max leverage</div>
+        <div>Available</div>
+      </div>
+
+      <div className="space-y-3">
+        {rows.length ? (
+          rows.map((row, index) => (
+            <MarketSectionRow
+              key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
+              row={row}
+              getSupplyApy={getSupplyApy}
+              getBorrowApy={getBorrowApy}
+              getAssetLogo={getAssetLogo}
+            />
+          ))
+        ) : (
+          <div className="rounded-[20px] border border-border bg-surface-raised px-6 py-10 text-center text-[14px] text-muted-foreground shadow-elev-1">
+            No loops in this category yet.
+          </div>
+        )}
       </div>
     </section>
   )
@@ -674,85 +576,54 @@ function MarketSectionRow({
   getAssetLogo: (asset: string) => string | undefined
 }) {
   return (
-    <tr className="asset-swap border-t border-border transition-colors hover:bg-surface-inset/60">
-      <td className="py-2.5 pl-6 pr-4">
-        <CellLink href={row.href} className="flex items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-11 shrink-0 rounded-full bg-card object-cover" />
-          <span className="min-w-0">
-            <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
-              {row.protocol}
-            </span>
-            <span className="mt-1 inline-flex items-center gap-1.5 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground dark:text-white/38">APY</span>
-              <span className="font-data tabular-nums text-emerald-600 dark:text-emerald-400">{getSupplyApy(row.protocol) ?? "—"}</span>
-            </span>
-          </span>
-        </CellLink>
-      </td>
-      <td className="py-2.5 px-4">
-        <CellLink href={row.href} className="flex min-w-0 items-center gap-3">
-          {getAssetLogo(row.asset) ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={getAssetLogo(row.asset)} alt="" aria-hidden="true" className="size-11 shrink-0 rounded-full bg-card object-cover" />
-            </>
-          ) : null}
-          <span className="min-w-0">
-            <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.asset}</span>
-            <span className="mt-1 inline-flex items-center gap-1.5 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground dark:text-white/38">APY</span>
-              <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">{getBorrowApy(row.asset) ?? "—"}</span>
-            </span>
-          </span>
-        </CellLink>
-      </td>
-      <td className="py-2.5 px-4">
-        <CellLink
-          href={row.href}
-          className={cn(
-            "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
-            row.apy ? (row.apy.startsWith("-") ? "text-rose-600" : "text-emerald-600") : "text-muted-foreground",
-          )}
-        >
-          {row.apy || "—"}
-        </CellLink>
-      </td>
-      <td className="py-2.5 px-4">
-        <CellLink href={row.href} className="text-foreground">
-          {row.rewardRows?.[1] ? (
-            <span className="block">
-              <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.rewardRows[1].value}</span>
-              <span className="mt-1 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.rewardRows[1].label}</span>
-            </span>
-          ) : row.rewardRows?.[0] ? (
-            <span className="block">
-              <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.rewardRows[0].value}</span>
-              <span className="mt-1 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.rewardRows[0].label}</span>
-            </span>
-          ) : row.partnerRewards ? (
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.partnerRewards}</span>
-          ) : (
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">—</span>
-          )}
-        </CellLink>
-      </td>
-      <td className="py-2.5 px-4 pr-6">
-        {row.waitlistHref ? (
-          <div className="inline-flex items-center">
-            <Button asChild size="sm" className="h-7 rounded-xs px-2.5 text-[12px]">
-              <a href={row.waitlistHref} target="_blank" rel="noreferrer">
-                Join waitlist
-              </a>
-            </Button>
-          </div>
-        ) : (
-          <CellLink href={row.href} className="inline-flex items-center text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
-            <span>{row.points ?? "—"}</span>
-          </CellLink>
-        )}
-      </td>
-    </tr>
+    <div className="rounded-[20px] border border-border bg-surface-raised px-4 py-4 shadow-elev-1 transition-colors hover:bg-surface-inset/40">
+      <div className="grid gap-4 md:grid-cols-5">
+        <MarketMetric value={row.protocol} subValue={getSupplyApy(row.protocol) ?? "—"} tone="positive" logo={row.protocolLogo} />
+        <MarketMetric value={row.asset} subValue={getBorrowApy(row.asset) ?? "—"} tone="negative" logo={getAssetLogo(row.asset)} />
+        <MarketMetric value={row.apy || "—"} tone={row.apy && row.apy.startsWith("-") ? "negative" : "positive"} />
+        <MarketMetric value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} subValue={row.rewardRows?.[1]?.label ?? row.rewardRows?.[0]?.label ?? " "} />
+        <MarketMetric value={row.waitlistHref ? "Waitlist" : row.points ?? "—"} subValue={row.waitlistHref ? "Not open yet" : " "} tone={row.waitlistHref ? "neutral" : "default"} cta={row.waitlistHref ? "Join waitlist" : undefined} />
+      </div>
+    </div>
+  )
+}
+
+function MarketMetric({
+  value,
+  subValue,
+  tone = "default",
+  logo,
+  cta,
+}: {
+  value: string
+  subValue?: string
+  tone?: "default" | "positive" | "negative" | "neutral"
+  logo?: string
+  cta?: string
+}) {
+  const valueClass =
+    tone === "positive"
+      ? "text-emerald-600 dark:text-emerald-400"
+      : tone === "negative"
+        ? "text-rose-600 dark:text-rose-400"
+        : tone === "neutral"
+          ? "text-muted-foreground"
+          : "text-foreground"
+
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center gap-2">
+        {logo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logo} alt="" aria-hidden="true" className="size-8 shrink-0 rounded-full bg-card object-cover" />
+        ) : null}
+        <div className="min-w-0">
+          <div className={cn("truncate text-[15px] font-medium tracking-[-0.03em]", valueClass)}>{value}</div>
+          {subValue ? <div className="mt-0.5 text-[13px] text-muted-foreground">{subValue}</div> : null}
+          {cta ? <div className="mt-0.5 text-[13px] font-medium text-[#01AACF]">{cta}</div> : null}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -815,14 +686,6 @@ function TrendingLoopCard({
           </div>
         </div>
       </div>
-    </Link>
-  )
-}
-
-function CellLink({ href, className, children }: { href: string; className?: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} className={cn("block text-left", className)}>
-      {children}
     </Link>
   )
 }
