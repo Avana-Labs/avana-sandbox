@@ -3,8 +3,9 @@ import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import type { PortfolioPageData, PortfolioHeroData, PortfolioTabKey } from "./types"
 import type { PortfolioPageRecords, PortfolioSnapshotRecord } from "./source"
 
-function buildHero(overrides: Partial<PortfolioHeroData> = {}): PortfolioHeroData {
+function buildHero(rangeData?: ChartRangeData, overrides: Partial<PortfolioHeroData> = {}): PortfolioHeroData {
   return {
+    ...(rangeData ? { rangeData } : {}),
     ...overrides,
   }
 }
@@ -209,12 +210,10 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
   const pendingToday = activity.filter((row) => row.status === "pending").length
 
   const heroByTab: Record<PortfolioTabKey, PortfolioHeroData> = {
-    overview: buildHero(
-      {
-        headlineValue: formatUsd(availableToBorrowUsd),
-        headlineDelta: `▲ ${currentLtvPct.toFixed(2)}% current LTV`,
-      },
-    ),
+    overview: buildHero(undefined, {
+      headlineValue: formatUsd(availableToBorrowUsd),
+      headlineDelta: `▲ ${currentLtvPct.toFixed(2)}% current LTV`,
+    }),
     lending: buildHero(
       getRangeData(snapshots, (snapshot) => snapshot.totalSuppliedUsd, totalSuppliedUsd || 964, 42, `${walletProfile.id}:lending`),
       {

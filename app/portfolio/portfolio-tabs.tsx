@@ -3,6 +3,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PortfolioHero } from "./hero/portfolio-hero"
 import type { PortfolioPageData, PortfolioTabKey } from "@/app/lib/data/providers/portfolio"
+import type { BorrowSnapshot } from "./borrow-hero-state"
 
 export type PortfolioTab = PortfolioTabKey
 
@@ -22,9 +23,10 @@ type PortfolioTabsProps = {
   activeTab: PortfolioTab
   onTabChange: (tab: PortfolioTab) => void
   pageData: PortfolioPageData
+  borrowSnapshot: BorrowSnapshot
 }
 
-export function PortfolioTabs({ activeTab, onTabChange, pageData }: PortfolioTabsProps) {
+export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot }: PortfolioTabsProps) {
   const activeHero = pageData.heroByTab[activeTab]
 
   const tabBar = (
@@ -56,6 +58,7 @@ export function PortfolioTabs({ activeTab, onTabChange, pageData }: PortfolioTab
           statTwoValue={activeHero.statTwoValue}
           rangeData={activeHero.rangeData}
           walletName={pageData.walletProfile.displayName}
+          borrowSnapshot={borrowSnapshot}
         />
       </Tabs>
     </section>

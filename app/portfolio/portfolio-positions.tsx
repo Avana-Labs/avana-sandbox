@@ -43,11 +43,13 @@ export function PortfolioPositions({
   collateralPositions = [],
   debtPositions = [],
   onSnapshotChange,
+  showSummary = true,
 }: {
   section?: "all" | "supplies" | "debts"
   collateralPositions?: SupplyRowContext[]
   debtPositions?: DebtRowContext[]
   onSnapshotChange?: (snapshot: BorrowSnapshot) => void
+  showSummary?: boolean
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">(section === "debts" ? "debts" : "supplies")
@@ -235,10 +237,12 @@ export function PortfolioPositions({
     <section className="space-y-8">
       {section === "all" ? (
         <>
-          <div className="grid gap-4 xl:grid-cols-2">
-            <SuppliesHealthFactorCard averageHealthFactor={supplyTotals.averageHf} showBalance={showDollarAmounts} />
-            <CurrentLtvCard borrowedUsd={debtTotals.totalBorrowed} collateralUsd={debtTotals.totalCollateral} showBalance={showDollarAmounts} />
-          </div>
+          {showSummary ? (
+            <div className="grid gap-4 xl:grid-cols-2">
+              <SuppliesHealthFactorCard averageHealthFactor={supplyTotals.averageHf} showBalance={showDollarAmounts} />
+              <CurrentLtvCard borrowedUsd={debtTotals.totalBorrowed} collateralUsd={debtTotals.totalCollateral} showBalance={showDollarAmounts} />
+            </div>
+          ) : null}
 
           <Tabs value={marketsTab} onValueChange={(value) => setMarketsTab(value as "supplies" | "debts")}>
             <TabsList className="inline-flex w-max min-w-max justify-start">
