@@ -13,7 +13,7 @@ export function ChartRangeSelector({ activeRange, onRangeChange, className }: Ch
     <div
       className={
         className ??
-        "flex w-full items-center justify-between gap-0.5 rounded-full border border-border bg-background p-1 sm:inline-flex sm:w-auto sm:justify-start sm:border-transparent sm:bg-[#f5f5f5] dark:sm:bg-surface-raised"
+        "flex w-full items-center justify-between gap-0.5 rounded-full border border-[#e5e5e5] bg-white p-0.5 sm:inline-flex sm:w-auto sm:justify-start dark:border-border dark:sm:bg-surface-raised"
       }
     >
       {CHART_RANGE_OPTIONS.map((range) => (
@@ -21,10 +21,10 @@ export function ChartRangeSelector({ activeRange, onRangeChange, className }: Ch
           key={range}
           type="button"
           onClick={() => onRangeChange(range)}
-          className={`flex-1 rounded-full px-2 py-1.5 text-[12px] font-medium transition-colors sm:flex-none sm:px-3.5 sm:py-1.5 sm:text-[13px] ${
+          className={`flex-1 rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors sm:flex-none sm:px-3.5 sm:py-1 sm:text-[13px] ${
             activeRange === range
-              ? "bg-[#f0f0f0] text-foreground sm:bg-white sm:shadow-[0_1px_2px_rgba(15,23,42,0.08)] dark:bg-[#1f2937] dark:text-foreground dark:sm:bg-background"
-              : "text-muted-foreground hover:text-foreground dark:text-[#a3a3a3] dark:hover:text-foreground"
+              ? "bg-[#ececec] text-[#313131] sm:bg-[#e9e9e9] sm:shadow-none dark:bg-[#1f2937] dark:text-foreground dark:sm:bg-background"
+              : "text-[#6a6a6a] hover:text-[#313131] dark:text-[#a3a3a3] dark:hover:text-foreground"
           }`}
         >
           {range}
