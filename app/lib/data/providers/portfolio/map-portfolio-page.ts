@@ -214,8 +214,6 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
   const totalExposureUsd = multiplyPositions.reduce((sum, row) => sum + row.exposureUsd, 0)
   const openPositionCount = multiplyPositions.filter((row) => row.status === "open").length
   const netCarryPct = multiplyPositions.length ? multiplyPositions.reduce((sum, row) => sum + row.pnlPct, 0) / multiplyPositions.length : 0
-  const settledToday = activity.filter((row) => row.status === "confirmed").length
-  const pendingToday = activity.filter((row) => row.status === "pending").length
 
   const heroByTab: Record<PortfolioTabKey, PortfolioHeroData> = {
     overview: buildHero(undefined, {
@@ -248,10 +246,6 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
     ),
     activity: buildHero(
       getRangeData(snapshots, (snapshot) => snapshot.totalEarnedUsd, Math.max(activity.length, 1), 6, `${walletProfile.id}:activity`),
-      {
-        headlineValue: `${activity.length}`,
-        headlineDelta: `${settledToday} settled, ${pendingToday} pending`,
-      },
     ),
   }
 
@@ -278,8 +272,6 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       },
       activity: {
         totalEvents: activity.length,
-        settledToday,
-        pendingToday,
       },
     },
     borrow: {
