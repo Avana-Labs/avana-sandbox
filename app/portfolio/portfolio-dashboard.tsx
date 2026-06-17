@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { CreditLinesCard } from "./credit-lines-card"
-import { StakeWizard } from "../stake/stake-wizard"
 import { PortfolioInvestments } from "./portfolio-investments"
 import { PortfolioPositions } from "./portfolio-positions"
 import { RecentActivity } from "./recent-activity"
@@ -146,10 +145,6 @@ export function PortfolioDashboard({
               onSnapshotChange={handleSnapshotChange}
               showSummary={false}
             />
-          </PortfolioSection>
-          <SectionDivider />
-          <PortfolioSection title="Credit Analysis">
-            <StakeWizard />
           </PortfolioSection>
         </div>
       ) : null}
