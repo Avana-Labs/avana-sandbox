@@ -24,9 +24,12 @@ import {
 } from "@/app/components/charts"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { CurrentLtvCard } from "@/app/borrow/components/debts-table"
+import { SuppliesHealthFactorCard } from "@/app/borrow/components/supplies-table"
 import { PortfolioHeroActions } from "./portfolio-hero-actions"
 import { PortfolioHeroHeader } from "./portfolio-hero-header"
 import { PORTFOLIO_NETWORKS } from "./portfolio-network-data"
+import type { BorrowSnapshot } from "../borrow-hero-state"
 import type { NetworkId, PortfolioHeroAction } from "./types"
 
 const DEFAULT_RANGE_DATA = buildRangeData(880, 14)
@@ -50,6 +53,7 @@ type PortfolioHeroProps = {
   statOneValue?: string
   statTwoValue?: string
   walletName?: string
+  borrowSnapshot?: BorrowSnapshot
 }
 
 type HeroUiConfig = {
@@ -169,6 +173,7 @@ export function PortfolioHero({
   statOneValue = "4.92%",
   statTwoValue = "+$12.46",
   walletName = "Demo wallet",
+  borrowSnapshot,
 }: PortfolioHeroProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
@@ -263,6 +268,16 @@ export function PortfolioHero({
             meta={uiConfig.headlineMeta}
             hidden={!showDollarAmounts}
           />
+          {isBorrowOverview && borrowSnapshot ? (
+            <div className="mt-4 grid gap-4 xl:grid-cols-2">
+              <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+              <CurrentLtvCard
+                borrowedUsd={borrowSnapshot.totalBorrowedUsd}
+                collateralUsd={borrowSnapshot.totalCollateralUsd}
+                showBalance={showDollarAmounts}
+              />
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>

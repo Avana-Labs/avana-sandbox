@@ -108,19 +108,20 @@ export function PortfolioDashboard({
 
   return (
     <>
-      <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} pageData={data} />
+      <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} pageData={data} borrowSnapshot={borrowSnapshot} />
 
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-5">
           <PortfolioSectionTitle title="Credit Limits" />
           <CreditLinesCard creditLines={borrowSnapshot} />
           <SectionDivider />
-          <PortfolioSection title="Credit Markets">
+          <PortfolioSection>
             <PortfolioPositions
               section="all"
               collateralPositions={collateralPositions}
               debtPositions={data.borrow.debtPositions}
               onSnapshotChange={handleSnapshotChange}
+              showSummary={false}
             />
           </PortfolioSection>
           <SectionDivider />
