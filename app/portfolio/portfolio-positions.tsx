@@ -227,12 +227,12 @@ export function PortfolioPositions({
     const totalCollateralUsd = supplies.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
     const totalBorrowedUsd = debtTotals.totalBorrowed
     const approvedUsd = supplies.reduce((sum, row) => sum + row.remainingBorrowPowerUsd, 0)
-    const liquidationNumberUsd = debtsRows.reduce((sum, row) => sum + row.liquidationThresholdUsd, 0)
+    const liquidationThresholdUsd = debtsRows.reduce((sum, row) => sum + row.liquidationThresholdUsd, 0)
     const currentLtvPct = totalCollateralUsd > 0 ? (totalBorrowedUsd / totalCollateralUsd) * 100 : 0
 
     return {
       approvedUsd,
-      liquidationNumberUsd,
+      liquidationThresholdUsd,
       totalBorrowedUsd,
       totalCollateralUsd,
       averageHealthFactor: debtTotals.averageHf ?? supplyTotals.averageHf,

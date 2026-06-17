@@ -41,11 +41,7 @@ export type PortfolioTabSummary = {
     totalEarnedUsd: number
     averageApyPct: number
   }
-  multiply: {
-    totalExposureUsd: number
-    openPositions: number
-    netCarryPct: number
-  }
+  multiply: Record<string, never>
   activity: {
     totalEvents: number
   }
@@ -54,7 +50,7 @@ export type PortfolioTabSummary = {
 export type PortfolioBorrowTabData = {
   creditLines: {
     approvedUsd: number
-    liquidationNumberUsd: number
+    liquidationThresholdUsd: number
     averageHealthFactor: number | null
     currentLtvPct: number
     totalBorrowedUsd: number
@@ -137,7 +133,9 @@ export type PortfolioLendTabData = {
 export type PortfolioMultiplyCollateral = {
   id: string
   label: string
-  tokens: [string, string]
+  collateralToken: string
+  borrowableToken: string
+  multiplier: number
   protocol: string
   healthFactor: number
   collateralUsd: number
@@ -197,6 +195,14 @@ export type PortfolioRewardsData = {
 }
 
 export type PortfolioMultiplyTabData = {
+  creditLines: {
+    approvedUsd: number
+    liquidationThresholdUsd: number
+    averageHealthFactor: number | null
+    currentLtvPct: number
+    totalBorrowedUsd: number
+    totalCollateralUsd: number
+  }
   lpCollaterals: PortfolioMultiplyCollateral[]
   positions: PortfolioMultiplyPosition[]
   openOrders: PortfolioOrder[]
