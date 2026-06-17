@@ -27,16 +27,8 @@ export function buildBorrowHeroData(template: PortfolioHeroData, snapshot: Borro
     ...template,
     headlineValue: formatUsd(snapshot.approvedUsd),
     headlineDelta: `${snapshot.currentLtvPct.toFixed(2)}% current LTV`,
-    headlineMeta: "Approved credit",
     rangeData: buildApprovedCreditRangeData(snapshot.approvedUsd),
-    actionLabels: template.actionLabels.length ? template.actionLabels : ["Borrow", "Repay", "Deposit", "Withdraw"],
-    primaryActionLabel: template.primaryActionLabel,
-    secondaryActionLabel: template.secondaryActionLabel,
-    statOneLabel: template.statOneLabel ?? "Current borrowed",
     statOneValue: formatUsd(snapshot.totalBorrowedUsd),
-    statOneHelpText: template.statOneHelpText ?? "Open debt across active borrow positions.",
-    statTwoLabel: template.statTwoLabel ?? "Credit health",
     statTwoValue: snapshot.averageHealthFactor == null ? "—" : snapshot.averageHealthFactor.toFixed(2),
-    statTwoHelpText: template.statTwoHelpText ?? "Average health factor across active borrow-linked collateral.",
   }
 }

@@ -24,20 +24,9 @@ export type PortfolioWalletProfile = {
 export type PortfolioHeroData = {
   headlineValue: string
   headlineDelta: string
-  headlineMeta?: string
   rangeData: ChartRangeData
-  actionLabels: string[]
-  hideChart?: boolean
-  hideActions?: boolean
-  hideStats?: boolean
-  primaryActionLabel: string
-  secondaryActionLabel: string
-  statOneLabel?: string
   statOneValue?: string
-  statOneHelpText?: string
-  statTwoLabel?: string
   statTwoValue?: string
-  statTwoHelpText?: string
 }
 
 export type PortfolioTabSummary = {
@@ -78,7 +67,6 @@ export type PortfolioBorrowTabData = {
     healthFactor: number | null
     pairApr: number
     feesUsd: number
-    feesLabel: string
   }>
   debtPositions: Array<{
     id: string
