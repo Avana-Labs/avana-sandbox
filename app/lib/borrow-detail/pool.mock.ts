@@ -608,26 +608,62 @@ function buildRelated(row: BorrowPoolRow): RelatedPoolSummary[] {
 function buildCollateralHistory(row: BorrowPoolRow): TxHistoryRow[] {
   const seed = prngFromString(`${row.id}:tx`)
   const kinds: TxHistoryRow["kind"][] = ["supply", "withdraw", "rewards"]
-  const now = Date.UTC(2026, 3, 23)
   const out: TxHistoryRow[] = []
+  const now = Date.now()
+  const token0Symbol = row.visuals[0].symbol.toUpperCase()
+  const token1Symbol = row.visuals[1].symbol.toUpperCase()
+  const token0Usd =
+    token0Symbol.includes("BTC") ? 68_400
+    : token0Symbol.includes("ETH") ? 3_450
+    : 1
+  const token1Usd =
+    token1Symbol.includes("BTC") ? 68_400
+    : token1Symbol.includes("ETH") ? 3_450
+    : 1
 
   for (let i = 0; i < 12; i++) {
-    const kind = kinds[Math.floor(seed() * kinds.length)]
+    const kind = kinds[i % kinds.length]
     const amountBase = kind === "rewards" ? 250 + seed() * 15_000 : 50_000 + seed() * 1_950_000
     const amount = Math.round(amountBase / 100) * 100
-    const at = new Date(now - i * 6 * 60 * 60 * 1000 - Math.floor(seed() * 86_400_000)).toISOString()
+    const ageMs = i * 30_000 + Math.floor(seed() * 5_000)
+    const at = new Date(now - ageMs).toISOString()
     const prefix = kind === "withdraw" ? "-" : "+"
+    const walletAddress = `0x${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}`
+    const walletLabel = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+    const token0Share = kind === "rewards" ? 0 : 0.48 + seed() * 0.14
+    const token1Share = 1 - token0Share
+    const token0Amount = amount * token0Share / token0Usd
+    const token1Amount = amount * token1Share / token1Usd
     out.push({
       id: `${row.id}-tx-${i}`,
       at,
+      timeLabel: formatRelativeAge(ageMs),
       kind,
       amountLabel: `${prefix}${formatCompactUsd(amount)}`,
+      token0AmountLabel: kind === "rewards" ? "—" : formatTokenAmount(token0Amount),
+      token1AmountLabel: kind === "rewards" ? "—" : formatTokenAmount(token1Amount),
       counterpartyLabel: undefined,
+      walletLabel,
+      walletHref: `https://etherscan.io/address/${walletAddress}`,
       txHashShort: `0x${Math.floor(seed() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(seed() * 0xffff).toString(16).padStart(4, "0")}`,
     })
   }
 
   return out
+}
+
+function formatRelativeAge(ageMs: number) {
+  const totalSeconds = Math.max(1, Math.floor(ageMs / 1000))
+  if (totalSeconds < 60) return `${totalSeconds}s`
+  const totalMinutes = Math.floor(totalSeconds / 60)
+  return `${totalMinutes}m`
+}
+
+function formatTokenAmount(value: number) {
+  if (value >= 1_000) return value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  if (value >= 1) return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 5 })
+  if (value >= 0.01) return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 5 })
+  return value.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })
 }
 
 // -------------------------------------------------------------------------
