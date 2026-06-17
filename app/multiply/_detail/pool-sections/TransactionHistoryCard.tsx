@@ -1,45 +1,43 @@
 "use client"
 
 import * as React from "react"
-import type { TxHistoryRow } from "@/app/lib/borrow-detail"
+import type { MultiplyTxHistoryRow } from "@/app/lib/multiply-detail"
 import { cn } from "@/lib/utils"
 
-const KIND_LABEL: Record<TxHistoryRow["kind"], string> = {
-  supply: "Pledge",
-  withdraw: "Remove",
-  borrow: "Borrow",
-  repay: "Repay",
-  liquidation: "Liquidation",
-  rewards: "Claim",
+const KIND_LABEL: Record<MultiplyTxHistoryRow["kind"], string> = {
+  open: "Open",
+  add: "Add collateral",
+  reduce: "Reduce",
+  close: "Close",
+  interest: "Interest",
+  rebalance: "Rebalance",
 }
 
-const KIND_TONE: Record<TxHistoryRow["kind"], string> = {
-  supply: "text-emerald-600 dark:text-emerald-400",
-  withdraw: "text-rose-600 dark:text-rose-400",
-  borrow: "text-rose-600 dark:text-rose-400",
-  repay: "text-emerald-600 dark:text-emerald-400",
-  liquidation: "text-amber-600 dark:text-amber-400",
-  rewards: "text-slate-700 dark:text-slate-300",
+const KIND_TONE: Record<MultiplyTxHistoryRow["kind"], string> = {
+  open: "text-emerald-600 dark:text-emerald-400",
+  add: "text-emerald-600 dark:text-emerald-400",
+  reduce: "text-rose-600 dark:text-rose-400",
+  close: "text-rose-600 dark:text-rose-400",
+  interest: "text-slate-700 dark:text-slate-300",
+  rebalance: "text-amber-600 dark:text-amber-400",
 }
 
 type Props = {
-  transactions: TxHistoryRow[]
-  tokenLabels: [string, string]
-  title?: string
+  transactions: MultiplyTxHistoryRow[]
+  collateralSymbol: string
+  borrowableSymbol: string
 }
 
 const FILTERS = [
   { id: "all", label: "All" },
-  { id: "supply", label: "Pledge" },
-  { id: "withdraw", label: "Remove" },
-  { id: "rewards", label: "Claim" },
+  { id: "open", label: "Open" },
+  { id: "add", label: "Add" },
+  { id: "reduce", label: "Reduce" },
+  { id: "close", label: "Close" },
+  { id: "rebalance", label: "Rebalance" },
 ] as const
 
-export function CollateralHistoryCard({
-  transactions,
-  tokenLabels,
-  title = "Transactions",
-}: Props) {
+export function TransactionHistoryCard({ transactions, collateralSymbol, borrowableSymbol }: Props) {
   const [activeFilter, setActiveFilter] = React.useState<(typeof FILTERS)[number]["id"]>("all")
   const visibleTransactions =
     activeFilter === "all" ? transactions : transactions.filter((tx) => tx.kind === activeFilter)
@@ -47,7 +45,7 @@ export function CollateralHistoryCard({
   return (
     <section className="min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">{title}</h2>
+        <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">Transactions</h2>
         <div className="flex flex-wrap items-center gap-2">
           {FILTERS.map((filter) => {
             const active = filter.id === activeFilter
@@ -76,18 +74,16 @@ export function CollateralHistoryCard({
             <col className="w-[96px]" />
             <col className="w-[118px]" />
             <col className="w-[112px]" />
-            <col className="w-[112px]" />
-            <col className="w-[112px]" />
+            <col className="w-[132px]" />
             <col />
           </colgroup>
           <thead>
-            <tr className="bg-slate-50 text-left text-[11.5px] font-medium text-muted-foreground dark:bg-slate-900/90">
-              <th className="rounded-l-2xl px-5 py-3.5">Time</th>
-              <th className="px-5 py-3.5">Type</th>
-              <th className="px-5 py-3.5 text-right">USD</th>
-              <th className="px-5 py-3.5 text-right">{tokenLabels[0]}</th>
-              <th className="px-5 py-3.5 text-right">{tokenLabels[1]}</th>
-              <th className="rounded-r-2xl px-5 py-3.5 text-right">Wallet</th>
+            <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+              <th className="rounded-l-2xl bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Time</th>
+              <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Type</th>
+              <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Amount</th>
+              <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">For</th>
+              <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right dark:bg-slate-900/90">Wallet</th>
             </tr>
           </thead>
           <tbody>
@@ -97,18 +93,19 @@ export function CollateralHistoryCard({
                   {tx.timeLabel}
                 </td>
                 <td className="px-5 py-4 align-middle">
-                  <span className={cn("text-[15px] font-medium", KIND_TONE[tx.kind])}>{KIND_LABEL[tx.kind]}</span>
+                  <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium", KIND_TONE[tx.kind])}>
+                    {KIND_LABEL[tx.kind]}
+                  </span>
                 </td>
-                <td className="px-5 py-4 text-right align-middle font-data text-[14px] tabular-nums text-foreground">
-                  {tx.amountLabel.replace(/^\+/, "")}
+                <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">
+                  {tx.amountLabel}
                 </td>
-                <td className="px-5 py-4 text-right align-middle font-data text-[14px] tabular-nums text-foreground">
-                  {tx.token0AmountLabel ?? "-"}
+                <td className="px-5 py-4 align-middle text-[14px] text-muted-foreground">
+                  <span className="inline-block whitespace-nowrap">
+                    {describeTransaction(tx.kind, collateralSymbol, borrowableSymbol)}
+                  </span>
                 </td>
-                <td className="px-5 py-4 text-right align-middle font-data text-[14px] tabular-nums text-foreground">
-                  {tx.token1AmountLabel ?? "-"}
-                </td>
-                <td className="px-5 py-4 text-right align-middle font-data text-[14px] tabular-nums text-foreground">
+                <td className="px-5 py-4 align-middle text-right font-data text-[14px] tabular-nums text-foreground">
                   {tx.walletHref ? (
                     <a
                       href={tx.walletHref}
@@ -131,4 +128,27 @@ export function CollateralHistoryCard({
       </div>
     </section>
   )
+}
+
+function describeTransaction(
+  kind: MultiplyTxHistoryRow["kind"],
+  collateralSymbol: string,
+  borrowableSymbol: string,
+) {
+  switch (kind) {
+    case "open":
+      return `${collateralSymbol} position`
+    case "add":
+      return `${collateralSymbol} collateral`
+    case "reduce":
+      return `${collateralSymbol} collateral`
+    case "close":
+      return `${borrowableSymbol} debt`
+    case "interest":
+      return `${borrowableSymbol} funding`
+    case "rebalance":
+      return `${collateralSymbol}/${borrowableSymbol}`
+    default:
+      return borrowableSymbol
+  }
 }

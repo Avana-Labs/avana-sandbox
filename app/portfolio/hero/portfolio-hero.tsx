@@ -50,6 +50,9 @@ type PortfolioHeroProps = {
   headlineDelta?: string
   rangeData?: ChartRangeData
   actionLabels?: string[]
+  hideChart?: boolean
+  hideActions?: boolean
+  hideStats?: boolean
   primaryActionLabel?: string
   secondaryActionLabel?: string
   statOneLabel?: string
@@ -157,6 +160,9 @@ export function PortfolioHero({
   headlineDelta,
   rangeData = DEFAULT_RANGE_DATA,
   actionLabels,
+  hideChart = false,
+  hideActions = false,
+  hideStats = false,
   primaryActionLabel = "Deposit",
   secondaryActionLabel = "Withdraw",
   statOneLabel = "Average APY",
@@ -234,37 +240,43 @@ export function PortfolioHero({
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-      <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
-        <div className="min-w-0 space-y-2.5 sm:space-y-3">
-          <HeroBalanceDisplay
-            value={resolvedDisplayValue}
-            delta={hoverPoint ? displayDelta : (headlineDelta ?? displayDelta)}
-            deltaTone={displayTone}
-            hidden={!showDollarAmounts}
-          />
-          <HeroChartSection
-            rangeData={displayRangeData}
-            activeRange={activeRange}
-            onRangeChange={(range) => {
-              setHoverIndex(null)
-              setActiveRange(range)
-            }}
-            onActiveIndexChange={setHoverIndex}
-            gradientId="portfolioHeroFill"
-            tone={trendTone}
-          />
-        </div>
+      {hideChart && hideActions && hideStats ? null : (
+        <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
+          <div className="min-w-0 space-y-2.5 sm:space-y-3">
+            <HeroBalanceDisplay
+              value={resolvedDisplayValue}
+              delta={hoverPoint ? displayDelta : (headlineDelta ?? displayDelta)}
+              deltaTone={displayTone}
+              hidden={!showDollarAmounts}
+            />
+            {hideChart ? null : (
+              <HeroChartSection
+                rangeData={displayRangeData}
+                activeRange={activeRange}
+                onRangeChange={(range) => {
+                  setHoverIndex(null)
+                  setActiveRange(range)
+                }}
+                onActiveIndexChange={setHoverIndex}
+                gradientId="portfolioHeroFill"
+                tone={trendTone}
+              />
+            )}
+          </div>
 
-        <div className="flex min-w-0 flex-col gap-3 lg:pt-0">
-          <PortfolioHeroActions actions={actions} />
-          {statOneLabel && statOneValue && statOneHelpText && statTwoLabel && statTwoValue && statTwoHelpText ? (
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-white/10">
-              <StatCard label={statOneLabel} value={statOneValue} helpText={statOneHelpText} />
-              <StatCard label={statTwoLabel} value={statTwoValue} helpText={statTwoHelpText} />
+          {hideActions && hideStats ? null : (
+            <div className="flex min-w-0 flex-col gap-3 lg:pt-0">
+              {hideActions ? null : <PortfolioHeroActions actions={actions} />}
+              {hideStats && statOneLabel && statOneValue && statOneHelpText && statTwoLabel && statTwoValue && statTwoHelpText ? null : statOneLabel && statOneValue && statOneHelpText && statTwoLabel && statTwoValue && statTwoHelpText ? (
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-white/10">
+                  <StatCard label={statOneLabel} value={statOneValue} helpText={statOneHelpText} />
+                  <StatCard label={statTwoLabel} value={statTwoValue} helpText={statTwoHelpText} />
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          )}
         </div>
-      </div>
+      )}
     </section>
   )
 }
