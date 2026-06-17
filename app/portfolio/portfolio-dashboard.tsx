@@ -4,12 +4,14 @@ import type { ReactNode } from "react"
 import { useState } from "react"
 import { CreditLinesCard } from "./credit-lines-card"
 import { StakeWizard } from "../stake/stake-wizard"
-import { RecentActivity } from "../lend/components/recent-activity"
 import { PortfolioInvestments } from "./portfolio-investments"
 import { PortfolioPositions } from "./portfolio-positions"
 import { PortfolioPositionsTabs } from "./portfolio-positions-tabs"
+import { RecentActivity } from "./recent-activity"
 import { PortfolioStrategies } from "./portfolio-strategies"
 import { PortfolioTabs, type PortfolioTab } from "./portfolio-tabs"
+
+const DEMO_WALLET_ADDRESS = "0x4b9815d5a010bee5ef34ee531a7ae15667fd7acc"
 
 function PortfolioSection({
   title,
@@ -66,7 +68,7 @@ export function PortfolioDashboard() {
       {activeTab === "looping" ? (
         <PortfolioPositionsTabs allowedTabs={["Positions", "Open Orders", "TWAP", "History"]} initialTab="Positions" />
       ) : null}
-      {activeTab === "activity" ? <RecentActivity /> : null}
+      {activeTab === "activity" ? <RecentActivity walletAddress={DEMO_WALLET_ADDRESS} /> : null}
     </>
   )
 }
