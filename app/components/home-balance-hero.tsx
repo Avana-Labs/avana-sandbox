@@ -1,11 +1,9 @@
 "use client"
 
-import Link from "next/link"
-import { ShieldAlert, Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import { HomeHowItWorksDialog } from "@/app/components/home-how-it-works-dialog"
 import { StaticSparkline } from "@/app/components/static-sparkline"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import type { HomeHowItWorksStep } from "@/app/lib/home-data"
@@ -71,12 +69,6 @@ export function HomeBalanceHero({ steps, totalPoints, totalPools, completedPools
 
         <div className="flex flex-wrap items-center gap-2">
           <HomeHowItWorksDialog steps={steps} />
-          <Button asChild variant="outline" size="sm" className="rounded-full">
-            <Link href="/risk-warning">
-              <ShieldAlert data-icon="inline-start" />
-              Risk warning
-            </Link>
-          </Button>
         </div>
       </CardHeader>
 

@@ -607,7 +607,6 @@ export function StakePageSkeleton() {
 }
 
 // -----------------------------------------------------------------------------
-// risk warning (`/risk-warning`) — intro + amber notice + accordion + cards
 // -----------------------------------------------------------------------------
 
 export function RiskWarningPageSkeleton() {
