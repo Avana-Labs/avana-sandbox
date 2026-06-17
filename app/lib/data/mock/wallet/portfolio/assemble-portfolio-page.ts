@@ -2,7 +2,6 @@ import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import type { ChartRangeData } from "@/app/components/charts"
 import type { PortfolioHeroData, PortfolioPageData } from "@/app/lib/data/providers/portfolio/types"
 import { getWalletProfile } from "./profiles"
-import { getWalletSnapshots } from "./snapshots"
 import { getWalletSupplies } from "./supplies"
 import { getWalletDebts } from "./debts"
 import {
@@ -51,7 +50,6 @@ function computeHealthFactor(collateralUsd: number, maxLtv: number, borrowedUsd:
 
 export function assemblePortfolioPage(walletProfileId: string): PortfolioPageData {
   const walletProfile = getWalletProfile(walletProfileId)
-  const snapshots = getWalletSnapshots(walletProfileId)
   const supplies = getWalletSupplies(walletProfileId)
   const debts = getWalletDebts(walletProfileId)
   const collaterals = getWalletCollaterals(walletProfileId)
@@ -64,6 +62,7 @@ export function assemblePortfolioPage(walletProfileId: string): PortfolioPageDat
   const totalCollateralUsd = collaterals.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
   const totalDebtUsd = debts.reduce((sum, row) => sum + row.borrowedUsd, 0)
   const availableToBorrowUsd = collaterals.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
+  const currentLtvPct = totalCollateralUsd ? (totalDebtUsd / totalCollateralUsd) * 100 : 0
   const collateralHealthFactors = collaterals
     .map((row) => computeHealthFactor(row.pool.collateralUsd, row.pool.maxLtv, row.borrowedUsd))
     .filter((value): value is number => value !== null && Number.isFinite(value))
@@ -79,8 +78,7 @@ export function assemblePortfolioPage(walletProfileId: string): PortfolioPageDat
   const settledToday = activityRows.filter((row) => row.status === "confirmed").length
   const pendingToday = activityRows.filter((row) => row.status === "pending").length
 
-  const latestSnapshot = snapshots[snapshots.length - 1]
-  const overviewRangeData = buildPortfolioRangeData(880, 14)
+  const overviewRangeData = buildPortfolioRangeData(availableToBorrowUsd, Math.max(availableToBorrowUsd * 0.03, 750))
   const lendingRangeData = buildPortfolioRangeData(964, 42)
   const loopingRangeData = buildPortfolioRangeData(198, 18)
   const activityRangeData = buildPortfolioRangeData(42, 6)
@@ -90,15 +88,15 @@ export function assemblePortfolioPage(walletProfileId: string): PortfolioPageDat
     fetchedAt: new Date().toISOString(),
     heroByTab: {
       overview: buildHero(overviewRangeData, {
-        headlineValue: `$${(latestSnapshot?.totalValueUsd ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-        headlineDelta: "$9.81K (3.41%) today",
-        headlineMeta: "Wallet profile",
+        headlineValue: `$${availableToBorrowUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        headlineDelta: `${currentLtvPct.toFixed(2)}% current LTV`,
+        headlineMeta: "Approved credit",
         actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
         primaryActionLabel: "Deposit",
         secondaryActionLabel: "Withdraw",
-        statOneLabel: "Approved credit",
-        statOneValue: `$${availableToBorrowUsd.toLocaleString("en-US")}`,
-        statOneHelpText: "Borrow capacity across pledged collateral positions.",
+        statOneLabel: "Current borrowed",
+        statOneValue: `$${totalDebtUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        statOneHelpText: "Open debt across active borrow positions.",
         statTwoLabel: "Credit health",
         statTwoValue: averageHealthFactor ? averageHealthFactor.toFixed(2) : "—",
         statTwoHelpText: "Average health factor across active borrow-linked collateral.",
