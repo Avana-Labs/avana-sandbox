@@ -7,34 +7,14 @@ function buildHero(rangeData: ChartRangeData, overrides: Partial<PortfolioHeroDa
   return {
     headlineValue: overrides.headlineValue ?? "$0.00",
     headlineDelta: overrides.headlineDelta ?? "$0.00 (0.00%)",
-    headlineMeta: overrides.headlineMeta,
     rangeData,
-    actionLabels: overrides.actionLabels ?? ["Deposit", "Withdraw"],
-    hideChart: overrides.hideChart,
-    hideActions: overrides.hideActions,
-    hideStats: overrides.hideStats,
-    primaryActionLabel: overrides.primaryActionLabel ?? "Deposit",
-    secondaryActionLabel: overrides.secondaryActionLabel ?? "Withdraw",
-    statOneLabel: overrides.statOneLabel,
     statOneValue: overrides.statOneValue,
-    statOneHelpText: overrides.statOneHelpText,
-    statTwoLabel: overrides.statTwoLabel,
     statTwoValue: overrides.statTwoValue,
-    statTwoHelpText: overrides.statTwoHelpText,
   }
 }
 
 function formatUsd(value: number) {
   return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-function formatUsdCompact(value: number) {
-  const absoluteValue = Math.abs(value)
-  const sign = value > 0 ? "+" : value < 0 ? "-" : ""
-  return `${sign}$${absoluteValue.toLocaleString("en-US", {
-    notation: "compact",
-    maximumFractionDigits: absoluteValue >= 100_000 ? 1 : 2,
-  })}`
 }
 
 function computeHealthFactor(collateralUsd: number, maxLtv: number, borrowedUsd: number) {
@@ -244,16 +224,8 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       {
         headlineValue: formatUsd(availableToBorrowUsd),
         headlineDelta: `${currentLtvPct.toFixed(2)}% current LTV`,
-        headlineMeta: "Approved credit",
-        actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
-        primaryActionLabel: "Deposit",
-        secondaryActionLabel: "Withdraw",
-        statOneLabel: "Current borrowed",
         statOneValue: formatUsd(totalDebtUsd),
-        statOneHelpText: "Open debt across active borrow positions.",
-        statTwoLabel: "Credit health",
         statTwoValue: averageHealthFactor ? averageHealthFactor.toFixed(2) : "—",
-        statTwoHelpText: "Average health factor across active borrow-linked collateral.",
       },
     ),
     lending: buildHero(
@@ -261,15 +233,8 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       {
         headlineValue: formatUsd(totalSuppliedUsd),
         headlineDelta: `${formatUsd(totalEarnedUsd)} earned this month`,
-        actionLabels: ["Supply assets", "Withdraw yield"],
-        primaryActionLabel: "Supply assets",
-        secondaryActionLabel: "Withdraw yield",
-        statOneLabel: "Average APY",
         statOneValue: `${averageApyPct.toFixed(2)}%`,
-        statOneHelpText: "Weighted average APY across supplied assets in the wallet.",
-        statTwoLabel: "Earned",
         statTwoValue: formatUsd(totalEarnedUsd),
-        statTwoHelpText: "Total yield already accrued by the portfolio.",
       },
     ),
     looping: buildHero(
@@ -283,15 +248,8 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       {
         headlineValue: formatUsd(totalExposureUsd),
         headlineDelta: `${netCarryPct >= 0 ? "+" : ""}${netCarryPct.toFixed(2)}% net carry`,
-        actionLabels: ["Increase loop", "Unwind loop"],
-        primaryActionLabel: "Increase loop",
-        secondaryActionLabel: "Unwind loop",
-        statOneLabel: "Open positions",
         statOneValue: `${openPositionCount}`,
-        statOneHelpText: "Open multiply positions in the wallet profile.",
-        statTwoLabel: "Net carry",
         statTwoValue: `${netCarryPct >= 0 ? "+" : ""}${netCarryPct.toFixed(2)}%`,
-        statTwoHelpText: "Average realized carry across the current multiply book.",
       },
     ),
     activity: buildHero(
@@ -299,12 +257,6 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       {
         headlineValue: `${activity.length}`,
         headlineDelta: `${settledToday} settled, ${pendingToday} pending`,
-        actionLabels: ["Product", "Action", "Status"],
-        hideChart: true,
-        hideActions: true,
-        hideStats: true,
-        primaryActionLabel: "Product",
-        secondaryActionLabel: "Action",
       },
     ),
   }
@@ -344,10 +296,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         totalBorrowedUsd: totalDebtUsd,
         totalCollateralUsd,
       },
-      collateralPositions: collaterals.map((record) => ({
-        ...record,
-        feesLabel: formatUsdCompact(record.feesUsd).replace(/^\+/, ""),
-      })),
+      collateralPositions: collaterals,
       debtPositions: debts.map((debt, index) => {
         const matchingCollateral = collaterals.find((row) => row.pool.id === debt.poolId)
         const fallbackCollateral = collaterals[index % collaterals.length] ?? collaterals[0]
