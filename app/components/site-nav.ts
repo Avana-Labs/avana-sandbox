@@ -47,8 +47,8 @@ export const siteNavLinks: SiteNavLink[] = [
     section: "Market scanner",
     description: "Review LP-backed borrowing venues, compare TVL, and read the current market surface at a glance.",
     highlights: ["Cross-chain venues", "Live TVL"],
-    actionLabel: "Risk warning",
-    actionHref: "/risk-warning",
+    actionLabel: "Support center",
+    actionHref: "/support-center",
   },
   {
     href: "/lend",
@@ -68,8 +68,8 @@ export const siteNavLinks: SiteNavLink[] = [
     section: "Directional overlays",
     description: "Monitor leverage, funding, and active overlays in a tighter LP-backed workspace.",
     highlights: ["Funding view", "Live positions"],
-    actionLabel: "Risk warning",
-    actionHref: "/risk-warning",
+    actionLabel: "Support center",
+    actionHref: "/support-center",
   },
   {
     href: "/rewards",
@@ -78,8 +78,8 @@ export const siteNavLinks: SiteNavLink[] = [
     section: "Incentives",
     description: "Track quest progress, points, and protocol metrics across Avana rewards programs.",
     highlights: ["Quest progress", "Points & tiers"],
-    actionLabel: "Risk warning",
-    actionHref: "/risk-warning",
+    actionLabel: "Support center",
+    actionHref: "/support-center",
   },
   {
     href: "/support-center",

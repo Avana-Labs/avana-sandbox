@@ -534,21 +534,34 @@ function buildTransactions(asset: BorrowableAsset): TxHistoryRow[] {
   const rand = prngFromString(`${asset.id}:tx`)
   const kinds: TxHistoryRow["kind"][] = ["supply", "borrow", "repay", "withdraw", "rewards", "liquidation"]
   const out: TxHistoryRow[] = []
-  const now = Date.UTC(2026, 3, 22)
+  const now = Date.now()
   for (let i = 0; i < 12; i++) {
     const kind = kinds[Math.floor(rand() * kinds.length)]
     const amount = Math.round((10_000 + rand() * 240_000) / 100) * 100
-    const at = new Date(now - i * 3 * 60 * 60 * 1000 - Math.floor(rand() * 86_400_000)).toISOString()
+    const ageMs = i * 28_000 + Math.floor(rand() * 6_000)
+    const at = new Date(now - ageMs).toISOString()
+    const walletAddress = `0x${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}`
+    const walletLabel = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     out.push({
       id: `${asset.id}-tx-${i}`,
       at,
+      timeLabel: formatRelativeAge(ageMs),
       kind,
       amountLabel: `${kind === "borrow" || kind === "withdraw" ? "-" : "+"}${formatCompactUsd(amount)}`,
-      counterpartyLabel: kind === "liquidation" ? "Liquidator · 0x9a…3b" : undefined,
+      counterpartyLabel: kind === "liquidation" ? "Liquidator" : undefined,
+      walletLabel,
+      walletHref: `https://etherscan.io/address/${walletAddress}`,
       txHashShort: `0x${Math.floor(rand() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(rand() * 0xffff).toString(16).padStart(4, "0")}`,
     })
   }
   return out
+}
+
+function formatRelativeAge(ageMs: number) {
+  const totalSeconds = Math.max(1, Math.floor(ageMs / 1000))
+  if (totalSeconds < 60) return `${totalSeconds}s`
+  const totalMinutes = Math.floor(totalSeconds / 60)
+  return `${totalMinutes}m`
 }
 
 // -------------------------------------------------------------------------

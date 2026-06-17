@@ -16,6 +16,7 @@ import {
   HOME_INITIAL_DEBTS,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
+import { triggerPageLoading } from "@/app/lib/page-loading"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { PoolsList, PoolsTable } from "./pools-table"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./borrow-modal"
@@ -128,6 +129,7 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
 
   const handleAssetBorrowDesktop = useCallback(
     (asset: BorrowableAsset) => {
+      triggerPageLoading()
       router.push(`/borrow/asset/${asset.id}`)
     },
     [router],
