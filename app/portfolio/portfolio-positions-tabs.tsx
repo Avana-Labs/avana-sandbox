@@ -153,22 +153,23 @@ export function PortfolioPositionsTabs({ allowedTabs = [...TABS], initialTab = "
               {data.lpCollaterals.map((collateral) => (
                 <div key={collateral.id} className="flex items-center justify-between px-3.5 py-2.5">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex items-center">
-                      <TokenIcon symbol={collateral.tokens[0]} size="md" ring />
-                      <TokenIcon symbol={collateral.tokens[1]} size="md" ring className="-ml-2" />
-                    </div>
+                    <TokenIcon symbol={collateral.collateralToken} size="md" ring />
                     <div>
                       <p className="font-medium text-[13px] text-foreground">
                         {collateral.label} ({collateral.protocol})
                       </p>
-                      <p className="mt-0.5 text-[11.5px] text-muted-foreground">Health: {collateral.healthFactor.toFixed(2)}x</p>
+                      <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                        Borrowable: {collateral.borrowableToken} · {collateral.multiplier.toFixed(0)}x
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-data text-[13px] font-medium tabular-nums text-foreground">
                       ${collateral.collateralUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                    <p className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Deposited</p>
+                    <p className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                      {collateral.healthFactor.toFixed(2)}x health
+                    </p>
                   </div>
                 </div>
               ))}

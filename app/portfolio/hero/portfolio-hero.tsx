@@ -54,6 +54,7 @@ type PortfolioHeroProps = {
   statTwoValue?: string
   walletName?: string
   borrowSnapshot?: BorrowSnapshot
+  multiplySnapshot?: BorrowSnapshot
 }
 
 type HeroUiConfig = {
@@ -176,6 +177,7 @@ export function PortfolioHero({
   statTwoValue = "+$12.46",
   walletName = "Demo wallet",
   borrowSnapshot,
+  multiplySnapshot,
 }: PortfolioHeroProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
@@ -277,6 +279,16 @@ export function PortfolioHero({
               <CurrentLtvCard
                 borrowedUsd={borrowSnapshot.totalBorrowedUsd}
                 collateralUsd={borrowSnapshot.totalCollateralUsd}
+                showBalance={showDollarAmounts}
+              />
+            </div>
+          ) : null}
+          {isLoopingOverview && multiplySnapshot ? (
+            <div className="mt-4 grid gap-4 xl:grid-cols-2">
+              <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+              <CurrentLtvCard
+                borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+                collateralUsd={multiplySnapshot.totalCollateralUsd}
                 showBalance={showDollarAmounts}
               />
             </div>

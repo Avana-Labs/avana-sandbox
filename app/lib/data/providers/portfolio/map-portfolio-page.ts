@@ -188,13 +188,13 @@ function getRangeData(
 }
 
 export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageData {
-  const { walletProfile, snapshots, supplies, debts, collaterals, multiplyPositions, openOrders, twapOrders, activity, strategies, rewards } =
+  const { walletProfile, snapshots, supplies, debts, collaterals, multiplyCreditLines, multiplyCollaterals, multiplyPositions, openOrders, twapOrders, activity, strategies, rewards } =
     records
 
   const totalCollateralUsd = collaterals.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
   const totalDebtUsd = debts.reduce((sum, row) => sum + row.borrowedUsd, 0)
   const availableToBorrowUsd = collaterals.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
-  const liquidationNumberUsd = calculateLiquidationNumberUsd(
+  const liquidationThresholdUsd = calculateLiquidationNumberUsd(
     collaterals.map((row) => ({
       borrowedUsd: row.borrowedUsd,
       referenceBorrowedUsd: row.borrowedUsd,
@@ -211,10 +211,6 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
   const totalSuppliedUsd = supplies.reduce((sum, row) => sum + row.suppliedUsd, 0)
   const totalEarnedUsd = supplies.reduce((sum, row) => sum + row.earnedUsd, 0)
   const averageApyPct = supplies.length ? supplies.reduce((sum, row) => sum + row.apyPct, 0) / supplies.length : 0
-  const totalExposureUsd = multiplyPositions.reduce((sum, row) => sum + row.exposureUsd, 0)
-  const openPositionCount = multiplyPositions.filter((row) => row.status === "open").length
-  const netCarryPct = multiplyPositions.length ? multiplyPositions.reduce((sum, row) => sum + row.pnlPct, 0) / multiplyPositions.length : 0
-
   const heroByTab: Record<PortfolioTabKey, PortfolioHeroData> = {
     overview: buildHero(undefined, {
       headlineValue: formatUsd(availableToBorrowUsd),
@@ -230,18 +226,12 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       },
     ),
     looping: buildHero(
-      getRangeData(
-        snapshots,
-        (snapshot) => snapshot.totalMultiplyExposureUsd,
-        totalExposureUsd || 198,
-        18,
-        `${walletProfile.id}:looping`,
-      ),
+      getRangeData(snapshots, (snapshot) => snapshot.totalMultiplyExposureUsd, multiplyCreditLines.approvedUsd || 198, 18, `${walletProfile.id}:looping`),
       {
-        headlineValue: formatUsd(totalExposureUsd),
-        headlineDelta: `▲ ${netCarryPct >= 0 ? "+" : ""}${netCarryPct.toFixed(2)}% net carry`,
-        statOneValue: `${openPositionCount}`,
-        statTwoValue: `${netCarryPct >= 0 ? "+" : ""}${netCarryPct.toFixed(2)}%`,
+        headlineValue: formatUsd(multiplyCreditLines.approvedUsd),
+        headlineDelta: `${multiplyCreditLines.averageHealthFactor?.toFixed(2) ?? "—"} health factor`,
+        statOneValue: `${multiplyCreditLines.currentLtvPct.toFixed(2)}%`,
+        statTwoValue: formatUsd(multiplyCreditLines.totalBorrowedUsd),
       },
     ),
     activity: buildHero(
@@ -265,11 +255,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         totalEarnedUsd,
         averageApyPct,
       },
-      multiply: {
-        totalExposureUsd,
-        openPositions: openPositionCount,
-        netCarryPct,
-      },
+      multiply: {},
       activity: {
         totalEvents: activity.length,
       },
@@ -277,7 +263,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
     borrow: {
       creditLines: {
         approvedUsd: availableToBorrowUsd,
-        liquidationNumberUsd,
+        liquidationThresholdUsd,
         averageHealthFactor,
         currentLtvPct,
         totalBorrowedUsd: totalDebtUsd,
@@ -311,14 +297,24 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       strategyBuckets: strategies,
     },
     multiply: {
-      lpCollaterals: collaterals.map((record) => ({
+      creditLines: {
+        approvedUsd: multiplyCreditLines.approvedUsd,
+        liquidationThresholdUsd: multiplyCreditLines.liquidationThresholdUsd,
+        averageHealthFactor: multiplyCreditLines.averageHealthFactor,
+        currentLtvPct: multiplyCreditLines.currentLtvPct,
+        totalBorrowedUsd: multiplyCreditLines.totalBorrowedUsd,
+        totalCollateralUsd: multiplyCreditLines.totalCollateralUsd,
+      },
+      lpCollaterals: multiplyCollaterals.map((record) => ({
         id: record.id,
-        label: record.pool.name,
-        tokens: [record.pool.visuals[0].symbol, record.pool.visuals[1].symbol],
-        protocol: record.pool.venue,
-        healthFactor: record.healthFactor ?? 0,
-        collateralUsd: record.pool.collateralUsd,
-        borrowPowerUsd: record.pool.borrowPowerUsd,
+        label: record.label,
+        collateralToken: record.collateralToken,
+        borrowableToken: record.borrowableToken,
+        multiplier: record.multiplier,
+        protocol: record.protocol,
+        healthFactor: record.healthFactor,
+        collateralUsd: record.collateralUsd,
+        borrowPowerUsd: record.borrowPowerUsd,
       })),
       positions: multiplyPositions,
       openOrders,

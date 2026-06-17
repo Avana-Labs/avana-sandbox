@@ -24,9 +24,10 @@ type PortfolioTabsProps = {
   onTabChange: (tab: PortfolioTab) => void
   pageData: PortfolioPageData
   borrowSnapshot: BorrowSnapshot
+  multiplySnapshot: BorrowSnapshot
 }
 
-export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot }: PortfolioTabsProps) {
+export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot, multiplySnapshot }: PortfolioTabsProps) {
   const activeHero = pageData.heroByTab[activeTab]
 
   const tabBar = (
@@ -48,7 +49,7 @@ export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot
   return (
     <section className="mb-6 sm:mb-8">
       <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as PortfolioTab)}>
-      <PortfolioHero
+        <PortfolioHero
           tab={activeTab}
           tabs={tabBar}
           initialNetwork={pageData.walletProfile.selectedNetwork}
@@ -59,6 +60,7 @@ export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot
           rangeData={activeHero.rangeData}
           walletName={pageData.walletProfile.displayName}
           borrowSnapshot={borrowSnapshot}
+          multiplySnapshot={multiplySnapshot}
         />
       </Tabs>
     </section>

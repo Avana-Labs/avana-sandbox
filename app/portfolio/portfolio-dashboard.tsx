@@ -7,9 +7,9 @@ import { CreditLinesCard } from "./credit-lines-card"
 import { StakeWizard } from "../stake/stake-wizard"
 import { PortfolioInvestments } from "./portfolio-investments"
 import { PortfolioPositions } from "./portfolio-positions"
-import { PortfolioPositionsTabs } from "./portfolio-positions-tabs"
 import { RecentActivity } from "./recent-activity"
 import { PortfolioTabs, type PortfolioTab } from "./portfolio-tabs"
+import { MultiplyCollateralTable } from "./multiply-collateral-table"
 import type { BorrowSnapshot } from "./borrow-hero-state"
 import { usePortfolioPage } from "./use-portfolio-page"
 
@@ -66,10 +66,21 @@ export function PortfolioDashboard({
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const [activeTab, setActiveTab] = useState<PortfolioTab>("lending")
   const [borrowSnapshotOverride, setBorrowSnapshotOverride] = useState<BorrowSnapshot | null>(null)
+  const fetchedMultiplySnapshot = useMemo<BorrowSnapshot>(
+    () => ({
+      approvedUsd: data?.multiply.creditLines.approvedUsd ?? initialData?.multiply.creditLines.approvedUsd ?? 0,
+      liquidationThresholdUsd: data?.multiply.creditLines.liquidationThresholdUsd ?? initialData?.multiply.creditLines.liquidationThresholdUsd ?? 0,
+      totalBorrowedUsd: data?.multiply.creditLines.totalBorrowedUsd ?? initialData?.multiply.creditLines.totalBorrowedUsd ?? 0,
+      totalCollateralUsd: data?.multiply.creditLines.totalCollateralUsd ?? initialData?.multiply.creditLines.totalCollateralUsd ?? 0,
+      averageHealthFactor: data?.multiply.creditLines.averageHealthFactor ?? initialData?.multiply.creditLines.averageHealthFactor ?? null,
+      currentLtvPct: data?.multiply.creditLines.currentLtvPct ?? initialData?.multiply.creditLines.currentLtvPct ?? 0,
+    }),
+    [data, initialData],
+  )
   const fetchedBorrowSnapshot = useMemo<BorrowSnapshot>(
     () => ({
       approvedUsd: data?.borrow.creditLines.approvedUsd ?? initialData?.borrow.creditLines.approvedUsd ?? 0,
-      liquidationNumberUsd: data?.borrow.creditLines.liquidationNumberUsd ?? initialData?.borrow.creditLines.liquidationNumberUsd ?? 0,
+      liquidationThresholdUsd: data?.borrow.creditLines.liquidationThresholdUsd ?? initialData?.borrow.creditLines.liquidationThresholdUsd ?? 0,
       totalBorrowedUsd: data?.borrow.creditLines.totalBorrowedUsd ?? initialData?.borrow.creditLines.totalBorrowedUsd ?? 0,
       totalCollateralUsd: data?.borrow.creditLines.totalCollateralUsd ?? initialData?.borrow.creditLines.totalCollateralUsd ?? 0,
       averageHealthFactor: data?.borrow.creditLines.averageHealthFactor ?? initialData?.borrow.creditLines.averageHealthFactor ?? null,
@@ -88,7 +99,7 @@ export function PortfolioDashboard({
       const baseline = previous ?? fetchedBorrowSnapshot
       if (
         baseline.approvedUsd === snapshot.approvedUsd &&
-        baseline.liquidationNumberUsd === snapshot.liquidationNumberUsd &&
+        baseline.liquidationThresholdUsd === snapshot.liquidationThresholdUsd &&
         baseline.totalBorrowedUsd === snapshot.totalBorrowedUsd &&
         baseline.totalCollateralUsd === snapshot.totalCollateralUsd &&
         baseline.averageHealthFactor === snapshot.averageHealthFactor &&
@@ -115,7 +126,13 @@ export function PortfolioDashboard({
 
   return (
     <>
-      <PortfolioTabs activeTab={activeTab} onTabChange={setActiveTab} pageData={data} borrowSnapshot={borrowSnapshot} />
+      <PortfolioTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        pageData={data}
+        borrowSnapshot={borrowSnapshot}
+        multiplySnapshot={fetchedMultiplySnapshot}
+      />
 
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-5">
@@ -138,11 +155,13 @@ export function PortfolioDashboard({
       ) : null}
       {activeTab === "lending" ? <PortfolioInvestments investments={data.lend.investments} /> : null}
       {activeTab === "looping" ? (
-        <PortfolioPositionsTabs
-          allowedTabs={["LP Collaterals", "Positions", "Open Orders", "TWAP", "History"]}
-          initialTab="Positions"
-          data={data.multiply}
-        />
+        <div className="mt-12 space-y-5">
+          <PortfolioSectionTitle title="Credit Limits" />
+          <CreditLinesCard creditLines={fetchedMultiplySnapshot} />
+          <PortfolioSection className="pt-8">
+            <MultiplyCollateralTable rows={data.multiply.lpCollaterals} />
+          </PortfolioSection>
+        </div>
       ) : null}
       {activeTab === "activity" ? <RecentActivity rows={data.activity.rows} /> : null}
     </>
