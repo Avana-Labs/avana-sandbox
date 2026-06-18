@@ -194,9 +194,9 @@ export function LightweightChart({
               strokeWidth={2.5}
               dot={(props) => {
                 const { cx, cy, index } = props
-                if (index !== data.length - 1 || cx == null || cy == null) return <g />
+                if (index !== data.length - 1 || cx == null || cy == null) return null
                 return (
-                  <g key={`lw-line-dot-${index}`}>
+                  <g>
                     <circle cx={cx} cy={cy} fill={palette.stroke} opacity={0.45}>
                       <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
                       <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
@@ -218,9 +218,9 @@ export function LightweightChart({
               fillOpacity={1}
               dot={(props) => {
                 const { cx, cy, index } = props
-                if (index !== data.length - 1 || cx == null || cy == null) return <g />
+                if (index !== data.length - 1 || cx == null || cy == null) return null
                 return (
-                  <g key={`lw-area-dot-${index}`}>
+                  <g>
                     <circle cx={cx} cy={cy} fill={palette.stroke} opacity={0.45}>
                       <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
                       <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
