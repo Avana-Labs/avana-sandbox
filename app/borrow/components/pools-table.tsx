@@ -56,6 +56,7 @@ type PoolsTableProps = {
 }
 
 type SectionTabId = "collateral" | "borrow"
+const INITIAL_MOBILE_COLLATERAL_ROWS = 4
 
 function SectionTabs({
   activeTab,
@@ -377,7 +378,10 @@ function SpokeMobileSection({
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
+  const [expanded, setExpanded] = useState(false)
   const borrowAssets = useMemo(() => getBorrowAssetsForSpoke(spoke.id), [spoke.id])
+  const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
+  const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
   return (
     <section className="space-y-2">
@@ -392,7 +396,7 @@ function SpokeMobileSection({
         {activeTab === "collateral" ? (
           <div className="overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
             <ul className="divide-y divide-border">
-              {rows.map((pool) => (
+              {visibleRows.map((pool) => (
                 <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onUseAsCollateral(pool)}>
                   <div className="flex items-center justify-between gap-3">
                     <TokenPairCell
@@ -460,6 +464,15 @@ function SpokeMobileSection({
                 </li>
               ))}
             </ul>
+            {hiddenRowCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                className="flex h-11 w-full items-center justify-center border-t border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+              >
+                View {hiddenRowCount} more {spoke.label.replace(" Spoke", "").toLowerCase()} markets
+              </button>
+            ) : null}
           </div>
         ) : (
           <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
