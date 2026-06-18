@@ -24,7 +24,7 @@ export function RewardsBalanceHero({ pageData }: { pageData: RewardsPageData }) 
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
         <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
           <Image
-            src="/Avana Icon (Personal) PNG.png"
+            src="/avana-icon.svg"
             alt=""
             width={760}
             height={760}
@@ -44,7 +44,7 @@ export function RewardsBalanceHero({ pageData }: { pageData: RewardsPageData }) 
 
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20">
                   <Image
-                    src="/Avana Icon (Personal) PNG.png"
+                    src="/avana-icon.svg"
                     alt="Avana token"
                     width={38}
                     height={38}

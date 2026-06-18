@@ -9,21 +9,6 @@ import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 
-const themeBootstrapScript = `
-(() => {
-  const storageKey = "avana-theme";
-  const root = document.documentElement;
-  const storedTheme = window.localStorage.getItem(storageKey);
-  const theme = storedTheme === "light" || storedTheme === "dark" || storedTheme === "system"
-    ? storedTheme
-    : "system";
-  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  const resolvedTheme = theme === "system" ? systemTheme : theme;
-  root.classList.toggle("dark", resolvedTheme === "dark");
-  root.style.colorScheme = resolvedTheme;
-})();
-`
-
 const diatypeSans = localFont({
   src: [
     {
@@ -123,7 +108,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        <script src="/theme-bootstrap.js" />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider
