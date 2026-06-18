@@ -1,25 +1,70 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection, DetailFaqSection, StickyDetailHeader, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { StickyDetailHeader } from "@/app/borrow/_detail/ui"
 import {
   AssetHero,
   AssetHeroIdentity,
-  InterestRateModelCard,
-  SupplyBorrowCard,
-  HistoricalUtilizationCard,
-  CashflowTrendCard,
-  AllocationBreakdownCard,
-  AssetCashflowCard,
-  TransactionHistoryCard,
-  RelatedAssetsRow,
 } from "@/app/borrow/_detail/asset-sections"
-import { RiskSection, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
-import { AssetTokenActions, AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
+import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { AssetTokenActions } from "@/app/borrow/_detail/sidebars"
 import { cn } from "@/lib/utils"
+
+const AboutNewsSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.AboutNewsSection), {
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.DetailFaqSection), {
+  loading: () => <DeferredBlock className="h-[380px]" />,
+})
+const EngagementTrendsCard = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.EngagementTrendsCard), {
+  loading: () => <DeferredBlock className="h-[260px]" />,
+})
+const InterestRateModelCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
+  { loading: () => <DeferredBlock className="h-[320px]" /> },
+)
+const SupplyBorrowCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.SupplyBorrowCard),
+  { loading: () => <DeferredBlock className="h-[280px]" /> },
+)
+const HistoricalUtilizationCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.HistoricalUtilizationCard),
+  { loading: () => <DeferredBlock className="h-[320px]" /> },
+)
+const CashflowTrendCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.CashflowTrendCard),
+  { loading: () => <DeferredBlock className="h-[320px]" /> },
+)
+const AllocationBreakdownCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AllocationBreakdownCard),
+  { loading: () => <DeferredBlock className="h-[320px]" /> },
+)
+const AssetCashflowCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AssetCashflowCard),
+  { loading: () => <DeferredBlock className="h-[240px]" /> },
+)
+const TransactionHistoryCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.TransactionHistoryCard),
+  { loading: () => <DeferredBlock className="h-[360px]" /> },
+)
+const RelatedAssetsRow = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.RelatedAssetsRow),
+  { loading: () => <DeferredBlock className="h-[200px]" /> },
+)
+const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections").then((mod) => mod.RiskSection), {
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const AssetTokenSidebar = dynamic(() => import("@/app/borrow/_detail/sidebars").then((mod) => mod.AssetTokenSidebar), {
+  loading: () => <DeferredBlock className="h-[760px]" />,
+})
+
+function DeferredBlock({ className }: { className?: string }) {
+  return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
+}
 
 function TokenAvatar({ visual, className }: { visual: AssetDetail["hero"]["visual"]; className?: string }) {
   return (

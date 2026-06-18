@@ -1,8 +1,15 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { MultiplyHero } from "./components/multiply-hero"
-import { ExploreLoopsMarketsTable } from "./components/explore-loops-markets-table"
+
+const ExploreLoopsMarketsTable = dynamic(
+  () => import("./components/explore-loops-markets-table").then((mod) => mod.ExploreLoopsMarketsTable),
+  {
+    loading: () => <div className="mt-8 h-[880px] rounded-radius-md border border-border bg-surface-raised/60" />,
+  },
+)
 
 export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
   return (

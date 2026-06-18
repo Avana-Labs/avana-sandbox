@@ -1,12 +1,16 @@
 "use client"
 
 import { useMemo } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { formatCompactUsd, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { cn } from "@/lib/utils"
-import { BorrowWorkspace } from "./components/borrow-workspace"
 import { TokenPairCell } from "./components/atoms"
+
+const BorrowWorkspace = dynamic(() => import("./components/borrow-workspace").then((mod) => mod.BorrowWorkspace), {
+  loading: () => <div className="h-[960px] rounded-radius-md border border-border bg-surface-raised/60" />,
+})
 
 type BorrowPageClientProps = { pageData: BorrowPageData }
 
