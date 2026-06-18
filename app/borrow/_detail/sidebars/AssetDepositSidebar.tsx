@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { LendModals, type LendModalState, type LendModalToken } from "@/app/lend/components/lend-modals"
-import { TOKENS, MARKETS } from "@/app/lend/components/data"
+import { TOKENS } from "@/app/lend/components/data"
 
 type Props = { detail: AssetDetail; className?: string; embedded?: boolean }
 
