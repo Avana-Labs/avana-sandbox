@@ -9,7 +9,7 @@ import {
   formatUsdExact,
   getSpokeById,
   type BorrowPoolRow,
-} from "@/app/lib/borrow-sim"
+} from "@/app/lib/data/borrow-domain"
 import { TokenBubble } from "./atoms"
 
 type ModalStage = "entry" | TransactionFlowStage

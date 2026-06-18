@@ -3,13 +3,17 @@
 import { Info } from "lucide-react"
 import {
   BORROW_SUPPLY_META,
+  HOME_BORROW_TOKENS,
+  LIQUIDATION_LTV,
+  MAX_LTV,
   aprToneClass,
+  formatHealthFactor,
   formatCompactUsd,
   formatUsdExact,
   healthFactorToneClass,
   homeVisualToBorrowVisual,
-} from "@/app/lib/borrow-sim"
-import { HOME_BORROW_TOKENS, LIQUIDATION_LTV, MAX_LTV, formatHealthFactor, type HomeCollateralPool } from "@/app/lib/home-sim"
+  type HomeCollateralPool,
+} from "@/app/lib/data/borrow-domain"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { cn } from "@/lib/utils"
 

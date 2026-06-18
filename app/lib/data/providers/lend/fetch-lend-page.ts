@@ -1,6 +1,7 @@
 import { z } from "zod"
-import { resolveDataSourceMode, unsupportedLiveSource } from "../source-mode"
-import { mockLendPageSource, type LendPageSource } from "./source"
+import { executeSourceLoad, type DataSourceRequestContext } from "@/app/lib/data/core/source-runtime"
+import { resolveDataSourceMode } from "../source-mode"
+import { liveLendPageSource, mockLendPageSource, type LendPageSource } from "./source"
 import type { LendPageData } from "./types"
 
 const lendPageSchema = z.object({
@@ -25,10 +26,26 @@ const lendPageSchema = z.object({
 function getLendPageSource(source?: LendPageSource) {
   if (source) return source
   const mode = resolveDataSourceMode()
-  if (mode === "mock") return mockLendPageSource
-  return unsupportedLiveSource("lend page")
+  return mode === "mock" ? mockLendPageSource : liveLendPageSource
 }
 
-export async function fetchLendPage(source?: LendPageSource): Promise<LendPageData> {
-  return lendPageSchema.parse(await getLendPageSource(source).getLendPageData())
+function getLendPageFallback(source?: LendPageSource) {
+  if (source || resolveDataSourceMode() === "mock") return undefined
+  return mockLendPageSource
+}
+
+export async function fetchLendPage(
+  source?: LendPageSource,
+  context?: DataSourceRequestContext,
+): Promise<LendPageData> {
+  const response = await executeSourceLoad({
+    primary: getLendPageSource(source),
+    fallback: getLendPageFallback(source),
+    operation: "getLendPageData",
+    context,
+    schema: lendPageSchema,
+    load: (pageSource, requestContext) => pageSource.getLendPageData(requestContext),
+  })
+
+  return response.data
 }

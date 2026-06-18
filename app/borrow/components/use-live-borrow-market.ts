@@ -8,8 +8,8 @@ import {
   formatUsdExact,
   type BorrowPoolRow,
   type BorrowableAsset,
-} from "@/app/lib/borrow-sim"
-import { type HomeCollateralPool } from "@/app/lib/home-sim"
+  type HomeCollateralPool,
+} from "@/app/lib/data/borrow-domain"
 
 const REFRESH_INTERVAL_MS = 2200
 const TREND_POINTS = 14

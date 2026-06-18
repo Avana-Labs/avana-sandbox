@@ -3,11 +3,15 @@
 import { useEffect, useMemo, useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/components/transaction-flow"
-import { HOME_COLLATERAL_POOLS, calculateRemovePreview, calculateRepayPreview, formatHealthFactor, type HomeCollateralPool } from "@/app/lib/home-sim"
 import {
+  HOME_COLLATERAL_POOLS,
+  calculateRemovePreview,
+  calculateRepayPreview,
+  formatHealthFactor,
   formatUsdExact,
   homeVisualToBorrowVisual,
-} from "@/app/lib/borrow-sim"
+  type HomeCollateralPool,
+} from "@/app/lib/data/borrow-domain"
 import { TokenBubble } from "./atoms"
 import { CompactRemoveCard } from "@/app/components/home/remove-card"
 import { CompactRepayCard } from "@/app/components/home/repay-card"

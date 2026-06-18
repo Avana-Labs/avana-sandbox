@@ -1,4 +1,5 @@
-import { CHART_RANGE_LABELS, type ChartPoint, type ChartRangeOption } from "@/app/components/charts"
+import { CHART_RANGE_LABELS, type ChartPoint, type ChartRangeData, type ChartRangeOption } from "@/app/components/charts"
+import { assertStableRecordIds, dedupeByStableId } from "@/app/lib/data/core/source-runtime"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import { calculateLiquidationNumberUsd } from "./liquidation"
 import type { PortfolioPageData, PortfolioHeroData, PortfolioTabKey } from "./types"
@@ -190,34 +191,56 @@ function getRangeData(
 export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageData {
   const { walletProfile, snapshots, supplies, debts, collaterals, multiplyCreditLines, multiplyCollaterals, multiplyPositions, openOrders, twapOrders, activity, strategies, rewards } =
     records
+  const walletSnapshots = dedupeByStableId(
+    snapshots.map((snapshot, index) => ({ ...snapshot, id: `${snapshot.walletProfileId}:${snapshot.timestamp}:${index}` })),
+    "portfolio snapshots",
+  ).map(({ id: _id, ...snapshot }) => snapshot)
+  const walletSupplies = assertStableRecordIds(dedupeByStableId(supplies, "portfolio supplies"), "portfolio supplies")
+  const walletDebts = assertStableRecordIds(dedupeByStableId(debts, "portfolio debts"), "portfolio debts")
+  const walletCollaterals = assertStableRecordIds(dedupeByStableId(collaterals, "portfolio collaterals"), "portfolio collaterals")
+  const walletMultiplyCollaterals = assertStableRecordIds(
+    dedupeByStableId(multiplyCollaterals, "portfolio multiply collaterals"),
+    "portfolio multiply collaterals",
+  )
+  const walletMultiplyPositions = assertStableRecordIds(
+    dedupeByStableId(multiplyPositions, "portfolio multiply positions"),
+    "portfolio multiply positions",
+  )
+  const walletOpenOrders = assertStableRecordIds(dedupeByStableId(openOrders, "portfolio open orders"), "portfolio open orders")
+  const walletTwapOrders = assertStableRecordIds(dedupeByStableId(twapOrders, "portfolio twap orders"), "portfolio twap orders")
+  const walletActivity = assertStableRecordIds(dedupeByStableId(activity, "portfolio activity"), "portfolio activity")
+  const walletStrategies = dedupeByStableId(
+    strategies.map((strategy) => ({ ...strategy, id: strategy.title })),
+    "portfolio strategies",
+  ).map(({ id: _id, ...strategy }) => strategy)
 
-  const totalCollateralUsd = collaterals.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
-  const totalDebtUsd = debts.reduce((sum, row) => sum + row.borrowedUsd, 0)
-  const availableToBorrowUsd = collaterals.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
+  const totalCollateralUsd = walletCollaterals.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
+  const totalDebtUsd = walletDebts.reduce((sum, row) => sum + row.borrowedUsd, 0)
+  const availableToBorrowUsd = walletCollaterals.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
   const liquidationThresholdUsd = calculateLiquidationNumberUsd(
-    collaterals.map((row) => ({
+    walletCollaterals.map((row) => ({
       borrowedUsd: row.borrowedUsd,
       referenceBorrowedUsd: row.borrowedUsd,
       referenceLiquidationUsd: row.pool.liquidationUsd,
     })),
   )
   const currentLtvPct = totalCollateralUsd ? (totalDebtUsd / totalCollateralUsd) * 100 : 0
-  const collateralHealthFactors = collaterals
+  const collateralHealthFactors = walletCollaterals
     .map((row) => computeHealthFactor(row.pool.collateralUsd, row.pool.maxLtv, row.borrowedUsd))
     .filter((value): value is number => value !== null && Number.isFinite(value))
   const averageHealthFactor = collateralHealthFactors.length
     ? collateralHealthFactors.reduce((sum, value) => sum + value, 0) / collateralHealthFactors.length
     : null
-  const totalSuppliedUsd = supplies.reduce((sum, row) => sum + row.suppliedUsd, 0)
-  const totalEarnedUsd = supplies.reduce((sum, row) => sum + row.earnedUsd, 0)
-  const averageApyPct = supplies.length ? supplies.reduce((sum, row) => sum + row.apyPct, 0) / supplies.length : 0
+  const totalSuppliedUsd = walletSupplies.reduce((sum, row) => sum + row.suppliedUsd, 0)
+  const totalEarnedUsd = walletSupplies.reduce((sum, row) => sum + row.earnedUsd, 0)
+  const averageApyPct = walletSupplies.length ? walletSupplies.reduce((sum, row) => sum + row.apyPct, 0) / walletSupplies.length : 0
   const heroByTab: Record<PortfolioTabKey, PortfolioHeroData> = {
     overview: buildHero(undefined, {
       headlineValue: formatUsd(availableToBorrowUsd),
       headlineDelta: `▲ ${currentLtvPct.toFixed(2)}% current LTV`,
     }),
     lending: buildHero(
-      getRangeData(snapshots, (snapshot) => snapshot.totalSuppliedUsd, totalSuppliedUsd || 964, 42, `${walletProfile.id}:lending`),
+      getRangeData(walletSnapshots, (snapshot) => snapshot.totalSuppliedUsd, totalSuppliedUsd || 964, 42, `${walletProfile.id}:lending`),
       {
         headlineValue: formatUsd(totalSuppliedUsd),
         headlineDelta: `${formatUsd(totalEarnedUsd)} earned this month`,
@@ -226,7 +249,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       },
     ),
     looping: buildHero(
-      getRangeData(snapshots, (snapshot) => snapshot.totalMultiplyExposureUsd, multiplyCreditLines.approvedUsd || 198, 18, `${walletProfile.id}:looping`),
+      getRangeData(walletSnapshots, (snapshot) => snapshot.totalMultiplyExposureUsd, multiplyCreditLines.approvedUsd || 198, 18, `${walletProfile.id}:looping`),
       {
         headlineValue: formatUsd(multiplyCreditLines.approvedUsd),
         headlineDelta: `${multiplyCreditLines.averageHealthFactor?.toFixed(2) ?? "—"} health factor`,
@@ -235,7 +258,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       },
     ),
     activity: buildHero(
-      getRangeData(snapshots, (snapshot) => snapshot.totalEarnedUsd, Math.max(activity.length, 1), 6, `${walletProfile.id}:activity`),
+      getRangeData(walletSnapshots, (snapshot) => snapshot.totalEarnedUsd, Math.max(walletActivity.length, 1), 6, `${walletProfile.id}:activity`),
     ),
   }
 
@@ -257,7 +280,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       },
       multiply: {},
       activity: {
-        totalEvents: activity.length,
+        totalEvents: walletActivity.length,
       },
     },
     borrow: {
@@ -269,14 +292,14 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         totalBorrowedUsd: totalDebtUsd,
         totalCollateralUsd,
       },
-      collateralPositions: collaterals.map((row) => ({
+      collateralPositions: walletCollaterals.map((row) => ({
         ...row,
         remainingBorrowPowerUsd: Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd),
         liquidationThresholdUsd: row.pool.liquidationUsd,
       })),
-      debtPositions: debts.map((debt, index) => {
-        const matchingCollateral = collaterals.find((row) => row.pool.id === debt.poolId)
-        const fallbackCollateral = collaterals[index % collaterals.length] ?? collaterals[0]
+      debtPositions: walletDebts.map((debt, index) => {
+        const matchingCollateral = walletCollaterals.find((row) => row.pool.id === debt.poolId)
+        const fallbackCollateral = walletCollaterals[index % walletCollaterals.length] ?? walletCollaterals[0]
         const resolvedCollateral = matchingCollateral ?? fallbackCollateral
         const healthFactor = computeHealthFactor(resolvedCollateral.pool.collateralUsd, resolvedCollateral.pool.maxLtv, debt.borrowedUsd)
 
@@ -293,8 +316,8 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       }),
     },
     lend: {
-      investments: supplies,
-      strategyBuckets: strategies,
+      investments: walletSupplies,
+      strategyBuckets: walletStrategies,
     },
     multiply: {
       creditLines: {
@@ -305,7 +328,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         totalBorrowedUsd: multiplyCreditLines.totalBorrowedUsd,
         totalCollateralUsd: multiplyCreditLines.totalCollateralUsd,
       },
-      lpCollaterals: multiplyCollaterals.map((record) => ({
+      lpCollaterals: walletMultiplyCollaterals.map((record) => ({
         id: record.id,
         label: record.label,
         collateralToken: record.collateralToken,
@@ -316,13 +339,13 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         collateralUsd: record.collateralUsd,
         borrowPowerUsd: record.borrowPowerUsd,
       })),
-      positions: multiplyPositions,
-      openOrders,
-      twapOrders,
-      history: activity.filter((row) => row.product === "multiply"),
+      positions: walletMultiplyPositions,
+      openOrders: walletOpenOrders,
+      twapOrders: walletTwapOrders,
+      history: walletActivity.filter((row) => row.product === "multiply"),
     },
     activity: {
-      rows: activity,
+      rows: walletActivity,
     },
     rewards,
   }

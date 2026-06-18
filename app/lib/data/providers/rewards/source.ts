@@ -1,4 +1,11 @@
 import { buildHomeSnapshot } from "@/app/lib/home-data"
+import {
+  createDataSourceAdapter,
+  createUnsupportedSourceError,
+  type DataSourceAdapter,
+  type DataSourceRequestContext,
+  type DataSourceResponse,
+} from "@/app/lib/data/core/source-runtime"
 import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/data/mock/shared/borrow"
 import { mockRewardsSharedSource, type RewardsPromoTabId } from "@/app/lib/data/mock/shared/rewards"
 import type { RewardsPageData } from "./types"
@@ -8,10 +15,27 @@ export type FetchRewardsPageInput = {
 }
 
 export type RewardsPageSource = {
-  getRewardsPageData(input: FetchRewardsPageInput): Promise<RewardsPageData>
+  adapter: DataSourceAdapter
+  getRewardsPageData(
+    input: FetchRewardsPageInput,
+    context?: DataSourceRequestContext,
+  ): Promise<DataSourceResponse<RewardsPageData>>
 }
 
+export const mockRewardsPageAdapter = createDataSourceAdapter({
+  id: "rewards-mock",
+  label: "Rewards page mock source",
+  mode: "mock",
+})
+
+export const liveRewardsPageAdapter = createDataSourceAdapter({
+  id: "rewards-live",
+  label: "Rewards page live source",
+  mode: "live",
+})
+
 export const mockRewardsPageSource: RewardsPageSource = {
+  adapter: mockRewardsPageAdapter,
   async getRewardsPageData(input) {
     const homeSnapshot = buildHomeSnapshot()
     const rewardPools = BORROW_POOL_CATALOG
@@ -30,14 +54,24 @@ export const mockRewardsPageSource: RewardsPageSource = {
       }))
 
     return {
-      walletProfileId: input.walletProfileId,
-      totalPools: homeSnapshot.totalPools,
-      completedPools: homeSnapshot.completedPools,
-      progressPercentage: homeSnapshot.progressPercentage,
-      balanceTotal: mockRewardsSharedSource.getBalanceTotal(),
-      rewardPools,
-      promoTabs: mockRewardsSharedSource.getPromoTabs(),
-      questsByTab: mockRewardsSharedSource.getAllQuests() as Record<RewardsPromoTabId, ReturnType<typeof mockRewardsSharedSource.getQuests>>,
+      fetchedAt: new Date().toISOString(),
+      data: {
+        walletProfileId: input.walletProfileId,
+        totalPools: homeSnapshot.totalPools,
+        completedPools: homeSnapshot.completedPools,
+        progressPercentage: homeSnapshot.progressPercentage,
+        balanceTotal: mockRewardsSharedSource.getBalanceTotal(),
+        rewardPools,
+        promoTabs: mockRewardsSharedSource.getPromoTabs(),
+        questsByTab: mockRewardsSharedSource.getAllQuests() as Record<RewardsPromoTabId, ReturnType<typeof mockRewardsSharedSource.getQuests>>,
+      },
     }
+  },
+}
+
+export const liveRewardsPageSource: RewardsPageSource = {
+  adapter: liveRewardsPageAdapter,
+  async getRewardsPageData() {
+    throw createUnsupportedSourceError(liveRewardsPageAdapter, "getRewardsPageData")
   },
 }

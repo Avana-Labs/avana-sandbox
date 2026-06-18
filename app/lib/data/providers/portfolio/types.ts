@@ -1,4 +1,5 @@
 import type { ChartRangeData } from "@/app/components/charts"
+import type { DataSourcePageInfo } from "@/app/lib/data/core/source-runtime"
 import type { NetworkId } from "@/app/portfolio/hero/types"
 import type {
   PortfolioActivityKind,
@@ -185,6 +186,7 @@ export type PortfolioActivityRow = {
 
 export type PortfolioActivityData = {
   rows: PortfolioActivityRow[]
+  pageInfo?: DataSourcePageInfo
 }
 
 export type PortfolioRewardsData = {

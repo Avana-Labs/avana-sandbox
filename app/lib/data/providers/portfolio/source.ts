@@ -1,3 +1,11 @@
+import {
+  createDataSourceAdapter,
+  createUnsupportedSourceError,
+  type DataSourceAdapter,
+  type DataSourceRequestContext,
+  type DataSourceResponse,
+} from "@/app/lib/data/core/source-runtime"
+
 export type PortfolioActivityProduct = "borrow" | "pool" | "lend" | "multiply"
 
 export type PortfolioActivityKind =
@@ -200,6 +208,27 @@ export type PortfolioPageRecords = {
 }
 
 export type PortfolioPageSource = {
-  getDefaultWalletProfileId(): string
-  getPortfolioPageRecords(walletProfileId: string): Promise<PortfolioPageRecords>
+  adapter: DataSourceAdapter
+  getDefaultWalletProfileId(context?: DataSourceRequestContext): string
+  getPortfolioPageRecords(
+    walletProfileId: string,
+    context?: DataSourceRequestContext,
+  ): Promise<DataSourceResponse<PortfolioPageRecords>>
+}
+
+export const livePortfolioPageAdapter = createDataSourceAdapter({
+  id: "portfolio-live",
+  label: "Portfolio page live source",
+  mode: "live",
+  supportsPagination: true,
+})
+
+export const livePortfolioPageSource: PortfolioPageSource = {
+  adapter: livePortfolioPageAdapter,
+  getDefaultWalletProfileId() {
+    throw createUnsupportedSourceError(livePortfolioPageAdapter, "getDefaultWalletProfileId")
+  },
+  async getPortfolioPageRecords() {
+    throw createUnsupportedSourceError(livePortfolioPageAdapter, "getPortfolioPageRecords")
+  },
 }
