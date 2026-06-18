@@ -325,6 +325,27 @@
   }
 }
 
+@keyframes lend-featured-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.lend-featured-marquee {
+  animation: lend-featured-marquee 38s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lend-featured-marquee {
+    animation: none;
+  }
+}
+
 @media (max-width: 767px) {
   .mobile-bottom-sheet {
     left: 0;
