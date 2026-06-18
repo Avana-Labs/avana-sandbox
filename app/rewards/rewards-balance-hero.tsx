@@ -22,10 +22,16 @@ export function RewardsBalanceHero({ pageData }: { pageData: RewardsPageData }) 
     <div className="mb-8 grid gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
       <section className="relative overflow-hidden rounded-radius-md border border-border/70 bg-card px-5 py-4 md:h-[174px]">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 -right-12 w-64 opacity-[0.08] [background:radial-gradient(circle_at_center,hsl(var(--foreground))_0,transparent_64%)] dark:opacity-[0.06] md:-right-20 md:w-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
-        />
+        <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
+          <Image
+            src="/Avana Icon (Personal) PNG.png"
+            alt=""
+            width={760}
+            height={760}
+            className="h-64 w-64 object-contain opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] md:h-[20rem] md:w-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
+            aria-hidden
+          />
+        </div>
 
         <div className="relative flex min-h-[120px] flex-col gap-3 md:h-full md:min-h-0">
           <div className="flex items-start justify-between gap-4">
@@ -38,7 +44,7 @@ export function RewardsBalanceHero({ pageData }: { pageData: RewardsPageData }) 
 
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20">
                   <Image
-                    src="/avana-icon.svg"
+                    src="/Avana Icon (Personal) PNG.png"
                     alt="Avana token"
                     width={38}
                     height={38}
