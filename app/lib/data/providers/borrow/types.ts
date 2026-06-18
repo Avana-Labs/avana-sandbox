@@ -18,3 +18,8 @@ export type BorrowPageData = {
   collateralPools: ReadonlyArray<(typeof HOME_COLLATERAL_POOLS)[number]>
   initialDebts: typeof HOME_INITIAL_DEBTS
 }
+
+export type BorrowWorkspaceData = Pick<
+  BorrowPageData,
+  "poolCatalog" | "pendingRows" | "dexes" | "collateralPools" | "initialDebts"
+>
