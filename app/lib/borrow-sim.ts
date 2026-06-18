@@ -1352,23 +1352,23 @@ function assetSortValue(row: BorrowableAsset, key: AssetSortKey): number {
 }
 
 export function aprToneClass(apr: number): string {
-  if (apr < 4) return "text-emerald-600"
-  if (apr < 5.5) return "text-amber-600"
-  return "text-rose-600"
+  if (apr < 4) return "text-emerald-700 dark:text-emerald-300"
+  if (apr < 5.5) return "text-amber-700 dark:text-amber-300"
+  return "text-rose-700 dark:text-rose-300"
 }
 
 export function utilizationToneClass(utilization: number): string {
-  if (utilization < 65) return "text-emerald-600"
-  if (utilization < 85) return "text-amber-600"
-  return "text-rose-600"
+  if (utilization < 65) return "text-emerald-700 dark:text-emerald-300"
+  if (utilization < 85) return "text-amber-700 dark:text-amber-300"
+  return "text-rose-700 dark:text-rose-300"
 }
 
 export function healthFactorToneClass(hf: number | null): string {
   if (hf === null || Number.isNaN(hf)) return "text-muted-foreground"
   if (!Number.isFinite(hf)) return "text-muted-foreground"
-  if (hf > 2) return "text-emerald-600"
-  if (hf > 1.5) return "text-amber-600"
-  return "text-rose-600"
+  if (hf > 2) return "text-emerald-700 dark:text-emerald-300"
+  if (hf > 1.5) return "text-amber-700 dark:text-amber-300"
+  return "text-rose-700 dark:text-rose-300"
 }
 
 export function homeVisualToBorrowVisual(visual: { symbol: string; shortLabel: string; bgClassName: string; textClassName: string }): BorrowAssetVisual {
