@@ -7,9 +7,6 @@ const nextConfig = {
     ]
   },
   distDir: process.env.AVANA_NEXT_DIST_DIR || ".next",
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "cryptologos.cc" },
