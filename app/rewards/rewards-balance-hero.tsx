@@ -38,7 +38,7 @@ export function RewardsBalanceHero({ pageData }: { pageData: RewardsPageData }) 
 
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20">
                   <Image
-                    src="/Avana Icon (Personal) PNG.png"
+                    src="/avana-icon.svg"
                     alt="Avana token"
                     width={38}
                     height={38}
