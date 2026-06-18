@@ -1,9 +1,9 @@
 "use client"
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PortfolioHero } from "./hero/portfolio-hero"
 import type { PortfolioPageData, PortfolioTabKey } from "@/app/lib/data/providers/portfolio"
 import type { BorrowSnapshot } from "./borrow-hero-state"
+import { cn } from "@/lib/utils"
 
 export type PortfolioTab = PortfolioTabKey
 
@@ -32,37 +32,43 @@ export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot
 
   const tabBar = (
     <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-      <TabsList className="flex h-auto w-full justify-between gap-2 border-0 bg-transparent p-0 sm:inline-flex sm:w-max sm:min-w-max sm:justify-start sm:gap-9">
+      <div role="tablist" aria-label="Portfolio views" className="flex h-auto w-full justify-between gap-2 border-0 bg-transparent p-0 sm:inline-flex sm:w-max sm:min-w-max sm:justify-start sm:gap-9">
         {PORTFOLIO_TABS.map((tab) => (
-          <TabsTrigger
+          <button
             key={tab.value}
-            value={tab.value}
-            className="h-auto flex-1 shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[16px] font-normal after:inset-x-0 after:h-[3px] data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:shadow-none sm:flex-none sm:pb-4 sm:text-[15px]"
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.value}
+            onClick={() => onTabChange(tab.value)}
+            className={cn(
+              "relative h-auto flex-1 shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[16px] font-normal text-muted-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:rounded-full after:bg-transparent sm:flex-none sm:pb-4 sm:text-[15px]",
+              activeTab === tab.value
+                ? "font-semibold text-foreground after:bg-foreground"
+                : "hover:text-foreground",
+            )}
           >
             {tab.label}
-          </TabsTrigger>
+          </button>
         ))}
-      </TabsList>
+      </div>
     </div>
   )
 
   return (
     <section className="mb-6 sm:mb-8">
-      <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as PortfolioTab)}>
-        <PortfolioHero
-          tab={activeTab}
-          tabs={tabBar}
-          initialNetwork={pageData.walletProfile.selectedNetwork}
-          headlineValue={activeHero.headlineValue}
-          headlineDelta={activeHero.headlineDelta}
-          statOneValue={activeHero.statOneValue}
-          statTwoValue={activeHero.statTwoValue}
-          rangeData={activeHero.rangeData}
-          walletName={pageData.walletProfile.displayName}
-          borrowSnapshot={borrowSnapshot}
-          multiplySnapshot={multiplySnapshot}
-        />
-      </Tabs>
+      <PortfolioHero
+        tab={activeTab}
+        tabs={tabBar}
+        initialNetwork={pageData.walletProfile.selectedNetwork}
+        headlineValue={activeHero.headlineValue}
+        headlineDelta={activeHero.headlineDelta}
+        statOneValue={activeHero.statOneValue}
+        statTwoValue={activeHero.statTwoValue}
+        rangeData={activeHero.rangeData}
+        walletName={pageData.walletProfile.displayName}
+        borrowSnapshot={borrowSnapshot}
+        multiplySnapshot={multiplySnapshot}
+      />
     </section>
   )
 }
