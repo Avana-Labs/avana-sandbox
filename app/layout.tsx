@@ -40,11 +40,6 @@ const diatypeSans = localFont({
       style: "normal",
     },
     {
-      path: "../public/fonts/diatype/core/ABCDiatypeVariable-Trial.woff2",
-      weight: "600",
-      style: "normal",
-    },
-    {
       path: "../public/fonts/diatype/core/ABCDiatype-Bold-Trial.woff2",
       weight: "700",
       style: "normal",
@@ -64,18 +59,7 @@ const diatypeData = localFont({
   ],
   variable: "--font-diatype-data",
   display: "swap",
-})
-
-const diatypeBrand = localFont({
-  src: [
-    {
-      path: "../public/fonts/diatype/brand/ABCDiatypeExtended-Medium-Trial.woff2",
-      weight: "500",
-      style: "normal",
-    },
-  ],
-  variable: "--font-diatype-brand",
-  display: "swap",
+  preload: false,
 })
 
 export const metadata: Metadata = {
@@ -150,7 +134,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${diatypeSans.variable} ${diatypeData.variable} ${diatypeBrand.variable}`}
+      className={`${diatypeSans.variable} ${diatypeData.variable}`}
       suppressHydrationWarning
     >
       <head>
