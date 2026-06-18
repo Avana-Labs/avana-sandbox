@@ -234,7 +234,7 @@ export function Header() {
   const desktopLinks = personalDesktopHeaderLinks
   const [showDivider, setShowDivider] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
-  const renderMobileBrand = () => <BrandIcon className="h-8 w-8" />
+  const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
     <>
       <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">

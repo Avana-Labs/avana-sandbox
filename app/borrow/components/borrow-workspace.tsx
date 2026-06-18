@@ -18,6 +18,7 @@ import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./
 import { SupplyCollateralModal, type SupplyCollateralContext, type SupplyCollateralResult } from "./supply-collateral-modal"
 import { type SupplyRowContext } from "./supplies-table"
 import { useLiveBorrowMarket } from "./use-live-borrow-market"
+import { useMediaQuery } from "@/app/lib/use-media-query"
 
 type DebtsState = Record<string, number>
 
@@ -78,6 +79,7 @@ export type BorrowWorkspaceProps = {
 
 export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps) {
   const router = useRouter()
+  const isDesktop = useMediaQuery("(min-width: 768px)", true)
   const { poolCatalog, pendingRows, dexes, collateralPools, initialDebts } = pageData
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
   const [search, setSearch] = useState("")
@@ -185,20 +187,23 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
       <div className="pt-3 pb-6">
         {isPoolTab(currentTab) ? (
           <>
-            <PoolsTable
-              groups={poolGroups}
-              pending={pendingRows}
-              onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
-            />
-            <PoolsList
-              groups={poolGroups}
-              pending={pendingRows}
-              onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
-            />
+            {isDesktop ? (
+              <PoolsTable
+                groups={poolGroups}
+                pending={pendingRows}
+                onUseAsCollateral={handlePoolsSupply}
+                onBorrowAssetDesktop={handleAssetBorrowDesktop}
+                onBorrowAssetMobile={handleAssetBorrowMobile}
+              />
+            ) : (
+              <PoolsList
+                groups={poolGroups}
+                pending={pendingRows}
+                onUseAsCollateral={handlePoolsSupply}
+                onBorrowAssetDesktop={handleAssetBorrowDesktop}
+                onBorrowAssetMobile={handleAssetBorrowMobile}
+              />
+            )}
           </>
         ) : null}
       </div>

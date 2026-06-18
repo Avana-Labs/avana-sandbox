@@ -140,7 +140,7 @@
 @layer base {
   * {
     @apply border-border;
-    font-synthesis: none;
+    font-synthesis: weight style;
   }
   body {
     @apply bg-background text-foreground;
