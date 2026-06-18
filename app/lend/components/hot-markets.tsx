@@ -157,34 +157,19 @@ function FeaturedCard({
   hover,
   onHover,
   onLeave,
+  interactive = true,
 }: {
   asset: FeaturedAsset
   cardKey: string
   hover: HoverState | null
   onHover: (state: HoverState) => void
   onLeave: () => void
+  interactive?: boolean
 }) {
   const points = useMemo(() => parsePathPoints(asset.path), [asset.path])
   const isHovered = hover?.cardKey === cardKey
-
-  return (
-    <Link
-      data-featured-card={cardKey}
-      href={`/borrow/asset/${asset.id}`}
-      onMouseLeave={onLeave}
-      onMouseMove={(event) => {
-        const bounds = event.currentTarget.getBoundingClientRect()
-        const ratio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width))
-        const pointIndex = Math.round(ratio * (points.length - 1))
-        const tooltipLeft = Math.max(113, Math.min(bounds.width - 113, event.clientX - bounds.left))
-        onHover({ cardKey, pointIndex, tooltipLeft })
-      }}
-      className={cn(
-        "relative block h-[176px] w-[372px] shrink-0 overflow-hidden rounded-2xl border text-left",
-        "border-[#e1e4e8] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-        "dark:border-[#26272a] dark:bg-[#1b1b1c] dark:shadow-none",
-      )}
-    >
+  const cardContent = (
+    <>
       <div className="pointer-events-none absolute inset-0 z-0 opacity-100 [background-image:radial-gradient(circle,rgba(148,163,184,0.28)_1px,transparent_1.15px)] [background-position:0_4px] [background-size:16px_16px] dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1.15px)]" />
       <div className="pointer-events-none absolute inset-0 z-0 rounded-2xl bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
 
@@ -219,6 +204,38 @@ function FeaturedCard({
       ) : null}
 
       <ReferenceGraph asset={asset} activePointIndex={isHovered ? hover.pointIndex : null} />
+    </>
+  )
+
+  const cardClassName = cn(
+    "relative block h-[176px] w-[372px] shrink-0 overflow-hidden rounded-2xl border text-left",
+    "border-[#e1e4e8] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+    "dark:border-[#26272a] dark:bg-[#1b1b1c] dark:shadow-none",
+  )
+
+  if (!interactive) {
+    return (
+      <div aria-hidden="true" className={cardClassName}>
+        {cardContent}
+      </div>
+    )
+  }
+
+  return (
+    <Link
+      data-featured-card={cardKey}
+      href={`/borrow/asset/${asset.id}`}
+      onMouseLeave={onLeave}
+      onMouseMove={(event) => {
+        const bounds = event.currentTarget.getBoundingClientRect()
+        const ratio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width))
+        const pointIndex = Math.round(ratio * (points.length - 1))
+        const tooltipLeft = Math.max(113, Math.min(bounds.width - 113, event.clientX - bounds.left))
+        onHover({ cardKey, pointIndex, tooltipLeft })
+      }}
+      className={cardClassName}
+    >
+      {cardContent}
     </Link>
   )
 }
@@ -292,7 +309,17 @@ export function HotMarkets({
               {renderSequence("a")}
             </div>
             <div aria-hidden="true" className="flex shrink-0 items-start gap-3 pr-3">
-              {renderSequence("b")}
+              {sequence.map((assetId, index) => (
+                <FeaturedCard
+                  key={`b-${assetId}-${index}`}
+                  asset={assets[assetId]}
+                  cardKey={`b-${assetId}-${index}`}
+                  hover={hover}
+                  onHover={setHover}
+                  onLeave={() => setHover(null)}
+                  interactive={false}
+                />
+              ))}
             </div>
           </motion.div>
         </div>
