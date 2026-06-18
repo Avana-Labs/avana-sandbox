@@ -2,7 +2,6 @@
 
 import Image from "next/image"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useTheme } from "@/app/components/theme-provider"
 import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/mock/shared/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
@@ -47,16 +46,14 @@ function ChevronDownIcon() {
   )
 }
 
-function FilterCheckIcon({ checked, dark }: { checked: boolean; dark: boolean }) {
+function FilterCheckIcon({ checked }: { checked: boolean }) {
   return (
     <span
       className={cn(
         "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
         checked
           ? "border-[#01AACF] bg-[#01AACF] text-white"
-          : dark
-            ? "border-white/55 bg-transparent text-transparent"
-            : "border-black/35 bg-transparent text-transparent",
+          : "border-black/35 bg-transparent text-transparent dark:border-white/55",
       )}
     >
       <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" className="size-3">
@@ -91,8 +88,6 @@ function MultiSelectDropdown({
   } | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
   const isAllSelected = selectedValues.length === 0 || selectedValues.length === options.length
   const triggerLabel = isAllSelected ? allLabel : `${countLabel} (${selectedValues.length})`
 
@@ -178,13 +173,11 @@ function MultiSelectDropdown({
         onClick={() => setOpen((current) => !current)}
         className={cn(
           "inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
-          isDark
-            ? "border border-white/8 bg-[#1f1f1f] text-white hover:bg-[#262626] focus-visible:ring-white/10"
-            : "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10",
+          "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:bg-[#1f1f1f] dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
-        <span className={cn(isDark ? "text-white/80" : "text-foreground/70")}>
+        <span className="text-foreground/70 dark:text-white/80">
           <ChevronDownIcon />
         </span>
       </button>
@@ -202,7 +195,7 @@ function MultiSelectDropdown({
             ref={panelRef}
             className={cn(
               "fixed z-30 overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-              isDark ? "border-white/8 bg-[#232323] text-white" : "border-border bg-white text-foreground",
+              "border-border bg-white text-foreground dark:border-white/8 dark:bg-[#232323] dark:text-white",
             )}
             style={
               panelStyle
@@ -223,19 +216,17 @@ function MultiSelectDropdown({
               }}
               className={cn(
                 "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
-                isDark
-                  ? "text-white hover:bg-white/5"
-                  : "text-foreground hover:bg-black/[0.04]",
+                "text-foreground hover:bg-black/[0.04] dark:text-white dark:hover:bg-white/5",
               )}
             >
-              <FilterCheckIcon checked={isAllSelected} dark={isDark} />
+              <FilterCheckIcon checked={isAllSelected} />
               <span>{allLabel}</span>
             </button>
 
             <div
               className={cn(
                 "w-full border-t",
-                isDark ? "border-white/20" : "border-black/12",
+                "border-black/12 dark:border-white/20",
               )}
             />
 
@@ -250,16 +241,12 @@ function MultiSelectDropdown({
                     onClick={() => toggleOption(option, !checked)}
                     className={cn(
                       "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors",
-                      isDark
-                        ? checked
-                          ? "bg-white/6 font-medium text-white"
-                          : "text-white/82 hover:bg-white/5"
-                        : checked
-                          ? "bg-black/[0.05] font-medium text-foreground"
-                          : "text-foreground/82 hover:bg-black/[0.04]",
+                      checked
+                        ? "bg-black/[0.05] font-medium text-foreground dark:bg-white/6 dark:text-white"
+                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
                     )}
                   >
-                    <FilterCheckIcon checked={checked} dark={isDark} />
+                    <FilterCheckIcon checked={checked} />
                     <span className="truncate">{option}</span>
                   </button>
                 )
