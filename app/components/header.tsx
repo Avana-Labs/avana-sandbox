@@ -243,7 +243,7 @@ export function Header() {
       <button
         type="button"
         aria-label="Connect"
-        className="inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
+        className="inline-flex h-9 items-center justify-center rounded-full bg-[#007a99] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#00627a]"
       >
         Connect
       </button>

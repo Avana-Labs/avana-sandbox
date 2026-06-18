@@ -246,7 +246,8 @@ function SingleSelectDropdown({
     <div ref={rootRef} className="relative z-20">
       <button
         type="button"
-        aria-label={ariaLabel}
+        aria-label={triggerLabel}
+        aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
@@ -257,7 +258,7 @@ function SingleSelectDropdown({
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
-        <span className={cn(isDark ? "text-white/70" : "text-foreground/55")}>
+        <span className={cn(isDark ? "text-white/80" : "text-foreground/70")}>
           <ChevronDownIcon />
         </span>
       </button>

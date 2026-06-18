@@ -224,7 +224,8 @@ function SingleSelectDropdown({
     <div ref={rootRef} className="relative z-20">
       <button
         type="button"
-        aria-label={ariaLabel}
+        aria-label={triggerLabel}
+        aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
@@ -233,7 +234,7 @@ function SingleSelectDropdown({
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
-        <span className="text-foreground/55 dark:text-white/70">
+        <span className="text-foreground/70 dark:text-white/80">
           <ChevronDown className="size-3.5" />
         </span>
       </button>
@@ -504,7 +505,7 @@ export function ExploreLoopsMarketsTable({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   #
                 </th>
                 <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
@@ -513,59 +514,59 @@ export function ExploreLoopsMarketsTable({
                     onClick={() => toggleSort("protocol")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "protocol" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "protocol" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>COLLATERAL</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>BORROWABLE</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>MAX APY</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("rewards")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "rewards" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "rewards" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>MAX LEVERAGE</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("points")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "points" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "points" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>AVAILABLE</span>
