@@ -1,6 +1,7 @@
 import "./globals.css"
 import type { Metadata } from "next"
 import localFont from "next/font/local"
+import { headers } from "next/headers"
 import type React from "react"
 import { Suspense } from "react"
 import { Header } from "./components/header"
@@ -139,11 +140,13 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined
+
   return (
     <html
       lang="en"
@@ -151,7 +154,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider
