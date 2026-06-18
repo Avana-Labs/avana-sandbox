@@ -1,18 +1,23 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { BorrowModal } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
-import { LendModals, type LendModalState, type LendModalToken } from "@/app/lend/components/lend-modals"
+import type { LendModalState, LendModalToken } from "@/app/lend/components/lend-modals"
 import { CompactRepayCard } from "@/app/components/home/repay-card"
 import { TOKENS } from "@/app/lend/components/data"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { HOME_BORROW_TOKENS, HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS, calculateRepayPreview } from "@/app/lib/home-sim"
 import { PickerSurface, PrimaryCardButton } from "@/app/components/home/shared"
+
+const LendModals = dynamic(() => import("@/app/lend/components/lend-modals").then((mod) => mod.LendModals), {
+  ssr: false,
+})
 
 type Props = { detail: AssetDetail; className?: string }
 
