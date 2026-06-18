@@ -1,6 +1,25 @@
 import process from "node:process"
 
+const themeBootstrapHash = "'sha256-Ik5jm8S/PQrtWlIEGsPj4ea1lM5oiXpT6DTzi5ntHjg='"
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' ${themeBootstrapHash}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "media-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ")
+
 const securityHeaders = [
+  {
+    key: "Content-Security-Policy",
+    value: contentSecurityPolicy,
+  },
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
@@ -25,6 +44,7 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false,
   async redirects() {
     return [
     ]
