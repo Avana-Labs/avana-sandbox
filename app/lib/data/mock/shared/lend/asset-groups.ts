@@ -1,3 +1,5 @@
+import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
+
 export type LendAssetRow = {
   symbol: string
   name: string
@@ -37,7 +39,7 @@ export const LEND_ASSET_GROUPS: LendAssetGroup[] = [
         availableLiquidityPrimary: "60.18K EURC",
         availableLiquiditySecondary: "$69.22K",
         availableLiquidityValue: 60.18,
-        logoSrc: "https://token-logos.family.co/asset?id=1:0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c&token=EURC",
+        logoSrc: getLocalAssetIcon("EURC"),
         logoAlt: "EURC logo",
         hub: "Circle",
         market: "Core",
@@ -53,7 +55,7 @@ export const LEND_ASSET_GROUPS: LendAssetGroup[] = [
         availableLiquidityPrimary: "25.39M frxUSD",
         availableLiquiditySecondary: "$25.37M",
         availableLiquidityValue: 25390,
-        logoSrc: "https://token-logos.family.co/asset?id=1:0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29&token=frxUSD",
+        logoSrc: getLocalAssetIcon("frxUSD"),
         logoAlt: "frxUSD logo",
         hub: "Frax",
         market: "Stable",
@@ -70,7 +72,7 @@ export const LEND_ASSET_GROUPS: LendAssetGroup[] = [
         availableLiquidityPrimary: "455.75K GHO",
         availableLiquiditySecondary: "$455.75K",
         availableLiquidityValue: 455.75,
-        logoSrc: "https://token-logos.family.co/asset?id=1:0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f&token=GHO",
+        logoSrc: getLocalAssetIcon("GHO"),
         logoAlt: "GHO logo",
         hub: "Aave",
         market: "Prime",
@@ -86,7 +88,7 @@ export const LEND_ASSET_GROUPS: LendAssetGroup[] = [
         availableLiquidityPrimary: "25.07M USDG",
         availableLiquiditySecondary: "$25.07M",
         availableLiquidityValue: 25070,
-        logoSrc: "https://token-logos.family.co/asset?id=1:0xe343167631d89B6Ffc58B88d6b7fB0228795491D&token=USDG",
+        logoSrc: getLocalAssetIcon("USDG"),
         logoAlt: "USDG logo",
         hub: "Paxos",
         market: "Stable",
@@ -103,7 +105,7 @@ export const LEND_ASSET_GROUPS: LendAssetGroup[] = [
         availableLiquidityPrimary: "<0.01 RLUSD",
         availableLiquiditySecondary: "$0.00",
         availableLiquidityValue: 0.01,
-        logoSrc: "https://token-logos.family.co/asset?id=1:0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD&token=RLUSD",
+        logoSrc: getLocalAssetIcon("RLUSD"),
         logoAlt: "RLUSD logo",
         hub: "Ripple",
         market: "Stable",
