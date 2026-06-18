@@ -16,6 +16,21 @@ const diatypeSans = localFont({
       weight: "400",
       style: "normal",
     },
+    {
+      path: "../public/fonts/diatype/core/ABCDiatype-Medium-Trial.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/diatype/core/ABCDiatypeVariable-Trial.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/diatype/core/ABCDiatype-Bold-Trial.woff2",
+      weight: "700",
+      style: "normal",
+    },
   ],
   variable: "--font-diatype-sans",
   display: "swap",
