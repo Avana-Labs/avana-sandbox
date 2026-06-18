@@ -12,9 +12,9 @@ export type BorrowPageData = {
   allPools: BorrowPool[]
   protocolLogos: Record<string, string>
   itemsPerPage: number
-  poolCatalog: typeof BORROW_POOL_CATALOG
-  pendingRows: typeof BORROW_PENDING_ROWS
-  dexes: typeof BORROW_DEXES
-  collateralPools: typeof HOME_COLLATERAL_POOLS
+  poolCatalog: ReadonlyArray<(typeof BORROW_POOL_CATALOG)[number]>
+  pendingRows: ReadonlyArray<(typeof BORROW_PENDING_ROWS)[number]>
+  dexes: ReadonlyArray<(typeof BORROW_DEXES)[number]>
+  collateralPools: ReadonlyArray<(typeof HOME_COLLATERAL_POOLS)[number]>
   initialDebts: typeof HOME_INITIAL_DEBTS
 }

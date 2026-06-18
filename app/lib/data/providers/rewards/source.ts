@@ -43,7 +43,7 @@ export const mockRewardsPageSource: RewardsPageSource = {
       .sort((left, right) => right.tvlUsd - left.tvlUsd)
       .slice(0, 2)
       .map((pool) => ({
-        id: `rewards-${pool.protocol}-${pool.name}`,
+        id: `rewards-${pool.id}`,
         href: `/borrow/pool/${pool.id}`,
         pool,
         title: pool.name,

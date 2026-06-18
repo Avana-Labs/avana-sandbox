@@ -24,7 +24,7 @@ import { personalDesktopHeaderLinks } from "./site-nav"
 type PreferencesView = "root" | "language" | "currency"
 
 function PreferencesMenu() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   const { showDollarAmounts, setShowDollarAmounts, language, setLanguage, currency, setCurrency } = useDisplayPreferences()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
@@ -74,7 +74,7 @@ function PreferencesMenu() {
                     type="button"
                     onClick={() => setTheme("system")}
                     className={`px-3.5 py-1.5 text-[13px] font-medium ${
-                      mounted && resolvedTheme === "system" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
+                      mounted && theme === "system" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
                     }`}
                   >
                     Auto

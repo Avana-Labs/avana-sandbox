@@ -48,8 +48,8 @@ function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
 }
 
 type PoolsTableProps = {
-  groups: DexGroup[]
-  pending?: PendingMarketRow[]
+  groups: ReadonlyArray<DexGroup>
+  pending?: ReadonlyArray<PendingMarketRow>
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAssetDesktop: (asset: BorrowableAsset) => void
   onBorrowAssetMobile: (asset: BorrowableAsset) => void
@@ -128,8 +128,8 @@ function CollateralDesktopTable({
   onUseAsCollateral,
   embedded = false,
 }: {
-  rows: BorrowPoolRow[]
-  pending: PendingMarketRow[]
+  rows: ReadonlyArray<BorrowPoolRow>
+  pending: ReadonlyArray<PendingMarketRow>
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   embedded?: boolean
 }) {

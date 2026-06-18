@@ -20,6 +20,6 @@ export type RewardsPageData = {
   progressPercentage: number
   balanceTotal: number
   rewardPools: RewardsHeroPoolRow[]
-  promoTabs: typeof REWARDS_PROMO_TABS
+  promoTabs: ReadonlyArray<(typeof REWARDS_PROMO_TABS)[number]>
   questsByTab: Record<RewardsPromoTabId, RewardsQuest[]>
 }

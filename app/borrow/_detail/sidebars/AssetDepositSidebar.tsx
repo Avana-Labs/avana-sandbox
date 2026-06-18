@@ -4,21 +4,12 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { LendModals } from "@/app/lend/components/lend-modals"
+import { LendModals, type LendModalState, type LendModalToken } from "@/app/lend/components/lend-modals"
 import { TOKENS, MARKETS } from "@/app/lend/components/data"
 
 type Props = { detail: AssetDetail; className?: string; embedded?: boolean }
 
-type LendToken = (typeof TOKENS)[number] | (typeof MARKETS)[number]
-type ModalState = {
-  isOpen: boolean
-  type: "deposit" | "withdraw" | "success"
-  actionType: "deposit" | "withdraw"
-  token: LendToken | null
-  amount: string
-}
-
-const INITIAL_MODAL: ModalState = {
+const INITIAL_MODAL: LendModalState = {
   isOpen: false,
   type: "deposit",
   actionType: "deposit",
@@ -36,7 +27,7 @@ const INITIAL_MODAL: ModalState = {
  * automatically flow here too.
  */
 export function AssetDepositSidebar({ detail, className, embedded = false }: Props) {
-  const [modalState, setModalState] = React.useState<ModalState>(INITIAL_MODAL)
+  const [modalState, setModalState] = React.useState<LendModalState>(INITIAL_MODAL)
 
   const token = React.useMemo(() => toLendToken(detail), [detail])
 
@@ -124,7 +115,7 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
   )
 }
 
-function toLendToken(detail: AssetDetail): LendToken {
+function toLendToken(detail: AssetDetail): LendModalToken {
   const catalog = TOKENS.find((t) => t.symbol.toLowerCase() === detail.hero.symbol.toLowerCase())
   if (catalog) return catalog
   const base = TOKENS[0]
@@ -138,5 +129,5 @@ function toLendToken(detail: AssetDetail): LendToken {
     earned: 0,
     daily: 0,
   }
-  return override as unknown as LendToken
+  return override as LendModalToken
 }

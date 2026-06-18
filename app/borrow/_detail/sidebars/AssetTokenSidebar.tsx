@@ -6,7 +6,7 @@ import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { BorrowModal } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
-import { LendModals } from "@/app/lend/components/lend-modals"
+import { LendModals, type LendModalState, type LendModalToken } from "@/app/lend/components/lend-modals"
 import { CompactRepayCard } from "@/app/components/home/repay-card"
 import { MARKETS, TOKENS } from "@/app/lend/components/data"
 import { TokenIcon } from "@/app/components/token-icon"
@@ -17,16 +17,7 @@ import { PickerSurface, PrimaryCardButton } from "@/app/components/home/shared"
 type Props = { detail: AssetDetail; className?: string }
 
 type SidebarTab = "deposit" | "withdraw" | "borrow" | "repay"
-type LendToken = (typeof TOKENS)[number] | (typeof MARKETS)[number]
-type ModalState = {
-  isOpen: boolean
-  type: "deposit" | "withdraw" | "success"
-  actionType: "deposit" | "withdraw"
-  token: LendToken | null
-  amount: string
-}
-
-const INITIAL_MODAL: ModalState = {
+const INITIAL_MODAL: LendModalState = {
   isOpen: false,
   type: "deposit",
   actionType: "deposit",
@@ -58,7 +49,7 @@ export function AssetTokenActions({ detail, className }: Props) {
 function TokenRail({ detail, className }: { detail: AssetDetail; className?: string }) {
   const [tab, setTab] = React.useState<SidebarTab>("deposit")
   const [amount, setAmount] = React.useState("")
-  const [modalState, setModalState] = React.useState<ModalState>(INITIAL_MODAL)
+  const [modalState, setModalState] = React.useState<LendModalState>(INITIAL_MODAL)
   const [borrowOpen, setBorrowOpen] = React.useState(false)
   const [repayOpen, setRepayOpen] = React.useState(false)
 
@@ -284,7 +275,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
   )
 }
 
-function toLendToken(detail: AssetDetail): LendToken {
+function toLendToken(detail: AssetDetail): LendModalToken {
   const catalog = TOKENS.find((t) => t.symbol.toLowerCase() === detail.hero.symbol.toLowerCase())
   if (catalog) return catalog
   const base = TOKENS[0]
@@ -297,7 +288,7 @@ function toLendToken(detail: AssetDetail): LendToken {
     balance: 0,
     earned: 0,
     daily: 0,
-  } as unknown as LendToken
+  } as LendModalToken
 }
 
 function resolveBorrowTokenId(detail: AssetDetail) {

@@ -17,11 +17,11 @@ function formatMarketUsd(value: number) {
   return `$${value.toFixed(2)}`
 }
 
-export function LendHero({ markets }: { markets: LendPageData["markets"] }) {
+export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["markets"][number]> }) {
   const { showDollarAmounts } = useDisplayPreferences()
 
   const metrics = useMemo(() => {
-    const activeMarkets = markets.filter((market) => !market.soon && market.tvl !== "—")
+    const activeMarkets = markets.filter((market) => !market.soon)
     const marketValues = activeMarkets.map((market) => ({
       ...market,
       tvlUsd: Number.parseFloat(market.tvl.replace(/[$,M]/g, "")) * 1_000_000,

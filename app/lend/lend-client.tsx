@@ -5,26 +5,20 @@ import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { LendHero } from "./components/lend-hero"
 import { LendAssetSpokes } from "./components/lend-asset-spokes"
 import { HotMarkets } from "./components/hot-markets"
-import { LendModals } from "./components/lend-modals"
+import { LendModals, type LendModalState } from "./components/lend-modals"
 
 export function LendClient({ pageData }: { pageData: LendPageData }) {
   const { tokens, markets, featuredAssets, featuredSequence, assetGroups } = pageData
-  const [modalState, setModalState] = useState<{
-    isOpen: boolean;
-    type: 'deposit' | 'withdraw' | 'success';
-    actionType: 'deposit' | 'withdraw';
-    token: typeof tokens[number] | typeof markets[number] | null;
-    amount: string;
-  }>({
+  const [modalState, setModalState] = useState<LendModalState>({
     isOpen: false,
-    type: 'deposit',
-    actionType: 'deposit',
+    type: "deposit",
+    actionType: "deposit",
     token: null,
-    amount: ''
+    amount: "",
   })
 
   const closeModal = () => {
-    setModalState(prev => ({ ...prev, isOpen: false }))
+    setModalState((prev) => ({ ...prev, isOpen: false }))
   }
 
   return (

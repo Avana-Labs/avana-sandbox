@@ -29,5 +29,5 @@ export const getCachedRouteManifest = unstable_cache(
 
 /** Allows future content updates to invalidate the cached route manifest by tag. */
 export async function refreshRouteManifest() {
-  revalidateTag(ROUTE_MANIFEST_TAG)
+  revalidateTag(ROUTE_MANIFEST_TAG, "max")
 }

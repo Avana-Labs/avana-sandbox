@@ -268,7 +268,7 @@ export function PortfolioHero({
         <div className="mt-5">
           <HeroBalanceDisplay
             value={resolvedDisplayValue}
-            delta={headlineDelta ?? (isLoopingOverview ? undefined : overviewDelta)}
+            delta={headlineDelta ?? (isLoopingOverview ? "" : overviewDelta ?? "")}
             deltaTone={isLoopingOverview ? (headlineDelta?.includes("-") ? "negative" : "positive") : "positive"}
             meta={uiConfig.headlineMeta}
             hidden={!showDollarAmounts}
@@ -299,14 +299,14 @@ export function PortfolioHero({
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
             <HeroBalanceDisplay
               value={resolvedDisplayValue}
-              delta={resolvedHeadlineDelta}
+              delta={resolvedHeadlineDelta ?? ""}
               deltaTone={displayTone}
               meta={uiConfig.headlineMeta}
               hidden={!showDollarAmounts}
             />
             {showChart ? (
               <HeroChartSection
-                rangeData={displayRangeData}
+                rangeData={displayRangeData ?? DEFAULT_RANGE_DATA}
                 activeRange={activeRange}
                 onRangeChange={(range) => {
                   setHoverIndex(null)

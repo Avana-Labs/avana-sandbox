@@ -6,9 +6,21 @@ import {
   MULTIPLY_TOKEN_SUPPLY_APYS,
 } from "@/app/lib/data/mock/shared/multiply"
 
+export type MultiplyMarket = {
+  symbol: string
+  name: string
+  price: number
+  funding: number
+  change: number
+  volume: number
+  maxLeverage: number
+  longOi: number
+  shortOi: number
+}
+
 export type MultiplyPageData = {
-  markets: typeof MOCK_MARKETS
-  lendRows: typeof MULTIPLY_MARKET_ROWS
+  markets: ReadonlyArray<MultiplyMarket>
+  lendRows: ReadonlyArray<(typeof MULTIPLY_MARKET_ROWS)[number]>
   pageSize: number
   tokenBorrowApys: typeof MULTIPLY_TOKEN_BORROW_APYS
   tokenLogos: typeof MULTIPLY_TOKEN_LOGOS

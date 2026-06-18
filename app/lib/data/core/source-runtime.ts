@@ -193,7 +193,7 @@ function parseSourcePayload<T>(payload: DataSourceResponse<unknown>, schema?: Zo
   return schema.parse(payload.data)
 }
 
-export async function executeSourceLoad<TSource, TData>({
+export async function executeSourceLoad<TSource extends { adapter: DataSourceAdapter }, TData>({
   primary,
   fallback,
   operation,
@@ -228,7 +228,7 @@ export async function executeSourceLoad<TSource, TData>({
     ensureRequestNotAborted(requestContext.signal)
     return await run(primary)
   } catch (error) {
-    const primaryAdapter = (primary as { adapter: DataSourceAdapter }).adapter
+    const primaryAdapter = primary.adapter
     const normalizedPrimaryError = normalizeDataSourceError(error, primaryAdapter, operation)
 
     if (!fallback || fallback === primary || !primaryAdapter.supportsFallback || !shouldFallbackFromError(normalizedPrimaryError)) {
@@ -238,7 +238,7 @@ export async function executeSourceLoad<TSource, TData>({
     try {
       return await run(fallback)
     } catch (fallbackError) {
-      const fallbackAdapter = (fallback as { adapter: DataSourceAdapter }).adapter
+      const fallbackAdapter = fallback.adapter
       throw normalizeDataSourceError(fallbackError, fallbackAdapter, operation)
     }
   }
