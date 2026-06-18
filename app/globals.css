@@ -140,7 +140,7 @@
 @layer base {
   * {
     @apply border-border;
-    font-synthesis: weight style;
+    font-synthesis: none;
   }
   body {
     @apply bg-background text-foreground;
@@ -168,7 +168,7 @@
 }
 
 .font-data {
-  font-family: var(--font-diatype-data), var(--font-diatype-sans), system-ui, sans-serif;
+  font-family: var(--font-diatype-sans), system-ui, sans-serif;
 }
 
 .font-brand {
