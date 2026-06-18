@@ -101,7 +101,7 @@ vi.mock("next/navigation", () => {
     notFound: () => {
       throw new Error("NEXT_NOT_FOUND")
     },
-    redirect: (_url: string) => {
+    redirect: () => {
       throw new Error("NEXT_REDIRECT")
     },
   }

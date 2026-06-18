@@ -46,14 +46,6 @@ function PortfolioSectionTitle({ title }: { title: string }) {
   )
 }
 
-function SectionDivider() {
-  return (
-    <div className="py-3 md:py-4" aria-hidden="true">
-      <div className="h-px w-full bg-border/80 dark:bg-white/10" />
-    </div>
-  )
-}
-
 export function PortfolioDashboard({
   initialData,
   walletProfileId,

@@ -136,9 +136,11 @@ async function computeConversionPct(
   ctx: QueryCtx,
   marketId: Id<"markets">,
   kind: SecondaryKind,
-  _since: number,
-  _now: number,
+  since: number,
+  now: number,
 ): Promise<{ valuePct: number; deltaPct: number }> {
+  void since
+  void now
   // TODO(convex-wire-up): implement once walletEvents is indexed.
   // For `repay`  : fraction of unique borrowers who emitted a `repay` event
   //                within 30 days of their latest `borrow`.
