@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
+import { Area, AreaChart, Bar, BarChart, Line, LineChart, ReferenceDot, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
 import { useTheme } from "next-themes"
 import type { Series, TimeRangeId } from "@/app/lib/borrow-detail"
 import type { TokenChartHover } from "../TokenPriceChart"
@@ -94,6 +94,7 @@ export function LightweightChart({
     "relative h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.06)_1px,transparent_0)] [background-size:18px_18px] dark:bg-none sm:h-[240px]"
 
   const ChartComponent = type === "bar" ? BarChart : type === "line" ? LineChart : AreaChart
+  const lastPoint = data[data.length - 1]
 
   return (
     <div className={chartShellClassName} style={height !== 220 ? { height } : undefined} role="img" aria-label={ariaLabel}>
@@ -192,19 +193,7 @@ export function LightweightChart({
               dataKey="value"
               stroke={palette.stroke}
               strokeWidth={2.5}
-              dot={(props) => {
-                const { cx, cy, index } = props
-                if (index !== data.length - 1 || cx == null || cy == null) return null
-                return (
-                  <g>
-                    <circle cx={cx} cy={cy} fill={palette.stroke} opacity={0.45}>
-                      <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
-                    </circle>
-                    <circle cx={cx} cy={cy} r={5.5} fill={palette.stroke} stroke="hsl(var(--background))" strokeWidth={2.5} />
-                  </g>
-                )
-              }}
+              dot={false}
               activeDot={{ r: 5, fill: palette.stroke, stroke: "hsl(var(--background))", strokeWidth: 2.5 }}
               isAnimationActive={false}
             />
@@ -216,23 +205,41 @@ export function LightweightChart({
               strokeWidth={2.5}
               fill={`url(#${gradientId(series.id, accentKey)})`}
               fillOpacity={1}
-              dot={(props) => {
-                const { cx, cy, index } = props
-                if (index !== data.length - 1 || cx == null || cy == null) return null
-                return (
-                  <g>
-                    <circle cx={cx} cy={cy} fill={palette.stroke} opacity={0.45}>
-                      <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
-                    </circle>
-                    <circle cx={cx} cy={cy} r={5.5} fill={palette.stroke} stroke="hsl(var(--background))" strokeWidth={2.5} />
-                  </g>
-                )
-              }}
+              dot={false}
               activeDot={{ r: 5, fill: palette.stroke, stroke: "hsl(var(--background))", strokeWidth: 2.5 }}
               isAnimationActive={false}
             />
           )}
+          {type !== "bar" && lastPoint ? (
+            <>
+              <ReferenceDot
+                x={lastPoint.idx}
+                y={lastPoint.value}
+                isFront
+                r={18}
+                fill={palette.stroke}
+                fillOpacity={0.12}
+                stroke="none"
+                shape={({ cx, cy }) => (
+                  <g key="lw-endpoint-pulse">
+                    <circle cx={cx} cy={cy} fill={palette.stroke} opacity={0.45}>
+                      <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
+                    </circle>
+                  </g>
+                )}
+              />
+              <ReferenceDot
+                x={lastPoint.idx}
+                y={lastPoint.value}
+                isFront
+                r={5.5}
+                fill={palette.stroke}
+                stroke="hsl(var(--background))"
+                strokeWidth={2.5}
+              />
+            </>
+          ) : null}
         </ChartComponent>
       </ResponsiveContainer>
     </div>
