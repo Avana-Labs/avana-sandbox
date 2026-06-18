@@ -44,16 +44,16 @@ export async function fetchRewardsPage(
   source?: RewardsPageSource,
   context?: DataSourceRequestContext,
 ): Promise<RewardsPageData> {
-  const response = await executeSourceLoad({
+  const response = await executeSourceLoad<RewardsPageSource, unknown>({
     primary: getRewardsPageSource(source),
     fallback: getRewardsPageFallback(source),
     operation: "getRewardsPageData",
     context,
     schema: rewardsPageSchema,
-    load: (pageSource, requestContext) => pageSource.getRewardsPageData(input, requestContext),
+    load: (pageSource, requestContext) => pageSource.getRewardsPageData(input, requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
   })
 
-  return response.data
+  return response.data as unknown as RewardsPageData
 }
 
 export type { FetchRewardsPageInput }

@@ -67,7 +67,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
       {
         title: "Trending Collateral",
         rows: sortByMetric("availableUsd").map((pool) => ({
-          id: `trending-${pool.protocol}-${pool.name}`,
+          id: `trending-${pool.id}`,
           href: `/borrow/pool/${pool.id}`,
           pool,
           title: pool.name,
@@ -80,7 +80,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
       {
         title: "Rewards Pools",
         rows: sortByMetric("tvlUsd").map((pool) => ({
-          id: `rewards-${pool.protocol}-${pool.name}`,
+          id: `rewards-${pool.id}`,
           href: `/borrow/pool/${pool.id}`,
           pool,
           title: pool.name,
@@ -96,7 +96,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
           .sort((left, right) => (right.aprMin + right.aprMax) / 2 - (left.aprMin + left.aprMax) / 2)
           .slice(0, 3)
           .map((pool) => ({
-            id: `apy-${pool.protocol}-${pool.name}`,
+            id: `apy-${pool.id}`,
             href: `/borrow/pool/${pool.id}`,
             pool,
             title: pool.name,
@@ -186,7 +186,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
               <div className="overflow-x-auto pb-1">
                 <div className="flex min-w-max gap-3">
                   {heroCards.map((card) => (
-                    <HeroMarketCard key={card.title} title={card.title} subtitle={card.subtitle} rows={card.rows} />
+                    <HeroMarketCard key={card.title} title={card.title} rows={card.rows} />
                   ))}
                 </div>
               </div>

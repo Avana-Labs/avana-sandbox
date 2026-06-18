@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/components/transaction-flow"
-import { PairVisual } from "@/app/components/home-workspace-primitives"
 import { Button } from "@/components/ui/button"
 import {
   formatUsdExact,
@@ -112,10 +111,10 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
                 <div className="grid gap-2.5 sm:grid-cols-2">
                   <div className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md border border-border bg-surface-raised px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)_1rem] md:gap-2.5 md:px-3.5">
                     <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
-                      <PairVisual
-                        visuals={pool.visuals}
-                        className="h-10 w-[3.2rem] shrink-0 [&>span]:size-10 [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[1.25rem] md:h-9 md:w-[2.75rem] md:[&>span]:size-8 md:[&>span:nth-child(2)]:left-[1.05rem]"
-                      />
+                      <div className="relative h-10 w-[3.2rem] shrink-0 md:h-9 md:w-[2.75rem]" aria-hidden>
+                        {visualA ? <TokenBubble visual={visualA} size="lg" className="absolute left-0 top-0 ring-2 ring-background md:size-8" /> : null}
+                        {visualB ? <TokenBubble visual={visualB} size="lg" className="absolute left-[1.25rem] top-0 ring-2 ring-background md:left-[1.05rem] md:size-8" /> : null}
+                      </div>
                     </span>
                     <span className="flex min-w-0 flex-col leading-tight">
                       <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">

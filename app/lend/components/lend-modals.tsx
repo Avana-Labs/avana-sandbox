@@ -9,19 +9,21 @@ import type { LendPageData } from "@/app/lib/data/providers/lend"
 
 type ModalStage = "entry" | TransactionFlowStage
 
-type ModalState = {
+export type LendModalToken = LendPageData["tokens"][number] | LendPageData["markets"][number]
+
+export type LendModalState = {
   isOpen: boolean
   type: "deposit" | "withdraw" | "success"
   actionType: "deposit" | "withdraw"
-  token: LendPageData["tokens"][number] | LendPageData["markets"][number] | null
+  token: LendModalToken | null
   amount: string
 }
 
 interface LendModalsProps {
-  tokens: LendPageData["tokens"]
-  markets: LendPageData["markets"]
-  modalState: ModalState
-  setModalState: React.Dispatch<React.SetStateAction<ModalState>>
+  tokens?: LendPageData["tokens"]
+  markets?: LendPageData["markets"]
+  modalState: LendModalState
+  setModalState: React.Dispatch<React.SetStateAction<LendModalState>>
   closeModal: () => void
 }
 

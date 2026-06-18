@@ -55,14 +55,14 @@ export async function fetchBorrowPage(
   source?: BorrowPageSource,
   context?: DataSourceRequestContext,
 ): Promise<BorrowPageData> {
-  const response = await executeSourceLoad({
+  const response = await executeSourceLoad<BorrowPageSource, unknown>({
     primary: getBorrowPageSource(source),
     fallback: getBorrowPageFallback(source),
     operation: "getBorrowPageData",
     context,
     schema: borrowPageSchema,
-    load: (pageSource, requestContext) => pageSource.getBorrowPageData(requestContext),
+    load: (pageSource, requestContext) => pageSource.getBorrowPageData(requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
   })
 
-  return response.data
+  return response.data as unknown as BorrowPageData
 }
