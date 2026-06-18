@@ -172,7 +172,8 @@ function MultiSelectDropdown({
     <div ref={rootRef} className="relative z-20">
       <button
         type="button"
-        aria-label={ariaLabel}
+        aria-label={triggerLabel}
+        aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
@@ -183,7 +184,7 @@ function MultiSelectDropdown({
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
-        <span className={cn(isDark ? "text-white/70" : "text-foreground/55")}>
+        <span className={cn(isDark ? "text-white/80" : "text-foreground/70")}>
           <ChevronDownIcon />
         </span>
       </button>
@@ -433,7 +434,7 @@ function AssetSection({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   #
                 </th>
                 <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
@@ -444,14 +445,14 @@ function AssetSection({
                       "flex items-center gap-2 transition-colors",
                       sortKey === "asset"
                         ? "text-foreground dark:text-white/90"
-                        : "text-muted-foreground/70 dark:text-white/42",
+                        : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>ASSET</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
@@ -459,14 +460,14 @@ function AssetSection({
                       "flex items-center gap-2 transition-colors",
                       sortKey === "apy"
                         ? "text-foreground dark:text-white/90"
-                        : "text-muted-foreground/70 dark:text-white/42",
+                        : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>APY</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("deposits")}
@@ -474,14 +475,14 @@ function AssetSection({
                       "flex items-center gap-2 transition-colors",
                       sortKey === "deposits"
                         ? "text-foreground dark:text-white/90"
-                        : "text-muted-foreground/70 dark:text-white/42",
+                        : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>TOTAL DEPOSITS</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("liquidity")}
@@ -489,7 +490,7 @@ function AssetSection({
                       "flex w-full items-center gap-2 transition-colors",
                       sortKey === "liquidity"
                         ? "text-foreground dark:text-white/90"
-                        : "text-muted-foreground/70 dark:text-white/42",
+                        : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>AVAILABLE LIQUIDITY</span>
