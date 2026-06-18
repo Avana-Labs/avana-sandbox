@@ -2,8 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from "framer-motion"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
 
@@ -236,33 +235,6 @@ export function HotMarkets({
   sequence: LendPageData["featuredSequence"]
 }) {
   const [hover, setHover] = useState<HoverState | null>(null)
-  const [sequenceWidth, setSequenceWidth] = useState(0)
-  const sequenceRef = useRef<HTMLDivElement | null>(null)
-  const x = useMotionValue(0)
-  const reduceMotion = useReducedMotion()
-
-  useEffect(() => {
-    const sequence = sequenceRef.current
-    if (!sequence) return
-
-    const updateWidth = () => {
-      setSequenceWidth(sequence.offsetWidth)
-      x.set(0)
-    }
-
-    updateWidth()
-    const observer = new ResizeObserver(updateWidth)
-    observer.observe(sequence)
-    return () => observer.disconnect()
-  }, [x])
-
-  useAnimationFrame((_, delta) => {
-    if (hover || reduceMotion || sequenceWidth === 0) return
-
-    const speed = sequenceWidth / MARQUEE_DURATION_SECONDS
-    const nextX = x.get() - speed * (delta / 1000)
-    x.set(nextX <= -sequenceWidth ? nextX + sequenceWidth : nextX)
-  })
 
   const renderSequence = (copy: "a" | "b") =>
     sequence.map((assetId, index) => {
@@ -292,8 +264,11 @@ export function HotMarkets({
           onMouseLeave={() => setHover(null)}
           onPointerLeave={() => setHover(null)}
         >
-          <motion.div style={{ x }} className="flex w-max items-start">
-            <div ref={sequenceRef} className="flex shrink-0 items-start gap-3 pr-3">
+          <div
+            className={cn("lend-featured-marquee flex w-max items-start", hover && "[animation-play-state:paused]")}
+            style={{ animationDuration: `${MARQUEE_DURATION_SECONDS}s` }}
+          >
+            <div className="flex shrink-0 items-start gap-3 pr-3">
               {renderSequence("a")}
             </div>
             <div aria-hidden="true" className="flex shrink-0 items-start gap-3 pr-3">
@@ -309,7 +284,7 @@ export function HotMarkets({
                 />
               ))}
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>
