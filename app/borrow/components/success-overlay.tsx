@@ -32,7 +32,6 @@ export function SuccessOverlay({
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : null)}>
       <DialogContent
-        hideClose
         className="w-[calc(100vw-1.5rem)] max-w-md overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
       >
           <div className="border-b border-border px-5 pb-4 pt-5">

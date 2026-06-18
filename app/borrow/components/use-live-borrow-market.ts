@@ -3,14 +3,13 @@
 import { useEffect, useMemo, useState } from "react"
 import { hashString } from "@/app/lib/deterministic"
 import {
-  BORROW_POOL_CATALOG,
   BORROW_SUPPLY_META,
   BORROWABLE_ASSETS,
   formatUsdExact,
   type BorrowPoolRow,
   type BorrowableAsset,
-} from "@/app/lib/borrow-sim"
-import { HOME_COLLATERAL_POOLS } from "@/app/lib/home-sim"
+  type HomeCollateralPool,
+} from "@/app/lib/data/borrow-domain"
 
 const REFRESH_INTERVAL_MS = 2200
 const TREND_POINTS = 14
@@ -36,6 +35,12 @@ type UseLiveBorrowMarketResult = {
   liveAssets: BorrowableAsset[]
   liveSupplyMetrics: Record<string, LiveSupplyMetric>
   liveDebtMetrics: Record<string, LiveDebtMetric>
+}
+
+type UseLiveBorrowMarketInput = {
+  debts: DebtsState
+  poolCatalog: ReadonlyArray<BorrowPoolRow>
+  collateralPools: ReadonlyArray<HomeCollateralPool>
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -75,7 +80,11 @@ function computeBaseHealthFactor(collateralUsd: number, maxLtv: number, debtUsd:
   return (collateralUsd * (maxLtv / 100)) / debtUsd
 }
 
-export function useLiveBorrowMarket(debts: DebtsState): UseLiveBorrowMarketResult {
+export function useLiveBorrowMarket({
+  debts,
+  poolCatalog,
+  collateralPools,
+}: UseLiveBorrowMarketInput): UseLiveBorrowMarketResult {
   const [phase, setPhase] = useState(0)
 
   useEffect(() => {
@@ -86,7 +95,7 @@ export function useLiveBorrowMarket(debts: DebtsState): UseLiveBorrowMarketResul
   }, [])
 
   const livePools = useMemo(() => {
-    return BORROW_POOL_CATALOG.map((pool) => {
+    return poolCatalog.map((pool) => {
       const baseApr = (pool.aprMin + pool.aprMax) / 2
       const spread = Math.max(0.8, pool.aprMax - pool.aprMin)
       const currentApr = clamp(baseApr + wave(`${pool.id}-fees-apr`, phase, 0.45), 0.1, 30)
@@ -102,7 +111,7 @@ export function useLiveBorrowMarket(debts: DebtsState): UseLiveBorrowMarketResul
         trendValues,
       }
     })
-  }, [phase])
+  }, [phase, poolCatalog])
 
   const liveAssets = useMemo(() => {
     return BORROWABLE_ASSETS.map((asset) => {
@@ -122,7 +131,7 @@ export function useLiveBorrowMarket(debts: DebtsState): UseLiveBorrowMarketResul
 
   const liveSupplyMetrics = useMemo<Record<string, LiveSupplyMetric>>(() => {
     return Object.fromEntries(
-      HOME_COLLATERAL_POOLS.map((pool) => {
+      collateralPools.map((pool) => {
         const baseFeesUsd = BORROW_SUPPLY_META[pool.id]?.feesUsd ?? 0
         const baseHealthFactor = computeBaseHealthFactor(pool.collateralUsd, pool.maxLtv, debts[pool.id] ?? 0)
         const pairApr = clamp(pool.pairApr + wave(`${pool.id}-lp-apr`, phase, 0.42), 0.1, 25)
@@ -143,11 +152,11 @@ export function useLiveBorrowMarket(debts: DebtsState): UseLiveBorrowMarketResul
         ]
       }),
     )
-  }, [debts, phase])
+  }, [collateralPools, debts, phase])
 
   const liveDebtMetrics = useMemo<Record<string, LiveDebtMetric>>(() => {
     return Object.fromEntries(
-      HOME_COLLATERAL_POOLS.filter((pool) => (debts[pool.id] ?? 0) > 0).map((pool) => {
+      collateralPools.filter((pool) => (debts[pool.id] ?? 0) > 0).map((pool) => {
         const borrowedUsd = debts[pool.id] ?? 0
         const baseAccrued = BORROW_SUPPLY_META[pool.id]?.accruedInterestUsd ?? 0
         const accruedInterestUsd = clamp(
@@ -169,7 +178,7 @@ export function useLiveBorrowMarket(debts: DebtsState): UseLiveBorrowMarketResul
         ]
       }),
     )
-  }, [debts, liveSupplyMetrics, liveUsdcBorrowApr, phase])
+  }, [collateralPools, debts, liveSupplyMetrics, liveUsdcBorrowApr, phase])
 
   return {
     livePools,

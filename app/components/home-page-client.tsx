@@ -427,7 +427,7 @@ export function HomePageClient() {
     }
 
     switch (activeFlow.mode) {
-      case "borrow":
+      case "borrow": {
         const borrowPowerUsedPct = borrowPool.borrowPowerUsd > 0 ? Math.min(100, ((borrowPool.borrowPowerUsd - borrowPreview.remainingBorrowPowerUsd) / borrowPool.borrowPowerUsd) * 100) : 0
         return {
           actionLabel: "borrow",
@@ -448,6 +448,7 @@ export function HomePageClient() {
           feeValue: "$0",
           footerNote: aaveFooterNote,
         }
+      }
       case "repay":
         return {
           actionLabel: "repayment",
@@ -468,7 +469,7 @@ export function HomePageClient() {
           feeValue: "$0",
           footerNote: aaveFooterNote,
         }
-      case "claim":
+      case "claim": {
         const selectedPositionCount = claimPreview.selectedPositionIds.length
         const selectedPosition =
           HOME_CLAIM_POSITIONS.find((position) => claimPreview.selectedPositionIds.includes(position.id)) ??
@@ -494,6 +495,7 @@ export function HomePageClient() {
           feeValue: "$0",
           footerNote: aaveFooterNote,
         }
+      }
       case "remove":
         return {
           actionLabel: "removal",

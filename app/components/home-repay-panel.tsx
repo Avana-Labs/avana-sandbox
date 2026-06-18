@@ -82,7 +82,11 @@ export function HomeRepayPanel({
             label="Repay amount"
             helper={preview.amountUsd > 0 ? `Approximate settlement value ${formatCompactUsd(preview.amountUsd)}` : "Repay in USDC to de-risk the selected collateral."}
             action={
-              <button type="button" onClick={onSetMax} className="text-xs font-semibold text-primary transition-opacity hover:opacity-80">
+              <button
+                type="button"
+                onClick={onSetMax}
+                className="inline-flex min-h-10 items-center rounded-full px-2 text-xs font-semibold text-primary transition-opacity hover:bg-surface-inset hover:opacity-80"
+              >
                 Max
               </button>
             }

@@ -34,6 +34,7 @@ yarn-error.log*
 # editor
 .vscode/
 /.gitconfig
+.DS_Store
 
 # typescript
 *.tsbuildinfo

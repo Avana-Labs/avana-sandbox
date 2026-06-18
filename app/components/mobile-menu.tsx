@@ -23,6 +23,7 @@ type MobileMenuProps = {
 
 export function MobileMenu({ actions, brand }: MobileMenuProps) {
   const [open, setOpen] = useState(false)
+  const [renderMenu, setRenderMenu] = useState(false)
   const [isShown, setIsShown] = useState(false)
   const [settingsIntroActive, setSettingsIntroActive] = useState(false)
   const [view, setView] = useState<MobileMenuView>("root")
@@ -30,6 +31,9 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   const [sheetDragOffset, setSheetDragOffset] = useState(0)
   const [sheetDragging, setSheetDragging] = useState(false)
   const selectorSheetRef = useRef<HTMLDivElement | null>(null)
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null)
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
+  const restoreFocusRef = useRef<HTMLElement | null>(null)
   const sheetDragStateRef = useRef<{
     pointerId: number
     startY: number
@@ -39,7 +43,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
   const { language, setLanguage, currency, setCurrency } = useDisplayPreferences()
-  const accentClass = "text-[#01AACF]"
+  const accentClass = "text-[#007a99]"
 
   useEffect(() => {
     setMounted(true)
@@ -47,6 +51,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
   useEffect(() => {
     setOpen(false)
+    setRenderMenu(false)
     setIsShown(false)
     setSettingsIntroActive(false)
     setView("root")
@@ -57,14 +62,17 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
   useEffect(() => {
     if (!open) {
-      setIsShown(false)
-      setSettingsIntroActive(false)
+      if (!renderMenu) {
+        setIsShown(false)
+        setSettingsIntroActive(false)
+      }
       return
     }
 
     setSettingsIntroActive(true)
     const frame = window.requestAnimationFrame(() => {
       setIsShown(true)
+      closeButtonRef.current?.focus()
     })
     const timer = window.setTimeout(() => {
       setSettingsIntroActive(false)
@@ -74,10 +82,10 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       window.cancelAnimationFrame(frame)
       window.clearTimeout(timer)
     }
-  }, [open])
+  }, [open, renderMenu])
 
   useEffect(() => {
-    if (!open) {
+    if (!renderMenu) {
       return
     }
 
@@ -103,13 +111,28 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       document.body.style.paddingRight = previousPaddingRight
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [open])
+  }, [renderMenu])
 
   const onClose = () => {
     setOpen(false)
     setIsShown(false)
     setSettingsIntroActive(false)
     setView("root")
+    setSheetDragOffset(0)
+    setSheetDragging(false)
+    sheetDragStateRef.current = null
+    window.setTimeout(() => {
+      setRenderMenu(false)
+      restoreFocusRef.current?.focus()
+    }, 300)
+  }
+
+  const onOpen = () => {
+    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : menuButtonRef.current
+    setRenderMenu(true)
+    window.requestAnimationFrame(() => {
+      setOpen(true)
+    })
   }
 
   const mainLinks = [
@@ -118,12 +141,12 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       label: "Express",
     },
     {
-      href: "/borrow",
-      label: "Borrow",
-    },
-    {
       href: "/lend",
       label: "Lend",
+    },
+    {
+      href: "/borrow",
+      label: "Borrow",
     },
     {
       href: "/multiply",
@@ -256,7 +279,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                   >
                     {link.label}
                   </span>
-                  <span className="shrink-0 pb-0.5 text-[0.88rem] font-medium tracking-[-0.02em] text-[#01AACF]">
+                  <span className="shrink-0 pb-0.5 text-[0.88rem] font-medium tracking-[-0.02em] text-[#007a99]">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                 </Link>
@@ -322,7 +345,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 <CircleHelp className={rootSettingsIconClass} />
                 <span>Help Center</span>
               </span>
-              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
+              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#007a99]" />
             </Link>
           </li>
           <li
@@ -340,7 +363,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 <Shield className={rootSettingsIconClass} />
                 <span>Security & privacy</span>
               </span>
-              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
+              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#007a99]" />
             </a>
           </li>
         </ul>
@@ -465,67 +488,76 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   return (
     <>
       <button
+        ref={menuButtonRef}
         type="button"
-        className="inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] md:hidden"
+        className="inline-flex h-10 w-10 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] md:hidden"
         aria-label="Toggle menu"
         aria-expanded={open}
         aria-controls="mobile-site-nav"
-        onClick={() => setOpen((currentValue) => !currentValue)}
+        onClick={() => {
+          if (open) {
+            onClose()
+            return
+          }
+          onOpen()
+        }}
       >
         <Menu className="h-7 w-7" strokeWidth={1.8} />
         <span className="sr-only">Toggle menu</span>
       </button>
 
-      <div
-        className={`fixed inset-0 z-[60] min-h-[100dvh] bg-background text-foreground transition-opacity duration-300 ease-out md:hidden ${
-          isVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-        }`}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Mobile menu"
-        aria-hidden={!isVisible}
-      >
-        <div className="flex h-16 items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <Link
-              href={siteRoutes.home}
-              prefetch={false}
-              aria-label="Avana"
-              className="inline-flex items-center"
-              onClick={onClose}
-            >
-              {brand}
-            </Link>
+      {renderMenu ? (
+        <div
+          className={`fixed inset-0 z-[60] min-h-[100dvh] bg-background text-foreground transition-opacity duration-300 ease-out md:hidden ${
+            isVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+          }`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile menu"
+        >
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+            <div className="flex items-center gap-3">
+              <Link
+                href={siteRoutes.home}
+                prefetch={false}
+                aria-label="Avana"
+                className="inline-flex items-center"
+                onClick={onClose}
+              >
+                {brand}
+              </Link>
 
-            <button
-              type="button"
-              className="inline-flex h-11 w-11 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
-              aria-label="Close menu"
-              onClick={onClose}
-            >
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                <path d="M5 5L17 17" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                <path d="M17 5L5 17" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-              </svg>
-            </button>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                className="inline-flex h-11 w-11 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+                aria-label="Close menu"
+                onClick={onClose}
+              >
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <path d="M5 5L17 17" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                  <path d="M17 5L5 17" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            {actions ? <div className="flex items-center gap-0.5">{actions}</div> : null}
           </div>
 
-          {actions ? <div className="flex items-center gap-0.5">{actions}</div> : null}
+          <nav
+            id="mobile-site-nav"
+            aria-label="Mobile navigation"
+            className={`h-[calc(100dvh-4rem)] overflow-y-auto px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
+              isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+            } ${isSelectorSheetOpen ? "pointer-events-none opacity-35 blur-[1px]" : ""}`}
+          >
+            {renderRootMenu()}
+          </nav>
+
+          {view === "language" ? renderLanguageList() : null}
+          {view === "currency" ? renderCurrencyList() : null}
         </div>
-
-        <nav
-          id="mobile-site-nav"
-          aria-label="Mobile navigation"
-          className={`h-[calc(100dvh-4rem)] overflow-y-auto px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
-            isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
-          } ${isSelectorSheetOpen ? "pointer-events-none opacity-35 blur-[1px]" : ""}`}
-        >
-          {renderRootMenu()}
-        </nav>
-
-        {view === "language" ? renderLanguageList() : null}
-        {view === "currency" ? renderCurrencyList() : null}
-      </div>
+      ) : null}
     </>
   )
 }

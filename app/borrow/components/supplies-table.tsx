@@ -3,20 +3,25 @@
 import { Info } from "lucide-react"
 import {
   BORROW_SUPPLY_META,
+  HOME_COLLATERAL_POOLS,
   formatCompactUsd,
+  formatHealthFactor,
   formatUsdExact,
+  getHealthStatus,
   getSpokeById,
   healthFactorToneClass,
   homePoolSpoke,
   homeVisualToBorrowVisual,
-} from "@/app/lib/borrow-sim"
-import { HOME_COLLATERAL_POOLS, formatHealthFactor, getHealthStatus, type HomeCollateralPool } from "@/app/lib/home-sim"
+  type HomeCollateralPool,
+} from "@/app/lib/data/borrow-domain"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { cn } from "@/lib/utils"
 
 export type SupplyRowContext = {
   pool: HomeCollateralPool
   borrowedUsd: number
+  remainingBorrowPowerUsd: number
+  liquidationThresholdUsd: number
   healthFactor: number | null
   pairApr: number
   feesUsd: number
@@ -71,46 +76,71 @@ export function SuppliesPanel({
         </div>
       ) : null}
       <div className="hidden md:block">
-        <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
+        <div className="rounded-[18px] bg-white dark:bg-slate-950">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-[13px]">
-            <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
-                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">LP Position</th>
-                <th className="pb-2 pt-3 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Collateral</th>
-                <th className="pb-2 pt-3 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Max Borrow</th>
-                <th className="pb-2 pt-3 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Health Factor</th>
-                <th className="pb-2 pt-3 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Fees Earned</th>
-                <th className="w-52 pb-2 pt-3 pr-5" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rows.map((row) => {
+            <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <colgroup>
+                <col className="w-[4%]" />
+                <col className="w-[26%]" />
+                <col className="w-[13%]" />
+                <col className="w-[13%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
+                <col className="w-[14%]" />
+              </colgroup>
+              <thead>
+                <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+                  <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                    #
+                  </th>
+                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                    LP Position
+                  </th>
+                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                    Collateral
+                  </th>
+                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                    Max Borrow
+                  </th>
+                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                    Health Factor
+                  </th>
+                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                    Fees Earned
+                  </th>
+                  <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 pr-6 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border dark:divide-white/6">
+              {rows.map((row, index) => {
                 const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
                 const meta = BORROW_SUPPLY_META[row.pool.id]
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 return (
-                  <tr key={row.pool.id} className="transition-colors hover:bg-surface-inset/60">
-                    <td className="py-2.5 pl-5">
+                  <tr key={row.pool.id} className="transition-colors hover:bg-slate-100 dark:hover:bg-white/5">
+                    <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
+                      {index + 1}
+                    </td>
+                    <td className="py-3 pl-5">
                       <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
                     </td>
-                    <td className="py-2.5 text-right font-data text-[13px] tabular-nums text-foreground">
+                    <td className="py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground">
                       {m(formatCompactUsd(row.pool.collateralUsd))}
                     </td>
-                    <td className="py-2.5 text-right font-data text-[13px] tabular-nums text-foreground">
-                      {m(formatCompactUsd(row.pool.borrowPowerUsd))}
+                    <td className="py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground">
+                      {m(formatCompactUsd(row.remainingBorrowPowerUsd))}
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-3 text-right">
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-3 pl-4 text-left">
                       <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
                       <div className="font-data text-[11px] font-medium tabular-nums text-emerald-600">
                         {row.pairApr.toFixed(1)}% APR
                       </div>
                     </td>
-                    <td className="py-2.5 pr-5 text-right">
-                      <div className="flex justify-end gap-1.5">
+                    <td className="py-3 pl-4 pr-6 text-left">
+                      <div className="flex justify-start gap-1.5">
                         <PillButton variant="ghost" onClick={() => onRemove(row)}>
                           Remove
                         </PillButton>
@@ -122,9 +152,9 @@ export function SuppliesPanel({
                   </tr>
                 )
               })}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -188,7 +218,7 @@ export function SuppliesPanel({
                 <div className="flex items-center justify-between border-t border-border pt-2 text-[12.5px]">
                   <span className="text-muted-foreground">Liquidation at</span>
                   <span className={cn("font-data font-medium tabular-nums", hfTone.text)}>
-                    {m(formatUsdExact(row.pool.liquidationUsd))} collateral
+                    {m(formatUsdExact(row.liquidationThresholdUsd))} collateral
                   </span>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { ArrowUpRight, BadgeDollarSign, Layers3, Search, Sparkles } from "lucide-react"
@@ -11,8 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { triggerPageLoading } from "@/app/lib/page-loading"
-import { BORROWABLE_ASSETS, BORROW_POOL_CATALOG, type BorrowAssetVisual } from "@/app/lib/borrow-sim"
-import { MARKETS, TOKENS } from "@/app/lend/components/data"
+import type { BorrowAssetVisual } from "@/app/lib/borrow-sim"
 import { cn } from "@/lib/utils"
 
 type SearchTab = "all" | "pools" | "borrow" | "lend"
@@ -36,11 +35,6 @@ const TABS: Array<{ id: SearchTab; label: string }> = [
   { id: "lend", label: "Lend" },
 ]
 
-const lendSymbols: ReadonlySet<string> = new Set([
-  ...TOKENS.map((token) => token.symbol),
-  ...MARKETS.map((market) => market.symbol),
-])
-
 const formatCompactUsd = (value: number) => {
   return Intl.NumberFormat("en-US", {
     notation: "compact",
@@ -50,7 +44,15 @@ const formatCompactUsd = (value: number) => {
   }).format(value)
 }
 
-function getSearchResults(): SearchResult[] {
+async function getSearchResults(): Promise<SearchResult[]> {
+  const [{ BORROWABLE_ASSETS, BORROW_POOL_CATALOG }, { MARKETS, TOKENS }] = await Promise.all([
+    import("@/app/lib/borrow-sim"),
+    import("@/app/lend/components/data"),
+  ])
+  const lendSymbols: ReadonlySet<string> = new Set([
+    ...TOKENS.map((token) => token.symbol),
+    ...MARKETS.map((market) => market.symbol),
+  ])
   const poolResults = BORROW_POOL_CATALOG.slice(0, 18).map((pool) => ({
     id: `pool-${pool.id}`,
     tab: "pools" as const,
@@ -176,7 +178,22 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [activeTab, setActiveTab] = useState<SearchTab>("all")
-  const results = useMemo(() => getSearchResults(), [])
+  const [results, setResults] = useState<SearchResult[] | null>(null)
+  const [loadingResults, setLoadingResults] = useState(false)
+
+  const loadResults = useCallback(async () => {
+    if (results || loadingResults) {
+      return
+    }
+
+    setLoadingResults(true)
+
+    try {
+      setResults(await getSearchResults())
+    } finally {
+      setLoadingResults(false)
+    }
+  }, [loadingResults, results])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -185,15 +202,25 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
       }
 
       event.preventDefault()
+      void loadResults()
       setOpen(true)
     }
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  }, [loadResults])
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    void loadResults()
+  }, [loadResults, open])
 
   const normalizedQuery = query.trim().toLowerCase()
-  const visibleResults = results
+  const resolvedResults = results ?? []
+  const visibleResults = resolvedResults
     .filter((result) => activeTab === "all" || result.tab === activeTab)
     .filter((result) => {
       if (!normalizedQuery) return true
@@ -216,10 +243,13 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
       <button
         type="button"
         aria-label="Search Avana"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          void loadResults()
+          setOpen(true)
+        }}
         className={
           iconOnly
-            ? "inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+            ? "inline-flex h-10 w-10 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
             : "flex h-9 w-full items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-left text-[14px] font-normal tracking-[-0.01em] text-[#767676] shadow-none transition-colors hover:bg-[#f3f3f3] lg:h-10 lg:gap-3 lg:px-4 lg:text-[15px] dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground dark:hover:bg-surface-hover"
         }
         >
@@ -274,7 +304,12 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
           </div>
 
           <div className="max-h-[430px] overflow-y-auto px-2 py-2.5">
-            {groupedResults.length > 0 ? (
+            {loadingResults && results == null ? (
+              <div className="px-5 py-12 text-center">
+                <p className="text-[15px] font-medium text-foreground">Loading results</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">Preparing pools, borrow assets, and lend assets.</p>
+              </div>
+            ) : groupedResults.length > 0 ? (
               groupedResults.map(([tab, group]) => (
                 <section key={tab} className="pb-2">
                   <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium text-muted-foreground">

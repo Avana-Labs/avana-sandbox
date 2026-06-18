@@ -68,7 +68,7 @@ function resolveTailwindTextColor(className: string, theme: ThemeMode) {
   if (!palette) return null
 
   const shade = Number(rawShade)
-  const targetShade = theme === "dark" ? (shade >= 600 ? 400 : 300) : Math.min(600, Math.max(500, shade))
+  const targetShade = clampTailwindShade(shade, theme)
   return palette[targetShade] ?? palette[500] ?? null
 }
 
@@ -126,4 +126,15 @@ const TAILWIND_HEX: Record<string, Partial<Record<300 | 400 | 500 | 600 | 700, s
   violet: { 300: "#c4b5fd", 400: "#a78bfa", 500: "#8b5cf6", 600: "#7c3aed", 700: "#6d28d9" },
   yellow: { 300: "#fde047", 400: "#facc15", 500: "#eab308", 600: "#ca8a04", 700: "#a16207" },
   zinc: { 300: "#d4d4d8", 400: "#a1a1aa", 500: "#71717a", 600: "#52525b", 700: "#3f3f46" },
+}
+
+type TailwindShade = keyof (typeof TAILWIND_HEX)["amber"]
+
+function clampTailwindShade(shade: number, theme: ThemeMode): TailwindShade {
+  if (theme === "dark") {
+    return shade >= 600 ? 400 : 300
+  }
+  if (shade >= 600) return 600
+  if (shade >= 500) return 500
+  return 500
 }
