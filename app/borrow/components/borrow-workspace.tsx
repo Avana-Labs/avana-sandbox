@@ -101,6 +101,8 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
     return collateralPools.map((pool) => ({
       pool,
       borrowedUsd: debts[pool.id] ?? 0,
+      remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - (debts[pool.id] ?? 0)),
+      liquidationThresholdUsd: pool.liquidationUsd,
       healthFactor: liveSupplyMetrics[pool.id]?.healthFactor ?? computeHealthFactor(pool, debts[pool.id] ?? 0),
       pairApr: liveSupplyMetrics[pool.id]?.pairApr ?? pool.pairApr,
       feesUsd: liveSupplyMetrics[pool.id]?.feesUsd ?? 0,
@@ -109,7 +111,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   }, [collateralPools, debts, liveSupplyMetrics])
 
   const filteredPools = useMemo(() => {
-    const filtered = filterPools(poolCatalog, { text: search, dexes: selectedDexes })
+    const filtered = filterPools([...poolCatalog], { text: search, dexes: selectedDexes })
     return filtered.map((pool) => livePoolById.get(pool.id) ?? pool)
   }, [livePoolById, poolCatalog, search, selectedDexes])
 

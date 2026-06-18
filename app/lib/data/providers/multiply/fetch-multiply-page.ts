@@ -28,14 +28,14 @@ export async function fetchMultiplyPage(
   source?: MultiplyPageSource,
   context?: DataSourceRequestContext,
 ): Promise<MultiplyPageData> {
-  const response = await executeSourceLoad({
+  const response = await executeSourceLoad<MultiplyPageSource, unknown>({
     primary: getMultiplyPageSource(source),
     fallback: getMultiplyPageFallback(source),
     operation: "getMultiplyPageData",
     context,
     schema: multiplyPageSchema,
-    load: (pageSource, requestContext) => pageSource.getMultiplyPageData(requestContext),
+    load: (pageSource, requestContext) => pageSource.getMultiplyPageData(requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
   })
 
-  return response.data
+  return response.data as unknown as MultiplyPageData
 }

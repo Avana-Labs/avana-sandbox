@@ -38,14 +38,14 @@ export async function fetchLendPage(
   source?: LendPageSource,
   context?: DataSourceRequestContext,
 ): Promise<LendPageData> {
-  const response = await executeSourceLoad({
+  const response = await executeSourceLoad<LendPageSource, unknown>({
     primary: getLendPageSource(source),
     fallback: getLendPageFallback(source),
     operation: "getLendPageData",
     context,
     schema: lendPageSchema,
-    load: (pageSource, requestContext) => pageSource.getLendPageData(requestContext),
+    load: (pageSource, requestContext) => pageSource.getLendPageData(requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
   })
 
-  return response.data
+  return response.data as unknown as LendPageData
 }

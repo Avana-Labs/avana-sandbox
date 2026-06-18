@@ -39,8 +39,8 @@ type UseLiveBorrowMarketResult = {
 
 type UseLiveBorrowMarketInput = {
   debts: DebtsState
-  poolCatalog: BorrowPoolRow[]
-  collateralPools: HomeCollateralPool[]
+  poolCatalog: ReadonlyArray<BorrowPoolRow>
+  collateralPools: ReadonlyArray<HomeCollateralPool>
 }
 
 function clamp(value: number, min: number, max: number) {
