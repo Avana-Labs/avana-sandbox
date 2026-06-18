@@ -27,6 +27,7 @@ type Props = {
 type ChartRow = { idx: number; value: number; label: string; iso: string }
 
 export function TokenInspirationChart({ series, timeRange, height = 248, onHoverChange }: Props) {
+  void timeRange
   const gradId = React.useId().replace(/:/g, "")
   const data = React.useMemo(() => toChartRows(series.points), [series.points])
 

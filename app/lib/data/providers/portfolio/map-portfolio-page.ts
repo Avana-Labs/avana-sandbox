@@ -191,10 +191,15 @@ function getRangeData(
 export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageData {
   const { walletProfile, snapshots, supplies, debts, collaterals, multiplyCreditLines, multiplyCollaterals, multiplyPositions, openOrders, twapOrders, activity, strategies, rewards } =
     records
+  const stripId = <T extends { id: string }>(record: T): Omit<T, "id"> => {
+    const { id, ...rest } = record
+    void id
+    return rest
+  }
   const walletSnapshots = dedupeByStableId(
     snapshots.map((snapshot, index) => ({ ...snapshot, id: `${snapshot.walletProfileId}:${snapshot.timestamp}:${index}` })),
     "portfolio snapshots",
-  ).map(({ id: _id, ...snapshot }) => snapshot)
+  ).map(stripId)
   const walletSupplies = assertStableRecordIds(dedupeByStableId(supplies, "portfolio supplies"), "portfolio supplies")
   const walletDebts = assertStableRecordIds(dedupeByStableId(debts, "portfolio debts"), "portfolio debts")
   const walletCollaterals = assertStableRecordIds(dedupeByStableId(collaterals, "portfolio collaterals"), "portfolio collaterals")
@@ -212,7 +217,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
   const walletStrategies = dedupeByStableId(
     strategies.map((strategy) => ({ ...strategy, id: strategy.title })),
     "portfolio strategies",
-  ).map(({ id: _id, ...strategy }) => strategy)
+  ).map(stripId)
 
   const totalCollateralUsd = walletCollaterals.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
   const totalDebtUsd = walletDebts.reduce((sum, row) => sum + row.borrowedUsd, 0)
