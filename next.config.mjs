@@ -1,13 +1,16 @@
 import process from "node:process"
 
+const isDev = process.env.NODE_ENV === "development"
 const themeBootstrapHash = "'sha256-Ik5jm8S/PQrtWlIEGsPj4ea1lM5oiXpT6DTzi5ntHjg='"
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${themeBootstrapHash}`,
+  isDev
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+    : `script-src 'self' 'unsafe-inline' ${themeBootstrapHash}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self'",
+  isDev ? "connect-src 'self' ws: wss: blob:" : "connect-src 'self'",
   "media-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",

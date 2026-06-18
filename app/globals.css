@@ -168,7 +168,7 @@
 }
 
 .font-data {
-  font-family: var(--font-diatype-sans), ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-diatype-data), var(--font-diatype-sans), system-ui, sans-serif;
 }
 
 .font-brand {
@@ -322,27 +322,6 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes lend-featured-marquee {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-.lend-featured-marquee {
-  animation: lend-featured-marquee 38s linear infinite;
-  will-change: transform;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lend-featured-marquee {
-    animation: none;
   }
 }
 

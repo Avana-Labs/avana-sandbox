@@ -36,6 +36,19 @@ const diatypeSans = localFont({
   display: "swap",
 })
 
+const diatypeData = localFont({
+  src: [
+    {
+      path: "../public/fonts/diatype/data/ABCDiatypeSemi-MonoVariable-Trial.woff2",
+      weight: "400 700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-diatype-data",
+  display: "swap",
+  preload: false,
+})
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://avana.cc"),
   title: {
@@ -106,7 +119,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={diatypeSans.variable}
+      className={`${diatypeSans.variable} ${diatypeData.variable}`}
       suppressHydrationWarning
     >
       <head>
