@@ -173,18 +173,6 @@ function FeaturedCard({
       <div className="pointer-events-none absolute inset-0 z-0 opacity-100 [background-image:radial-gradient(circle,rgba(148,163,184,0.28)_1px,transparent_1.15px)] [background-position:0_4px] [background-size:16px_16px] dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1.15px)]" />
       <div className="pointer-events-none absolute inset-0 z-0 rounded-2xl bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
 
-      <Image
-        src={asset.iconUrl}
-        alt=""
-        aria-hidden="true"
-        width={274}
-        height={274}
-        className="pointer-events-none absolute -left-5 top-16 size-[274px] rounded-full object-cover opacity-10 blur-2xl saturate-150"
-        loading="lazy"
-        decoding="async"
-        unoptimized
-      />
-
       <div className="absolute left-6 right-6 top-6 z-10 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <AssetIcon asset={asset} />
