@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 import { RewardsTabs } from "./rewards-tabs"
-import { getCachedHomeSnapshot } from "@/app/lib/home-data"
 import { RewardsBalanceHero } from "./rewards-balance-hero"
+import { fetchRewardsPage } from "@/app/lib/data/providers/rewards"
+import { resolvePortfolioWalletProfileId } from "@/app/lib/data/providers/portfolio"
 
 export const metadata: Metadata = {
   title: "Rewards",
@@ -9,19 +10,16 @@ export const metadata: Metadata = {
 }
 
 export default async function RewardsPage() {
-  const { totalPools, completedPools, progressPercentage } = await getCachedHomeSnapshot()
+  const walletProfileId = resolvePortfolioWalletProfileId()
+  const pageData = await fetchRewardsPage({ walletProfileId })
 
   return (
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8 md:py-10">
         <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
-          <RewardsBalanceHero
-            completedPools={completedPools}
-            totalPools={totalPools}
-            progressPercentage={progressPercentage}
-          />
+          <RewardsBalanceHero pageData={pageData} />
 
-          <RewardsTabs />
+          <RewardsTabs pageData={pageData} />
         </div>
       </main>
     </div>

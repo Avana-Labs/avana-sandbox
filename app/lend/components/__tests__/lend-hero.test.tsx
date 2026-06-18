@@ -1,6 +1,7 @@
 import { render } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { LendHero } from "../lend-hero"
+import { MARKETS } from "../data"
 
 vi.mock("@/app/components/display-preferences", () => ({
   useDisplayPreferences: () => ({ showDollarAmounts: true }),
@@ -8,7 +9,7 @@ vi.mock("@/app/components/display-preferences", () => ({
 
 describe("LendHero", () => {
   it("renders lending metrics", () => {
-    const { getByText } = render(<LendHero />)
+    const { getByText } = render(<LendHero markets={MARKETS} />)
 
     expect(getByText("Total TVL")).toBeInTheDocument()
     expect(getByText("$31.4M")).toBeInTheDocument()

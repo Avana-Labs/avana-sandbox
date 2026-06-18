@@ -2,18 +2,13 @@
 
 import { useMemo } from "react"
 import Link from "next/link"
-import type { BorrowPool, BorrowProtocolMap } from "@/app/lib/borrow-data"
-import { BORROW_POOL_CATALOG, formatCompactUsd, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { formatCompactUsd, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { cn } from "@/lib/utils"
 import { BorrowWorkspace } from "./components/borrow-workspace"
 import { TokenPairCell } from "./components/atoms"
 
-type BorrowPageClientProps = {
-  protocols: BorrowProtocolMap
-  allPools: BorrowPool[]
-  protocolLogos: Record<string, string>
-  itemsPerPage: number
-}
+type BorrowPageClientProps = { pageData: BorrowPageData }
 
 function formatUsd(value: number) {
   if (value >= 1_000_000) {
@@ -26,8 +21,9 @@ function formatUsd(value: number) {
 }
 
 /** Borrow markets UI: hero-level metrics (from server-prepared data) + the 4-tab Borrow workspace. */
-export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
+export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
   const heroSectionClassName = "mb-4 px-1 md:px-2"
+  const { allPools, poolCatalog } = pageData
 
   const metricsData = useMemo(() => {
     const totalCollaterals = allPools.reduce((sum, pool) => sum + Math.max(pool.tvl, 0), 0)
@@ -54,7 +50,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
   }, [allPools])
 
   const heroCards = useMemo(() => {
-    const poolsWithLogos = BORROW_POOL_CATALOG.filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
+    const poolsWithLogos = poolCatalog.filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
 
     const sortByMetric = (metric: "tvlUsd" | "availableUsd" | "apy") =>
       [...poolsWithLogos]
@@ -111,7 +107,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
           })),
       },
     ]
-  }, [])
+  }, [poolCatalog])
 
   const totalTvlChange = metricsData.totalTvlChange
   const totalTvlChangeIsUp = totalTvlChange >= 0
@@ -198,7 +194,7 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
 
           </section>
 
-        <BorrowWorkspace />
+        <BorrowWorkspace pageData={pageData} />
         </div>
       </main>
     </div>

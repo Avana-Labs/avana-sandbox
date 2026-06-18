@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { BORROW_DEXES, type BorrowDexId } from "@/app/lib/borrow-sim"
+import { type BorrowDexId } from "@/app/lib/borrow-sim"
+import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { useTheme } from "@/app/components/theme-provider"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +21,7 @@ export type TabsBarProps = {
   onTabChange: (tab: BorrowTabId) => void
   search: string
   onSearchChange: (value: string) => void
+  dexes: BorrowPageData["dexes"]
   selectedDexes: Set<BorrowDexId>
   onDexChange: (dex: BorrowDexId | null) => void
 }
@@ -344,6 +346,7 @@ export function TabsBar({
   onTabChange,
   search,
   onSearchChange,
+  dexes,
   selectedDexes,
   onDexChange,
 }: TabsBarProps) {
@@ -374,7 +377,7 @@ export function TabsBar({
           <SingleSelectDropdown
             allLabel="All DEX"
             value={selectedDex}
-            options={BORROW_DEXES.map((dex) => ({ label: dex.label, value: dex.id }))}
+              options={dexes.map((dex) => ({ label: dex.label, value: dex.id }))}
             onChange={(nextValue) => {
               const nextDex = (nextValue as BorrowDexId | null) ?? null
               onDexChange(nextDex)
@@ -413,7 +416,7 @@ export function TabsBar({
           <SingleSelectDropdown
             allLabel="All DEX"
             value={selectedDex}
-            options={BORROW_DEXES.map((dex) => ({ label: dex.label, value: dex.id }))}
+                options={dexes.map((dex) => ({ label: dex.label, value: dex.id }))}
             onChange={(nextValue) => {
               const nextDex = (nextValue as BorrowDexId | null) ?? null
               onDexChange(nextDex)

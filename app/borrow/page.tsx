@@ -1,8 +1,8 @@
 import { BorrowPageClient } from "./borrow-page-client"
-import { getCachedBorrowSnapshot } from "@/app/lib/borrow-data"
+import { fetchBorrowPage } from "@/app/lib/data/providers/borrow"
 
 export default async function BorrowPage() {
-  const snapshot = await getCachedBorrowSnapshot()
+  const pageData = await fetchBorrowPage()
 
-  return <BorrowPageClient {...snapshot} />
+  return <BorrowPageClient pageData={pageData} />
 }
