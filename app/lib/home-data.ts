@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache"
+import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 
 export type HomeChain = {
   id: string
@@ -21,7 +22,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "ethereum",
     name: "Ethereum",
-    logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    logo: getLocalAssetIcon("ETH") ?? "",
     pools: 12,
     completed: 2,
     rewards: { points: "65000" },
@@ -29,7 +30,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "polygon",
     name: "Polygon",
-    logo: "https://cryptologos.cc/logos/polygon-matic-logo.png",
+    logo: getLocalAssetIcon("Polygon") ?? "",
     pools: 8,
     completed: 1,
     rewards: { points: "42500" },
@@ -37,7 +38,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "arbitrum",
     name: "Arbitrum",
-    logo: "https://cryptologos.cc/logos/arbitrum-arb-logo.png",
+    logo: getLocalAssetIcon("ARB") ?? "",
     pools: 10,
     completed: 0,
     rewards: { points: "38000" },
@@ -45,7 +46,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "optimism",
     name: "OP Mainnet",
-    logo: "https://cryptologos.cc/logos/optimism-ethereum-op-logo.png",
+    logo: getLocalAssetIcon("OP") ?? "",
     pools: 7,
     completed: 0,
     rewards: { points: "28500" },
@@ -53,7 +54,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "base",
     name: "Base",
-    logo: "https://raw.githubusercontent.com/base-org/brand-kit/refs/heads/main/logo/in-product/Base_Network_Logo.png",
+    logo: getLocalAssetIcon("Base") ?? "",
     pools: 6,
     completed: 0,
     rewards: { points: "25000" },
@@ -61,7 +62,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "bnb",
     name: "BNB Chain",
-    logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+    logo: getLocalAssetIcon("BNB") ?? "",
     pools: 9,
     completed: 0,
     rewards: { points: "35000" },
@@ -69,7 +70,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "blast",
     name: "Blast",
-    logo: "https://cdn.prod.website-files.com/65a6baa1a3f8ed336f415cb4/65a6c461965bf28af43b80bc_Logo%20Yellow%20on%20Transparent%20Background.png",
+    logo: getLocalAssetIcon("Blast") ?? "",
     pools: 5,
     completed: 0,
     rewards: { points: "85000" },
@@ -77,7 +78,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "worldcoin",
     name: "World Chain",
-    logo: "https://cdn.prod.website-files.com/6503306c491d20f69e484470/6786362e8c89793e2617bfef_6718ce22ee5879d832765fd6_66ced64f18a10922ffcff77d_65d8bce782514cfb6c149b7a_1VQdZPHJ_400x400.webp",
+    logo: getLocalAssetIcon("World Chain") ?? "",
     pools: 4,
     completed: 0,
     rewards: { points: "18500" },
@@ -85,7 +86,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "avalanche",
     name: "Avalanche",
-    logo: "https://cryptologos.cc/logos/avalanche-avax-logo.png",
+    logo: getLocalAssetIcon("Avalanche") ?? "",
     pools: 8,
     completed: 0,
     rewards: { points: "32000" },
@@ -93,7 +94,7 @@ const HOME_CHAINS: HomeChain[] = [
   {
     id: "zora",
     name: "Zora Network",
-    logo: "https://avatars.githubusercontent.com/u/60056322?s=280&v=4",
+    logo: getLocalAssetIcon("Zora") ?? "",
     pools: 6,
     completed: 0,
     rewards: { points: "45000" },
