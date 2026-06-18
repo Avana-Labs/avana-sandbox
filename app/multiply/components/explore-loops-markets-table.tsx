@@ -728,11 +728,6 @@ function TrendingLoopCard({
       <div className="pointer-events-none absolute inset-0 z-0 opacity-100 [background-image:radial-gradient(circle,rgba(148,163,184,0.28)_1px,transparent_1.15px)] [background-position:0_4px] [background-size:16px_16px] dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1.15px)]" />
       <div className="pointer-events-none absolute inset-0 z-0 rounded-2xl bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
 
-      <div className="pointer-events-none absolute -left-5 top-16 z-0 size-[274px] rounded-full opacity-10 blur-2xl saturate-150">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-full rounded-full object-cover" />
-      </div>
-
       <div className="relative z-10 mb-3 flex items-start justify-between gap-3">
         <div className="flex items-center">
           <div className="relative flex h-10 w-[62px] items-center">
