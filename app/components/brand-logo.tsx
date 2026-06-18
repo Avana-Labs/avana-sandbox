@@ -14,8 +14,9 @@ export function BrandLogo({ mobileOnly = false }: BrandLogoProps) {
       <Image
         src={HEADER_WORDMARK_PATH}
         alt={`${SITE_NAME} logo`}
-        width={3000}
-        height={1500}
+        width={252}
+        height={56}
+        sizes={mobileOnly ? "172px" : "(max-width: 767px) 172px, 168px"}
         className={
           mobileOnly
             ? "h-[56px] w-auto scale-[1.08] origin-left"
@@ -37,9 +38,10 @@ export function BrandIcon({ className }: BrandIconProps) {
       <Image
         src="/Avana Icon (Personal) PNG.png"
         alt="Avana logo"
-        width={256}
-        height={256}
-        className={cn("h-8 w-8 object-cover", className)}
+        width={32}
+        height={32}
+        sizes="32px"
+        className={cn("object-cover", className)}
         priority
       />
     </span>

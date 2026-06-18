@@ -1,16 +1,25 @@
 import "./globals.css"
 import type { Metadata } from "next"
+import dynamic from "next/dynamic"
 import localFont from "next/font/local"
-import { headers } from "next/headers"
 import type React from "react"
 import { Suspense } from "react"
 import { Header } from "./components/header"
-import { DesktopHelpBubble } from "./components/desktop-help-bubble"
-import { Toaster } from "sonner"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
-import { ExternalLinkGuard } from "./components/external-link-guard"
 import { PageLoadingBar } from "./components/page-loading-bar"
+
+const DesktopHelpBubble = dynamic(
+  () => import("./components/desktop-help-bubble").then((mod) => mod.DesktopHelpBubble),
+  { loading: () => null },
+)
+
+const ExternalLinkGuard = dynamic(
+  () => import("./components/external-link-guard").then((mod) => mod.ExternalLinkGuard),
+  { loading: () => null },
+)
+
+const Toaster = dynamic(() => import("sonner").then((mod) => mod.Toaster), { loading: () => null })
 
 const themeBootstrapScript = `
 (() => {
@@ -32,16 +41,6 @@ const diatypeSans = localFont({
     {
       path: "../public/fonts/diatype/core/ABCDiatype-Regular-Trial.woff2",
       weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/diatype/core/ABCDiatype-Medium-Trial.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/diatype/core/ABCDiatype-Bold-Trial.woff2",
-      weight: "700",
       style: "normal",
     },
   ],
@@ -124,13 +123,11 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const nonce = (await headers()).get("x-nonce") ?? undefined
-
   return (
     <html
       lang="en"
@@ -138,7 +135,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider
