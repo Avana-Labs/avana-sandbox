@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch"
 import { BrandIcon, BrandLogo } from "./brand-logo"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
-import { MobileMenu } from "./mobile-menu"
+import { LazyMobileMenu } from "./lazy-mobile-menu"
 import { LazySearchCommand, LazySearchCommandIconOnly } from "./lazy-search-command"
 import { useTheme } from "./theme-provider"
 import { personalDesktopHeaderLinks } from "./site-nav"
@@ -367,7 +367,7 @@ export function Header() {
                 {renderMobileBrand()}
               </Link>
 
-              <MobileMenu actions={renderMobileActions()} brand={renderMobileBrand()} />
+              <LazyMobileMenu actions={renderMobileActions()} brand={renderMobileBrand()} />
             </div>
 
             <div className="flex items-center gap-0.5">
