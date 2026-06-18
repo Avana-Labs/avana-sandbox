@@ -115,7 +115,7 @@ export function LendModals({ tokens, markets, modalState, setModalState, closeMo
                         <button
                           type="button"
                           onClick={() => setModalState((prev) => ({ ...prev, amount: tokenBalance.toString() }))}
-                          className="text-[12px] font-medium text-[hsl(var(--brand))] transition-colors hover:opacity-80"
+                          className="inline-flex min-h-10 items-center rounded-full px-2 text-[12px] font-medium text-[hsl(var(--brand))] transition-colors hover:bg-surface-inset hover:opacity-80"
                         >
                           Max
                         </button>

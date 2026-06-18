@@ -199,7 +199,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                             }
                             setAmount("0")
                           }}
-                          className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                          className="inline-flex min-h-10 items-center rounded-full px-2 text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:bg-surface-inset hover:text-foreground hover:underline"
                         >
                           Max
                         </button>

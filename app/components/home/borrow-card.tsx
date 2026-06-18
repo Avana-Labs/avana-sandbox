@@ -84,7 +84,7 @@ export function CompactBorrowCard({
               <button
                 type="button"
                 onClick={onSetMax}
-                className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                className="inline-flex min-h-10 items-center rounded-full px-2 text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:bg-surface-inset hover:text-foreground hover:underline"
               >
                 Max
               </button>
@@ -109,7 +109,7 @@ export function CompactBorrowCard({
               <button
                 type="button"
                 onClick={onOpenTokenDialog}
-                className="inline-flex h-7 items-center gap-1.5 rounded-xs border border-border bg-surface-raised px-2 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover md:min-h-7 md:px-2"
               >
                 <TokenBubble visual={token.visual} className="size-4" />
                 {token.symbol}
@@ -119,7 +119,7 @@ export function CompactBorrowCard({
               <button
                 type="button"
                 onClick={onOpenTokenDialog}
-                className="inline-flex h-7 items-center gap-1 rounded-xs bg-accent-primary px-2.5 text-[12px] font-medium text-accent-primary-foreground transition-colors hover:bg-accent-primary-hover"
+                className="inline-flex min-h-10 items-center gap-1 rounded-xs bg-accent-primary px-3 text-[12px] font-medium text-accent-primary-foreground transition-colors hover:bg-accent-primary-hover md:min-h-7 md:px-2.5"
               >
                 Select token
                 <ChevronDown className="h-3.5 w-3.5 opacity-80" />
