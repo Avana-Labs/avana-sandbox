@@ -5,7 +5,7 @@ type BrandLogoProps = {
   mobileOnly?: boolean
 }
 
-const HEADER_WORDMARK_PATH = "/Avana Full (Personal) PNG.png"
+const HEADER_WORDMARK_PATH = "/avana-wordmark.svg"
 const SITE_NAME = "Avana"
 
 export function BrandLogo({ mobileOnly = false }: BrandLogoProps) {
@@ -36,7 +36,7 @@ export function BrandIcon({ className }: BrandIconProps) {
   return (
     <span className="inline-flex items-center overflow-hidden">
       <Image
-        src="/Avana Icon (Personal) PNG.png"
+        src="/avana-icon.svg"
         alt="Avana logo"
         width={32}
         height={32}
