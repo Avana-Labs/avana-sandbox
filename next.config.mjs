@@ -3,7 +3,7 @@ import process from "node:process"
 const themeBootstrapHash = "'sha256-Ik5jm8S/PQrtWlIEGsPj4ea1lM5oiXpT6DTzi5ntHjg='"
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' ${themeBootstrapHash}`,
+  `script-src 'self' 'unsafe-inline' ${themeBootstrapHash}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
