@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 import { Info } from "lucide-react"
@@ -14,14 +15,12 @@ import {
 } from "@fluentui/react-icons"
 import {
   buildRangeData,
-  HeroBalanceDisplay,
-  HeroChartSection,
-  formatChartValue,
   resolveSeriesChange,
   resolveSeriesTone,
-  type ChartRangeData,
-  type ChartRangeOption,
-} from "@/app/components/charts"
+} from "@/app/components/charts/chart-data"
+import { formatChartValue } from "@/app/components/charts/format"
+import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
+import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/types"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { CurrentLtvCard } from "@/app/borrow/components/debts-table"
@@ -31,6 +30,13 @@ import { PortfolioHeroHeader } from "./portfolio-hero-header"
 import { PORTFOLIO_NETWORKS } from "./portfolio-network-data"
 import type { BorrowSnapshot } from "../borrow-hero-state"
 import type { NetworkId, PortfolioHeroAction } from "./types"
+
+const HeroChartSection = dynamic(
+  () => import("@/app/components/charts/hero-chart-section").then((mod) => mod.HeroChartSection),
+  {
+    loading: () => <div className="h-[196px] rounded-radius-md border border-border bg-surface-raised/60" />,
+  },
+)
 
 const DEFAULT_RANGE_DATA = buildRangeData(880, 14)
 
