@@ -1,11 +1,22 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { LendHero } from "./components/lend-hero"
-import { LendAssetSpokes } from "./components/lend-asset-spokes"
-import { HotMarkets } from "./components/hot-markets"
-import { LendModals, type LendModalState } from "./components/lend-modals"
+import type { LendModalState } from "./components/lend-modals"
+
+const HotMarkets = dynamic(() => import("./components/hot-markets").then((mod) => mod.HotMarkets), {
+  loading: () => <div className="h-[228px] rounded-radius-md border border-border bg-surface-raised/60" />,
+})
+
+const LendAssetSpokes = dynamic(() => import("./components/lend-asset-spokes").then((mod) => mod.LendAssetSpokes), {
+  loading: () => <div className="mt-8 h-[640px] rounded-radius-md border border-border bg-surface-raised/60" />,
+})
+
+const LendModals = dynamic(() => import("./components/lend-modals").then((mod) => mod.LendModals), {
+  ssr: false,
+})
 
 export function LendClient({ pageData }: { pageData: LendPageData }) {
   const { tokens, markets, featuredAssets, featuredSequence, assetGroups } = pageData
