@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache"
 import { createSeededRandom } from "@/app/lib/deterministic"
+import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 
 export type BorrowPoolSeed = {
   name: string
@@ -18,15 +19,15 @@ export type BorrowPool = BorrowPoolSeed & {
 export type BorrowProtocolMap = Record<string, BorrowPoolSeed[]>
 
 export const BORROW_PROTOCOL_LOGOS = {
-  Lido: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
-  PancakeSwap: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
-  "Convex Finance": "https://cryptologos.cc/logos/convex-finance-cvx-logo.png",
-  "Rocket Pool": "https://cryptologos.cc/logos/rocket-pool-rpl-logo.png",
-  "Uniswap V3": "https://cryptologos.cc/logos/uniswap-uni-logo.png",
-  Curve: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
-  Balancer: "https://cryptologos.cc/logos/balancer-bal-logo.png",
-  Aave: "https://cryptologos.cc/logos/aave-aave-logo.png",
-  Compound: "https://cryptologos.cc/logos/compound-comp-logo.png",
+  Lido: getLocalAssetIcon("Lido"),
+  PancakeSwap: getLocalAssetIcon("PancakeSwap"),
+  "Convex Finance": getLocalAssetIcon("Convex Finance"),
+  "Rocket Pool": getLocalAssetIcon("Rocket Pool"),
+  "Uniswap V3": getLocalAssetIcon("UNI"),
+  Curve: getLocalAssetIcon("CRV"),
+  Balancer: getLocalAssetIcon("BAL"),
+  Aave: getLocalAssetIcon("AAVE"),
+  Compound: getLocalAssetIcon("Compound"),
 } as const
 
 export const BORROW_ITEMS_PER_PAGE = 24
