@@ -213,7 +213,7 @@ export function TransactionFlowPanel({
               </div>
             )}
 
-            {!useReviewHeading && stage !== "review" ? (
+            {!useReviewHeading ? (
               <div className={titleClass}>
                 {titleText}
               </div>

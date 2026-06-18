@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from "react"
 
+function getInitialMatch(query: string, defaultValue: boolean) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return defaultValue
+  }
+
+  return window.matchMedia(query).matches
+}
+
 export function useMediaQuery(query: string, defaultValue = false): boolean {
-  const [matches, setMatches] = useState(defaultValue)
+  const [matches, setMatches] = useState(() => getInitialMatch(query, defaultValue))
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {

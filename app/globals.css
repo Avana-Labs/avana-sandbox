@@ -140,7 +140,7 @@
 @layer base {
   * {
     @apply border-border;
-    font-synthesis: none;
+    font-synthesis: weight style;
   }
   body {
     @apply bg-background text-foreground;
@@ -172,7 +172,7 @@
 }
 
 .font-brand {
-  font-family: var(--font-diatype-brand), var(--font-diatype-sans), system-ui, sans-serif;
+  font-family: var(--font-diatype-sans), system-ui, sans-serif;
 }
 
 .no-number-spinner {

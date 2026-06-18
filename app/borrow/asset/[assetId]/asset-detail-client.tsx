@@ -1,25 +1,75 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection, DetailFaqSection, StickyDetailHeader, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { StickyDetailHeader } from "@/app/borrow/_detail/ui"
 import {
   AssetHero,
   AssetHeroIdentity,
-  InterestRateModelCard,
-  SupplyBorrowCard,
-  HistoricalUtilizationCard,
-  CashflowTrendCard,
-  AllocationBreakdownCard,
-  AssetCashflowCard,
-  TransactionHistoryCard,
-  RelatedAssetsRow,
 } from "@/app/borrow/_detail/asset-sections"
-import { RiskSection, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
-import { AssetTokenActions, AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
+import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { AssetTokenActions } from "@/app/borrow/_detail/sidebars"
 import { cn } from "@/lib/utils"
+
+const AboutNewsSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.AboutNewsSection), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.DetailFaqSection), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[380px]" />,
+})
+const EngagementTrendsCard = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.EngagementTrendsCard), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[260px]" />,
+})
+const InterestRateModelCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
+  { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
+)
+const SupplyBorrowCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.SupplyBorrowCard),
+  { ssr: false, loading: () => <DeferredBlock className="h-[280px]" /> },
+)
+const HistoricalUtilizationCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.HistoricalUtilizationCard),
+  { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
+)
+const CashflowTrendCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.CashflowTrendCard),
+  { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
+)
+const AllocationBreakdownCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AllocationBreakdownCard),
+  { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
+)
+const AssetCashflowCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AssetCashflowCard),
+  { ssr: false, loading: () => <DeferredBlock className="h-[240px]" /> },
+)
+const TransactionHistoryCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.TransactionHistoryCard),
+  { ssr: false, loading: () => <DeferredBlock className="h-[360px]" /> },
+)
+const RelatedAssetsRow = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.RelatedAssetsRow),
+  { ssr: false, loading: () => <DeferredBlock className="h-[200px]" /> },
+)
+const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections").then((mod) => mod.RiskSection), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const AssetTokenSidebar = dynamic(() => import("@/app/borrow/_detail/sidebars").then((mod) => mod.AssetTokenSidebar), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[760px]" />,
+})
+
+function DeferredBlock({ className }: { className?: string }) {
+  return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
+}
 
 function TokenAvatar({ visual, className }: { visual: AssetDetail["hero"]["visual"]; className?: string }) {
   return (
@@ -74,7 +124,7 @@ export function AssetDetailClient({ detail }: Props) {
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="inline-flex h-8 items-center justify-center rounded-radius-sm bg-[hsl(var(--brand))] px-3 text-[12.5px] font-medium text-white shadow-elev-1 transition-colors hover:bg-[hsl(var(--brand))]/90 lg:hidden"
+              className="inline-flex h-9 items-center justify-center rounded-radius-sm bg-[#007a99] px-3 text-[12.5px] font-medium text-white shadow-elev-1 transition-colors hover:bg-[#00627a] lg:hidden"
             >
               Deposit
             </button>
@@ -213,35 +263,29 @@ function MobileDepositDock({
 }) {
   return (
     <div className="lg:hidden">
-      <div
-        aria-hidden={!open}
-        className={cn(
-          "fixed inset-0 z-40 bg-black/40 transition-opacity",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-        onClick={onToggle}
-      />
-      <div
-        role="dialog"
-        aria-label="Deposit"
-        className={cn(
-          "fixed inset-x-0 bottom-0 z-50 rounded-t-radius-md border-t border-border bg-surface-raised p-4 shadow-elev-3 transition-transform duration-200",
-          open ? "translate-y-0" : "translate-y-full",
-        )}
-      >
-        <button
-          type="button"
-          onClick={onToggle}
-          className="mb-3 flex w-full items-center justify-center gap-1.5 text-[11.5px] font-medium text-muted-foreground"
-        >
-          Hide <ChevronDown className="h-3 w-3" />
-        </button>
-        {children}
-      </div>
+      {open ? (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40 transition-opacity" onClick={onToggle} />
+          <div
+            role="dialog"
+            aria-label="Deposit"
+            className="fixed inset-x-0 bottom-0 z-50 rounded-t-radius-md border-t border-border bg-surface-raised p-4 shadow-elev-3 transition-transform duration-200"
+          >
+            <button
+              type="button"
+              onClick={onToggle}
+              className="mb-3 flex w-full items-center justify-center gap-1.5 text-[11.5px] font-medium text-muted-foreground"
+            >
+              Hide <ChevronDown className="h-3 w-3" />
+            </button>
+            {children}
+          </div>
+        </>
+      ) : null}
       <button
         type="button"
         onClick={onToggle}
-        className="fixed inset-x-4 bottom-4 z-30 h-10 rounded-radius-sm bg-[hsl(var(--brand))] text-[13px] font-medium text-white shadow-elev-3 hover:bg-[hsl(var(--brand))]/90"
+        className="fixed inset-x-4 bottom-4 z-30 h-10 rounded-radius-sm bg-[#007a99] text-[13px] font-medium text-white shadow-elev-3 hover:bg-[#00627a]"
       >
         {label}
       </button>

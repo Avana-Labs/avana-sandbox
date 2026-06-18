@@ -1,7 +1,5 @@
 "use client"
 
-import { HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS, HOME_PORTFOLIO_SUMMARY } from "@/app/lib/home-sim"
-
 function DeltaBadge({
   value,
   tone,
@@ -47,28 +45,28 @@ function StoryMetric({
   )
 }
 
-export function CreditLinesCard() {
-  const totalBorrowed = Object.values(HOME_INITIAL_DEBTS).reduce((sum, value) => sum + value, 0)
-  const activeHealthFactors = HOME_COLLATERAL_POOLS.map((pool) => {
-    const borrowedUsd = HOME_INITIAL_DEBTS[pool.id] ?? 0
-    return borrowedUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / borrowedUsd : null
-  }).filter((value): value is number => value !== null && Number.isFinite(value))
-  const averageHealthFactor = activeHealthFactors.length > 0 ? activeHealthFactors.reduce((sum, value) => sum + value, 0) / activeHealthFactors.length : null
-  const activeCollateral = HOME_COLLATERAL_POOLS.reduce((sum, pool) => {
-    const borrowedUsd = HOME_INITIAL_DEBTS[pool.id] ?? 0
-    return borrowedUsd > 0 ? sum + pool.collateralUsd : sum
-  }, 0)
-  const currentLtv = activeCollateral > 0 ? (totalBorrowed / activeCollateral) * 100 : 0
-  const approvedUsd = HOME_PORTFOLIO_SUMMARY.availableUsd
+export function CreditLinesCard({
+  creditLines,
+}: {
+  creditLines: {
+    approvedUsd: number
+    liquidationThresholdUsd: number
+    averageHealthFactor: number | null
+    currentLtvPct: number
+    totalBorrowedUsd: number
+    totalCollateralUsd: number
+  }
+}) {
+  const averageHealthFactor = creditLines.averageHealthFactor
+  const currentLtv = creditLines.currentLtvPct
+  const totalBorrowed = creditLines.totalBorrowedUsd
 
   return (
     <section className="w-full space-y-4">
       <div className="grid w-full grid-cols-2 gap-x-5 gap-y-4 md:grid-cols-4 md:gap-x-8 md:gap-y-5">
         <StoryMetric
-          value={`$${approvedUsd.toLocaleString("en-US")}`}
-          label="You&apos;re approved for"
-          delta="+3.8%"
-          deltaTone="positive"
+          value={`$${creditLines.liquidationThresholdUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+          label="Liquidation Number"
         />
         <StoryMetric
           value={averageHealthFactor ? averageHealthFactor.toFixed(2) : "—"}

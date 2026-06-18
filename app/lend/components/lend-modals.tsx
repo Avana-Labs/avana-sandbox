@@ -5,26 +5,32 @@ import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/component
 import { PrimaryCardButton } from "@/app/components/home/shared"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
-import { TOKENS, MARKETS } from "./data"
+import type { LendPageData } from "@/app/lib/data/providers/lend"
 
 type ModalStage = "entry" | TransactionFlowStage
 
-type ModalState = {
+export type LendModalToken = LendPageData["tokens"][number] | LendPageData["markets"][number]
+
+export type LendModalState = {
   isOpen: boolean
   type: "deposit" | "withdraw" | "success"
   actionType: "deposit" | "withdraw"
-  token: (typeof TOKENS)[number] | (typeof MARKETS)[number] | null
+  token: LendModalToken | null
   amount: string
 }
 
 interface LendModalsProps {
-  modalState: ModalState
-  setModalState: React.Dispatch<React.SetStateAction<ModalState>>
+  tokens?: LendPageData["tokens"]
+  markets?: LendPageData["markets"]
+  modalState: LendModalState
+  setModalState: React.Dispatch<React.SetStateAction<LendModalState>>
   closeModal: () => void
 }
 
-export function LendModals({ modalState, setModalState, closeModal }: LendModalsProps) {
+export function LendModals({ tokens, markets, modalState, setModalState, closeModal }: LendModalsProps) {
   const [stage, setStage] = useState<ModalStage>("entry")
+  void tokens
+  void markets
 
   useEffect(() => {
     if (modalState.isOpen) {
@@ -109,7 +115,7 @@ export function LendModals({ modalState, setModalState, closeModal }: LendModals
                         <button
                           type="button"
                           onClick={() => setModalState((prev) => ({ ...prev, amount: tokenBalance.toString() }))}
-                          className="text-[12px] font-medium text-[hsl(var(--brand))] transition-colors hover:opacity-80"
+                          className="inline-flex min-h-10 items-center rounded-full px-2 text-[12px] font-medium text-[hsl(var(--brand))] transition-colors hover:bg-surface-inset hover:opacity-80"
                         >
                           Max
                         </button>

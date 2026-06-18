@@ -1,22 +1,23 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 
 export const MULTIPLY_TOKEN_LOGOS = {
-  ETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-  stETH: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
-  wstETH: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
-  rETH: "https://cryptologos.cc/logos/rocket-pool-rpl-logo.png",
-  cbETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-  USDT: "https://cryptologos.cc/logos/tether-usdt-logo.png",
-  USDC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
-  DAI: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png",
-  GHO: "https://cryptologos.cc/logos/aave-aave-logo.png",
-  crvUSD: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
-  EURC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
-  WBTC: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png",
-  cbBTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
-  AAVE: "https://cryptologos.cc/logos/aave-aave-logo.png",
-  UNI: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
-  CRV: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
+  ETH: getLocalAssetIcon("ETH"),
+  stETH: getLocalAssetIcon("stETH"),
+  wstETH: getLocalAssetIcon("wstETH"),
+  rETH: getLocalAssetIcon("rETH"),
+  cbETH: getLocalAssetIcon("cbETH"),
+  USDT: getLocalAssetIcon("USDT"),
+  USDC: getLocalAssetIcon("USDC"),
+  DAI: getLocalAssetIcon("DAI"),
+  GHO: getLocalAssetIcon("GHO"),
+  crvUSD: getLocalAssetIcon("crvUSD"),
+  EURC: getLocalAssetIcon("EURC"),
+  WBTC: getLocalAssetIcon("WBTC"),
+  cbBTC: getLocalAssetIcon("cbBTC"),
+  AAVE: getLocalAssetIcon("AAVE"),
+  UNI: getLocalAssetIcon("UNI"),
+  CRV: getLocalAssetIcon("CRV"),
 } as const
 
 export const MULTIPLY_TOKEN_SUPPLY_APYS: Partial<Record<keyof typeof MULTIPLY_TOKEN_LOGOS, string>> = {

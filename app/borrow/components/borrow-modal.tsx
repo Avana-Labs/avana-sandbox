@@ -7,16 +7,14 @@ import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/component
 import {
   HOME_BORROW_TOKENS,
   HOME_COLLATERAL_POOLS,
+  BORROWABLE_TOKEN_OPTIONS,
   calculateBorrowPreview,
   formatHealthFactor,
   type HomeBorrowToken,
   type HomeCollateralPool,
-} from "@/app/lib/home-sim"
-import {
-  BORROWABLE_TOKEN_OPTIONS,
   formatUsdExact,
   homeVisualToBorrowVisual,
-} from "@/app/lib/borrow-sim"
+} from "@/app/lib/data/borrow-domain"
 import { HomeBorrowPanel } from "@/app/components/home-borrow-panel"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
 import { PillButton, TokenBubble } from "./atoms"

@@ -1,32 +1,28 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { BorrowModal } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
-import { LendModals } from "@/app/lend/components/lend-modals"
+import type { LendModalState, LendModalToken } from "@/app/lend/components/lend-modals"
 import { CompactRepayCard } from "@/app/components/home/repay-card"
-import { MARKETS, TOKENS } from "@/app/lend/components/data"
+import { TOKENS } from "@/app/lend/components/data"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { HOME_BORROW_TOKENS, HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS, calculateRepayPreview } from "@/app/lib/home-sim"
 import { PickerSurface, PrimaryCardButton } from "@/app/components/home/shared"
 
+const LendModals = dynamic(() => import("@/app/lend/components/lend-modals").then((mod) => mod.LendModals), {
+  ssr: false,
+})
+
 type Props = { detail: AssetDetail; className?: string }
 
 type SidebarTab = "deposit" | "withdraw" | "borrow" | "repay"
-type LendToken = (typeof TOKENS)[number] | (typeof MARKETS)[number]
-type ModalState = {
-  isOpen: boolean
-  type: "deposit" | "withdraw" | "success"
-  actionType: "deposit" | "withdraw"
-  token: LendToken | null
-  amount: string
-}
-
-const INITIAL_MODAL: ModalState = {
+const INITIAL_MODAL: LendModalState = {
   isOpen: false,
   type: "deposit",
   actionType: "deposit",
@@ -58,7 +54,7 @@ export function AssetTokenActions({ detail, className }: Props) {
 function TokenRail({ detail, className }: { detail: AssetDetail; className?: string }) {
   const [tab, setTab] = React.useState<SidebarTab>("deposit")
   const [amount, setAmount] = React.useState("")
-  const [modalState, setModalState] = React.useState<ModalState>(INITIAL_MODAL)
+  const [modalState, setModalState] = React.useState<LendModalState>(INITIAL_MODAL)
   const [borrowOpen, setBorrowOpen] = React.useState(false)
   const [repayOpen, setRepayOpen] = React.useState(false)
 
@@ -203,7 +199,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                             }
                             setAmount("0")
                           }}
-                          className="text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                          className="inline-flex min-h-10 items-center rounded-full px-2 text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:bg-surface-inset hover:text-foreground hover:underline"
                         >
                           Max
                         </button>
@@ -284,7 +280,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
   )
 }
 
-function toLendToken(detail: AssetDetail): LendToken {
+function toLendToken(detail: AssetDetail): LendModalToken {
   const catalog = TOKENS.find((t) => t.symbol.toLowerCase() === detail.hero.symbol.toLowerCase())
   if (catalog) return catalog
   const base = TOKENS[0]
@@ -297,7 +293,7 @@ function toLendToken(detail: AssetDetail): LendToken {
     balance: 0,
     earned: 0,
     daily: 0,
-  } as unknown as LendToken
+  } as LendModalToken
 }
 
 function resolveBorrowTokenId(detail: AssetDetail) {

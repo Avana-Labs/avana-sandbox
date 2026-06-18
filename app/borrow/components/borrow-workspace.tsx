@@ -3,19 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  BORROW_PENDING_ROWS,
-  BORROW_POOL_CATALOG,
   filterPools,
   groupByDex,
   type BorrowDexId,
   type BorrowPoolRow,
   type BorrowableAsset,
-} from "@/app/lib/borrow-sim"
-import {
-  HOME_COLLATERAL_POOLS,
-  HOME_INITIAL_DEBTS,
   type HomeCollateralPool,
-} from "@/app/lib/home-sim"
+} from "@/app/lib/data/borrow-domain"
+import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { PoolsList, PoolsTable } from "./pools-table"
@@ -23,6 +18,7 @@ import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./
 import { SupplyCollateralModal, type SupplyCollateralContext, type SupplyCollateralResult } from "./supply-collateral-modal"
 import { type SupplyRowContext } from "./supplies-table"
 import { useLiveBorrowMarket } from "./use-live-borrow-market"
+import { useMediaQuery } from "@/app/lib/use-media-query"
 
 type DebtsState = Record<string, number>
 
@@ -77,40 +73,49 @@ function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
 }
 
 export type BorrowWorkspaceProps = {
+  pageData: BorrowWorkspaceData
   onTabChange?: (tab: BorrowTabId) => void
 }
 
-export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
+export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps) {
   const router = useRouter()
+  const isDesktop = useMediaQuery("(min-width: 768px)", true)
+  const { poolCatalog, pendingRows, dexes, collateralPools, initialDebts } = pageData
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
   const [search, setSearch] = useState("")
   const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
-  const [debts, setDebts] = useState<DebtsState>({ ...HOME_INITIAL_DEBTS })
+  const [debts, setDebts] = useState<DebtsState>({ ...initialDebts })
 
   const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
   const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
     open: false,
     context: null,
   })
-  const { livePools, liveSupplyMetrics } = useLiveBorrowMarket(debts)
+  const { livePools, liveSupplyMetrics } = useLiveBorrowMarket({
+    debts,
+    poolCatalog,
+    collateralPools,
+  })
   const livePoolById = useMemo(() => new Map(livePools.map((pool) => [pool.id, pool])), [livePools])
 
   // Data for each tab
   const supplies = useMemo<SupplyRowContext[]>(() => {
-    return HOME_COLLATERAL_POOLS.map((pool) => ({
+    return collateralPools.map((pool) => ({
       pool,
       borrowedUsd: debts[pool.id] ?? 0,
+      remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - (debts[pool.id] ?? 0)),
+      liquidationThresholdUsd: pool.liquidationUsd,
       healthFactor: liveSupplyMetrics[pool.id]?.healthFactor ?? computeHealthFactor(pool, debts[pool.id] ?? 0),
       pairApr: liveSupplyMetrics[pool.id]?.pairApr ?? pool.pairApr,
       feesUsd: liveSupplyMetrics[pool.id]?.feesUsd ?? 0,
       feesLabel: liveSupplyMetrics[pool.id]?.feesLabel ?? "$0.00",
     }))
-  }, [debts, liveSupplyMetrics])
+  }, [collateralPools, debts, liveSupplyMetrics])
 
   const filteredPools = useMemo(() => {
-    const filtered = filterPools(BORROW_POOL_CATALOG, { text: search, dexes: selectedDexes })
+    const filtered = filterPools([...poolCatalog], { text: search, dexes: selectedDexes })
     return filtered.map((pool) => livePoolById.get(pool.id) ?? pool)
-  }, [livePoolById, search, selectedDexes])
+  }, [livePoolById, poolCatalog, search, selectedDexes])
 
   const visiblePools = useMemo(() => {
     if (!isPoolTab(currentTab)) return []
@@ -174,6 +179,7 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
         onTabChange={(tab) => setCurrentTab(tab)}
         search={search}
         onSearchChange={setSearch}
+        dexes={dexes}
         selectedDexes={selectedDexes}
         onDexChange={(dex) => setSelectedDexes(dex ? new Set([dex]) : new Set())}
       />
@@ -181,20 +187,23 @@ export function BorrowWorkspace({ onTabChange }: BorrowWorkspaceProps = {}) {
       <div className="pt-3 pb-6">
         {isPoolTab(currentTab) ? (
           <>
-            <PoolsTable
-              groups={poolGroups}
-              pending={BORROW_PENDING_ROWS}
-              onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
-            />
-            <PoolsList
-              groups={poolGroups}
-              pending={BORROW_PENDING_ROWS}
-              onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
-            />
+            {isDesktop ? (
+              <PoolsTable
+                groups={poolGroups}
+                pending={pendingRows}
+                onUseAsCollateral={handlePoolsSupply}
+                onBorrowAssetDesktop={handleAssetBorrowDesktop}
+                onBorrowAssetMobile={handleAssetBorrowMobile}
+              />
+            ) : (
+              <PoolsList
+                groups={poolGroups}
+                pending={pendingRows}
+                onUseAsCollateral={handlePoolsSupply}
+                onBorrowAssetDesktop={handleAssetBorrowDesktop}
+                onBorrowAssetMobile={handleAssetBorrowMobile}
+              />
+            )}
           </>
         ) : null}
       </div>

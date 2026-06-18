@@ -42,26 +42,23 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
       {about.stats.length > 0 ? (
         <dl className={plain ? "space-y-1.5 text-[12.5px]" : "mt-4 space-y-1.5 text-[12.5px]"}>
           {about.stats.map((s) => (
-            <div key={s.label} className="border-b border-border/70 py-2 last:border-b-0">
-              {s.href ? (
-                <a
-                  href={s.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group flex items-center gap-4 text-text-extra-high transition-colors hover:text-text-high"
-                >
-                  <dt className="min-w-0 flex-1 text-text-low">{s.label}</dt>
-                  <dd className="min-w-0 truncate text-right font-data font-medium tabular-nums">{s.value}</dd>
-                  <ArrowUpRight className="size-4 shrink-0 text-text-low transition-colors group-hover:text-text-high" aria-hidden />
-                </a>
-              ) : (
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="shrink-0 text-text-low">{s.label}</dt>
-                  <dd className="min-w-0 truncate text-right font-data font-medium tabular-nums text-text-extra-high">
-                    {s.value}
-                  </dd>
-                </div>
-              )}
+            <div key={s.label} className="flex items-center justify-between gap-4 border-b border-border/70 py-2 last:border-b-0">
+              <dt className={s.href ? "min-w-0 flex-1 text-text-low" : "shrink-0 text-text-low"}>{s.label}</dt>
+              <dd className={s.href ? "min-w-0" : "min-w-0 truncate text-right font-data font-medium tabular-nums text-text-extra-high"}>
+                {s.href ? (
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex items-center justify-end gap-2 text-text-extra-high transition-colors hover:text-text-high"
+                  >
+                    <span className="truncate font-data font-medium tabular-nums">{s.value}</span>
+                    <ArrowUpRight className="size-4 shrink-0 text-text-low transition-colors group-hover:text-text-high" aria-hidden />
+                  </a>
+                ) : (
+                  s.value
+                )}
+              </dd>
             </div>
           ))}
         </dl>

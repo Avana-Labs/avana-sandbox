@@ -4,12 +4,10 @@ import localFont from "next/font/local"
 import type React from "react"
 import { Suspense } from "react"
 import { Header } from "./components/header"
-import { DesktopHelpBubble } from "./components/desktop-help-bubble"
-import { Toaster } from "sonner"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
-import { ExternalLinkGuard } from "./components/external-link-guard"
 import { PageLoadingBar } from "./components/page-loading-bar"
+import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 
 const themeBootstrapScript = `
 (() => {
@@ -33,21 +31,6 @@ const diatypeSans = localFont({
       weight: "400",
       style: "normal",
     },
-    {
-      path: "../public/fonts/diatype/core/ABCDiatype-Medium-Trial.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/diatype/core/ABCDiatypeVariable-Trial.woff2",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/diatype/core/ABCDiatype-Bold-Trial.woff2",
-      weight: "700",
-      style: "normal",
-    },
   ],
   variable: "--font-diatype-sans",
   display: "swap",
@@ -63,18 +46,7 @@ const diatypeData = localFont({
   ],
   variable: "--font-diatype-data",
   display: "swap",
-})
-
-const diatypeBrand = localFont({
-  src: [
-    {
-      path: "../public/fonts/diatype/brand/ABCDiatypeExtended-Medium-Trial.woff2",
-      weight: "500",
-      style: "normal",
-    },
-  ],
-  variable: "--font-diatype-brand",
-  display: "swap",
+  preload: false,
 })
 
 export const metadata: Metadata = {
@@ -127,12 +99,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/Avana Favicon.png",
+        url: "/avana-icon.svg",
       },
     ],
     shortcut: [
       {
-        url: "/Avana Favicon.png",
+        url: "/avana-icon.svg",
       },
     ],
   },
@@ -147,7 +119,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${diatypeSans.variable} ${diatypeData.variable} ${diatypeBrand.variable}`}
+      className={`${diatypeSans.variable} ${diatypeData.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -167,9 +139,7 @@ export default function RootLayout({
               </Suspense>
               <Header />
               <div className="flex-1">{children}</div>
-              <DesktopHelpBubble />
-              <Toaster />
-              <ExternalLinkGuard />
+              <DeferredGlobalChrome />
             </div>
           </DisplayPreferencesProvider>
         </ThemeProvider>

@@ -3,9 +3,9 @@
 import * as React from "react"
 import Link from "next/link"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
+import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { LEND_ROWS, PAGE_SIZE, TOKEN_BORROW_APYS, TOKEN_LOGOS, TOKEN_SUPPLY_APYS } from "./multiply-lend-section"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -224,7 +224,8 @@ function SingleSelectDropdown({
     <div ref={rootRef} className="relative z-20">
       <button
         type="button"
-        aria-label={ariaLabel}
+        aria-label={triggerLabel}
+        aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
@@ -233,7 +234,7 @@ function SingleSelectDropdown({
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
-        <span className="text-foreground/55 dark:text-white/70">
+        <span className="text-foreground/70 dark:text-white/80">
           <ChevronDown className="size-3.5" />
         </span>
       </button>
@@ -313,14 +314,28 @@ function SingleSelectDropdown({
   )
 }
 
-export function ExploreLoopsMarketsTable() {
+type ExploreLoopsMarketsTableProps = {
+  rows: MultiplyPageData["lendRows"]
+  pageSize: MultiplyPageData["pageSize"]
+  tokenBorrowApys: MultiplyPageData["tokenBorrowApys"]
+  tokenLogos: MultiplyPageData["tokenLogos"]
+  tokenSupplyApys: MultiplyPageData["tokenSupplyApys"]
+}
+
+export function ExploreLoopsMarketsTable({
+  rows,
+  pageSize,
+  tokenBorrowApys,
+  tokenLogos,
+  tokenSupplyApys,
+}: ExploreLoopsMarketsTableProps) {
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all-markets")
   const [search, setSearch] = React.useState("")
   const [page, setPage] = React.useState(0)
   const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
   const searchQuery = search.trim().toLowerCase()
-  const buildSearchText = (row: (typeof LEND_ROWS)[number]) =>
+  const buildSearchText = (row: (typeof rows)[number]) =>
     [
       row.protocol,
       row.asset,
@@ -337,7 +352,7 @@ export function ExploreLoopsMarketsTable() {
   const filteredRows = React.useMemo(() => {
     const hasAnySymbol = (symbols: Set<string>, ...values: string[]) => values.some((value) => symbols.has(value.toUpperCase()))
 
-    return LEND_ROWS.filter((row) => {
+    return rows.filter((row) => {
       const protocol = row.protocol.toUpperCase()
       const asset = row.asset.toUpperCase()
       const matchesBtc = hasAnySymbol(BTC_SYMBOLS, protocol, asset)
@@ -388,8 +403,8 @@ export function ExploreLoopsMarketsTable() {
     })
   }, [filteredRows, sortDirection, sortKey])
 
-  const pageCount = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE))
-  const visibleRows = sortedRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
+  const pageCount = Math.max(1, Math.ceil(sortedRows.length / pageSize))
+  const visibleRows = sortedRows.slice(page * pageSize, page * pageSize + pageSize)
 
   const toggleSort = (nextKey: typeof sortKey) => {
     if (sortKey === nextKey) {
@@ -401,14 +416,14 @@ export function ExploreLoopsMarketsTable() {
     setSortDirection(nextKey === "protocol" || nextKey === "asset" ? "asc" : "desc")
   }
 
-  const getAssetLogo = (asset: string) => TOKEN_LOGOS[asset as keyof typeof TOKEN_LOGOS]
-  const getSupplyApy = (asset: string) => TOKEN_SUPPLY_APYS[asset as keyof typeof TOKEN_SUPPLY_APYS]
-  const getBorrowApy = (asset: string) => TOKEN_BORROW_APYS[asset as keyof typeof TOKEN_BORROW_APYS]
+  const getAssetLogo = (asset: string) => tokenLogos[asset as keyof typeof tokenLogos]
+  const getSupplyApy = (asset: string) => tokenSupplyApys[asset as keyof typeof tokenSupplyApys]
+  const getBorrowApy = (asset: string) => tokenBorrowApys[asset as keyof typeof tokenBorrowApys]
   const trendingRows = React.useMemo(() => {
     const parsePct = (value?: string) => Number.parseFloat(value?.replace("%", "") ?? "")
     const parseLeverage = (value?: string) => Number.parseFloat(value?.replace("x", "") ?? "")
 
-    return [...LEND_ROWS]
+    return [...rows]
       .filter((row) => parseLeverage(row.rewardRows?.[0]?.value) > 8)
       .sort((a, b) => {
         const apyDiff = parsePct(b.apy) - parsePct(a.apy)
@@ -490,7 +505,7 @@ export function ExploreLoopsMarketsTable() {
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   #
                 </th>
                 <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
@@ -499,59 +514,59 @@ export function ExploreLoopsMarketsTable() {
                     onClick={() => toggleSort("protocol")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "protocol" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "protocol" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>COLLATERAL</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>BORROWABLE</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>MAX APY</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("rewards")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "rewards" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "rewards" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>MAX LEVERAGE</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("points")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "points" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                      sortKey === "points" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>AVAILABLE</span>
@@ -564,7 +579,7 @@ export function ExploreLoopsMarketsTable() {
               {visibleRows.length ? visibleRows.map((row, index) => (
                 <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="asset-swap transition-colors hover:bg-slate-100 dark:hover:bg-white/5" style={{ animationDelay: `${index * 40}ms` }}>
                   <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
-                    {page * PAGE_SIZE + index + 1}
+                    {page * pageSize + index + 1}
                   </td>
                   <td className="py-3 pl-6 pr-4">
                     <CellLink href={row.href} className="flex items-center gap-2.5">
@@ -701,7 +716,7 @@ function TrendingLoopCard({
   row,
   borrowLogo,
 }: {
-  row: (typeof LEND_ROWS)[number]
+  row: MultiplyPageData["lendRows"][number]
   borrowLogo?: string
 }) {
   const leverage = row.rewardRows?.[0]?.value ?? "—"

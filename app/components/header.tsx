@@ -16,15 +16,15 @@ import { Switch } from "@/components/ui/switch"
 import { BrandIcon, BrandLogo } from "./brand-logo"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
-import { MobileMenu } from "./mobile-menu"
-import { SearchCommand } from "./search-command"
+import { LazyMobileMenu } from "./lazy-mobile-menu"
+import { LazySearchCommand, LazySearchCommandIconOnly } from "./lazy-search-command"
 import { useTheme } from "./theme-provider"
 import { personalDesktopHeaderLinks } from "./site-nav"
 
 type PreferencesView = "root" | "language" | "currency"
 
 function PreferencesMenu() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   const { showDollarAmounts, setShowDollarAmounts, language, setLanguage, currency, setCurrency } = useDisplayPreferences()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
@@ -74,7 +74,7 @@ function PreferencesMenu() {
                     type="button"
                     onClick={() => setTheme("system")}
                     className={`px-3.5 py-1.5 text-[13px] font-medium ${
-                      mounted && resolvedTheme === "system" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
+                      mounted && theme === "system" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
                     }`}
                   >
                     Auto
@@ -234,16 +234,16 @@ export function Header() {
   const desktopLinks = personalDesktopHeaderLinks
   const [showDivider, setShowDivider] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
-  const renderMobileBrand = () => <BrandIcon className="h-8 w-8" />
+  const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
     <>
       <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">
-        <SearchCommand iconOnly />
+        <LazySearchCommandIconOnly />
       </span>
       <button
         type="button"
         aria-label="Connect"
-        className="inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
+        className="inline-flex h-9 items-center justify-center rounded-full bg-[#007a99] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#00627a]"
       >
         Connect
       </button>
@@ -314,7 +314,7 @@ export function Header() {
             </div>
 
             <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4 xl:max-w-[410px]">
-              <SearchCommand />
+              <LazySearchCommand />
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
@@ -367,7 +367,7 @@ export function Header() {
                 {renderMobileBrand()}
               </Link>
 
-              <MobileMenu actions={renderMobileActions()} brand={renderMobileBrand()} />
+              <LazyMobileMenu actions={renderMobileActions()} brand={renderMobileBrand()} />
             </div>
 
             <div className="flex items-center gap-0.5">

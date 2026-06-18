@@ -155,7 +155,7 @@ export function HeroAreaChart({
             dot={(props) => {
               const { cx, cy, index } = props
               if (index !== data.length - 1 || cx == null || cy == null) {
-                return null
+                return <g key={`hero-area-dot-${index ?? "placeholder"}`} />
               }
               return (
                 <g key={`hero-area-dot-${index}`}>
