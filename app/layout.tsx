@@ -1,6 +1,5 @@
 import "./globals.css"
 import type { Metadata } from "next"
-import dynamic from "next/dynamic"
 import localFont from "next/font/local"
 import type React from "react"
 import { Suspense } from "react"
@@ -8,18 +7,7 @@ import { Header } from "./components/header"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { PageLoadingBar } from "./components/page-loading-bar"
-
-const DesktopHelpBubble = dynamic(
-  () => import("./components/desktop-help-bubble").then((mod) => mod.DesktopHelpBubble),
-  { loading: () => null },
-)
-
-const ExternalLinkGuard = dynamic(
-  () => import("./components/external-link-guard").then((mod) => mod.ExternalLinkGuard),
-  { loading: () => null },
-)
-
-const Toaster = dynamic(() => import("sonner").then((mod) => mod.Toaster), { loading: () => null })
+import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 
 const themeBootstrapScript = `
 (() => {
@@ -138,9 +126,7 @@ export default function RootLayout({
               </Suspense>
               <Header />
               <div className="flex-1">{children}</div>
-              <DesktopHelpBubble />
-              <Toaster />
-              <ExternalLinkGuard />
+              <DeferredGlobalChrome />
             </div>
           </DisplayPreferencesProvider>
         </ThemeProvider>
