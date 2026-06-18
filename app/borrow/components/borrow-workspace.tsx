@@ -8,8 +8,8 @@ import {
   type BorrowDexId,
   type BorrowPoolRow,
   type BorrowableAsset,
-} from "@/app/lib/borrow-sim"
-import { type HomeCollateralPool } from "@/app/lib/home-sim"
+  type HomeCollateralPool,
+} from "@/app/lib/data/borrow-domain"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"

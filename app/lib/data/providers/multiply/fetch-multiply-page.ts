@@ -1,6 +1,7 @@
 import { z } from "zod"
-import { resolveDataSourceMode, unsupportedLiveSource } from "../source-mode"
-import { mockMultiplyPageSource, type MultiplyPageSource } from "./source"
+import { executeSourceLoad, type DataSourceRequestContext } from "@/app/lib/data/core/source-runtime"
+import { resolveDataSourceMode } from "../source-mode"
+import { liveMultiplyPageSource, mockMultiplyPageSource, type MultiplyPageSource } from "./source"
 import type { MultiplyPageData } from "./types"
 
 const multiplyPageSchema = z.object({
@@ -15,10 +16,26 @@ const multiplyPageSchema = z.object({
 function getMultiplyPageSource(source?: MultiplyPageSource) {
   if (source) return source
   const mode = resolveDataSourceMode()
-  if (mode === "mock") return mockMultiplyPageSource
-  return unsupportedLiveSource("multiply page")
+  return mode === "mock" ? mockMultiplyPageSource : liveMultiplyPageSource
 }
 
-export async function fetchMultiplyPage(source?: MultiplyPageSource): Promise<MultiplyPageData> {
-  return multiplyPageSchema.parse(await getMultiplyPageSource(source).getMultiplyPageData())
+function getMultiplyPageFallback(source?: MultiplyPageSource) {
+  if (source || resolveDataSourceMode() === "mock") return undefined
+  return mockMultiplyPageSource
+}
+
+export async function fetchMultiplyPage(
+  source?: MultiplyPageSource,
+  context?: DataSourceRequestContext,
+): Promise<MultiplyPageData> {
+  const response = await executeSourceLoad({
+    primary: getMultiplyPageSource(source),
+    fallback: getMultiplyPageFallback(source),
+    operation: "getMultiplyPageData",
+    context,
+    schema: multiplyPageSchema,
+    load: (pageSource, requestContext) => pageSource.getMultiplyPageData(requestContext),
+  })
+
+  return response.data
 }

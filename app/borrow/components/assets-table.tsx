@@ -7,7 +7,7 @@ import {
   formatCompactUsd,
   utilizationToneClass,
   type BorrowableAsset,
-} from "@/app/lib/borrow-sim"
+} from "@/app/lib/data/borrow-domain"
 import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { cn } from "@/lib/utils"

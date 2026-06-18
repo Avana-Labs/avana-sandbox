@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { type BorrowDexId } from "@/app/lib/borrow-sim"
+import { type BorrowDexId } from "@/app/lib/data/borrow-domain"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { useTheme } from "@/app/components/theme-provider"
 import { cn } from "@/lib/utils"

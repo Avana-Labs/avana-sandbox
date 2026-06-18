@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import Link from "next/link"
-import { formatCompactUsd, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { formatCompactUsd, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { cn } from "@/lib/utils"
 import { BorrowWorkspace } from "./components/borrow-workspace"

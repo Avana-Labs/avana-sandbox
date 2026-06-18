@@ -14,7 +14,7 @@ import {
   type BorrowableAsset,
   type DexGroup,
   type PendingMarketRow,
-} from "@/app/lib/borrow-sim"
+} from "@/app/lib/data/borrow-domain"
 import { AssetsPanel } from "./assets-table"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
 import { cn } from "@/lib/utils"

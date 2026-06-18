@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "@/app/borrow/components/repay-remove-modal"
 import {
