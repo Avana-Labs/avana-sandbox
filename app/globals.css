@@ -168,7 +168,7 @@
 }
 
 .font-data {
-  font-family: var(--font-diatype-data), var(--font-diatype-sans), system-ui, sans-serif;
+  font-family: var(--font-diatype-sans), ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
 }
 
 .font-brand {
