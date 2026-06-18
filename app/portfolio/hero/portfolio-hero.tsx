@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 import { Info } from "lucide-react"
@@ -14,22 +15,28 @@ import {
 } from "@fluentui/react-icons"
 import {
   buildRangeData,
-  HeroBalanceDisplay,
-  HeroChartSection,
-  formatChartValue,
   resolveSeriesChange,
   resolveSeriesTone,
-  type ChartRangeData,
-  type ChartRangeOption,
-} from "@/app/components/charts"
+} from "@/app/components/charts/chart-data"
+import { formatChartValue } from "@/app/components/charts/format"
+import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
+import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/types"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { TOKENS } from "../../lend/components/data"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { CurrentLtvCard } from "@/app/borrow/components/debts-table"
+import { SuppliesHealthFactorCard } from "@/app/borrow/components/supplies-table"
 import { PortfolioHeroActions } from "./portfolio-hero-actions"
 import { PortfolioHeroHeader } from "./portfolio-hero-header"
 import { PORTFOLIO_NETWORKS } from "./portfolio-network-data"
+import type { BorrowSnapshot } from "../borrow-hero-state"
 import type { NetworkId, PortfolioHeroAction } from "./types"
+
+const HeroChartSection = dynamic(
+  () => import("@/app/components/charts/hero-chart-section").then((mod) => mod.HeroChartSection),
+  {
+    loading: () => <div className="h-[196px] rounded-radius-md border border-border bg-surface-raised/60" />,
+  },
+)
 
 const DEFAULT_RANGE_DATA = buildRangeData(880, 14)
 
@@ -43,36 +50,64 @@ const RANGE_PERIOD_WORD: Record<ChartRangeOption, string> = {
 }
 
 type PortfolioHeroProps = {
-  openDeposit?: (token: typeof TOKENS[number]) => void
-  openWithdraw?: (token: typeof TOKENS[number]) => void
+  tab: "overview" | "lending" | "looping" | "activity"
   tabs?: ReactNode
+  initialNetwork?: NetworkId
   headlineValue?: string
   headlineDelta?: string
   rangeData?: ChartRangeData
+  statOneValue?: string
+  statTwoValue?: string
+  walletName?: string
+  borrowSnapshot?: BorrowSnapshot
+  multiplySnapshot?: BorrowSnapshot
+}
+
+type HeroUiConfig = {
+  headlineMeta?: string
   actionLabels?: string[]
+  hideBalance?: boolean
   hideChart?: boolean
   hideActions?: boolean
   hideStats?: boolean
-  primaryActionLabel?: string
-  secondaryActionLabel?: string
   statOneLabel?: string
-  statOneValue?: string
   statOneHelpText?: string
   statTwoLabel?: string
-  statTwoValue?: string
   statTwoHelpText?: string
-  walletName?: string
+}
+
+const HERO_UI_CONFIG: Record<PortfolioHeroProps["tab"], HeroUiConfig> = {
+  overview: {
+    headlineMeta: "Approved credit",
+  },
+  lending: {
+    actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
+    statOneLabel: "Average APY",
+    statOneHelpText: "Weighted average APY across supplied assets in the wallet.",
+    statTwoLabel: "Earned",
+    statTwoHelpText: "Total yield already accrued by the portfolio.",
+  },
+  looping: {
+    actionLabels: ["Increase loop", "Unwind loop"],
+    statOneLabel: "Open positions",
+    statOneHelpText: "Open multiply positions in the wallet profile.",
+    statTwoLabel: "Net carry",
+    statTwoHelpText: "Average realized carry across the current multiply book.",
+  },
+  activity: {
+    actionLabels: ["Product", "Action", "Status"],
+    hideBalance: true,
+    hideChart: true,
+    hideActions: true,
+    hideStats: true,
+  },
 }
 
 function buildActions({
-  openDeposit,
-  openWithdraw,
   actionLabels,
   primaryActionLabel,
   secondaryActionLabel,
 }: {
-  openDeposit?: (token: typeof TOKENS[number]) => void
-  openWithdraw?: (token: typeof TOKENS[number]) => void
   actionLabels?: string[]
   primaryActionLabel: string
   secondaryActionLabel: string
@@ -108,19 +143,11 @@ function buildActions({
   }
 
   return labels.map((label, index) => {
-    const lower = label.toLowerCase()
-    const onClick =
-      lower.includes("deposit") || lower.includes("supply")
-        ? () => openDeposit?.(TOKENS[0])
-        : lower.includes("withdraw") || lower.includes("unwind")
-          ? () => openWithdraw?.(TOKENS[0])
-          : undefined
-
     return {
       id: `${index}-${label.toLowerCase().replace(/\s+/g, "-")}`,
       label,
       icon: resolveIcon(label),
-      onClick,
+      onClick: undefined,
       className: resolveClasses(label),
     }
   })
@@ -128,16 +155,9 @@ function buildActions({
 
 function InfoTip({ text }: { text: string }) {
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Info className="inline h-3.5 w-3.5 cursor-help text-muted-foreground/60" />
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[220px] text-xs">
-          {text}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span role="img" className="inline-flex cursor-help text-muted-foreground/60" title={text} aria-label={text}>
+      <Info className="h-3.5 w-3.5" />
+    </span>
   )
 }
 
@@ -153,56 +173,61 @@ function StatCard({ label, value, helpText }: { label: string; value: string; he
 }
 
 export function PortfolioHero({
-  openDeposit,
-  openWithdraw,
+  tab,
   tabs,
+  initialNetwork = "all",
   headlineValue,
   headlineDelta,
   rangeData = DEFAULT_RANGE_DATA,
-  actionLabels,
-  hideChart = false,
-  hideActions = false,
-  hideStats = false,
-  primaryActionLabel = "Deposit",
-  secondaryActionLabel = "Withdraw",
-  statOneLabel = "Average APY",
   statOneValue = "4.92%",
-  statOneHelpText = "Weighted average APY across all your deposited assets.",
-  statTwoLabel = "Interest earned",
   statTwoValue = "+$12.46",
-  statTwoHelpText = "Total yield earned from all active positions over time.",
   walletName = "Demo wallet",
+  borrowSnapshot,
+  multiplySnapshot,
 }: PortfolioHeroProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const [selectedNetwork, setSelectedNetwork] = useState<NetworkId>("all")
+  const [selectedNetwork, setSelectedNetwork] = useState<NetworkId>(initialNetwork)
   const { showDollarAmounts } = useDisplayPreferences()
 
   const activeNetwork = PORTFOLIO_NETWORKS.find((network) => network.id === selectedNetwork) ?? PORTFOLIO_NETWORKS[0]
+  const uiConfig = HERO_UI_CONFIG[tab]
+  const isBorrowOverview = tab === "overview"
+  const isLoopingOverview = tab === "looping"
+  const showBalance = !uiConfig.hideBalance
 
+  const resolvedHeadlineValue = selectedNetwork === "all" ? (headlineValue ?? activeNetwork.balance) : activeNetwork.balance
+  const showChart = !isBorrowOverview && !isLoopingOverview && !uiConfig.hideChart
+  const showActions = !uiConfig.hideActions
+  const showStats = !uiConfig.hideStats
   const networkFeed = useMemo(
     () =>
-      getPortfolioHeroFeed({
-        balance: activeNetwork.balance,
-        delta: activeNetwork.delta,
-        chartBase: activeNetwork.chartBase,
-        chartVariance: activeNetwork.chartVariance,
-      }),
-    [activeNetwork.balance, activeNetwork.delta, activeNetwork.chartBase, activeNetwork.chartVariance],
+      showChart
+        ? getPortfolioHeroFeed({
+            balance: activeNetwork.balance,
+            delta: activeNetwork.delta,
+            chartBase: activeNetwork.chartBase,
+            chartVariance: activeNetwork.chartVariance,
+          })
+        : null,
+    [activeNetwork.balance, activeNetwork.delta, activeNetwork.chartBase, activeNetwork.chartVariance, showChart],
   )
 
   const displayRangeData = useMemo(() => {
-    if (selectedNetwork === "all") {
+    if (!showChart) {
+      return null
+    }
+    if (selectedNetwork === "all" && rangeData) {
       return rangeData
     }
-    return networkFeed.rangeData
-  }, [networkFeed.rangeData, rangeData, selectedNetwork])
+    return networkFeed?.rangeData ?? DEFAULT_RANGE_DATA
+  }, [networkFeed?.rangeData, rangeData, selectedNetwork, showChart])
 
   // Delta + color track the active range's real trend, so a dip turns red.
-  const activePoints = displayRangeData[activeRange]
-  const trendTone = resolveSeriesTone(activePoints)
-  const trendChange = resolveSeriesChange(activePoints)
-  const hoverPoint = hoverIndex == null ? null : activePoints[hoverIndex] ?? null
+  const activePoints = displayRangeData?.[activeRange] ?? []
+  const trendTone = showChart ? resolveSeriesTone(activePoints) : "positive"
+  const trendChange = showChart ? resolveSeriesChange(activePoints) : null
+  const hoverPoint = showChart && hoverIndex != null ? activePoints[hoverIndex] ?? null : null
   const firstPoint = activePoints[0]
   const displayPoint = hoverPoint ?? activePoints[activePoints.length - 1]
   const displayTone = hoverPoint
@@ -210,25 +235,30 @@ export function PortfolioHero({
       ? "positive"
       : "negative"
     : trendTone
-  const displayDelta = hoverPoint ? (() => {
-    const baseValue = firstPoint?.value ?? hoverPoint.value
-    const changeAbs = Math.abs(hoverPoint.value - baseValue)
-    const pct = baseValue ? ((hoverPoint.value - baseValue) / baseValue) * 100 : 0
-    return `${formatChartValue("usd", changeAbs)} (${Math.abs(pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
-  })() : `$${trendChange.changeAbs.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} (${Math.abs(trendChange.pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
-  const resolvedHeadlineValue = selectedNetwork === "all" ? (headlineValue ?? activeNetwork.balance) : activeNetwork.balance
+  const displayDelta = showChart && trendChange
+    ? hoverPoint
+      ? (() => {
+          const baseValue = firstPoint?.value ?? hoverPoint.value
+          const changeAbs = Math.abs(hoverPoint.value - baseValue)
+          const pct = baseValue ? ((hoverPoint.value - baseValue) / baseValue) * 100 : 0
+          return `${formatChartValue("usd", changeAbs)} (${Math.abs(pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
+        })()
+      : `$${trendChange.changeAbs.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} (${Math.abs(trendChange.pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
+    : undefined
   const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
+  const resolvedHeadlineDelta = headlineDelta ?? displayDelta
+  const overviewDelta = headlineDelta ?? undefined
 
-  const actions = buildActions({
-    openDeposit,
-    openWithdraw,
-    actionLabels,
-    primaryActionLabel,
-    secondaryActionLabel,
-  })
+  const actions = showActions
+    ? buildActions({
+        actionLabels: uiConfig.actionLabels,
+        primaryActionLabel: uiConfig.actionLabels?.[0] ?? "Deposit",
+        secondaryActionLabel: uiConfig.actionLabels?.[1] ?? "Withdraw",
+      })
+    : []
 
   return (
     <section className="mb-8">
@@ -240,18 +270,49 @@ export function PortfolioHero({
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-      {hideChart && hideActions && hideStats ? null : (
-        <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
+      {isBorrowOverview || isLoopingOverview ? (
+        <div className="mt-5">
+          <HeroBalanceDisplay
+            value={resolvedDisplayValue}
+            delta={headlineDelta ?? (isLoopingOverview ? "" : overviewDelta ?? "")}
+            deltaTone={isLoopingOverview ? (headlineDelta?.includes("-") ? "negative" : "positive") : "positive"}
+            meta={uiConfig.headlineMeta}
+            hidden={!showDollarAmounts}
+          />
+          {isBorrowOverview && borrowSnapshot ? (
+            <div className="mt-4 grid gap-4 xl:grid-cols-2">
+              <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+              <CurrentLtvCard
+                borrowedUsd={borrowSnapshot.totalBorrowedUsd}
+                collateralUsd={borrowSnapshot.totalCollateralUsd}
+                showBalance={showDollarAmounts}
+              />
+            </div>
+          ) : null}
+          {isLoopingOverview && multiplySnapshot ? (
+            <div className="mt-4 grid gap-4 xl:grid-cols-2">
+              <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+              <CurrentLtvCard
+                borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+                collateralUsd={multiplySnapshot.totalCollateralUsd}
+                showBalance={showDollarAmounts}
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : showBalance ? (
+        <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
             <HeroBalanceDisplay
               value={resolvedDisplayValue}
-              delta={hoverPoint ? displayDelta : (headlineDelta ?? displayDelta)}
+              delta={resolvedHeadlineDelta ?? ""}
               deltaTone={displayTone}
+              meta={uiConfig.headlineMeta}
               hidden={!showDollarAmounts}
             />
-            {hideChart ? null : (
+            {showChart ? (
               <HeroChartSection
-                rangeData={displayRangeData}
+                rangeData={displayRangeData ?? DEFAULT_RANGE_DATA}
                 activeRange={activeRange}
                 onRangeChange={(range) => {
                   setHoverIndex(null)
@@ -261,22 +322,28 @@ export function PortfolioHero({
                 gradientId="portfolioHeroFill"
                 tone={trendTone}
               />
-            )}
+            ) : null}
           </div>
 
-          {hideActions && hideStats ? null : (
+          {showActions || showStats ? (
             <div className="flex min-w-0 flex-col gap-3 lg:pt-0">
-              {hideActions ? null : <PortfolioHeroActions actions={actions} />}
-              {hideStats && statOneLabel && statOneValue && statOneHelpText && statTwoLabel && statTwoValue && statTwoHelpText ? null : statOneLabel && statOneValue && statOneHelpText && statTwoLabel && statTwoValue && statTwoHelpText ? (
+              {showActions ? <PortfolioHeroActions actions={actions} /> : null}
+              {showStats &&
+              uiConfig.statOneLabel &&
+              statOneValue &&
+              uiConfig.statOneHelpText &&
+              uiConfig.statTwoLabel &&
+              statTwoValue &&
+              uiConfig.statTwoHelpText ? (
                 <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-white/10">
-                  <StatCard label={statOneLabel} value={statOneValue} helpText={statOneHelpText} />
-                  <StatCard label={statTwoLabel} value={statTwoValue} helpText={statTwoHelpText} />
+                  <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} />
+                  <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} />
                 </div>
               ) : null}
             </div>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
     </section>
   )
 }

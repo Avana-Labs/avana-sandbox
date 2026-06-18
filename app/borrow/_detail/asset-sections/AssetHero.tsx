@@ -34,7 +34,11 @@ export function AssetHeroIdentity({
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative shrink-0">
             {leading}
-            <span className={cn("inline-flex size-14 items-center justify-center", detail.hero.visual.textClass)} aria-label={detail.hero.symbol}>
+            <span
+              role="img"
+              aria-label={detail.hero.symbol}
+              className={cn("inline-flex size-14 items-center justify-center", detail.hero.visual.textClass)}
+            >
               {detail.hero.visual.iconUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -67,8 +71,7 @@ export function AssetHeroIdentity({
                 onClick={async () => {
                   await navigator.clipboard.writeText(detail.hero.contractAddress ?? metaLabel)
                 }}
-                className="inline-flex items-center gap-1.5 text-[13px] font-normal leading-none text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Copy contract"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2 py-1 text-[13px] font-normal leading-none text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
               >
                 <Copy className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
                 <span>{metaLabel}</span>
@@ -125,7 +128,7 @@ function HeroIcon({ label, onClick, children }: { label: string; onClick: () => 
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+      className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground md:size-7"
     >
       {children}
     </button>

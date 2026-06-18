@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { BORROW_DEXES, type BorrowDexId } from "@/app/lib/borrow-sim"
+import { type BorrowDexId } from "@/app/lib/data/borrow-domain"
+import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { useTheme } from "@/app/components/theme-provider"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +21,7 @@ export type TabsBarProps = {
   onTabChange: (tab: BorrowTabId) => void
   search: string
   onSearchChange: (value: string) => void
+  dexes: BorrowPageData["dexes"]
   selectedDexes: Set<BorrowDexId>
   onDexChange: (dex: BorrowDexId | null) => void
 }
@@ -244,7 +246,8 @@ function SingleSelectDropdown({
     <div ref={rootRef} className="relative z-20">
       <button
         type="button"
-        aria-label={ariaLabel}
+        aria-label={triggerLabel}
+        aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
@@ -255,7 +258,7 @@ function SingleSelectDropdown({
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
-        <span className={cn(isDark ? "text-white/70" : "text-foreground/55")}>
+        <span className={cn(isDark ? "text-white/80" : "text-foreground/70")}>
           <ChevronDownIcon />
         </span>
       </button>
@@ -344,6 +347,7 @@ export function TabsBar({
   onTabChange,
   search,
   onSearchChange,
+  dexes,
   selectedDexes,
   onDexChange,
 }: TabsBarProps) {
@@ -374,7 +378,7 @@ export function TabsBar({
           <SingleSelectDropdown
             allLabel="All DEX"
             value={selectedDex}
-            options={BORROW_DEXES.map((dex) => ({ label: dex.label, value: dex.id }))}
+              options={dexes.map((dex) => ({ label: dex.label, value: dex.id }))}
             onChange={(nextValue) => {
               const nextDex = (nextValue as BorrowDexId | null) ?? null
               onDexChange(nextDex)
@@ -413,7 +417,7 @@ export function TabsBar({
           <SingleSelectDropdown
             allLabel="All DEX"
             value={selectedDex}
-            options={BORROW_DEXES.map((dex) => ({ label: dex.label, value: dex.id }))}
+                options={dexes.map((dex) => ({ label: dex.label, value: dex.id }))}
             onChange={(nextValue) => {
               const nextDex = (nextValue as BorrowDexId | null) ?? null
               onDexChange(nextDex)

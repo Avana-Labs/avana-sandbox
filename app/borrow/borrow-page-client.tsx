@@ -1,19 +1,11 @@
-"use client"
-
-import { useMemo } from "react"
 import Link from "next/link"
-import type { BorrowPool, BorrowProtocolMap } from "@/app/lib/borrow-data"
-import { BORROW_POOL_CATALOG, formatCompactUsd, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { formatCompactUsd, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
+import type { BorrowPageData, BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import { cn } from "@/lib/utils"
-import { BorrowWorkspace } from "./components/borrow-workspace"
 import { TokenPairCell } from "./components/atoms"
+import { BorrowWorkspaceShell } from "./borrow-workspace-shell"
 
-type BorrowPageClientProps = {
-  protocols: BorrowProtocolMap
-  allPools: BorrowPool[]
-  protocolLogos: Record<string, string>
-  itemsPerPage: number
-}
+type BorrowPageClientProps = { pageData: BorrowPageData }
 
 function formatUsd(value: number) {
   if (value >= 1_000_000) {
@@ -26,65 +18,86 @@ function formatUsd(value: number) {
 }
 
 /** Borrow markets UI: hero-level metrics (from server-prepared data) + the 4-tab Borrow workspace. */
-export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
+export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
   const heroSectionClassName = "mb-4 px-1 md:px-2"
+  const { allPools, poolCatalog } = pageData
+  const workspaceData: BorrowWorkspaceData = {
+    poolCatalog: pageData.poolCatalog,
+    pendingRows: pageData.pendingRows,
+    dexes: pageData.dexes,
+    collateralPools: pageData.collateralPools,
+    initialDebts: pageData.initialDebts,
+  }
 
-  const metricsData = useMemo(() => {
-    const totalCollaterals = allPools.reduce((sum, pool) => sum + Math.max(pool.tvl, 0), 0)
-    const totalVolume24h = allPools.reduce((sum, pool) => sum + Math.max(pool.volume24h, 0), 0)
-    const totalTvlChangeWeighted = allPools.reduce((sum, pool) => sum + pool.change * Math.max(pool.tvl, 0), 0)
-    const weightedPoolApy =
-      totalCollaterals > 0 ? allPools.reduce((sum, pool) => sum + pool.apy * Math.max(pool.tvl, 0), 0) / totalCollaterals : 0
+  const totalCollaterals = allPools.reduce((sum, pool) => sum + Math.max(pool.tvl, 0), 0)
+  const totalVolume24h = allPools.reduce((sum, pool) => sum + Math.max(pool.volume24h, 0), 0)
+  const totalTvlChangeWeighted = allPools.reduce((sum, pool) => sum + pool.change * Math.max(pool.tvl, 0), 0)
+  const weightedPoolApy =
+    totalCollaterals > 0 ? allPools.reduce((sum, pool) => sum + pool.apy * Math.max(pool.tvl, 0), 0) / totalCollaterals : 0
 
-    const maxLtv = 0.8
-    const utilizationRatio = Math.min(0.85, Math.max(0.5, 0.5 + (weightedPoolApy / 100) * 0.7))
-    const usedLtv = maxLtv * utilizationRatio
-    const totalLoans = totalCollaterals * usedLtv
-    const availableCredit = Math.max(totalCollaterals * maxLtv - totalLoans, 0)
-    const totalTvl = totalCollaterals + totalVolume24h * 0.12
-    const totalTvlChange = totalCollaterals > 0 ? totalTvlChangeWeighted / totalCollaterals : 0
+  const maxLtv = 0.8
+  const utilizationRatio = Math.min(0.85, Math.max(0.5, 0.5 + (weightedPoolApy / 100) * 0.7))
+  const usedLtv = maxLtv * utilizationRatio
+  const totalLoans = totalCollaterals * usedLtv
+  const availableCredit = Math.max(totalCollaterals * maxLtv - totalLoans, 0)
+  const totalTvl = totalCollaterals + totalVolume24h * 0.12
+  const totalTvlChangeValue = totalCollaterals > 0 ? totalTvlChangeWeighted / totalCollaterals : 0
 
-    return {
-      totalTvl,
-      collaterals: totalCollaterals,
-      availableCredit,
-      totalLoans,
-      totalTvlChange,
-    }
-  }, [allPools])
+  const metricsData = {
+    totalTvl,
+    collaterals: totalCollaterals,
+    availableCredit,
+    totalLoans,
+    totalTvlChange: totalTvlChangeValue,
+  }
 
-  const heroCards = useMemo(() => {
-    const poolsWithLogos = BORROW_POOL_CATALOG.filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
+  const poolsWithLogos = poolCatalog.filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
 
-    const sortByMetric = (metric: "tvlUsd" | "availableUsd" | "apy") =>
-      [...poolsWithLogos]
-        .sort((left, right) => {
-          const leftValue =
-            metric === "tvlUsd" ? left.tvlUsd : metric === "availableUsd" ? left.availableUsd : (left.aprMin + left.aprMax) / 2
-          const rightValue =
-            metric === "tvlUsd" ? right.tvlUsd : metric === "availableUsd" ? right.availableUsd : (right.aprMin + right.aprMax) / 2
-          return rightValue - leftValue
-        })
+  const sortByMetric = (metric: "tvlUsd" | "availableUsd" | "apy") =>
+    [...poolsWithLogos]
+      .sort((left, right) => {
+        const leftValue =
+          metric === "tvlUsd" ? left.tvlUsd : metric === "availableUsd" ? left.availableUsd : (left.aprMin + left.aprMax) / 2
+        const rightValue =
+          metric === "tvlUsd" ? right.tvlUsd : metric === "availableUsd" ? right.availableUsd : (right.aprMin + right.aprMax) / 2
+        return rightValue - leftValue
+      })
+      .slice(0, 3)
+
+  const heroCards = [
+    {
+      title: "Trending Collateral",
+      rows: sortByMetric("availableUsd").map((pool) => ({
+        id: `trending-${pool.id}`,
+        href: `/borrow/pool/${pool.id}`,
+        pool,
+        title: pool.name,
+        subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
+        value: formatCompactUsd(pool.availableUsd),
+        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
+        deltaClassName: "text-emerald-500",
+      })),
+    },
+    {
+      title: "Rewards Pools",
+      rows: sortByMetric("tvlUsd").map((pool) => ({
+        id: `rewards-${pool.id}`,
+        href: `/borrow/pool/${pool.id}`,
+        pool,
+        title: pool.name,
+        subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
+        value: formatCompactUsd(pool.tvlUsd),
+        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
+        deltaClassName: "text-emerald-500",
+      })),
+    },
+    {
+      title: "High APY Pools",
+      rows: [...poolsWithLogos]
+        .sort((left, right) => (right.aprMin + right.aprMax) / 2 - (left.aprMin + left.aprMax) / 2)
         .slice(0, 3)
-
-    return [
-      {
-        title: "Trending Collateral",
-        rows: sortByMetric("availableUsd").map((pool) => ({
-          id: `trending-${pool.protocol}-${pool.name}`,
-          href: `/borrow/pool/${pool.id}`,
-          pool,
-          title: pool.name,
-          subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
-          value: formatCompactUsd(pool.availableUsd),
-          delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
-          deltaClassName: "text-emerald-500",
-        })),
-      },
-      {
-        title: "Rewards Pools",
-        rows: sortByMetric("tvlUsd").map((pool) => ({
-          id: `rewards-${pool.protocol}-${pool.name}`,
+        .map((pool) => ({
+          id: `apy-${pool.id}`,
           href: `/borrow/pool/${pool.id}`,
           pool,
           title: pool.name,
@@ -93,25 +106,8 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
           delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
           deltaClassName: "text-emerald-500",
         })),
-      },
-      {
-        title: "High APY Pools",
-        rows: [...poolsWithLogos]
-          .sort((left, right) => (right.aprMin + right.aprMax) / 2 - (left.aprMin + left.aprMax) / 2)
-          .slice(0, 3)
-          .map((pool) => ({
-            id: `apy-${pool.protocol}-${pool.name}`,
-            href: `/borrow/pool/${pool.id}`,
-            pool,
-            title: pool.name,
-            subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
-            value: formatCompactUsd(pool.tvlUsd),
-            delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
-            deltaClassName: "text-emerald-500",
-          })),
-      },
-    ]
-  }, [])
+    },
+  ]
 
   const totalTvlChange = metricsData.totalTvlChange
   const totalTvlChangeIsUp = totalTvlChange >= 0
@@ -190,15 +186,14 @@ export function BorrowPageClient({ allPools }: BorrowPageClientProps) {
               <div className="overflow-x-auto pb-1">
                 <div className="flex min-w-max gap-3">
                   {heroCards.map((card) => (
-                    <HeroMarketCard key={card.title} title={card.title} subtitle={card.subtitle} rows={card.rows} />
+                    <HeroMarketCard key={card.title} title={card.title} rows={card.rows} />
                   ))}
                 </div>
               </div>
             </div>
 
           </section>
-
-        <BorrowWorkspace />
+          <BorrowWorkspaceShell pageData={workspaceData} />
         </div>
       </main>
     </div>

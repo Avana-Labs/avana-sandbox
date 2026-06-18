@@ -16,7 +16,6 @@ type TokenPriceChartProps = {
   className?: string
   ariaLabel?: string
   formatValue?: (v: number) => string
-  formatTime?: (iso: string) => string
   onHoverChange?: (hover: TokenChartHover | null) => void
 }
 
@@ -31,7 +30,6 @@ export function TokenPriceChart({
   className,
   ariaLabel,
   formatValue = defaultFormatValue,
-  formatTime = defaultFormatTime,
   onHoverChange,
 }: TokenPriceChartProps) {
   const width = 900
@@ -243,10 +241,4 @@ function formatAxisDate(raw: string) {
 
 function defaultFormatValue(v: number) {
   return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-function defaultFormatTime(iso: string) {
-  const d = new Date(iso.includes("T") ? iso : `${iso}T12:00:00`)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
 }

@@ -129,201 +129,210 @@ const VISUALS = {
     shortLabel: "U",
     bgClass: "bg-sky-100",
     textClass: "text-sky-700",
-    iconUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+    iconUrl: getTokenIconMeta("USDC").iconUrl,
   },
   USDT: {
     symbol: "USDT",
     shortLabel: "T",
     bgClass: "bg-emerald-100",
     textClass: "text-emerald-700",
-    iconUrl: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+    iconUrl: getTokenIconMeta("USDT").iconUrl,
   },
   DAI: {
     symbol: "DAI",
     shortLabel: "D",
     bgClass: "bg-orange-100",
     textClass: "text-orange-700",
-    iconUrl: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png",
+    iconUrl: getTokenIconMeta("DAI").iconUrl,
   },
   GHO: {
     symbol: "GHO",
     shortLabel: "G",
     bgClass: "bg-violet-100",
     textClass: "text-violet-700",
+    iconUrl: getTokenIconMeta("GHO").iconUrl,
   },
   crvUSD: {
     symbol: "crvUSD",
     shortLabel: "cU",
     bgClass: "bg-rose-100",
     textClass: "text-rose-700",
-    iconUrl: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
+    iconUrl: getTokenIconMeta("crvUSD").iconUrl,
   },
   USDe: {
     symbol: "USDe",
     shortLabel: "Ue",
     bgClass: "bg-muted",
     textClass: "text-foreground",
+    iconUrl: getTokenIconMeta("USDe").iconUrl,
   },
   FRAX: {
     symbol: "FRAX",
     shortLabel: "F",
     bgClass: "bg-zinc-100",
     textClass: "text-zinc-700",
-    iconUrl: "https://cryptologos.cc/logos/frax-frax-logo.png",
+    iconUrl: getTokenIconMeta("FRAX").iconUrl,
   },
   EURC: {
     symbol: "EURC",
     shortLabel: "€",
     bgClass: "bg-blue-100",
     textClass: "text-blue-700",
+    iconUrl: getTokenIconMeta("EURC").iconUrl,
   },
   sDAI: {
     symbol: "sDAI",
     shortLabel: "sD",
     bgClass: "bg-orange-100",
     textClass: "text-orange-600",
-    iconUrl: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png",
+    iconUrl: getTokenIconMeta("sDAI").iconUrl,
   },
   "USD+": {
     symbol: "USD+",
     shortLabel: "+",
     bgClass: "bg-teal-100",
     textClass: "text-teal-700",
+    iconUrl: getTokenIconMeta("USD+").iconUrl,
   },
   ETH: {
     symbol: "ETH",
     shortLabel: "E",
     bgClass: "bg-indigo-100",
     textClass: "text-indigo-700",
-    iconUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    iconUrl: getTokenIconMeta("ETH").iconUrl,
   },
   WETH: {
     symbol: "WETH",
     shortLabel: "W",
     bgClass: "bg-indigo-100",
     textClass: "text-indigo-700",
-    iconUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    iconUrl: getTokenIconMeta("WETH").iconUrl,
   },
   WBTC: {
     symbol: "WBTC",
     shortLabel: "B",
     bgClass: "bg-amber-100",
     textClass: "text-amber-700",
-    iconUrl: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png",
+    iconUrl: getTokenIconMeta("WBTC").iconUrl,
   },
   cbBTC: {
     symbol: "cbBTC",
     shortLabel: "cB",
     bgClass: "bg-blue-100",
     textClass: "text-blue-700",
-    iconUrl: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+    iconUrl: getTokenIconMeta("cbBTC").iconUrl,
   },
   stETH: {
     symbol: "stETH",
     shortLabel: "st",
     bgClass: "bg-sky-100",
     textClass: "text-sky-600",
-    iconUrl: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
+    iconUrl: getTokenIconMeta("stETH").iconUrl,
   },
   wstETH: {
     symbol: "wstETH",
     shortLabel: "ws",
     bgClass: "bg-sky-100",
     textClass: "text-sky-600",
-    iconUrl: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
+    iconUrl: getTokenIconMeta("wstETH").iconUrl,
   },
   rETH: {
     symbol: "rETH",
     shortLabel: "r",
     bgClass: "bg-orange-100",
     textClass: "text-orange-600",
-    iconUrl: "https://cryptologos.cc/logos/rocket-pool-rpl-logo.png",
+    iconUrl: getTokenIconMeta("rETH").iconUrl,
   },
   cbETH: {
     symbol: "cbETH",
     shortLabel: "cE",
     bgClass: "bg-blue-100",
     textClass: "text-blue-600",
-    iconUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    iconUrl: getTokenIconMeta("cbETH").iconUrl,
   },
   weETH: {
     symbol: "weETH",
     shortLabel: "we",
     bgClass: "bg-indigo-100",
     textClass: "text-indigo-600",
-    iconUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    iconUrl: getTokenIconMeta("weETH").iconUrl,
   },
   AAVE: {
     symbol: "AAVE",
     shortLabel: "A",
     bgClass: "bg-violet-100",
     textClass: "text-violet-700",
-    iconUrl: "https://cryptologos.cc/logos/aave-aave-logo.png",
+    iconUrl: getTokenIconMeta("AAVE").iconUrl,
   },
   UNI: {
     symbol: "UNI",
     shortLabel: "U",
     bgClass: "bg-pink-100",
     textClass: "text-pink-700",
-    iconUrl: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+    iconUrl: getTokenIconMeta("UNI").iconUrl,
   },
   CRV: {
     symbol: "CRV",
     shortLabel: "C",
     bgClass: "bg-rose-100",
     textClass: "text-rose-700",
-    iconUrl: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
+    iconUrl: getTokenIconMeta("CRV").iconUrl,
   },
   LDO: {
     symbol: "LDO",
     shortLabel: "L",
     bgClass: "bg-sky-100",
     textClass: "text-sky-700",
-    iconUrl: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png",
+    iconUrl: getTokenIconMeta("LDO").iconUrl,
   },
   BAL: {
     symbol: "BAL",
     shortLabel: "B",
     bgClass: "bg-muted",
     textClass: "text-foreground",
-    iconUrl: "https://cryptologos.cc/logos/balancer-bal-logo.png",
+    iconUrl: getTokenIconMeta("BAL").iconUrl,
   },
   GNO: {
     symbol: "GNO",
     shortLabel: "G",
     bgClass: "bg-emerald-100",
     textClass: "text-emerald-700",
-    iconUrl: "https://cryptologos.cc/logos/gnosis-gno-gno-logo.png",
+    iconUrl: getTokenIconMeta("GNO").iconUrl,
   },
   AURA: {
     symbol: "AURA",
     shortLabel: "Au",
     bgClass: "bg-amber-100",
     textClass: "text-amber-700",
+    iconUrl: getTokenIconMeta("AURA").iconUrl,
   },
   AERO: {
     symbol: "AERO",
     shortLabel: "Ae",
     bgClass: "bg-blue-100",
     textClass: "text-blue-700",
+    iconUrl: getTokenIconMeta("AERO").iconUrl,
   },
   DEGEN: {
     symbol: "DEGEN",
     shortLabel: "Dg",
     bgClass: "bg-violet-100",
     textClass: "text-violet-700",
+    iconUrl: getTokenIconMeta("DEGEN").iconUrl,
   },
   BRETT: {
     symbol: "BRETT",
     shortLabel: "Br",
     bgClass: "bg-blue-100",
     textClass: "text-blue-600",
+    iconUrl: getTokenIconMeta("BRETT").iconUrl,
   },
   WELL: {
     symbol: "WELL",
     shortLabel: "W",
     bgClass: "bg-teal-100",
     textClass: "text-teal-700",
+    iconUrl: getTokenIconMeta("WELL").iconUrl,
   },
   MOG: {
     symbol: "MOG",
@@ -336,21 +345,21 @@ const VISUALS = {
     shortLabel: "3",
     bgClass: "bg-orange-100",
     textClass: "text-orange-700",
-    iconUrl: "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
+    iconUrl: getTokenIconMeta("3CRV").iconUrl,
   },
   ARB: {
     symbol: "ARB",
     shortLabel: "A",
     bgClass: "bg-indigo-100",
     textClass: "text-indigo-600",
-    iconUrl: "https://cryptologos.cc/logos/arbitrum-arb-logo.png",
+    iconUrl: getTokenIconMeta("ARB").iconUrl,
   },
   OP: {
     symbol: "OP",
     shortLabel: "O",
     bgClass: "bg-rose-100",
     textClass: "text-rose-600",
-    iconUrl: "https://cryptologos.cc/logos/optimism-ethereum-op-logo.png",
+    iconUrl: getTokenIconMeta("OP").iconUrl,
   },
 } satisfies Record<string, BorrowAssetVisual>
 
@@ -1343,23 +1352,23 @@ function assetSortValue(row: BorrowableAsset, key: AssetSortKey): number {
 }
 
 export function aprToneClass(apr: number): string {
-  if (apr < 4) return "text-emerald-600"
-  if (apr < 5.5) return "text-amber-600"
-  return "text-rose-600"
+  if (apr < 4) return "text-emerald-700 dark:text-emerald-300"
+  if (apr < 5.5) return "text-amber-700 dark:text-amber-300"
+  return "text-rose-700 dark:text-rose-300"
 }
 
 export function utilizationToneClass(utilization: number): string {
-  if (utilization < 65) return "text-emerald-600"
-  if (utilization < 85) return "text-amber-600"
-  return "text-rose-600"
+  if (utilization < 65) return "text-emerald-700 dark:text-emerald-300"
+  if (utilization < 85) return "text-amber-700 dark:text-amber-300"
+  return "text-rose-700 dark:text-rose-300"
 }
 
 export function healthFactorToneClass(hf: number | null): string {
   if (hf === null || Number.isNaN(hf)) return "text-muted-foreground"
   if (!Number.isFinite(hf)) return "text-muted-foreground"
-  if (hf > 2) return "text-emerald-600"
-  if (hf > 1.5) return "text-amber-600"
-  return "text-rose-600"
+  if (hf > 2) return "text-emerald-700 dark:text-emerald-300"
+  if (hf > 1.5) return "text-amber-700 dark:text-amber-300"
+  return "text-rose-700 dark:text-rose-300"
 }
 
 export function homeVisualToBorrowVisual(visual: { symbol: string; shortLabel: string; bgClassName: string; textClassName: string }): BorrowAssetVisual {

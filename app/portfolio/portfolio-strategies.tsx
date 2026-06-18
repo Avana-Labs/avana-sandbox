@@ -4,85 +4,46 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { EnhancedGraph } from "@/app/components/enhanced-graph"
-import { getDeterministicAmount } from "@/app/lib/deterministic"
-
-type StrategyPool = {
-  name: string
-  apy: string
-  tvl: string
-  isUp: boolean
-}
-
-type StrategySection = {
-  title: string
-  description: string
-  badgeClassName: string
-  badgeLabel: string
-  accentClassName: string
-  pools: StrategyPool[]
-}
-
-const STRATEGIES: StrategySection[] = [
-  {
-    title: "Conservative Strategy",
-    description: "Stable assets with lower risk",
-    badgeLabel: "4-8% APY range",
-    badgeClassName:
-      "rounded-xs border border-blue-500/25 bg-blue-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-blue-700 dark:text-blue-400",
-    accentClassName: "from-blue-500/[0.03]",
-    pools: [
-      { name: "Uniswap USDC-USDT", apy: "4.2%", tvl: "$2.1B", isUp: true },
-      { name: "Aave USDC", apy: "5.1%", tvl: "$1.8B", isUp: true },
-      { name: "Convex USDT", apy: "6.3%", tvl: "$950M", isUp: true },
-      { name: "Chainlink USDC", apy: "7.2%", tvl: "$750M", isUp: false },
-    ],
-  },
-  {
-    title: "Moderate Strategy",
-    description: "Balanced risk-reward ratio",
-    badgeLabel: "8-15% APY range",
-    badgeClassName:
-      "rounded-xs border border-indigo-500/25 bg-indigo-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-indigo-700 dark:text-indigo-400",
-    accentClassName: "from-indigo-500/[0.03]",
-    pools: [
-      { name: "Compound ETH-USDC", apy: "12.5%", tvl: "$890M", isUp: true },
-      { name: "Rocket Pool stETH", apy: "9.8%", tvl: "$1.2B", isUp: true },
-      { name: "Balancer ETH-DAI", apy: "14.2%", tvl: "$450M", isUp: false },
-      { name: "Solana USDC", apy: "11.5%", tvl: "$680M", isUp: true },
-    ],
-  },
-  {
-    title: "Aggressive Strategy",
-    description: "High risk, high potential returns",
-    badgeLabel: "15-40% APY range",
-    badgeClassName:
-      "rounded-xs border border-rose-500/25 bg-rose-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-rose-700 dark:text-rose-400",
-    accentClassName: "from-rose-500/[0.03]",
-    pools: [
-      { name: "Curve ETH-BTC", apy: "35.8%", tvl: "$120M", isUp: true },
-      { name: "Balancer WETH-DAI", apy: "28.4%", tvl: "$85M", isUp: false },
-      { name: "Pancakeswap BNB-USDT", apy: "42.1%", tvl: "$65M", isUp: true },
-      { name: "Sushiswap ETH-USDC", apy: "31.6%", tvl: "$95M", isUp: false },
-    ],
-  },
-]
+import type { PortfolioStrategyBucket } from "@/app/lib/data/providers/portfolio"
+import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 
 function getPoolLogo(poolName: string) {
-  if (poolName.includes("Uniswap")) return "https://cryptologos.cc/logos/uniswap-uni-logo.png"
-  if (poolName.includes("Aave")) return "https://cryptologos.cc/logos/aave-aave-logo.png"
-  if (poolName.includes("Convex")) return "https://cryptologos.cc/logos/convex-finance-cvx-logo.png"
-  if (poolName.includes("Chainlink")) return "https://cryptologos.cc/logos/chainlink-link-logo.png"
-  if (poolName.includes("Compound")) return "https://cryptologos.cc/logos/compound-comp-logo.png"
-  if (poolName.includes("Rocket Pool")) return "https://cryptologos.cc/logos/rocket-pool-rpl-logo.png"
-  if (poolName.includes("Balancer")) return "https://cryptologos.cc/logos/balancer-bal-logo.png"
-  if (poolName.includes("Solana")) return "https://cryptologos.cc/logos/solana-sol-logo.png"
-  if (poolName.includes("Curve")) return "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png"
-  if (poolName.includes("Pancakeswap")) return "https://cryptologos.cc/logos/pancakeswap-cake-logo.png"
-  if (poolName.includes("Sushiswap")) return "https://cryptologos.cc/logos/sushiswap-sushi-logo.png"
+  if (poolName.includes("Uniswap")) return getLocalAssetIcon("UNI") ?? "/placeholder.svg"
+  if (poolName.includes("Aave")) return getLocalAssetIcon("AAVE") ?? "/placeholder.svg"
+  if (poolName.includes("Convex")) return getLocalAssetIcon("Convex Finance") ?? "/placeholder.svg"
+  if (poolName.includes("Chainlink")) return getLocalAssetIcon("Chainlink") ?? "/placeholder.svg"
+  if (poolName.includes("Compound")) return getLocalAssetIcon("Compound") ?? "/placeholder.svg"
+  if (poolName.includes("Rocket Pool")) return getLocalAssetIcon("Rocket Pool") ?? "/placeholder.svg"
+  if (poolName.includes("Balancer")) return getLocalAssetIcon("BAL") ?? "/placeholder.svg"
+  if (poolName.includes("Solana")) return getLocalAssetIcon("SOL") ?? "/placeholder.svg"
+  if (poolName.includes("Curve")) return getLocalAssetIcon("CRV") ?? "/placeholder.svg"
+  if (poolName.includes("Pancakeswap")) return getLocalAssetIcon("PancakeSwap") ?? "/placeholder.svg"
+  if (poolName.includes("Sushiswap")) return getLocalAssetIcon("Sushiswap") ?? "/placeholder.svg"
   return "/placeholder.svg"
 }
 
-export function PortfolioStrategies() {
+const TONE_STYLES: Record<
+  PortfolioStrategyBucket["tone"],
+  { badgeClassName: string; accentClassName: string }
+> = {
+  conservative: {
+    badgeClassName:
+      "rounded-xs border border-blue-500/25 bg-blue-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-blue-700 dark:text-blue-400",
+    accentClassName: "from-blue-500/[0.03]",
+  },
+  moderate: {
+    badgeClassName:
+      "rounded-xs border border-indigo-500/25 bg-indigo-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-indigo-700 dark:text-indigo-400",
+    accentClassName: "from-indigo-500/[0.03]",
+  },
+  aggressive: {
+    badgeClassName:
+      "rounded-xs border border-rose-500/25 bg-rose-500/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-rose-700 dark:text-rose-400",
+    accentClassName: "from-rose-500/[0.03]",
+  },
+}
+
+export function PortfolioStrategies({ buckets }: { buckets: PortfolioStrategyBucket[] }) {
   return (
     <section className="mb-8 space-y-6">
       <div className="space-y-1">
@@ -93,17 +54,17 @@ export function PortfolioStrategies() {
       </div>
 
       <div className="grid gap-6">
-        {STRATEGIES.map((strategy) => (
+        {buckets.map((strategy) => (
           <Card key={strategy.title} className="relative overflow-hidden border-border bg-surface-raised p-5 shadow-elev-1">
-            <div className={`absolute inset-0 bg-gradient-to-br ${strategy.accentClassName} via-transparent to-transparent`} />
+            <div className={`absolute inset-0 bg-gradient-to-br ${TONE_STYLES[strategy.tone].accentClassName} via-transparent to-transparent`} />
             <div className="relative space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-[14px] font-medium tracking-tight text-foreground">{strategy.title}</h3>
                   <p className="mt-0.5 text-[11.5px] text-muted-foreground">{strategy.description}</p>
                 </div>
-                <Badge variant="secondary" className={strategy.badgeClassName}>
-                  {strategy.badgeLabel}
+                <Badge variant="secondary" className={TONE_STYLES[strategy.tone].badgeClassName}>
+                  {strategy.apyRangeLabel}
                 </Badge>
               </div>
 
@@ -131,32 +92,17 @@ export function PortfolioStrategies() {
 
                       <div className="flex items-center justify-between text-[11.5px]">
                         <span className="text-muted-foreground">Portfolio alloc.</span>
-                        <span className="font-data font-medium tabular-nums text-accent-primary">
-                          $
-                          {getDeterministicAmount(
-                            `${pool.name}-${strategy.title}-portfolio`,
-                            strategy.title.includes("Conservative")
-                              ? 5000
-                              : strategy.title.includes("Moderate")
-                                ? 15000
-                                : 1000,
-                            strategy.title.includes("Conservative")
-                              ? 20000
-                              : strategy.title.includes("Moderate")
-                                ? 40000
-                                : 6000,
-                          ).toLocaleString()}
-                        </span>
+                        <span className="font-data font-medium tabular-nums text-accent-primary">${pool.allocationUsd.toLocaleString()}</span>
                       </div>
 
                       <div className="flex items-center justify-between text-[11.5px]">
                         <span className="text-muted-foreground">APY</span>
-                        <span className="font-data font-medium tabular-nums text-foreground">{pool.apy}</span>
+                        <span className="font-data font-medium tabular-nums text-foreground">{pool.apyPct.toFixed(1)}%</span>
                       </div>
 
                       <div className="flex items-center justify-between text-[11.5px]">
                         <span className="text-muted-foreground">TVL</span>
-                        <span className="font-data tabular-nums text-foreground">{pool.tvl}</span>
+                        <span className="font-data tabular-nums text-foreground">${pool.tvlUsd.toLocaleString()}</span>
                       </div>
 
                       <div className="-mx-1 h-[56px]">

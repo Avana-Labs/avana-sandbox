@@ -52,14 +52,15 @@ export function StickyDetailHeader({
     return () => obs.disconnect()
   }, [heroRef])
 
+  if (!visible) return null
+
   return (
     <div
       role="banner"
-      aria-hidden={!visible}
       data-visible={visible}
       className={cn(
-        "pointer-events-none fixed left-0 right-0 top-0 z-30 border-b border-border bg-background/90 backdrop-blur-md transition-all duration-200",
-        visible ? "translate-y-0 opacity-100 pointer-events-auto" : "-translate-y-1 opacity-0",
+        "pointer-events-auto fixed left-0 right-0 top-0 z-30 border-b border-border bg-background/90 backdrop-blur-md transition-all duration-200",
+        "translate-y-0 opacity-100",
         className,
       )}
     >

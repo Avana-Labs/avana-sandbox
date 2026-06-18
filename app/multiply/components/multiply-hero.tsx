@@ -19,7 +19,7 @@ type Market = {
 const HERO_STATS = [
   { label: "24h Volume", tone: "emerald" },
   { label: "Average Funding", tone: "emerald" },
-  { label: "Average Max Lev", tone: "violet" },
+  { label: "Average Max Lev", tone: "amber" },
 ] as const
 
 function formatUsd(value: number) {
@@ -28,7 +28,7 @@ function formatUsd(value: number) {
   return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
 }
 
-export function MultiplyHero({ markets }: { markets: Market[] }) {
+export function MultiplyHero({ markets }: { markets: ReadonlyArray<Market> }) {
   const { showDollarAmounts } = useDisplayPreferences()
 
   const metrics = useMemo(() => {
@@ -77,7 +77,7 @@ export function MultiplyHero({ markets }: { markets: Market[] }) {
                 className={cn(
                   "mb-1 flex items-center gap-1.5 text-[11px] font-medium md:justify-end",
                   metric.tone === "emerald" && "text-[#6ca98b]",
-                  metric.tone === "violet" && "text-[#7d72cc]",
+                  metric.tone === "amber" && "text-[#b1835f]",
                   metric.tone === "amber" && "text-[#b1835f]",
                 )}
               >
@@ -85,7 +85,7 @@ export function MultiplyHero({ markets }: { markets: Market[] }) {
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
                     metric.tone === "emerald" && "bg-[#7ec39f]",
-                    metric.tone === "violet" && "bg-[#a092ef]",
+                    metric.tone === "amber" && "bg-[#c29f78]",
                     metric.tone === "amber" && "bg-[#c29f78]",
                   )}
                 />
