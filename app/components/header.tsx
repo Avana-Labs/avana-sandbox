@@ -17,7 +17,7 @@ import { BrandIcon, BrandLogo } from "./brand-logo"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
 import { MobileMenu } from "./mobile-menu"
-import { SearchCommand } from "./search-command"
+import { LazySearchCommand, LazySearchCommandIconOnly } from "./lazy-search-command"
 import { useTheme } from "./theme-provider"
 import { personalDesktopHeaderLinks } from "./site-nav"
 
@@ -238,7 +238,7 @@ export function Header() {
   const renderMobileActions = () => (
     <>
       <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">
-        <SearchCommand iconOnly />
+        <LazySearchCommandIconOnly />
       </span>
       <button
         type="button"
@@ -314,7 +314,7 @@ export function Header() {
             </div>
 
             <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4 xl:max-w-[410px]">
-              <SearchCommand />
+              <LazySearchCommand />
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
