@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Star } from "lucide-react"
 import {
   MULTIPLY_MARKET_ROWS,
   type MultiplyMarketRow as LendRow,
-} from "@/app/lib/multiply-sim"
+} from "@/app/lib/data/mock/shared/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -14,7 +14,7 @@ export {
   MULTIPLY_TOKEN_BORROW_APYS as TOKEN_BORROW_APYS,
   MULTIPLY_TOKEN_LOGOS as TOKEN_LOGOS,
   MULTIPLY_TOKEN_SUPPLY_APYS as TOKEN_SUPPLY_APYS,
-} from "@/app/lib/multiply-sim"
+} from "@/app/lib/data/mock/shared/multiply"
 
 export const LEND_ROWS: LendRow[] = MULTIPLY_MARKET_ROWS
 

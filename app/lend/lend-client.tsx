@@ -1,18 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { TOKENS, MARKETS } from "./components/data"
+import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { LendHero } from "./components/lend-hero"
 import { LendAssetSpokes } from "./components/lend-asset-spokes"
 import { HotMarkets } from "./components/hot-markets"
 import { LendModals } from "./components/lend-modals"
 
-export function LendClient() {
+export function LendClient({ pageData }: { pageData: LendPageData }) {
+  const { tokens, markets, featuredAssets, featuredSequence, assetGroups } = pageData
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     type: 'deposit' | 'withdraw' | 'success';
     actionType: 'deposit' | 'withdraw';
-    token: typeof TOKENS[number] | typeof MARKETS[number] | null;
+    token: typeof tokens[number] | typeof markets[number] | null;
     amount: string;
   }>({
     isOpen: false,
@@ -31,17 +32,19 @@ export function LendClient() {
       <main className="py-8">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
-            <LendHero />
+            <LendHero markets={markets} />
 
             <div className="mt-12 space-y-8">
-              <HotMarkets />
+              <HotMarkets assets={featuredAssets} sequence={featuredSequence} />
             </div>
 
-            <LendAssetSpokes />
+            <LendAssetSpokes groups={assetGroups} />
           </div>
         </div>
 
         <LendModals
+          tokens={tokens}
+          markets={markets}
           modalState={modalState}
           setModalState={setModalState}
           closeModal={closeModal} 

@@ -1,36 +1,30 @@
 import { mockPortfolioPageSource } from "@/app/lib/data/mock/wallet/portfolio/source"
+import { resolveDataSourceMode, unsupportedLiveSource } from "../source-mode"
 import { mapPortfolioPage } from "./map-portfolio-page"
+import type { PortfolioPageSource } from "./source"
 import type { FetchPortfolioPageInput, PortfolioPageData } from "./types"
 
-function wait(ms: number, signal?: AbortSignal) {
-  return new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(resolve, ms)
-
-    const abort = () => {
-      clearTimeout(timeout)
-      reject(new DOMException("Request aborted", "AbortError"))
-    }
-
-    if (signal?.aborted) {
-      abort()
-      return
-    }
-
-    signal?.addEventListener("abort", abort, { once: true })
-  })
+function getPortfolioPageSource(source?: PortfolioPageSource) {
+  if (source) return source
+  const mode = resolveDataSourceMode()
+  if (mode === "mock") return mockPortfolioPageSource
+  return unsupportedLiveSource("portfolio page")
 }
 
 export async function fetchPortfolioPage(
   input: FetchPortfolioPageInput,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; source?: PortfolioPageSource },
 ): Promise<PortfolioPageData> {
-  await wait(180, options?.signal)
-  const records = await mockPortfolioPageSource.getPortfolioPageRecords(input.walletProfileId)
+  if (options?.signal?.aborted) {
+    throw new DOMException("Request aborted", "AbortError")
+  }
+
+  const records = await getPortfolioPageSource(options?.source).getPortfolioPageRecords(input.walletProfileId)
   return mapPortfolioPage(records)
 }
 
 export function resolvePortfolioWalletProfileId() {
-  return mockPortfolioPageSource.getDefaultWalletProfileId()
+  return getPortfolioPageSource().getDefaultWalletProfileId()
 }
 
 export type { FetchPortfolioPageInput, PortfolioPageData, PortfolioTabKey } from "./types"

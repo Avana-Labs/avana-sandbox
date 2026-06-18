@@ -5,7 +5,7 @@ import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/component
 import { PrimaryCardButton } from "@/app/components/home/shared"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
-import { TOKENS, MARKETS } from "./data"
+import type { LendPageData } from "@/app/lib/data/providers/lend"
 
 type ModalStage = "entry" | TransactionFlowStage
 
@@ -13,18 +13,22 @@ type ModalState = {
   isOpen: boolean
   type: "deposit" | "withdraw" | "success"
   actionType: "deposit" | "withdraw"
-  token: (typeof TOKENS)[number] | (typeof MARKETS)[number] | null
+  token: LendPageData["tokens"][number] | LendPageData["markets"][number] | null
   amount: string
 }
 
 interface LendModalsProps {
+  tokens: LendPageData["tokens"]
+  markets: LendPageData["markets"]
   modalState: ModalState
   setModalState: React.Dispatch<React.SetStateAction<ModalState>>
   closeModal: () => void
 }
 
-export function LendModals({ modalState, setModalState, closeModal }: LendModalsProps) {
+export function LendModals({ tokens, markets, modalState, setModalState, closeModal }: LendModalsProps) {
   const [stage, setStage] = useState<ModalStage>("entry")
+  void tokens
+  void markets
 
   useEffect(() => {
     if (modalState.isOpen) {

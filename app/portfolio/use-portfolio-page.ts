@@ -17,6 +17,15 @@ export function usePortfolioPage(input: FetchPortfolioPageInput, initialData?: P
   })
 
   React.useEffect(() => {
+    if (initialData?.walletProfile.id === input.walletProfileId) {
+      setState({
+        data: initialData,
+        error: null,
+        isLoading: false,
+      })
+      return
+    }
+
     const controller = new AbortController()
 
     setState((current) => ({

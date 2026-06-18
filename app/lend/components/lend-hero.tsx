@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { MARKETS } from "./data"
+import type { LendPageData } from "@/app/lib/data/providers/lend"
 
 const LEND_METRICS = [
   { label: "Average APY", tone: "emerald" },
@@ -17,11 +17,11 @@ function formatMarketUsd(value: number) {
   return `$${value.toFixed(2)}`
 }
 
-export function LendHero() {
+export function LendHero({ markets }: { markets: LendPageData["markets"] }) {
   const { showDollarAmounts } = useDisplayPreferences()
 
   const metrics = useMemo(() => {
-    const activeMarkets = MARKETS.filter((market) => !market.soon && market.tvl !== "—")
+    const activeMarkets = markets.filter((market) => !market.soon && market.tvl !== "—")
     const marketValues = activeMarkets.map((market) => ({
       ...market,
       tvlUsd: Number.parseFloat(market.tvl.replace(/[$,M]/g, "")) * 1_000_000,
@@ -47,7 +47,7 @@ export function LendHero() {
       activeMarkets: activeMarkets.length,
       weightedChange24h,
     }
-  }, [])
+  }, [markets])
 
   return (
     <section className="mb-4 px-1 md:px-2">
