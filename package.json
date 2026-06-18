@@ -14,6 +14,7 @@
     "dev:clean": "npm run clean && npm run dev",
     "lint": "eslint .",
     "start": "node scripts/run-next.mjs start",
+    "lighthouse:budgets": "node scripts/lighthouse-budgets.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
