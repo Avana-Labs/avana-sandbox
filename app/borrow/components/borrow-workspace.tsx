@@ -10,7 +10,7 @@ import {
   type BorrowableAsset,
   type HomeCollateralPool,
 } from "@/app/lib/data/borrow-domain"
-import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
+import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { PoolsList, PoolsTable } from "./pools-table"
@@ -72,7 +72,7 @@ function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
 }
 
 export type BorrowWorkspaceProps = {
-  pageData: BorrowPageData
+  pageData: BorrowWorkspaceData
   onTabChange?: (tab: BorrowTabId) => void
 }
 
