@@ -1,13 +1,13 @@
 import type { Metadata } from "next"
 import { fetchPortfolioPage, resolvePortfolioWalletProfileId } from "@/app/lib/data/providers/portfolio"
-import { PortfolioDashboard } from "./portfolio-dashboard"
+import { PortfolioDashboard } from "../portfolio/portfolio-dashboard"
 
 export const metadata: Metadata = {
-  title: "Portfolio",
+  title: "Dashboard",
   description: "Track portfolio balance, positions, strategies, and recent activity.",
 }
 
-export default async function PortfolioPage() {
+export default async function DashboardPage() {
   const walletProfileId = resolvePortfolioWalletProfileId()
   const initialData = await fetchPortfolioPage({ walletProfileId })
 

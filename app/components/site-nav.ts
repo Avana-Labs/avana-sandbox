@@ -98,7 +98,7 @@ export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
   { href: "/lend", label: "Lend" },
   { href: "/borrow", label: "Borrow" },
   { href: "/multiply", label: "Multiply" },
-  { href: "/portfolio", label: "Portfolio", icon: Wallet24Regular },
+  { href: "/dashboard", label: "Dashboard", icon: Wallet24Regular },
   { href: "/rewards", label: "Rewards", icon: Reward24Regular },
 ]
 
