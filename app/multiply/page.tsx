@@ -3,7 +3,7 @@ import { MultiplyClient } from "./multiply-client"
 import { fetchMultiplyPage } from "@/app/lib/data/providers/multiply"
 
 export const metadata: Metadata = {
-  title: "Multiply | Avana",
+  title: "Multiply",
   description: "Multiply LP-backed positions.",
 }
 
