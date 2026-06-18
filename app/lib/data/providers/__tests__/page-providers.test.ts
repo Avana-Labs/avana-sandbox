@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { createDataSourceAdapter } from "@/app/lib/data/core/source-runtime"
 import { fetchBorrowPage } from "@/app/lib/data/providers/borrow"
 import type { BorrowPageData, BorrowPageSource } from "@/app/lib/data/providers/borrow"
 import { fetchLendPage } from "@/app/lib/data/providers/lend"
@@ -22,26 +23,29 @@ describe("page providers", () => {
 
   it("accepts a borrow source override", async () => {
     const source: BorrowPageSource = {
+      adapter: createDataSourceAdapter({ id: "borrow-test", label: "Borrow test source", mode: "mock" }),
       async getBorrowPageData() {
         return {
-          protocols: { Custom: [{ name: "ETH-USDC", apy: 5, tvl: 1000, volume24h: 200, chain: "Ethereum", isUp: true, change: 1.2 }] },
-          allPools: [{ name: "ETH-USDC", apy: 5, tvl: 1000, volume24h: 200, chain: "Ethereum", isUp: true, change: 1.2, protocol: "Custom" }],
-          protocolLogos: { Custom: "https://example.com/logo.png" },
-          itemsPerPage: 12,
-          poolCatalog: [
-            {
-              id: "custom-eth-usdc",
-              name: "ETH / USDC",
-              visuals: [
-                { symbol: "ETH", iconUrl: "https://example.com/eth.png" },
-                { symbol: "USDC", iconUrl: "https://example.com/usdc.png" },
-              ],
-            },
-          ] as unknown as BorrowPageData["poolCatalog"],
-          pendingRows: [{ id: "pending-1" }] as unknown as BorrowPageData["pendingRows"],
-          dexes: [{ id: "custom", label: "Custom" }] as unknown as BorrowPageData["dexes"],
-          collateralPools: [{ id: "pool-1", name: "ETH / USDC" }] as unknown as BorrowPageData["collateralPools"],
-          initialDebts: { "pool-1": 0 },
+          data: {
+            protocols: { Custom: [{ name: "ETH-USDC", apy: 5, tvl: 1000, volume24h: 200, chain: "Ethereum", isUp: true, change: 1.2 }] },
+            allPools: [{ name: "ETH-USDC", apy: 5, tvl: 1000, volume24h: 200, chain: "Ethereum", isUp: true, change: 1.2, protocol: "Custom" }],
+            protocolLogos: { Custom: "https://example.com/logo.png" },
+            itemsPerPage: 12,
+            poolCatalog: [
+              {
+                id: "custom-eth-usdc",
+                name: "ETH / USDC",
+                visuals: [
+                  { symbol: "ETH", iconUrl: "https://example.com/eth.png" },
+                  { symbol: "USDC", iconUrl: "https://example.com/usdc.png" },
+                ],
+              },
+            ] as unknown as BorrowPageData["poolCatalog"],
+            pendingRows: [{ id: "pending-1" }] as unknown as BorrowPageData["pendingRows"],
+            dexes: [{ id: "custom", label: "Custom" }] as unknown as BorrowPageData["dexes"],
+            collateralPools: [{ id: "pool-1", name: "ETH / USDC" }] as unknown as BorrowPageData["collateralPools"],
+            initialDebts: { "pool-1": 0 },
+          },
         }
       },
     }
@@ -60,26 +64,29 @@ describe("page providers", () => {
 
   it("accepts a lend source override", async () => {
     const source: LendPageSource = {
+      adapter: createDataSourceAdapter({ id: "lend-test", label: "Lend test source", mode: "mock" }),
       async getLendPageData() {
         return {
-          tokens: [{ symbol: "USDC", name: "USD Coin", balance: 1, price: 1, color: "blue", bg: "bg", apy: 5, earned: 1, daily: 1, utilization: 10 }] as unknown as LendPageData["tokens"],
-          markets: [{ symbol: "DAI", name: "Dai", apy: 4, apyChange24h: 0.2, tvl: "$1.0M", utilization: 50, type: "Liquid", protocol: "Maker", color: "orange", bg: "bg", soon: false, event: null }] as unknown as LendPageData["markets"],
-          activity: [{ type: "deposit", asset: "USDC", amount: "+10", date: "Today" }] as unknown as LendPageData["activity"],
-          chartSeries: [{ time: "00:00", value: 1 }],
-          featuredAssets: {
-            usdc: {
-              id: "usdc",
-              symbol: "USDC",
-              displayName: "USD Coin",
-              eyebrow: "Prime",
-              apy: 3.2,
-              tone: "blue",
-              iconUrl: "https://example.com/usdc.png",
-              path: "M0,0L10,10",
-            },
-          } as unknown as LendPageData["featuredAssets"],
-          featuredSequence: ["usdc"] as unknown as LendPageData["featuredSequence"],
-          assetGroups: [{ title: "Stablecoins", rows: [{ symbol: "USDC", name: "USD Coin", apy: "3.2%" }] }] as unknown as LendPageData["assetGroups"],
+          data: {
+            tokens: [{ symbol: "USDC", name: "USD Coin", balance: 1, price: 1, color: "blue", bg: "bg", apy: 5, earned: 1, daily: 1, utilization: 10 }] as unknown as LendPageData["tokens"],
+            markets: [{ symbol: "DAI", name: "Dai", apy: 4, apyChange24h: 0.2, tvl: "$1.0M", utilization: 50, type: "Liquid", protocol: "Maker", color: "orange", bg: "bg", soon: false, event: null }] as unknown as LendPageData["markets"],
+            activity: [{ type: "deposit", asset: "USDC", amount: "+10", date: "Today" }] as unknown as LendPageData["activity"],
+            chartSeries: [{ time: "00:00", value: 1 }],
+            featuredAssets: {
+              usdc: {
+                id: "usdc",
+                symbol: "USDC",
+                displayName: "USD Coin",
+                eyebrow: "Prime",
+                apy: 3.2,
+                tone: "blue",
+                iconUrl: "https://example.com/usdc.png",
+                path: "M0,0L10,10",
+              },
+            } as unknown as LendPageData["featuredAssets"],
+            featuredSequence: ["usdc"] as unknown as LendPageData["featuredSequence"],
+            assetGroups: [{ title: "Stablecoins", rows: [{ symbol: "USDC", name: "USD Coin", apy: "3.2%" }] }] as unknown as LendPageData["assetGroups"],
+          },
         }
       },
     }
@@ -98,14 +105,17 @@ describe("page providers", () => {
 
   it("accepts a multiply source override", async () => {
     const source: MultiplyPageSource = {
+      adapter: createDataSourceAdapter({ id: "multiply-test", label: "Multiply test source", mode: "mock" }),
       async getMultiplyPageData() {
         return {
-          markets: [{ symbol: "ETH", name: "Ethereum", price: 3000, funding: 0.01, change: 1, volume: 1000, maxLeverage: 10, longOi: 60, shortOi: 40 }] as unknown as MultiplyPageData["markets"],
-          lendRows: [{ href: "/multiply/markets/eth-usdc", protocol: "ETH", protocolLogo: "https://example.com/eth.png", asset: "USDC", kind: "Loop", apy: "7.50%", apyLabel: "Custom", collateralFactor: 0.8, liquidationThreshold: 0.85 }] as unknown as MultiplyPageData["lendRows"],
-          pageSize: 24,
-          tokenBorrowApys: { USDC: "5.00%" } as unknown as MultiplyPageData["tokenBorrowApys"],
-          tokenLogos: { ETH: "https://example.com/eth.png" } as unknown as MultiplyPageData["tokenLogos"],
-          tokenSupplyApys: { ETH: "3.50%" } as unknown as MultiplyPageData["tokenSupplyApys"],
+          data: {
+            markets: [{ symbol: "ETH", name: "Ethereum", price: 3000, funding: 0.01, change: 1, volume: 1000, maxLeverage: 10, longOi: 60, shortOi: 40 }] as unknown as MultiplyPageData["markets"],
+            lendRows: [{ href: "/multiply/markets/eth-usdc", protocol: "ETH", protocolLogo: "https://example.com/eth.png", asset: "USDC", kind: "Loop", apy: "7.50%", apyLabel: "Custom", collateralFactor: 0.8, liquidationThreshold: 0.85 }] as unknown as MultiplyPageData["lendRows"],
+            pageSize: 24,
+            tokenBorrowApys: { USDC: "5.00%" } as unknown as MultiplyPageData["tokenBorrowApys"],
+            tokenLogos: { ETH: "https://example.com/eth.png" } as unknown as MultiplyPageData["tokenLogos"],
+            tokenSupplyApys: { ETH: "3.50%" } as unknown as MultiplyPageData["tokenSupplyApys"],
+          },
         }
       },
     }
@@ -124,38 +134,41 @@ describe("page providers", () => {
 
   it("accepts a rewards source override", async () => {
     const source: RewardsPageSource = {
+      adapter: createDataSourceAdapter({ id: "rewards-test", label: "Rewards test source", mode: "mock" }),
       async getRewardsPageData(input) {
         return {
-          walletProfileId: input.walletProfileId,
-          totalPools: 10,
-          completedPools: 3,
-          progressPercentage: 30,
-          balanceTotal: 1200,
-          rewardPools: [
-            {
-              id: "reward-1",
-              href: "/borrow/pool/custom",
-              title: "Custom Pool",
-              subtitle: "0.30% fee",
-              value: "$1.2M",
-              delta: "7.0% APY",
-              deltaClassName: "text-emerald-500",
-            },
-          ] as RewardsPageData["rewardPools"],
-          promoTabs: [{ id: "new-users", label: "New users" }] as unknown as RewardsPageData["promoTabs"],
-          questsByTab: {
-            "new-users": [
+          data: {
+            walletProfileId: input.walletProfileId,
+            totalPools: 10,
+            completedPools: 3,
+            progressPercentage: 30,
+            balanceTotal: 1200,
+            rewardPools: [
               {
-                id: "quest-1",
-                title: "Connect wallet",
-                description: "Start profile",
-                reward: "25 AVA",
-                cta: "Connect",
-                category: "Setup",
-                iconId: "wallet",
+                id: "reward-1",
+                href: "/borrow/pool/custom",
+                title: "Custom Pool",
+                subtitle: "0.30% fee",
+                value: "$1.2M",
+                delta: "7.0% APY",
+                deltaClassName: "text-emerald-500",
               },
-            ],
-          } as unknown as RewardsPageData["questsByTab"],
+            ] as RewardsPageData["rewardPools"],
+            promoTabs: [{ id: "new-users", label: "New users" }] as unknown as RewardsPageData["promoTabs"],
+            questsByTab: {
+              "new-users": [
+                {
+                  id: "quest-1",
+                  title: "Connect wallet",
+                  description: "Start profile",
+                  reward: "25 AVA",
+                  cta: "Connect",
+                  category: "Setup",
+                  iconId: "wallet",
+                },
+              ],
+            } as unknown as RewardsPageData["questsByTab"],
+          },
         }
       },
     }
@@ -174,6 +187,7 @@ describe("page providers", () => {
 
   it("accepts a portfolio source override", async () => {
     const source: PortfolioPageSource = {
+      adapter: createDataSourceAdapter({ id: "portfolio-test", label: "Portfolio test source", mode: "mock" }),
       getDefaultWalletProfileId() {
         return "wallet-override"
       },
@@ -181,10 +195,13 @@ describe("page providers", () => {
         const records = await mockPortfolioPageSource.getPortfolioPageRecords(resolvePortfolioWalletProfileId())
         return {
           ...records,
-          walletProfile: {
-            ...records.walletProfile,
-            id: walletProfileId,
-            displayName: "Override wallet",
+          data: {
+            ...records.data,
+            walletProfile: {
+              ...records.data.walletProfile,
+              id: walletProfileId,
+              displayName: "Override wallet",
+            },
           },
         }
       },

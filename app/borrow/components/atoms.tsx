@@ -3,7 +3,7 @@
 import { memo, useState, type ButtonHTMLAttributes, type ReactNode } from "react"
 import Image from "next/image"
 import { EnhancedGraph } from "@/app/components/enhanced-graph"
-import type { BorrowAssetVisual, BorrowSpoke, DexChip } from "@/app/lib/borrow-sim"
+import type { BorrowAssetVisual, BorrowSpoke, DexChip } from "@/app/lib/data/borrow-domain"
 import { cn } from "@/lib/utils"
 
 type TokenBubbleSize = "xs" | "sm" | "md" | "lg" | "xl"
