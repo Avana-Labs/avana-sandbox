@@ -149,7 +149,7 @@ function buildActions({
 
 function InfoTip({ text }: { text: string }) {
   return (
-    <span className="inline-flex cursor-help text-muted-foreground/60" title={text} aria-label={text}>
+    <span role="img" className="inline-flex cursor-help text-muted-foreground/60" title={text} aria-label={text}>
       <Info className="h-3.5 w-3.5" />
     </span>
   )
