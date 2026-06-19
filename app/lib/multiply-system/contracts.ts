@@ -73,10 +73,19 @@ export type MultiplySandboxActionResult = {
   state: MultiplySystemState
 }
 
+export type MultiplyRiskSnapshot = {
+  marketId: string
+  healthFactor: number | "infinity"
+  ltv: number
+  multiplier: number
+  capturedAt: number
+}
+
 export type MultiplyWalletReadSnapshot = {
   walletId: string
   transactionHistory: MultiplyTransactionHistoryItem[]
   metrics: MultiplyMetricsSnapshot
+  riskSnapshots: MultiplyRiskSnapshot[]
 }
 
 export type MultiplyReadAdapter = {

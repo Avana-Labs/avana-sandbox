@@ -1,5 +1,8 @@
 import type { MultiplyAction, MultiplySystemState } from "@/app/lib/multiply-engine"
 import { buildMultiplyCatalogMarketsRecord } from "./catalog"
+import type { MultiplyRiskSnapshot } from "./contracts"
+
+export type { MultiplyRiskSnapshot }
 
 export function buildMockMultiplySystemState(_walletId = "demo-wallet"): MultiplySystemState {
   return {
@@ -39,6 +42,16 @@ export function buildMockMultiplySystemStateWithSeedPosition(walletId = "demo-wa
   }
 
   return state
+}
+
+export function buildMockMultiplyRiskSnapshots(state: MultiplySystemState): MultiplyRiskSnapshot[] {
+  return Object.values(state.positions).map((position) => ({
+    marketId: position.marketId,
+    healthFactor: position.healthFactor,
+    ltv: position.ltv,
+    multiplier: position.multiplier,
+    capturedAt: position.lastUpdatedAt,
+  }))
 }
 
 export function getMultiplyMarketIds() {
