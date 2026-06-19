@@ -39,7 +39,7 @@ import { buildMockBorrowSystemState, HOME_POOL_TO_MARKET_ID } from "@/app/lib/bo
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import { selectBorrowMarketSummaries } from "@/app/lib/borrow-system/selectors"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
-import { normalizeBorrowAssetRouteId } from "@/app/lib/borrow-routes"
+import { normalizeBorrowAssetRouteId, normalizeBorrowMarketRouteId } from "@/app/lib/borrow-routes"
 import type { AssetDetail, PoolDetail } from "./types"
 
 const detailWalletId = getDefaultWalletProfileId()
@@ -91,7 +91,7 @@ export {
   riskLevelLabel,
   riskScoreFromBps,
 } from "./allocation"
-export { borrowAssetDetailPath, normalizeBorrowAssetRouteId } from "@/app/lib/borrow-routes"
+export { borrowAssetDetailPath, borrowMarketDetailPath, normalizeBorrowAssetRouteId, normalizeBorrowMarketRouteId } from "@/app/lib/borrow-routes"
 export { HOME_POOL_TO_MARKET_ID as HOME_POOL_ID_MAP } from "@/app/lib/borrow-system/mock"
 
 /**
@@ -103,7 +103,7 @@ export { HOME_POOL_TO_MARKET_ID as HOME_POOL_ID_MAP } from "@/app/lib/borrow-sys
  * - `null`/unknown → `null` (caller should render `notFound()`).
  */
 export function getPoolDetail(id: string): PoolDetail | null {
-  return resolvePoolDetailFromState(detailState, detailWalletId, id)
+  return resolvePoolDetailFromState(detailState, detailWalletId, normalizeBorrowMarketRouteId(id))
 }
 
 /** Returns every (id, detail) that can be rendered. Used for warm-up / tests. */
