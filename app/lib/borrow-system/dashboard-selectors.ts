@@ -1,7 +1,6 @@
 import { calculateSpokeCreditMetrics, currentDebtValueUsd6, debtInterestOwedUsd6, formatFixed, totalDebtValueUsd6, type BorrowSpokeId, type BorrowSystemState } from "@/app/lib/credit-engine"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
-import type { DebtRowContext } from "@/app/borrow/components/debts-table"
-import type { SupplyRowContext } from "@/app/borrow/components/supplies-table"
+import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { selectBorrowCollateralPools, selectInitialBorrowDebts, selectWalletBorrowSnapshot } from "@/app/lib/borrow-system/selectors"
 
 function fixedToNumber(value: bigint, decimals: number) {
