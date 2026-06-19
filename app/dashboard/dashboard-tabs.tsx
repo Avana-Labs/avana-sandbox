@@ -1,39 +1,39 @@
 "use client"
 
-import { PortfolioHero } from "./hero/portfolio-hero"
 import type { PortfolioPageData, PortfolioTabKey } from "@/app/lib/data/providers/portfolio"
-import type { BorrowSnapshot } from "./borrow-hero-state"
+import { DashboardHero } from "./dashboard-hero"
+import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { cn } from "@/lib/utils"
 
-export type PortfolioTab = PortfolioTabKey
+export type DashboardTab = PortfolioTabKey
 
 type TabConfig = {
-  value: PortfolioTab
+  value: DashboardTab
   label: string
 }
 
-const PORTFOLIO_TABS: TabConfig[] = [
+const DASHBOARD_TABS: TabConfig[] = [
   { value: "lending", label: "Lend" },
   { value: "overview", label: "Borrow" },
   { value: "looping", label: "Multiply" },
   { value: "activity", label: "Activity" },
 ]
 
-type PortfolioTabsProps = {
-  activeTab: PortfolioTab
-  onTabChange: (tab: PortfolioTab) => void
+type DashboardTabsProps = {
+  activeTab: DashboardTab
+  onTabChange: (tab: DashboardTab) => void
   pageData: PortfolioPageData
   borrowSnapshot: BorrowSnapshot
   multiplySnapshot: BorrowSnapshot
 }
 
-export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot, multiplySnapshot }: PortfolioTabsProps) {
+export function DashboardTabs({ activeTab, onTabChange, pageData, borrowSnapshot, multiplySnapshot }: DashboardTabsProps) {
   const activeHero = pageData.heroByTab[activeTab]
 
   const tabBar = (
     <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <div role="tablist" aria-label="Portfolio views" className="flex h-auto w-full justify-between gap-2 border-0 bg-transparent p-0 sm:inline-flex sm:w-max sm:min-w-max sm:justify-start sm:gap-9">
-        {PORTFOLIO_TABS.map((tab) => (
+        {DASHBOARD_TABS.map((tab) => (
           <button
             key={tab.value}
             type="button"
@@ -56,7 +56,7 @@ export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot
 
   return (
     <section className="mb-6 sm:mb-8">
-      <PortfolioHero
+      <DashboardHero
         tab={activeTab}
         tabs={tabBar}
         headlineValue={activeHero.headlineValue}

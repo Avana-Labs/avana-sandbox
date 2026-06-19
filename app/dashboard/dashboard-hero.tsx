@@ -24,10 +24,10 @@ import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/t
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
 import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/supplies-table"
-import { PortfolioHeroActions } from "./portfolio-hero-actions"
-import { PortfolioHeroHeader } from "./portfolio-hero-header"
-import type { BorrowSnapshot } from "../borrow-hero-state"
-import type { PortfolioHeroAction } from "./types"
+import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
+import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
+import { PortfolioHeroHeader } from "@/app/portfolio/hero/portfolio-hero-header"
+import type { PortfolioHeroAction } from "@/app/portfolio/hero/types"
 
 const HeroChartSection = dynamic(
   () => import("@/app/components/charts/hero-chart-section").then((mod) => mod.HeroChartSection),
@@ -47,7 +47,7 @@ const RANGE_PERIOD_WORD: Record<ChartRangeOption, string> = {
   All: "all time",
 }
 
-type PortfolioHeroProps = {
+type DashboardHeroProps = {
   tab: "overview" | "lending" | "looping" | "activity"
   tabs?: ReactNode
   headlineValue?: string
@@ -72,7 +72,7 @@ type HeroUiConfig = {
   statTwoHelpText?: string
 }
 
-const HERO_UI_CONFIG: Record<PortfolioHeroProps["tab"], HeroUiConfig> = {
+const HERO_UI_CONFIG: Record<DashboardHeroProps["tab"], HeroUiConfig> = {
   overview: {
     headlineMeta: "Approved credit",
   },
@@ -168,7 +168,7 @@ function StatCard({ label, value, helpText }: { label: string; value: string; he
   )
 }
 
-export function PortfolioHero({
+export function DashboardHero({
   tab,
   tabs,
   headlineValue,
@@ -178,7 +178,7 @@ export function PortfolioHero({
   statTwoValue = "+$12.46",
   borrowSnapshot,
   multiplySnapshot,
-}: PortfolioHeroProps) {
+}: DashboardHeroProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const { showDollarAmounts } = useDisplayPreferences()
