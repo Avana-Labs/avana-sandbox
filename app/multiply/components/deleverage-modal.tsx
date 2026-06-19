@@ -2,9 +2,8 @@
 
 import * as React from "react"
 import type { MultiplyMarketRecord, MultiplyPosition } from "@/app/lib/multiply-engine"
-import { buildMultiplySessionSeed, getMultiplySessionWalletId } from "@/app/lib/multiply-system/demo-session"
 import { useMultiplyActionBox } from "@/app/lib/multiply-system/use-multiply-action-box"
-import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
+import type { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { TransactionFlowPanel } from "@/app/components/transaction-flow"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -19,22 +18,32 @@ function formatMultiplier(value: number) {
   return `${value.toFixed(2)}x`
 }
 
+type MultiplySession = ReturnType<typeof useMultiplySession>
+
 export function DeleverageModal({
   open,
   onOpenChange,
   market,
   position,
+  session,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   market: MultiplyMarketRecord
   position: MultiplyPosition
+  session: MultiplySession
 }) {
-  const walletId = React.useMemo(() => getMultiplySessionWalletId(), [])
-  const sessionSeed = React.useMemo(() => buildMultiplySessionSeed(walletId), [walletId])
-  const session = useMultiplySession({ walletId, sessionSeed })
+  const walletId = session.walletId
   const actionBox = useMultiplyActionBox(session)
   const [targetMultiplier, setTargetMultiplier] = React.useState(Math.max(1, position.multiplier - 0.5))
+
+  React.useEffect(() => {
+    if (!open) {
+      actionBox.reset()
+      return
+    }
+    setTargetMultiplier(Math.max(1, position.multiplier - 0.5))
+  }, [open, position.id, position.multiplier])
 
   const handleReview = React.useCallback(async () => {
     await actionBox.prepareAction({
