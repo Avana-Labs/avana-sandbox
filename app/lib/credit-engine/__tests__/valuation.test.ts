@@ -71,4 +71,54 @@ describe("borrow valuation helpers", () => {
 
     expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(parseFixed("5176.16", 6))
   })
+
+  it("values multiple LP collateral positions independently and sums wallet total", () => {
+    const state = makeExampleBorrowSystemState()
+    const account = state.accounts["wallet-1"]!
+    const uniPosition = account.collateralPositions.find((position) => position.marketId === "uni-v3-bluechip-weth-usdc")!
+    const curvePosition = account.collateralPositions.find((position) => position.marketId === "curve-eth-usdt")!
+    const uniMarket = state.markets["uni-v3-bluechip-weth-usdc"]!
+    const curveMarket = state.markets["curve-eth-usdt"]!
+
+    const expected =
+      currentCollateralValueUsd6(uniPosition, uniMarket) + currentCollateralValueUsd6(curvePosition, curveMarket)
+
+    expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(expected)
+    expect(expected).toBe(parseFixed("20399.225", 6))
+  })
+
+  it("ignores disabled collateral positions when calculating wallet collateral value", () => {
+    const state = makeExampleBorrowSystemState()
+    state.accounts["wallet-1"]!.collateralPositions = state.accounts["wallet-1"]!.collateralPositions.map((position, index) => ({
+      ...position,
+      collateralEnabled: index === 0,
+    }))
+
+    const enabledPosition = state.accounts["wallet-1"]!.collateralPositions[0]!
+    const enabledMarket = state.markets[enabledPosition.marketId]!
+
+    expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(currentCollateralValueUsd6(enabledPosition, enabledMarket))
+  })
+
+  it("returns zero collateral value when all LP prices are zero", () => {
+    const state = makeExampleBorrowSystemState()
+    for (const market of Object.values(state.markets)) {
+      market.snapshot.lpTokenPriceUsd6 = 0n
+    }
+
+    expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(0n)
+  })
+
+  it("handles missing market records without throwing", () => {
+    const state = makeExampleBorrowSystemState()
+    state.accounts["wallet-1"]!.collateralPositions.push({
+      id: "wallet-1:missing-market",
+      marketId: "missing-market",
+      collateralShares: parseFixed("10", 18),
+      principalTokenAmount: parseFixed("10", 18),
+      collateralEnabled: true,
+    })
+
+    expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(parseFixed("20399.225", 6))
+  })
 })
