@@ -152,6 +152,45 @@ export type BorrowAccountState = {
   debtPositions: UserDebtPosition[]
 }
 
+export type BorrowAction =
+  | {
+      type: "borrow"
+      walletId: string
+      marketId: string
+      assetId: string
+      amountUsd6: bigint
+      at?: number
+    }
+  | {
+      type: "repay"
+      walletId: string
+      debtPositionId: string
+      amountUsd6: bigint
+      at?: number
+    }
+  | {
+      type: "supplyCollateral"
+      walletId: string
+      marketId: string
+      amountUsd6: bigint
+      at?: number
+    }
+  | {
+      type: "removeCollateral"
+      walletId: string
+      positionId: string
+      amountUsd6?: bigint
+      percentBps?: number
+      at?: number
+    }
+  | {
+      type: "liquidate"
+      walletId: string
+      positionId: string
+      repayAmountUsd6: bigint
+      at?: number
+    }
+
 export type BorrowSystemState = {
   now: number
   markets: Record<string, BorrowMarketRecord>
