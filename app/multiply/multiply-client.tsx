@@ -38,6 +38,7 @@ export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
         <MultiplyHero markets={pageData.markets} />
         <ExploreLoopsMarketsTable
           rows={pageData.lendRows}
+          trendingSnapshots={pageData.trendingSnapshots}
           pageSize={pageData.pageSize}
           tokenBorrowApys={pageData.tokenBorrowApys}
           tokenLogos={pageData.tokenLogos}

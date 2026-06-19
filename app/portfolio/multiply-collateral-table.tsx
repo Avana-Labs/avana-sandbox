@@ -5,11 +5,22 @@ import Link from "next/link"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 function formatUsd(value: number) {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
   if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`
   return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+}
+
+function formatPct(value: number) {
+  return `${value.toFixed(2)}%`
+}
+
+function statusClass(status: PortfolioMultiplyCollateral["status"]) {
+  return status === "open"
+    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+    : "border-slate-500/20 bg-slate-500/10 text-slate-600 dark:text-slate-300"
 }
 
 export function MultiplyCollateralTable({
@@ -29,22 +40,26 @@ export function MultiplyCollateralTable({
 
       <div className="rounded-[18px] bg-white dark:bg-slate-950">
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
+          <table className="w-full min-w-[1180px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
             <colgroup>
-              <col className="w-[4%]" />
-              <col className="w-[22%]" />
-              <col className="w-[18%]" />
-              <col className="w-[14%]" />
-              <col className="w-[14%]" />
-              <col className="w-[14%]" />
-              <col className="w-[14%]" />
+              <col className="w-[3%]" />
+              <col className="w-[16%]" />
+              <col className="w-[10%]" />
+              <col className="w-[8%]" />
+              <col className="w-[9%]" />
+              <col className="w-[8%]" />
+              <col className="w-[9%]" />
+              <col className="w-[9%]" />
+              <col className="w-[8%]" />
+              <col className="w-[8%]" />
+              <col className="w-[12%]" />
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
                 <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
                   #
                 </th>
-                <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
                   Market
                 </th>
                 <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
@@ -54,10 +69,22 @@ export function MultiplyCollateralTable({
                   Multiplier
                 </th>
                 <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  Debt
+                </th>
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  LTV
+                </th>
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
                   Health
                 </th>
                 <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
-                  Equity
+                  Liq. price
+                </th>
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  Net APY
+                </th>
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  Status
                 </th>
                 <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
                   Actions
@@ -70,7 +97,7 @@ export function MultiplyCollateralTable({
                   <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
                     {index + 1}
                   </td>
-                  <td className="py-3 pl-6 pr-4">
+                  <td className="py-3 pl-4 pr-4">
                     <div className="flex items-center gap-2.5">
                       <TokenIcon symbol={row.collateralToken} size="lg" />
                       <span className="min-w-0">
@@ -89,16 +116,35 @@ export function MultiplyCollateralTable({
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
                     {row.multiplier.toFixed(2)}x
                   </td>
+                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
+                    {formatUsd(row.debtUsd)}
+                  </td>
+                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
+                    {formatPct(row.ltvPct)}
+                  </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-emerald-600 dark:text-emerald-400">
                     {row.healthFactor.toFixed(2)}
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
-                    {formatUsd(row.borrowPowerUsd)}
+                    {row.liquidationPriceUsd ? formatUsd(row.liquidationPriceUsd) : "—"}
+                  </td>
+                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
+                    {formatPct(row.netApyPct)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full border px-2 py-0.5 text-[10.5px] font-medium capitalize",
+                        statusClass(row.status),
+                      )}
+                    >
+                      {row.status}
+                    </span>
                   </td>
                   <td className="px-4 py-3 pr-6">
                     <div className="flex justify-end gap-2">
                       <Button asChild variant="secondary" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]">
-                        <Link href={`/multiply/markets/${row.id.split(":")[1] ?? ""}`}>Manage</Link>
+                        <Link href={`/multiply/markets/${row.marketId}`}>Manage</Link>
                       </Button>
                       <Button
                         type="button"
@@ -129,7 +175,7 @@ export function MultiplyCollateralTable({
                   <div className="min-w-0">
                     <div className="text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.label}</div>
                     <div className="truncate text-[12px] text-muted-foreground dark:text-white/38">
-                      {row.multiplier.toFixed(2)}x · HF {row.healthFactor.toFixed(2)}
+                      {row.multiplier.toFixed(2)}x · LTV {formatPct(row.ltvPct)} · HF {row.healthFactor.toFixed(2)}
                     </div>
                   </div>
                 </div>
@@ -137,9 +183,19 @@ export function MultiplyCollateralTable({
                   {formatUsd(row.collateralUsd)}
                 </div>
               </div>
+              <dl className="mb-3 grid grid-cols-2 gap-2 text-[12px]">
+                <div>
+                  <dt className="text-muted-foreground">Debt</dt>
+                  <dd className="font-data tabular-nums">{formatUsd(row.debtUsd)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Net APY</dt>
+                  <dd className="font-data tabular-nums">{formatPct(row.netApyPct)}</dd>
+                </div>
+              </dl>
               <div className="flex justify-end gap-2">
                 <Button asChild variant="secondary" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]">
-                  <Link href={`/multiply/markets/${row.id.split(":")[1] ?? ""}`}>Manage</Link>
+                  <Link href={`/multiply/markets/${row.marketId}`}>Manage</Link>
                 </Button>
                 <Button type="button" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]" onClick={() => onDeleverage?.(row.id)}>
                   Deleverage
