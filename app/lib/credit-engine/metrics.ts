@@ -1,6 +1,7 @@
 import type { BorrowAccountState, BorrowSpokeId, BorrowSystemState } from "./types"
 import { WAD, mulDiv, parseFixed } from "./units"
 import {
+  calculateCollateralValueUsd6,
   currentCollateralValueUsd6,
   currentDebtValueUsd6,
   totalCollateralValueUsd6,
@@ -144,4 +145,23 @@ export function calculateSpokeCreditMetrics(
   const account = state.accounts[walletId]
   if (!account) throw new Error(`Unknown wallet ${walletId}`)
   return calculateMetricsForAccount(state, scopeAccountBySpoke(state, account, spokeId))
+}
+
+export function calculateBorrowCapacityUsd6(state: BorrowSystemState, walletId: string, spokeId?: BorrowSpokeId) {
+  const metrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : calculateCreditMetrics(state, walletId)
+  const collateralValueUsd6 = spokeId
+    ? totalCollateralValueUsd6(scopeAccountBySpoke(state, state.accounts[walletId]!, spokeId), state.markets)
+    : calculateCollateralValueUsd6(state, walletId)
+  return metrics.creditLimitUsd6 > collateralValueUsd6 ? collateralValueUsd6 : metrics.creditLimitUsd6
+}
+
+export function calculateCurrentLtvWad(state: BorrowSystemState, walletId: string, spokeId?: BorrowSpokeId) {
+  const metrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : calculateCreditMetrics(state, walletId)
+  if (metrics.poolCollateralValueUsd6 <= 0n || metrics.totalBorrowedUsd6 <= 0n) return 0n
+  return mulDiv(metrics.totalBorrowedUsd6, WAD, metrics.poolCollateralValueUsd6)
+}
+
+export function calculateHealthFactorWad(state: BorrowSystemState, walletId: string, spokeId?: BorrowSpokeId) {
+  const metrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : calculateCreditMetrics(state, walletId)
+  return metrics.totalBorrowedUsd6 > 0n ? metrics.healthFactorWad : null
 }

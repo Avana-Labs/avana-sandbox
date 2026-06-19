@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { RAY, parseFixed } from "@/app/lib/credit-engine"
 import {
+  calculateCollateralValueUsd6,
   collateralInterestEarnedUsd6,
   currentCollateralValueUsd6,
   currentDebtValueUsd6,
@@ -49,5 +50,25 @@ describe("borrow valuation helpers", () => {
     expect(totalDebtValueUsd6(account)).toBe(parseFixed("6200", 6))
     expect(totalInterestEarnedUsd6(account, state.markets)).toBe(0n)
     expect(totalInterestOwedUsd6(account)).toBe(0n)
+  })
+
+  it("calculates collateral value for a wallet using all enabled LP positions", () => {
+    const state = makeExampleBorrowSystemState()
+
+    expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(parseFixed("20399.225", 6))
+  })
+
+  it("returns zero collateral value when the wallet has no enabled collateral", () => {
+    const state = makeExampleBorrowSystemState()
+    state.accounts["wallet-1"]!.collateralPositions = []
+
+    expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(0n)
+  })
+
+  it("handles missing or invalid collateral prices safely", () => {
+    const state = makeExampleBorrowSystemState()
+    state.markets["uni-v3-bluechip-weth-usdc"]!.snapshot.lpTokenPriceUsd6 = 0n
+
+    expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(parseFixed("5176.16", 6))
   })
 })

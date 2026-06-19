@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 import { WAD_DECIMALS, formatFixed, parseFixed } from "@/app/lib/credit-engine"
-import { calculateCreditMetrics, calculateSpokeCreditMetrics } from "@/app/lib/credit-engine/metrics"
+import {
+  calculateBorrowCapacityUsd6,
+  calculateCreditMetrics,
+  calculateCurrentLtvWad,
+  calculateHealthFactorWad,
+  calculateSpokeCreditMetrics,
+} from "@/app/lib/credit-engine/metrics"
 import { EXAMPLE_UNI_MARKET_ID, makeExampleBorrowSystemState } from "./fixtures"
 
 describe("credit metrics", () => {
@@ -47,5 +53,84 @@ describe("credit metrics", () => {
     expect(walletMetrics.availableCreditUsd6).toBeGreaterThan(0n)
     expect(spokeMetrics.availableCreditUsd6).toBe(0n)
     expect(spokeMetrics.healthFactorWad).toBeLessThan(parseFixed("1", 18))
+  })
+
+  it("calculates borrow capacity from collateral factors across enabled collateral positions", () => {
+    const state = makeExampleBorrowSystemState()
+
+    expect(formatFixed(calculateBorrowCapacityUsd6(state, "wallet-1"), 6)).toBe("14480.3956")
+  })
+
+  it("never returns borrow capacity above the sum allowed by collateral factors", () => {
+    const state = makeExampleBorrowSystemState()
+    state.markets["uni-v3-bluechip-weth-usdc"]!.riskConfig.collateralFactorWad = parseFixed("1.25", 18)
+
+    expect(formatFixed(calculateBorrowCapacityUsd6(state, "wallet-1"), 6)).toBe("20399.225")
+  })
+
+  it("returns zero borrow capacity when all collateral is invalid or disabled", () => {
+    const state = makeExampleBorrowSystemState()
+    state.accounts["wallet-1"]!.collateralPositions = state.accounts["wallet-1"]!.collateralPositions.map((position) => ({
+      ...position,
+      collateralEnabled: false,
+    }))
+
+    expect(calculateBorrowCapacityUsd6(state, "wallet-1")).toBe(0n)
+  })
+
+  it("calculates current ltv from outstanding debt and collateral value", () => {
+    const state = makeExampleBorrowSystemState()
+
+    expect(formatFixed(calculateCurrentLtvWad(state, "wallet-1"), WAD_DECIMALS)).toBe("0.303933115106088589")
+  })
+
+  it("returns zero ltv when there is no debt", () => {
+    const state = makeExampleBorrowSystemState()
+    state.accounts["wallet-1"]!.debtPositions = []
+
+    expect(calculateCurrentLtvWad(state, "wallet-1")).toBe(0n)
+  })
+
+  it("handles zero collateral safely when calculating ltv", () => {
+    const state = makeExampleBorrowSystemState()
+    state.accounts["wallet-1"]!.collateralPositions = []
+
+    expect(calculateCurrentLtvWad(state, "wallet-1")).toBe(0n)
+  })
+
+  it("returns a safe health factor when there is no debt", () => {
+    const state = makeExampleBorrowSystemState()
+    state.accounts["wallet-1"]!.debtPositions = []
+
+    expect(calculateHealthFactorWad(state, "wallet-1")).toBeNull()
+  })
+
+  it("lowers health factor as debt increases", () => {
+    const state = makeExampleBorrowSystemState()
+    const debt = state.accounts["wallet-1"]!.debtPositions[0]!
+    const before = calculateHealthFactorWad(state, "wallet-1")
+
+    debt.principalBorrowedUsd6 += parseFixed("1000", 6)
+    debt.debtSharesUsd6 += parseFixed("1000", 6)
+
+    const after = calculateHealthFactorWad(state, "wallet-1")
+    expect(before).not.toBeNull()
+    expect(after).not.toBeNull()
+    expect(after!).toBeLessThan(before!)
+  })
+
+  it("lowers health factor as collateral value drops and flags unhealthy positions", () => {
+    const state = makeExampleBorrowSystemState()
+    const account = state.accounts["wallet-1"]!
+
+    const before = calculateHealthFactorWad(state, "wallet-1")
+    account.collateralPositions = []
+
+    const after = calculateHealthFactorWad(state, "wallet-1")
+
+    expect(before).not.toBeNull()
+    expect(after).not.toBeNull()
+    expect(after!).toBeLessThan(before!)
+    expect(after!).toBeLessThan(parseFixed("1", 18))
   })
 })
