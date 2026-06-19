@@ -3,8 +3,10 @@
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
+import { buildMultiplySessionSeed } from "@/app/lib/multiply-system/demo-session"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
+import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
@@ -14,6 +16,7 @@ import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
 import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-live"
+import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
 
 function DashboardSection({
@@ -59,17 +62,37 @@ export function DashboardClient({
     walletId: borrowSessionWalletId,
     sessionSeed: borrowSessionSeed,
   })
+  const multiplySessionSeed = useMemo(() => buildMultiplySessionSeed(borrowSessionWalletId), [borrowSessionWalletId])
+  const multiplySession = useMultiplySession({
+    walletId: borrowSessionWalletId,
+    sessionSeed: multiplySessionSeed,
+  })
   const portfolioBorrow = usePortfolioBorrowLive(borrowSessionWalletId, borrowSession)
-  const fetchedMultiplySnapshot = useMemo<BorrowSnapshot>(
+  const portfolioMultiply = usePortfolioMultiplyLive(borrowSessionWalletId, multiplySession)
+  const multiplySnapshot = useMemo<BorrowSnapshot>(
     () => ({
-      approvedUsd: data?.multiply.creditLines.approvedUsd ?? initialData?.multiply.creditLines.approvedUsd ?? 0,
-      liquidationThresholdUsd: data?.multiply.creditLines.liquidationThresholdUsd ?? initialData?.multiply.creditLines.liquidationThresholdUsd ?? 0,
-      totalBorrowedUsd: data?.multiply.creditLines.totalBorrowedUsd ?? initialData?.multiply.creditLines.totalBorrowedUsd ?? 0,
-      totalCollateralUsd: data?.multiply.creditLines.totalCollateralUsd ?? initialData?.multiply.creditLines.totalCollateralUsd ?? 0,
-      averageHealthFactor: data?.multiply.creditLines.averageHealthFactor ?? initialData?.multiply.creditLines.averageHealthFactor ?? null,
-      currentLtvPct: data?.multiply.creditLines.currentLtvPct ?? initialData?.multiply.creditLines.currentLtvPct ?? 0,
+      approvedUsd: portfolioMultiply?.creditLines.approvedUsd ?? data?.multiply.creditLines.approvedUsd ?? initialData?.multiply.creditLines.approvedUsd ?? 0,
+      liquidationThresholdUsd:
+        portfolioMultiply?.creditLines.liquidationThresholdUsd ??
+        data?.multiply.creditLines.liquidationThresholdUsd ??
+        initialData?.multiply.creditLines.liquidationThresholdUsd ??
+        0,
+      totalBorrowedUsd:
+        portfolioMultiply?.creditLines.totalBorrowedUsd ?? data?.multiply.creditLines.totalBorrowedUsd ?? initialData?.multiply.creditLines.totalBorrowedUsd ?? 0,
+      totalCollateralUsd:
+        portfolioMultiply?.creditLines.totalCollateralUsd ??
+        data?.multiply.creditLines.totalCollateralUsd ??
+        initialData?.multiply.creditLines.totalCollateralUsd ??
+        0,
+      averageHealthFactor:
+        portfolioMultiply?.creditLines.averageHealthFactor ??
+        data?.multiply.creditLines.averageHealthFactor ??
+        initialData?.multiply.creditLines.averageHealthFactor ??
+        null,
+      currentLtvPct:
+        portfolioMultiply?.creditLines.currentLtvPct ?? data?.multiply.creditLines.currentLtvPct ?? initialData?.multiply.creditLines.currentLtvPct ?? 0,
     }),
-    [data, initialData],
+    [data, initialData, portfolioMultiply],
   )
   const borrowSnapshot = useMemo<BorrowSnapshot>(
     () => ({
@@ -100,8 +123,22 @@ export function DashboardClient({
   const collateralPositions = portfolioBorrow?.collateralPositions ?? data?.borrow.collateralPositions ?? initialData?.borrow.collateralPositions ?? []
   const debtPositions = portfolioBorrow?.debtPositions ?? data?.borrow.debtPositions ?? initialData?.borrow.debtPositions ?? []
   const activityRows = useMemo(
-    () => [...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory), ...(data?.activity.rows ?? initialData?.activity.rows ?? [])],
-    [borrowSession.transactionHistory, data?.activity.rows, initialData?.activity.rows],
+    () => [
+      ...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory),
+      ...multiplySession.transactionHistory.map((item) => ({
+        id: item.id,
+        at: new Date(item.timestamp).toISOString(),
+        product: "multiply" as const,
+        kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
+        status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
+        amountUsd: 0,
+        primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
+        secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
+        txHash: item.hash,
+      })),
+      ...(data?.activity.rows ?? initialData?.activity.rows ?? []),
+    ],
+    [borrowSession.transactionHistory, multiplySession.transactionHistory, data?.activity.rows, initialData?.activity.rows],
   )
 
   if (!data || !resolvedWalletProfileId || !portfolioBorrow) return null
@@ -113,7 +150,7 @@ export function DashboardClient({
         onTabChange={setActiveTab}
         pageData={data}
         borrowSnapshot={borrowSnapshot}
-        multiplySnapshot={fetchedMultiplySnapshot}
+        multiplySnapshot={multiplySnapshot}
       />
 
       {activeTab === "overview" ? (
@@ -136,9 +173,9 @@ export function DashboardClient({
       {activeTab === "looping" ? (
         <div className="mt-12 space-y-5">
           <DashboardSectionTitle title="Credit Limits" />
-          <CreditLinesCard creditLines={fetchedMultiplySnapshot} />
+          <CreditLinesCard creditLines={multiplySnapshot} />
           <DashboardSection className="pt-8">
-            <MultiplyCollateralTable rows={data.multiply.lpCollaterals} />
+            <MultiplyCollateralTable rows={portfolioMultiply?.lpCollaterals ?? data.multiply.lpCollaterals} />
           </DashboardSection>
         </div>
       ) : null}

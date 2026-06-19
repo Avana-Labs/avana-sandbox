@@ -28,8 +28,8 @@ export const liveMultiplyPageAdapter = createDataSourceAdapter({
 
 export const mockMultiplyPageSource: MultiplyPageSource = {
   adapter: mockMultiplyPageAdapter,
-  async getMultiplyPageData(context?: DataSourceRequestContext) {
-    const walletId = context?.walletProfileId ?? "demo-wallet"
+  async getMultiplyPageData(_context?: DataSourceRequestContext) {
+    const walletId = "demo-wallet"
     const state = buildMockMultiplySystemState(walletId)
     const adapter = new SandboxMultiplyReadAdapter({ state })
     const data = await adapter.readMultiplyPage(walletId)

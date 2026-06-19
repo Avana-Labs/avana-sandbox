@@ -324,6 +324,7 @@ type ExploreLoopsMarketsTableProps = {
   tokenBorrowApys: MultiplyPageData["tokenBorrowApys"]
   tokenLogos: MultiplyPageData["tokenLogos"]
   tokenSupplyApys: MultiplyPageData["tokenSupplyApys"]
+  onOpenMultiply?: (href: string) => void
 }
 
 export function ExploreLoopsMarketsTable({
@@ -332,6 +333,7 @@ export function ExploreLoopsMarketsTable({
   tokenBorrowApys,
   tokenLogos,
   tokenSupplyApys,
+  onOpenMultiply,
 }: ExploreLoopsMarketsTableProps) {
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all-markets")
   const [search, setSearch] = React.useState("")
@@ -501,11 +503,12 @@ export function ExploreLoopsMarketsTable({
           <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
             <colgroup>
               <col className="w-[5%]" />
-              <col className="w-[24%]" />
-              <col className="w-[22%]" />
+              <col className="w-[20%]" />
               <col className="w-[18%]" />
-              <col className="w-[18%]" />
-              <col className="w-[18%]" />
+              <col className="w-[15%]" />
+              <col className="w-[15%]" />
+              <col className="w-[15%]" />
+              <col className="w-[12%]" />
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -564,7 +567,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("points")}
@@ -576,6 +579,9 @@ export function ExploreLoopsMarketsTable({
                     <span>AVAILABLE</span>
                     <SortIcon />
                   </button>
+                </th>
+                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                  ACTION
                 </th>
               </tr>
             </thead>
@@ -674,10 +680,23 @@ export function ExploreLoopsMarketsTable({
                       </CellLink>
                     )}
                   </td>
+                  <td className={`py-3 px-4 pr-4 ${ROW_HOVER_RIGHT}`}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-7 rounded-xs px-2.5 text-[11px]"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onOpenMultiply?.(row.href)
+                      }}
+                    >
+                      Multiply
+                    </Button>
+                  </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-[14px] text-muted-foreground dark:text-white/38">
+                  <td colSpan={7} className="px-6 py-10 text-center text-[14px] text-muted-foreground dark:text-white/38">
                     No loops in this category yet.
                   </td>
                 </tr>
