@@ -1,4 +1,5 @@
 export { buildDefaultRewardsCatalog } from "./catalog"
+export { buildProfileBootstrapEvents, buildSandboxCompletionEvents, listTasksByCategory } from "./task-completion"
 export {
   applyActivityEvent,
   calculateRewardSummary,
