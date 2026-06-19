@@ -33,11 +33,21 @@ const borrowPageSchema = z.object({
   ),
   protocolLogos: z.record(z.string(), z.string()),
   itemsPerPage: z.number().int().positive(),
+  walletId: z.string(),
+  borrowSessionSeed: z.string(),
   poolCatalog: z.array(z.object({ id: z.string(), name: z.string() }).passthrough()),
+  borrowableAssets: z.array(z.object({ id: z.string(), symbol: z.string() }).passthrough()),
   pendingRows: z.array(z.object({}).passthrough()),
   dexes: z.array(z.object({ id: z.string() }).passthrough()),
   collateralPools: z.array(z.object({ id: z.string(), name: z.string() }).passthrough()),
   initialDebts: z.record(z.string(), z.number()),
+  borrowSnapshot: z.object({
+    totalBorrowedUsd: z.number(),
+    availableCreditUsd: z.number(),
+    totalCollateralUsd: z.number(),
+    liquidationValueUsd: z.number(),
+    healthFactor: z.number().nullable(),
+  }),
 })
 
 function getBorrowPageSource(source?: BorrowPageSource) {

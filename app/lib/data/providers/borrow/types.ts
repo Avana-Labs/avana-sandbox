@@ -1,4 +1,5 @@
 import type { BorrowPool, BorrowProtocolMap } from "@/app/lib/borrow-data"
+import type { BorrowableAsset } from "@/app/lib/borrow-sim"
 import {
   BORROW_DEXES,
   BORROW_PENDING_ROWS,
@@ -12,14 +13,24 @@ export type BorrowPageData = {
   allPools: BorrowPool[]
   protocolLogos: Record<string, string>
   itemsPerPage: number
+  walletId: string
+  borrowSessionSeed: string
   poolCatalog: ReadonlyArray<(typeof BORROW_POOL_CATALOG)[number]>
+  borrowableAssets: ReadonlyArray<BorrowableAsset>
   pendingRows: ReadonlyArray<(typeof BORROW_PENDING_ROWS)[number]>
   dexes: ReadonlyArray<(typeof BORROW_DEXES)[number]>
   collateralPools: ReadonlyArray<(typeof HOME_COLLATERAL_POOLS)[number]>
   initialDebts: typeof HOME_INITIAL_DEBTS
+  borrowSnapshot: {
+    totalBorrowedUsd: number
+    availableCreditUsd: number
+    totalCollateralUsd: number
+    liquidationValueUsd: number
+    healthFactor: number | null
+  }
 }
 
 export type BorrowWorkspaceData = Pick<
   BorrowPageData,
-  "poolCatalog" | "pendingRows" | "dexes" | "collateralPools" | "initialDebts"
+  "walletId" | "borrowSessionSeed" | "poolCatalog" | "borrowableAssets" | "pendingRows" | "dexes" | "collateralPools" | "initialDebts" | "borrowSnapshot"
 >
