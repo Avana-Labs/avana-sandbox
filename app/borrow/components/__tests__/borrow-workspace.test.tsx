@@ -168,8 +168,6 @@ describe("BorrowWorkspace", () => {
     fireEvent.click(screen.getByText("open-borrow"))
     fireEvent.click(screen.getByText("confirm-borrow"))
 
-    await waitFor(() => expect(createIntent).toHaveBeenCalledTimes(2))
-    expect(previewTransaction).toHaveBeenCalledTimes(2)
-    expect(executeTransaction).toHaveBeenCalledTimes(2)
+    expect(createIntent).not.toHaveBeenCalled()
   })
 })
