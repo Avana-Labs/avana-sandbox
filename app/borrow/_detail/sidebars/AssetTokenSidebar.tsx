@@ -177,6 +177,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
             {tab === "repay" ? (
               <CompactRepayCard
                 pool={repayPool}
+                token={toBorrowToken(detail.row)}
                 debtUsd={repayDebtUsd}
                 amount={amount}
                 preview={repayPreview ?? calculateRepayPreview(repayPool, 0, 0, detail.row.borrowApr)}
