@@ -3,6 +3,15 @@
 import { buildRangeData } from "@/app/components/charts"
 import type { PortfolioHeroData } from "@/app/lib/data/providers/portfolio"
 
+export type BorrowSpokeBreakdown = {
+  spokeId: string
+  label: string
+  availableCreditUsd: number
+  totalBorrowedUsd: number
+  liquidationBufferUsd: number
+  healthFactor: number | null
+}
+
 export type BorrowSnapshot = {
   approvedUsd: number
   liquidationThresholdUsd: number
@@ -10,6 +19,7 @@ export type BorrowSnapshot = {
   totalCollateralUsd: number
   averageHealthFactor: number | null
   currentLtvPct: number
+  spokeBreakdown?: BorrowSpokeBreakdown[]
 }
 
 function formatUsd(value: number) {
