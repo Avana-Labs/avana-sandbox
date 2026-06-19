@@ -15,7 +15,7 @@ import {
   type DexGroup,
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
-import { AssetsPanel } from "./assets-table"
+import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
@@ -51,7 +51,7 @@ function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
   )
 }
 
-type PoolsTableProps = {
+type CollateralPoolsTableProps = {
   groups: ReadonlyArray<DexGroup>
   pending?: ReadonlyArray<PendingMarketRow>
   onUseAsCollateral: (pool: BorrowPoolRow) => void
@@ -299,7 +299,12 @@ function CollateralDesktopTable({
   return <div className="overflow-hidden rounded-[20px] bg-transparent">{table}</div>
 }
 
-export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral, onBorrowAssetDesktop }: PoolsTableProps) {
+export const CollateralPoolsTable = memo(function CollateralPoolsTable({
+  groups,
+  pending = [],
+  onUseAsCollateral,
+  onBorrowAssetDesktop,
+}: CollateralPoolsTableProps) {
   return (
     <div className="hidden space-y-10 md:block">
       {groups.flatMap((group) =>
@@ -347,7 +352,7 @@ function SpokeDesktopSection({
           {activeTab === "collateral" ? (
             <CollateralDesktopTable rows={rows} pending={pending} onUseAsCollateral={onUseAsCollateral} embedded />
           ) : (
-            <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
+            <BorrowableAssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
           )}
         </div>
       </div>
@@ -355,7 +360,12 @@ function SpokeDesktopSection({
   )
 }
 
-export function PoolsList({ groups, pending = [], onUseAsCollateral, onBorrowAssetMobile }: PoolsTableProps) {
+export function CollateralPoolsList({
+  groups,
+  pending = [],
+  onUseAsCollateral,
+  onBorrowAssetMobile,
+}: CollateralPoolsTableProps) {
   return (
     <div className="space-y-8 md:hidden">
       {groups.flatMap((group) =>
@@ -485,7 +495,7 @@ function SpokeMobileSection({
             ) : null}
           </div>
         ) : (
-          <AssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
+          <BorrowableAssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
         )}
       </div>
     </section>

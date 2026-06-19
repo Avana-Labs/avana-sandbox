@@ -16,7 +16,7 @@ const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover
 const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
 const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
 
-type AssetsTableProps = {
+type BorrowableAssetsTableProps = {
   rows: BorrowableAsset[]
   onBorrow: (asset: BorrowableAsset) => void
   onViewMarket?: (asset: BorrowableAsset) => void
@@ -28,7 +28,13 @@ function formatAssetAmount(value: number, symbol: string) {
   return `${formatCompactUsd(value).replace(/^\$/, "")} ${symbol}`
 }
 
-export function AssetsPanel({ rows, onBorrow, onViewMarket, groupByCategory = true, variant = "default" }: AssetsTableProps) {
+export function BorrowableAssetsPanel({
+  rows,
+  onBorrow,
+  onViewMarket,
+  groupByCategory = true,
+  variant = "default",
+}: BorrowableAssetsTableProps) {
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
