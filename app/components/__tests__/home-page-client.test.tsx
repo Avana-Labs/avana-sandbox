@@ -10,7 +10,6 @@ const toastError = vi.fn()
 const createIntent = vi.fn()
 const previewTransaction = vi.fn()
 const executeTransaction = vi.fn()
-const dispatch = vi.fn()
 
 const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)
@@ -127,7 +126,6 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
     createIntent,
     previewTransaction,
     executeTransaction,
-    dispatch,
   }),
 }))
 
@@ -225,7 +223,6 @@ describe("HomePageClient", () => {
     expect(createIntent).toHaveBeenCalledTimes(1)
     expect(previewTransaction).toHaveBeenCalledTimes(1)
     expect(executeTransaction).toHaveBeenCalledTimes(1)
-    expect(dispatch).not.toHaveBeenCalled()
   })
 
   it("routes the repay flow through transaction adapters", async () => {
@@ -244,7 +241,6 @@ describe("HomePageClient", () => {
     expect(createIntent).toHaveBeenCalledTimes(1)
     expect(previewTransaction).toHaveBeenCalledTimes(1)
     expect(executeTransaction).toHaveBeenCalledTimes(1)
-    expect(dispatch).not.toHaveBeenCalled()
   })
 
   it("routes the remove flow through transaction adapters", async () => {
@@ -263,6 +259,5 @@ describe("HomePageClient", () => {
     expect(createIntent).toHaveBeenCalledTimes(1)
     expect(previewTransaction).toHaveBeenCalledTimes(1)
     expect(executeTransaction).toHaveBeenCalledTimes(1)
-    expect(dispatch).not.toHaveBeenCalled()
   })
 })

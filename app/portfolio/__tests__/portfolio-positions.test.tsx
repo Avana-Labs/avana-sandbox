@@ -5,7 +5,6 @@ import { PortfolioPositions } from "@/app/portfolio/portfolio-positions"
 const createIntent = vi.fn()
 const previewTransaction = vi.fn()
 const executeTransaction = vi.fn()
-const dispatch = vi.fn()
 
 const poolVisual = { symbol: "WETH", shortLabel: "WETH", bgClassName: "bg-black", textClassName: "text-white" }
 const stableVisual = { symbol: "USDC", shortLabel: "USDC", bgClassName: "bg-blue-500", textClassName: "text-white" }
@@ -188,7 +187,6 @@ describe("PortfolioPositions", () => {
             createIntent,
             previewTransaction,
             executeTransaction,
-            dispatch,
           } as never
         }
       />,
@@ -204,7 +202,6 @@ describe("PortfolioPositions", () => {
     await waitFor(() => expect(createIntent).toHaveBeenCalledTimes(3))
     expect(previewTransaction).toHaveBeenCalledTimes(3)
     expect(executeTransaction).toHaveBeenCalledTimes(3)
-    expect(dispatch).not.toHaveBeenCalled()
   })
 
   it("routes debt-side actions through the transaction adapter", async () => {
@@ -231,7 +228,6 @@ describe("PortfolioPositions", () => {
             createIntent,
             previewTransaction,
             executeTransaction,
-            dispatch,
           } as never
         }
       />,
@@ -245,6 +241,5 @@ describe("PortfolioPositions", () => {
     await waitFor(() => expect(createIntent).toHaveBeenCalledTimes(2))
     expect(previewTransaction).toHaveBeenCalledTimes(2)
     expect(executeTransaction).toHaveBeenCalledTimes(2)
-    expect(dispatch).not.toHaveBeenCalled()
   })
 })
