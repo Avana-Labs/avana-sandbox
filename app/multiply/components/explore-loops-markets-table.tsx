@@ -32,7 +32,7 @@ type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
 
 function SearchIcon({ className }: { className?: string } = {}) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-muted-foreground/70 dark:text-[#01AACF]", className)}>
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-[#01AACF]", className)}>
       <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
     </svg>

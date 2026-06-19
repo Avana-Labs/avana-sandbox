@@ -138,7 +138,7 @@ function SearchPill({
 }) {
   return (
     <label className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-full border border-border bg-white px-4 text-[13px] shadow-elev-1 dark:border-border/60 dark:bg-[#131820]">
-      <Search className="h-4 w-4 shrink-0 text-muted-foreground dark:text-[#01AACF]" />
+      <Search className="h-4 w-4 shrink-0 text-[#01AACF]" />
       <input
         type="search"
         value={value}
