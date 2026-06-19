@@ -10,6 +10,7 @@ import {
   type BorrowDexId,
   type BorrowPoolRow,
   type BorrowableAsset,
+  type HomeBorrowToken,
   type HomeCollateralPool,
 } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
@@ -69,6 +70,22 @@ function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
     poolIsStable(pool) ||
     poolHasAnySymbol(pool, GOV_SYMBOLS)
   )
+}
+
+function toBorrowToken(asset: BorrowableAsset): HomeBorrowToken {
+  return {
+    id: asset.id,
+    name: asset.name,
+    symbol: asset.symbol,
+    subtitle: asset.subtitle,
+    borrowApr: asset.borrowApr,
+    visual: {
+      symbol: asset.visual.symbol,
+      shortLabel: asset.visual.shortLabel,
+      bgClassName: asset.visual.bgClass,
+      textClassName: asset.visual.textClass,
+    },
+  }
 }
 
 export type BorrowWorkspaceProps = {
@@ -164,10 +181,11 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
           pool: fallback.pool,
           currentDebtUsd: fallback.borrowedUsd,
           defaultTokenId: asset.id,
+          tokenOptions: session.getBorrowableAssetsForMarket(fallback.pool.id).map(toBorrowToken),
         },
       })
     },
-    [supplies],
+    [session, supplies],
   )
 
   const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
