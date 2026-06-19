@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { calculateCreditMetrics, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
 import { deserializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
 import type { SandboxActionResult, SyntheticTransactionReceipt, TransactionHistoryItem, TransactionIntent } from "@/app/lib/borrow-system/contracts"
+import { createExecutionFingerprint } from "@/app/lib/borrow-system/execution-guard"
 import { buildLegacyTransactionHistory, buildSyntheticReceipts } from "@/app/lib/borrow-system/read-model"
 import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
 import { SandboxTransactionAdapter } from "@/app/lib/borrow-system/sandbox-transaction-adapter"
@@ -46,6 +47,8 @@ export function useBorrowSession({
     buildSyntheticReceipts(buildLegacyTransactionHistory(seededState, walletId)),
   )
   const stateRef = useRef(state)
+  const pendingExecutionsRef = useRef(new Map<string, Promise<SandboxActionResult>>())
+  const [isPending, setIsPending] = useState(false)
 
   useEffect(() => {
     stateRef.current = state
@@ -118,10 +121,27 @@ export function useBorrowSession({
   )
   const executeTransaction = useCallback(
     async (intent: TransactionIntent): Promise<SandboxActionResult> => {
-      const result = await transactionAdapter.executeTransaction(intent)
-      setTransactionHistory((current) => mergeHistory(result.historyItem, current))
-      setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
-      return result
+      const fingerprint = createExecutionFingerprint(intent)
+      const inFlight = pendingExecutionsRef.current.get(fingerprint)
+      if (inFlight) {
+        return inFlight
+      }
+
+      setIsPending(true)
+      const execution = transactionAdapter
+        .executeTransaction(intent)
+        .then((result) => {
+          setTransactionHistory((current) => mergeHistory(result.historyItem, current))
+          setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
+          return result
+        })
+        .finally(() => {
+          pendingExecutionsRef.current.delete(fingerprint)
+          setIsPending(pendingExecutionsRef.current.size > 0)
+        })
+
+      pendingExecutionsRef.current.set(fingerprint, execution)
+      return execution
     },
     [transactionAdapter],
   )
@@ -157,6 +177,7 @@ export function useBorrowSession({
     transactionHistory,
     transactionReceipts,
     lastReceipt: transactionReceipts[0] ?? null,
+    isPending,
     getBorrowableAssetsForMarket,
     readAdapter,
     createIntent,
