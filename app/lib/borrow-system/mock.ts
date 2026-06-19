@@ -3,7 +3,7 @@ import { RAY, clampMax, clampMin, parseFixed } from "@/app/lib/credit-engine"
 import { BORROW_POOL_CATALOG, BORROWABLE_ASSETS, type BorrowAssetVisual, type BorrowableAsset, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS } from "@/app/lib/home-sim"
 
-const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
+export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
   "eth-usdc": "uni-v3-bluechip-weth-usdc",
   "wbtc-eth": "uni-v3-bluechip-wbtc-weth",
   "usdc-usdt": "uni-v3-stable-usdc-usdt",
