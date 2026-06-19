@@ -44,7 +44,7 @@ export const mockRewardsPageSource: RewardsPageSource = {
       .slice(0, 2)
       .map((pool) => ({
         id: `rewards-${pool.id}`,
-        href: `/borrow/pool/${pool.id}`,
+        href: `/borrow/markets/${pool.id}`,
         pool,
         title: pool.name,
         subtitle: `${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`,

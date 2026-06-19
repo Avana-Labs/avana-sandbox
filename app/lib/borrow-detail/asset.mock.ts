@@ -2,7 +2,7 @@
  * Mock `AssetDetail` factory. Mirrors pool.mock.ts but for borrowable assets.
  *
  * - Hand-curated overrides for USDC / ETH / WBTC (the three likely demos).
- * - Procedural fallback for every other `BorrowableAsset` in borrow-sim.ts.
+ * - Procedural fallback for every other spoke-bound borrowable product.
  * - Allocation rows come from `allocation.ts::computeAssetAllocation`.
  *
  * Swap `buildAssetDetail` for a live fetch in `index.ts` when ready.
@@ -10,10 +10,13 @@
 
 import {
   BORROW_POOL_CATALOG,
-  BORROWABLE_ASSETS,
-  type BorrowableAsset,
   formatCompactUsd,
 } from "@/app/lib/borrow-sim"
+import {
+  listSpokeBorrowables,
+  resolveSpokeBorrowable,
+  type SpokeBorrowableRecord,
+} from "@/app/lib/borrow-system/registry"
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
 import { buildCuratedPriceFamily } from "./token-price-series"
 import {
@@ -194,12 +197,14 @@ function deltaFromPct(pct: number): DeltaStat {
     : { value: pct, direction: "down", label: `${pct.toFixed(1)}%` }
 }
 
-function buildHero(asset: BorrowableAsset, fixture: AssetFixture | undefined): AssetDetailHero {
+function buildHero(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): AssetDetailHero {
   return {
     visual: asset.visual,
     name: asset.name,
     symbol: asset.symbol,
-    subtitle: fixture?.subtitle ?? `${asset.name} — ${asset.subtitle}.`,
+    subtitle: fixture?.subtitle
+      ? `${fixture.subtitle} Available through ${asset.spokeLabel}.`
+      : `${asset.name} — ${asset.subtitle}.`,
     chain: fixture?.chain ?? "Ethereum",
     category: asset.category === "stable" ? "stable" : "crypto",
     contractLabel: fixture?.contractLabel,
@@ -209,15 +214,15 @@ function buildHero(asset: BorrowableAsset, fixture: AssetFixture | undefined): A
   }
 }
 
-function buildQuickStats(asset: BorrowableAsset, supplied: number, borrowed: number, fixture: AssetFixture | undefined): QuickStat[] {
+function buildQuickStats(asset: SpokeBorrowableRecord, supplied: number, borrowed: number, fixture: AssetFixture | undefined): QuickStat[] {
   const utilization = borrowed / supplied
   const heroPriceUsd =
     fixture?.heroPriceUsd ??
     (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
-  const dexLiquidityUsd = BORROW_POOL_CATALOG.reduce((sum, pool) => {
-    const hasAsset = pool.borrowableTokens.some((token) => token.symbol.toUpperCase() === asset.symbol.toUpperCase())
-    return hasAsset ? sum + pool.availableUsd : sum
-  }, 0)
+  const dexLiquidityUsd = BORROW_POOL_CATALOG.filter((pool) => asset.marketIds.includes(pool.id)).reduce(
+    (sum, pool) => sum + pool.availableUsd,
+    0,
+  )
   const defaults: QuickStat[] = [
     { id: "price", label: "Price", value: formatUsdPrice(heroPriceUsd), delta: deltaFromPct(-2.1) },
     { id: "dexLiquidity", label: "Dex Liquidity", value: formatCompactUsd(dexLiquidityUsd), delta: deltaFromPct(1.2) },
@@ -239,7 +244,7 @@ function formatUsdPrice(value: number): string {
 }
 
 function buildHeroSeries(
-  asset: BorrowableAsset,
+  asset: SpokeBorrowableRecord,
   supplied: number,
   borrowed: number,
   fixture: AssetFixture | undefined,
@@ -249,7 +254,7 @@ function buildHeroSeries(
   const priceBase =
     fixture?.heroPriceUsd ??
     (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
-  const curatedPrice = buildCuratedPriceFamily(asset.id, "Price")
+  const curatedPrice = buildCuratedPriceFamily(asset.baseAssetId, "Price")
   return {
     price:
       curatedPrice ??
@@ -268,7 +273,7 @@ function buildHeroSeries(
   }
 }
 
-function buildSupplyBorrow(asset: BorrowableAsset, supplied: number, borrowed: number) {
+function buildSupplyBorrow(asset: SpokeBorrowableRecord, supplied: number, borrowed: number) {
   return {
     supplied: buildSeries(`${asset.id}:sb:supply`, "1Y", "Supplied", { base: supplied, driftMultiplier: 1.12, noise: 0.04, nonNegative: true, roundTo: 0 }),
     borrowed: buildSeries(`${asset.id}:sb:borrow`, "1Y", "Borrowed", { base: borrowed, driftMultiplier: 1.09, noise: 0.05, nonNegative: true, roundTo: 0 }),
@@ -282,7 +287,7 @@ function buildSupplyBorrow(asset: BorrowableAsset, supplied: number, borrowed: n
   }
 }
 
-function buildInterestGenerated(asset: BorrowableAsset, borrowed: number): Record<PerfPeriod, PerfTabDataset> {
+function buildInterestGenerated(asset: SpokeBorrowableRecord, borrowed: number): Record<PerfPeriod, PerfTabDataset> {
   const periods: Record<PerfPeriod, { scale: number; label: string }> = {
     weekly: { scale: 7, label: "7d" },
     monthly: { scale: 30, label: "30d" },
@@ -312,7 +317,7 @@ function deltaForPeriod(id: string, period: PerfPeriod): string {
   return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`
 }
 
-function buildAssetKeyMetrics(asset: BorrowableAsset, supplied: number, borrowed: number): Record<KeyMetricId, Record<TimeRangeId, Series>> {
+function buildAssetKeyMetrics(asset: SpokeBorrowableRecord, supplied: number, borrowed: number): Record<KeyMetricId, Record<TimeRangeId, Series>> {
   const utilization = Math.min(95, (borrowed / supplied) * 100)
   const shapes: Record<KeyMetricId, Parameters<typeof buildSeriesFamily>[2]> = {
     tvl: { base: supplied, driftMultiplier: 1.08, noise: 0.04, nonNegative: true, roundTo: 0 },
@@ -335,7 +340,7 @@ function buildAssetKeyMetrics(asset: BorrowableAsset, supplied: number, borrowed
   return out
 }
 
-function buildAssetCashflow(asset: BorrowableAsset, supplied: number, borrowed: number): CashflowCard {
+function buildAssetCashflow(asset: SpokeBorrowableRecord, supplied: number, borrowed: number): CashflowCard {
   const annualInterest = borrowed * asset.borrowApr / 100
   const feesSeries = buildSeries(`${asset.id}:cf:interest`, "1Y", "Interest", { base: annualInterest / 12, driftMultiplier: 1.04, noise: 0.08, nonNegative: true, roundTo: 0 })
   const rewardsSeries = buildSeries(`${asset.id}:cf:rewards`, "1Y", "Rewards", { base: supplied * 0.002 / 12, driftMultiplier: 1.05, noise: 0.18, nonNegative: true, roundTo: 0 })
@@ -352,7 +357,7 @@ function buildAssetCashflow(asset: BorrowableAsset, supplied: number, borrowed: 
   }
 }
 
-function buildCashflowTrend(asset: BorrowableAsset, _supplied: number, borrowed: number): CashflowTrend {
+function buildCashflowTrend(asset: SpokeBorrowableRecord, _supplied: number, borrowed: number): CashflowTrend {
   const annualInterest = borrowed * (asset.borrowApr / 100)
   const monthlyGross = annualInterest / 12
   const rand = prngFromString(`${asset.id}:cf:trend`)
@@ -382,7 +387,7 @@ function buildCashflowTrend(asset: BorrowableAsset, _supplied: number, borrowed:
   }
 }
 
-function buildAssetEngagement(asset: BorrowableAsset, supplied: number): EngagementTrend {
+function buildAssetEngagement(asset: SpokeBorrowableRecord, supplied: number): EngagementTrend {
   const rand = prngFromString(`${asset.id}:engagement`)
   const base = Math.max(800, Math.round(Math.sqrt(supplied) * 1.6))
   const now = Date.UTC(2026, 3, 22)
@@ -422,7 +427,7 @@ function buildAssetEngagement(asset: BorrowableAsset, supplied: number): Engagem
   }
 }
 
-function buildAssetRisk(asset: BorrowableAsset, fixture: AssetFixture | undefined): RiskAssessment {
+function buildAssetRisk(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): RiskAssessment {
   if (fixture?.risk) return fixture.risk
   const isStable = asset.category === "stable"
   // Derive a unique bps per asset so every gauge shows a distinct score.
@@ -467,7 +472,7 @@ function buildAssetRisk(asset: BorrowableAsset, fixture: AssetFixture | undefine
   }
 }
 
-function buildAssetAbout(asset: BorrowableAsset, fixture: AssetFixture | undefined): AboutCard {
+function buildAssetAbout(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): AboutCard {
   if (fixture?.about) {
     return {
       ...fixture.about,
@@ -476,8 +481,8 @@ function buildAssetAbout(asset: BorrowableAsset, fixture: AssetFixture | undefin
   }
   return {
     description:
-      `${asset.name} (${asset.symbol}) is a core borrowable market in the protocol and a building block for both directional hedges and LP carry loops. ` +
-      `${asset.subtitle} The borrow APY is influenced by utilization, reserve settings, and how often the asset is used as collateral elsewhere in the system, so the page focuses on the live rate, the supply/borrow mix, and the latest risk posture.`,
+      `${asset.name} (${asset.symbol}) is a core borrowable market in ${asset.spokeLabel} and a building block for directional hedges and LP carry loops within that spoke. ` +
+      `${asset.subtitle} The borrow APY is influenced by utilization, reserve settings, and demand inside ${asset.spokeLabel}, so the page focuses on the live rate, the supply/borrow mix, and the latest risk posture.`,
     stats: buildAboutStats(asset, fixture),
     history: [
       { date: "2025-02-10", title: "Listed", description: `${asset.symbol} listed with conservative borrow cap.` },
@@ -486,7 +491,7 @@ function buildAssetAbout(asset: BorrowableAsset, fixture: AssetFixture | undefin
   }
 }
 
-function buildAboutStats(asset: BorrowableAsset, fixture?: AssetFixture): AboutCard["stats"] {
+function buildAboutStats(asset: SpokeBorrowableRecord, fixture?: AssetFixture): AboutCard["stats"] {
   const tokenSeed = fakeAddressSeed(`${asset.id}:token`)
   const tokenLabel = fixture?.contractLabel ?? tokenSeed.short
   const tokenExplorer = fixture?.contractAddress
@@ -516,8 +521,9 @@ function fakeAddressSeed(seed: string) {
   }
 }
 
-function buildRelated(asset: BorrowableAsset): RelatedAssetSummary[] {
-  return BORROWABLE_ASSETS.filter((other) => other.id !== asset.id && other.category === asset.category)
+function buildRelated(asset: SpokeBorrowableRecord): RelatedAssetSummary[] {
+  return listSpokeBorrowables()
+    .filter((other) => other.spokeId === asset.spokeId && other.id !== asset.id)
     .slice(0, 4)
     .map((other) => ({
       id: other.id,
@@ -530,7 +536,7 @@ function buildRelated(asset: BorrowableAsset): RelatedAssetSummary[] {
     }))
 }
 
-function buildTransactions(asset: BorrowableAsset): TxHistoryRow[] {
+function buildTransactions(asset: SpokeBorrowableRecord): TxHistoryRow[] {
   const rand = prngFromString(`${asset.id}:tx`)
   const kinds: TxHistoryRow["kind"][] = ["supply", "borrow", "repay", "withdraw", "rewards", "liquidation"]
   const out: TxHistoryRow[] = []
@@ -568,13 +574,13 @@ function formatRelativeAge(ageMs: number) {
 // Public
 // -------------------------------------------------------------------------
 
-export function resolveAsset(id: string): BorrowableAsset | null {
+export function resolveAsset(id: string): SpokeBorrowableRecord | null {
   if (!id) return null
-  return BORROWABLE_ASSETS.find((asset) => asset.id === id || asset.symbol.toLowerCase() === id.toLowerCase()) ?? null
+  return resolveSpokeBorrowable(id)
 }
 
-export function buildAssetDetail(asset: BorrowableAsset): AssetDetail {
-  const fixture = ASSET_FIXTURES[asset.id]
+export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
+  const fixture = ASSET_FIXTURES[asset.baseAssetId]
   const supplied = fixture?.baseSuppliedUsd ?? Math.max(asset.totalBorrowedUsd + asset.availableUsd, 1)
   const borrowed = fixture?.baseBorrowedUsd ?? asset.totalBorrowedUsd
   const allocation: AllocationRow[] = computeAssetAllocation(asset, BORROW_POOL_CATALOG)

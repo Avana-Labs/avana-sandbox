@@ -1,4 +1,5 @@
-import { buildBorrowSnapshot } from "@/app/lib/borrow-data"
+import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
 import {
   createDataSourceAdapter,
   createUnsupportedSourceError,
@@ -6,13 +7,7 @@ import {
   type DataSourceRequestContext,
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
-import {
-  BORROW_DEXES,
-  BORROW_PENDING_ROWS,
-  BORROW_POOL_CATALOG,
-  HOME_COLLATERAL_POOLS,
-  HOME_INITIAL_DEBTS,
-} from "@/app/lib/data/mock/shared/borrow"
+import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
 import type { BorrowPageData } from "./types"
 
 export type BorrowPageSource = {
@@ -35,18 +30,13 @@ export const liveBorrowPageAdapter = createDataSourceAdapter({
 export const mockBorrowPageSource: BorrowPageSource = {
   adapter: mockBorrowPageAdapter,
   async getBorrowPageData() {
-    const snapshot = buildBorrowSnapshot()
+    const walletId = getDefaultWalletProfileId()
+    const systemState = buildMockBorrowSystemState(walletId)
+    const readAdapter = new SandboxBorrowReadAdapter({ state: systemState })
 
     return {
       fetchedAt: new Date().toISOString(),
-      data: {
-        ...snapshot,
-        poolCatalog: BORROW_POOL_CATALOG,
-        pendingRows: BORROW_PENDING_ROWS,
-        dexes: BORROW_DEXES,
-        collateralPools: HOME_COLLATERAL_POOLS,
-        initialDebts: HOME_INITIAL_DEBTS,
-      },
+      data: await readAdapter.readBorrowPage(walletId),
     }
   },
 }

@@ -5,7 +5,6 @@ import {
   BORROW_SUPPLY_META,
   HOME_BORROW_TOKENS,
   LIQUIDATION_LTV,
-  MAX_LTV,
   aprToneClass,
   formatHealthFactor,
   formatCompactUsd,
@@ -262,23 +261,27 @@ export function CurrentLtvCard({
   const ltv = collateralUsd > 0 ? Math.min(1, borrowedUsd / collateralUsd) : 0
   const ltvPct = ltv * 100
   const liquidationPct = LIQUIDATION_LTV * 100
-  const ltvLabel = `${ltvPct.toFixed(2)}%`
   const masked = !showBalance
-  const maxUsd = collateralUsd * MAX_LTV
+  const liquidationValueUsd = collateralUsd * LIQUIDATION_LTV
+  const remainingBorrowingPowerUsd = Math.max(0, liquidationValueUsd - borrowedUsd)
+  const borrowingPowerLabel = masked ? "••" : formatCompactUsd(remainingBorrowingPowerUsd)
   const usedLabel = masked ? "••" : formatCompactUsd(borrowedUsd)
-  const maxLabel = masked ? "••" : formatCompactUsd(maxUsd)
+  const maxLabel = masked ? "••" : formatCompactUsd(liquidationValueUsd)
   const usedTicks = Math.max(1, Math.round((ltvPct / 100) * TICK_COUNT))
   const tone = "bg-emerald-500"
+  const statusLabel = remainingBorrowingPowerUsd > 0 ? "GOOD" : "RISK"
 
   return (
     <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2">
-        <span className="text-[13px] font-semibold text-foreground">Current LTV</span>
-        <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
-          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">{masked ? "••" : ltvLabel}</span>
+          <span className="text-[13px] font-semibold text-foreground">Borrowing Power</span>
+          <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
+          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">{borrowingPowerLabel}</span>
         </div>
-        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">borrow power used</span>
+        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-600">
+          {statusLabel}
+        </span>
       </div>
 
       <div className="relative mt-9">
@@ -287,7 +290,7 @@ export function CurrentLtvCard({
           style={{ left: `${ltvPct}%` }}
         >
           <div className="rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-bold text-background">
-            {masked ? "••" : ltvLabel}
+            {masked ? "••" : `${ltvPct.toFixed(2)}%`}
           </div>
           <div className="-mt-px text-[10px] leading-none text-foreground">▼</div>
         </div>
@@ -316,7 +319,7 @@ export function CurrentLtvCard({
         </span>
         <span className="inline-flex items-center gap-2">
           <span>
-            Max <span className="font-semibold text-foreground">{maxLabel}</span>
+            Liq. max <span className="font-semibold text-foreground">{maxLabel}</span>
           </span>
           <span className="text-rose-500">{liquidationPct.toFixed(0)}% liq</span>
         </span>

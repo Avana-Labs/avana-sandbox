@@ -1,7 +1,10 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
+import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
+import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
@@ -10,14 +13,8 @@ import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
+import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
-
-function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: value >= 1000 ? 0 : 2,
-  })}`
-}
 
 function DashboardSection({
   title,
@@ -56,7 +53,13 @@ export function DashboardClient({
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
-  const [borrowSnapshotOverride, setBorrowSnapshotOverride] = useState<BorrowSnapshot | null>(null)
+  const borrowSessionWalletId = resolvedWalletProfileId ?? "demo-wallet"
+  const borrowSessionSeed = useMemo(() => buildBorrowSessionSeed(borrowSessionWalletId), [borrowSessionWalletId])
+  const borrowSession = useBorrowSession({
+    walletId: borrowSessionWalletId,
+    sessionSeed: borrowSessionSeed,
+  })
+  const portfolioBorrow = usePortfolioBorrowLive(borrowSessionWalletId, borrowSession)
   const fetchedMultiplySnapshot = useMemo<BorrowSnapshot>(
     () => ({
       approvedUsd: data?.multiply.creditLines.approvedUsd ?? initialData?.multiply.creditLines.approvedUsd ?? 0,
@@ -68,52 +71,40 @@ export function DashboardClient({
     }),
     [data, initialData],
   )
-  const fetchedBorrowSnapshot = useMemo<BorrowSnapshot>(
+  const borrowSnapshot = useMemo<BorrowSnapshot>(
     () => ({
-      approvedUsd: data?.borrow.creditLines.approvedUsd ?? initialData?.borrow.creditLines.approvedUsd ?? 0,
-      liquidationThresholdUsd: data?.borrow.creditLines.liquidationThresholdUsd ?? initialData?.borrow.creditLines.liquidationThresholdUsd ?? 0,
-      totalBorrowedUsd: data?.borrow.creditLines.totalBorrowedUsd ?? initialData?.borrow.creditLines.totalBorrowedUsd ?? 0,
-      totalCollateralUsd: data?.borrow.creditLines.totalCollateralUsd ?? initialData?.borrow.creditLines.totalCollateralUsd ?? 0,
-      averageHealthFactor: data?.borrow.creditLines.averageHealthFactor ?? initialData?.borrow.creditLines.averageHealthFactor ?? null,
-      currentLtvPct: data?.borrow.creditLines.currentLtvPct ?? initialData?.borrow.creditLines.currentLtvPct ?? 0,
+      approvedUsd: portfolioBorrow?.creditLines.approvedUsd ?? data?.borrow.creditLines.approvedUsd ?? initialData?.borrow.creditLines.approvedUsd ?? 0,
+      liquidationThresholdUsd:
+        portfolioBorrow?.creditLines.liquidationThresholdUsd ??
+        data?.borrow.creditLines.liquidationThresholdUsd ??
+        initialData?.borrow.creditLines.liquidationThresholdUsd ??
+        0,
+      totalBorrowedUsd:
+        portfolioBorrow?.creditLines.totalBorrowedUsd ?? data?.borrow.creditLines.totalBorrowedUsd ?? initialData?.borrow.creditLines.totalBorrowedUsd ?? 0,
+      totalCollateralUsd:
+        portfolioBorrow?.creditLines.totalCollateralUsd ??
+        data?.borrow.creditLines.totalCollateralUsd ??
+        initialData?.borrow.creditLines.totalCollateralUsd ??
+        0,
+      averageHealthFactor:
+        portfolioBorrow?.creditLines.averageHealthFactor ??
+        data?.borrow.creditLines.averageHealthFactor ??
+        initialData?.borrow.creditLines.averageHealthFactor ??
+        null,
+      currentLtvPct:
+        portfolioBorrow?.creditLines.currentLtvPct ?? data?.borrow.creditLines.currentLtvPct ?? initialData?.borrow.creditLines.currentLtvPct ?? 0,
     }),
-    [data, initialData],
-  )
-  const borrowSnapshot = borrowSnapshotOverride ?? fetchedBorrowSnapshot
-
-  useEffect(() => {
-    setBorrowSnapshotOverride(null)
-  }, [resolvedWalletProfileId])
-
-  const handleSnapshotChange = useCallback((snapshot: BorrowSnapshot) => {
-    setBorrowSnapshotOverride((previous) => {
-      const baseline = previous ?? fetchedBorrowSnapshot
-      if (
-        baseline.approvedUsd === snapshot.approvedUsd &&
-        baseline.liquidationThresholdUsd === snapshot.liquidationThresholdUsd &&
-        baseline.totalBorrowedUsd === snapshot.totalBorrowedUsd &&
-        baseline.totalCollateralUsd === snapshot.totalCollateralUsd &&
-        baseline.averageHealthFactor === snapshot.averageHealthFactor &&
-        baseline.currentLtvPct === snapshot.currentLtvPct
-      ) {
-        return previous
-      }
-      return snapshot
-    })
-  }, [fetchedBorrowSnapshot])
-
-  const collateralPositions = useMemo(
-    () =>
-      data
-        ? data.borrow.collateralPositions.map((position) => ({
-            ...position,
-            feesLabel: formatUsd(position.feesUsd),
-          }))
-        : [],
-    [data],
+    [data, initialData, portfolioBorrow],
   )
 
-  if (!data || !resolvedWalletProfileId) return null
+  const collateralPositions = portfolioBorrow?.collateralPositions ?? data?.borrow.collateralPositions ?? initialData?.borrow.collateralPositions ?? []
+  const debtPositions = portfolioBorrow?.debtPositions ?? data?.borrow.debtPositions ?? initialData?.borrow.debtPositions ?? []
+  const activityRows = useMemo(
+    () => [...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory), ...(data?.activity.rows ?? initialData?.activity.rows ?? [])],
+    [borrowSession.transactionHistory, data?.activity.rows, initialData?.activity.rows],
+  )
+
+  if (!data || !resolvedWalletProfileId || !portfolioBorrow) return null
 
   return (
     <>
@@ -133,9 +124,10 @@ export function DashboardClient({
             <DashboardBorrowTab
               section="all"
               collateralPositions={collateralPositions}
-              debtPositions={data.borrow.debtPositions}
-              onSnapshotChange={handleSnapshotChange}
+              debtPositions={debtPositions}
               showSummary={false}
+              walletId={borrowSessionWalletId}
+              borrowSession={borrowSession}
             />
           </DashboardSection>
         </div>
@@ -150,7 +142,7 @@ export function DashboardClient({
           </DashboardSection>
         </div>
       ) : null}
-      {activeTab === "activity" ? <RecentActivity rows={data.activity.rows} /> : null}
+      {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
     </>
   )
 }
