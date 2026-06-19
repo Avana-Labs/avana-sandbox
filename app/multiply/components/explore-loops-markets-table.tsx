@@ -28,6 +28,10 @@ const SORT_PRESETS = [
   { label: "Collateral A-Z", value: "protocol:asc" },
 ] as const
 
+const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
+const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
+const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+
 type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
 
 function SearchIcon({ className }: { className?: string } = {}) {
@@ -492,7 +496,7 @@ export function ExploreLoopsMarketsTable({
         </div>
       </div>
 
-      <div className="rounded-[18px] bg-white dark:bg-slate-950">
+      <div className="rounded-[18px] bg-white dark:bg-transparent">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
             <colgroup>
@@ -505,10 +509,10 @@ export function ExploreLoopsMarketsTable({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
+                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   #
                 </th>
-                <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("protocol")}
@@ -521,7 +525,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -534,7 +538,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
@@ -547,7 +551,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("rewards")}
@@ -560,7 +564,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
+                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("points")}
@@ -577,11 +581,11 @@ export function ExploreLoopsMarketsTable({
             </thead>
             <tbody key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`} className="divide-y divide-border dark:divide-white/6">
               {visibleRows.length ? visibleRows.map((row, index) => (
-                <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="asset-swap transition-colors hover:bg-slate-100 dark:hover:bg-white/5" style={{ animationDelay: `${index * 40}ms` }}>
-                  <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
+                <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="group asset-swap transition-colors" style={{ animationDelay: `${index * 40}ms` }}>
+                  <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
                     {page * pageSize + index + 1}
                   </td>
-                  <td className="py-3 pl-6 pr-4">
+                  <td className={`py-3 pl-6 pr-4 ${ROW_HOVER_BG}`}>
                     <CellLink href={row.href} className="flex items-center gap-2.5">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -601,7 +605,7 @@ export function ExploreLoopsMarketsTable({
                       </span>
                     </CellLink>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
                     <CellLink href={row.href} className="flex min-w-0 items-center gap-2.5">
                       {getAssetLogo(row.asset) ? (
                         <>
@@ -625,7 +629,7 @@ export function ExploreLoopsMarketsTable({
                       </span>
                     </CellLink>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
                     <CellLink
                       href={row.href}
                       className={cn(
@@ -636,7 +640,7 @@ export function ExploreLoopsMarketsTable({
                       {row.apy || "—"}
                     </CellLink>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
                     <CellLink href={row.href} className="text-foreground">
                       {row.rewardRows?.[1] ? (
                         <span className="block">
@@ -655,7 +659,7 @@ export function ExploreLoopsMarketsTable({
                       )}
                     </CellLink>
                   </td>
-                  <td className="py-3 px-4 pr-6">
+                  <td className={`py-3 px-4 pr-6 ${ROW_HOVER_RIGHT}`}>
                     {row.waitlistHref ? (
                       <div className="inline-flex items-center">
                         <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
