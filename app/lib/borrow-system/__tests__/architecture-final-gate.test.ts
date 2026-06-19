@@ -46,9 +46,9 @@ describe("borrow architecture final gate", () => {
     expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")).toContain("buildHomeClaimPreview")
   })
 
-  it("keeps claim on home-sim preview runtime until BorrowAction supports claim", () => {
+  it("keeps claim on adapter-backed preview runtime with canonical BorrowAction support", () => {
     const policy = readFileSync(path.join(process.cwd(), "app/lib/borrow-system/claim-adapter-policy.ts"), "utf8")
     expect(policy).toContain("isClaimSupportedByTransactionAdapter")
-    expect(policy).toContain("BorrowAction")
+    expect(policy).toMatch(/return true/)
   })
 })

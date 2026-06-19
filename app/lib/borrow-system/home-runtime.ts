@@ -337,16 +337,35 @@ export function buildHomeRemovePreview(
 }
 
 /**
- * Home-sim claim preview. Intentionally off SandboxTransactionAdapter until BorrowAction supports claim.
- * @see claim-adapter-policy.ts
+ * Adapter-backed claim preview sourced from engine reward positions.
  */
+export function selectRewardClaimableTotals(state: BorrowSystemState, walletId: string): Record<string, number> {
+  const account = state.accounts[walletId]
+  if (!account) return {}
+  return Object.fromEntries(account.rewardPositions.map((position) => [position.id, fixedToNumber(position.claimableUsd6, 6)]))
+}
+
+export function buildClaimBorrowAction(walletId: string, preview: ClaimPreview): BorrowAction | null {
+  if (!preview.hasSelection || preview.effectiveClaimUsd <= 0) {
+    return null
+  }
+
+  return {
+    type: "claim",
+    walletId,
+    rewardPositionIds: preview.selectedPositionIds,
+    amountUsd6: parseFixed(preview.effectiveClaimUsd.toFixed(6), 6),
+  }
+}
+
 export function buildHomeClaimPreview(
+  state: BorrowSystemState,
+  walletId: string,
   positions: HomeClaimPosition[],
-  claimableTotals: Record<string, number>,
   selections: Record<string, boolean>,
   partialAmountUsd: number | null,
 ): ClaimPreview {
-  return calculateClaimPreview(positions, claimableTotals, selections, partialAmountUsd)
+  return calculateClaimPreview(positions, selectRewardClaimableTotals(state, walletId), selections, partialAmountUsd)
 }
 
 export type SupplyPreview = {
