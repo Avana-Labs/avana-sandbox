@@ -84,6 +84,13 @@ export function calculatePriceDropToLiquidationPct(
   return 1 - liquidationPrice / collateralPriceUsd
 }
 
+export function calculateLoopSteps(maxLtv: number, targetMultiplier: number): number {
+  if (targetMultiplier <= 1 || maxLtv >= 1) return 0
+  const stepFactor = 1 / (1 - maxLtv)
+  if (stepFactor <= 1) return 1
+  return Math.max(1, Math.ceil(Math.log(targetMultiplier) / Math.log(stepFactor)))
+}
+
 export function isCorrelatedPair(collateralSymbol: string, borrowSymbol: string): boolean {
   const ethFamily = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH"])
   const btcFamily = new Set(["WBTC", "CBBTC", "BTC"])
