@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { applyBorrowAction, calculateCreditMetrics, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
+import { calculateCreditMetrics, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
 import { deserializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
 import type { SandboxActionResult, TransactionIntent } from "@/app/lib/borrow-system/contracts"
 import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
@@ -49,15 +49,6 @@ export function useBorrowSession({
     window.addEventListener("storage", handleStorage)
     return () => window.removeEventListener("storage", handleStorage)
   }, [walletId])
-
-  const dispatch = useCallback((action: BorrowAction) => {
-    setState((current) =>
-      applyBorrowAction(current, {
-        ...action,
-        at: action.at ?? Date.now(),
-      }),
-    )
-  }, [])
 
   const reset = useCallback(() => {
     clearBorrowSessionState(walletId)
@@ -112,7 +103,6 @@ export function useBorrowSession({
     createIntent,
     previewTransaction,
     executeTransaction,
-    dispatch,
     reset,
   }
 }
