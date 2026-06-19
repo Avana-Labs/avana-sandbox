@@ -10,6 +10,9 @@ import type {
   TransactionResult,
 } from "@/app/lib/borrow-system/contracts"
 import { parseFixed } from "@/app/lib/credit-engine"
+import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
+import type { PortfolioBorrowTabData } from "@/app/lib/data/providers/portfolio"
+import type { AssetDetail, PoolDetail } from "@/app/lib/borrow-detail"
 
 describe("borrow system contracts", () => {
   it("defines transaction intent, preview, and result contracts", () => {
@@ -111,6 +114,10 @@ describe("borrow system contracts", () => {
         },
       }),
       readMarkets: async () => [],
+      readBorrowPage: async () => ({}) as BorrowPageData,
+      readPortfolioBorrow: async () => ({}) as PortfolioBorrowTabData,
+      readPoolDetail: async () => null as PoolDetail | null,
+      readAssetDetail: async () => null as AssetDetail | null,
     }
 
     const productionReadAdapter: ProductionReadAdapter = {
@@ -128,6 +135,10 @@ describe("borrow system contracts", () => {
         },
       }),
       readMarkets: async () => [],
+      readBorrowPage: async () => ({}) as BorrowPageData,
+      readPortfolioBorrow: async () => ({}) as PortfolioBorrowTabData,
+      readPoolDetail: async () => null as PoolDetail | null,
+      readAssetDetail: async () => null as AssetDetail | null,
     }
 
     expect(sandboxReadAdapter.mode).toBe("sandbox")

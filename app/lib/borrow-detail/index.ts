@@ -38,8 +38,7 @@ import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/
 import { buildMockBorrowSystemState, HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import { selectBorrowMarketSummaries } from "@/app/lib/borrow-system/selectors"
-import { buildPoolDetail } from "./pool.mock"
-import { buildAssetDetail, resolveAsset } from "./asset.mock"
+import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import type { AssetDetail, PoolDetail } from "./types"
 
 const detailWalletId = getDefaultWalletProfileId()
@@ -102,24 +101,23 @@ export { HOME_POOL_TO_MARKET_ID as HOME_POOL_ID_MAP } from "@/app/lib/borrow-sys
  * - `null`/unknown → `null` (caller should render `notFound()`).
  */
 export function getPoolDetail(id: string): PoolDetail | null {
-  const resolvedId = HOME_POOL_TO_MARKET_ID[id] ?? id
-  const row = detailPoolRows.find((candidate) => candidate.id === resolvedId)
-  if (!row) return null
-  return buildPoolDetail(row)
+  return resolvePoolDetailFromState(detailState, detailWalletId, id)
 }
 
 /** Returns every (id, detail) that can be rendered. Used for warm-up / tests. */
 export function listAllPoolDetails(): PoolDetail[] {
-  return detailPoolRows.map((row) => buildPoolDetail(row))
+  return detailPoolRows
+    .map((row) => resolvePoolDetailFromState(detailState, detailWalletId, row.id))
+    .filter((detail): detail is PoolDetail => detail !== null)
 }
 
 /** Returns the detail view-model for a borrowable asset id. */
 export function getAssetDetail(id: string): AssetDetail | null {
-  const asset = detailAssets.find((candidate) => candidate.id === id) ?? resolveAsset(id)
-  if (!asset) return null
-  return buildAssetDetail(asset)
+  return resolveAssetDetailFromState(id)
 }
 
 export function listAllAssetDetails(): AssetDetail[] {
-  return detailAssets.map((asset) => buildAssetDetail(asset))
+  return detailAssets
+    .map((asset) => resolveAssetDetailFromState(asset.id))
+    .filter((detail): detail is AssetDetail => detail !== null)
 }
