@@ -5,6 +5,7 @@ export function validateMultiplyAction(params: {
   theoreticalMaxMultiplier: number
   publicMaxMultiplier: number
   safeMaxMultiplier: number
+  recommendedMaxMultiplier: number
   minHealthFactor: number
   maxLtv: number
   healthFactor: number | "infinity"
@@ -42,7 +43,9 @@ export function validateMultiplyAction(params: {
     errors.push("Estimated price impact is too high.")
   }
 
-  if (params.selectedMultiplier > params.safeMaxMultiplier) {
+  if (params.selectedMultiplier > params.recommendedMaxMultiplier) {
+    warnings.push("Selected multiplier exceeds the recommended maximum for this market.")
+  } else if (params.selectedMultiplier > params.safeMaxMultiplier) {
     warnings.push("Selected multiplier exceeds the recommended safe maximum.")
   }
   if (params.healthFactor !== "infinity" && params.healthFactor < 1.5) {

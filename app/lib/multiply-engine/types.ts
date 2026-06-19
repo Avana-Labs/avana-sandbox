@@ -17,9 +17,11 @@ export type MultiplyMarketRecord = {
   }
   risk: {
     maxLtv: number
+    collateralFactor: number
     liquidationThreshold: number
     hardMaxMultiplier: number
     publicMaxMultiplier: number
+    recommendedMaxMultiplier: number
     minHealthFactor: number
     riskTier: MultiplyRiskTier
   }
@@ -127,6 +129,7 @@ export type MultiplySimulation = {
     theoreticalMaxMultiplier: number
     safeMaxMultiplier: number
     publicMaxMultiplier: number
+    recommendedMaxMultiplier: number
     minHealthFactor: number
   }
   validation: {
