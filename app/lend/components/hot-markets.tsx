@@ -289,7 +289,7 @@ export function HotMarkets({
     return snapshot?.href ?? `/lend/markets/${assetId}`
   }
 
-  const renderSequence = (copy: "a" | "b") =>
+  const renderSequence = (copy: "a" | "b", interactive = true) =>
     sequence.map((assetId, index) => {
       const cardKey = `${copy}-${assetId}-${index}`
       return (
@@ -301,6 +301,7 @@ export function HotMarkets({
           hover={hover}
           onHover={setHover}
           onLeave={() => setHover(null)}
+          interactive={interactive}
         />
       )
     })
