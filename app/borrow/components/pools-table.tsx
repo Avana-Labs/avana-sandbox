@@ -198,7 +198,7 @@ function CollateralDesktopTable({
                     sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>TRADING APY</span>
+                  <span>FEES</span>
                   <SortIcon />
                 </button>
               </th>
