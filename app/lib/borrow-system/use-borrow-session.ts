@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { applyBorrowAction, calculateCreditMetrics, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
 import { deserializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
 import type { SandboxActionResult, TransactionIntent } from "@/app/lib/borrow-system/contracts"
+import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
 import { SandboxTransactionAdapter } from "@/app/lib/borrow-system/sandbox-transaction-adapter"
 import {
   selectBorrowableAssets,
@@ -84,6 +85,7 @@ export function useBorrowSession({
     (intent: TransactionIntent): Promise<SandboxActionResult> => transactionAdapter.executeTransaction(intent),
     [transactionAdapter],
   )
+  const readAdapter = useMemo(() => new SandboxBorrowReadAdapter({ state }), [state])
 
   const metrics = useMemo(() => calculateCreditMetrics(state, walletId), [state, walletId])
   const marketSummaries = useMemo(() => selectBorrowMarketSummaries(state, walletId), [state, walletId])
@@ -106,6 +108,7 @@ export function useBorrowSession({
     initialDebts,
     walletSnapshot,
     getBorrowableAssetsForMarket,
+    readAdapter,
     createIntent,
     previewTransaction,
     executeTransaction,
