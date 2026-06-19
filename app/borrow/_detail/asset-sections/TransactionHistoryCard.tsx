@@ -39,10 +39,6 @@ const FILTERS = [
   { id: "rewards", label: "Rewards" },
 ] as const
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
-
 function formatRelativeTime(iso: string) {
   const elapsedMs = Math.max(0, Date.now() - new Date(iso).getTime())
   const totalSeconds = Math.max(1, Math.floor(elapsedMs / 1000))
@@ -125,22 +121,22 @@ export function TransactionHistoryCard({
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">
                 {visibleTransactions.map((tx) => (
-                  <tr key={tx.id} className="group transition-colors">
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                  <tr key={tx.id}>
+                    <td className="px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
                       {tx.timeLabel ?? formatRelativeTime(tx.at)}
                     </td>
-                    <td className={`px-5 py-3 align-middle ${ROW_HOVER_BG}`}>
+                    <td className="px-5 py-3 align-middle">
                       <span className={cn("text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind]}
                       </span>
                     </td>
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
+                    <td className="px-5 py-3 align-middle font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84">
                       {tx.amountLabel}
                     </td>
-                    <td className={`px-5 py-3 align-middle text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 ${ROW_HOVER_BG}`}>
+                    <td className="px-5 py-3 align-middle text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
                       <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol)}</span>
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84 ${ROW_HOVER_RIGHT}`}>
+                    <td className="px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84">
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}
@@ -192,22 +188,22 @@ export function TransactionHistoryCard({
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">
                 {visibleTransactions.map((tx) => (
-                  <tr key={tx.id} className="group transition-colors">
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                  <tr key={tx.id}>
+                    <td className="px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
                       {tx.timeLabel ?? formatRelativeTime(tx.at)}
                     </td>
-                    <td className={`px-5 py-3 align-middle ${ROW_HOVER_BG}`}>
+                    <td className="px-5 py-3 align-middle">
                       <span className={cn("text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind]}
                       </span>
                     </td>
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
+                    <td className="px-5 py-3 align-middle font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84">
                       {tx.amountLabel}
                     </td>
-                    <td className={`px-5 py-3 align-middle text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 ${ROW_HOVER_BG}`}>
+                    <td className="px-5 py-3 align-middle text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
                       <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol)}</span>
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84 ${ROW_HOVER_RIGHT}`}>
+                    <td className="px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84">
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}
