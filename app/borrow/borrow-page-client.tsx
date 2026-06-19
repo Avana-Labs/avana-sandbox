@@ -73,7 +73,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
       title: "Trending Collateral",
       rows: sortByMetric("availableUsd").map((pool) => ({
         id: `trending-${pool.id}`,
-        href: `/borrow/pool/${pool.id}`,
+        href: `/borrow/markets/${pool.id}`,
         pool,
         title: pool.name,
         subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
@@ -86,7 +86,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
       title: "Rewards Pools",
       rows: sortByMetric("tvlUsd").map((pool) => ({
         id: `rewards-${pool.id}`,
-        href: `/borrow/pool/${pool.id}`,
+        href: `/borrow/markets/${pool.id}`,
         pool,
         title: pool.name,
         subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
@@ -102,7 +102,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
         .slice(0, 3)
         .map((pool) => ({
           id: `apy-${pool.id}`,
-          href: `/borrow/pool/${pool.id}`,
+          href: `/borrow/markets/${pool.id}`,
           pool,
           title: pool.name,
           subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
