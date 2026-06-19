@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest"
 import { parseFixed, type BorrowAction } from "@/app/lib/credit-engine"
 import { SandboxTransactionAdapter } from "@/app/lib/borrow-system/sandbox-transaction-adapter"
-import { EXAMPLE_UNI_MARKET_ID, EXAMPLE_UNI_USDC_ASSET_ID, EXAMPLE_WALLET_1_DEBT_ID, makeExampleBorrowSystemState } from "@/app/lib/credit-engine/__tests__/fixtures"
+import {
+  EXAMPLE_UNI_MARKET_ID,
+  EXAMPLE_UNI_USDC_ASSET_ID,
+  EXAMPLE_WALLET_1_DEBT_ID,
+  makeExampleBorrowSystemState,
+} from "@/app/lib/credit-engine/__tests__/fixtures"
+import { assertSandboxActionContract } from "./sandbox-adapter-contract"
 
 function createHarness() {
   const seed = makeExampleBorrowSystemState()
@@ -27,8 +33,8 @@ function createHarness() {
 }
 
 describe("sandbox transaction adapter", () => {
-  it("creates a transaction intent for deposit lp and returns a simulated receipt on execution", async () => {
-    const { adapter, getState } = createHarness()
+  it("deposit LP satisfies the sandbox action contract", async () => {
+    const harness = createHarness()
     const action: BorrowAction = {
       type: "supplyCollateral",
       walletId: "wallet-1",
@@ -36,112 +42,132 @@ describe("sandbox transaction adapter", () => {
       amountUsd6: parseFixed("1000", 6),
     }
 
-    const intent = adapter.createIntent(action)
-    const preview = await adapter.previewTransaction(intent)
-    const result = await adapter.executeTransaction(intent)
+    const { preview, result } = await assertSandboxActionContract(harness, action, {
+      expectedActionType: "deposit",
+      walletId: "wallet-1",
+    })
 
-    expect(intent.actionType).toBe("deposit")
-    expect(preview.allowed).toBe(true)
-    expect(result.receipt.simulated).toBe(true)
-    expect(result.historyItem.simulated).toBe(true)
-    expect(getState().transactions.at(-1)?.kind).toBe("deposit")
+    expect(preview.after.collateralValueUsd6).toBeGreaterThan(preview.before.collateralValueUsd6)
+    expect(result.state.transactions.at(-1)?.kind).toBe("deposit")
   })
 
-  it("creates a borrow intent, previews through the credit engine, and updates mock state consistently", async () => {
-    const { adapter, getState } = createHarness()
-    const intent = adapter.createIntent({
+  it("borrow satisfies the sandbox action contract", async () => {
+    const harness = createHarness()
+    const action: BorrowAction = {
       type: "borrow",
       walletId: "wallet-1",
       marketId: EXAMPLE_UNI_MARKET_ID,
       assetId: EXAMPLE_UNI_USDC_ASSET_ID,
       amountUsd6: parseFixed("300", 6),
+    }
+
+    const { preview, result } = await assertSandboxActionContract(harness, action, {
+      expectedActionType: "borrow",
+      walletId: "wallet-1",
     })
 
-    const preview = await adapter.previewTransaction(intent)
-    const result = await adapter.executeTransaction(intent)
-
-    expect(preview.allowed).toBe(true)
     expect(preview.after.totalBorrowedUsd6).toBeGreaterThan(preview.before.totalBorrowedUsd6)
-    expect(result.receipt.actionType).toBe("borrow")
-    expect(result.result.simulated).toBe(true)
     expect(result.state.accounts["wallet-1"]!.debtPositions[0]!.principalBorrowedUsd6).toBeGreaterThan(parseFixed("4200", 6))
-    expect(getState().transactions.at(-1)?.kind).toBe("borrow")
   })
 
-  it("creates a repay intent and records simulated history", async () => {
-    const { adapter, getState } = createHarness()
-    const intent = adapter.createIntent({
+  it("repay satisfies the sandbox action contract", async () => {
+    const harness = createHarness()
+    const action: BorrowAction = {
       type: "repay",
       walletId: "wallet-1",
       debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
       amountUsd6: parseFixed("250", 6),
+    }
+
+    const { preview, result } = await assertSandboxActionContract(harness, action, {
+      expectedActionType: "repay",
+      walletId: "wallet-1",
     })
 
-    const result = await adapter.executeTransaction(intent)
-
-    expect(result.historyItem.kind).toBe("repay")
-    expect(result.historyItem.simulated).toBe(true)
-    expect(getState().transactions.at(-1)?.kind).toBe("repay")
+    expect(preview.after.totalBorrowedUsd6).toBeLessThan(preview.before.totalBorrowedUsd6)
+    expect(result.state.transactions.at(-1)?.kind).toBe("repay")
   })
 
-  it("creates a withdraw intent and blocks unsafe withdrawals before mutating state", async () => {
-    const { adapter, seed, getState } = createHarness()
-    const safeIntent = adapter.createIntent({
+  it("withdraw satisfies the sandbox action contract for safe removals", async () => {
+    const harness = createHarness()
+    const action: BorrowAction = {
       type: "removeCollateral",
       walletId: "wallet-1",
       positionId: "wallet-1:weth-usdc",
       amountUsd6: parseFixed("1000", 6),
+    }
+
+    const { preview, result } = await assertSandboxActionContract(harness, action, {
+      expectedActionType: "withdraw",
+      walletId: "wallet-1",
     })
 
-    const safeResult = await adapter.executeTransaction(safeIntent)
-    expect(safeResult.historyItem.kind).toBe("withdraw")
+    expect(preview.after.collateralValueUsd6).toBeLessThan(preview.before.collateralValueUsd6)
+    expect(result.historyItem.kind).toBe("withdraw")
+  })
 
-    const blockedIntent = adapter.createIntent({
+  it("blocks unsafe withdraw before mutating sandbox state", async () => {
+    const harness = createHarness()
+    const beforeTransactions = harness.getState().transactions.length
+    const action: BorrowAction = {
       type: "removeCollateral",
       walletId: "wallet-1",
       positionId: "wallet-1:weth-usdc",
       percentBps: 10_000,
+    }
+
+    await assertSandboxActionContract(harness, action, {
+      expectedActionType: "withdraw",
+      walletId: "wallet-1",
     })
 
-    const blockedPreview = await adapter.previewTransaction(blockedIntent)
-    expect(blockedPreview.allowed).toBe(false)
-    expect(getState().transactions.length).toBe(seed.transactions.length + 1)
+    expect(harness.getState().transactions).toHaveLength(beforeTransactions)
   })
 
-  it("creates a liquidation preview intent without mutating source state during preview", async () => {
-    const { adapter, getState } = createHarness()
-    const state = getState()
+  it("liquidation preview does not mutate state and execute remains preview-only", async () => {
+    const harness = createHarness()
+    const state = harness.getState()
     state.accounts["wallet-1"]!.debtPositions[0]!.principalBorrowedUsd6 = parseFixed("18000", 6)
     state.accounts["wallet-1"]!.debtPositions[0]!.debtSharesUsd6 = parseFixed("18000", 6)
     const beforeTransactions = state.transactions.length
 
-    const intent = adapter.createIntent({
+    const action: BorrowAction = {
       type: "liquidate",
       walletId: "wallet-1",
       positionId: "wallet-1:weth-usdc",
       debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
       repayAmountUsd6: parseFixed("2000", 6),
+    }
+
+    const { preview, result } = await assertSandboxActionContract(harness, action, {
+      expectedActionType: "liquidate",
+      previewOnly: true,
+      walletId: "wallet-1",
     })
 
-    const preview = await adapter.previewTransaction(intent)
     expect(preview.allowed).toBe(true)
-    expect(getState().transactions).toHaveLength(beforeTransactions)
+    expect(preview.riskLabel).toBe("danger")
+    expect(result.receipt.error).toContain("preview-only")
+    expect(harness.getState().transactions).toHaveLength(beforeTransactions)
   })
 
   it("resets sandbox state back to the original seed", async () => {
-    const { adapter, seed, getState } = createHarness()
-    const intent = adapter.createIntent({
+    const harness = createHarness()
+    const action: BorrowAction = {
       type: "borrow",
       walletId: "wallet-1",
       marketId: EXAMPLE_UNI_MARKET_ID,
       assetId: EXAMPLE_UNI_USDC_ASSET_ID,
       amountUsd6: parseFixed("300", 6),
+    }
+
+    await assertSandboxActionContract(harness, action, {
+      expectedActionType: "borrow",
+      walletId: "wallet-1",
     })
+    expect(harness.getState().transactions.length).toBeGreaterThan(harness.seed.transactions.length)
 
-    await adapter.executeTransaction(intent)
-    expect(getState().transactions.length).toBeGreaterThan(seed.transactions.length)
-
-    adapter.resetSandboxState()
-    expect(getState()).toEqual(seed)
+    harness.adapter.resetSandboxState()
+    expect(harness.getState()).toEqual(harness.seed)
   })
 })
