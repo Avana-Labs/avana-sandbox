@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import { useEffect, useMemo, useState } from "react"
 import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
+import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import type { PortfolioBorrowTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { CreditLinesCard } from "./credit-lines-card"
@@ -13,6 +14,7 @@ import { PortfolioTabs, type PortfolioTab } from "./portfolio-tabs"
 import { MultiplyCollateralTable } from "./multiply-collateral-table"
 import type { BorrowSnapshot } from "./borrow-hero-state"
 import { usePortfolioPage } from "./use-portfolio-page"
+import { usePortfolioBorrowLive } from "./use-portfolio-borrow-live"
 
 function PortfolioSection({
   title,
@@ -57,25 +59,7 @@ export function PortfolioDashboard({
     walletId: borrowSessionWalletId,
     sessionSeed: borrowSessionSeed,
   })
-  const [portfolioBorrow, setPortfolioBorrow] = useState<PortfolioBorrowTabData | null>(initialData?.borrow ?? null)
-
-  useEffect(() => {
-    let cancelled = false
-
-    void borrowSession.readAdapter.readPortfolioBorrow(borrowSessionWalletId).then((next) => {
-      if (!cancelled) {
-        setPortfolioBorrow(next)
-      }
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [borrowSession.readAdapter, borrowSessionWalletId])
-
-  useEffect(() => {
-    setPortfolioBorrow((current) => current ?? data?.borrow ?? initialData?.borrow ?? null)
-  }, [data, initialData])
+  const portfolioBorrow = usePortfolioBorrowLive(borrowSessionWalletId, borrowSession)
   const fetchedMultiplySnapshot = useMemo<BorrowSnapshot>(
     () => ({
       approvedUsd: data?.multiply.creditLines.approvedUsd ?? initialData?.multiply.creditLines.approvedUsd ?? 0,
@@ -115,6 +99,10 @@ export function PortfolioDashboard({
 
   const collateralPositions = portfolioBorrow?.collateralPositions ?? data?.borrow.collateralPositions ?? initialData?.borrow.collateralPositions ?? []
   const debtPositions = portfolioBorrow?.debtPositions ?? data?.borrow.debtPositions ?? initialData?.borrow.debtPositions ?? []
+  const activityRows = useMemo(
+    () => [...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory), ...(data?.activity.rows ?? initialData?.activity.rows ?? [])],
+    [borrowSession.transactionHistory, data?.activity.rows, initialData?.activity.rows],
+  )
 
   if (!data || !resolvedWalletProfileId || !portfolioBorrow) return null
 
@@ -154,7 +142,7 @@ export function PortfolioDashboard({
           </PortfolioSection>
         </div>
       ) : null}
-      {activeTab === "activity" ? <RecentActivity rows={data.activity.rows} /> : null}
+      {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
     </>
   )
 }
