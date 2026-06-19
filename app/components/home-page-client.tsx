@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { ArrowLeft, ArrowRight, Lock, Settings } from "lucide-react"
 import { toast } from "sonner"
-import { applyBorrowAction, calculateSpokeCreditMetrics, formatFixed, parseFixed } from "@/app/lib/credit-engine"
+import { calculateSpokeCreditMetrics, formatFixed, parseFixed, type BorrowAction } from "@/app/lib/credit-engine"
 import { buildBorrowSessionSeed, getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
 import {
   buildHomeBorrowPreview,
@@ -15,6 +15,7 @@ import {
   selectHomeDebtMap,
 } from "@/app/lib/borrow-system/home-runtime"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
+import { selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import {
   HOME_CLAIM_POSITIONS,
@@ -64,6 +65,13 @@ type HomeFlowState = {
 
 function fixedToNumber(value: bigint, decimals: number) {
   return Number.parseFloat(formatFixed(value, decimals))
+}
+
+function executedAmountUsd(action: BorrowAction, fallbackUsd: number) {
+  if ("amountUsd6" in action && action.amountUsd6 != null) {
+    return fixedToNumber(action.amountUsd6, 6)
+  }
+  return fallbackUsd
 }
 
 export function HomePageClient() {
@@ -168,6 +176,18 @@ export function HomePageClient() {
   const activeFlow = homeFlow?.mode === mode ? homeFlow : null
   const activeFlowStage = activeFlow?.stage ?? "review"
 
+  const executeHomeAction = async (action: BorrowAction) => {
+    const intent = session.createIntent(action)
+    const preview = await session.previewTransaction(intent)
+    if (!preview.allowed) {
+      toast.error(preview.validationErrors[0] ?? "Unable to complete transaction")
+      setHomeFlow({ mode: activeFlow?.mode ?? mode, stage: "review" })
+      return null
+    }
+
+    return session.executeTransaction(preview.intent)
+  }
+
   useEffect(() => {
     if (!session.collateralPools.length) return
     if (!session.collateralPools.some((pool) => pool.id === borrowPoolId)) {
@@ -216,142 +236,157 @@ export function HomePageClient() {
     }
 
     const timer = window.setTimeout(() => {
-      if (homeFlow.mode === "borrow" && borrowToken && borrowPool) {
-        const amountUsd = Number.parseFloat(borrowAmount) || 0
-        const at = Date.now()
-        const action = {
-          type: "borrow" as const,
-          walletId,
-          marketId: borrowPool.id,
-          assetId: borrowToken.id,
-          amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
-          at,
-        }
-        const nextState = applyBorrowAction(session.state, action)
-        const nextMetrics = calculateSpokeCreditMetrics(nextState, walletId, nextState.markets[borrowPool.id]!.spokeId)
-        const nextHealthFactor = fixedToNumber(nextMetrics.healthFactorWad, 18)
-        const nextAvailableCredit = fixedToNumber(nextMetrics.availableCreditUsd6, 6)
+      void (async () => {
+        if (homeFlow.mode === "borrow" && borrowToken && borrowPool) {
+          const amountUsd = Number.parseFloat(borrowAmount) || 0
+          const action = {
+            type: "borrow" as const,
+            walletId,
+            marketId: borrowPool.id,
+            assetId: borrowToken.id,
+            amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
+            at: Date.now(),
+          }
+          const result = await executeHomeAction(action)
+          if (!result) return
 
-        session.dispatch(action)
-        setBorrowAmount("")
-        setHomeFlow({
-          mode: "borrow",
-          stage: "success",
-          success: {
-            amountLabel: `${amountUsd.toFixed(0)} ${borrowToken.symbol}`,
-            title: "Borrow successful",
-            description: "Borrow completed.",
-            rows: [
-              { label: "Borrow APR", value: `${borrowToken.borrowApr.toFixed(1)}%`, tone: "warning" },
-              { label: "Health factor", value: formatHealthFactor(nextHealthFactor), tone: "positive" },
-              { label: "Remaining borrow power", value: formatCompactUsd(nextAvailableCredit) },
-            ],
-          },
-        })
-        toast.success(`Borrowed ${amountUsd.toFixed(0)} ${borrowToken.symbol}`)
-        return
-      }
+          const nextMetrics = calculateSpokeCreditMetrics(result.state, walletId, result.state.markets[borrowPool.id]!.spokeId)
+          const nextHealthFactor = fixedToNumber(nextMetrics.healthFactorWad, 18)
+          const nextAvailableCredit = fixedToNumber(nextMetrics.availableCreditUsd6, 6)
+          const executedUsd = executedAmountUsd(action, amountUsd)
 
-      if (homeFlow.mode === "repay" && repayDebtContext) {
-        const amountUsd = Number.parseFloat(repayAmount) || 0
-        const at = Date.now()
-        const action = {
-          type: "repay" as const,
-          walletId,
-          debtPositionId: repayDebtContext.position.id,
-          amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
-          at,
-        }
-        const nextState = applyBorrowAction(session.state, action)
-        const nextDebtContext = selectHomeDebtContextForMarket(nextState, walletId, repayPoolId)
-        const remainingDebtUsd = nextDebtContext?.amountUsd ?? 0
-
-        session.dispatch(action)
-        setRepayAmount("")
-        setHomeFlow({
-          mode: "repay",
-          stage: "success",
-          success: {
-            amountLabel: `${formatCompactUsd(amountUsd)} ${repayDebtContext.token.symbol}`,
-            title: "Repayment successful",
-            description: "Repayment completed.",
-            rows: [
-              {
-                label: "Remaining debt",
-                value: `${formatCompactUsd(remainingDebtUsd)} ${repayDebtContext.token.symbol}`,
-                tone: remainingDebtUsd === 0 ? "positive" : "warning",
-              },
-              { label: "Health factor", value: repayPreview.healthFactorAfterLabel, tone: "positive" },
-              { label: "Interest saved / yr", value: formatCompactUsd(repayPreview.yearlyInterestSavedUsd), tone: "positive" },
-            ],
-          },
-        })
-        toast.success(`Repaid ${formatCompactUsd(amountUsd)} ${repayDebtContext.token.symbol}`)
-        return
-      }
-
-      if (homeFlow.mode === "claim") {
-        const rows = Object.entries(claimPreview.tokenTotals)
-          .filter(([, value]) => value > 0)
-          .slice(0, 3)
-          .map(([symbol, value]) => ({
-            label: `${symbol} received`,
-            value: getClaimBreakdownLabel(symbol, value),
-            tone: "positive" as const,
-          }))
-
-        setClaimableTotals((currentValue) => {
-          const nextValue = { ...currentValue }
-          claimPreview.selectedPositionIds.forEach((positionId) => {
-            nextValue[positionId] = 0
-          })
-          return nextValue
-        })
-        setClaimAmount("")
-        setHomeFlow({
-          mode: "claim",
-          stage: "success",
+          setBorrowAmount("")
+          setHomeFlow({
+            mode: "borrow",
+            stage: "success",
             success: {
-              amountLabel: formatUsd(claimPreview.effectiveClaimUsd),
-              title: "Claim successful",
-            description: "Fees claimed.",
-            rows,
-          },
-        })
-        toast.success(`Claimed ${formatUsd(claimPreview.effectiveClaimUsd)} in fees`)
-        return
-      }
-
-      if (homeFlow.mode === "remove" && removePool) {
-        const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === removePool.id)
-        if (!position) {
+              amountLabel: `${formatCompactUsd(executedUsd)} ${borrowToken.symbol}`,
+              title: result.receipt.status === "success" ? "Borrow successful" : "Borrow failed",
+              description: result.receipt.status === "success" ? "Borrow completed." : result.receipt.error ?? "Borrow failed.",
+              rows: [
+                { label: "Borrow APR", value: `${borrowToken.borrowApr.toFixed(1)}%`, tone: "warning" },
+                { label: "Health factor", value: formatHealthFactor(nextHealthFactor), tone: "positive" },
+                { label: "Remaining borrow power", value: formatCompactUsd(nextAvailableCredit) },
+              ],
+            },
+          })
+          toast.success(`Borrowed ${formatCompactUsd(executedUsd)} ${borrowToken.symbol}`)
           return
         }
-        const at = Date.now()
-        const action = {
-          type: "removeCollateral" as const,
-          walletId,
-          positionId: position.id,
-          percentBps: removePercent * 100,
-          at,
+
+        if (homeFlow.mode === "repay" && repayDebtContext) {
+          const amountUsd = Number.parseFloat(repayAmount) || 0
+          const action = {
+            type: "repay" as const,
+            walletId,
+            debtPositionId: repayDebtContext.position.id,
+            amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
+            at: Date.now(),
+          }
+          const result = await executeHomeAction(action)
+          if (!result) return
+
+          const nextDebtContext = selectHomeDebtContextForMarket(result.state, walletId, repayPoolId)
+          const remainingDebtUsd = nextDebtContext?.amountUsd ?? 0
+          const nextMetrics = calculateSpokeCreditMetrics(result.state, walletId, result.state.markets[repayPoolId]!.spokeId)
+          const executedUsd = executedAmountUsd(action, amountUsd)
+
+          setRepayAmount("")
+          setHomeFlow({
+            mode: "repay",
+            stage: "success",
+            success: {
+              amountLabel: `${formatCompactUsd(executedUsd)} ${repayDebtContext.token.symbol}`,
+              title: result.receipt.status === "success" ? "Repayment successful" : "Repayment failed",
+              description: result.receipt.status === "success" ? "Repayment completed." : result.receipt.error ?? "Repayment failed.",
+              rows: [
+                {
+                  label: "Remaining debt",
+                  value: `${formatCompactUsd(remainingDebtUsd)} ${repayDebtContext.token.symbol}`,
+                  tone: remainingDebtUsd === 0 ? "positive" : "warning",
+                },
+                { label: "Health factor", value: formatHealthFactor(fixedToNumber(nextMetrics.healthFactorWad, 18)), tone: "positive" },
+                { label: "Interest saved / yr", value: formatCompactUsd(repayPreview.yearlyInterestSavedUsd), tone: "positive" },
+              ],
+            },
+          })
+          toast.success(`Repaid ${formatCompactUsd(executedUsd)} ${repayDebtContext.token.symbol}`)
+          return
         }
-        session.dispatch(action)
-        setHomeFlow({
-          mode: "remove",
-          stage: "success",
-          success: {
-            amountLabel: `${removePercent}% · ${formatCompactUsd(removePreview.removeUsd)}`,
-            title: "Removal successful",
-            description: "Collateral removed.",
-            rows: [
-              { label: "Received", value: formatCompactUsd(removePreview.removeUsd), tone: "positive" },
-              { label: "Remaining collateral", value: formatCompactUsd(removePreview.afterCollateralUsd) },
-              { label: "Health factor", value: removePreview.healthFactorAfterLabel, tone: removePreview.isUnsafe ? "danger" : "positive" },
-            ],
-          },
-        })
-        toast.success(`Removed ${removePercent}% from ${removePool.name}`)
-      }
+
+        if (homeFlow.mode === "claim") {
+          const rows = Object.entries(claimPreview.tokenTotals)
+            .filter(([, value]) => value > 0)
+            .slice(0, 3)
+            .map(([symbol, value]) => ({
+              label: `${symbol} received`,
+              value: getClaimBreakdownLabel(symbol, value),
+              tone: "positive" as const,
+            }))
+
+          setClaimableTotals((currentValue) => {
+            const nextValue = { ...currentValue }
+            claimPreview.selectedPositionIds.forEach((positionId) => {
+              nextValue[positionId] = 0
+            })
+            return nextValue
+          })
+          setClaimAmount("")
+          setHomeFlow({
+            mode: "claim",
+            stage: "success",
+              success: {
+                amountLabel: formatUsd(claimPreview.effectiveClaimUsd),
+                title: "Claim successful",
+              description: "Fees claimed.",
+              rows,
+            },
+          })
+          toast.success(`Claimed ${formatUsd(claimPreview.effectiveClaimUsd)} in fees`)
+          return
+        }
+
+        if (homeFlow.mode === "remove" && removePool) {
+          const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === removePool.id)
+          if (!position) {
+            return
+          }
+          const action = {
+            type: "removeCollateral" as const,
+            walletId,
+            positionId: position.id,
+            amountUsd6: parseFixed(removePreview.removeUsd.toFixed(6), 6),
+            percentBps: removePercent * 100,
+            at: Date.now(),
+          }
+          const result = await executeHomeAction(action)
+          if (!result) return
+
+          const nextPool = selectBorrowCollateralPools(result.state, walletId).find((pool) => pool.id === removePool.id) ?? null
+          const nextMetrics = calculateSpokeCreditMetrics(result.state, walletId, result.state.markets[removePool.id]!.spokeId)
+          const executedUsd = executedAmountUsd(action, removePreview.removeUsd)
+
+          setHomeFlow({
+            mode: "remove",
+            stage: "success",
+            success: {
+              amountLabel: `${removePercent}% · ${formatCompactUsd(executedUsd)}`,
+              title: result.receipt.status === "success" ? "Removal successful" : "Removal failed",
+              description: result.receipt.status === "success" ? "Collateral removed." : result.receipt.error ?? "Removal failed.",
+              rows: [
+                { label: "Received", value: formatCompactUsd(executedUsd), tone: "positive" },
+                { label: "Remaining collateral", value: formatCompactUsd(nextPool?.collateralUsd ?? 0) },
+                {
+                  label: "Health factor",
+                  value: formatHealthFactor(fixedToNumber(nextMetrics.healthFactorWad, 18)),
+                  tone: fixedToNumber(nextMetrics.healthFactorWad, 18) < 1 ? "danger" : "positive",
+                },
+              ],
+            },
+          })
+          toast.success(`Removed ${removePercent}% from ${removePool.name}`)
+        }
+      })()
     }, 5000)
 
     return () => window.clearTimeout(timer)
@@ -369,7 +404,6 @@ export function HomePageClient() {
       repayPoolId,
       repayDebtContext,
       repayPreview,
-      session.dispatch,
       session.state,
       walletId,
   ])
