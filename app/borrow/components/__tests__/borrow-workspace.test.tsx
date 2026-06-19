@@ -88,8 +88,8 @@ vi.mock("@/app/borrow/components/tabs-bar", () => ({
   isPoolTab: () => true,
 }))
 
-vi.mock("@/app/borrow/components/pools-table", () => ({
-  PoolsTable: ({
+vi.mock("@/app/borrow/components/collateral-pools-table", () => ({
+  CollateralPoolsTable: ({
     onUseAsCollateral,
     onBorrowAssetMobile,
   }: {
@@ -105,7 +105,7 @@ vi.mock("@/app/borrow/components/pools-table", () => ({
       </button>
     </div>
   ),
-  PoolsList: () => null,
+  CollateralPoolsList: () => null,
 }))
 
 vi.mock("@/app/borrow/components/borrow-modal", () => ({

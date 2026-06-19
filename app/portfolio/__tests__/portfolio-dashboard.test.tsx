@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
-import { PortfolioDashboard } from "@/app/portfolio/portfolio-dashboard"
+import { DashboardClient } from "@/app/dashboard/dashboard-client"
 
 const readPortfolioBorrow = vi.fn()
 
@@ -92,8 +92,8 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
   }),
 }))
 
-vi.mock("@/app/portfolio/portfolio-tabs", () => ({
-  PortfolioTabs: ({ onTabChange }: { onTabChange: (tab: "overview") => void }) => (
+vi.mock("@/app/dashboard/dashboard-tabs", () => ({
+  DashboardTabs: ({ onTabChange }: { onTabChange: (tab: "overview") => void }) => (
     <button type="button" onClick={() => onTabChange("overview")}>
       Borrow tab
     </button>
@@ -104,8 +104,8 @@ vi.mock("@/app/portfolio/credit-lines-card", () => ({
   CreditLinesCard: ({ creditLines }: { creditLines: { approvedUsd: number } }) => <div>approved:{creditLines.approvedUsd}</div>,
 }))
 
-vi.mock("@/app/portfolio/portfolio-positions", () => ({
-  PortfolioPositions: ({
+vi.mock("@/app/portfolio/dashboard-borrow-tab", () => ({
+  DashboardBorrowTab: ({
     collateralPositions,
     debtPositions,
   }: {
@@ -131,7 +131,7 @@ vi.mock("@/app/portfolio/multiply-collateral-table", () => ({
   MultiplyCollateralTable: () => <div>multiply</div>,
 }))
 
-describe("PortfolioDashboard", () => {
+describe("DashboardClient", () => {
   it("reads borrow credit lines and positions from the sandbox read adapter", async () => {
     readPortfolioBorrow.mockResolvedValue({
       creditLines: {
@@ -167,7 +167,7 @@ describe("PortfolioDashboard", () => {
       ],
     })
 
-    render(<PortfolioDashboard walletProfileId="demo-wallet" />)
+    render(<DashboardClient walletProfileId="demo-wallet" />)
 
     await waitFor(() => expect(readPortfolioBorrow).toHaveBeenCalledWith("demo-wallet"))
     await waitFor(() => expect(screen.getByText("Borrow tab")).toBeInTheDocument())
