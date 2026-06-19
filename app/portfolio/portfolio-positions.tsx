@@ -51,6 +51,9 @@ type BorrowSessionAdapter = {
   state: BorrowSystemState
   dispatch: (action: BorrowAction) => void
   getBorrowableAssetsForMarket: (marketId?: string) => BorrowableAsset[]
+  createIntent: (action: BorrowAction) => { id: string }
+  previewTransaction: (intent: { id: string }) => Promise<{ allowed: boolean; intent: { id: string } }>
+  executeTransaction: (intent: { id: string }) => Promise<unknown>
 }
 
 export function PortfolioPositions({
@@ -102,6 +105,17 @@ export function PortfolioPositions({
     const dailyInterest = debtsRows.reduce((sum, row) => sum + row.dailyInterestUsd, 0)
     return { totalBorrowed, totalCollateral, accruedInterest, averageHf, dailyInterest }
   }, [debtsRows])
+
+  const executeAction = useCallback(
+    async (action: BorrowAction) => {
+      if (!borrowSession) return
+      const intent = borrowSession.createIntent(action)
+      const preview = await borrowSession.previewTransaction(intent)
+      if (!preview.allowed) return
+      await borrowSession.executeTransaction(preview.intent)
+    },
+    [borrowSession],
+  )
 
   const handleSupplyBorrowMore = useCallback((context: SupplyRowContext) => {
     const tokenOptions = borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken) ?? []
@@ -171,31 +185,31 @@ export function PortfolioPositions({
 
   const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
     if (!borrowSession || !walletId) return
-    borrowSession.dispatch({
+    void executeAction({
       type: "supplyCollateral",
       walletId,
       marketId: result.pool.id,
       amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
     })
-  }, [borrowSession, walletId])
+  }, [borrowSession, executeAction, walletId])
 
   const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
     if (!borrowSession || !walletId) return
-    borrowSession.dispatch({
+    void executeAction({
       type: "borrow",
       walletId,
       marketId: result.pool.id,
       assetId: result.token.id,
       amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
     })
-  }, [borrowSession, walletId])
+  }, [borrowSession, executeAction, walletId])
 
   const handleRepayRemoveConfirm = useCallback((result: RepayRemoveResult) => {
     if (!borrowSession || !walletId) return
     if (result.mode === "repay") {
       const debtRow = debtPositions.find((row) => row.pool.id === result.pool.id)
       if (!debtRow?.id) return
-      borrowSession.dispatch({
+      void executeAction({
         type: "repay",
         walletId,
         debtPositionId: debtRow.id,
@@ -206,13 +220,13 @@ export function PortfolioPositions({
 
     const position = borrowSession.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === result.pool.id)
     if (!position) return
-    borrowSession.dispatch({
+    void executeAction({
       type: "removeCollateral",
       walletId,
       positionId: position.id,
       amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
     })
-  }, [borrowSession, debtPositions, walletId])
+  }, [borrowSession, debtPositions, executeAction, walletId])
 
   return (
     <section className="space-y-8">
