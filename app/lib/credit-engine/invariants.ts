@@ -43,6 +43,18 @@ function assertAccountState(account: BorrowAccountState, system: BorrowSystemSta
 
   assertUnique(account.collateralPositions, `${account.walletId} collateral position`)
   assertUnique(account.debtPositions, `${account.walletId} debt position`)
+  assertUnique(account.rewardPositions, `${account.walletId} reward position`)
+
+  for (const position of account.rewardPositions) {
+    if (!system.markets[position.marketId]) {
+      throw new Error(`Unknown market on reward position ${position.id}: ${position.marketId}`)
+    }
+    assertNonNegative(`${position.id}.claimableUsd6`, position.claimableUsd6)
+    assertNonNegative(`${position.id}.earnedUsd6`, position.earnedUsd6)
+    if (position.claimableUsd6 > position.earnedUsd6) {
+      throw new Error(`Reward position ${position.id} claimable balance exceeds earned total`)
+    }
+  }
 
   for (const position of account.collateralPositions) {
     if (!system.markets[position.marketId]) {

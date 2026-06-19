@@ -11,9 +11,8 @@ import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/component
 import { CompactClaimCard } from "@/app/components/home/claim-card"
 import { CompactRemoveCard } from "@/app/components/home/remove-card"
 import { PairVisual } from "@/app/components/home-workspace-primitives"
-import { buildHomeClaimPreview, buildHomeRemovePreview } from "@/app/lib/borrow-system/modal-preview-runtime"
+import { buildClaimBorrowAction, buildHomeClaimPreview, buildHomeRemovePreview, selectRewardClaimableTotals } from "@/app/lib/borrow-system/modal-preview-runtime"
 import {
-  HOME_INITIAL_CLAIMABLE_TOTALS,
   HOME_INITIAL_DEBTS,
   formatCompactUsd,
   formatUsd,
@@ -85,14 +84,14 @@ function PoolActionRail({ detail, className }: Props) {
   const claimPosition = React.useMemo(() => resolveClaimPosition(detail, pool), [detail, pool])
 
   const claimableTotals = React.useMemo(
-    () => ({ [claimPosition.id]: HOME_INITIAL_CLAIMABLE_TOTALS[claimPosition.id] ?? claimPosition.totalUsd }),
-    [claimPosition],
+    () => selectRewardClaimableTotals(session.state, walletId),
+    [session.state, walletId],
   )
   const claimSelections = React.useMemo(() => ({ [claimPosition.id]: true }), [claimPosition.id])
   const claimPositions = React.useMemo(() => [claimPosition], [claimPosition])
   const claimPreview = React.useMemo(
-    () => buildHomeClaimPreview(claimPositions, claimableTotals, claimSelections, Number.parseFloat(claimAmount) || null),
-    [claimAmount, claimPositions, claimSelections, claimableTotals],
+    () => buildHomeClaimPreview(session.state, walletId, claimPositions, claimSelections, Number.parseFloat(claimAmount) || null),
+    [claimAmount, claimPositions, claimSelections, session.state, walletId],
   )
   const removePreview = React.useMemo(
     () => buildHomeRemovePreview(session.state, walletId, pool.id, removePercent),
@@ -121,13 +120,32 @@ function PoolActionRail({ detail, className }: Props) {
     }
     if (claimStage !== "processing") return
 
-    const timer = window.setTimeout(() => {
-      setClaimStage("success")
-      toast.success(`Claimed ${formatUsd(claimPreview.effectiveClaimUsd)} in fees`)
-    }, 5000)
+    void (async () => {
+      const action = buildClaimBorrowAction(walletId, claimPreview)
+      if (!action) {
+        setClaimStage("review")
+        return
+      }
 
-    return () => window.clearTimeout(timer)
-  }, [claimOpen, claimPreview.effectiveClaimUsd, claimStage])
+      const intent = session.createIntent(action)
+      const preview = await session.previewTransaction(intent)
+      if (!preview.allowed) {
+        toast.error(preview.validationErrors[0] ?? "Unable to claim rewards")
+        setClaimStage("review")
+        return
+      }
+
+      const result = await session.executeTransaction(preview.intent)
+      if (result.receipt.status === "success") {
+        setClaimStage("success")
+        toast.success(`Claimed ${formatUsd(claimPreview.effectiveClaimUsd)} in fees`)
+        return
+      }
+
+      toast.error(result.receipt.error ?? "Claim failed")
+      setClaimStage("review")
+    })()
+  }, [claimOpen, claimPreview, claimStage, session, walletId])
 
   const claimRows = React.useMemo(
     () =>

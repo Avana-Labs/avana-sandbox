@@ -1,6 +1,7 @@
 import {
   applyBorrowAction,
   simulateBorrow,
+  simulateClaim,
   simulateDeposit,
   simulateLiquidation,
   simulateRepay,
@@ -33,6 +34,8 @@ function normalizeActionType(action: BorrowAction): TransactionActionType {
       return "repay"
     case "borrow":
       return "borrow"
+    case "claim":
+      return "claim"
   }
 }
 
@@ -57,7 +60,9 @@ function toPreview(state: BorrowSystemState, action: BorrowAction, intent: Trans
           ? simulateRepay(state, action)
           : action.type === "removeCollateral"
             ? simulateWithdraw(state, action)
-            : simulateLiquidation(state, action)
+            : action.type === "claim"
+              ? simulateClaim(state, action)
+              : simulateLiquidation(state, action)
 
   return {
     intent,

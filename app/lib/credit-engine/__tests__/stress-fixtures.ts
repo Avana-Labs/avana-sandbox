@@ -51,6 +51,7 @@ export function makeStressBorrowSystemState(userCount = 1000): BorrowSystemState
           principalBorrowedUsd6: usdFromInt(baseDebtUsd),
         },
       ],
+      rewardPositions: [],
     }
   }
 
@@ -171,6 +172,7 @@ export function makeHeterogeneousStressBorrowSystemState(userCount = 10_000): Bo
           principalBorrowedUsd6: usdFromInt(primaryDebtUsd),
         },
       ],
+      rewardPositions: [],
     }
   }
 

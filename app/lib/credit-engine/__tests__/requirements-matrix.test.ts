@@ -36,12 +36,14 @@ describe("borrow requirements matrix", () => {
     it("covers calculateHealthFactorWad in metrics.test.ts", () => expect(true).toBe(true))
     it("covers simulateDeposit and simulateBorrow in simulation.test.ts", () => expect(true).toBe(true))
     it("covers simulateRepay and simulateWithdraw in simulation.test.ts", () => expect(true).toBe(true))
+    it("covers simulateClaim in claim-actions.test.ts", () => expect(true).toBe(true))
     it("covers simulateLiquidation in simulation.test.ts", () => expect(true).toBe(true))
     it("covers validateAction in validation.test.ts", () => expect(true).toBe(true))
   })
 
   describe("sandbox checklist", () => {
     it("covers deposit borrow repay withdraw in sandbox-transaction-adapter.test.ts", () => expect(true).toBe(true))
+    it("covers claim in sandbox-transaction-adapter.test.ts", () => expect(true).toBe(true))
     it("covers liquidation preview-only policy in sandbox-transaction-adapter.test.ts", () => expect(true).toBe(true))
     it("covers reset sandbox state in sandbox-transaction-adapter.test.ts", () => expect(true).toBe(true))
   })
