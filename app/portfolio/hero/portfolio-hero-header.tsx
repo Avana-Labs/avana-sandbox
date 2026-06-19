@@ -1,30 +1,25 @@
 "use client"
 
-import { PortfolioNetworkSelector } from "./portfolio-network-selector"
-import type { NetworkId } from "./types"
-import { WalletMark } from "./wallet-mark"
+import { useEffect, useState } from "react"
 
-type PortfolioHeroHeaderProps = {
-  walletName?: string
-  selectedNetwork: NetworkId
-  onNetworkChange: (networkId: NetworkId) => void
+function resolveGreeting(date = new Date()) {
+  const hour = date.getHours()
+
+  if (hour < 12) return "Good morning"
+  if (hour < 18) return "Good afternoon"
+  return "Good evening"
 }
 
-export function PortfolioHeroHeader({
-  walletName = "Demo wallet",
-  selectedNetwork,
-  onNetworkChange,
-}: PortfolioHeroHeaderProps) {
-  return (
-    <div className="mb-4 flex items-center justify-between gap-3 sm:mb-6 sm:gap-4">
-      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-        <span className="shrink-0">
-          <WalletMark size={40} />
-        </span>
-        <h1 className="truncate text-[16px] font-medium tracking-[-0.03em] text-foreground sm:text-[18px]">{walletName}</h1>
-      </div>
+export function PortfolioHeroHeader() {
+  const [title, setTitle] = useState("Welcome back")
 
-      <PortfolioNetworkSelector selectedNetwork={selectedNetwork} onNetworkChange={onNetworkChange} />
+  useEffect(() => {
+    setTitle(resolveGreeting())
+  }, [])
+
+  return (
+    <div className="mb-4 sm:mb-6">
+      <h1 className="text-[24px] font-medium tracking-[-0.04em] text-foreground sm:text-[30px]">{title}</h1>
     </div>
   )
 }
