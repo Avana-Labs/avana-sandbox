@@ -13,8 +13,8 @@ import {
   type SupplyCollateralContext,
   type SupplyCollateralResult,
 } from "@/app/borrow/components/supply-collateral-modal"
-import { CurrentLtvCard, DebtsPanel } from "@/app/borrow/components/debts-table"
-import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/borrow/components/supplies-table"
+import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/components/borrow-tab/debts-table"
+import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/dashboard/components/borrow-tab/supplies-table"
 
 type DebtsState = Record<string, number>
 

@@ -14,7 +14,7 @@ import {
   homeVisualToBorrowVisual,
 } from "@/app/lib/data/borrow-domain"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
-import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "./atoms"
+import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
 import { cn } from "@/lib/utils"
 
 const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
