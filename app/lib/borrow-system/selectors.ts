@@ -2,6 +2,7 @@ import {
   calculateCreditMetrics,
   calculateSpokeCreditMetrics,
   currentCollateralValueUsd6,
+  currentDebtValueUsd6,
   formatFixed,
   totalDebtValueUsd6,
   type BorrowSystemState,
@@ -38,7 +39,7 @@ function marketDebtUsd6(state: BorrowSystemState, walletId: string, marketId: st
   if (!spokeId) return 0n
   return account.debtPositions
     .filter((position) => position.spokeId === spokeId)
-    .reduce((sum, position) => sum + position.principalBorrowedUsd6, 0n)
+    .reduce((sum, position) => sum + currentDebtValueUsd6(position), 0n)
 }
 
 export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: string): BorrowPoolRow[] {
@@ -171,12 +172,7 @@ export function selectInitialBorrowDebts(state: BorrowSystemState, walletId: str
   return Object.fromEntries(
     account.collateralPositions.map((position) => [
       position.marketId,
-      fixedToNumber(
-        account.debtPositions
-          .filter((debt) => debt.marketId === position.marketId)
-          .reduce((sum, debt) => sum + debt.principalBorrowedUsd6, 0n),
-        6,
-      ),
+      fixedToNumber(marketDebtUsd6(state, walletId, position.marketId), 6),
     ]),
   )
 }
