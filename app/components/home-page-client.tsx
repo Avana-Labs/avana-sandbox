@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { ArrowLeft, ArrowRight, Lock, Settings } from "lucide-react"
 import { toast } from "sonner"
 import { calculateSpokeCreditMetrics, formatFixed, parseFixed, type BorrowAction } from "@/app/lib/credit-engine"
-import { buildBorrowSessionSeed, getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
+import { getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
 import {
   buildClaimBorrowAction,
   buildHomeBorrowPreview,
@@ -19,7 +19,7 @@ import {
 } from "@/app/lib/borrow-system/home-runtime"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
-import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
+import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import {
   HOME_CLAIM_POSITIONS,
   HOME_DEFAULT_SELECTIONS,
@@ -78,11 +78,7 @@ function executedAmountUsd(action: BorrowAction, fallbackUsd: number) {
 export function HomePageClient() {
   const isDesktop = useMediaQuery("(min-width: 768px)", true)
   const walletId = getBorrowSessionWalletId()
-  const sessionSeed = useMemo(() => buildBorrowSessionSeed(walletId), [walletId])
-  const session = useBorrowSession({
-    walletId,
-    sessionSeed,
-  })
+  const { borrow: session } = useAvanaSessions()
   const defaultBorrowPoolId = HOME_POOL_TO_MARKET_ID[HOME_DEFAULT_SELECTIONS.borrowPoolId] ?? session.collateralPools[0]?.id ?? ""
   const defaultRepayPoolId = HOME_POOL_TO_MARKET_ID[HOME_DEFAULT_SELECTIONS.repayPoolId] ?? session.collateralPools[0]?.id ?? ""
   const defaultRemovePoolId = HOME_POOL_TO_MARKET_ID[HOME_DEFAULT_SELECTIONS.removePoolId] ?? session.collateralPools[0]?.id ?? ""

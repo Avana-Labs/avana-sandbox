@@ -2,22 +2,37 @@
 
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
-import { useAvanaSession } from "@/app/lib/avana-session"
+import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
-import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
-import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
-import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import type { PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { DeleverageModal } from "@/app/multiply/components/deleverage-modal"
-import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
+import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
 import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
+import { PortfolioPositionsTabs } from "@/app/portfolio/portfolio-positions-tabs"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
 import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
+
+function mergeMultiplyTabData(
+  staticData: PortfolioMultiplyTabData,
+  liveData: PortfolioMultiplyTabData | null,
+): PortfolioMultiplyTabData {
+  if (!liveData) return staticData
+
+  return {
+    creditLines: liveData.creditLines,
+    lpCollaterals: liveData.lpCollaterals.length > 0 ? liveData.lpCollaterals : staticData.lpCollaterals,
+    positions: liveData.positions.length > 0 ? liveData.positions : staticData.positions,
+    openOrders: staticData.openOrders,
+    twapOrders: staticData.twapOrders,
+    history: liveData.history.length > 0 ? liveData.history : staticData.history,
+  }
+}
 
 function DashboardSection({
   title,
@@ -58,17 +73,9 @@ export function DashboardClient({
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const [deleverageOpen, setDeleverageOpen] = useState(false)
   const [deleveragePositionId, setDeleveragePositionId] = useState<string | null>(null)
-  const avanaSession = useAvanaSession(resolvedWalletProfileId ?? "demo-wallet")
-  const borrowSession = useBorrowSession({
-    walletId: avanaSession.walletId,
-    sessionSeed: avanaSession.borrowSessionSeed,
-  })
-  const multiplySession = useMultiplySession({
-    walletId: avanaSession.walletId,
-    sessionSeed: avanaSession.multiplySessionSeed,
-  })
-  const portfolioBorrow = usePortfolioBorrowLive(avanaSession.walletId, borrowSession)
-  const portfolioMultiply = usePortfolioMultiplyLive(avanaSession.walletId, multiplySession)
+  const { walletId, borrow: borrowSession, multiply: multiplySession } = useAvanaSessions()
+  const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
+  const portfolioMultiply = usePortfolioMultiplyLive(walletId, multiplySession)
   const multiplySnapshot = useMemo<BorrowSnapshot>(
     () => ({
       approvedUsd: portfolioMultiply?.creditLines.approvedUsd ?? data?.multiply.creditLines.approvedUsd ?? initialData?.multiply.creditLines.approvedUsd ?? 0,
@@ -150,6 +157,27 @@ export function DashboardClient({
     return { position, market }
   }, [deleveragePositionId, multiplySession.state.markets, multiplySession.state.positions])
 
+  const multiplyTabData = useMemo(() => {
+    if (!data) {
+      return portfolioMultiply ?? initialData?.multiply ?? {
+        creditLines: {
+          approvedUsd: 0,
+          liquidationThresholdUsd: 0,
+          averageHealthFactor: null,
+          currentLtvPct: 0,
+          totalBorrowedUsd: 0,
+          totalCollateralUsd: 0,
+        },
+        lpCollaterals: [],
+        positions: [],
+        openOrders: [],
+        twapOrders: [],
+        history: [],
+      }
+    }
+    return mergeMultiplyTabData(data.multiply, portfolioMultiply)
+  }, [data, initialData, portfolioMultiply])
+
   if (!data || !resolvedWalletProfileId || !portfolioBorrow) return null
 
   return (
@@ -172,7 +200,7 @@ export function DashboardClient({
               collateralPositions={collateralPositions}
               debtPositions={debtPositions}
               showSummary={false}
-              walletId={avanaSession.walletId}
+              walletId={walletId}
               borrowSession={borrowSession}
             />
           </DashboardSection>
@@ -183,9 +211,10 @@ export function DashboardClient({
         <div className="mt-12 space-y-5">
           <DashboardSectionTitle title="Credit Limits" />
           <CreditLinesCard creditLines={multiplySnapshot} />
-          <DashboardSection className="pt-8">
+          <DashboardSection className="space-y-8 pt-8">
+            <PortfolioPositionsTabs data={multiplyTabData} initialTab="LP Collaterals" />
             <MultiplyCollateralTable
-              rows={portfolioMultiply?.lpCollaterals ?? data.multiply.lpCollaterals}
+              rows={multiplyTabData.lpCollaterals}
               onDeleverage={(positionId) => {
                 setDeleveragePositionId(positionId)
                 setDeleverageOpen(true)

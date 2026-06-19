@@ -25,8 +25,8 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { buildBorrowSessionSeed, getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
-import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
+import { getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
+import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 
 type Props = {
   detail: PoolDetail
@@ -70,8 +70,7 @@ function PoolActionRail({ detail, className }: Props) {
   const [removeOpen, setRemoveOpen] = React.useState(false)
   const [claimOpen, setClaimOpen] = React.useState(false)
   const walletId = React.useMemo(() => getBorrowSessionWalletId(), [])
-  const sessionSeed = React.useMemo(() => buildBorrowSessionSeed(walletId), [walletId])
-  const session = useBorrowSession({ walletId, sessionSeed })
+  const session = useBorrowSessionContext()
 
   const pool = React.useMemo(
     () => session.collateralPools.find((entry) => entry.id === detail.id) ?? resolvePool(detail),

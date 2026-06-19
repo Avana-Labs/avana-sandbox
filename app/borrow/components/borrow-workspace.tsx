@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { parseFixed } from "@/app/lib/credit-engine"
-import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
+import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import {
   filterPools,
   groupByDex,
@@ -98,10 +98,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   const router = useRouter()
   const isDesktop = useMediaQuery("(min-width: 768px)", true)
   const { walletId, borrowSessionSeed, pendingRows, dexes } = pageData
-  const session = useBorrowSession({
-    walletId,
-    sessionSeed: borrowSessionSeed,
-  })
+  const session = useBorrowSessionContext()
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
   const [search, setSearch] = useState("")
   const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
