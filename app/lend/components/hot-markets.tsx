@@ -5,6 +5,7 @@ import Link from "next/link"
 import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from "framer-motion"
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
+import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { cn } from "@/lib/utils"
 
 type HoverState = {
@@ -224,7 +225,7 @@ function FeaturedCard({
   return (
     <Link
       data-featured-card={cardKey}
-      href={`/borrow/assets/${asset.id}`}
+      href={borrowAssetDetailPath(asset.id)}
       onMouseLeave={onLeave}
       onMouseMove={(event) => {
         const bounds = event.currentTarget.getBoundingClientRect()

@@ -22,4 +22,9 @@ describe("borrow detail contract", () => {
     expect(curveUsdc?.related.every((asset) => asset.id.startsWith("curve-stable:"))).toBe(true)
     expect(listAllAssetDetails().length).toBe(64)
   })
+
+  it("resolves URL-encoded spoke asset route params", () => {
+    expect(getAssetDetail("uni-v2%3Adai")?.hero.symbol).toBe("DAI")
+    expect(getAssetDetail("uni-v2%3Adai")?.id).toBe("uni-v2:dai")
+  })
 })
