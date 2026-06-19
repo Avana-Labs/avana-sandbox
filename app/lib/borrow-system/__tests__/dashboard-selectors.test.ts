@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { parseFixed } from "@/app/lib/credit-engine"
+import { applyBorrowAction } from "@/app/lib/credit-engine/actions"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { selectBorrowSnapshot, selectPortfolioDebtRows, selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
 
@@ -13,5 +15,23 @@ describe("borrow dashboard selectors", () => {
     expect(debts).toHaveLength(2)
     expect(snapshot.totalBorrowedUsd).toBe(2000)
     expect(snapshot.approvedUsd).toBeGreaterThan(0)
+  })
+
+  it("reflects shared-session borrow activity in debt and collateral rows", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const next = applyBorrowAction(state, {
+      type: "borrow",
+      walletId: "demo-wallet",
+      marketId: "uni-v3-bluechip-weth-usdc",
+      assetId: "uni-v3-bluechip:usdc",
+      amountUsd6: parseFixed("300", 6),
+    })
+
+    const supplies = selectPortfolioSupplyRows(next, "demo-wallet")
+    const debts = selectPortfolioDebtRows(next, "demo-wallet")
+
+    expect(supplies.find((row) => row.pool.id === "uni-v3-bluechip-weth-usdc")?.borrowedUsd).toBeGreaterThan(1200)
+    expect(debts.find((row) => row.pool.id === "uni-v3-bluechip-weth-usdc")?.borrowedUsd).toBeGreaterThan(1200)
+    expect(debts.some((row) => row.id.includes("uni-v3-bluechip:usdc"))).toBe(true)
   })
 })

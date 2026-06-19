@@ -2,9 +2,8 @@
 
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
-import { serializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
+import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
 import { selectBorrowSnapshot, selectPortfolioDebtRows, selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
-import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { CreditLinesCard } from "./credit-lines-card"
@@ -54,10 +53,7 @@ export function PortfolioDashboard({
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const [activeTab, setActiveTab] = useState<PortfolioTab>("lending")
   const borrowSessionWalletId = resolvedWalletProfileId ?? "demo-wallet"
-  const borrowSessionSeed = useMemo(
-    () => serializeBorrowSystemState(buildMockBorrowSystemState(borrowSessionWalletId)),
-    [borrowSessionWalletId],
-  )
+  const borrowSessionSeed = useMemo(() => buildBorrowSessionSeed(borrowSessionWalletId), [borrowSessionWalletId])
   const borrowSession = useBorrowSession({
     walletId: borrowSessionWalletId,
     sessionSeed: borrowSessionSeed,

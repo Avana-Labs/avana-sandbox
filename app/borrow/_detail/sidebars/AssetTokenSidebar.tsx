@@ -4,16 +4,23 @@ import * as React from "react"
 import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import { currentDebtValueUsd6, formatFixed, parseFixed } from "@/app/lib/credit-engine"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { BorrowModal } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
+import { SupplyCollateralModal } from "@/app/borrow/components/supply-collateral-modal"
 import type { LendModalState, LendModalToken } from "@/app/lend/components/lend-modals"
 import { CompactRepayCard } from "@/app/components/home/repay-card"
 import { TOKENS } from "@/app/lend/components/data"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
-import { HOME_BORROW_TOKENS, HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS, calculateRepayPreview } from "@/app/lib/home-sim"
+import { getBorrowSessionWalletId, buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
+import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
+import { calculateRepayPreview, type HomeBorrowToken, type HomeCollateralPool, type HomeAssetVisual } from "@/app/lib/home-sim"
+import type { BorrowPoolRow, BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import { PickerSurface, PrimaryCardButton } from "@/app/components/home/shared"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
 const LendModals = dynamic(() => import("@/app/lend/components/lend-modals").then((mod) => mod.LendModals), {
   ssr: false,
@@ -57,20 +64,51 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
   const [modalState, setModalState] = React.useState<LendModalState>(INITIAL_MODAL)
   const [borrowOpen, setBorrowOpen] = React.useState(false)
   const [repayOpen, setRepayOpen] = React.useState(false)
+  const [supplyOpen, setSupplyOpen] = React.useState(false)
+  const [depositPromptOpen, setDepositPromptOpen] = React.useState(false)
+  const walletId = React.useMemo(() => getBorrowSessionWalletId(), [])
+  const sessionSeed = React.useMemo(() => buildBorrowSessionSeed(walletId), [walletId])
+  const session = useBorrowSession({ walletId, sessionSeed })
 
   const token = React.useMemo(() => toLendToken(detail), [detail])
-  const borrowContext = React.useMemo(() => resolveBorrowContext(detail), [detail])
-  const borrowTokenId = React.useMemo(() => resolveBorrowTokenId(detail), [detail])
+  const fallbackMarket = React.useMemo(
+    () => session.marketSummaries.find((market) => detail.row.marketIds.includes(market.id)) ?? null,
+    [detail.row.marketIds, session.marketSummaries],
+  )
+  const borrowContext = React.useMemo<HomeCollateralPool | null>(() => {
+    const suppliedPool = session.collateralPools.find((pool) => detail.row.marketIds.includes(pool.id))
+    if (suppliedPool) return suppliedPool
+    return fallbackMarket ? toHomeCollateralPool(fallbackMarket) : null
+  }, [detail.row.marketIds, fallbackMarket, session.collateralPools])
+  const borrowTokenId = detail.row.id
+  const currentDebtPosition = React.useMemo(
+    () => session.state.accounts[walletId]?.debtPositions.find((position) => position.assetId === detail.row.id) ?? null,
+    [detail.row.id, session.state.accounts, walletId],
+  )
   const repayDebtUsd = React.useMemo(
-    () => resolveCurrentDebtUsd(borrowContext.id, borrowContext.borrowPowerUsd),
-    [borrowContext.borrowPowerUsd, borrowContext.id],
+    () => (currentDebtPosition ? Number.parseFloat(formatFixed(currentDebtValueUsd6(currentDebtPosition), 6)) : 0),
+    [currentDebtPosition],
   )
   const repayPreview = React.useMemo(
-    () => calculateRepayPreview(borrowContext, repayDebtUsd, Number.parseFloat(amount) || 0, detail.row.borrowApr),
+    () =>
+      borrowContext
+        ? calculateRepayPreview(borrowContext, repayDebtUsd, Number.parseFloat(amount) || 0, detail.row.borrowApr)
+        : null,
     [amount, borrowContext, detail.row.borrowApr, repayDebtUsd],
+  )
+  const repayPool = React.useMemo<HomeCollateralPool>(
+    () => borrowContext ?? (fallbackMarket ? toHomeCollateralPool(fallbackMarket) : makeEmptyHomeCollateralPool(detail)),
+    [borrowContext, detail, fallbackMarket],
   )
   const borrowAprLabel =
     detail.quickStats.find((stat) => stat.id === "borrowApy")?.value ?? `${detail.row.borrowApr.toFixed(2)}%`
+  const tokenOptions = React.useMemo(
+    () => (borrowContext ? session.getBorrowableAssetsForMarket(borrowContext.id).map(toBorrowToken) : []),
+    [borrowContext, session],
+  )
+  const canBorrowFromSession = Boolean(
+    borrowContext && session.collateralPools.some((pool) => pool.id === borrowContext.id),
+  )
 
   const tokenBalance = "balance" in token ? token.balance : 0
   const tokenPrice = "price" in token ? token.price : 1
@@ -138,10 +176,10 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
           <div className="flex flex-col gap-3 pt-1">
             {tab === "repay" ? (
               <CompactRepayCard
-                pool={borrowContext}
+                pool={repayPool}
                 debtUsd={repayDebtUsd}
                 amount={amount}
-                preview={repayPreview}
+                preview={repayPreview ?? calculateRepayPreview(repayPool, 0, 0, detail.row.borrowApr)}
                 submitLabel={primaryLabel}
                 flatHero
                 onOpenPoolDialog={() => {}}
@@ -194,7 +232,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                               return
                             }
                             if (tab === "borrow") {
-                              setAmount(String(Math.round(borrowContext.borrowPowerUsd)))
+                              setAmount(String(Math.round(borrowContext?.borrowPowerUsd ?? 0)))
                               return
                             }
                             setAmount("0")
@@ -231,6 +269,10 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                   disabled={isInvalidAmount || exceedsBalance}
                   onClick={() => {
                     if (tab === "borrow") {
+                      if (!canBorrowFromSession) {
+                        setDepositPromptOpen(true)
+                        return
+                      }
                       setBorrowOpen(true)
                       return
                     }
@@ -253,29 +295,100 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
 
       <BorrowModal
         open={borrowOpen}
-        context={{
-          pool: borrowContext,
-          currentDebtUsd: 0,
-          defaultTokenId: borrowTokenId,
-        }}
+        context={
+          borrowContext
+            ? {
+                pool: borrowContext,
+                currentDebtUsd: repayDebtUsd,
+                defaultTokenId: borrowTokenId,
+                tokenOptions,
+              }
+            : null
+        }
         initialAmount={amount}
         initialTokenId={borrowTokenId}
         startStage={amount ? "review" : "entry"}
         onClose={() => setBorrowOpen(false)}
-        onConfirm={() => setBorrowOpen(false)}
+        onConfirm={(result) => {
+          session.dispatch({
+            type: "borrow",
+            walletId,
+            marketId: result.pool.id,
+            assetId: result.token.id,
+            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
+          })
+        }}
       />
 
       <RepayRemoveModal
         open={repayOpen}
-        context={{
-          pool: borrowContext,
-          currentDebtUsd: repayDebtUsd,
-          mode: "repay",
-          borrowApr: detail.row.borrowApr,
-        }}
+        context={
+          borrowContext
+            ? {
+                pool: borrowContext,
+                currentDebtUsd: repayDebtUsd,
+                mode: "repay",
+                borrowApr: detail.row.borrowApr,
+              }
+            : null
+        }
         onClose={() => setRepayOpen(false)}
-        onConfirm={() => {}}
+        onConfirm={(result) => {
+          if (!currentDebtPosition) return
+          session.dispatch({
+            type: "repay",
+            walletId,
+            debtPositionId: currentDebtPosition.id,
+            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
+          })
+        }}
       />
+
+      <SupplyCollateralModal
+        open={supplyOpen}
+        context={fallbackMarket ? { pool: fallbackMarket } : null}
+        onClose={() => setSupplyOpen(false)}
+        onConfirm={(result) => {
+          session.dispatch({
+            type: "supplyCollateral",
+            walletId,
+            marketId: result.pool.id,
+            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
+          })
+        }}
+      />
+
+      <Dialog open={depositPromptOpen} onOpenChange={setDepositPromptOpen}>
+        <DialogContent className="max-w-sm rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3">
+          <DialogTitle className="sr-only">Deposit collateral first</DialogTitle>
+          <div className="space-y-4 px-6 pb-6 pt-5">
+            <div className="space-y-2">
+              <h3 className="text-[22px] font-medium tracking-[-0.03em] text-foreground">
+                You need to deposit an asset before you can borrow.
+              </h3>
+              <p className="text-[14px] leading-6 text-muted-foreground">
+                To borrow {detail.hero.symbol}, deposit a compatible collateral market from {detail.row.spokeLabel} first.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90"
+                onClick={() => {
+                  setDepositPromptOpen(false)
+                  setSupplyOpen(true)
+                }}
+                disabled={!fallbackMarket}
+              >
+                Deposit
+              </Button>
+              <Button type="button" variant="secondary" className="h-11 rounded-2xl" onClick={() => setDepositPromptOpen(false)}>
+                Got it
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
@@ -296,24 +409,60 @@ function toLendToken(detail: AssetDetail): LendModalToken {
   } as LendModalToken
 }
 
-function resolveBorrowTokenId(detail: AssetDetail) {
-  const match = HOME_BORROW_TOKENS.find((token) => token.symbol.toLowerCase() === detail.hero.symbol.toLowerCase())
-  return match?.id ?? "usdc"
+function toBorrowToken(asset: BorrowableAsset): HomeBorrowToken {
+  return {
+    id: asset.id,
+    name: asset.name,
+    symbol: asset.symbol,
+    subtitle: asset.subtitle,
+    borrowApr: asset.borrowApr,
+    visual: {
+      symbol: asset.visual.symbol,
+      shortLabel: asset.visual.shortLabel,
+      bgClassName: asset.visual.bgClass,
+      textClassName: asset.visual.textClass,
+    },
+  }
 }
 
-function resolveBorrowContext(detail: AssetDetail) {
-  const symbol = detail.hero.symbol.toUpperCase()
-  const stablePool = HOME_COLLATERAL_POOLS.find((pool) => pool.id === "usdc-usdt")
-  const bluechipPool = HOME_COLLATERAL_POOLS.find((pool) => pool.id === "eth-usdc")
-  const btcPool = HOME_COLLATERAL_POOLS.find((pool) => pool.id === "wbtc-eth")
-
-  if (symbol === "USDC" || symbol === "USDT" || symbol === "DAI") return stablePool ?? HOME_COLLATERAL_POOLS[0]
-  if (symbol === "WBTC") return btcPool ?? HOME_COLLATERAL_POOLS[0]
-  if (symbol === "ETH" || symbol === "WETH") return bluechipPool ?? HOME_COLLATERAL_POOLS[0]
-
-  return bluechipPool ?? HOME_COLLATERAL_POOLS[0]
+function toHomeCollateralPool(row: BorrowPoolRow): HomeCollateralPool {
+  return {
+    id: row.id,
+    name: row.name,
+    venue: row.venue,
+    category: row.feeTier,
+    collateralUsd: row.collateralExampleUsd,
+    maxLtv: row.ltv,
+    borrowPowerUsd: Math.round(row.collateralExampleUsd * (row.ltv / 100)),
+    liquidationUsd: Math.round(row.collateralExampleUsd * ((row.ltv + 10) / 100)),
+    pairApr: (row.aprMin + row.aprMax) / 2,
+    visuals: row.visuals.map((visual) => ({
+      symbol: visual.symbol,
+      shortLabel: visual.shortLabel,
+      bgClassName: visual.bgClass,
+      textClassName: visual.textClass,
+    })) as [HomeAssetVisual, HomeAssetVisual],
+  }
 }
 
-function resolveCurrentDebtUsd(poolId: string, borrowPowerUsd: number) {
-  return HOME_INITIAL_DEBTS[poolId] ?? Math.round(borrowPowerUsd * 0.45)
+function makeEmptyHomeCollateralPool(detail: AssetDetail): HomeCollateralPool {
+  const fallbackVisual: HomeAssetVisual = {
+    symbol: detail.hero.symbol,
+    shortLabel: detail.hero.visual.shortLabel,
+    bgClassName: detail.hero.visual.bgClass,
+    textClassName: detail.hero.visual.textClass,
+  }
+
+  return {
+    id: detail.id,
+    name: detail.hero.name,
+    venue: detail.row.spokeLabel,
+    category: detail.row.spokeLabel,
+    collateralUsd: 0,
+    maxLtv: 0,
+    borrowPowerUsd: 0,
+    liquidationUsd: 0,
+    pairApr: 0,
+    visuals: [fallbackVisual, fallbackVisual],
+  }
 }
