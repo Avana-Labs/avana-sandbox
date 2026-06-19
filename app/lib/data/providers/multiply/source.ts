@@ -5,7 +5,8 @@ import {
   type DataSourceRequestContext,
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
-import { mockMultiplySharedSource } from "@/app/lib/data/mock/shared/multiply"
+import { buildMockMultiplySystemState } from "@/app/lib/multiply-system/mock"
+import { SandboxMultiplyReadAdapter } from "@/app/lib/multiply-system/sandbox-read-adapter"
 import type { MultiplyPageData } from "./types"
 
 export type MultiplyPageSource = {
@@ -27,17 +28,14 @@ export const liveMultiplyPageAdapter = createDataSourceAdapter({
 
 export const mockMultiplyPageSource: MultiplyPageSource = {
   adapter: mockMultiplyPageAdapter,
-  async getMultiplyPageData() {
+  async getMultiplyPageData(_context?: DataSourceRequestContext) {
+    const walletId = "demo-wallet"
+    const state = buildMockMultiplySystemState(walletId)
+    const adapter = new SandboxMultiplyReadAdapter({ state })
+    const data = await adapter.readMultiplyPage(walletId)
     return {
       fetchedAt: new Date().toISOString(),
-      data: {
-        markets: mockMultiplySharedSource.getMarkets(),
-        lendRows: mockMultiplySharedSource.getLendRows(),
-        pageSize: 12,
-        tokenBorrowApys: mockMultiplySharedSource.getTokenBorrowApys(),
-        tokenLogos: mockMultiplySharedSource.getTokenLogos(),
-        tokenSupplyApys: mockMultiplySharedSource.getTokenSupplyApys(),
-      },
+      data,
     }
   },
 }

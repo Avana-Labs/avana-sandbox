@@ -15,6 +15,7 @@ import {
 } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
+import { borrowAssetDetailPath, borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
@@ -163,10 +164,18 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
     setSupplyModal({ open: true, context: { pool } })
   }, [])
 
+  const handleMarketDetail = useCallback(
+    (pool: BorrowPoolRow) => {
+      triggerPageLoading()
+      router.push(borrowMarketDetailPath(pool.id))
+    },
+    [router],
+  )
+
   const handleAssetBorrowDesktop = useCallback(
     (asset: BorrowableAsset) => {
       triggerPageLoading()
-      router.push(`/borrow/assets/${asset.id}`)
+      router.push(borrowAssetDetailPath(asset.id))
     },
     [router],
   )
@@ -228,6 +237,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
                 groups={poolGroups}
                 borrowAssetsBySpoke={borrowAssetsBySpoke}
                 pending={pendingRows}
+                onViewMarket={handleMarketDetail}
                 onUseAsCollateral={handlePoolsSupply}
                 onBorrowAssetDesktop={handleAssetBorrowDesktop}
                 onBorrowAssetMobile={handleAssetBorrowMobile}
@@ -237,6 +247,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
                 groups={poolGroups}
                 borrowAssetsBySpoke={borrowAssetsBySpoke}
                 pending={pendingRows}
+                onViewMarket={handleMarketDetail}
                 onUseAsCollateral={handlePoolsSupply}
                 onBorrowAssetDesktop={handleAssetBorrowDesktop}
                 onBorrowAssetMobile={handleAssetBorrowMobile}
