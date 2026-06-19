@@ -158,6 +158,13 @@ export type UserDebtPosition = {
   principalBorrowedUsd6: bigint
 }
 
+export type UserRewardPosition = {
+  id: string
+  marketId: string
+  claimableUsd6: bigint
+  earnedUsd6: bigint
+}
+
 export type BorrowAccountState = {
   walletId: string
   walletBalanceUsd6: bigint
@@ -165,6 +172,7 @@ export type BorrowAccountState = {
   lastUpdatedAt: number
   collateralPositions: UserCollateralPosition[]
   debtPositions: UserDebtPosition[]
+  rewardPositions: UserRewardPosition[]
 }
 
 export type BorrowAction =
@@ -205,6 +213,13 @@ export type BorrowAction =
       debtPositionId?: string
       liquidatorWalletId?: string
       repayAmountUsd6: bigint
+      at?: number
+    }
+  | {
+      type: "claim"
+      walletId: string
+      rewardPositionIds: string[]
+      amountUsd6: bigint
       at?: number
     }
 

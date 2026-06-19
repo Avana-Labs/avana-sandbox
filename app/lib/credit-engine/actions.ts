@@ -16,6 +16,7 @@ function cloneState(state: BorrowSystemState): BorrowSystemState {
           ...account,
           collateralPositions: account.collateralPositions.map((position) => ({ ...position })),
           debtPositions: account.debtPositions.map((position) => ({ ...position })),
+          rewardPositions: account.rewardPositions.map((position) => ({ ...position })),
         },
       ]),
     ),
@@ -358,6 +359,50 @@ function applyLiquidationAction(state: BorrowSystemState, action: Extract<Borrow
   return state
 }
 
+function applyClaimAction(state: BorrowSystemState, action: Extract<BorrowAction, { type: "claim" }>) {
+  const account = state.accounts[action.walletId]
+  if (!account) throw new Error(`Unknown wallet ${action.walletId}`)
+  if (action.amountUsd6 <= 0n) throw new Error("Claim amount must be positive")
+  if (action.rewardPositionIds.length === 0) throw new Error("Select at least one reward position to claim")
+
+  const selectedPositions = action.rewardPositionIds.map((positionId) => {
+    const position = account.rewardPositions.find((entry) => entry.id === positionId)
+    if (!position) throw new Error(`Unknown reward position ${positionId}`)
+    return position
+  })
+
+  const totalClaimableUsd6 = selectedPositions.reduce((sum, position) => sum + position.claimableUsd6, 0n)
+  if (totalClaimableUsd6 === 0n) throw new Error("Selected reward positions have nothing to claim")
+
+  const actualClaimUsd6 = action.amountUsd6 > totalClaimableUsd6 ? totalClaimableUsd6 : action.amountUsd6
+  let remainingUsd6 = actualClaimUsd6
+
+  for (const positionId of action.rewardPositionIds) {
+    if (remainingUsd6 === 0n) break
+    const position = account.rewardPositions.find((entry) => entry.id === positionId)
+    if (!position || position.claimableUsd6 === 0n) continue
+
+    const claimFromPosition = remainingUsd6 > position.claimableUsd6 ? position.claimableUsd6 : remainingUsd6
+    position.claimableUsd6 -= claimFromPosition
+    remainingUsd6 -= claimFromPosition
+  }
+
+  account.walletBalanceUsd6 += actualClaimUsd6
+  const primaryMarketId = selectedPositions[0]!.marketId
+  const market = state.markets[primaryMarketId]
+  state.transactions.push({
+    id: `tx-${state.transactions.length + 1}`,
+    walletId: action.walletId,
+    spokeId: market?.spokeId,
+    marketId: primaryMarketId,
+    kind: "claim",
+    amountUsd6: actualClaimUsd6,
+    at: action.at ?? state.now,
+  })
+
+  return state
+}
+
 export function applyBorrowAction(state: BorrowSystemState, action: BorrowAction): BorrowSystemState {
   const accrued = accrueBorrowSystemState(state, action.at ?? state.now)
   const next = cloneState(accrued)
@@ -373,6 +418,8 @@ export function applyBorrowAction(state: BorrowSystemState, action: BorrowAction
       return applyRemoveCollateralAction(next, action)
     case "liquidate":
       return applyLiquidationAction(next, action)
+    case "claim":
+      return applyClaimAction(next, action)
     default:
       {
         const exhaustiveAction: never = action
