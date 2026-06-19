@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
+import type { BorrowSnapshot } from "./borrow-hero-state"
+import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "@/app/borrow/components/repay-remove-modal"
 import {
@@ -11,9 +13,8 @@ import {
   type SupplyCollateralContext,
   type SupplyCollateralResult,
 } from "@/app/borrow/components/supply-collateral-modal"
-import { CurrentLtvCard, DebtsPanel, type DebtRowContext } from "@/app/borrow/components/debts-table"
-import { SuppliesHealthFactorCard, SuppliesPanel, type SupplyRowContext } from "@/app/borrow/components/supplies-table"
-import type { BorrowSnapshot } from "./borrow-hero-state"
+import { CurrentLtvCard, DebtsPanel } from "@/app/borrow/components/debts-table"
+import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/borrow/components/supplies-table"
 
 type DebtsState = Record<string, number>
 

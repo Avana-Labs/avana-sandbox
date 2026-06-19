@@ -12,25 +12,14 @@ import {
   formatUsdExact,
   healthFactorToneClass,
   homeVisualToBorrowVisual,
-  type HomeCollateralPool,
 } from "@/app/lib/data/borrow-domain"
+import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { cn } from "@/lib/utils"
 
 const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
 const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
 const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
-
-export type DebtRowContext = {
-  id?: string
-  pool: HomeCollateralPool
-  borrowedUsd: number
-  liquidationThresholdUsd: number
-  healthFactor: number | null
-  borrowApr: number
-  accruedInterestUsd: number
-  dailyInterestUsd: number
-}
 
 type DebtsTableProps = {
   rows: DebtRowContext[]
