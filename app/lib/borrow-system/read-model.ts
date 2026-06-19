@@ -99,7 +99,6 @@ export function buildBorrowPageData(state: BorrowSystemState, walletId: string):
       ? poolCatalog.reduce((sum, pool) => sum + (pool.change24hPct ?? 0) * pool.tvlUsd, 0) / totalTvlUsd
       : 0
 
-  const poolsWithLogos = poolCatalog.filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
   const averageApr = (pool: (typeof poolCatalog)[number]) => (pool.aprMin + pool.aprMax) / 2
 
   return {
@@ -114,9 +113,9 @@ export function buildBorrowPageData(state: BorrowSystemState, walletId: string):
       totalTvlChangePct,
     },
     explore: {
-      trendingCollateral: [...poolsWithLogos].sort((left, right) => right.availableUsd - left.availableUsd).slice(0, 3),
-      topMarkets: [...poolsWithLogos].sort((left, right) => right.tvlUsd - left.tvlUsd).slice(0, 3),
-      highApyPools: [...poolsWithLogos].sort((left, right) => averageApr(right) - averageApr(left)).slice(0, 3),
+      trendingCollateral: [...poolCatalog].sort((left, right) => right.availableUsd - left.availableUsd).slice(0, 3),
+      topMarkets: [...poolCatalog].sort((left, right) => right.tvlUsd - left.tvlUsd).slice(0, 3),
+      highApyPools: [...poolCatalog].sort((left, right) => averageApr(right) - averageApr(left)).slice(0, 3),
     },
     borrowableAssets: selectBorrowableAssets(state, walletId),
     pendingRows: BORROW_PENDING_ROWS,
