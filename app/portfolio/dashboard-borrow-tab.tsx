@@ -39,7 +39,7 @@ function sortByBorrowedDesc(rows: DebtRowContext[]) {
   return [...rows].sort((left, right) => right.borrowedUsd - left.borrowedUsd)
 }
 
-export function PortfolioPositions({
+export function DashboardBorrowTab({
   section = "all",
   collateralPositions = [],
   debtPositions = [],

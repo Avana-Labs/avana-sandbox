@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { CreditLinesCard } from "./credit-lines-card"
 import { PortfolioInvestments } from "./portfolio-investments"
-import { PortfolioPositions } from "./portfolio-positions"
+import { DashboardBorrowTab } from "./dashboard-borrow-tab"
 import { RecentActivity } from "./recent-activity"
 import { PortfolioTabs, type PortfolioTab } from "./portfolio-tabs"
 import { MultiplyCollateralTable } from "./multiply-collateral-table"
@@ -130,7 +130,7 @@ export function PortfolioDashboard({
           <PortfolioSectionTitle title="Credit Limits" />
           <CreditLinesCard creditLines={borrowSnapshot} />
           <PortfolioSection className="pt-8">
-            <PortfolioPositions
+            <DashboardBorrowTab
               section="all"
               collateralPositions={collateralPositions}
               debtPositions={data.borrow.debtPositions}
