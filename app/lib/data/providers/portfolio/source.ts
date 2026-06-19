@@ -30,9 +30,6 @@ export type PortfolioStrategyTone = "conservative" | "moderate" | "aggressive"
 export type PortfolioWalletProfileRecord = {
   id: string
   walletAddress: string
-  displayName: string
-  selectedNetwork: "all" | "ethereum" | "unichain" | "base" | "arbitrum" | "tempo" | "monad" | "solana"
-  networks: Array<"all" | "ethereum" | "unichain" | "base" | "arbitrum" | "tempo" | "monad" | "solana">
 }
 
 export type PortfolioPoolVisualRecord = {

@@ -66,7 +66,7 @@ export function CreditLinesCard({
       <div className="grid w-full grid-cols-2 gap-x-5 gap-y-4 md:grid-cols-4 md:gap-x-8 md:gap-y-5">
         <StoryMetric
           value={`$${creditLines.liquidationThresholdUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
-          label="Liquidation Number"
+          label="Liquidation thresholds"
         />
         <StoryMetric
           value={averageHealthFactor ? averageHealthFactor.toFixed(2) : "—"}

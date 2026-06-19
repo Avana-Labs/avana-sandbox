@@ -74,6 +74,12 @@
     /* Layered surfaces */
     --surface-raised: 0 0% 100%;
     --surface-inset: 220 14% 96%;
+
+    /* Global scrollbar */
+    --scrollbar-track: 150 14% 94%;
+    --scrollbar-thumb: 191 99% 41%;
+    --scrollbar-thumb-hover: 191 100% 33%;
+    --scrollbar-thumb-active: 191 100% 28%;
   }
 
   .dark {
@@ -134,18 +140,63 @@
 
     --surface-raised: 220 14% 10%;
     --surface-inset: 220 12% 13%;
+
+    /* Global scrollbar */
+    --scrollbar-track: 220 12% 12%;
+    --scrollbar-thumb: 191 99% 41%;
+    --scrollbar-thumb-hover: 191 100% 48%;
+    --scrollbar-thumb-active: 191 100% 54%;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-    font-synthesis: weight style;
+    font-synthesis: none;
   }
   body {
     @apply bg-background text-foreground;
     /* Diatype (Next.js sets --font-diatype-sans on <html>); no Tailwind font-* on layout */
     font-family: var(--font-diatype-sans), system-ui, sans-serif;
+  }
+
+  html {
+    scrollbar-color: hsl(var(--scrollbar-thumb)) hsl(var(--scrollbar-track));
+    scrollbar-width: thin;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track {
+    background: hsl(var(--scrollbar-track));
+  }
+
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb {
+    background: hsl(var(--scrollbar-thumb) / 0.9);
+    border: 0;
+    border-radius: 9999px;
+    box-shadow: none;
+  }
+
+  html::-webkit-scrollbar-thumb:hover,
+  body::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--scrollbar-thumb-hover) / 0.95);
+  }
+
+  html::-webkit-scrollbar-thumb:active,
+  body::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--scrollbar-thumb-active));
+  }
+
+  html::-webkit-scrollbar-corner,
+  body::-webkit-scrollbar-corner {
+    background: hsl(var(--scrollbar-track));
   }
   /* Tighter default spacing */
   h1,
@@ -168,7 +219,7 @@
 }
 
 .font-data {
-  font-family: var(--font-diatype-data), var(--font-diatype-sans), system-ui, sans-serif;
+  font-family: var(--font-diatype-sans), system-ui, sans-serif;
 }
 
 .font-brand {

@@ -15,7 +15,7 @@ export function PortfolioInvestments({ investments }: { investments: PortfolioSu
   return (
     <section className="mb-8">
       <div className="mb-3">
-        <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">My investments</h2>
+        <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">Positions</h2>
       </div>
 
       <Card className="overflow-hidden rounded-[18px] border-0 bg-white shadow-none dark:bg-slate-950">
