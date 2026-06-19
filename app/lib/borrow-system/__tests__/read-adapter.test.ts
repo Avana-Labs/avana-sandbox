@@ -40,6 +40,36 @@ describe("borrow read adapters", () => {
     expect(assetDetail?.hero.symbol).toBe("USDC")
   })
 
+  it("prefers canonical persisted transaction history when provided", async () => {
+    const walletId = getDefaultWalletProfileId()
+    const state = buildMockBorrowSystemState(walletId)
+    const adapter = new SandboxBorrowReadAdapter({
+      state,
+      transactionHistory: [
+        {
+          id: "history-1",
+          intentId: "intent-1",
+          walletId,
+          marketId: "uni-v3-bluechip-weth-usdc",
+          assetId: "uni-v3-bluechip:usdc",
+          kind: "borrow",
+          status: "success",
+          requestedAmountUsd6: 250_000_000n,
+          executedAmountUsd6: 250_000_000n,
+          simulated: true,
+          timestamp: state.now + 1_000,
+          hash: "sim_history_1",
+        },
+      ],
+    })
+
+    const snapshot = await adapter.readWalletSnapshot(walletId)
+
+    expect(snapshot.transactionHistory).toHaveLength(1)
+    expect(snapshot.transactionHistory[0]?.intentId).toBe("intent-1")
+    expect(snapshot.transactionHistory[0]?.hash).toBe("sim_history_1")
+  })
+
   it("exposes a production placeholder that matches the read contract and throws intentionally", async () => {
     const adapter = new ProductionBorrowReadAdapter()
 

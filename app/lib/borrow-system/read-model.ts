@@ -40,7 +40,7 @@ function toMetricsSnapshot(state: BorrowSystemState, walletId: string): Transact
   }
 }
 
-function toTransactionHistory(state: BorrowSystemState, walletId: string): TransactionHistoryItem[] {
+export function buildLegacyTransactionHistory(state: BorrowSystemState, walletId: string): TransactionHistoryItem[] {
   return state.transactions
     .filter((transaction) => transaction.walletId === walletId)
     .map((transaction) => ({
@@ -59,10 +59,25 @@ function toTransactionHistory(state: BorrowSystemState, walletId: string): Trans
     }))
 }
 
-export function buildWalletReadSnapshot(state: BorrowSystemState, walletId: string): WalletReadSnapshot {
+export function buildSyntheticReceipts(history: TransactionHistoryItem[]) {
+  return history.map((item) => ({
+    id: item.id,
+    hash: item.hash,
+    status: item.status,
+    actionType: item.kind,
+    simulated: item.simulated,
+    timestamp: item.timestamp,
+  }))
+}
+
+export function buildWalletReadSnapshot(
+  state: BorrowSystemState,
+  walletId: string,
+  transactionHistory: TransactionHistoryItem[] = buildLegacyTransactionHistory(state, walletId),
+): WalletReadSnapshot {
   return {
     walletId,
-    transactionHistory: toTransactionHistory(state, walletId),
+    transactionHistory,
     creditSnapshot: toMetricsSnapshot(state, walletId),
   }
 }
