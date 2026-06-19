@@ -45,11 +45,11 @@ export function terminalStagesForAction(kind: BorrowActionKind): ActionBoxStage[
 }
 
 export function canAdvanceStage(kind: BorrowActionKind, stage: ActionBoxStage, preview: ActionBoxPreviewUi | null) {
-  if (stage === "preview" || stage === "review") {
-    return preview?.allowed ?? false
-  }
   if (kind === "liquidate-preview" && stage === "review") {
     return false
+  }
+  if (stage === "preview" || stage === "review") {
+    return preview?.allowed ?? false
   }
   return true
 }
