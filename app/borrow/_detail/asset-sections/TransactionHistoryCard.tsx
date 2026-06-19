@@ -94,7 +94,7 @@ export function TransactionHistoryCard({
           })}
         </div>
       </div>
-      <div className="w-full max-w-[760px] overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
+      <div className="overflow-hidden">
           <div className="hidden md:block">
             <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
@@ -109,13 +109,13 @@ export function TransactionHistoryCard({
                   <th className="rounded-l-2xl bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                     Time
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-slate-50 px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                     Type
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                     Amount
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                     For
                   </th>
                   <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
@@ -123,30 +123,30 @@ export function TransactionHistoryCard({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border dark:divide-white/6">
+              <tbody>
                 {visibleTransactions.map((tx) => (
                   <tr key={tx.id} className="group transition-colors">
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
                       {tx.timeLabel ?? formatRelativeTime(tx.at)}
                     </td>
-                    <td className={`px-5 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                    <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
+                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind]}
                       </span>
                     </td>
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel}
                     </td>
-                    <td className={`px-5 py-3 align-middle text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right text-[12px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
                       <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol)}</span>
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84 ${ROW_HOVER_RIGHT}`}>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline dark:text-white/84"
+                          className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
                         >
                           {tx.walletLabel ?? tx.counterpartyLabel ?? tx.txHashShort}
                         </a>
@@ -176,13 +176,13 @@ export function TransactionHistoryCard({
                   <th className="rounded-l-2xl bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                     Time
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-slate-50 px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                     Type
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                     Amount
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                     For
                   </th>
                   <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
@@ -190,30 +190,30 @@ export function TransactionHistoryCard({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border dark:divide-white/6">
+              <tbody>
                 {visibleTransactions.map((tx) => (
                   <tr key={tx.id} className="group transition-colors">
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
                       {tx.timeLabel ?? formatRelativeTime(tx.at)}
                     </td>
-                    <td className={`px-5 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                    <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
+                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind]}
                       </span>
                     </td>
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel}
                     </td>
-                    <td className={`px-5 py-3 align-middle text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right text-[12px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
                       <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol)}</span>
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white/84 ${ROW_HOVER_RIGHT}`}>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline dark:text-white/84"
+                          className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
                         >
                           {tx.walletLabel ?? tx.counterpartyLabel ?? tx.txHashShort}
                         </a>
