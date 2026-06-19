@@ -323,17 +323,7 @@ export function HotMarkets({
               {renderSequence("a")}
             </div>
             <div aria-hidden="true" className="flex shrink-0 items-start gap-3 pr-3">
-              {sequence.map((assetId, index) => (
-                <FeaturedCard
-                  key={`b-${assetId}-${index}`}
-                  asset={assets[assetId]}
-                  cardKey={`b-${assetId}-${index}`}
-                  hover={hover}
-                  onHover={setHover}
-                  onLeave={() => setHover(null)}
-                  interactive={false}
-                />
-              ))}
+              {renderSequence("b", false)}
             </div>
           </motion.div>
         </div>
