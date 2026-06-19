@@ -2,10 +2,17 @@ export type BorrowSpokeId =
   | "uni-v2"
   | "uni-v3-stable"
   | "uni-v3-bluechip"
+  | "uni-v3-gov"
+  | "curve-stable"
+  | "curve-correlated"
   | "curve-crypto"
+  | "bal-stable"
+  | "bal-correlated"
   | "bal-weighted"
   | "bal-boosted"
   | "bal-reclamm"
+  | "aero-basic-stable"
+  | "aero-basic-volatile"
   | "aero-slipstream-bluechip"
 
 export type BorrowVisual = {
