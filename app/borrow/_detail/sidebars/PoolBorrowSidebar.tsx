@@ -3,6 +3,7 @@
 import * as React from "react"
 import { toast } from "sonner"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
+import { parseFixed } from "@/app/lib/credit-engine"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { SupplyCollateralModal } from "@/app/borrow/components/supply-collateral-modal"
 import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
@@ -26,6 +27,8 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { buildBorrowSessionSeed, getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
+import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 
 type Props = {
   detail: PoolDetail
@@ -68,9 +71,18 @@ function PoolActionRail({ detail, className }: Props) {
   const [supplyOpen, setSupplyOpen] = React.useState(false)
   const [removeOpen, setRemoveOpen] = React.useState(false)
   const [claimOpen, setClaimOpen] = React.useState(false)
+  const walletId = React.useMemo(() => getBorrowSessionWalletId(), [])
+  const sessionSeed = React.useMemo(() => buildBorrowSessionSeed(walletId), [walletId])
+  const session = useBorrowSession({ walletId, sessionSeed })
 
-  const pool = React.useMemo(() => resolvePool(detail), [detail])
-  const currentDebtUsd = React.useMemo(() => resolveCurrentDebtUsd(pool.id, pool.borrowPowerUsd), [pool.id, pool.borrowPowerUsd])
+  const pool = React.useMemo(
+    () => session.collateralPools.find((entry) => entry.id === detail.id) ?? resolvePool(detail),
+    [detail, session.collateralPools],
+  )
+  const currentDebtUsd = React.useMemo(
+    () => session.initialDebts[pool.id] ?? resolveCurrentDebtUsd(pool.id, pool.borrowPowerUsd),
+    [pool.borrowPowerUsd, pool.id, session.initialDebts],
+  )
   const claimPosition = React.useMemo(() => resolveClaimPosition(detail, pool), [detail, pool])
 
   const claimableTotals = React.useMemo(
@@ -192,9 +204,13 @@ function PoolActionRail({ detail, className }: Props) {
         open={supplyOpen}
         context={{ pool: toBorrowPoolRow(detail) }}
         onClose={() => setSupplyOpen(false)}
-        onConfirm={() => {
-          setSupplyOpen(false)
-          toast.success(`Pledged ${formatCompactUsd(pool.collateralUsd)} of ${pool.name}`)
+        onConfirm={(result) => {
+          session.dispatch({
+            type: "supplyCollateral",
+            walletId,
+            marketId: result.pool.id,
+            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
+          })
         }}
       />
 
@@ -207,8 +223,14 @@ function PoolActionRail({ detail, className }: Props) {
         }}
         onClose={() => setRemoveOpen(false)}
         onConfirm={(result) => {
-          setRemoveOpen(false)
-          toast.success(`Removed ${result.percent ?? removePercent}% from ${pool.name}`)
+          const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === result.pool.id)
+          if (!position) return
+          session.dispatch({
+            type: "removeCollateral",
+            walletId,
+            positionId: position.id,
+            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
+          })
         }}
       />
 
