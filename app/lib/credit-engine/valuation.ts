@@ -60,6 +60,12 @@ export function resolveAccount(state: BorrowSystemState, walletId: string) {
   return state.accounts[walletId]
 }
 
+export function calculateCollateralValueUsd6(state: BorrowSystemState, walletId: string) {
+  const account = resolveAccount(state, walletId)
+  if (!account) throw new Error(`Unknown wallet ${walletId}`)
+  return totalCollateralValueUsd6(account, state.markets)
+}
+
 export function resolveDebtAsset(state: BorrowSystemState, position: UserDebtPosition): BorrowAssetRecord {
   const asset = state.assets[position.assetId]
   if (!asset) throw new Error(`Unknown asset ${position.assetId}`)
