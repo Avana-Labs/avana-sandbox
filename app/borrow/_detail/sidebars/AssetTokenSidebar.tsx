@@ -14,8 +14,8 @@ import { CompactRepayCard } from "@/app/components/home/repay-card"
 import { TOKENS } from "@/app/lend/components/data"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
-import { getBorrowSessionWalletId, buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
-import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
+import { getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
+import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { buildHomeRepayPreview } from "@/app/lib/borrow-system/modal-preview-runtime"
 import type { HomeBorrowToken, HomeCollateralPool, HomeAssetVisual } from "@/app/lib/home-sim"
 import type { BorrowPoolRow, BorrowableAsset } from "@/app/lib/data/borrow-domain"
@@ -68,8 +68,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
   const [supplyOpen, setSupplyOpen] = React.useState(false)
   const [depositPromptOpen, setDepositPromptOpen] = React.useState(false)
   const walletId = React.useMemo(() => getBorrowSessionWalletId(), [])
-  const sessionSeed = React.useMemo(() => buildBorrowSessionSeed(walletId), [walletId])
-  const session = useBorrowSession({ walletId, sessionSeed })
+  const session = useBorrowSessionContext()
 
   const token = React.useMemo(() => toLendToken(detail), [detail])
   const fallbackMarket = React.useMemo(
