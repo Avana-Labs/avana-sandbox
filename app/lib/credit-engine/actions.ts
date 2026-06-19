@@ -234,6 +234,90 @@ function applyRemoveCollateralAction(state: BorrowSystemState, action: Extract<B
   return state
 }
 
+function applyLiquidationAction(state: BorrowSystemState, action: Extract<BorrowAction, { type: "liquidate" }>) {
+  const account = state.accounts[action.walletId]
+  if (!account) throw new Error(`Unknown wallet ${action.walletId}`)
+  if (action.repayAmountUsd6 <= 0n) throw new Error("Liquidation repay amount must be positive")
+
+  const metricsBefore = calculateCreditMetrics(state, action.walletId)
+  if (metricsBefore.totalBorrowedUsd6 === 0n) throw new Error(`Wallet ${action.walletId} has no debt to liquidate`)
+  if (metricsBefore.healthFactorWad >= WAD) throw new Error(`Wallet ${action.walletId} is not eligible for liquidation`)
+
+  const positionIndex = account.collateralPositions.findIndex((position) => position.id === action.positionId)
+  if (positionIndex === -1) throw new Error(`Unknown collateral position ${action.positionId}`)
+
+  const collateralPosition = account.collateralPositions[positionIndex]!
+  const market = state.markets[collateralPosition.marketId]
+  if (!market) throw new Error(`Unknown market ${collateralPosition.marketId}`)
+
+  const debtIndex =
+    action.debtPositionId != null
+      ? account.debtPositions.findIndex((position) => position.id === action.debtPositionId)
+      : account.debtPositions.findIndex((position) => position.marketId === collateralPosition.marketId)
+  if (debtIndex === -1) throw new Error(`Unknown debt position ${action.debtPositionId ?? "(auto)"}`)
+
+  const debtPosition = account.debtPositions[debtIndex]!
+  const asset = state.assets[debtPosition.assetId]
+  if (!asset) throw new Error(`Unknown asset ${debtPosition.assetId}`)
+
+  const currentCollateralUsd6 = currentCollateralValueUsd6(collateralPosition, market)
+  const currentDebtUsd6 = currentDebtValueUsd6(debtPosition)
+  const actualRepayUsd6 = [action.repayAmountUsd6, currentDebtUsd6, currentCollateralUsd6].reduce((min, value) =>
+    value < min ? value : min,
+  )
+  if (actualRepayUsd6 <= 0n) throw new Error("Liquidation has no repayable value")
+
+  const seizedTokenAmount = usd6ToTokenAmount(actualRepayUsd6, market.snapshot.lpTokenPriceUsd6)
+  const seizedCollateralShares =
+    actualRepayUsd6 >= currentCollateralUsd6 ? collateralPosition.collateralShares : assetsToShares(seizedTokenAmount, market.snapshot.supplyIndexRay)
+  const principalReduction =
+    collateralPosition.collateralShares > 0n
+      ? mulDiv(collateralPosition.principalTokenAmount, seizedCollateralShares, collateralPosition.collateralShares)
+      : 0n
+  const interestOwedUsd6 = debtInterestOwedUsd6(debtPosition)
+  const sharesToBurn = actualRepayUsd6 === currentDebtUsd6 ? debtPosition.debtSharesUsd6 : assetsToShares(actualRepayUsd6, debtPosition.debtIndexRay)
+  const principalReductionUsd6 = actualRepayUsd6 > interestOwedUsd6 ? actualRepayUsd6 - interestOwedUsd6 : 0n
+
+  collateralPosition.collateralShares =
+    collateralPosition.collateralShares > seizedCollateralShares ? collateralPosition.collateralShares - seizedCollateralShares : 0n
+  collateralPosition.principalTokenAmount =
+    collateralPosition.principalTokenAmount > principalReduction ? collateralPosition.principalTokenAmount - principalReduction : 0n
+
+  market.snapshot.totalCollateralShares =
+    market.snapshot.totalCollateralShares > seizedCollateralShares ? market.snapshot.totalCollateralShares - seizedCollateralShares : 0n
+  market.snapshot.totalLiquidityUsd6 =
+    market.snapshot.totalLiquidityUsd6 > actualRepayUsd6 ? market.snapshot.totalLiquidityUsd6 - actualRepayUsd6 : 0n
+  market.snapshot.availableUsd6 = market.snapshot.availableUsd6 > actualRepayUsd6 ? market.snapshot.availableUsd6 - actualRepayUsd6 : 0n
+
+  debtPosition.debtSharesUsd6 = debtPosition.debtSharesUsd6 > sharesToBurn ? debtPosition.debtSharesUsd6 - sharesToBurn : 0n
+  debtPosition.principalBorrowedUsd6 =
+    debtPosition.principalBorrowedUsd6 > principalReductionUsd6 ? debtPosition.principalBorrowedUsd6 - principalReductionUsd6 : 0n
+
+  asset.snapshot.availableLiquidityUsd6 += actualRepayUsd6
+  asset.snapshot.totalBorrowedUsd6 = asset.snapshot.totalBorrowedUsd6 > actualRepayUsd6 ? asset.snapshot.totalBorrowedUsd6 - actualRepayUsd6 : 0n
+  asset.snapshot.totalDebtSharesUsd6 = asset.snapshot.totalDebtSharesUsd6 > sharesToBurn ? asset.snapshot.totalDebtSharesUsd6 - sharesToBurn : 0n
+
+  if (collateralPosition.collateralShares === 0n) {
+    account.collateralPositions.splice(positionIndex, 1)
+  }
+  if (debtPosition.debtSharesUsd6 === 0n || debtPosition.principalBorrowedUsd6 === 0n) {
+    account.debtPositions.splice(debtIndex, 1)
+  }
+
+  state.transactions.push({
+    id: `tx-${state.transactions.length + 1}`,
+    walletId: action.walletId,
+    marketId: collateralPosition.marketId,
+    assetId: debtPosition.assetId,
+    kind: "liquidate",
+    amountUsd6: actualRepayUsd6,
+    at: action.at ?? state.now,
+  })
+
+  syncBorrowRates(state, action.walletId)
+  return state
+}
+
 export function applyBorrowAction(state: BorrowSystemState, action: BorrowAction): BorrowSystemState {
   const accrued = accrueBorrowSystemState(state, action.at ?? state.now)
   const next = cloneState(accrued)
@@ -247,6 +331,8 @@ export function applyBorrowAction(state: BorrowSystemState, action: BorrowAction
       return applyRepayAction(next, action)
     case "removeCollateral":
       return applyRemoveCollateralAction(next, action)
+    case "liquidate":
+      return applyLiquidationAction(next, action)
     default:
       throw new Error(`Unsupported action ${action.type}`)
   }
