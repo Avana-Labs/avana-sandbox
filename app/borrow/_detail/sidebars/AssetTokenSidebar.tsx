@@ -16,7 +16,8 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { getBorrowSessionWalletId, buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
-import { calculateRepayPreview, type HomeBorrowToken, type HomeCollateralPool, type HomeAssetVisual } from "@/app/lib/home-sim"
+import { buildHomeRepayPreview } from "@/app/lib/borrow-system/modal-preview-runtime"
+import type { HomeBorrowToken, HomeCollateralPool, HomeAssetVisual } from "@/app/lib/home-sim"
 import type { BorrowPoolRow, BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import { PickerSurface, PrimaryCardButton } from "@/app/components/home/shared"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
@@ -90,11 +91,8 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
     [currentDebtPosition],
   )
   const repayPreview = React.useMemo(
-    () =>
-      borrowContext
-        ? calculateRepayPreview(borrowContext, repayDebtUsd, Number.parseFloat(amount) || 0, detail.row.borrowApr)
-        : null,
-    [amount, borrowContext, detail.row.borrowApr, repayDebtUsd],
+    () => buildHomeRepayPreview(session.state, walletId, currentDebtPosition?.id ?? null, Number.parseFloat(amount) || 0),
+    [amount, currentDebtPosition?.id, session.state, walletId],
   )
   const repayPool = React.useMemo<HomeCollateralPool>(
     () => borrowContext ?? (fallbackMarket ? toHomeCollateralPool(fallbackMarket) : makeEmptyHomeCollateralPool(detail)),
@@ -189,7 +187,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                 token={toDetailBorrowToken(detail)}
                 debtUsd={repayDebtUsd}
                 amount={amount}
-                preview={repayPreview ?? calculateRepayPreview(repayPool, 0, 0, detail.row.borrowApr)}
+                preview={repayPreview}
                 submitLabel={primaryLabel}
                 flatHero
                 onOpenPoolDialog={() => {}}
@@ -315,19 +313,13 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
               }
             : null
         }
+        borrowSession={session}
+        walletId={walletId}
         initialAmount={amount}
         initialTokenId={borrowTokenId}
         startStage={amount ? "review" : "entry"}
         onClose={() => setBorrowOpen(false)}
-        onConfirm={(result) => {
-          void executeAction({
-            type: "borrow",
-            walletId,
-            marketId: result.pool.id,
-            assetId: result.token.id,
-            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-          })
-        }}
+        onConfirm={() => setBorrowOpen(false)}
       />
 
       <RepayRemoveModal
@@ -339,33 +331,23 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                 currentDebtUsd: repayDebtUsd,
                 mode: "repay",
                 borrowApr: detail.row.borrowApr,
+                debtPositionId: currentDebtPosition?.id,
               }
             : null
         }
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setRepayOpen(false)}
-        onConfirm={(result) => {
-          if (!currentDebtPosition) return
-          void executeAction({
-            type: "repay",
-            walletId,
-            debtPositionId: currentDebtPosition.id,
-            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-          })
-        }}
+        onConfirm={() => setRepayOpen(false)}
       />
 
       <SupplyCollateralModal
         open={supplyOpen}
         context={fallbackMarket ? { pool: fallbackMarket } : null}
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setSupplyOpen(false)}
-        onConfirm={(result) => {
-          void executeAction({
-            type: "supplyCollateral",
-            walletId,
-            marketId: result.pool.id,
-            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-          })
-        }}
+        onConfirm={() => setSupplyOpen(false)}
       />
 
       <Dialog open={depositPromptOpen} onOpenChange={setDepositPromptOpen}>

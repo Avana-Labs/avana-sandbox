@@ -11,11 +11,11 @@ import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/component
 import { CompactClaimCard } from "@/app/components/home/claim-card"
 import { CompactRemoveCard } from "@/app/components/home/remove-card"
 import { PairVisual } from "@/app/components/home-workspace-primitives"
+import { buildHomeRemovePreview } from "@/app/lib/borrow-system/modal-preview-runtime"
 import {
   HOME_INITIAL_CLAIMABLE_TOTALS,
   HOME_INITIAL_DEBTS,
   calculateClaimPreview,
-  calculateRemovePreview,
   formatCompactUsd,
   formatUsd,
   getClaimBreakdownLabel,
@@ -96,8 +96,8 @@ function PoolActionRail({ detail, className }: Props) {
     [claimAmount, claimPositions, claimSelections, claimableTotals],
   )
   const removePreview = React.useMemo(
-    () => calculateRemovePreview(pool, currentDebtUsd, removePercent),
-    [currentDebtUsd, pool, removePercent],
+    () => buildHomeRemovePreview(session.state, walletId, pool.id, removePercent),
+    [pool.id, removePercent, session.state, walletId],
   )
   const executeAction = React.useCallback(
     async (action: BorrowAction) => {
@@ -212,15 +212,10 @@ function PoolActionRail({ detail, className }: Props) {
       <SupplyCollateralModal
         open={supplyOpen}
         context={{ pool: toBorrowPoolRow(detail) }}
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setSupplyOpen(false)}
-        onConfirm={(result) => {
-          void executeAction({
-            type: "supplyCollateral",
-            walletId,
-            marketId: result.pool.id,
-            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-          })
-        }}
+        onConfirm={() => setSupplyOpen(false)}
       />
 
       <RepayRemoveModal
@@ -229,18 +224,12 @@ function PoolActionRail({ detail, className }: Props) {
           pool,
           currentDebtUsd,
           mode: "remove",
+          collateralPositionId: session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === pool.id)?.id,
         }}
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setRemoveOpen(false)}
-        onConfirm={(result) => {
-          const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === result.pool.id)
-          if (!position) return
-          void executeAction({
-            type: "removeCollateral",
-            walletId,
-            positionId: position.id,
-            amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-          })
-        }}
+        onConfirm={() => setRemoveOpen(false)}
       />
 
       <Dialog
