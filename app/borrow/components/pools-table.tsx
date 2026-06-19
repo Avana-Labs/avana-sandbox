@@ -20,6 +20,10 @@ import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
 
+const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
+const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
+const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+
 function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
   if (!events || events.length === 0) return null
   return (
@@ -75,8 +79,8 @@ function SectionTabs({
           key={tab.id}
           type="button"
           onClick={() => onTabChange(tab.id as SectionTabId)}
-          className={[
-            "border-b-2 pb-2 text-left text-[15px] font-medium tracking-[-0.03em] transition-colors md:text-[17px]",
+            className={[
+            "border-b-2 pb-2 text-left text-[15px] font-normal tracking-[-0.03em] transition-colors md:text-[17px]",
             activeTab === tab.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground/80",
           ].join(" ")}
         >
@@ -171,8 +175,8 @@ function CollateralDesktopTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[920px] text-[12px]">
           <thead>
-            <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-              <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <tr className="bg-slate-50 text-left text-muted-foreground dark:bg-[#131820] dark:text-white/52">
+                  <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("asset")}
@@ -239,27 +243,27 @@ function CollateralDesktopTable({
               </th>
             </tr>
           </thead>
-          <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`} className="divide-y divide-border dark:divide-white/6">
+          <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
             {sortedRows.map((pool, index) => (
               <tr
                 key={pool.id}
-                className="asset-swap group cursor-pointer border-t border-border transition-colors hover:bg-surface-inset/60"
+                className="asset-swap group cursor-pointer transition-colors"
                 onClick={() => onUseAsCollateral(pool)}
                 style={{ animationDelay: `${index * 40}ms` }}
               >
-                <td className="py-2.5 pl-6 pr-4">
+                <td className={`py-2.5 pl-6 pr-4 ${ROW_HOVER_LEFT}`}>
                   <CollateralAssetCell pool={pool} />
                 </td>
-                <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%</span>
                 </td>
-                <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{pool.ltv}%</span>
                 </td>
-                <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
                 </td>
-                <td className="py-2.5 px-6">
+                <td className={`py-2.5 px-6 ${ROW_HOVER_RIGHT}`}>
                   <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                     <span className="tabular-nums">{formatPairAmount(pool.availableUsd, pool)}</span>
                   </div>
@@ -286,7 +290,7 @@ function CollateralDesktopTable({
     return table
   }
 
-  return <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">{table}</div>
+  return <div className="overflow-hidden rounded-[20px] bg-transparent">{table}</div>
 }
 
 export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral, onBorrowAssetDesktop }: PoolsTableProps) {
@@ -326,14 +330,14 @@ function SpokeDesktopSection({
 
   return (
     <section className="mb-2">
-      <div className="mt-4 overflow-hidden rounded-[20px] border border-black/5 bg-[#f7f7f5] dark:border-white/10 dark:bg-[#171717] md:shadow-none">
-        <div className="flex flex-col gap-3 px-1 py-2 md:flex-row md:items-center md:gap-4 md:px-4 md:py-3">
+      <div className="mt-4 overflow-hidden rounded-[20px] bg-transparent md:shadow-none">
+        <div className="flex flex-col gap-3 rounded-t-[20px] bg-transparent px-1 py-2 md:flex-row md:items-center md:gap-4 md:px-4 md:py-3">
           <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
-          <h3 className="text-[16px] font-medium tracking-tight text-foreground dark:text-white md:ml-auto md:text-[18px]">
+          <h3 className="text-[16px] font-normal tracking-tight text-foreground md:ml-auto md:text-[18px]">
             {spoke.label}
           </h3>
         </div>
-        <div className="border-t border-black/5 bg-surface-raised dark:border-white/10 dark:bg-[#1b1b1b]">
+        <div className="bg-transparent">
           {activeTab === "collateral" ? (
             <CollateralDesktopTable rows={rows} pending={pending} onUseAsCollateral={onUseAsCollateral} embedded />
           ) : (
@@ -385,9 +389,9 @@ function SpokeMobileSection({
 
   return (
     <section className="space-y-2">
-      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:rounded-[18px] md:border md:border-black/5 md:bg-[#f7f7f5] md:px-4 md:py-2 md:shadow-none dark:md:border-white/10 dark:md:bg-[#171717]">
+      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:rounded-[18px] md:border md:border-black/5 md:bg-transparent md:px-4 md:py-2 md:shadow-none dark:md:border-white/10">
         <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
-        <h3 className="text-[16px] font-medium tracking-tight text-foreground dark:text-white md:ml-auto md:text-[18px]">
+        <h3 className="text-[16px] font-normal tracking-tight text-foreground md:ml-auto md:text-[18px]">
           {spoke.label}
         </h3>
       </div>

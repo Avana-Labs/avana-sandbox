@@ -17,6 +17,10 @@ import {
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { cn } from "@/lib/utils"
 
+const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
+const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
+const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+
 export type SupplyRowContext = {
   pool: HomeCollateralPool
   borrowedUsd: number
@@ -76,7 +80,7 @@ export function SuppliesPanel({
         </div>
       ) : null}
       <div className="hidden md:block">
-        <div className="rounded-[18px] bg-white dark:bg-slate-950">
+        <div className="rounded-[18px] bg-transparent">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
@@ -90,56 +94,56 @@ export function SuppliesPanel({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                     #
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                     LP Position
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                     Collateral
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                     Max Borrow
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                     Health Factor
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                     Fees Earned
                   </th>
-                  <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 pr-6 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58" />
+                  <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 pr-6 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border dark:divide-white/6">
+              <tbody>
               {rows.map((row, index) => {
                 const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
                 const meta = BORROW_SUPPLY_META[row.pool.id]
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 return (
-                  <tr key={row.pool.id} className="transition-colors hover:bg-slate-100 dark:hover:bg-white/5">
-                    <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
+                  <tr key={row.pool.id} className="group transition-colors">
+                    <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
                       {index + 1}
                     </td>
-                    <td className="py-3 pl-5">
+                    <td className={`py-3 pl-5 ${ROW_HOVER_BG}`}>
                       <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
                     </td>
-                    <td className="py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground">
+                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {m(formatCompactUsd(row.pool.collateralUsd))}
                     </td>
-                    <td className="py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground">
+                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {m(formatCompactUsd(row.remainingBorrowPowerUsd))}
                     </td>
-                    <td className="py-3 text-right">
+                    <td className={`py-3 text-right ${ROW_HOVER_BG}`}>
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                     </td>
-                    <td className="py-3 pl-4 text-left">
+                    <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
                       <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
                       <div className="font-data text-[11px] font-medium tabular-nums text-emerald-600">
                         {row.pairApr.toFixed(1)}% APR
                       </div>
                     </td>
-                    <td className="py-3 pl-4 pr-6 text-left">
+                    <td className={`py-3 pl-4 pr-6 text-left ${ROW_HOVER_RIGHT}`}>
                       <div className="flex justify-start gap-1.5">
                         <PillButton variant="ghost" onClick={() => onRemove(row)}>
                           Remove
