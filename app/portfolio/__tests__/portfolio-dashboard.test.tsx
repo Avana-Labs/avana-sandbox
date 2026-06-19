@@ -87,6 +87,8 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
     readAdapter: {
       readPortfolioBorrow,
     },
+    state: { now: Date.UTC(2026, 5, 19), markets: {}, assets: {}, accounts: {}, transactions: [] },
+    transactionHistory: [],
   }),
 }))
 
@@ -167,9 +169,10 @@ describe("PortfolioDashboard", () => {
 
     render(<PortfolioDashboard walletProfileId="demo-wallet" />)
 
-    fireEvent.click(screen.getByText("Borrow tab"))
-
     await waitFor(() => expect(readPortfolioBorrow).toHaveBeenCalledWith("demo-wallet"))
+    await waitFor(() => expect(screen.getByText("Borrow tab")).toBeInTheDocument())
+
+    fireEvent.click(screen.getByText("Borrow tab"))
     await waitFor(() => expect(screen.getByText("approved:999")).toBeInTheDocument())
     expect(screen.getByText("collateral:pool-a")).toBeInTheDocument()
     expect(screen.getByText("debt:debt-a")).toBeInTheDocument()
