@@ -185,10 +185,13 @@ function LoanAssetsSection({
 
   const table = (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[920px] text-[12px]">
+          <table className="w-full min-w-[920px] text-[12px]">
             <thead>
               <tr className="bg-slate-50 text-left text-muted-foreground dark:bg-[#131820] dark:text-white/52">
-                <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  #
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -259,7 +262,10 @@ function LoanAssetsSection({
                   onClick={() => onBorrow(asset)}
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
-                  <td className={`py-2.5 pl-6 pr-4 ${ROW_HOVER_LEFT}`}>
+                  <td className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                    {index + 1}
+                  </td>
+                  <td className={`py-2.5 px-4 ${ROW_HOVER_BG}`}>
                     <div className="flex min-w-0 items-center gap-4">
                       <TokenBubble visual={asset.visual} size="xl" ring={false} className="bg-transparent" />
                       <div className="min-w-0">
@@ -340,6 +346,7 @@ function AssetsSection({
           <table className="w-full min-w-[920px] text-[13px]">
             <thead>
               <tr className="bg-slate-50 text-left text-muted-foreground dark:bg-[#131820]">
+                <th className="pb-2 pt-3 pl-5 pr-3 text-[10.5px] font-medium uppercase tracking-[0.06em]">#</th>
                 <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">Asset</th>
                 <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Borrow APR</th>
                 <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Utilization</th>
@@ -350,9 +357,12 @@ function AssetsSection({
               </tr>
             </thead>
             <tbody>
-              {assets.map((asset) => (
+              {assets.map((asset, index) => (
                 <tr key={asset.id} className="group transition-colors">
-                  <td className={`py-2.5 pl-5 ${ROW_HOVER_LEFT}`}>
+                  <td className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                    {index + 1}
+                  </td>
+                  <td className={`py-2.5 pl-5 ${ROW_HOVER_BG}`}>
                     <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} size="md" />
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${ROW_HOVER_BG}`}>

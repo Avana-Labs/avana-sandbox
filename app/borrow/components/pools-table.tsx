@@ -176,7 +176,10 @@ function CollateralDesktopTable({
       <table className="w-full min-w-[920px] text-[12px]">
           <thead>
                 <tr className="bg-slate-50 text-left text-muted-foreground dark:bg-[#131820] dark:text-white/52">
-                  <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    #
+                  </th>
+                  <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                 <button
                   type="button"
                   onClick={() => toggleSort("asset")}
@@ -244,14 +247,17 @@ function CollateralDesktopTable({
             </tr>
           </thead>
           <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
-            {sortedRows.map((pool, index) => (
-              <tr
-                key={pool.id}
-                className="asset-swap group cursor-pointer transition-colors"
-                onClick={() => onUseAsCollateral(pool)}
-                style={{ animationDelay: `${index * 40}ms` }}
-              >
-                <td className={`py-2.5 pl-6 pr-4 ${ROW_HOVER_LEFT}`}>
+              {sortedRows.map((pool, index) => (
+                <tr
+                  key={pool.id}
+                  className="asset-swap group cursor-pointer transition-colors"
+                  onClick={() => onUseAsCollateral(pool)}
+                  style={{ animationDelay: `${index * 40}ms` }}
+                >
+                <td className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                  {index + 1}
+                </td>
+                <td className={`py-2.5 px-4 ${ROW_HOVER_BG}`}>
                   <CollateralAssetCell pool={pool} />
                 </td>
                 <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
@@ -275,7 +281,7 @@ function CollateralDesktopTable({
             ))}
             {pending.map((row) => (
               <tr key={row.id}>
-                <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={5}>
+                <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={6}>
                   {row.label}
                   <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
                 </td>
