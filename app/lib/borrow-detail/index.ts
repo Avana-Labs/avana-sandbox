@@ -36,15 +36,16 @@
 
 import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
 import { buildMockBorrowSystemState, HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
-import { selectBorrowableAssets, selectBorrowMarketSummaries } from "@/app/lib/borrow-system/selectors"
+import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
+import { selectBorrowMarketSummaries } from "@/app/lib/borrow-system/selectors"
 import { buildPoolDetail } from "./pool.mock"
-import { buildAssetDetail } from "./asset.mock"
+import { buildAssetDetail, resolveAsset } from "./asset.mock"
 import type { AssetDetail, PoolDetail } from "./types"
 
 const detailWalletId = getDefaultWalletProfileId()
 const detailState = buildMockBorrowSystemState(detailWalletId)
 const detailPoolRows = selectBorrowMarketSummaries(detailState, detailWalletId)
-const detailAssets = selectBorrowableAssets(detailState, detailWalletId)
+const detailAssets = listSpokeBorrowables()
 
 export type { PoolDetail, AssetDetail } from "./types"
 export type {
@@ -114,7 +115,7 @@ export function listAllPoolDetails(): PoolDetail[] {
 
 /** Returns the detail view-model for a borrowable asset id. */
 export function getAssetDetail(id: string): AssetDetail | null {
-  const asset = detailAssets.find((candidate) => candidate.id === id)
+  const asset = detailAssets.find((candidate) => candidate.id === id) ?? resolveAsset(id)
   if (!asset) return null
   return buildAssetDetail(asset)
 }
