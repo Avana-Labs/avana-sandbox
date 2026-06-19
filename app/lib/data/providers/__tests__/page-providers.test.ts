@@ -162,7 +162,7 @@ describe("page providers", () => {
             rewardPools: [
               {
                 id: "reward-1",
-                href: "/borrow/pool/custom",
+                href: "/borrow/markets/custom",
                 title: "Custom Pool",
                 subtitle: "0.30% fee",
                 value: "$1.2M",

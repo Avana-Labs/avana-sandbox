@@ -149,8 +149,8 @@ export function AssetDetailClient({ detail }: Props) {
           <div ref={heroRef} className="min-w-0 lg:col-start-1 lg:row-start-2">
             <AssetHero detail={detail} hideIdentity className="mb-6" />
 
-            <section aria-label="Market analytics" className="space-y-8 pt-8">
-              <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]">Market data</h2>
+            <section aria-label="Asset analytics" className="space-y-8 pt-8">
+              <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]">Asset data</h2>
               <QuickStatsGrid detail={detail} />
               <InterestRateModelCard detail={detail} />
               <SupplyBorrowCard detail={detail} />
@@ -183,8 +183,8 @@ export function AssetDetailClient({ detail }: Props) {
                     question: `What is ${detail.hero.symbol}?`,
                     answer: (
                       <p>
-                        {detail.hero.name} is a market listed on Avana. It can be supplied to earn yield, and in supported
-                        markets it can also be used in borrowing workflows depending on the risk settings for the asset.
+                        {detail.hero.name} is a borrowable asset listed on Avana. It can be borrowed anywhere the selected
+                        collateral market supports it, with rates and limits determined by the active market risk settings.
                       </p>
                     ),
                   },

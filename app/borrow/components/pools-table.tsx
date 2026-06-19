@@ -68,8 +68,8 @@ function SectionTabs({
   return (
     <div className="flex flex-wrap gap-8 border-b border-border/50 md:border-b-0">
       {[
-        { id: "collateral", label: "Collateral" },
-        { id: "borrow", label: "Borrowable" },
+        { id: "collateral", label: "Markets" },
+        { id: "borrow", label: "Assets" },
       ].map((tab) => (
         <button
           key={tab.id}
@@ -436,7 +436,7 @@ function SpokeMobileSection({
                   </div>
                   <div className="flex gap-2">
                     <Link
-                      href={`/borrow/pool/${pool.id}`}
+                      href={`/borrow/markets/${pool.id}`}
                       onClick={(event) => event.stopPropagation()}
                       className="flex h-9 flex-1 items-center justify-center rounded-xs border border-border bg-surface-raised text-[13px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
                     >

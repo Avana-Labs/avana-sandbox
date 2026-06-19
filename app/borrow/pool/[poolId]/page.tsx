@@ -1,7 +1,6 @@
-import { notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import { getPoolDetail } from "@/app/lib/borrow-detail"
-import { PoolDetailClient } from "./pool-detail-client"
 
 type PageProps = {
   params: Promise<{ poolId: string }>
@@ -19,7 +18,5 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PoolDetailPage({ params }: PageProps) {
   const { poolId } = await params
-  const detail = getPoolDetail(poolId)
-  if (!detail) notFound()
-  return <PoolDetailClient detail={detail} />
+  redirect(`/borrow/markets/${poolId}`)
 }
