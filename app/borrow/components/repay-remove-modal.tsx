@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/components/transaction-flow"
 import {
   HOME_COLLATERAL_POOLS,
-  calculateRemovePreview,
-  calculateRepayPreview,
+  type RemovePreview,
+  type RepayPreview,
   formatHealthFactor,
   formatUsdExact,
   homeVisualToBorrowVisual,
@@ -42,6 +42,50 @@ type Props = {
   onConfirm: (result: RepayRemoveResult) => void
 }
 
+function buildRepayPreview(pool: HomeCollateralPool, currentDebtUsd: number, amountUsd: number, borrowApr: number): RepayPreview {
+  const remainingDebtUsd = Math.max(0, currentDebtUsd - amountUsd)
+  const oldHealthFactor = currentDebtUsd > 0 ? pool.liquidationUsd / currentDebtUsd : Number.POSITIVE_INFINITY
+  const healthFactorAfter = remainingDebtUsd > 0 ? pool.liquidationUsd / remainingDebtUsd : Number.POSITIVE_INFINITY
+
+  return {
+    amountUsd,
+    isEmpty: amountUsd <= 0,
+    isValid: amountUsd > 0,
+    exceedsDebt: amountUsd > currentDebtUsd,
+    remainingDebtUsd,
+    remainingDebtLabel: formatUsdExact(remainingDebtUsd),
+    healthFactorAfter: Number.isFinite(healthFactorAfter) ? healthFactorAfter : null,
+    healthFactorAfterLabel: formatHealthFactor(Number.isFinite(healthFactorAfter) ? healthFactorAfter : null),
+    oldHealthFactorLabel: formatHealthFactor(Number.isFinite(oldHealthFactor) ? oldHealthFactor : null),
+    riskTone: healthFactorAfter < 1.2 ? "danger" : healthFactorAfter < 1.5 ? "warning" : "positive",
+    yearlyInterestSavedUsd: amountUsd * (borrowApr / 100),
+    ctaLabel: amountUsd <= 0 ? "Enter amount" : "Review repayment",
+  }
+}
+
+function buildRemovePreview(pool: HomeCollateralPool, currentDebtUsd: number, percent: number): RemovePreview {
+  const safePercent = Math.min(100, Math.max(0, percent))
+  const removeUsd = pool.collateralUsd * (safePercent / 100)
+  const afterCollateralUsd = Math.max(0, pool.collateralUsd - removeUsd)
+  const liquidationThresholdAfterUsd =
+    pool.collateralUsd > 0 ? (pool.liquidationUsd / pool.collateralUsd) * afterCollateralUsd : 0
+  const healthFactorAfter = currentDebtUsd > 0 ? liquidationThresholdAfterUsd / currentDebtUsd : Number.POSITIVE_INFINITY
+  const isUnsafe = currentDebtUsd > 0 && healthFactorAfter < 1
+
+  return {
+    percent,
+    safePercent,
+    removeUsd,
+    afterCollateralUsd,
+    healthFactorAfter: Number.isFinite(healthFactorAfter) ? healthFactorAfter : null,
+    healthFactorAfterLabel: formatHealthFactor(Number.isFinite(healthFactorAfter) ? healthFactorAfter : null),
+    riskTone: isUnsafe ? "danger" : healthFactorAfter < 1.5 ? "warning" : "positive",
+    isUnsafe,
+    liquidationThresholdAfterUsd,
+    ctaLabel: safePercent <= 0 ? "Select amount" : "Review removal",
+  }
+}
+
 export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
   const [amountInput, setAmountInput] = useState("")
   const [percent, setPercent] = useState(25)
@@ -65,12 +109,12 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
 
   const repayPreview = useMemo(() => {
     if (!context) return null
-    return calculateRepayPreview(context.pool, context.currentDebtUsd, safeAmountUsd, context.borrowApr ?? 5.2)
+    return buildRepayPreview(context.pool, context.currentDebtUsd, safeAmountUsd, context.borrowApr ?? 5.2)
   }, [context, safeAmountUsd])
 
   const removePreview = useMemo(() => {
     if (!context) return null
-    return calculateRemovePreview(context.pool, context.currentDebtUsd, percent)
+    return buildRemovePreview(context.pool, context.currentDebtUsd, percent)
   }, [context, percent])
   const visuals = pool.visuals.map(homeVisualToBorrowVisual) as [
     ReturnType<typeof homeVisualToBorrowVisual>,
