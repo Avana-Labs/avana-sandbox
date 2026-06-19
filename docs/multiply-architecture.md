@@ -4,7 +4,7 @@ Multiply is a separate sandbox product from Borrow. Both share wallet identity b
 
 ## Shared
 
-- Wallet profile / `walletId`
+- Wallet profile / `walletId` via `useAvanaSession`
 - Sandbox mode labeling in UI
 - Portfolio shell tabs (Borrow + Multiply + Activity)
 - Transaction flow UI primitives
@@ -35,3 +35,5 @@ Production should replace only the multiply read/transaction adapters. UI and `m
 ## Stress testing
 
 `app/lib/multiply-engine/__tests__/scale-100-users.test.ts` runs 100 heterogeneous wallet sessions through batch multiply/deleverage actions and asserts invariants plus adapter read consistency.
+
+`app/lib/multiply-system/__tests__/scale-100-users-adapter.test.ts` runs the same cohort through `SandboxMultiplyTransactionAdapter` execute/preview paths.
