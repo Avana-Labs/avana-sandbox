@@ -1,5 +1,4 @@
 import {
-  applyBorrowAction,
   calculateSpokeCreditMetrics,
   currentCollateralValueUsd6,
   currentDebtValueUsd6,
@@ -22,6 +21,7 @@ import {
   type RemovePreview,
   type RepayPreview,
 } from "@/app/lib/home-sim"
+import { buildBorrowPreviewModel, buildRepayPreviewModel, buildWithdrawPreviewModel } from "./preview-builders"
 import { selectBorrowCollateralPools, selectBorrowableAssets } from "./selectors"
 
 function fixedToNumber(value: bigint, decimals: number) {
@@ -178,55 +178,30 @@ export function buildHomeBorrowPreview(
     }
   }
 
-  try {
-    const next = applyBorrowAction(state, {
-      type: "borrow",
-      walletId,
-      marketId,
-      assetId,
-      amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
-    })
-    const nextMetrics = calculateSpokeCreditMetrics(next, walletId, market.spokeId)
-    const healthFactor = healthFactorToNumber(nextMetrics.healthFactorWad)
-    const remainingBorrowPowerUsd = fixedToNumber(nextMetrics.availableCreditUsd6, 6)
-    const riskTone = getRiskTone(healthFactor)
+  const model = buildBorrowPreviewModel(state, walletId, marketId, assetId, amountUsd)
+  const riskTone = getRiskTone(model.healthFactor ?? Number.POSITIVE_INFINITY)
 
-    return {
-      amountUsd,
-      amountLabel: formatUsd(amountUsd),
-      isEmpty: false,
-      isValid: true,
-      exceedsBorrowPower: false,
-      healthFactor,
-      healthFactorLabel: formatHealthFactor(healthFactor),
-      riskTone,
-      progressPercent: currentMetrics.creditLimitUsd6 > 0n ? Math.min(100, ((amountUsd - remainingBorrowPowerUsd + currentAvailableCreditUsd) / fixedToNumber(currentMetrics.creditLimitUsd6, 6)) * 100) : 0,
-      remainingBorrowPowerUsd,
-      warningTitle:
-        riskTone === "danger" ? "High liquidation risk" : riskTone === "warning" ? "Borrowing gets tighter" : null,
-      warningMessage:
-        riskTone === "danger" || riskTone === "warning"
-          ? `Credit health: ${formatHealthFactor(healthFactor)}.`
-          : null,
-      ctaLabel: `Borrow ${amountUsd.toFixed(0)} ${state.assets[assetId]?.symbol ?? "tokens"}`,
-    }
-  } catch (error) {
-    return {
-      amountUsd,
-      amountLabel: formatUsd(amountUsd),
-      isEmpty: false,
-      isValid: false,
-      exceedsBorrowPower: true,
-      healthFactor: currentMetrics.totalBorrowedUsd6 > 0n ? healthFactorToNumber(currentMetrics.healthFactorWad) : null,
-      healthFactorLabel:
-        currentMetrics.totalBorrowedUsd6 > 0n ? formatHealthFactor(healthFactorToNumber(currentMetrics.healthFactorWad)) : "—",
-      riskTone: "danger",
-      progressPercent: 100,
-      remainingBorrowPowerUsd: currentAvailableCreditUsd,
-      warningTitle: "Borrow unavailable",
-      warningMessage: error instanceof Error ? error.message : String(error),
-      ctaLabel: userMessageFromError(error),
-    }
+  return {
+    amountUsd,
+    amountLabel: formatUsd(amountUsd),
+    isEmpty: model.isEmpty,
+    isValid: model.isValid,
+    exceedsBorrowPower: model.exceedsBorrowPower,
+    healthFactor: model.healthFactor,
+    healthFactorLabel: formatHealthFactor(model.healthFactor),
+    riskTone,
+    progressPercent: model.progressPercent,
+    remainingBorrowPowerUsd: model.remainingBorrowPowerUsd || currentAvailableCreditUsd,
+    warningTitle:
+      model.warningMessage != null
+        ? model.isValid
+          ? riskTone === "danger"
+            ? "High liquidation risk"
+            : "Borrowing gets tighter"
+          : "Borrow unavailable"
+        : null,
+    warningMessage: model.warningMessage,
+    ctaLabel: model.isValid ? `Borrow ${amountUsd.toFixed(0)} ${state.assets[assetId]?.symbol ?? "tokens"}` : userMessageFromError(model.warningMessage ?? "Action unavailable"),
   }
 }
 
@@ -280,49 +255,22 @@ export function buildHomeRepayPreview(
     }
   }
 
-  try {
-    const next = applyBorrowAction(state, {
-      type: "repay",
-      walletId,
-      debtPositionId: debtPosition.id,
-      amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
-    })
-    const nextMetrics = calculateSpokeCreditMetrics(next, walletId, debtPosition.spokeId)
-    const nextPosition = next.accounts[walletId]?.debtPositions.find((position) => position.id === debtPosition.id) ?? null
-    const remainingDebtUsd = nextPosition ? fixedToNumber(currentDebtValueUsd6(nextPosition), 6) : 0
-    const healthFactorAfter = nextMetrics.totalBorrowedUsd6 > 0n ? healthFactorToNumber(nextMetrics.healthFactorWad) : Number.POSITIVE_INFINITY
+  const model = buildRepayPreviewModel(state, walletId, debtPosition.id, amountUsd)
+  const healthFactorAfter = model.healthFactorAfter ?? currentHealthFactor
 
-    return {
-      amountUsd,
-      isEmpty: false,
-      isValid: !exceedsDebt,
-      exceedsDebt,
-      remainingDebtUsd,
-      remainingDebtLabel: `${formatCompactUsd(remainingDebtUsd)} ${state.assets[debtPosition.assetId]?.symbol ?? ""}`.trim(),
-      healthFactorAfter,
-      healthFactorAfterLabel: formatHealthFactor(healthFactorAfter),
-      oldHealthFactorLabel: formatHealthFactor(currentHealthFactor),
-      riskTone: getRiskTone(healthFactorAfter),
-      yearlyInterestSavedUsd: (Math.min(amountUsd, currentDebtUsd) * borrowApr) / 100,
-      ctaLabel: exceedsDebt
-        ? "Exceeds debt"
-        : `Repay ${formatCompactUsd(Math.min(amountUsd, currentDebtUsd))} ${state.assets[debtPosition.assetId]?.symbol ?? ""}`.trim(),
-    }
-  } catch (error) {
-    return {
-      amountUsd,
-      isEmpty: false,
-      isValid: false,
-      exceedsDebt: amountUsd > currentDebtUsd,
-      remainingDebtUsd: currentDebtUsd,
-      remainingDebtLabel: formatCompactUsd(currentDebtUsd),
-      healthFactorAfter: currentHealthFactor,
-      healthFactorAfterLabel: formatHealthFactor(currentHealthFactor),
-      oldHealthFactorLabel: formatHealthFactor(currentHealthFactor),
-      riskTone: "danger",
-      yearlyInterestSavedUsd: 0,
-      ctaLabel: userMessageFromError(error),
-    }
+  return {
+    amountUsd,
+    isEmpty: model.isEmpty,
+    isValid: model.isValid,
+    exceedsDebt: model.exceedsDebt,
+    remainingDebtUsd: model.remainingDebtUsd,
+    remainingDebtLabel: `${formatCompactUsd(model.remainingDebtUsd)} ${state.assets[debtPosition.assetId]?.symbol ?? ""}`.trim(),
+    healthFactorAfter,
+    healthFactorAfterLabel: formatHealthFactor(healthFactorAfter),
+    oldHealthFactorLabel: formatHealthFactor(currentHealthFactor),
+    riskTone: getRiskTone(healthFactorAfter),
+    yearlyInterestSavedUsd: model.yearlyInterestSavedUsd,
+    ctaLabel: model.isValid ? `Repay ${formatCompactUsd(Math.min(amountUsd, currentDebtUsd))} ${state.assets[debtPosition.assetId]?.symbol ?? ""}`.trim() : userMessageFromError(model.warningMessage ?? "Action unavailable"),
   }
 }
 
@@ -367,41 +315,20 @@ export function buildHomeRemovePreview(
     }
   }
 
-  try {
-    const next = applyBorrowAction(state, {
-      type: "removeCollateral",
-      walletId,
-      positionId: position.id,
-      percentBps: percent * 100,
-    })
-    const nextMetrics = calculateSpokeCreditMetrics(next, walletId, market.spokeId)
-    const healthFactorAfter = nextMetrics.totalBorrowedUsd6 > 0n ? healthFactorToNumber(nextMetrics.healthFactorWad) : Number.POSITIVE_INFINITY
+  const model = buildWithdrawPreviewModel(state, walletId, marketId, percent)
+  const healthFactorAfter =
+    model.healthFactorAfter ?? (currentMetrics.totalBorrowedUsd6 > 0n ? healthFactorToNumber(currentMetrics.healthFactorWad) : Number.POSITIVE_INFINITY)
 
-    return {
-      percent,
-      safePercent,
-      removeUsd,
-      afterCollateralUsd,
-      healthFactorAfter,
-      healthFactorAfterLabel: formatHealthFactor(healthFactorAfter),
-      riskTone: getRiskTone(healthFactorAfter),
-      isUnsafe: false,
-      liquidationThresholdAfterUsd: fixedToNumber(nextMetrics.liquidationValueUsd6, 6),
-      ctaLabel: `Remove ${percent}% · ${formatCompactUsd(removeUsd)}`,
-    }
-  } catch (_error) {
-    const currentHealthFactor = currentMetrics.totalBorrowedUsd6 > 0n ? healthFactorToNumber(currentMetrics.healthFactorWad) : Number.POSITIVE_INFINITY
-    return {
-      percent,
-      safePercent,
-      removeUsd,
-      afterCollateralUsd,
-      healthFactorAfter: currentHealthFactor,
-      healthFactorAfterLabel: formatHealthFactor(currentHealthFactor),
-      riskTone: "danger",
-      isUnsafe: true,
-      liquidationThresholdAfterUsd: fixedToNumber(currentMetrics.liquidationValueUsd6, 6),
-      ctaLabel: `Remove ${percent}% · ${formatCompactUsd(removeUsd)}`,
-    }
+  return {
+    percent,
+    safePercent,
+    removeUsd,
+    afterCollateralUsd: model.afterCollateralUsd || afterCollateralUsd,
+    healthFactorAfter,
+    healthFactorAfterLabel: formatHealthFactor(healthFactorAfter),
+    riskTone: model.isUnsafe ? "danger" : getRiskTone(healthFactorAfter),
+    isUnsafe: model.isUnsafe,
+    liquidationThresholdAfterUsd: fixedToNumber(currentMetrics.liquidationValueUsd6, 6),
+    ctaLabel: `Remove ${percent}% · ${formatCompactUsd(removeUsd)}`,
   }
 }
