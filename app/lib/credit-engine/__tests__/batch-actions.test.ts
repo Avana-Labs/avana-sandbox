@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 import { applyBorrowActions, calculateCreditMetrics, parseFixed } from "@/app/lib/credit-engine"
-import { makeExampleBorrowSystemState } from "./fixtures"
+import {
+  EXAMPLE_CURVE_MARKET_ID,
+  EXAMPLE_CURVE_USDT_ASSET_ID,
+  EXAMPLE_WALLET_1_DEBT_ID,
+  makeExampleBorrowSystemState,
+} from "./fixtures"
 
 describe("borrow batch actions", () => {
   it("applies actions in chronological order across wallets", () => {
@@ -9,22 +14,22 @@ describe("borrow batch actions", () => {
       {
         type: "repay",
         walletId: "wallet-1",
-        debtPositionId: "wallet-1:usdc",
+        debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
         amountUsd6: parseFixed("500", 6),
         at: state.now + 30_000,
       },
       {
         type: "borrow",
         walletId: "wallet-2",
-        marketId: "curve-eth-usdt",
-        assetId: "usdt",
+        marketId: EXAMPLE_CURVE_MARKET_ID,
+        assetId: EXAMPLE_CURVE_USDT_ASSET_ID,
         amountUsd6: parseFixed("800", 6),
         at: state.now + 15_000,
       },
       {
         type: "supplyCollateral",
         walletId: "wallet-2",
-        marketId: "curve-eth-usdt",
+        marketId: EXAMPLE_CURVE_MARKET_ID,
         amountUsd6: parseFixed("1200", 6),
         at: state.now + 5_000,
       },

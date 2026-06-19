@@ -110,6 +110,10 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
     open: false,
     context: null,
   })
+  const marketSpokeById = useMemo(
+    () => new Map(session.marketSummaries.map((market) => [market.id, market.spoke])),
+    [session.marketSummaries],
+  )
 
   // Data for each tab
   const supplies = useMemo<SupplyRowContext[]>(() => {
@@ -136,16 +140,20 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
 
   const poolGroups = useMemo(() => groupByDex(visiblePools), [visiblePools])
   const borrowAssetsBySpoke = useMemo(() => {
-    const symbolMap = new Map(session.borrowableAssets.map((asset) => [asset.symbol.toUpperCase(), asset]))
     return Object.fromEntries(
       poolGroups.flatMap((group) =>
         group.spokes.map((entry) => {
-          const symbols = new Set(entry.rows.flatMap((row) => row.borrowableTokens.map((token) => token.symbol.toUpperCase())))
-          return [entry.spoke.id, Array.from(symbols).map((symbol) => symbolMap.get(symbol)).filter((asset): asset is NonNullable<typeof asset> => Boolean(asset))]
+          const assets = new Map<string, BorrowableAsset>()
+          for (const row of entry.rows) {
+            for (const asset of session.getBorrowableAssetsForMarket(row.id)) {
+              assets.set(asset.id, asset)
+            }
+          }
+          return [entry.spoke.id, Array.from(assets.values())]
         }),
       ),
     ) as Record<string, BorrowableAsset[]>
-  }, [poolGroups, session.borrowableAssets])
+  }, [poolGroups, session])
 
   useEffect(() => {
     onTabChange?.(currentTab)
@@ -165,8 +173,12 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
 
   const handleAssetBorrowMobile = useCallback(
     (asset: BorrowableAsset) => {
+      const assetSpokeId = asset.id.includes(":") ? asset.id.split(":")[0] : null
       const best = supplies
-        .filter((row) => Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0)
+        .filter((row) => {
+          if (assetSpokeId && marketSpokeById.get(row.pool.id) !== assetSpokeId) return false
+          return Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0
+        })
         .reduce<SupplyRowContext | null>((acc, row) => {
           if (!acc) return row
           const rowScore = Number.isFinite(row.healthFactor ?? NaN) ? (row.healthFactor as number) : 99
@@ -185,7 +197,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
         },
       })
     },
-    [session, supplies],
+    [marketSpokeById, session, supplies],
   )
 
   const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {

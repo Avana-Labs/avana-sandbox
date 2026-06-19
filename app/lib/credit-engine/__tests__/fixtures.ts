@@ -1,12 +1,21 @@
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import { RAY, parseFixed } from "@/app/lib/credit-engine"
 
+export const EXAMPLE_UNI_MARKET_ID = "uni-v3-bluechip-weth-usdc"
+export const EXAMPLE_CURVE_MARKET_ID = "curve-eth-usdt"
+export const EXAMPLE_UNI_USDC_ASSET_ID = "uni-v3-bluechip:usdc"
+export const EXAMPLE_UNI_USDT_ASSET_ID = "uni-v3-bluechip:usdt"
+export const EXAMPLE_UNI_WETH_ASSET_ID = "uni-v3-bluechip:weth"
+export const EXAMPLE_CURVE_USDC_ASSET_ID = "curve-crypto:usdc"
+export const EXAMPLE_CURVE_USDT_ASSET_ID = "curve-crypto:usdt"
+export const EXAMPLE_WALLET_1_DEBT_ID = `wallet-1:${EXAMPLE_UNI_USDC_ASSET_ID}`
+
 export function makeExampleBorrowSystemState(): BorrowSystemState {
   return {
     now: Date.UTC(2026, 5, 19),
     markets: {
-      "uni-v3-bluechip-weth-usdc": {
-        id: "uni-v3-bluechip-weth-usdc",
+      [EXAMPLE_UNI_MARKET_ID]: {
+        id: EXAMPLE_UNI_MARKET_ID,
         spokeId: "uni-v3-bluechip",
         display: {
           name: "WETH / USDC",
@@ -36,8 +45,12 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
           riskScoreWad: parseFixed("0.22", 18),
         },
         relations: {
-          supportedBorrowAssetIds: ["usdc", "usdt", "weth"],
-          relatedMarketIds: ["curve-eth-usdt"],
+          supportedBorrowAssetIds: [
+            EXAMPLE_UNI_USDC_ASSET_ID,
+            EXAMPLE_UNI_USDT_ASSET_ID,
+            EXAMPLE_UNI_WETH_ASSET_ID,
+          ],
+          relatedMarketIds: [EXAMPLE_CURVE_MARKET_ID],
         },
         snapshot: {
           lpTokenPriceUsd6: parseFixed("1845.22", 6),
@@ -62,8 +75,8 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
           engagement: { label: "Engagement", unit: "count", points: [] },
         },
       },
-      "curve-eth-usdt": {
-        id: "curve-eth-usdt",
+      [EXAMPLE_CURVE_MARKET_ID]: {
+        id: EXAMPLE_CURVE_MARKET_ID,
         spokeId: "curve-crypto",
         display: {
           name: "ETH / USDT",
@@ -93,8 +106,8 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
           riskScoreWad: parseFixed("0.31", 18),
         },
         relations: {
-          supportedBorrowAssetIds: ["usdc", "usdt"],
-          relatedMarketIds: ["uni-v3-bluechip-weth-usdc"],
+          supportedBorrowAssetIds: [EXAMPLE_CURVE_USDC_ASSET_ID, EXAMPLE_CURVE_USDT_ASSET_ID],
+          relatedMarketIds: [EXAMPLE_UNI_MARKET_ID],
         },
         snapshot: {
           lpTokenPriceUsd6: parseFixed("1522.4", 6),
@@ -121,12 +134,17 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
       },
     },
     assets: {
-      usdc: {
-        id: "usdc",
+      [EXAMPLE_UNI_USDC_ASSET_ID]: {
+        id: EXAMPLE_UNI_USDC_ASSET_ID,
+        baseAssetId: "usdc",
+        spokeId: "uni-v3-bluechip",
+        marketIds: [EXAMPLE_UNI_MARKET_ID],
+        slug: "usdc",
+        contextLabel: "USD Coin on Uniswap v3 bluechip",
         symbol: "USDC",
         display: {
           name: "USD Coin",
-          subtitle: "Primary stable borrow asset",
+          subtitle: "Primary stable borrow asset for Uni v3 bluechip collateral",
           chain: "Ethereum",
           category: "stable",
           visual: {
@@ -155,12 +173,17 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
           supplyBorrow: {},
         },
       },
-      usdt: {
-        id: "usdt",
+      [EXAMPLE_UNI_USDT_ASSET_ID]: {
+        id: EXAMPLE_UNI_USDT_ASSET_ID,
+        baseAssetId: "usdt",
+        spokeId: "uni-v3-bluechip",
+        marketIds: [EXAMPLE_UNI_MARKET_ID],
+        slug: "usdt",
+        contextLabel: "Tether on Uniswap v3 bluechip",
         symbol: "USDT",
         display: {
           name: "Tether",
-          subtitle: "Secondary stable borrow asset",
+          subtitle: "Secondary stable borrow asset for Uni v3 bluechip collateral",
           chain: "Ethereum",
           category: "stable",
           visual: {
@@ -189,12 +212,17 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
           supplyBorrow: {},
         },
       },
-      weth: {
-        id: "weth",
+      [EXAMPLE_UNI_WETH_ASSET_ID]: {
+        id: EXAMPLE_UNI_WETH_ASSET_ID,
+        baseAssetId: "weth",
+        spokeId: "uni-v3-bluechip",
+        marketIds: [EXAMPLE_UNI_MARKET_ID],
+        slug: "weth",
+        contextLabel: "Wrapped Ether on Uniswap v3 bluechip",
         symbol: "WETH",
         display: {
           name: "Wrapped Ether",
-          subtitle: "Volatile borrow asset",
+          subtitle: "Volatile borrow asset for Uni v3 bluechip collateral",
           chain: "Ethereum",
           category: "eth",
           visual: {
@@ -223,6 +251,84 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
           supplyBorrow: {},
         },
       },
+      [EXAMPLE_CURVE_USDC_ASSET_ID]: {
+        id: EXAMPLE_CURVE_USDC_ASSET_ID,
+        baseAssetId: "usdc",
+        spokeId: "curve-crypto",
+        marketIds: [EXAMPLE_CURVE_MARKET_ID],
+        slug: "usdc",
+        contextLabel: "USD Coin on Curve crypto",
+        symbol: "USDC",
+        display: {
+          name: "USD Coin",
+          subtitle: "Stable borrow asset for Curve crypto collateral",
+          chain: "Ethereum",
+          category: "stable",
+          visual: {
+            symbol: "USDC",
+            shortLabel: "U",
+            bgClassName: "bg-sky-500",
+            textClassName: "text-sky-50",
+          },
+        },
+        borrowConfig: {
+          baseBorrowAprWad: parseFixed("0.056", 18),
+        },
+        snapshot: {
+          priceUsd6: parseFixed("1", 6),
+          priceChange24hWad: parseFixed("0.0002", 18),
+          availableLiquidityUsd6: parseFixed("72000000", 6),
+          totalBorrowedUsd6: parseFixed("24000000", 6),
+          totalDebtSharesUsd6: parseFixed("24000000", 6),
+        },
+        detail: {
+          about: "Curve crypto USDC borrow market.",
+          faqs: [{ question: "What is USDC?", answer: "A dollar-backed stablecoin." }],
+        },
+        analytics: {
+          utilization: { label: "Utilization", unit: "pct", points: [] },
+          supplyBorrow: {},
+        },
+      },
+      [EXAMPLE_CURVE_USDT_ASSET_ID]: {
+        id: EXAMPLE_CURVE_USDT_ASSET_ID,
+        baseAssetId: "usdt",
+        spokeId: "curve-crypto",
+        marketIds: [EXAMPLE_CURVE_MARKET_ID],
+        slug: "usdt",
+        contextLabel: "Tether on Curve crypto",
+        symbol: "USDT",
+        display: {
+          name: "Tether",
+          subtitle: "Stable borrow asset for Curve crypto collateral",
+          chain: "Ethereum",
+          category: "stable",
+          visual: {
+            symbol: "USDT",
+            shortLabel: "T",
+            bgClassName: "bg-emerald-500",
+            textClassName: "text-emerald-50",
+          },
+        },
+        borrowConfig: {
+          baseBorrowAprWad: parseFixed("0.059", 18),
+        },
+        snapshot: {
+          priceUsd6: parseFixed("1", 6),
+          priceChange24hWad: parseFixed("0.0001", 18),
+          availableLiquidityUsd6: parseFixed("68000000", 6),
+          totalBorrowedUsd6: parseFixed("22000000", 6),
+          totalDebtSharesUsd6: parseFixed("22000000", 6),
+        },
+        detail: {
+          about: "Curve crypto USDT borrow market.",
+          faqs: [{ question: "What is USDT?", answer: "A dollar-backed stablecoin." }],
+        },
+        analytics: {
+          utilization: { label: "Utilization", unit: "pct", points: [] },
+          supplyBorrow: {},
+        },
+      },
     },
     accounts: {
       "wallet-1": {
@@ -233,14 +339,14 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
         collateralPositions: [
           {
             id: "wallet-1:weth-usdc",
-            marketId: "uni-v3-bluechip-weth-usdc",
+            marketId: EXAMPLE_UNI_MARKET_ID,
             collateralShares: parseFixed("8.25", 18),
             principalTokenAmount: parseFixed("8.25", 18),
             collateralEnabled: true,
           },
           {
             id: "wallet-1:curve-eth-usdt",
-            marketId: "curve-eth-usdt",
+            marketId: EXAMPLE_CURVE_MARKET_ID,
             collateralShares: parseFixed("3.4", 18),
             principalTokenAmount: parseFixed("3.4", 18),
             collateralEnabled: true,
@@ -248,9 +354,11 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
         ],
         debtPositions: [
           {
-            id: "wallet-1:usdc",
-            assetId: "usdc",
-            marketId: "uni-v3-bluechip-weth-usdc",
+            id: EXAMPLE_WALLET_1_DEBT_ID,
+            assetId: EXAMPLE_UNI_USDC_ASSET_ID,
+            baseAssetId: "usdc",
+            spokeId: "uni-v3-bluechip",
+            marketId: EXAMPLE_UNI_MARKET_ID,
             debtSharesUsd6: parseFixed("6200", 6),
             debtIndexRay: RAY,
             borrowRateWad: parseFixed("0.052", 18),

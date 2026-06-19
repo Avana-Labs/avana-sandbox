@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import fc from "fast-check"
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import { RAY, USD_SCALE, WAD, assetsToShares, calculateCreditMetrics, currentDebtValueUsd6, sharesToAssets } from "@/app/lib/credit-engine"
-import { makeExampleBorrowSystemState } from "./fixtures"
+import { EXAMPLE_UNI_USDC_ASSET_ID, makeExampleBorrowSystemState } from "./fixtures"
 
 const BPS_TO_WAD = 100_000_000_000_000n
 
@@ -29,7 +29,7 @@ function makeRandomState(params: {
 }): BorrowSystemState {
   const state = makeExampleBorrowSystemState()
   const market = state.markets["uni-v3-bluechip-weth-usdc"]!
-  const asset = state.assets.usdc!
+  const asset = state.assets[EXAMPLE_UNI_USDC_ASSET_ID]!
   const account = state.accounts["wallet-1"]!
   const collateralPosition = account.collateralPositions[0]!
   const debtPosition = account.debtPositions[0]!
@@ -77,8 +77,8 @@ describe("borrow credit property tests", () => {
         fc.bigInt({ min: RAY, max: RAY * 4n }),
         (shares, indexA, indexB) => {
           fc.pre(indexB >= indexA)
-          expect(currentDebtValueUsd6({ id: "d", assetId: "usdc", debtSharesUsd6: shares, debtIndexRay: indexB, borrowRateWad: 0n, principalBorrowedUsd6: shares })).toBeGreaterThanOrEqual(
-            currentDebtValueUsd6({ id: "d", assetId: "usdc", debtSharesUsd6: shares, debtIndexRay: indexA, borrowRateWad: 0n, principalBorrowedUsd6: shares }),
+          expect(currentDebtValueUsd6({ id: "d", assetId: EXAMPLE_UNI_USDC_ASSET_ID, baseAssetId: "usdc", spokeId: "uni-v3-bluechip", debtSharesUsd6: shares, debtIndexRay: indexB, borrowRateWad: 0n, principalBorrowedUsd6: shares })).toBeGreaterThanOrEqual(
+            currentDebtValueUsd6({ id: "d", assetId: EXAMPLE_UNI_USDC_ASSET_ID, baseAssetId: "usdc", spokeId: "uni-v3-bluechip", debtSharesUsd6: shares, debtIndexRay: indexA, borrowRateWad: 0n, principalBorrowedUsd6: shares }),
           )
         },
       ),

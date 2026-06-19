@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { calculateCreditMetrics, formatFixed, parseFixed } from "@/app/lib/credit-engine"
 import { applyBorrowAction } from "@/app/lib/credit-engine/actions"
-import { makeExampleBorrowSystemState } from "./fixtures"
+import { EXAMPLE_UNI_MARKET_ID, makeExampleBorrowSystemState } from "./fixtures"
 
 describe("borrow collateral actions", () => {
   it("adds collateral and increases credit limit", () => {
@@ -9,7 +9,7 @@ describe("borrow collateral actions", () => {
     const next = applyBorrowAction(state, {
       type: "supplyCollateral",
       walletId: "wallet-1",
-      marketId: "uni-v3-bluechip-weth-usdc",
+      marketId: EXAMPLE_UNI_MARKET_ID,
       amountUsd6: parseFixed("1000", 6),
     })
 
@@ -45,5 +45,18 @@ describe("borrow collateral actions", () => {
         percentBps: 10_000,
       }),
     ).toThrow("Removing collateral would make wallet wallet-1 insolvent")
+  })
+
+  it("rejects collateral removals that only break spoke health while wallet totals still look solvent", () => {
+    const state = makeExampleBorrowSystemState()
+
+    expect(() =>
+      applyBorrowAction(state, {
+        type: "removeCollateral",
+        walletId: "wallet-1",
+        positionId: "wallet-1:weth-usdc",
+        amountUsd6: parseFixed("8000", 6),
+      }),
+    ).toThrow("Removing collateral would make spoke uni-v3-bluechip insolvent")
   })
 })
