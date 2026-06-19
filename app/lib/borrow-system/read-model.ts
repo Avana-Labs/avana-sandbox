@@ -70,6 +70,43 @@ export function buildSyntheticReceipts(history: TransactionHistoryItem[]) {
   }))
 }
 
+function historyKindToActivityKind(kind: TransactionHistoryItem["kind"]) {
+  switch (kind) {
+    case "deposit":
+      return "pledge" as const
+    case "withdraw":
+      return "withdraw" as const
+    case "borrow":
+      return "borrow" as const
+    case "repay":
+      return "repay" as const
+    case "claim":
+      return "claim" as const
+    case "liquidate":
+      return "liquidation" as const
+  }
+}
+
+export function mapTransactionHistoryToActivityRows(history: TransactionHistoryItem[]) {
+  return history.map((item) => {
+    const amountUsd = Number.parseFloat(formatFixed(item.executedAmountUsd6, 6))
+    const signedAmount =
+      item.kind === "borrow" || item.kind === "withdraw" || item.kind === "liquidate" ? -Math.abs(amountUsd) : Math.abs(amountUsd)
+
+    return {
+      id: item.id,
+      at: new Date(item.timestamp).toISOString(),
+      product: "borrow" as const,
+      kind: historyKindToActivityKind(item.kind),
+      status: item.status === "success" ? ("confirmed" as const) : item.status === "failed" ? ("failed" as const) : ("pending" as const),
+      amountUsd: signedAmount,
+      primaryLabel: item.marketId ?? item.assetId ?? "Borrow",
+      secondaryLabel: item.simulated ? "Simulated transaction" : "On-chain transaction",
+      txHash: item.hash,
+    }
+  })
+}
+
 export function buildWalletReadSnapshot(
   state: BorrowSystemState,
   walletId: string,
