@@ -1,4 +1,7 @@
+import type { MultiplySystemState } from "@/app/lib/multiply-engine"
+import { deserializeMultiplySystemState, serializeMultiplySystemState } from "./codec"
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult } from "./contracts"
+import { notifyMultiplySessionChanged } from "./session-sync"
 
 const STORAGE_PREFIX = "avana.multiply.session.v1"
 const META_STORAGE_PREFIX = "avana.multiply.session.meta.v1"
@@ -16,6 +19,21 @@ export function multiplySessionMetadataKey(walletId: string) {
   return `${META_STORAGE_PREFIX}:${walletId}`
 }
 
+export function readMultiplySessionState(walletId: string, seed: string): MultiplySystemState {
+  if (typeof window === "undefined") {
+    return deserializeMultiplySystemState(seed)
+  }
+
+  const stored = window.localStorage.getItem(multiplySessionStorageKey(walletId))
+  return deserializeMultiplySystemState(stored ?? seed)
+}
+
+export function writeMultiplySessionState(walletId: string, state: MultiplySystemState) {
+  if (typeof window === "undefined") return
+  window.localStorage.setItem(multiplySessionStorageKey(walletId), serializeMultiplySystemState(state))
+  notifyMultiplySessionChanged(walletId)
+}
+
 export function readMultiplySessionMetadata(walletId: string): MultiplySessionMetadata {
   if (typeof window === "undefined") {
     return { transactionHistory: [], receipts: [] }
@@ -29,6 +47,7 @@ export function readMultiplySessionMetadata(walletId: string): MultiplySessionMe
 export function writeMultiplySessionMetadata(walletId: string, metadata: MultiplySessionMetadata) {
   if (typeof window === "undefined") return
   window.localStorage.setItem(multiplySessionMetadataKey(walletId), JSON.stringify(metadata))
+  notifyMultiplySessionChanged(walletId)
 }
 
 export function clearMultiplySessionState(walletId: string) {

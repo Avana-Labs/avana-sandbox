@@ -36,6 +36,16 @@ export function useMultiplyActionBox(session: MultiplySessionLike) {
     [session],
   )
 
+  const refreshPreview = useCallback(
+    async (action: MultiplyAction) => {
+      const nextIntent = session.createIntent(action)
+      const nextPreview = await session.previewTransaction(nextIntent)
+      setPreview(nextPreview)
+      return nextPreview
+    },
+    [session],
+  )
+
   const advance = useCallback(async () => {
     if (!intent || !preview) return null
 
@@ -67,6 +77,7 @@ export function useMultiplyActionBox(session: MultiplySessionLike) {
     intent,
     preview,
     prepareAction,
+    refreshPreview,
     advance,
     reset,
     canAdvance,
