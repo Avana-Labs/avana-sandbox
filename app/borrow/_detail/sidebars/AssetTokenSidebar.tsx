@@ -4,7 +4,7 @@ import * as React from "react"
 import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { currentDebtValueUsd6, formatFixed, parseFixed } from "@/app/lib/credit-engine"
+import { currentDebtValueUsd6, formatFixed, parseFixed, type BorrowAction } from "@/app/lib/credit-engine"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { BorrowModal } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
@@ -109,6 +109,15 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
   const canBorrowFromSession = Boolean(
     borrowContext && session.collateralPools.some((pool) => pool.id === borrowContext.id),
   )
+  const executeAction = React.useCallback(
+    async (action: BorrowAction) => {
+      const intent = session.createIntent(action)
+      const preview = await session.previewTransaction(intent)
+      if (!preview.allowed) return
+      await session.executeTransaction(preview.intent)
+    },
+    [session],
+  )
 
   const tokenBalance = "balance" in token ? token.balance : 0
   const tokenPrice = "price" in token ? token.price : 1
@@ -177,7 +186,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
             {tab === "repay" ? (
               <CompactRepayCard
                 pool={repayPool}
-                token={toBorrowToken(detail.row)}
+                token={toDetailBorrowToken(detail)}
                 debtUsd={repayDebtUsd}
                 amount={amount}
                 preview={repayPreview ?? calculateRepayPreview(repayPool, 0, 0, detail.row.borrowApr)}
@@ -311,7 +320,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
         startStage={amount ? "review" : "entry"}
         onClose={() => setBorrowOpen(false)}
         onConfirm={(result) => {
-          session.dispatch({
+          void executeAction({
             type: "borrow",
             walletId,
             marketId: result.pool.id,
@@ -336,7 +345,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
         onClose={() => setRepayOpen(false)}
         onConfirm={(result) => {
           if (!currentDebtPosition) return
-          session.dispatch({
+          void executeAction({
             type: "repay",
             walletId,
             debtPositionId: currentDebtPosition.id,
@@ -350,7 +359,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
         context={fallbackMarket ? { pool: fallbackMarket } : null}
         onClose={() => setSupplyOpen(false)}
         onConfirm={(result) => {
-          session.dispatch({
+          void executeAction({
             type: "supplyCollateral",
             walletId,
             marketId: result.pool.id,
@@ -410,18 +419,37 @@ function toLendToken(detail: AssetDetail): LendModalToken {
   } as LendModalToken
 }
 
-function toBorrowToken(asset: BorrowableAsset): HomeBorrowToken {
+function toBorrowToken(asset: Partial<BorrowableAsset> & { id: string; borrowApr: number }): HomeBorrowToken {
+  const symbol = asset.symbol ?? "TOKEN"
+  const name = asset.name ?? symbol
+
   return {
     id: asset.id,
-    name: asset.name,
-    symbol: asset.symbol,
-    subtitle: asset.subtitle,
+    name,
+    symbol,
+    subtitle: asset.subtitle ?? name,
     borrowApr: asset.borrowApr,
     visual: {
-      symbol: asset.visual.symbol,
-      shortLabel: asset.visual.shortLabel,
-      bgClassName: asset.visual.bgClass,
-      textClassName: asset.visual.textClass,
+      symbol: asset.visual?.symbol ?? symbol,
+      shortLabel: asset.visual?.shortLabel ?? symbol,
+      bgClassName: asset.visual?.bgClass ?? "bg-slate-900",
+      textClassName: asset.visual?.textClass ?? "text-white",
+    },
+  }
+}
+
+function toDetailBorrowToken(detail: AssetDetail): HomeBorrowToken {
+  return {
+    id: detail.row.id,
+    name: detail.hero.name,
+    symbol: detail.hero.symbol,
+    subtitle: detail.row.spokeLabel,
+    borrowApr: detail.row.borrowApr,
+    visual: {
+      symbol: detail.hero.symbol,
+      shortLabel: detail.hero.visual.shortLabel ?? detail.hero.symbol,
+      bgClassName: detail.hero.visual.bgClass ?? "bg-slate-900",
+      textClassName: detail.hero.visual.textClass ?? "text-white",
     },
   }
 }
@@ -449,9 +477,9 @@ function toHomeCollateralPool(row: BorrowPoolRow): HomeCollateralPool {
 function makeEmptyHomeCollateralPool(detail: AssetDetail): HomeCollateralPool {
   const fallbackVisual: HomeAssetVisual = {
     symbol: detail.hero.symbol,
-    shortLabel: detail.hero.visual.shortLabel,
-    bgClassName: detail.hero.visual.bgClass,
-    textClassName: detail.hero.visual.textClass,
+    shortLabel: detail.hero.visual.shortLabel ?? detail.hero.symbol,
+    bgClassName: detail.hero.visual.bgClass ?? "bg-slate-900",
+    textClassName: detail.hero.visual.textClass ?? "text-white",
   }
 
   return {
