@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { currentDebtValueUsd6, formatFixed, parseFixed, type BorrowAction } from "@/app/lib/credit-engine"
@@ -9,13 +8,13 @@ import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { BorrowModal } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
 import { SupplyCollateralModal } from "@/app/borrow/components/supply-collateral-modal"
-import type { LendModalState, LendModalToken } from "@/app/lend/components/lend-modals"
+import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
+import { LendMarketActionDialog } from "@/app/lend/components/lend-market-action-dialog"
 import { CompactRepayCard } from "@/app/components/home/repay-card"
-import { TOKENS } from "@/app/lend/components/data"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
-import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useBorrowSessionContext, useLendSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { buildHomeRepayPreview } from "@/app/lib/borrow-system/modal-preview-runtime"
 import type { HomeBorrowToken, HomeCollateralPool, HomeAssetVisual } from "@/app/lib/home-sim"
 import type { BorrowPoolRow, BorrowableAsset } from "@/app/lib/data/borrow-domain"
@@ -23,20 +22,9 @@ import { PickerSurface, PrimaryCardButton } from "@/app/components/home/shared"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
-const LendModals = dynamic(() => import("@/app/lend/components/lend-modals").then((mod) => mod.LendModals), {
-  ssr: false,
-})
-
 type Props = { detail: AssetDetail; className?: string }
 
 type SidebarTab = "deposit" | "withdraw" | "borrow" | "repay"
-const INITIAL_MODAL: LendModalState = {
-  isOpen: false,
-  type: "deposit",
-  actionType: "deposit",
-  token: null,
-  amount: "",
-}
 
 export function AssetTokenSidebar({ detail, className }: Props) {
   return (
@@ -62,15 +50,27 @@ export function AssetTokenActions({ detail, className }: Props) {
 function TokenRail({ detail, className }: { detail: AssetDetail; className?: string }) {
   const [tab, setTab] = React.useState<SidebarTab>("deposit")
   const [amount, setAmount] = React.useState("")
-  const [modalState, setModalState] = React.useState<LendModalState>(INITIAL_MODAL)
+  const [lendDialogState, setLendDialogState] = React.useState<{ open: boolean; action: "deposit" | "withdraw" }>({
+    open: false,
+    action: "deposit",
+  })
+  const marketId = React.useMemo(() => resolveLendMarketId(detail.hero.symbol), [detail.hero.symbol])
   const [borrowOpen, setBorrowOpen] = React.useState(false)
   const [repayOpen, setRepayOpen] = React.useState(false)
   const [supplyOpen, setSupplyOpen] = React.useState(false)
   const [depositPromptOpen, setDepositPromptOpen] = React.useState(false)
   const walletId = React.useMemo(() => getBorrowSessionWalletId(), [])
   const session = useBorrowSessionContext()
+  const lendSession = useLendSessionContext()
 
-  const token = React.useMemo(() => toLendToken(detail), [detail])
+  const lendPosition = React.useMemo(
+    () =>
+      Object.values(lendSession.state.positions).find(
+        (entry) => entry.walletId === lendSession.walletId && entry.marketId === marketId && entry.status === "active",
+      ),
+    [lendSession.state.positions, lendSession.walletId, marketId],
+  )
+  const supplyApy = parseFloat(String(detail.row.borrowApr)) || 0
   const fallbackMarket = React.useMemo(
     () => session.marketSummaries.find((market) => detail.row.marketIds.includes(market.id)) ?? null,
     [detail.row.marketIds, session.marketSummaries],
@@ -116,8 +116,8 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
     [session],
   )
 
-  const tokenBalance = "balance" in token ? token.balance : 0
-  const tokenPrice = "price" in token ? token.price : 1
+  const tokenBalance = lendPosition?.currentSuppliedAmount ?? 0
+  const tokenPrice = 1
   const parsedAmount = Number.parseFloat(amount) || 0
   const exceedsBalance = tab === "withdraw" && parsedAmount > tokenBalance
   const isInvalidAmount = !parsedAmount || parsedAmount <= 0
@@ -135,13 +135,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
               : "Review repayment"
 
   const openLend = (action: "deposit" | "withdraw") => {
-    setModalState({
-      isOpen: true,
-      type: action,
-      actionType: action,
-      token,
-      amount,
-    })
+    setLendDialogState({ open: true, action })
   }
 
   return (
@@ -207,7 +201,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                           {tab === "borrow"
                             ? detail.hero.name
                             : tab === "deposit"
-                              ? `${token.apy.toFixed(2)}% supply APY`
+                              ? `${supplyApy.toFixed(2)}% supply APY`
                               : `${tokenBalance.toLocaleString()} available`}
                         </div>
                       </div>
@@ -228,7 +222,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                           {tab === "borrow"
                             ? `${borrowAprLabel} borrow APY`
                             : tab === "deposit"
-                              ? `${token.apy.toFixed(2)}% supply APY`
+                              ? `${supplyApy.toFixed(2)}% supply APY`
                               : `${tokenBalance.toLocaleString()} available`}
                         </span>
                         <button
@@ -294,10 +288,11 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
         </div>
       </div>
 
-      <LendModals
-        modalState={modalState}
-        setModalState={setModalState}
-        closeModal={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
+      <LendMarketActionDialog
+        open={lendDialogState.open}
+        onOpenChange={(open) => setLendDialogState((prev) => ({ ...prev, open }))}
+        marketId={marketId}
+        initialAction={lendDialogState.action}
       />
 
       <BorrowModal
@@ -382,22 +377,6 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
       </Dialog>
     </>
   )
-}
-
-function toLendToken(detail: AssetDetail): LendModalToken {
-  const catalog = TOKENS.find((t) => t.symbol.toLowerCase() === detail.hero.symbol.toLowerCase())
-  if (catalog) return catalog
-  const base = TOKENS[0]
-  const apy = Number.parseFloat(String(detail.row.borrowApr)) || base.apy
-  return {
-    ...base,
-    symbol: detail.hero.symbol,
-    name: detail.hero.name,
-    apy,
-    balance: 0,
-    earned: 0,
-    daily: 0,
-  } as LendModalToken
 }
 
 function toBorrowToken(asset: Partial<BorrowableAsset> & { id: string; borrowApr: number }): HomeBorrowToken {

@@ -323,7 +323,9 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
     },
     lend: {
       investments: walletSupplies,
+      positions: walletSupplies,
       strategyBuckets: walletStrategies,
+      history: [],
     },
     multiply: {
       creditLines: {

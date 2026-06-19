@@ -5,7 +5,8 @@ import {
   type DataSourceRequestContext,
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
-import { mockLendSharedSource } from "@/app/lib/data/mock/shared/lend"
+import { buildMockLendSystemState } from "@/app/lib/lend-system/mock"
+import { SandboxLendReadAdapter } from "@/app/lib/lend-system/sandbox-read-adapter"
 import type { LendPageData } from "./types"
 
 export type LendPageSource = {
@@ -27,18 +28,14 @@ export const liveLendPageAdapter = createDataSourceAdapter({
 
 export const mockLendPageSource: LendPageSource = {
   adapter: mockLendPageAdapter,
-  async getLendPageData() {
+  async getLendPageData(_context?: DataSourceRequestContext) {
+    const walletId = "demo-wallet"
+    const state = buildMockLendSystemState(walletId)
+    const adapter = new SandboxLendReadAdapter({ state })
+    const data = await adapter.readLendPage(walletId)
     return {
       fetchedAt: new Date().toISOString(),
-      data: {
-        tokens: mockLendSharedSource.getTokens(),
-        markets: mockLendSharedSource.getMarkets(),
-        activity: mockLendSharedSource.getActivity(),
-        chartSeries: mockLendSharedSource.getChartSeries(),
-        featuredAssets: mockLendSharedSource.getFeaturedAssets(),
-        featuredSequence: mockLendSharedSource.getFeaturedSequence(),
-        assetGroups: mockLendSharedSource.getAssetGroups(),
-      },
+      data,
     }
   },
 }
