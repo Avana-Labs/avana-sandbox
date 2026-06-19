@@ -77,14 +77,20 @@ export type PortfolioBorrowTabData = {
 
 export type PortfolioSupplyPosition = {
   id: string
+  marketId?: string
   symbol: string
   name: string
   balance: number
   priceUsd: number
   suppliedUsd: number
+  principalUsd?: number
   earnedUsd: number
   dailyEarnedUsd: number
   apyPct: number
+  principalAmount?: number
+  interestEarned?: number
+  availableToWithdraw?: number
+  status?: "active" | "closed"
 }
 
 export type PortfolioPoolVisual = {
@@ -125,7 +131,9 @@ export type PortfolioStrategyBucket = {
 
 export type PortfolioLendTabData = {
   investments: PortfolioSupplyPosition[]
+  positions: PortfolioSupplyPosition[]
   strategyBuckets: PortfolioStrategyBucket[]
+  history: PortfolioActivityRow[]
 }
 
 export type PortfolioMultiplyCollateral = {

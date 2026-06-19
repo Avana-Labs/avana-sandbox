@@ -131,6 +131,8 @@ describe("page providers", () => {
     expect(data.markets.length).toBeGreaterThan(0)
     expect(data.assetGroups.length).toBeGreaterThan(0)
     expect(data.featuredSequence.length).toBeGreaterThan(0)
+    expect(data.featuredSnapshots.length).toBe(3)
+    expect(data.marketRows.length).toBeGreaterThan(10)
   })
 
   it("accepts a lend source override", async () => {
@@ -156,6 +158,8 @@ describe("page providers", () => {
               },
             } as unknown as LendPageData["featuredAssets"],
             featuredSequence: ["usdc"] as unknown as LendPageData["featuredSequence"],
+            featuredSnapshots: [{ marketId: "usdc", symbol: "USDC", href: "/lend/markets/usdc", apyLabel: "3.20%" }],
+            marketRows: [{ marketId: "usdc", asset: "USDC", href: "/lend/markets/usdc" }],
             assetGroups: [{ title: "Stablecoins", rows: [{ symbol: "USDC", name: "USD Coin", apy: "3.2%" }] }] as unknown as LendPageData["assetGroups"],
           },
         }
