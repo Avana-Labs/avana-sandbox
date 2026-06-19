@@ -14,6 +14,24 @@ const lendPageSchema = z.object({
     z.object({ id: z.string(), symbol: z.string(), displayName: z.string(), apy: z.number(), iconUrl: z.string(), path: z.string() }),
   ),
   featuredSequence: z.array(z.string()),
+  featuredSnapshots: z.array(
+    z
+      .object({
+        marketId: z.string(),
+        symbol: z.string(),
+        href: z.string(),
+      })
+      .passthrough(),
+  ),
+  marketRows: z.array(
+    z
+      .object({
+        marketId: z.string(),
+        asset: z.string(),
+        href: z.string(),
+      })
+      .passthrough(),
+  ),
   assetGroups: z.array(
     z.object({
       title: z.string(),
