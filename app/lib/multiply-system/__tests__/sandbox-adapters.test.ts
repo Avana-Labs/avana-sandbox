@@ -17,6 +17,14 @@ describe("SandboxMultiplyReadAdapter", () => {
 
     const page = await adapter.readMultiplyPage("wallet-1")
     expect(page.lendRows).toHaveLength(20)
+    expect(page.trendingSnapshots).toHaveLength(4)
+  })
+
+  it("exposes wallet risk snapshots from open positions", async () => {
+    const state = makeExampleMultiplySystemState()
+    const adapter = new SandboxMultiplyReadAdapter({ state })
+    const snapshot = await adapter.readWalletSnapshot("wallet-1")
+    expect(snapshot.riskSnapshots.length).toBeGreaterThan(0)
   })
 })
 
