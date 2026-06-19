@@ -133,3 +133,7 @@ export function buildLendCatalogMarketsRecord(now = NOW): Record<string, LendMar
 export function getLendMarketById(marketId: string) {
   return LEND_MARKET_CATALOG.find((market) => market.marketId === marketId.toLowerCase()) ?? null
 }
+
+export function resolveLendMarketId(symbol: string) {
+  return symbol.toLowerCase().replace(/[^a-z0-9]/g, "")
+}

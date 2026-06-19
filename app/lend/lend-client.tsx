@@ -4,7 +4,6 @@ import dynamic from "next/dynamic"
 import { useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { LendHero } from "./components/lend-hero"
-import type { LendSessionModalState } from "./components/lend-session-modal"
 
 const HotMarkets = dynamic(() => import("./components/hot-markets").then((mod) => mod.HotMarkets), {
   loading: () => <div className="h-[228px] rounded-radius-md border border-border bg-surface-raised/60" />,
@@ -14,16 +13,17 @@ const LendAssetSpokes = dynamic(() => import("./components/lend-asset-spokes").t
   loading: () => <div className="mt-8 h-[640px] rounded-radius-md border border-border bg-surface-raised/60" />,
 })
 
-const LendSessionModal = dynamic(() => import("./components/lend-session-modal").then((mod) => mod.LendSessionModal), {
-  ssr: false,
-})
+const LendMarketActionDialog = dynamic(
+  () => import("./components/lend-market-action-dialog").then((mod) => mod.LendMarketActionDialog),
+  { ssr: false },
+)
 
 export function LendClient({ pageData }: { pageData: LendPageData }) {
   const { markets, featuredAssets, featuredSequence, featuredSnapshots, assetGroups } = pageData
-  const [modalState, setModalState] = useState<LendSessionModalState>({
-    isOpen: false,
+  const [dialogState, setDialogState] = useState<{ open: boolean; marketId: string; action: "deposit" | "withdraw" }>({
+    open: false,
     marketId: "eth",
-    actionType: "deposit",
+    action: "deposit",
   })
 
   return (
@@ -40,17 +40,22 @@ export function LendClient({ pageData }: { pageData: LendPageData }) {
             <LendAssetSpokes
               groups={assetGroups}
               onDeposit={(marketId) =>
-                setModalState({
-                  isOpen: true,
+                setDialogState({
+                  open: true,
                   marketId,
-                  actionType: "deposit",
+                  action: "deposit",
                 })
               }
             />
           </div>
         </div>
 
-        <LendSessionModal modalState={modalState} onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))} />
+        <LendMarketActionDialog
+          open={dialogState.open}
+          onOpenChange={(open) => setDialogState((prev) => ({ ...prev, open }))}
+          marketId={dialogState.marketId}
+          initialAction={dialogState.action}
+        />
       </main>
     </div>
   )

@@ -14,6 +14,7 @@ import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
 import { PortfolioPositionsTabs } from "@/app/portfolio/portfolio-positions-tabs"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
+import { buildLendSnapshotFromTabData } from "@/app/portfolio/lend-hero-state"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
 import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-live"
 import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
@@ -180,6 +181,8 @@ export function DashboardClient({
     return mergeLendTabData(data.lend, portfolioLend)
   }, [data, initialData, portfolioLend])
 
+  const lendSnapshot = useMemo(() => buildLendSnapshotFromTabData(lendTabData), [lendTabData])
+
   const multiplyTabData = useMemo(() => {
     if (!data) {
       return portfolioMultiply ?? initialData?.multiply ?? {
@@ -211,6 +214,7 @@ export function DashboardClient({
         pageData={data}
         borrowSnapshot={borrowSnapshot}
         multiplySnapshot={multiplySnapshot}
+        lendSnapshot={lendSnapshot}
       />
 
       {activeTab === "overview" ? (

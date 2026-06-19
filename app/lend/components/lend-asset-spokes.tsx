@@ -8,7 +8,19 @@ import { LEND_ASSET_GROUPS } from "@/app/lib/data/mock/shared/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
 
-type AssetRow = LendPageData["assetGroups"][number]["rows"][number]
+type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
+  marketId?: string
+  supplyApyLabel?: string
+  rewardsApyLabel?: string
+  totalApyLabel?: string
+  supplyApyValue?: number
+  rewardsApyValue?: number
+  utilizationLabel?: string
+  utilizationValue?: number
+  reserveFactorLabel?: string
+  reserveFactorValue?: number
+  status?: string
+}
 type AssetGroup = LendPageData["assetGroups"][number]
 const DEFAULT_ASSET_GROUPS: AssetGroup[] = LEND_ASSET_GROUPS
 const STABLE_SYMBOLS = new Set(DEFAULT_ASSET_GROUPS[0]?.rows.map((row) => row.symbol) ?? [])
@@ -305,6 +317,22 @@ function AssetIcon({ row }: { row: AssetRow }) {
   return <TokenIcon symbol={row.symbol} size="xl" ring className="bg-white dark:bg-[#111111]" />
 }
 
+function StatusBadge({ status }: { status?: string }) {
+  const normalized = (status ?? "active").toLowerCase()
+  const tone =
+    normalized === "active"
+      ? "border-emerald-200/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400"
+      : normalized === "capped"
+        ? "border-amber-200/70 bg-amber-500/10 text-amber-800 dark:border-amber-900/50 dark:text-amber-300"
+        : "border-border bg-surface-inset text-muted-foreground"
+
+  return (
+    <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize", tone)}>
+      {normalized}
+    </span>
+  )
+}
+
 function AssetRowView({
   row,
   delay,
@@ -340,29 +368,25 @@ function AssetRowView({
       </td>
 
       <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
-        <div className={cn("flex items-center gap-2", row.apyAccent && "text-[#6d6afb] dark:text-white")}>
-          <YieldsBadge accent={row.apyAccent} />
-          <span className="tabular-nums">{row.apy}</span>
-        </div>
+        <span className="tabular-nums">{row.supplyApyLabel ?? row.apy}</span>
+      </td>
+
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+        <span className="tabular-nums">{row.rewardsApyLabel ?? "0.00%"}</span>
+      </td>
+
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+        <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
+      </td>
+
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+        <span className="tabular-nums">{row.reserveFactorLabel ?? "—"}</span>
       </td>
 
       <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
-        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
-          {row.totalDepositsPrimary}
-        </div>
-        <div className="mt-0.5 text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[12px]">
-          {row.totalDepositsSecondary}
-        </div>
+        <StatusBadge status={row.status} />
       </td>
 
-      <td className={`py-3 px-6 pr-4 ${ROW_HOVER_RIGHT}`}>
-        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
-          {row.availableLiquidityPrimary}
-        </div>
-        <div className="mt-0.5 text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[12px]">
-          {row.availableLiquiditySecondary}
-        </div>
-      </td>
       <td className={`py-3 px-4 pr-4 ${ROW_HOVER_RIGHT}`}>
         {onDeposit ? (
           <Button type="button" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]" onClick={() => onDeposit(marketId)}>
@@ -385,7 +409,9 @@ function AssetSection({
   rows: AssetRow[]
   onDeposit?: (marketId: string) => void
 }) {
-  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "liquidity">("asset")
+  const [sortKey, setSortKey] = useState<
+    "asset" | "supplyApy" | "rewardsApy" | "utilization" | "reserveFactor" | "status"
+  >("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -403,12 +429,16 @@ function AssetSection({
 
     return [...rows].sort((a, b) => {
       switch (sortKey) {
-        case "apy":
-          return (a.apyValue - b.apyValue) * direction
-        case "deposits":
-          return (a.totalDepositsValue - b.totalDepositsValue) * direction
-        case "liquidity":
-          return (a.availableLiquidityValue - b.availableLiquidityValue) * direction
+        case "supplyApy":
+          return ((a.supplyApyValue ?? a.apyValue / 100) - (b.supplyApyValue ?? b.apyValue / 100)) * direction
+        case "rewardsApy":
+          return ((a.rewardsApyValue ?? 0) - (b.rewardsApyValue ?? 0)) * direction
+        case "utilization":
+          return ((a.utilizationValue ?? 0) - (b.utilizationValue ?? 0)) * direction
+        case "reserveFactor":
+          return ((a.reserveFactorValue ?? 0) - (b.reserveFactorValue ?? 0)) * direction
+        case "status":
+          return (a.status ?? "active").localeCompare(b.status ?? "active") * direction
         case "asset":
         default:
           return a.name.localeCompare(b.name) * direction
@@ -436,14 +466,16 @@ function AssetSection({
 
       <div className="rounded-[18px] bg-white dark:bg-transparent">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px]">
+          <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[12px]">
             <colgroup>
-              <col className="w-[5%]" />
-              <col className="w-[29%]" />
-              <col className="w-[17%]" />
-              <col className="w-[24%]" />
-              <col className="w-[20%]" />
+              <col className="w-[4%]" />
+              <col className="w-[22%]" />
+              <col className="w-[11%]" />
+              <col className="w-[11%]" />
               <col className="w-[12%]" />
+              <col className="w-[12%]" />
+              <col className="w-[12%]" />
+              <col className="w-[10%]" />
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -468,45 +500,75 @@ function AssetSection({
                 <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
-                    onClick={() => toggleSort("apy")}
+                    onClick={() => toggleSort("supplyApy")}
                     className={cn(
                       "flex items-center gap-2 transition-colors",
-                      sortKey === "apy"
+                      sortKey === "supplyApy"
                         ? "text-foreground dark:text-white/90"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>APY</span>
+                    <span>SUPPLY APY</span>
                     <SortIcon />
                   </button>
                 </th>
                 <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
-                    onClick={() => toggleSort("deposits")}
+                    onClick={() => toggleSort("rewardsApy")}
                     className={cn(
                       "flex items-center gap-2 transition-colors",
-                      sortKey === "deposits"
+                      sortKey === "rewardsApy"
                         ? "text-foreground dark:text-white/90"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>TOTAL DEPOSITS</span>
+                    <span>REWARDS APY</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
-                    onClick={() => toggleSort("liquidity")}
+                    onClick={() => toggleSort("utilization")}
                     className={cn(
-                      "flex w-full items-center gap-2 transition-colors",
-                      sortKey === "liquidity"
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "utilization"
                         ? "text-foreground dark:text-white/90"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>AVAILABLE LIQUIDITY</span>
+                    <span>UTILIZATION</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("reserveFactor")}
+                    className={cn(
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "reserveFactor"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-foreground/70 dark:text-white/70",
+                    )}
+                  >
+                    <span>RESERVE FACTOR</span>
+                    <SortIcon />
+                  </button>
+                </th>
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("status")}
+                    className={cn(
+                      "flex items-center gap-2 transition-colors",
+                      sortKey === "status"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-foreground/70 dark:text-white/70",
+                    )}
+                  >
+                    <span>STATUS</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -522,7 +584,7 @@ function AssetSection({
                 ))
               ) : (
                 <tr>
-                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={6}>
+                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={8}>
                     No assets match these filters.
                   </td>
                 </tr>

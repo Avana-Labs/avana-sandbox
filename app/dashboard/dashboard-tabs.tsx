@@ -3,6 +3,7 @@
 import type { PortfolioPageData, PortfolioTabKey } from "@/app/lib/data/providers/portfolio"
 import { DashboardHero } from "./dashboard-hero"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
+import { buildLendHeroData, type LendSnapshot } from "@/app/portfolio/lend-hero-state"
 import { cn } from "@/lib/utils"
 
 export type DashboardTab = PortfolioTabKey
@@ -25,10 +26,21 @@ type DashboardTabsProps = {
   pageData: PortfolioPageData
   borrowSnapshot: BorrowSnapshot
   multiplySnapshot: BorrowSnapshot
+  lendSnapshot?: LendSnapshot | null
 }
 
-export function DashboardTabs({ activeTab, onTabChange, pageData, borrowSnapshot, multiplySnapshot }: DashboardTabsProps) {
-  const activeHero = pageData.heroByTab[activeTab]
+export function DashboardTabs({
+  activeTab,
+  onTabChange,
+  pageData,
+  borrowSnapshot,
+  multiplySnapshot,
+  lendSnapshot,
+}: DashboardTabsProps) {
+  const activeHero =
+    activeTab === "lending" && lendSnapshot
+      ? buildLendHeroData(pageData.heroByTab.lending, lendSnapshot)
+      : pageData.heroByTab[activeTab]
 
   const tabBar = (
     <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
