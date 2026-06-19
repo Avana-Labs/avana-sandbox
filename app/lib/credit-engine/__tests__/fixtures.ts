@@ -9,6 +9,7 @@ export const EXAMPLE_UNI_WETH_ASSET_ID = "uni-v3-bluechip:weth"
 export const EXAMPLE_CURVE_USDC_ASSET_ID = "curve-crypto:usdc"
 export const EXAMPLE_CURVE_USDT_ASSET_ID = "curve-crypto:usdt"
 export const EXAMPLE_WALLET_1_DEBT_ID = `wallet-1:${EXAMPLE_UNI_USDC_ASSET_ID}`
+export const EXAMPLE_WALLET_1_REWARD_ID = "claim-eth-usdc"
 
 export function makeExampleBorrowSystemState(): BorrowSystemState {
   return {
@@ -365,6 +366,20 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
             principalBorrowedUsd6: parseFixed("6200", 6),
           },
         ],
+        rewardPositions: [
+          {
+            id: EXAMPLE_WALLET_1_REWARD_ID,
+            marketId: EXAMPLE_UNI_MARKET_ID,
+            claimableUsd6: parseFixed("142", 6),
+            earnedUsd6: parseFixed("142", 6),
+          },
+          {
+            id: "claim-curve-eth-usdt",
+            marketId: EXAMPLE_CURVE_MARKET_ID,
+            claimableUsd6: parseFixed("62.4", 6),
+            earnedUsd6: parseFixed("62.4", 6),
+          },
+        ],
       },
       "wallet-2": {
         walletId: "wallet-2",
@@ -373,6 +388,7 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
         lastUpdatedAt: Date.UTC(2026, 5, 18, 18),
         collateralPositions: [],
         debtPositions: [],
+        rewardPositions: [],
       },
     },
     transactions: [],

@@ -1,8 +1,8 @@
-import type { BorrowAssetRecord, BorrowMarketRecord, BorrowSystemState, BorrowVisual, UserCollateralPosition, UserDebtPosition } from "@/app/lib/credit-engine"
+import type { BorrowAssetRecord, BorrowMarketRecord, BorrowSystemState, BorrowVisual, UserCollateralPosition, UserDebtPosition, UserRewardPosition } from "@/app/lib/credit-engine"
 import { RAY, clampMax, clampMin, parseFixed } from "@/app/lib/credit-engine"
 import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
-import { HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS } from "@/app/lib/home-sim"
+import { HOME_COLLATERAL_POOLS, HOME_CLAIM_POSITIONS, HOME_INITIAL_DEBTS } from "@/app/lib/home-sim"
 
 export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
   "eth-usdc": "uni-v3-bluechip-weth-usdc",
@@ -283,6 +283,19 @@ function debtPositionFromHomePool(
   }
 }
 
+function rewardPositionsFromHomeClaims(walletId: string, markets: Record<string, BorrowMarketRecord>): UserRewardPosition[] {
+  return HOME_CLAIM_POSITIONS.map((position) => {
+    const marketId = HOME_POOL_TO_MARKET_ID[position.poolId]
+    if (!marketId || !markets[marketId]) return null
+    return {
+      id: position.id,
+      marketId,
+      claimableUsd6: usd6(position.totalUsd),
+      earnedUsd6: usd6(position.totalUsd),
+    }
+  }).filter((position): position is UserRewardPosition => Boolean(position))
+}
+
 export function buildMockBorrowCatalog() {
   const spokeBorrowables = listSpokeBorrowables()
   const borrowAssetIdsBySpoke = new Map(
@@ -314,6 +327,7 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
   const debtPositions = Object.entries(HOME_INITIAL_DEBTS)
     .map(([poolId, debtUsd]) => debtPositionFromHomePool(walletId, poolId, debtUsd, markets, assets))
     .filter((position): position is UserDebtPosition => Boolean(position))
+  const rewardPositions = rewardPositionsFromHomeClaims(walletId, markets)
 
   return {
     now: Date.UTC(2026, 5, 19),
@@ -327,6 +341,7 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
         lastUpdatedAt: Date.UTC(2026, 5, 18, 12),
         collateralPositions,
         debtPositions,
+        rewardPositions,
       },
     },
     transactions: [],

@@ -1,10 +1,8 @@
 /**
- * Claim remains a home-sim preview-only flow until a canonical BorrowAction exists.
- * Surfaces should label claim as simulated but must not route through SandboxTransactionAdapter.
+ * Claim routes through SandboxTransactionAdapter once a canonical BorrowAction exists.
  */
 export function isClaimSupportedByTransactionAdapter() {
-  return false
+  return true
 }
 
-export const CLAIM_ADAPTER_EXCLUSION_REASON =
-  "Claim rewards are not modeled in the credit engine BorrowAction union yet."
+export const CLAIM_ADAPTER_EXCLUSION_REASON = null

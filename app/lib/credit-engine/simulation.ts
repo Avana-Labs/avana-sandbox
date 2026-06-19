@@ -57,6 +57,9 @@ function labelRisk(healthFactorWad: bigint | null): SimulationRiskLabel {
 }
 
 function warningsFromSnapshot(actionType: BorrowAction["type"], after: SimulationSnapshot) {
+  if (actionType === "claim") {
+    return []
+  }
   const warnings: string[] = []
   const healthFactor = after.metrics.healthFactorWad
   if (healthFactor != null && healthFactor < 1_500000000000000000n) {
@@ -111,5 +114,9 @@ export function simulateWithdraw(state: BorrowSystemState, action: Extract<Borro
 }
 
 export function simulateLiquidation(state: BorrowSystemState, action: Extract<BorrowAction, { type: "liquidate" }>) {
+  return previewAction(state, action)
+}
+
+export function simulateClaim(state: BorrowSystemState, action: Extract<BorrowAction, { type: "claim" }>) {
   return previewAction(state, action)
 }
