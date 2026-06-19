@@ -3,7 +3,7 @@
 import * as React from "react"
 import { toast } from "sonner"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { parseFixed } from "@/app/lib/credit-engine"
+import { parseFixed, type BorrowAction } from "@/app/lib/credit-engine"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { SupplyCollateralModal } from "@/app/borrow/components/supply-collateral-modal"
 import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
@@ -98,6 +98,15 @@ function PoolActionRail({ detail, className }: Props) {
   const removePreview = React.useMemo(
     () => calculateRemovePreview(pool, currentDebtUsd, removePercent),
     [currentDebtUsd, pool, removePercent],
+  )
+  const executeAction = React.useCallback(
+    async (action: BorrowAction) => {
+      const intent = session.createIntent(action)
+      const preview = await session.previewTransaction(intent)
+      if (!preview.allowed) return
+      await session.executeTransaction(preview.intent)
+    },
+    [session],
   )
 
   React.useEffect(() => {
@@ -205,7 +214,7 @@ function PoolActionRail({ detail, className }: Props) {
         context={{ pool: toBorrowPoolRow(detail) }}
         onClose={() => setSupplyOpen(false)}
         onConfirm={(result) => {
-          session.dispatch({
+          void executeAction({
             type: "supplyCollateral",
             walletId,
             marketId: result.pool.id,
@@ -225,7 +234,7 @@ function PoolActionRail({ detail, className }: Props) {
         onConfirm={(result) => {
           const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === result.pool.id)
           if (!position) return
-          session.dispatch({
+          void executeAction({
             type: "removeCollateral",
             walletId,
             positionId: position.id,
