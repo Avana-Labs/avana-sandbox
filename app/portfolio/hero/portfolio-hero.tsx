@@ -188,7 +188,6 @@ export function PortfolioHero({
   const isLoopingOverview = tab === "looping"
   const showBalance = !uiConfig.hideBalance
 
-  const resolvedHeadlineValue = headlineValue
   const showChart = !isBorrowOverview && !isLoopingOverview && !uiConfig.hideChart
   const showActions = !uiConfig.hideActions
   const showStats = !uiConfig.hideStats
@@ -206,6 +205,7 @@ export function PortfolioHero({
       ? "positive"
       : "negative"
     : trendTone
+  const resolvedHeadlineValue = headlineValue ?? (displayPoint ? formatChartValue("usd", displayPoint.value) : "$0.00")
   const displayDelta = showChart && trendChange
     ? hoverPoint
       ? (() => {
