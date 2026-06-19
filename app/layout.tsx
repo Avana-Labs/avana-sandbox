@@ -6,6 +6,7 @@ import { Suspense } from "react"
 import { Header } from "./components/header"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
+import { AvanaSessionProviders } from "./components/avana-session-providers"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 
@@ -120,14 +121,16 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <DisplayPreferencesProvider>
-            <div className="flex min-h-screen flex-col">
-              <Suspense fallback={null}>
-                <PageLoadingBar />
-              </Suspense>
-              <Header />
-              <div className="flex-1">{children}</div>
-              <DeferredGlobalChrome />
-            </div>
+            <AvanaSessionProviders>
+              <div className="flex min-h-screen flex-col">
+                <Suspense fallback={null}>
+                  <PageLoadingBar />
+                </Suspense>
+                <Header />
+                <div className="flex-1">{children}</div>
+                <DeferredGlobalChrome />
+              </div>
+            </AvanaSessionProviders>
           </DisplayPreferencesProvider>
         </ThemeProvider>
       </body>
