@@ -1,8 +1,14 @@
 "use client"
 
 import { TransactionFlowPanel } from "@/app/components/transaction-flow"
+import type { HomeSuccessRowTone } from "@/app/lib/home-sim"
 import type { ActionBoxStage } from "@/app/lib/borrow-system/action-box-contract"
-import type { ActionBoxPreviewUi, ActionBoxSuccessUi } from "@/app/lib/borrow-system/action-box-contract"
+import type { ActionBoxMetricRow, ActionBoxPreviewUi, ActionBoxSuccessUi } from "@/app/lib/borrow-system/action-box-contract"
+
+function toHomeSuccessRowTone(tone: ActionBoxMetricRow["tone"]): HomeSuccessRowTone {
+  if (tone === "neutral" || tone == null) return "default"
+  return tone
+}
 
 type BorrowActionBoxProps = {
   stage: ActionBoxStage
@@ -55,7 +61,7 @@ export function BorrowActionBox({
       rows={rows.map((row) => ({
         label: row.label,
         value: row.value,
-        tone: row.tone ?? "default",
+        tone: toHomeSuccessRowTone(row.tone),
       }))}
       note={previewUi?.warnings[0] ?? undefined}
       blockedReason={previewUi?.blockedReason}
