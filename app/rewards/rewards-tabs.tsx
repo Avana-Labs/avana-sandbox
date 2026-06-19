@@ -1,13 +1,20 @@
 "use client"
 
-import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { QuestsTab } from "./quests-tab"
+import type { RewardsPromoTabId, RewardsQuest } from "@/app/lib/data/mock/shared/rewards"
 
-/** Rewards page content now uses the Avana-specific quest groups directly as the only tabs. */
-export function RewardsTabs({ pageData }: { pageData: RewardsPageData }) {
+export function RewardsTabs({
+  promoTabs,
+  questsByTab,
+  onClaimTask,
+}: {
+  promoTabs: ReadonlyArray<{ id: RewardsPromoTabId; label: string }>
+  questsByTab: Record<RewardsPromoTabId, RewardsQuest[]>
+  onClaimTask: (taskId: string) => Promise<unknown>
+}) {
   return (
     <div id="rewards-tabs" className="space-y-6">
-      <QuestsTab promoTabs={pageData.promoTabs} questsByTab={pageData.questsByTab} />
+      <QuestsTab promoTabs={promoTabs} questsByTab={questsByTab} onClaimTask={onClaimTask} />
     </div>
   )
 }

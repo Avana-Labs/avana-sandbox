@@ -55,6 +55,34 @@ vi.mock("@/app/lib/use-media-query", () => ({
   useMediaQuery: () => true,
 }))
 
+vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  useBorrowSessionContext: () => ({
+    marketSummaries: [market],
+    collateralPools: [
+      {
+        id: market.id,
+        name: market.name,
+        venue: market.venue,
+        category: market.feeTier,
+        collateralUsd: 12000,
+        maxLtv: 70,
+        borrowPowerUsd: 8400,
+        liquidationUsd: 9000,
+        pairApr: 3.1,
+        visuals: [
+          { symbol: "WETH", shortLabel: "WETH", bgClassName: "bg-black", textClassName: "text-white" },
+          { symbol: "USDC", shortLabel: "USDC", bgClassName: "bg-blue-500", textClassName: "text-white" },
+        ],
+      },
+    ],
+    initialDebts: { [market.id]: 0 },
+    getBorrowableAssetsForMarket: () => [asset],
+    createIntent,
+    previewTransaction,
+    executeTransaction,
+  }),
+}))
+
 vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
   useBorrowSession: () => ({
     marketSummaries: [market],

@@ -22,7 +22,6 @@ import {
   type RewardsQuestIconId,
   type RewardsQuest,
 } from "@/app/lib/data/mock/shared/rewards"
-import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { Card } from "@/components/ui/card"
 
 const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {
@@ -65,8 +64,18 @@ function PromoTabButton({
   )
 }
 
-function AvanaQuestCard({ quest, accent = "default" }: { quest: RewardsQuest; accent?: "default" | "challenge" }) {
+function AvanaQuestCard({
+  quest,
+  accent = "default",
+  onClaimTask,
+}: {
+  quest: RewardsQuest & { status?: string; progressLabel?: string }
+  accent?: "default" | "challenge"
+  onClaimTask: (taskId: string) => Promise<unknown>
+}) {
   const Icon = QUEST_ICON_MAP[quest.iconId]
+  const isClaimable = quest.status === "claimable"
+  const isDisabled = quest.status === "claimed" || quest.status === "expired"
 
   return (
     <Card className="flex h-full flex-col overflow-hidden rounded-[14px] border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -87,6 +96,9 @@ function AvanaQuestCard({ quest, accent = "default" }: { quest: RewardsQuest; ac
           <p className={`line-clamp-2 text-[12px] font-normal leading-5 ${accent === "challenge" ? "text-[#4E9D73]/90" : "text-muted-foreground"}`}>
             {quest.description}
           </p>
+          {"progressLabel" in quest && quest.progressLabel ? (
+            <div className="text-[11px] font-medium text-muted-foreground">{quest.progressLabel}</div>
+          ) : null}
           <div className="pt-1 font-data text-[14px] font-medium tracking-tight text-foreground md:text-[15px]">{quest.reward}</div>
         </div>
 
@@ -100,7 +112,19 @@ function AvanaQuestCard({ quest, accent = "default" }: { quest: RewardsQuest; ac
 
           <button
             type="button"
-            className="inline-flex h-9 w-full items-center justify-center gap-1 rounded-[11px] bg-muted px-3.5 text-[12px] font-medium text-foreground transition-colors hover:bg-muted/80"
+            onClick={() => {
+              if (isClaimable) {
+                void onClaimTask(quest.id)
+              }
+            }}
+            disabled={isDisabled}
+            className={`inline-flex h-9 w-full items-center justify-center gap-1 rounded-[11px] px-3.5 text-[12px] font-medium transition-colors ${
+              isClaimable
+                ? "bg-[#9CDD4C] text-[#163300] hover:bg-[#8fd341]"
+                : isDisabled
+                  ? "bg-muted/60 text-muted-foreground"
+                  : "bg-muted text-foreground hover:bg-muted/80"
+            }`}
           >
             {quest.cta}
             <ArrowRight className="h-3.5 w-3.5" />
@@ -114,9 +138,11 @@ function AvanaQuestCard({ quest, accent = "default" }: { quest: RewardsQuest; ac
 function RewardsPromoPanel({
   promoTabs,
   questsByTab,
+  onClaimTask,
 }: {
-  promoTabs: RewardsPageData["promoTabs"]
-  questsByTab: RewardsPageData["questsByTab"]
+  promoTabs: ReadonlyArray<{ id: RewardsPromoTabId; label: string }>
+  questsByTab: Record<RewardsPromoTabId, RewardsQuest[]>
+  onClaimTask: (taskId: string) => Promise<unknown>
 }) {
   const [activePromoTab, setActivePromoTab] = useState<RewardsPromoTabId>("new-users")
 
@@ -140,7 +166,7 @@ function RewardsPromoPanel({
         <div className="space-y-6">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
             {questsByTab["new-users"].map((quest) => (
-              <AvanaQuestCard key={quest.id} quest={quest} />
+              <AvanaQuestCard key={quest.id} quest={quest} onClaimTask={onClaimTask} />
             ))}
           </div>
         </div>
@@ -150,7 +176,7 @@ function RewardsPromoPanel({
         <div className="space-y-6">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
             {questsByTab["challenge-tasks"].map((quest) => (
-              <AvanaQuestCard key={quest.id} quest={quest} accent="challenge" />
+              <AvanaQuestCard key={quest.id} quest={quest} accent="challenge" onClaimTask={onClaimTask} />
             ))}
           </div>
         </div>
@@ -160,7 +186,7 @@ function RewardsPromoPanel({
         <div className="space-y-6">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
             {questsByTab["refer-a-friend"].map((quest) => (
-              <AvanaQuestCard key={quest.id} quest={quest} />
+              <AvanaQuestCard key={quest.id} quest={quest} onClaimTask={onClaimTask} />
             ))}
           </div>
         </div>
@@ -173,13 +199,15 @@ function RewardsPromoPanel({
 export function QuestsTab({
   promoTabs,
   questsByTab,
+  onClaimTask,
 }: {
-  promoTabs: RewardsPageData["promoTabs"]
-  questsByTab: RewardsPageData["questsByTab"]
+  promoTabs: ReadonlyArray<{ id: RewardsPromoTabId; label: string }>
+  questsByTab: Record<RewardsPromoTabId, RewardsQuest[]>
+  onClaimTask: (taskId: string) => Promise<unknown>
 }) {
   return (
     <div className="space-y-6">
-      <RewardsPromoPanel promoTabs={promoTabs} questsByTab={questsByTab} />
+      <RewardsPromoPanel promoTabs={promoTabs} questsByTab={questsByTab} onClaimTask={onClaimTask} />
     </div>
   )
 }

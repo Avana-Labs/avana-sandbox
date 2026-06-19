@@ -4,6 +4,8 @@ import { parseFixed } from "@/app/lib/credit-engine"
 import { DashboardClient } from "@/app/dashboard/dashboard-client"
 
 const readPortfolioBorrow = vi.fn()
+const readPortfolioLend = vi.fn()
+const readPortfolioMultiply = vi.fn()
 let transactionHistory: Array<Record<string, unknown>> = []
 
 vi.mock("@/app/portfolio/use-portfolio-page", () => ({
@@ -18,6 +20,29 @@ vi.mock("@/app/portfolio/use-portfolio-page", () => ({
       activity: { rows: [] },
       rewards: { claimableUsd: 0, earnedUsd: 0, settledUsd: 0, pendingUsd: 0 },
       fetchedAt: new Date().toISOString(),
+    },
+  }),
+}))
+
+vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  useAvanaSessions: () => ({
+    walletId: "demo-wallet",
+    borrow: {
+      readAdapter: { readPortfolioBorrow },
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, assets: {}, accounts: {}, transactions: [] },
+      get transactionHistory() {
+        return transactionHistory
+      },
+    },
+    multiply: {
+      readAdapter: { readPortfolioMultiply },
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
+      transactionHistory: [],
+    },
+    lend: {
+      readAdapter: { readPortfolioLend },
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
+      transactionHistory: [],
     },
   }),
 }))
@@ -80,6 +105,27 @@ describe("DashboardClient activity", () => {
       creditLines: { approvedUsd: 100, liquidationThresholdUsd: 80, averageHealthFactor: 2, currentLtvPct: 40, totalBorrowedUsd: 50, totalCollateralUsd: 100 },
       collateralPositions: [],
       debtPositions: [],
+    })
+    readPortfolioLend.mockResolvedValue({
+      investments: [],
+      positions: [],
+      strategyBuckets: [],
+      history: [],
+    })
+    readPortfolioMultiply.mockResolvedValue({
+      creditLines: {
+        approvedUsd: 0,
+        liquidationThresholdUsd: 0,
+        averageHealthFactor: null,
+        currentLtvPct: 0,
+        totalBorrowedUsd: 0,
+        totalCollateralUsd: 0,
+      },
+      lpCollaterals: [],
+      positions: [],
+      openOrders: [],
+      twapOrders: [],
+      history: [],
     })
 
     render(<DashboardClient walletProfileId="demo-wallet" />)

@@ -194,7 +194,6 @@ export function buildLendWalletSnapshot(
 ): LendWalletReadSnapshot {
   const portfolio = buildPortfolioLendData(walletId, state, transactionHistory)
   const totalSuppliedUsd = portfolio.investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
-  const totalEarnedUsd = portfolio.investments.reduce((sum, item) => sum + item.earnedUsd, 0)
   const averageApy =
     portfolio.investments.length === 0
       ? 0
