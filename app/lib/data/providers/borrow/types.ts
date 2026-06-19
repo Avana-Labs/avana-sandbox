@@ -1,4 +1,3 @@
-import type { BorrowPool, BorrowProtocolMap } from "@/app/lib/borrow-data"
 import type { BorrowableAsset } from "@/app/lib/borrow-sim"
 import {
   BORROW_DEXES,
@@ -9,13 +8,21 @@ import {
 } from "@/app/lib/data/mock/shared/borrow"
 
 export type BorrowPageData = {
-  protocols: BorrowProtocolMap
-  allPools: BorrowPool[]
-  protocolLogos: Record<string, string>
-  itemsPerPage: number
   walletId: string
   borrowSessionSeed: string
   poolCatalog: ReadonlyArray<(typeof BORROW_POOL_CATALOG)[number]>
+  heroMetrics: {
+    totalTvlUsd: number
+    totalCollateralUsd: number
+    availableCreditUsd: number
+    outstandingLoansUsd: number
+    totalTvlChangePct: number
+  }
+  explore: {
+    trendingCollateral: ReadonlyArray<(typeof BORROW_POOL_CATALOG)[number]>
+    topMarkets: ReadonlyArray<(typeof BORROW_POOL_CATALOG)[number]>
+    highApyPools: ReadonlyArray<(typeof BORROW_POOL_CATALOG)[number]>
+  }
   borrowableAssets: ReadonlyArray<BorrowableAsset>
   pendingRows: ReadonlyArray<(typeof BORROW_PENDING_ROWS)[number]>
   dexes: ReadonlyArray<(typeof BORROW_DEXES)[number]>
