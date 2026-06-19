@@ -6,7 +6,7 @@ import { HeroMarketCard } from "@/app/borrow/borrow-page-client"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
+import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
 
 function formatTokenAmount(value: number) {
   return value.toLocaleString("en-US", {
@@ -15,7 +15,23 @@ function formatTokenAmount(value: number) {
   })
 }
 
-export function RewardsBalanceHero({ pageData }: { pageData: RewardsPageData }) {
+export function RewardsBalanceHero({
+  rewardPools,
+  balanceTotal,
+  claimableCount,
+  completedCount,
+  totalCount,
+  progressPercentage,
+  onClaimAll,
+}: {
+  rewardPools: RewardsHeroPoolRow[]
+  balanceTotal: number
+  claimableCount: number
+  completedCount: number
+  totalCount: number
+  progressPercentage: number
+  onClaimAll: () => void
+}) {
   const { showDollarAmounts } = useDisplayPreferences()
 
   return (
@@ -38,7 +54,7 @@ export function RewardsBalanceHero({ pageData }: { pageData: RewardsPageData }) 
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
-                  {showDollarAmounts ? formatTokenAmount(pageData.balanceTotal) : "••••••••"}
+                  {showDollarAmounts ? formatTokenAmount(balanceTotal) : "••••••••"}
                   <span className="ml-1.5 align-middle text-[0.78em]">AVA</span>
                 </span>
 
@@ -60,8 +76,13 @@ export function RewardsBalanceHero({ pageData }: { pageData: RewardsPageData }) 
               </div>
             </div>
 
-            <Button variant="outline" className="h-8 shrink-0 rounded-[14px] px-3.5 text-[11px] font-medium shadow-none">
-              Collect rewards
+            <Button
+              variant="outline"
+              className="h-8 shrink-0 rounded-[14px] px-3.5 text-[11px] font-medium shadow-none"
+              onClick={onClaimAll}
+              disabled={claimableCount === 0}
+            >
+              {claimableCount > 0 ? `Claim ${claimableCount} rewards` : "No rewards ready"}
             </Button>
           </div>
 
@@ -71,16 +92,16 @@ export function RewardsBalanceHero({ pageData }: { pageData: RewardsPageData }) 
                 Your progress
               </span>
               <span className="text-[11px] font-normal text-muted-foreground">
-                {pageData.completedPools}/{pageData.totalPools} completed
+                {completedCount}/{totalCount} completed
               </span>
             </div>
-            <Progress value={pageData.progressPercentage} className="h-1.5" aria-label="Overall quest completion progress" />
+            <Progress value={progressPercentage} className="h-1.5" aria-label="Overall quest completion progress" />
           </div>
         </div>
       </section>
 
       <section className="hidden min-w-0 md:block">
-        <HeroMarketCard title="Rewards Pools" rows={pageData.rewardPools} />
+        <HeroMarketCard title="Rewards Pools" rows={rewardPools} />
       </section>
     </div>
   )

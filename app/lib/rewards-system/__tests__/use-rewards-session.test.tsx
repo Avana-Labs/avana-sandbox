@@ -14,7 +14,7 @@ describe("useRewardsSession", () => {
     const { result } = renderHook(() =>
       useRewardsSession({
         walletId,
-        sessionSeed: buildRewardsSessionSeed(walletId),
+        sessionSeed: buildRewardsSessionSeed(),
       }),
     )
 

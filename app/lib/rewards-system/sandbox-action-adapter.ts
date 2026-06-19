@@ -10,7 +10,7 @@ import type { RewardsActionAdapter, RewardsSessionState } from "./contracts"
 
 type SandboxRewardsActionAdapterOptions = {
   readState: () => RewardsSessionState
-  writeState: (state: RewardsSessionState) => void
+  writeState: (nextState: RewardsSessionState | ((currentState: RewardsSessionState) => RewardsSessionState)) => void
   now?: () => number
   tasks?: RewardTask[]
 }
@@ -35,6 +35,10 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
 
   private writeState(state: RewardsSessionState) {
     this.options.writeState(state)
+  }
+
+  private updateState(updater: (currentState: RewardsSessionState) => RewardsSessionState) {
+    this.options.writeState(updater)
   }
 
   private ensureReferralProfile(state: RewardsSessionState, wallet: string): [RewardsSessionState, ReferralProfile] {
@@ -93,7 +97,7 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
 
   async recordActivityEvent(event: RewardActivityEvent) {
     const nextState = applyActivityEvent(this.readState(), event)
-    this.writeState(nextState)
+    this.updateState((currentState) => applyActivityEvent(currentState, event))
     return nextState
   }
 
@@ -133,8 +137,16 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
       ...state,
       claims: [...state.claims, claim],
     }
-    const nextState = applyActivityEvent(withClaim, event)
-    this.writeState(nextState)
+    applyActivityEvent(withClaim, event)
+    this.updateState((currentState) =>
+      applyActivityEvent(
+        {
+          ...currentState,
+          claims: [...currentState.claims, claim],
+        },
+        event,
+      ),
+    )
     return claim
   }
 

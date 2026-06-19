@@ -22,7 +22,7 @@ describe("sandbox rewards adapters", () => {
     const actionAdapter = new SandboxRewardsActionAdapter({
       readState: () => state,
       writeState: (nextState) => {
-        state = nextState
+        state = typeof nextState === "function" ? nextState(state) : nextState
       },
       now: () => Date.UTC(2026, 5, 19),
     })

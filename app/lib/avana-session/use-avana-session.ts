@@ -5,6 +5,7 @@ import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
 import { getDefaultWalletProfileId, getWalletProfile } from "@/app/lib/data/mock/wallet/portfolio/profiles"
 import { buildLendSessionSeed } from "@/app/lib/lend-system/demo-session"
 import { buildMultiplySessionSeed } from "@/app/lib/multiply-system/demo-session"
+import { buildRewardsSessionSeed } from "@/app/lib/rewards-system"
 
 export type AvanaSession = {
   walletId: string
@@ -13,6 +14,7 @@ export type AvanaSession = {
   borrowSessionSeed: string
   multiplySessionSeed: string
   lendSessionSeed: string
+  rewardsSessionSeed: string
 }
 
 export function useAvanaSession(walletId = getDefaultWalletProfileId()): AvanaSession {
@@ -26,6 +28,7 @@ export function useAvanaSession(walletId = getDefaultWalletProfileId()): AvanaSe
       borrowSessionSeed: buildBorrowSessionSeed(profile.id),
       multiplySessionSeed: buildMultiplySessionSeed(profile.id),
       lendSessionSeed: buildLendSessionSeed(profile.id),
+      rewardsSessionSeed: buildRewardsSessionSeed(),
     }),
     [profile.id, profile.walletAddress],
   )
