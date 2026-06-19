@@ -65,7 +65,6 @@ export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot
         statOneValue={activeHero.statOneValue}
         statTwoValue={activeHero.statTwoValue}
         rangeData={activeHero.rangeData}
-        walletName={pageData.walletProfile.displayName}
         borrowSnapshot={borrowSnapshot}
         multiplySnapshot={multiplySnapshot}
       />

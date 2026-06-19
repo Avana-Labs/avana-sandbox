@@ -58,7 +58,6 @@ type PortfolioHeroProps = {
   rangeData?: ChartRangeData
   statOneValue?: string
   statTwoValue?: string
-  walletName?: string
   borrowSnapshot?: BorrowSnapshot
   multiplySnapshot?: BorrowSnapshot
 }
@@ -181,7 +180,6 @@ export function PortfolioHero({
   rangeData = DEFAULT_RANGE_DATA,
   statOneValue = "4.92%",
   statTwoValue = "+$12.46",
-  walletName = "Demo wallet",
   borrowSnapshot,
   multiplySnapshot,
 }: PortfolioHeroProps) {
@@ -263,7 +261,6 @@ export function PortfolioHero({
   return (
     <section className="mb-8">
       <PortfolioHeroHeader
-        walletName={walletName}
         selectedNetwork={selectedNetwork}
         onNetworkChange={setSelectedNetwork}
       />

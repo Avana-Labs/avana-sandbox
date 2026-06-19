@@ -17,7 +17,6 @@ export type FetchPortfolioPageInput = {
 export type PortfolioWalletProfile = {
   id: string
   walletAddress: string
-  displayName: string
   selectedNetwork: NetworkId
   networks: NetworkId[]
 }
