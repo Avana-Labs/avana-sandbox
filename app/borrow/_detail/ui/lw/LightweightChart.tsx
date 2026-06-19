@@ -194,7 +194,9 @@ export function LightweightChart({
               strokeWidth={2.5}
               dot={(props) => {
                 const { cx, cy, index } = props
-                if (index !== data.length - 1 || cx == null || cy == null) return <g />
+                if (index !== data.length - 1 || cx == null || cy == null) {
+                  return <g key={`lw-line-dot-${index ?? "placeholder"}`} />
+                }
                 return (
                   <g key={`lw-line-dot-${index}`}>
                     <circle cx={cx} cy={cy} fill={palette.stroke} opacity={0.45}>
@@ -218,7 +220,9 @@ export function LightweightChart({
               fillOpacity={1}
               dot={(props) => {
                 const { cx, cy, index } = props
-                if (index !== data.length - 1 || cx == null || cy == null) return <g />
+                if (index !== data.length - 1 || cx == null || cy == null) {
+                  return <g key={`lw-area-dot-${index ?? "placeholder"}`} />
+                }
                 return (
                   <g key={`lw-area-dot-${index}`}>
                     <circle cx={cx} cy={cy} fill={palette.stroke} opacity={0.45}>
