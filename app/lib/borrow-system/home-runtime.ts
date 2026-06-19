@@ -21,7 +21,7 @@ import {
   type RemovePreview,
   type RepayPreview,
 } from "@/app/lib/home-sim"
-import { buildBorrowPreviewModel, buildRepayPreviewModel, buildWithdrawPreviewModel } from "./preview-builders"
+import { buildBorrowPreviewModel, buildDepositPreviewModel, buildRepayPreviewModel, buildWithdrawPreviewModel } from "./preview-builders"
 import { selectBorrowCollateralPools, selectBorrowableAssets } from "./selectors"
 
 function fixedToNumber(value: bigint, decimals: number) {
@@ -330,5 +330,59 @@ export function buildHomeRemovePreview(
     isUnsafe: model.isUnsafe,
     liquidationThresholdAfterUsd: fixedToNumber(currentMetrics.liquidationValueUsd6, 6),
     ctaLabel: `Remove ${percent}% · ${formatCompactUsd(removeUsd)}`,
+  }
+}
+
+export type SupplyPreview = {
+  amountUsd: number
+  isEmpty: boolean
+  isValid: boolean
+  borrowPowerUsd: number
+  collateralValueUsd: number
+  healthFactor: number | null
+  healthFactorLabel: string
+  riskTone: ReturnType<typeof getRiskTone>
+  warningMessage: string | null
+  ctaLabel: string
+}
+
+export function buildHomeSupplyPreview(
+  state: BorrowSystemState,
+  walletId: string,
+  marketId: string,
+  amountUsd: number,
+): SupplyPreview {
+  const market = state.markets[marketId]
+  const ltvPct = market ? fixedToNumber(market.riskConfig.collateralFactorWad, 18) * 100 : 0
+
+  if (amountUsd <= 0) {
+    return {
+      amountUsd,
+      isEmpty: true,
+      isValid: false,
+      borrowPowerUsd: 0,
+      collateralValueUsd: 0,
+      healthFactor: null,
+      healthFactorLabel: "—",
+      riskTone: "neutral",
+      warningMessage: null,
+      ctaLabel: "Enter an amount",
+    }
+  }
+
+  const model = buildDepositPreviewModel(state, walletId, marketId, amountUsd)
+  const borrowPowerUsd = model.collateralValueUsd * (ltvPct / 100)
+
+  return {
+    amountUsd,
+    isEmpty: model.isEmpty,
+    isValid: model.isValid,
+    borrowPowerUsd,
+    collateralValueUsd: model.collateralValueUsd,
+    healthFactor: model.healthFactor,
+    healthFactorLabel: formatHealthFactor(model.healthFactor),
+    riskTone: getRiskTone(model.healthFactor ?? Number.POSITIVE_INFINITY),
+    warningMessage: model.warningMessage,
+    ctaLabel: model.isValid ? "Review pledge" : (model.warningMessage ?? "Action unavailable"),
   }
 }

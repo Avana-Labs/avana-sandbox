@@ -4,6 +4,7 @@ import {
   formatFixed,
   parseFixed,
   simulateBorrow,
+  simulateDeposit,
   simulateLiquidation,
   simulateRepay,
   simulateWithdraw,
@@ -156,5 +157,39 @@ export function buildLiquidationPreviewModel(
     warnings: preview.warnings,
     beforeBorrowedUsd: fixedToNumber(preview.before.metrics.totalBorrowedUsd6, 6),
     afterBorrowedUsd: fixedToNumber(preview.after.metrics.totalBorrowedUsd6, 6),
+  }
+}
+
+export function buildDepositPreviewModel(
+  state: BorrowSystemState,
+  walletId: string,
+  marketId: string,
+  amountUsd: number,
+) {
+  if (amountUsd <= 0) {
+    return {
+      isEmpty: true,
+      isValid: false,
+      borrowCapacityUsd: 0,
+      collateralValueUsd: 0,
+      healthFactor: null as number | null,
+      warningMessage: null as string | null,
+    }
+  }
+
+  const preview = simulateDeposit(state, {
+    type: "supplyCollateral",
+    walletId,
+    marketId,
+    amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
+  })
+
+  return {
+    isEmpty: false,
+    isValid: preview.allowed,
+    borrowCapacityUsd: fixedToNumber(preview.after.metrics.borrowCapacityUsd6, 6),
+    collateralValueUsd: fixedToNumber(preview.after.metrics.collateralValueUsd6, 6),
+    healthFactor: healthFactorToNumber(preview.after.metrics.healthFactorWad),
+    warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,
   }
 }
