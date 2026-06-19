@@ -21,6 +21,8 @@ import {
   MULTIPLY_TOKEN_SUPPLY_APYS,
   type MultiplyMarketRow,
 } from "@/app/lib/multiply-sim"
+import { MULTIPLY_MARKET_CATALOG, getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
+import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
 
 export type MultiplyMarketHero = {
   visuals: [MultiplyTokenVisual, MultiplyTokenVisual]
@@ -303,9 +305,24 @@ function formatRelativeAge(ageMs: number) {
   return `${Math.floor(totalHours / 24)}d`
 }
 
+function resolveMultiplyRow(id: string): MultiplyMarketRow | null {
+  const normalized = id.toLowerCase()
+  const catalogMarket = getMultiplyMarketById(normalized)
+  if (catalogMarket) return catalogMarketToRow(catalogMarket)
+
+  return (
+    MULTIPLY_MARKET_ROWS.find(
+      (market) =>
+        `${market.protocol}-${market.asset}`.toLowerCase() === normalized ||
+        market.href.endsWith(`/multiply/markets/${normalized}`),
+    ) ?? null
+  )
+}
+
 function buildRelated(row: MultiplyMarketRow): MultiplyMarketRelatedSummary[] {
-  const sameCollateral = MULTIPLY_MARKET_ROWS.filter((other) => other.protocol === row.protocol && other.asset !== row.asset)
-  const sameBorrowable = MULTIPLY_MARKET_ROWS.filter((other) => other.asset === row.asset && other.protocol !== row.protocol)
+  const catalogRows = MULTIPLY_MARKET_CATALOG.map(catalogMarketToRow)
+  const sameCollateral = catalogRows.filter((other) => other.protocol === row.protocol && other.asset !== row.asset)
+  const sameBorrowable = catalogRows.filter((other) => other.asset === row.asset && other.protocol !== row.protocol)
   return [...sameCollateral, ...sameBorrowable]
     .slice(0, 4)
     .map((other) => ({
@@ -319,11 +336,13 @@ function buildRelated(row: MultiplyMarketRow): MultiplyMarketRelatedSummary[] {
 }
 
 export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null {
-  const row = MULTIPLY_MARKET_ROWS.find((market) => `${market.protocol}-${market.asset}` === id || market.href.endsWith(`/multiply/markets/${id}`))
+  const row = resolveMultiplyRow(id)
   if (!row) return null
 
+  const resolvedId = id.toLowerCase()
+
   return {
-    id,
+    id: resolvedId,
     hero: buildHero(row),
     supplyBorrow: buildSupplyBorrow(row),
     transactions: buildTransactions(row),
@@ -337,7 +356,7 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
 }
 
 export function listAllMultiplyMarketDetails(): MultiplyMarketDetail[] {
-  return MULTIPLY_MARKET_ROWS.map((row) => getMultiplyMarketDetail(`${row.protocol}-${row.asset}`)).filter(
+  return MULTIPLY_MARKET_CATALOG.map((market) => getMultiplyMarketDetail(market.id)).filter(
     (detail): detail is MultiplyMarketDetail => Boolean(detail),
   )
 }

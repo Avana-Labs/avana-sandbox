@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { formatCompactUsd, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
 import type { BorrowPageData, BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
+import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { cn } from "@/lib/utils"
 import { TokenPairCell } from "./components/atoms"
 import { BorrowWorkspaceShell } from "./borrow-workspace-shell"
@@ -36,7 +37,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
       title: "Trending Collateral",
       rows: pageData.explore.trendingCollateral.map((pool) => ({
         id: `trending-${pool.id}`,
-        href: `/borrow/markets/${pool.id}`,
+        href: borrowMarketDetailPath(pool.id),
         pool,
         title: pool.name,
         subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
@@ -49,7 +50,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
       title: "Top Markets",
       rows: pageData.explore.topMarkets.map((pool) => ({
         id: `top-${pool.id}`,
-        href: `/borrow/markets/${pool.id}`,
+        href: borrowMarketDetailPath(pool.id),
         pool,
         title: pool.name,
         subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
@@ -62,7 +63,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
       title: "High APY Pools",
       rows: pageData.explore.highApyPools.map((pool) => ({
         id: `apy-${pool.id}`,
-        href: `/borrow/markets/${pool.id}`,
+        href: borrowMarketDetailPath(pool.id),
         pool,
         title: pool.name,
         subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
