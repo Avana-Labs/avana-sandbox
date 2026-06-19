@@ -1,11 +1,16 @@
 import { act, renderHook } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it } from "vitest"
 import { parseFixed } from "@/app/lib/credit-engine"
 import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+import { writeBorrowSessionMetadata, writeBorrowSessionState } from "@/app/lib/borrow-system/storage"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 
 describe("useBorrowSession", () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
   it("hydrates from the canonical seed and persists adapter-driven deposit updates", async () => {
     const walletId = "demo-wallet"
     const seeded = buildMockBorrowSystemState(walletId)
@@ -95,5 +100,56 @@ describe("useBorrowSession", () => {
     })
 
     expect(result.current.walletSnapshot.totalBorrowedUsd).toBe(initialDebt)
+  })
+
+  it("hydrates persisted receipts and canonical history for the current wallet session", async () => {
+    const walletId = "demo-wallet"
+    const seededState = buildMockBorrowSystemState(walletId)
+    const sessionSeed = buildBorrowSessionSeed(walletId)
+
+    writeBorrowSessionState(walletId, seededState)
+    writeBorrowSessionMetadata(walletId, {
+      transactionHistory: [
+        {
+          id: "history-1",
+          intentId: "intent-1",
+          walletId,
+          marketId: "uni-v3-bluechip-weth-usdc",
+          assetId: "uni-v3-bluechip:usdc",
+          kind: "borrow",
+          status: "success",
+          requestedAmountUsd6: parseFixed("250", 6),
+          executedAmountUsd6: parseFixed("250", 6),
+          simulated: true,
+          timestamp: seededState.now + 2_000,
+          hash: "sim_1",
+        },
+      ],
+      receipts: [
+        {
+          id: "receipt-1",
+          hash: "sim_1",
+          status: "success",
+          actionType: "borrow",
+          simulated: true,
+          timestamp: seededState.now + 2_000,
+        },
+      ],
+    })
+
+    const { result } = renderHook(() =>
+      useBorrowSession({
+        walletId,
+        sessionSeed,
+      }),
+    )
+
+    expect(result.current.transactionHistory[0]?.intentId).toBe("intent-1")
+    expect(result.current.lastReceipt?.hash).toBe("sim_1")
+
+    await act(async () => {
+      const snapshot = await result.current.readAdapter.readWalletSnapshot(walletId)
+      expect(snapshot.transactionHistory[0]?.intentId).toBe("intent-1")
+    })
   })
 })

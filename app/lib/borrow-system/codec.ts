@@ -28,10 +28,18 @@ function decode(value: JsonValue): unknown {
   return value
 }
 
+export function serializeBorrowValue(value: unknown) {
+  return JSON.stringify(encode(value))
+}
+
+export function deserializeBorrowValue<T>(serialized: string): T {
+  return decode(JSON.parse(serialized) as JsonValue) as T
+}
+
 export function serializeBorrowSystemState(state: BorrowSystemState) {
-  return JSON.stringify(encode(state))
+  return serializeBorrowValue(state)
 }
 
 export function deserializeBorrowSystemState(serialized: string): BorrowSystemState {
-  return decode(JSON.parse(serialized) as JsonValue) as BorrowSystemState
+  return deserializeBorrowValue<BorrowSystemState>(serialized)
 }

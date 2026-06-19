@@ -1,6 +1,8 @@
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
+import type { TransactionHistoryItem } from "./contracts"
 import type { SandboxReadAdapter } from "./contracts"
 import {
+  buildLegacyTransactionHistory,
   buildBorrowPageData,
   buildPortfolioBorrowData,
   buildWalletReadSnapshot,
@@ -11,13 +13,15 @@ import {
 export class SandboxBorrowReadAdapter implements SandboxReadAdapter {
   readonly mode = "sandbox" as const
   private readonly state: BorrowSystemState
+  private readonly transactionHistory?: TransactionHistoryItem[]
 
-  constructor({ state }: { state: BorrowSystemState }) {
+  constructor({ state, transactionHistory }: { state: BorrowSystemState; transactionHistory?: TransactionHistoryItem[] }) {
     this.state = state
+    this.transactionHistory = transactionHistory
   }
 
   async readWalletSnapshot(walletId: string) {
-    return buildWalletReadSnapshot(this.state, walletId)
+    return buildWalletReadSnapshot(this.state, walletId, this.transactionHistory ?? buildLegacyTransactionHistory(this.state, walletId))
   }
 
   async readMarkets() {
