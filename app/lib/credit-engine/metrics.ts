@@ -1,4 +1,4 @@
-import type { BorrowAccountState, BorrowSystemState } from "./types"
+import type { BorrowAccountState, BorrowSpokeId, BorrowSystemState } from "./types"
 import { WAD, mulDiv, parseFixed } from "./units"
 import {
   currentCollateralValueUsd6,
@@ -49,10 +49,17 @@ function weightedBaseBorrowAprWad(account: BorrowAccountState, state: BorrowSyst
   return numerator / totalBorrowedUsd6
 }
 
-export function calculateCreditMetrics(state: BorrowSystemState, walletId: string): BorrowCreditMetrics {
-  const account = state.accounts[walletId]
-  if (!account) throw new Error(`Unknown wallet ${walletId}`)
+function scopeAccountBySpoke(state: BorrowSystemState, account: BorrowAccountState, spokeId?: BorrowSpokeId): BorrowAccountState {
+  if (!spokeId) return account
 
+  return {
+    ...account,
+    collateralPositions: account.collateralPositions.filter((position) => state.markets[position.marketId]?.spokeId === spokeId),
+    debtPositions: account.debtPositions.filter((position) => position.spokeId === spokeId),
+  }
+}
+
+function calculateMetricsForAccount(state: BorrowSystemState, account: BorrowAccountState): BorrowCreditMetrics {
   const poolCollateralValueUsd6 = totalCollateralValueUsd6(account, state.markets)
   const totalBorrowedUsd6 = totalDebtValueUsd6(account)
   const interestEarnedUsd6 = totalInterestEarnedUsd6(account, state.markets)
@@ -121,4 +128,20 @@ export function calculateCreditMetrics(state: BorrowSystemState, walletId: strin
     interestEarnedUsd6,
     interestOwedUsd6,
   }
+}
+
+export function calculateCreditMetrics(state: BorrowSystemState, walletId: string): BorrowCreditMetrics {
+  const account = state.accounts[walletId]
+  if (!account) throw new Error(`Unknown wallet ${walletId}`)
+  return calculateMetricsForAccount(state, account)
+}
+
+export function calculateSpokeCreditMetrics(
+  state: BorrowSystemState,
+  walletId: string,
+  spokeId: BorrowSpokeId,
+): BorrowCreditMetrics {
+  const account = state.accounts[walletId]
+  if (!account) throw new Error(`Unknown wallet ${walletId}`)
+  return calculateMetricsForAccount(state, scopeAccountBySpoke(state, account, spokeId))
 }

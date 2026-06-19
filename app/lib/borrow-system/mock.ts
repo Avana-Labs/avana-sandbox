@@ -1,6 +1,7 @@
 import type { BorrowAssetRecord, BorrowMarketRecord, BorrowSystemState, BorrowVisual, UserCollateralPosition, UserDebtPosition } from "@/app/lib/credit-engine"
 import { RAY, clampMax, clampMin, parseFixed } from "@/app/lib/credit-engine"
-import { BORROW_POOL_CATALOG, BORROWABLE_ASSETS, type BorrowAssetVisual, type BorrowableAsset, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS } from "@/app/lib/home-sim"
 
 export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
@@ -87,8 +88,9 @@ function estimateLiquidationThresholdWad(pool: BorrowPoolRow) {
   return clampMax(wadFromRatio(pool.ltv / 100 + 0.1), parseFixed("0.95", 18))
 }
 
-function assetPriceUsd6(asset: BorrowableAsset) {
+function assetPriceUsd6(asset: SpokeBorrowableRecord) {
   const byId = ASSET_PRICE_USD[asset.id]
+  const byBaseAssetId = ASSET_PRICE_USD[asset.baseAssetId]
   const fallback =
     asset.category === "stable"
       ? "1"
@@ -97,16 +99,17 @@ function assetPriceUsd6(asset: BorrowableAsset) {
         : asset.category === "eth"
           ? "2021.44"
           : "8.5"
-  return usd6(byId ?? fallback)
+  return usd6(byId ?? byBaseAssetId ?? fallback)
 }
 
-function assetPriceChangeWad(asset: BorrowableAsset) {
+function assetPriceChangeWad(asset: SpokeBorrowableRecord) {
   const byId = ASSET_PRICE_CHANGE_24H[asset.id]
+  const byBaseAssetId = ASSET_PRICE_CHANGE_24H[asset.baseAssetId]
   const fallback = asset.category === "stable" ? "0.0001" : asset.category === "btc" ? "-0.0241" : "-0.031"
-  return parseFixed(byId ?? fallback, 18)
+  return parseFixed(byId ?? byBaseAssetId ?? fallback, 18)
 }
 
-function buildMarketRecord(pool: BorrowPoolRow): BorrowMarketRecord {
+function buildMarketRecord(pool: BorrowPoolRow, borrowAssetIdsBySymbol: Map<string, string>): BorrowMarketRecord {
   const avgApr = (pool.aprMin + pool.aprMax) / 2
   const totalBorrowedUsd = Math.max(pool.tvlUsd * 0.18, pool.availableUsd * 0.42)
   const volume24hUsd = Math.max(pool.availableUsd * 0.12, pool.tvlUsd * 0.035)
@@ -132,7 +135,7 @@ function buildMarketRecord(pool: BorrowPoolRow): BorrowMarketRecord {
     },
     relations: {
       supportedBorrowAssetIds: pool.borrowableTokens
-        .map((visual) => BORROWABLE_ASSETS.find((asset) => asset.symbol.toUpperCase() === visual.symbol.toUpperCase())?.id)
+        .map((visual) => borrowAssetIdsBySymbol.get(visual.symbol.toUpperCase()))
         .filter((value): value is string => Boolean(value)),
       relatedMarketIds: BORROW_POOL_CATALOG.filter((candidate) => candidate.id !== pool.id && candidate.spoke === pool.spoke)
         .slice(0, 3)
@@ -188,9 +191,14 @@ function buildMarketRecord(pool: BorrowPoolRow): BorrowMarketRecord {
   }
 }
 
-function buildAssetRecord(asset: BorrowableAsset): BorrowAssetRecord {
+function buildAssetRecord(asset: SpokeBorrowableRecord): BorrowAssetRecord {
   return {
     id: asset.id,
+    baseAssetId: asset.baseAssetId,
+    spokeId: asset.spokeId,
+    marketIds: [...asset.marketIds],
+    slug: asset.slug,
+    contextLabel: asset.contextLabel,
     symbol: asset.symbol,
     display: {
       name: asset.name,
@@ -210,9 +218,12 @@ function buildAssetRecord(asset: BorrowableAsset): BorrowAssetRecord {
       totalDebtSharesUsd6: usd6(asset.totalBorrowedUsd),
     },
     detail: {
-      about: `${asset.name} is a borrowable asset on the protocol.`,
+      about: `${asset.name} is a borrowable asset within the ${asset.spokeLabel} spoke.`,
       faqs: [
-        { question: `What is ${asset.symbol}?`, answer: `${asset.name} can be borrowed anywhere the selected collateral market supports it.` },
+        {
+          question: `What is ${asset.symbol}?`,
+          answer: `${asset.name} can be borrowed only from collateral supplied inside the ${asset.spokeLabel} spoke.`,
+        },
       ],
     },
     analytics: {
@@ -243,15 +254,28 @@ function collateralPositionFromHomePool(walletId: string, poolId: string, collat
   }
 }
 
-function debtPositionFromHomePool(walletId: string, poolId: string, debtUsd: number, assets: Record<string, BorrowAssetRecord>): UserDebtPosition | null {
+function debtPositionFromHomePool(
+  walletId: string,
+  poolId: string,
+  debtUsd: number,
+  markets: Record<string, BorrowMarketRecord>,
+  assets: Record<string, BorrowAssetRecord>,
+): UserDebtPosition | null {
   const assetId = HOME_POOL_TO_DEBT_ASSET_ID[poolId]
   if (!assetId || debtUsd <= 0) return null
-  const asset = assets[assetId]
+  const marketId = HOME_POOL_TO_MARKET_ID[poolId]
+  if (!marketId) return null
+  const market = markets[marketId]
+  if (!market) return null
+  const scopedAssetId = `${market.spokeId}:${assetId}`
+  const asset = assets[scopedAssetId]
   if (!asset) return null
   return {
-    id: `${walletId}:${poolId}:${assetId}`,
-    assetId,
-    marketId: HOME_POOL_TO_MARKET_ID[poolId],
+    id: `${walletId}:${scopedAssetId}`,
+    assetId: scopedAssetId,
+    baseAssetId: asset.baseAssetId,
+    spokeId: market.spokeId,
+    marketId,
     debtSharesUsd6: usd6(debtUsd),
     debtIndexRay: RAY,
     borrowRateWad: asset.borrowConfig.baseBorrowAprWad,
@@ -260,8 +284,25 @@ function debtPositionFromHomePool(walletId: string, poolId: string, debtUsd: num
 }
 
 export function buildMockBorrowCatalog() {
-  const markets = Object.fromEntries(BORROW_POOL_CATALOG.map((pool) => [pool.id, buildMarketRecord(pool)]))
-  const assets = Object.fromEntries(BORROWABLE_ASSETS.map((asset) => [asset.id, buildAssetRecord(asset)]))
+  const spokeBorrowables = listSpokeBorrowables()
+  const borrowAssetIdsBySpoke = new Map(
+    spokeBorrowables.map((asset) => [`${asset.spokeId}:${asset.symbol.toUpperCase()}`, asset.id]),
+  )
+  const markets = Object.fromEntries(
+    BORROW_POOL_CATALOG.map((pool) => [
+      pool.id,
+      buildMarketRecord(
+        pool,
+        new Map(
+          pool.borrowableTokens.map((visual) => [
+            visual.symbol.toUpperCase(),
+            borrowAssetIdsBySpoke.get(`${pool.spoke}:${visual.symbol.toUpperCase()}`) ?? "",
+          ]),
+        ),
+      ),
+    ]),
+  )
+  const assets = Object.fromEntries(spokeBorrowables.map((asset) => [asset.id, buildAssetRecord(asset)]))
   return { markets, assets }
 }
 
@@ -271,7 +312,7 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
     collateralPositionFromHomePool(walletId, pool.id, pool.collateralUsd, markets),
   ).filter((position): position is UserCollateralPosition => Boolean(position))
   const debtPositions = Object.entries(HOME_INITIAL_DEBTS)
-    .map(([poolId, debtUsd]) => debtPositionFromHomePool(walletId, poolId, debtUsd, assets))
+    .map(([poolId, debtUsd]) => debtPositionFromHomePool(walletId, poolId, debtUsd, markets, assets))
     .filter((position): position is UserDebtPosition => Boolean(position))
 
   return {

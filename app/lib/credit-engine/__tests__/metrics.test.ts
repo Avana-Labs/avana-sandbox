@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { WAD_DECIMALS, formatFixed } from "@/app/lib/credit-engine"
-import { calculateCreditMetrics } from "@/app/lib/credit-engine/metrics"
-import { makeExampleBorrowSystemState } from "./fixtures"
+import { WAD_DECIMALS, formatFixed, parseFixed } from "@/app/lib/credit-engine"
+import { calculateCreditMetrics, calculateSpokeCreditMetrics } from "@/app/lib/credit-engine/metrics"
+import { EXAMPLE_UNI_MARKET_ID, makeExampleBorrowSystemState } from "./fixtures"
 
 describe("credit metrics", () => {
   it("matches the example borrow account formulas", () => {
@@ -31,5 +31,21 @@ describe("credit metrics", () => {
 
     const metrics = calculateCreditMetrics(state, "wallet-1")
     expect(metrics.availableCreditUsd6).toBe(0n)
+  })
+
+  it("keeps wallet aggregates separate from spoke insolvency", () => {
+    const state = makeExampleBorrowSystemState()
+    const uniPosition = state.accounts["wallet-1"]!.collateralPositions.find(
+      (position) => position.marketId === EXAMPLE_UNI_MARKET_ID,
+    )!
+    uniPosition.collateralShares = parseFixed("4", 18)
+    uniPosition.principalTokenAmount = parseFixed("4", 18)
+
+    const walletMetrics = calculateCreditMetrics(state, "wallet-1")
+    const spokeMetrics = calculateSpokeCreditMetrics(state, "wallet-1", "uni-v3-bluechip")
+
+    expect(walletMetrics.availableCreditUsd6).toBeGreaterThan(0n)
+    expect(spokeMetrics.availableCreditUsd6).toBe(0n)
+    expect(spokeMetrics.healthFactorWad).toBeLessThan(parseFixed("1", 18))
   })
 })

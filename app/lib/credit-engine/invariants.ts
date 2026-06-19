@@ -27,6 +27,9 @@ function assertMarketRecord(market: BorrowMarketRecord) {
 }
 
 function assertAssetRecord(asset: BorrowAssetRecord) {
+  if (asset.marketIds.length === 0) {
+    throw new Error(`Borrow asset ${asset.id} must reference at least one market`)
+  }
   assertNonNegative(`${asset.id}.baseBorrowAprWad`, asset.borrowConfig.baseBorrowAprWad)
   assertNonNegative(`${asset.id}.priceUsd6`, asset.snapshot.priceUsd6)
   assertNonNegative(`${asset.id}.availableLiquidityUsd6`, asset.snapshot.availableLiquidityUsd6)
@@ -53,8 +56,14 @@ function assertAccountState(account: BorrowAccountState, system: BorrowSystemSta
     if (!system.assets[debt.assetId]) {
       throw new Error(`Unknown asset on debt position ${debt.id}: ${debt.assetId}`)
     }
+    if (system.assets[debt.assetId]!.spokeId !== debt.spokeId) {
+      throw new Error(`Debt position ${debt.id} references asset from the wrong spoke`)
+    }
     if (debt.marketId && !system.markets[debt.marketId]) {
       throw new Error(`Unknown linked market on debt position ${debt.id}: ${debt.marketId}`)
+    }
+    if (debt.marketId && system.markets[debt.marketId]!.spokeId !== debt.spokeId) {
+      throw new Error(`Debt position ${debt.id} references market from the wrong spoke`)
     }
     assertNonNegative(`${debt.id}.debtSharesUsd6`, debt.debtSharesUsd6)
     assertNonNegative(`${debt.id}.debtIndexRay`, debt.debtIndexRay)
@@ -84,6 +93,14 @@ export function assertBorrowSystemInvariants(system: BorrowSystemState) {
 
   for (const asset of Object.values(system.assets)) {
     assertAssetRecord(asset)
+    for (const marketId of asset.marketIds) {
+      if (!system.markets[marketId]) {
+        throw new Error(`Borrow asset ${asset.id} references unknown market ${marketId}`)
+      }
+      if (system.markets[marketId]!.spokeId !== asset.spokeId) {
+        throw new Error(`Borrow asset ${asset.id} references market ${marketId} from the wrong spoke`)
+      }
+    }
   }
 
   for (const account of Object.values(system.accounts)) {
@@ -100,6 +117,12 @@ export function assertBorrowSystemInvariants(system: BorrowSystemState) {
     }
     if (transaction.assetId && !system.assets[transaction.assetId]) {
       throw new Error(`Transaction ${transaction.id} references unknown asset ${transaction.assetId}`)
+    }
+    if (transaction.assetId && transaction.spokeId && system.assets[transaction.assetId]!.spokeId !== transaction.spokeId) {
+      throw new Error(`Transaction ${transaction.id} references asset from the wrong spoke`)
+    }
+    if (transaction.marketId && transaction.spokeId && system.markets[transaction.marketId]!.spokeId !== transaction.spokeId) {
+      throw new Error(`Transaction ${transaction.id} references market from the wrong spoke`)
     }
   }
 }

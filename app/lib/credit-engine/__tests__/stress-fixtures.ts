@@ -13,13 +13,14 @@ function tokenFromInt(value: number) {
 export function makeStressBorrowSystemState(userCount = 1000): BorrowSystemState {
   const state = makeExampleBorrowSystemState()
   const marketIds = Object.keys(state.markets) as Array<keyof typeof state.markets>
-  const assetIds = Object.keys(state.assets) as Array<keyof typeof state.assets>
   const accounts: BorrowSystemState["accounts"] = {}
 
   for (let index = 0; index < userCount; index += 1) {
     const walletId = `wallet-stress-${index}`
     const marketId = marketIds[index % marketIds.length]!
-    const assetId = marketId === "curve-eth-usdt" ? "usdt" : (assetIds[index % assetIds.length] ?? "usdc")
+    const market = state.markets[marketId]!
+    const assetId = market.relations.supportedBorrowAssetIds[index % market.relations.supportedBorrowAssetIds.length]!
+    const asset = state.assets[assetId]!
     const collateralTokens = 5 + (index % 8)
     const baseDebtUsd = 600 + (index % 7) * 125
 
@@ -41,10 +42,12 @@ export function makeStressBorrowSystemState(userCount = 1000): BorrowSystemState
         {
           id: `${walletId}:${assetId}`,
           assetId,
+          baseAssetId: asset.baseAssetId,
+          spokeId: asset.spokeId,
           marketId,
           debtSharesUsd6: usdFromInt(baseDebtUsd),
           debtIndexRay: RAY,
-          borrowRateWad: state.assets[assetId]!.borrowConfig.baseBorrowAprWad,
+          borrowRateWad: asset.borrowConfig.baseBorrowAprWad,
           principalBorrowedUsd6: usdFromInt(baseDebtUsd),
         },
       ],
