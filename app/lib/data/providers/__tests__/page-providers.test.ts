@@ -31,6 +31,8 @@ describe("page providers", () => {
             allPools: [{ name: "ETH-USDC", apy: 5, tvl: 1000, volume24h: 200, chain: "Ethereum", isUp: true, change: 1.2, protocol: "Custom" }],
             protocolLogos: { Custom: "https://example.com/logo.png" },
             itemsPerPage: 12,
+            walletId: "wallet-override",
+            borrowSessionSeed: "{\"stub\":true}",
             poolCatalog: [
               {
                 id: "custom-eth-usdc",
@@ -41,10 +43,24 @@ describe("page providers", () => {
                 ],
               },
             ] as unknown as BorrowPageData["poolCatalog"],
+            borrowableAssets: [
+              {
+                id: "usdc",
+                symbol: "USDC",
+                name: "USD Coin",
+              },
+            ] as unknown as BorrowPageData["borrowableAssets"],
             pendingRows: [{ id: "pending-1" }] as unknown as BorrowPageData["pendingRows"],
             dexes: [{ id: "custom", label: "Custom" }] as unknown as BorrowPageData["dexes"],
             collateralPools: [{ id: "pool-1", name: "ETH / USDC" }] as unknown as BorrowPageData["collateralPools"],
             initialDebts: { "pool-1": 0 },
+            borrowSnapshot: {
+              totalBorrowedUsd: 0,
+              availableCreditUsd: 1000,
+              totalCollateralUsd: 1500,
+              liquidationValueUsd: 1200,
+              healthFactor: null,
+            },
           },
         }
       },
