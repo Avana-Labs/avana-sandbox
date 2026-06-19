@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react"
 import { parseFixed, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
+import type { SandboxActionResult, TransactionIntent, TransactionPreview } from "@/app/lib/borrow-system/contracts"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow, type BorrowableAsset, type HomeBorrowToken } from "@/app/lib/data/borrow-domain"
@@ -50,9 +51,9 @@ function toBorrowToken(asset: BorrowableAsset): HomeBorrowToken {
 type BorrowSessionAdapter = {
   state: BorrowSystemState
   getBorrowableAssetsForMarket: (marketId?: string) => BorrowableAsset[]
-  createIntent: (action: BorrowAction) => { id: string }
-  previewTransaction: (intent: { id: string }) => Promise<{ allowed: boolean; intent: { id: string } }>
-  executeTransaction: (intent: { id: string }) => Promise<unknown>
+  createIntent: (action: BorrowAction) => TransactionIntent
+  previewTransaction: (intent: TransactionIntent) => Promise<TransactionPreview>
+  executeTransaction: (intent: TransactionIntent) => Promise<SandboxActionResult>
 }
 
 export function PortfolioPositions({
