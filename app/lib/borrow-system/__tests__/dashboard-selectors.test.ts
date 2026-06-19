@@ -17,6 +17,7 @@ describe("borrow dashboard selectors", () => {
     expect(snapshot.approvedUsd).toBeGreaterThan(0)
     expect(snapshot.spokeBreakdown).toHaveLength(2)
     expect(snapshot.spokeBreakdown.reduce((sum, row) => sum + row.totalBorrowedUsd, 0)).toBe(snapshot.totalBorrowedUsd)
+    expect(supplies.find((row) => row.pool.id === "uni-v3-bluechip-wbtc-weth")?.borrowedUsd).toBe(1200)
   })
 
   it("reflects shared-session borrow activity in debt and collateral rows", () => {

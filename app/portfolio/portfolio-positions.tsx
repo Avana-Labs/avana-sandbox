@@ -104,13 +104,14 @@ export function PortfolioPositions({
   }, [debtsRows])
 
   const handleSupplyBorrowMore = useCallback((context: SupplyRowContext) => {
+    const tokenOptions = borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken) ?? []
     setBorrowModal({
       open: true,
       context: {
         pool: context.pool,
         currentDebtUsd: context.borrowedUsd,
-        defaultTokenId: "usdc",
-        tokenOptions: borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken),
+        defaultTokenId: tokenOptions[0]?.id,
+        tokenOptions,
       },
     })
   }, [borrowSession])
@@ -153,16 +154,20 @@ export function PortfolioPositions({
   }, [])
 
   const handleDebtManage = useCallback((context: DebtRowContext) => {
+    const tokenOptions = borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken) ?? []
+    const defaultTokenId =
+      borrowSession?.state.accounts[walletId ?? ""]?.debtPositions.find((position) => position.id === context.id)?.assetId ??
+      tokenOptions[0]?.id
     setBorrowModal({
       open: true,
       context: {
         pool: context.pool,
         currentDebtUsd: context.borrowedUsd,
-        defaultTokenId: "usdc",
-        tokenOptions: borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken),
+        defaultTokenId,
+        tokenOptions,
       },
     })
-  }, [borrowSession])
+  }, [borrowSession, walletId])
 
   const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
     if (!borrowSession || !walletId) return
