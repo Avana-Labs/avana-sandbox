@@ -4,46 +4,42 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { LendModals, type LendModalState, type LendModalToken } from "@/app/lend/components/lend-modals"
-import { TOKENS } from "@/app/lend/components/data"
+import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
+import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
+import { LendMarketActionDialog } from "@/app/lend/components/lend-market-action-dialog"
 
 type Props = { detail: AssetDetail; className?: string; embedded?: boolean }
-
-const INITIAL_MODAL: LendModalState = {
-  isOpen: false,
-  type: "deposit",
-  actionType: "deposit",
-  token: null,
-  amount: "",
-}
 
 /**
  * Right-column sidebar on the asset detail page.
  *
  * Keeps the page-visible surface tiny (summary + two buttons) and delegates
- * the actual deposit / withdraw flow to the existing lend `LendModals`
- * component. That way the asset page never recreates the confirm/success
- * screen and any lend changes (confetti, Max, base rate breakdown, ...)
- * automatically flow here too.
+ * deposit / withdraw to the session-backed lend action dialog.
  */
 export function AssetDepositSidebar({ detail, className, embedded = false }: Props) {
-  const [modalState, setModalState] = React.useState<LendModalState>(INITIAL_MODAL)
+  const lendSession = useLendSessionContext()
+  const marketId = resolveLendMarketId(detail.hero.symbol)
+  const [dialogState, setDialogState] = React.useState<{ open: boolean; action: "deposit" | "withdraw" }>({
+    open: false,
+    action: "deposit",
+  })
 
-  const token = React.useMemo(() => toLendToken(detail), [detail])
+  const position = React.useMemo(
+    () =>
+      Object.values(lendSession.state.positions).find(
+        (entry) => entry.walletId === lendSession.walletId && entry.marketId === marketId && entry.status === "active",
+      ),
+    [lendSession.state.positions, lendSession.walletId, marketId],
+  )
+
+  const apyLabel = `${parseFloat(String(detail.row.borrowApr)).toFixed(2)}%`
+  const suppliedLabel = position
+    ? `$${position.suppliedValueUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : "$0.00"
 
   const open = (action: "deposit" | "withdraw") => {
-    setModalState({
-      isOpen: true,
-      type: action,
-      actionType: action,
-      token,
-      amount: "",
-    })
+    setDialogState({ open: true, action })
   }
-
-  const close = () => setModalState((prev) => ({ ...prev, isOpen: false }))
-
-  const apyLabel = `${token.apy.toFixed(2)}%`
 
   return (
     <>
@@ -60,7 +56,7 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
         <header className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Your deposits</div>
-            <div className="mt-1 font-data text-[22px] font-medium tabular-nums text-foreground">$0.00</div>
+            <div className="mt-1 font-data text-[22px] font-medium tabular-nums text-foreground">{suppliedLabel}</div>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-xs border border-emerald-200/70 bg-emerald-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400">
             {apyLabel} APY
@@ -87,7 +83,8 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
           <button
             type="button"
             onClick={() => open("withdraw")}
-            className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+            disabled={!position}
+            className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset disabled:cursor-not-allowed disabled:opacity-50"
           >
             Withdraw
           </button>
@@ -110,24 +107,12 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
         </div>
       )}
 
-      <LendModals modalState={modalState} setModalState={setModalState} closeModal={close} />
+      <LendMarketActionDialog
+        open={dialogState.open}
+        onOpenChange={(open) => setDialogState((prev) => ({ ...prev, open }))}
+        marketId={marketId}
+        initialAction={dialogState.action}
+      />
     </>
   )
-}
-
-function toLendToken(detail: AssetDetail): LendModalToken {
-  const catalog = TOKENS.find((t) => t.symbol.toLowerCase() === detail.hero.symbol.toLowerCase())
-  if (catalog) return catalog
-  const base = TOKENS[0]
-  const apy = parseFloat(String(detail.row.borrowApr)) || base.apy
-  const override = {
-    ...base,
-    symbol: detail.hero.symbol,
-    name: detail.hero.name,
-    apy,
-    balance: 0,
-    earned: 0,
-    daily: 0,
-  }
-  return override as LendModalToken
 }

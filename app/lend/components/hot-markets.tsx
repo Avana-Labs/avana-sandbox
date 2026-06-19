@@ -5,7 +5,6 @@ import Link from "next/link"
 import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from "framer-motion"
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
-import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { cn } from "@/lib/utils"
 
 type HoverState = {
@@ -15,6 +14,7 @@ type HoverState = {
 }
 
 type FeaturedAsset = LendPageData["featuredAssets"][keyof LendPageData["featuredAssets"]]
+type FeaturedSnapshot = LendPageData["featuredSnapshots"][number]
 const TIME_LABELS = ["12:00 AM", "1:00 AM", "2:00 AM", "3:00 AM", "4:00 AM", "5:00 AM", "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM"]
 const MARQUEE_DURATION_SECONDS = 38
 const GRAPH_WIDTH = 396
@@ -155,6 +155,7 @@ function ReferenceGraph({
 function FeaturedCard({
   asset,
   cardKey,
+  href,
   hover,
   onHover,
   onLeave,
@@ -162,6 +163,7 @@ function FeaturedCard({
 }: {
   asset: FeaturedAsset
   cardKey: string
+  href: string
   hover: HoverState | null
   onHover: (state: HoverState) => void
   onLeave: () => void
@@ -225,7 +227,7 @@ function FeaturedCard({
   return (
     <Link
       data-featured-card={cardKey}
-      href={borrowAssetDetailPath(asset.id)}
+      href={href}
       onMouseLeave={onLeave}
       onMouseMove={(event) => {
         const bounds = event.currentTarget.getBoundingClientRect()
@@ -244,9 +246,11 @@ function FeaturedCard({
 export function HotMarkets({
   assets,
   sequence,
+  snapshots = [],
 }: {
   assets: LendPageData["featuredAssets"]
   sequence: LendPageData["featuredSequence"]
+  snapshots?: ReadonlyArray<FeaturedSnapshot>
 }) {
   const [hover, setHover] = useState<HoverState | null>(null)
   const [sequenceWidth, setSequenceWidth] = useState(0)
@@ -277,17 +281,27 @@ export function HotMarkets({
     x.set(nextX <= -sequenceWidth ? nextX + sequenceWidth : nextX)
   })
 
-  const renderSequence = (copy: "a" | "b") =>
+  const hrefForAsset = (assetId: (typeof sequence)[number]) => {
+    const asset = assets[assetId]
+    const snapshot = snapshots.find(
+      (entry) => entry.marketId === assetId || entry.symbol.toUpperCase() === asset.symbol.toUpperCase(),
+    )
+    return snapshot?.href ?? `/lend/markets/${assetId}`
+  }
+
+  const renderSequence = (copy: "a" | "b", interactive = true) =>
     sequence.map((assetId, index) => {
       const cardKey = `${copy}-${assetId}-${index}`
       return (
         <FeaturedCard
           key={cardKey}
           asset={assets[assetId]}
+          href={hrefForAsset(assetId)}
           cardKey={cardKey}
           hover={hover}
           onHover={setHover}
           onLeave={() => setHover(null)}
+          interactive={interactive}
         />
       )
     })
@@ -310,17 +324,7 @@ export function HotMarkets({
               {renderSequence("a")}
             </div>
             <div aria-hidden="true" className="flex shrink-0 items-start gap-3 pr-3">
-              {sequence.map((assetId, index) => (
-                <FeaturedCard
-                  key={`b-${assetId}-${index}`}
-                  asset={assets[assetId]}
-                  cardKey={`b-${assetId}-${index}`}
-                  hover={hover}
-                  onHover={setHover}
-                  onLeave={() => setHover(null)}
-                  interactive={false}
-                />
-              ))}
+              {renderSequence("b", false)}
             </div>
           </motion.div>
         </div>

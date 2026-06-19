@@ -27,6 +27,7 @@ const assetDetail = {
     marketIds: [pool.id],
     borrowApr: 4.2,
     spokeLabel: "Uniswap V3 Bluechip",
+    walletBalanceLabel: "$10,000",
   },
   quickStats: [],
   about: { title: "About", body: "About USDC" },
@@ -141,6 +142,77 @@ vi.mock("@/app/borrow/components/supply-collateral-modal", () => ({
     ) : null,
 }))
 
+vi.mock("@/app/lend/components/lend-market-action-dialog", () => ({
+  LendMarketActionDialog: () => null,
+}))
+
+vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  useBorrowSessionContext: () => {
+    const state = buildMockBorrowSystemState(walletId)
+    const collateralPools = selectBorrowCollateralPools(state, walletId)
+    const collateralPool = collateralPools.find((entry) => entry.id === "uni-v3-bluechip-weth-usdc") ?? collateralPools[0]!
+
+    return {
+      state,
+      marketSummaries: [
+        {
+          id: collateralPool.id,
+          name: collateralPool.name,
+          venue: collateralPool.venue,
+          feeTier: collateralPool.category,
+          tvlUsd: collateralPool.collateralUsd,
+          spoke: "uni-v3-bluechip",
+          ltv: collateralPool.maxLtv,
+          dexes: [],
+          borrowableTokens: [],
+          aprMin: collateralPool.pairApr,
+          aprMax: collateralPool.pairApr,
+          availableUsd: collateralPool.borrowPowerUsd,
+          riskPremiumBps: 25,
+          visuals: [
+            { symbol: "WETH", shortLabel: "WETH", bgClassName: "bg-black", textClassName: "text-white", iconUrl: "/weth.svg" },
+            { symbol: "USDC", shortLabel: "USDC", bgClassName: "bg-blue-500", textClassName: "text-white", iconUrl: "/usdc.svg" },
+          ],
+          collateralExampleUsd: collateralPool.collateralUsd,
+          trendUp: true,
+        },
+      ],
+      collateralPools: [collateralPool],
+      initialDebts: { [collateralPool.id]: 500 },
+      getBorrowableAssetsForMarket: () => [
+        {
+          id: "uni-v3-bluechip:usdc",
+          name: "USD Coin",
+          symbol: "USDC",
+          subtitle: "Stablecoin",
+          borrowApr: 4.2,
+          totalBorrowedUsd: 1000,
+          utilization: 40,
+          availableUsd: 9000,
+          walletBalanceLabel: "$10,000",
+          hasWalletBalance: true,
+          visual: {
+            symbol: "USDC",
+            shortLabel: "USDC",
+            bgClass: "bg-blue-500",
+            textClass: "text-white",
+          },
+          trendUp: true,
+          category: "stable",
+        },
+      ],
+      createIntent,
+      previewTransaction,
+      executeTransaction,
+    }
+  },
+  useLendSessionContext: () => ({
+    walletId,
+    state: { positions: {}, markets: {} },
+    transactionHistory: [],
+  }),
+}))
+
 vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
   useBorrowSession: () => {
     const state = buildMockBorrowSystemState(walletId)
@@ -223,8 +295,9 @@ describe("detail sidebars", () => {
     fireEvent.click(screen.getByText("Review repayment"))
     fireEvent.click(screen.getByText("confirm-repay"))
 
-    fireEvent.click(screen.getAllByText("Deposit")[1]!)
-    fireEvent.click(screen.getByText("confirm-supply"))
+    fireEvent.click(screen.getByRole("tab", { name: "Deposit" }))
+    fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: "100" } })
+    fireEvent.click(screen.getByText("Review deposit"))
 
     await waitFor(() => expect(createIntent).not.toHaveBeenCalled())
   })

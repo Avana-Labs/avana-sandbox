@@ -3,6 +3,7 @@ import {
   LEND_FEATURED_ASSETS,
   LEND_FEATURED_SEQUENCE,
 } from "@/app/lib/data/mock/shared/lend"
+import type { LendFeaturedSnapshot, LendMarketRow } from "@/app/lib/lend-system/read-model"
 
 export type LendToken = {
   symbol: string
@@ -54,5 +55,7 @@ export type LendPageData = {
   chartSeries: ReadonlyArray<LendChartPoint>
   featuredAssets: typeof LEND_FEATURED_ASSETS
   featuredSequence: ReadonlyArray<(typeof LEND_FEATURED_SEQUENCE)[number]>
+  featuredSnapshots: ReadonlyArray<LendFeaturedSnapshot>
   assetGroups: ReadonlyArray<(typeof LEND_ASSET_GROUPS)[number]>
+  marketRows: ReadonlyArray<LendMarketRow>
 }
