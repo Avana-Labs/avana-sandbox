@@ -194,7 +194,6 @@ export function buildLendWalletSnapshot(
 ): LendWalletReadSnapshot {
   const portfolio = buildPortfolioLendData(walletId, state, transactionHistory)
   const totalSuppliedUsd = portfolio.investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
-  const totalEarnedUsd = portfolio.investments.reduce((sum, item) => sum + item.earnedUsd, 0)
   const averageApy =
     portfolio.investments.length === 0
       ? 0
@@ -206,8 +205,8 @@ export function buildLendWalletSnapshot(
     metrics: {
       suppliedAmount: portfolio.investments.reduce((sum, item) => sum + item.balance, 0),
       suppliedValueUsd: totalSuppliedUsd,
-      principalAmount: portfolio.investments.reduce((sum, item) => sum + item.principalAmount, 0),
-      interestEarned: portfolio.investments.reduce((sum, item) => sum + item.interestEarned, 0),
+      principalAmount: portfolio.investments.reduce((sum, item) => sum + (item.principalAmount ?? 0), 0),
+      interestEarned: portfolio.investments.reduce((sum, item) => sum + (item.interestEarned ?? 0), 0),
       currentApy: averageApy,
     },
     yieldSnapshots: buildLendYieldSnapshots(state),
