@@ -33,16 +33,19 @@ type Props = {
 
 export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Props) {
   const [stage, setStage] = useState<ModalStage>("entry")
+  const [amountInput, setAmountInput] = useState("")
 
   useEffect(() => {
     if (open && context) {
       setStage("entry")
+      setAmountInput(Math.round(context.pool.collateralExampleUsd).toString())
     }
   }, [open, context])
 
   const pool = context?.pool
   const spoke = getSpokeById(pool?.spoke ?? "uni-v2")
-  const positionUsd = pool?.collateralExampleUsd ?? 0
+  const parsedAmount = Number.parseFloat(amountInput)
+  const positionUsd = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0
   const borrowPower = positionUsd * ((pool?.ltv ?? 0) / 100)
   const borrowAprEst = spoke.aprApprox
   const feesApy = ((pool?.aprMin ?? 0) + (pool?.aprMax ?? 0)) / 2
@@ -102,9 +105,17 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
                   </div>
 
                   <div className="flex min-h-[100px] flex-col items-center justify-center gap-4 py-3 sm:min-h-[120px] md:min-h-[110px] md:flex-1 md:py-0">
-                    <div className="font-compact text-[clamp(3.2rem,9vw,4.8rem)] font-medium leading-none tracking-[-0.05em] text-foreground">
-                      {formatUsdExact(positionUsd)}
-                    </div>
+                    <label className="w-full max-w-[18rem]">
+                      <span className="sr-only">Collateral amount</span>
+                      <input
+                        inputMode="decimal"
+                        value={amountInput}
+                        onChange={(event) => setAmountInput(event.target.value)}
+                        className="w-full border-0 bg-transparent text-center font-compact text-[clamp(3.2rem,9vw,4.8rem)] font-medium leading-none tracking-[-0.05em] text-foreground outline-none placeholder:text-muted-foreground/45"
+                        placeholder="0"
+                      />
+                    </label>
+                    <div className="text-[13px] text-muted-foreground">{formatUsdExact(positionUsd)}</div>
                   </div>
                 </div>
 
@@ -160,6 +171,7 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
 
                 <Button
                   type="button"
+                  disabled={positionUsd <= 0}
                   className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90 md:shrink-0"
                   onClick={() => setStage("review")}
                 >
