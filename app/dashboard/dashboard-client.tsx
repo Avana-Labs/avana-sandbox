@@ -4,7 +4,8 @@ import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
-import type { PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { DeleverageModal } from "@/app/multiply/components/deleverage-modal"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
@@ -15,8 +16,23 @@ import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
 import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-live"
+import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
+
+function mergeLendTabData(
+  staticData: PortfolioLendTabData,
+  liveData: PortfolioLendTabData | null,
+): PortfolioLendTabData {
+  if (!liveData) return staticData
+
+  return {
+    investments: liveData.investments.length > 0 ? liveData.investments : staticData.investments,
+    positions: liveData.positions.length > 0 ? liveData.positions : staticData.positions,
+    strategyBuckets: staticData.strategyBuckets,
+    history: liveData.history.length > 0 ? liveData.history : staticData.history,
+  }
+}
 
 function mergeMultiplyTabData(
   staticData: PortfolioMultiplyTabData,
@@ -73,9 +89,10 @@ export function DashboardClient({
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const [deleverageOpen, setDeleverageOpen] = useState(false)
   const [deleveragePositionId, setDeleveragePositionId] = useState<string | null>(null)
-  const { walletId, borrow: borrowSession, multiply: multiplySession } = useAvanaSessions()
+  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
   const portfolioMultiply = usePortfolioMultiplyLive(walletId, multiplySession)
+  const portfolioLend = usePortfolioLendLive(walletId, lendSession)
   const multiplySnapshot = useMemo<BorrowSnapshot>(
     () => ({
       approvedUsd: portfolioMultiply?.creditLines.approvedUsd ?? data?.multiply.creditLines.approvedUsd ?? initialData?.multiply.creditLines.approvedUsd ?? 0,
@@ -143,9 +160,10 @@ export function DashboardClient({
         secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
         txHash: item.hash,
       })),
+      ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory),
       ...(data?.activity.rows ?? initialData?.activity.rows ?? []),
     ],
-    [borrowSession.transactionHistory, multiplySession.transactionHistory, data?.activity.rows, initialData?.activity.rows],
+    [borrowSession.transactionHistory, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, data?.activity.rows, initialData?.activity.rows],
   )
 
   const deleverageTarget = useMemo(() => {
@@ -156,6 +174,11 @@ export function DashboardClient({
     if (!market) return null
     return { position, market }
   }, [deleveragePositionId, multiplySession.state.markets, multiplySession.state.positions])
+
+  const lendTabData = useMemo(() => {
+    if (!data) return portfolioLend ?? initialData?.lend ?? { investments: [], positions: [], strategyBuckets: [], history: [] }
+    return mergeLendTabData(data.lend, portfolioLend)
+  }, [data, initialData, portfolioLend])
 
   const multiplyTabData = useMemo(() => {
     if (!data) {
@@ -206,7 +229,7 @@ export function DashboardClient({
           </DashboardSection>
         </div>
       ) : null}
-      {activeTab === "lending" ? <PortfolioInvestments investments={data.lend.investments} /> : null}
+      {activeTab === "lending" ? <PortfolioInvestments investments={lendTabData.investments} /> : null}
       {activeTab === "looping" ? (
         <div className="mt-12 space-y-5">
           <DashboardSectionTitle title="Credit Limits" />

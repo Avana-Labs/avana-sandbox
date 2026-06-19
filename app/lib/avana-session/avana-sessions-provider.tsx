@@ -2,11 +2,13 @@
 
 import { createContext, useContext, type ReactNode } from "react"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
+import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { useAvanaSession } from "./use-avana-session"
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
 type MultiplySession = ReturnType<typeof useMultiplySession>
+type LendSession = ReturnType<typeof useLendSession>
 
 export type AvanaSessions = {
   walletId: string
@@ -14,6 +16,7 @@ export type AvanaSessions = {
   sandboxMode: true
   borrow: BorrowSession
   multiply: MultiplySession
+  lend: LendSession
 }
 
 const AvanaSessionsContext = createContext<AvanaSessions | null>(null)
@@ -34,6 +37,10 @@ export function AvanaSessionsProvider({
     walletId: avana.walletId,
     sessionSeed: avana.multiplySessionSeed,
   })
+  const lend = useLendSession({
+    walletId: avana.walletId,
+    sessionSeed: avana.lendSessionSeed,
+  })
 
   return (
     <AvanaSessionsContext.Provider
@@ -43,6 +50,7 @@ export function AvanaSessionsProvider({
         sandboxMode: avana.sandboxMode,
         borrow,
         multiply,
+        lend,
       }}
     >
       {children}
@@ -68,4 +76,8 @@ export function useBorrowSessionContext() {
 
 export function useMultiplySessionContext() {
   return useAvanaSessions().multiply
+}
+
+export function useLendSessionContext() {
+  return useAvanaSessions().lend
 }
