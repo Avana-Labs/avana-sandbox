@@ -21,7 +21,7 @@ function getHubBucket(row: AssetRow) {
 
 function SearchIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-6 text-muted-foreground/70 dark:text-white/40">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-6 text-muted-foreground/70 dark:text-[#01AACF]">
       <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
     </svg>
@@ -533,14 +533,14 @@ export function LendAssetSpokes({ groups = DEFAULT_ASSET_GROUPS }: { groups?: Le
   return (
     <section className="mt-16 space-y-8" style={{ overflowAnchor: "none" }}>
       <div className="hidden items-center gap-2 py-2.5 md:flex">
-        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18 md:flex-none md:w-[280px]">
+        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30 md:flex-none md:w-[280px]">
           <SearchIcon />
           <input
             aria-label="Filter assets"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Filter assets"
-            className="lend-filter-input w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none md:text-[15px] md:font-normal"
+            className="lend-filter-input w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground/45 md:text-[15px] md:font-normal"
           />
         </label>
 
@@ -566,14 +566,14 @@ export function LendAssetSpokes({ groups = DEFAULT_ASSET_GROUPS }: { groups?: Le
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto py-2.5 md:hidden">
-        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18">
+        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
           <SearchIcon />
           <input
             aria-label="Filter assets"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Filter assets"
-            className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none"
+            className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground/45"
           />
         </label>
 

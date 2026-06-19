@@ -32,7 +32,7 @@ type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
 
 function SearchIcon({ className }: { className?: string } = {}) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-muted-foreground/70 dark:text-white/40", className)}>
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-muted-foreground/70 dark:text-[#01AACF]", className)}>
       <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
     </svg>
@@ -87,7 +87,7 @@ function ExpandableDesktopSearch({
         className={cn(
           "flex h-10 items-center overflow-hidden border shadow-elev-1 transition-[width,border-radius,background-color,border-color] duration-200",
           isExpanded ? "w-[240px] rounded-[12px] px-3" : "w-10 cursor-pointer justify-center rounded-[12px]",
-          "border-border bg-white text-foreground dark:border-white/7 dark:bg-[#111111] dark:text-white/96",
+          "border-border bg-white text-foreground dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb]",
         )}
         onClick={() => {
           if (!isExpanded) setOpen(true)
@@ -99,7 +99,7 @@ function ExpandableDesktopSearch({
           className={cn("flex shrink-0 items-center justify-center", isExpanded ? "pointer-events-none mr-2 size-5" : "size-10")}
           onClick={() => setOpen(true)}
         >
-          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6")} />
+          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6", "dark:text-[#01AACF]")} />
         </button>
 
         {isExpanded ? (
@@ -109,7 +109,7 @@ function ExpandableDesktopSearch({
             value={value}
             onChange={(event) => onChange(event.target.value)}
             placeholder="Search loops"
-            className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:placeholder:text-white/35"
+            className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
           />
         ) : null}
       </div>

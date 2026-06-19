@@ -100,7 +100,7 @@ function ExpandableDesktopSearch({
         className={cn(
           "flex h-10 items-center overflow-hidden border shadow-elev-1 transition-[width,border-radius,background-color,border-color] duration-200",
           isExpanded ? "w-[240px] rounded-[12px] px-3" : "w-10 cursor-pointer justify-center rounded-[12px]",
-          "border-border bg-white text-foreground dark:border-white/7 dark:bg-[#111111] dark:text-white/96",
+          "border-border bg-white text-foreground dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb]",
         )}
         onClick={() => {
           if (!isExpanded) setOpen(true)
@@ -115,7 +115,7 @@ function ExpandableDesktopSearch({
           )}
           onClick={() => setOpen(true)}
         >
-          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6")} />
+          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6", "dark:text-[#01AACF]")} />
         </button>
 
         {isExpanded ? (
@@ -125,7 +125,7 @@ function ExpandableDesktopSearch({
             value={value}
             onChange={(event) => onChange(event.target.value)}
             placeholder="Filter assets"
-            className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:placeholder:text-white/35"
+            className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
           />
         ) : null}
       </div>
@@ -391,14 +391,14 @@ export function TabsBar({
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto py-2.5 md:hidden">
-        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-white/7 dark:bg-[#111111] dark:text-white/96 dark:focus-within:border-white/18">
-          <SearchIcon />
+        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
+          <SearchIcon className="dark:text-[#01AACF]" />
           <input
             aria-label="Filter assets"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Filter assets"
-            className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none"
+            className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
           />
         </label>
 
