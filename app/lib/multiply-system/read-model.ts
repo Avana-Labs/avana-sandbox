@@ -5,7 +5,7 @@ import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfoli
 import { MULTIPLY_TOKEN_BORROW_APYS, MULTIPLY_TOKEN_LOGOS, MULTIPLY_TOKEN_SUPPLY_APYS } from "@/app/lib/multiply-sim"
 import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
-import type { MultiplyTransactionHistoryItem, MultiplyWalletReadSnapshot } from "./contracts"
+import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult, MultiplyWalletReadSnapshot } from "./contracts"
 
 function formatPct(value: number) {
   return `${(value * 100).toFixed(2)}%`
@@ -138,7 +138,7 @@ export function buildMultiplyWalletSnapshot(
           ? portfolio.positions.reduce((sum, position) => sum + position.leverage, 0) / portfolio.positions.length
           : 1,
       ltv: portfolio.creditLines.currentLtvPct / 100,
-      healthFactor: portfolio.creditLines.averageHealthFactor,
+      healthFactor: portfolio.creditLines.averageHealthFactor ?? "infinity",
       netApy:
         portfolio.positions.length > 0
           ? portfolio.positions.reduce((sum, position) => sum + position.pnlPct, 0) / portfolio.positions.length / 100

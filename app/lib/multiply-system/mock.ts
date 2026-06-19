@@ -1,7 +1,7 @@
 import type { MultiplyAction, MultiplySystemState } from "@/app/lib/multiply-engine"
 import { buildMultiplyCatalogMarketsRecord } from "./catalog"
 
-export function buildMockMultiplySystemState(walletId = "demo-wallet"): MultiplySystemState {
+export function buildMockMultiplySystemState(_walletId = "demo-wallet"): MultiplySystemState {
   return {
     now: Date.UTC(2026, 5, 19),
     markets: buildMultiplyCatalogMarketsRecord(),

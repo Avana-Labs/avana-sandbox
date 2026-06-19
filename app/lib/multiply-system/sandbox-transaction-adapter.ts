@@ -24,32 +24,6 @@ function defaultId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-function toMetrics(state: MultiplySystemState, walletId: string, marketId?: string) {
-  const positions = Object.values(state.positions).filter(
-    (position) => position.walletId === walletId && (!marketId || position.marketId === marketId),
-  )
-  const collateralValueUsd = positions.reduce((sum, position) => sum + position.collateralValueUsd, 0)
-  const debtValueUsd = positions.reduce((sum, position) => sum + position.debtValueUsd, 0)
-  const multiplier =
-    positions.length > 0 ? positions.reduce((sum, position) => sum + position.multiplier, 0) / positions.length : 1
-  const healthFactors = positions.map((position) => position.healthFactor)
-  const healthFactor =
-    healthFactors.length === 0
-      ? ("infinity" as const)
-      : healthFactors.some((value) => value === "infinity")
-        ? ("infinity" as const)
-        : (healthFactors as number[]).reduce((sum, value) => sum + value, 0) / healthFactors.length
-
-  return {
-    collateralValueUsd,
-    debtValueUsd,
-    multiplier,
-    ltv: collateralValueUsd > 0 ? debtValueUsd / collateralValueUsd : 0,
-    healthFactor,
-    netApy: positions.length > 0 ? positions.reduce((sum, position) => sum + position.netApy, 0) / positions.length : 0,
-  }
-}
-
 function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: MultiplyTransactionIntent): MultiplyTransactionPreview {
   if (action.type === "multiply") {
     const market = state.markets[action.marketId]
