@@ -792,6 +792,8 @@ export function HomePageClient() {
                         primaryLabel={flowPrimaryLabel}
                         onPrimary={advanceFlow}
                         onBack={() => setHomeFlow(null)}
+                        simulated
+                        submitDisabled={session.isPending}
                         variant="surface"
                       />
                     ) : (
@@ -830,6 +832,8 @@ export function HomePageClient() {
                         primaryLabel={flowPrimaryLabel}
                         onPrimary={advanceFlow}
                         onBack={() => setHomeFlow(null)}
+                        simulated
+                        submitDisabled={session.isPending}
                         variant="surface"
                       />
                     ) : (
@@ -869,6 +873,8 @@ export function HomePageClient() {
                         primaryLabel={flowPrimaryLabel}
                         onPrimary={advanceFlow}
                         onBack={() => setHomeFlow(null)}
+                        simulated
+                        submitDisabled={session.isPending}
                         variant="surface"
                       />
                     ) : (
@@ -912,6 +918,8 @@ export function HomePageClient() {
                         primaryLabel={flowPrimaryLabel}
                         onPrimary={advanceFlow}
                         onBack={() => setHomeFlow(null)}
+                        simulated
+                        submitDisabled={session.isPending}
                         variant="surface"
                       />
                     ) : (
@@ -1007,6 +1015,8 @@ export function HomePageClient() {
               onPrimary={advanceFlow}
               onBack={() => setHomeFlow(null)}
               onClose={closeFlow}
+              simulated
+              submitDisabled={session.isPending}
               className="rounded-none border-0 bg-transparent shadow-none"
               variant="bare"
             />
