@@ -1,17 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { parseFixed } from "@/app/lib/credit-engine"
+import { BorrowActionBox } from "@/app/borrow/components/borrow-action-box"
+import { buildHomeSupplyPreview } from "@/app/lib/borrow-system/modal-preview-runtime"
+import type { BorrowModalSession } from "@/app/lib/borrow-system/modal-session"
+import { useBorrowActionBox } from "@/app/lib/borrow-system/use-borrow-action-box"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/components/transaction-flow"
 import { Button } from "@/components/ui/button"
-import {
-  formatUsdExact,
-  getSpokeById,
-  type BorrowPoolRow,
-} from "@/app/lib/data/borrow-domain"
+import { formatUsdExact, getSpokeById, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
 import { TokenBubble } from "./atoms"
-
-type ModalStage = "entry" | TransactionFlowStage
 
 export type SupplyCollateralContext = {
   pool: BorrowPoolRow
@@ -22,70 +20,105 @@ export type SupplyCollateralResult = {
   amountUsd: number
   borrowPowerUsd: number
   feesApy: number
+  receiptHash?: string
 }
 
 type Props = {
   open: boolean
   context: SupplyCollateralContext | null
+  borrowSession: BorrowModalSession
+  walletId: string
   onClose: () => void
   onConfirm: (result: SupplyCollateralResult) => void
 }
 
-export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Props) {
-  const [stage, setStage] = useState<ModalStage>("entry")
+export function SupplyCollateralModal({ open, context, borrowSession, walletId, onClose, onConfirm }: Props) {
+  const actionBox = useBorrowActionBox(borrowSession)
   const [amountInput, setAmountInput] = useState("")
+  const [flowStarted, setFlowStarted] = useState(false)
+  const [pendingReviewAdvance, setPendingReviewAdvance] = useState(false)
 
   useEffect(() => {
     if (open && context) {
-      setStage("entry")
       setAmountInput(Math.round(context.pool.collateralExampleUsd).toString())
+      setFlowStarted(false)
+      setPendingReviewAdvance(false)
+      actionBox.reset()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, context])
 
   const pool = context?.pool
   const spoke = getSpokeById(pool?.spoke ?? "uni-v2")
   const parsedAmount = Number.parseFloat(amountInput)
   const positionUsd = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0
-  const borrowPower = positionUsd * ((pool?.ltv ?? 0) / 100)
-  const borrowAprEst = spoke.aprApprox
   const feesApy = ((pool?.aprMin ?? 0) + (pool?.aprMax ?? 0)) / 2
   const visuals = pool?.visuals ?? []
   const [visualA, visualB] = visuals
   const pairLabel = visualA && visualB ? `${visualA.symbol}/${visualB.symbol} LP` : "LP position"
-  const aaveFooterNote = (
-    <>
-      Powered by Aave v4.{" "}
-      <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
-        Learn More
-      </a>
-    </>
-  )
+
+  const preview = useMemo(() => {
+    if (!pool) return null
+    return buildHomeSupplyPreview(borrowSession.state, walletId, pool.id, positionUsd)
+  }, [borrowSession.state, pool, positionUsd, walletId])
+
+  const handleClose = useCallback(() => {
+    if (actionBox.stage === "processing" || borrowSession.isPending) return
+    setFlowStarted(false)
+    actionBox.reset()
+    onClose()
+  }, [actionBox, borrowSession.isPending, onClose])
+
+  const startReviewFlow = useCallback(async () => {
+    if (!pool || !preview?.isValid) return
+    await actionBox.prepareAction({
+      type: "supplyCollateral",
+      walletId,
+      marketId: pool.id,
+      amountUsd6: parseFixed(positionUsd.toFixed(6), 6),
+    })
+    setFlowStarted(true)
+    setPendingReviewAdvance(true)
+  }, [actionBox, pool, positionUsd, preview?.isValid, walletId])
 
   useEffect(() => {
-    if (stage !== "processing") return
-    if (!pool) return
+    if (!pendingReviewAdvance || actionBox.stage !== "preview" || !actionBox.previewUi?.allowed) return
+    setPendingReviewAdvance(false)
+    void actionBox.advance()
+  }, [actionBox, pendingReviewAdvance])
 
-    const timer = window.setTimeout(() => {
+  const handlePrimary = useCallback(async () => {
+    if (actionBox.stage === "success") {
       if (!pool) return
       onConfirm({
         pool,
         amountUsd: positionUsd,
-        borrowPowerUsd: borrowPower,
+        borrowPowerUsd: preview?.borrowPowerUsd ?? 0,
         feesApy,
+        receiptHash: actionBox.successUi?.receipt.hash,
       })
-      setStage("success")
-    }, 5000)
+      handleClose()
+      return
+    }
 
-    return () => window.clearTimeout(timer)
-  }, [borrowPower, feesApy, onConfirm, pool, positionUsd, stage])
+    if (actionBox.stage === "approve") {
+      await actionBox.advance()
+      return
+    }
 
-  if (!context || !pool) return null
+    await actionBox.advance()
+  }, [actionBox, feesApy, handleClose, onConfirm, pool, positionUsd, preview?.borrowPowerUsd])
 
-  const handleClose = () => {
-    if (stage === "processing") return
-    setStage("entry")
-    onClose()
-  }
+  if (!context || !pool || !preview) return null
+
+  const primaryLabel =
+    actionBox.stage === "success"
+      ? "Done"
+      : actionBox.stage === "approve"
+        ? "Approve wallet"
+        : actionBox.stage === "review"
+          ? "Pledge collateral"
+          : (actionBox.previewUi?.ctaLabel ?? "Continue")
 
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? handleClose() : null)}>
@@ -95,15 +128,14 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
         className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md overflow-y-auto rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3"
       >
         <DialogTitle className="sr-only">Pledge collateral</DialogTitle>
-        {stage === "entry" ? (
+        {!flowStarted ? (
           <div className="flex h-full min-h-0 flex-col bg-background sm:h-auto">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:px-8 sm:pb-5 sm:pt-6">
               <div className="flex min-h-full flex-col gap-2.5">
                 <div className="px-1 py-3 md:flex-1 md:min-h-[140px]">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-[hsl(var(--brand))]">You're pledging</span>
+                    <span className="text-sm font-medium text-[hsl(var(--brand))]">You&apos;re pledging</span>
                   </div>
-
                   <div className="flex min-h-[100px] flex-col items-center justify-center gap-4 py-3 sm:min-h-[120px] md:min-h-[110px] md:flex-1 md:py-0">
                     <label className="w-full max-w-[18rem]">
                       <span className="sr-only">Collateral amount</span>
@@ -128,92 +160,56 @@ export function SupplyCollateralModal({ open, context, onClose, onConfirm }: Pro
                       </div>
                     </span>
                     <span className="flex min-w-0 flex-col leading-tight">
-                      <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
-                        Collateral position
-                      </span>
-                      <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
-                        {pairLabel}
-                      </span>
+                      <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">Collateral position</span>
+                      <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">{pairLabel}</span>
                     </span>
                     <span />
                   </div>
-
                   <div className="grid h-[70px] grid-cols-[4rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md border border-border bg-surface-raised px-4 text-left md:h-[58px] md:grid-cols-[2.75rem_minmax(0,1fr)_1rem] md:gap-2.5 md:px-3.5">
                     <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
                       <span className="font-compact text-[28px] leading-none text-[hsl(var(--brand))]">$</span>
                     </span>
                     <span className="flex min-w-0 flex-col leading-tight">
-                      <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
-                        Borrow power
-                      </span>
-                      <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
-                        {formatUsdExact(borrowPower)}
-                      </span>
+                      <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">Borrow power</span>
+                      <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">{formatUsdExact(preview.borrowPowerUsd)}</span>
                     </span>
                     <span />
                   </div>
                 </div>
 
-                <div className="mt-1 grid grid-cols-3 gap-2 text-center md:hidden">
-                  <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
-                    <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">LTV</div>
-                    <div className="mt-0.5 font-data text-[12.5px] font-medium text-emerald-700 dark:text-emerald-400">{pool.ltv}%</div>
-                  </div>
-                  <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
-                    <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">Borrow</div>
-                    <div className="mt-0.5 font-data text-[12.5px] font-medium text-emerald-700 dark:text-emerald-400">{formatUsdExact(borrowPower)}</div>
-                  </div>
-                  <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
-                    <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">APR</div>
-                    <div className="mt-0.5 font-data text-[12.5px] font-medium text-amber-700 dark:text-amber-400">{borrowAprEst.toFixed(1)}%</div>
-                  </div>
-                </div>
-
                 <Button
                   type="button"
-                  disabled={positionUsd <= 0}
+                  disabled={!preview.isValid}
                   className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90 md:shrink-0"
-                  onClick={() => setStage("review")}
+                  onClick={() => {
+                    void startReviewFlow()
+                  }}
                 >
                   Review pledge
                 </Button>
-                <div className="mt-auto pt-3 text-center text-[12px] text-muted-foreground">
-                  {aaveFooterNote}
-                </div>
               </div>
             </div>
           </div>
         ) : (
-          <TransactionFlowPanel
-            stage={stage as TransactionFlowStage}
+          <BorrowActionBox
+            stage={actionBox.stage}
             actionLabel="pledging collateral"
             amountLabel={formatUsdExact(positionUsd)}
             title="Collateral pledged"
             subtitle="Collateral is now available for borrowing."
-              visual={
-              <div className="flex items-center">
-                {visualA ? <TokenBubble visual={visualA} size="md" /> : null}
-                {visualB ? <TokenBubble visual={visualB} size="md" className="-ml-2" /> : null}
-              </div>
-            }
-            rows={[
-              { label: "Position", value: `${pairLabel} · ${spoke.label}` },
-              { label: "Max LTV", value: `${pool.ltv}%`, tone: "positive" as const },
-              { label: "Borrow power", value: formatUsdExact(borrowPower), tone: "positive" as const },
-              { label: "LP APY", value: `${feesApy.toFixed(1)}%`, tone: "positive" as const },
-            ]}
-            note={undefined}
-            footerNote={aaveFooterNote}
-            primaryLabel={stage === "review" ? "Pledge collateral" : stage === "approve" ? "Approve wallet" : "Done"}
+            previewUi={actionBox.previewUi}
+            successUi={actionBox.successUi}
+            simulated
+            isPending={borrowSession.isPending}
+            primaryLabel={primaryLabel}
             onPrimary={() => {
-              if (stage === "review") setStage("approve")
-              else if (stage === "approve") setStage("processing")
-              else handleClose()
+              void handlePrimary()
             }}
-            onBack={() => setStage("entry")}
+            onBack={() => {
+              setFlowStarted(false)
+              actionBox.reset()
+            }}
             onClose={handleClose}
-            className="rounded-none border-0 bg-transparent shadow-none"
-            variant="bare"
           />
         )}
       </DialogContent>
