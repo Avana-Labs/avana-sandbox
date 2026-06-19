@@ -2,8 +2,8 @@
 
 import {
   HOME_CLAIM_POSITIONS,
-  calculateClaimPreview,
   formatUsd,
+  type ClaimPreview,
 } from "@/app/lib/home-sim"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { PairVisual } from "@/app/components/home-workspace-primitives"
@@ -23,7 +23,7 @@ export function CompactClaimCard({
   onSubmit,
 }: {
   amount: string
-  preview: ReturnType<typeof calculateClaimPreview>
+  preview: ClaimPreview
   positions?: typeof HOME_CLAIM_POSITIONS
   claimableTotals: Record<string, number>
   selections: Record<string, boolean>

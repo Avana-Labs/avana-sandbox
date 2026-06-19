@@ -7,12 +7,15 @@ import { toast } from "sonner"
 import { calculateSpokeCreditMetrics, formatFixed, parseFixed, type BorrowAction } from "@/app/lib/credit-engine"
 import { buildBorrowSessionSeed, getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
 import {
+  buildClaimBorrowAction,
   buildHomeBorrowPreview,
+  buildHomeClaimPreview,
   buildHomeRemovePreview,
   buildHomeRepayPreview,
   selectHomeBorrowTokensForMarket,
   selectHomeDebtContextForMarket,
   selectHomeDebtMap,
+  selectRewardClaimableTotals,
 } from "@/app/lib/borrow-system/home-runtime"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
@@ -20,9 +23,7 @@ import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import {
   HOME_CLAIM_POSITIONS,
   HOME_DEFAULT_SELECTIONS,
-  HOME_INITIAL_CLAIMABLE_TOTALS,
   HOME_INITIAL_CLAIM_SELECTIONS,
-  calculateClaimPreview,
   formatCompactUsd,
   formatHealthFactor,
   formatUsd,
@@ -97,7 +98,6 @@ export function HomePageClient() {
   const [repayPoolId, setRepayPoolId] = useState(defaultRepayPoolId)
   const [repayAmount, setRepayAmount] = useState("")
   const [claimSelections, setClaimSelections] = useState(() => ({ ...HOME_INITIAL_CLAIM_SELECTIONS }))
-  const [claimableTotals, setClaimableTotals] = useState(() => ({ ...HOME_INITIAL_CLAIMABLE_TOTALS }))
   const [claimAmount, setClaimAmount] = useState("")
   const [removePoolId, setRemovePoolId] = useState(defaultRemovePoolId)
   const [removePercent, setRemovePercent] = useState(HOME_DEFAULT_SELECTIONS.removePercent)
@@ -159,9 +159,10 @@ export function HomePageClient() {
     [repayAmount, repayDebtContext?.position.id, session.state, walletId],
   )
 
+  const claimableTotals = useMemo(() => selectRewardClaimableTotals(session.state, walletId), [session.state, walletId])
   const claimPreview = useMemo(
-    () => calculateClaimPreview(HOME_CLAIM_POSITIONS, claimableTotals, claimSelections, Number.parseFloat(claimAmount) || null),
-    [claimAmount, claimSelections, claimableTotals],
+    () => buildHomeClaimPreview(session.state, walletId, HOME_CLAIM_POSITIONS, claimSelections, Number.parseFloat(claimAmount) || null),
+    [claimAmount, claimSelections, session.state, walletId],
   )
 
   const removePool = useMemo(
@@ -315,6 +316,12 @@ export function HomePageClient() {
         }
 
         if (homeFlow.mode === "claim") {
+          const action = buildClaimBorrowAction(walletId, claimPreview)
+          if (!action) return
+
+          const result = await executeHomeAction(action)
+          if (!result) return
+
           const rows = Object.entries(claimPreview.tokenTotals)
             .filter(([, value]) => value > 0)
             .slice(0, 3)
@@ -324,25 +331,20 @@ export function HomePageClient() {
               tone: "positive" as const,
             }))
 
-          setClaimableTotals((currentValue) => {
-            const nextValue = { ...currentValue }
-            claimPreview.selectedPositionIds.forEach((positionId) => {
-              nextValue[positionId] = 0
-            })
-            return nextValue
-          })
           setClaimAmount("")
           setHomeFlow({
             mode: "claim",
             stage: "success",
-              success: {
-                amountLabel: formatUsd(claimPreview.effectiveClaimUsd),
-                title: "Claim successful",
-              description: "Fees claimed.",
+            success: {
+              amountLabel: formatUsd(claimPreview.effectiveClaimUsd),
+              title: result.receipt.status === "success" ? "Claim successful" : "Claim failed",
+              description: result.receipt.status === "success" ? "Fees claimed." : result.receipt.error ?? "Claim failed.",
               rows,
             },
           })
-          toast.success(`Claimed ${formatUsd(claimPreview.effectiveClaimUsd)} in fees`)
+          if (result.receipt.status === "success") {
+            toast.success(`Claimed ${formatUsd(claimPreview.effectiveClaimUsd)} in fees`)
+          }
           return
         }
 
