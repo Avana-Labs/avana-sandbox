@@ -1,4 +1,7 @@
 import type { BorrowAction, BorrowMarketRecord, BorrowSystemState } from "@/app/lib/credit-engine"
+import type { AssetDetail, PoolDetail } from "@/app/lib/borrow-detail"
+import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
+import type { PortfolioBorrowTabData } from "@/app/lib/data/providers/portfolio"
 
 export type TransactionActionType = "deposit" | "borrow" | "repay" | "withdraw" | "liquidate" | "claim"
 export type TransactionStatus = "idle" | "pending" | "success" | "failed"
@@ -85,6 +88,10 @@ export type BaseReadAdapter = {
   mode: "sandbox" | "production"
   readWalletSnapshot(walletId: string): Promise<WalletReadSnapshot>
   readMarkets(): Promise<BorrowMarketRecord[]>
+  readBorrowPage(walletId: string): Promise<BorrowPageData>
+  readPortfolioBorrow(walletId: string): Promise<PortfolioBorrowTabData>
+  readPoolDetail(poolId: string): Promise<PoolDetail | null>
+  readAssetDetail(assetId: string): Promise<AssetDetail | null>
 }
 
 export type SandboxReadAdapter = BaseReadAdapter & {
