@@ -11,10 +11,10 @@ import {
   BORROW_POOL_CATALOG,
   type BorrowAssetVisual,
   type BorrowPoolRow,
-  type BorrowableAsset,
   getDexById,
   getSpokeById,
 } from "@/app/lib/borrow-sim"
+import type { SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import type { AllocationRow, RiskLevel } from "./types"
 
 /**
@@ -60,13 +60,11 @@ export function riskScoreFromBps(bps: number): number {
  * so rounding drift doesn't leave the UI showing 99.7%).
  */
 export function computeAssetAllocation(
-  asset: BorrowableAsset,
+  asset: SpokeBorrowableRecord,
   pools: BorrowPoolRow[] = BORROW_POOL_CATALOG,
   limit = 6,
 ): AllocationRow[] {
-  const candidates = pools.filter((pool) =>
-    pool.borrowableTokens.some((token) => token.symbol.toUpperCase() === asset.symbol.toUpperCase()),
-  )
+  const candidates = pools.filter((pool) => asset.marketIds.includes(pool.id))
   if (candidates.length === 0) return []
 
   const weighted = candidates.map((pool) => {

@@ -71,6 +71,7 @@ export type BorrowPoolRow = {
   venue: string
   feeTier: string
   tvlUsd: number
+  change24hPct?: number
   spoke: BorrowSpokeId
   ltv: number
   dexes: DexChip[]

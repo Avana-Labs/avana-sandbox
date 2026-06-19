@@ -36,6 +36,11 @@ type TransactionFlowPanelProps = {
   onClose?: () => void
   className?: string
   variant?: "surface" | "bare"
+  simulated?: boolean
+  previewOnly?: boolean
+  receiptHash?: string | null
+  submitDisabled?: boolean
+  blockedReason?: string | null
 }
 
 type TransactionPageProgressBarProps = {
@@ -84,6 +89,11 @@ export function TransactionFlowPanel({
   onClose,
   className,
   variant = "surface",
+  simulated = false,
+  previewOnly = false,
+  receiptHash = null,
+  submitDisabled = false,
+  blockedReason = null,
 }: TransactionFlowPanelProps) {
   const titleText =
     stage === "approve"
@@ -226,6 +236,16 @@ export function TransactionFlowPanel({
             {useReviewHeading ? (
               <p className="mt-3 text-[15px] text-muted-foreground">{subtitle}</p>
             ) : null}
+            {simulated ? (
+              <span className="mt-3 inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-amber-700 dark:text-amber-300">
+                Simulated transaction
+              </span>
+            ) : null}
+            {previewOnly ? (
+              <span className="mt-2 inline-flex items-center rounded-full border border-border bg-surface-inset px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                Preview only
+              </span>
+            ) : null}
           </div>
 
           <div
@@ -291,6 +311,12 @@ export function TransactionFlowPanel({
             ) : null}
 
             {note ? <p className="mt-4 text-[12px] leading-5 text-muted-foreground">{note}</p> : null}
+            {blockedReason ? <p className="mt-4 text-[12px] font-medium leading-5 text-rose-600">{blockedReason}</p> : null}
+            {stage === "success" && receiptHash ? (
+              <p className="mt-4 text-[12px] text-muted-foreground">
+                Receipt: <span className="font-data text-foreground">{receiptHash}</span>
+              </p>
+            ) : null}
           </div>
 
         </div>
@@ -314,6 +340,7 @@ export function TransactionFlowPanel({
             type="button"
             className="h-12 w-full rounded-[14px] bg-[hsl(var(--brand))] text-[15px] text-white hover:bg-[hsl(var(--brand))]/90"
             onClick={onPrimary}
+            disabled={submitDisabled || Boolean(blockedReason && stage === "review")}
           >
             {primaryLabel}
           </Button>

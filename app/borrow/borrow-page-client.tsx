@@ -20,56 +20,23 @@ function formatUsd(value: number) {
 /** Borrow markets UI: hero-level metrics (from server-prepared data) + the 4-tab Borrow workspace. */
 export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
   const heroSectionClassName = "mb-4 px-1 md:px-2"
-  const { allPools, poolCatalog } = pageData
   const workspaceData: BorrowWorkspaceData = {
+    walletId: pageData.walletId,
+    borrowSessionSeed: pageData.borrowSessionSeed,
     poolCatalog: pageData.poolCatalog,
+    borrowableAssets: pageData.borrowableAssets,
     pendingRows: pageData.pendingRows,
     dexes: pageData.dexes,
     collateralPools: pageData.collateralPools,
     initialDebts: pageData.initialDebts,
+    borrowSnapshot: pageData.borrowSnapshot,
   }
-
-  const totalCollaterals = allPools.reduce((sum, pool) => sum + Math.max(pool.tvl, 0), 0)
-  const totalVolume24h = allPools.reduce((sum, pool) => sum + Math.max(pool.volume24h, 0), 0)
-  const totalTvlChangeWeighted = allPools.reduce((sum, pool) => sum + pool.change * Math.max(pool.tvl, 0), 0)
-  const weightedPoolApy =
-    totalCollaterals > 0 ? allPools.reduce((sum, pool) => sum + pool.apy * Math.max(pool.tvl, 0), 0) / totalCollaterals : 0
-
-  const maxLtv = 0.8
-  const utilizationRatio = Math.min(0.85, Math.max(0.5, 0.5 + (weightedPoolApy / 100) * 0.7))
-  const usedLtv = maxLtv * utilizationRatio
-  const totalLoans = totalCollaterals * usedLtv
-  const availableCredit = Math.max(totalCollaterals * maxLtv - totalLoans, 0)
-  const totalTvl = totalCollaterals + totalVolume24h * 0.12
-  const totalTvlChangeValue = totalCollaterals > 0 ? totalTvlChangeWeighted / totalCollaterals : 0
-
-  const metricsData = {
-    totalTvl,
-    collaterals: totalCollaterals,
-    availableCredit,
-    totalLoans,
-    totalTvlChange: totalTvlChangeValue,
-  }
-
-  const poolsWithLogos = poolCatalog.filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
-
-  const sortByMetric = (metric: "tvlUsd" | "availableUsd" | "apy") =>
-    [...poolsWithLogos]
-      .sort((left, right) => {
-        const leftValue =
-          metric === "tvlUsd" ? left.tvlUsd : metric === "availableUsd" ? left.availableUsd : (left.aprMin + left.aprMax) / 2
-        const rightValue =
-          metric === "tvlUsd" ? right.tvlUsd : metric === "availableUsd" ? right.availableUsd : (right.aprMin + right.aprMax) / 2
-        return rightValue - leftValue
-      })
-      .slice(0, 3)
-
   const heroCards = [
     {
       title: "Trending Collateral",
-      rows: sortByMetric("availableUsd").map((pool) => ({
+      rows: pageData.explore.trendingCollateral.map((pool) => ({
         id: `trending-${pool.id}`,
-        href: `/borrow/pool/${pool.id}`,
+        href: `/borrow/markets/${pool.id}`,
         pool,
         title: pool.name,
         subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
@@ -79,10 +46,10 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
       })),
     },
     {
-      title: "Rewards Pools",
-      rows: sortByMetric("tvlUsd").map((pool) => ({
-        id: `rewards-${pool.id}`,
-        href: `/borrow/pool/${pool.id}`,
+      title: "Top Markets",
+      rows: pageData.explore.topMarkets.map((pool) => ({
+        id: `top-${pool.id}`,
+        href: `/borrow/markets/${pool.id}`,
         pool,
         title: pool.name,
         subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
@@ -93,23 +60,20 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
     },
     {
       title: "High APY Pools",
-      rows: [...poolsWithLogos]
-        .sort((left, right) => (right.aprMin + right.aprMax) / 2 - (left.aprMin + left.aprMax) / 2)
-        .slice(0, 3)
-        .map((pool) => ({
-          id: `apy-${pool.id}`,
-          href: `/borrow/pool/${pool.id}`,
-          pool,
-          title: pool.name,
-          subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
-          value: formatCompactUsd(pool.tvlUsd),
-          delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
-          deltaClassName: "text-emerald-500",
-        })),
+      rows: pageData.explore.highApyPools.map((pool) => ({
+        id: `apy-${pool.id}`,
+        href: `/borrow/markets/${pool.id}`,
+        pool,
+        title: pool.name,
+        subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
+        value: formatCompactUsd(pool.tvlUsd),
+        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
+        deltaClassName: "text-emerald-500",
+      })),
     },
   ]
 
-  const totalTvlChange = metricsData.totalTvlChange
+  const totalTvlChange = pageData.heroMetrics.totalTvlChangePct
   const totalTvlChangeIsUp = totalTvlChange >= 0
   const totalTvlChangeLabel = `${totalTvlChangeIsUp ? "+" : ""}${totalTvlChange.toFixed(2)}%`
 
@@ -124,7 +88,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total TVL</p>
                     <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
-                      {formatUsd(metricsData.totalTvl)}
+                      {formatUsd(pageData.heroMetrics.totalTvlUsd)}
                     </p>
                     <span
                       className={cn(
@@ -148,7 +112,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
                     Total Collateral
                   </div>
                   <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-                    {formatUsd(metricsData.collaterals)}
+                    {formatUsd(pageData.heroMetrics.totalCollateralUsd)}
                   </p>
                 </div>
 
@@ -158,7 +122,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
                     Available Credit
                   </div>
                   <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-                    {formatUsd(metricsData.availableCredit)}
+                    {formatUsd(pageData.heroMetrics.availableCreditUsd)}
                   </p>
                 </div>
 
@@ -168,7 +132,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
                     Outstanding Loans
                   </div>
                   <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-                    {formatUsd(metricsData.totalLoans)}
+                    {formatUsd(pageData.heroMetrics.outstandingLoansUsd)}
                   </p>
                 </div>
               </div>
