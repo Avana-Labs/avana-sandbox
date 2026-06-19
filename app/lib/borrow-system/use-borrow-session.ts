@@ -1,8 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { applyBorrowAction, calculateCreditMetrics, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
 import { deserializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
+import type { SandboxActionResult, TransactionIntent } from "@/app/lib/borrow-system/contracts"
+import { SandboxTransactionAdapter } from "@/app/lib/borrow-system/sandbox-transaction-adapter"
 import {
   selectBorrowableAssets,
   selectBorrowCollateralPools,
@@ -21,6 +23,11 @@ export function useBorrowSession({
 }) {
   const seededState = useMemo(() => deserializeBorrowSystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<BorrowSystemState>(seededState)
+  const stateRef = useRef(state)
+
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
 
   useEffect(() => {
     setState(readBorrowSessionState(walletId, sessionSeed))
@@ -56,6 +63,28 @@ export function useBorrowSession({
     setState(seededState)
   }, [seededState, walletId])
 
+  const transactionAdapter = useMemo(
+    () =>
+      new SandboxTransactionAdapter({
+        readState: () => stateRef.current,
+        writeState: (nextState) => {
+          stateRef.current = nextState
+          setState(nextState)
+        },
+      }),
+    [],
+  )
+
+  const createIntent = useCallback((action: BorrowAction) => transactionAdapter.createIntent(action), [transactionAdapter])
+  const previewTransaction = useCallback(
+    (intent: TransactionIntent) => transactionAdapter.previewTransaction(intent),
+    [transactionAdapter],
+  )
+  const executeTransaction = useCallback(
+    (intent: TransactionIntent): Promise<SandboxActionResult> => transactionAdapter.executeTransaction(intent),
+    [transactionAdapter],
+  )
+
   const metrics = useMemo(() => calculateCreditMetrics(state, walletId), [state, walletId])
   const marketSummaries = useMemo(() => selectBorrowMarketSummaries(state, walletId), [state, walletId])
   const borrowableAssets = useMemo(() => selectBorrowableAssets(state, walletId), [state, walletId])
@@ -77,6 +106,9 @@ export function useBorrowSession({
     initialDebts,
     walletSnapshot,
     getBorrowableAssetsForMarket,
+    createIntent,
+    previewTransaction,
+    executeTransaction,
     dispatch,
     reset,
   }
