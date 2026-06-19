@@ -8,7 +8,6 @@ import { selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
 const createIntent = vi.fn()
 const previewTransaction = vi.fn()
 const executeTransaction = vi.fn()
-const dispatch = vi.fn()
 const walletId = "demo-wallet"
 const previewState = buildMockBorrowSystemState(walletId)
 const previewPool = selectBorrowCollateralPools(previewState, walletId).find((entry) => entry.id === "uni-v3-bluechip-weth-usdc")!
@@ -200,7 +199,6 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
       createIntent,
       previewTransaction,
       executeTransaction,
-      dispatch,
     }
   },
 }))
@@ -231,7 +229,6 @@ describe("detail sidebars", () => {
     await waitFor(() => expect(createIntent).toHaveBeenCalledTimes(3))
     expect(previewTransaction).toHaveBeenCalledTimes(3)
     expect(executeTransaction).toHaveBeenCalledTimes(3)
-    expect(dispatch).not.toHaveBeenCalled()
   })
 
   it("routes pool sidebar pledge and remove actions through transaction adapters", async () => {
@@ -247,6 +244,5 @@ describe("detail sidebars", () => {
     await waitFor(() => expect(createIntent).toHaveBeenCalledTimes(2))
     expect(previewTransaction).toHaveBeenCalledTimes(2)
     expect(executeTransaction).toHaveBeenCalledTimes(2)
-    expect(dispatch).not.toHaveBeenCalled()
   })
 })

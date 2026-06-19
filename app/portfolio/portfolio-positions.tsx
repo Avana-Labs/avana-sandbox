@@ -49,7 +49,6 @@ function toBorrowToken(asset: BorrowableAsset): HomeBorrowToken {
 
 type BorrowSessionAdapter = {
   state: BorrowSystemState
-  dispatch: (action: BorrowAction) => void
   getBorrowableAssetsForMarket: (marketId?: string) => BorrowableAsset[]
   createIntent: (action: BorrowAction) => { id: string }
   previewTransaction: (intent: { id: string }) => Promise<{ allowed: boolean; intent: { id: string } }>

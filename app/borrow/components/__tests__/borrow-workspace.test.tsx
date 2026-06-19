@@ -6,7 +6,6 @@ const push = vi.fn()
 const createIntent = vi.fn()
 const previewTransaction = vi.fn()
 const executeTransaction = vi.fn()
-const dispatch = vi.fn()
 
 const market = {
   id: "uni-v3-bluechip-weth-usdc",
@@ -81,7 +80,6 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
     createIntent,
     previewTransaction,
     executeTransaction,
-    dispatch,
   }),
 }))
 
@@ -141,7 +139,7 @@ vi.mock("@/app/borrow/components/supply-collateral-modal", () => ({
 }))
 
 describe("BorrowWorkspace", () => {
-  it("routes supply and borrow confirms through the transaction adapter instead of direct dispatch", async () => {
+  it("routes supply and borrow confirms through the transaction adapter", async () => {
     createIntent.mockImplementation((action) => ({ id: `intent-${action.type}`, payload: action }))
     previewTransaction.mockImplementation(async (intent) => ({ allowed: true, intent }))
     executeTransaction.mockResolvedValue({
@@ -173,6 +171,5 @@ describe("BorrowWorkspace", () => {
     await waitFor(() => expect(createIntent).toHaveBeenCalledTimes(2))
     expect(previewTransaction).toHaveBeenCalledTimes(2)
     expect(executeTransaction).toHaveBeenCalledTimes(2)
-    expect(dispatch).not.toHaveBeenCalled()
   })
 })
