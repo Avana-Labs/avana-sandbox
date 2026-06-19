@@ -187,6 +187,8 @@ export type BorrowAction =
       type: "liquidate"
       walletId: string
       positionId: string
+      debtPositionId?: string
+      liquidatorWalletId?: string
       repayAmountUsd6: bigint
       at?: number
     }
