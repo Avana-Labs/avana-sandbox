@@ -28,24 +28,25 @@ export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: stri
   const account = state.accounts[walletId]
   if (!account) return []
   const poolById = new Map(selectBorrowCollateralPools(state, walletId).map((pool) => [pool.id, pool]))
+  const rows: DebtRowContext[] = []
 
-  return account.debtPositions
-    .map((position) => {
-      const pool = position.marketId ? poolById.get(position.marketId) : null
-      if (!pool) return null
-      const borrowedUsd = fixedToNumber(currentDebtValueUsd6(position), 6)
-      return {
-        id: position.id,
-        pool,
-        borrowedUsd,
-        liquidationThresholdUsd: pool.liquidationUsd,
-        healthFactor: borrowedUsd > 0 ? pool.liquidationUsd / borrowedUsd : Number.POSITIVE_INFINITY,
-        borrowApr: fixedToNumber(position.borrowRateWad, 18) * 100,
-        accruedInterestUsd: fixedToNumber(debtInterestOwedUsd6(position), 6),
-        dailyInterestUsd: (borrowedUsd * (fixedToNumber(position.borrowRateWad, 18))) / 365,
-      }
+  for (const position of account.debtPositions) {
+    const pool = position.marketId ? poolById.get(position.marketId) : null
+    if (!pool) continue
+    const borrowedUsd = fixedToNumber(currentDebtValueUsd6(position), 6)
+    rows.push({
+      id: position.id,
+      pool,
+      borrowedUsd,
+      liquidationThresholdUsd: pool.liquidationUsd,
+      healthFactor: borrowedUsd > 0 ? pool.liquidationUsd / borrowedUsd : Number.POSITIVE_INFINITY,
+      borrowApr: fixedToNumber(position.borrowRateWad, 18) * 100,
+      accruedInterestUsd: fixedToNumber(debtInterestOwedUsd6(position), 6),
+      dailyInterestUsd: (borrowedUsd * fixedToNumber(position.borrowRateWad, 18)) / 365,
     })
-    .filter((row): row is DebtRowContext => Boolean(row))
+  }
+
+  return rows
 }
 
 export function selectBorrowSnapshot(state: BorrowSystemState, walletId: string): BorrowSnapshot {
