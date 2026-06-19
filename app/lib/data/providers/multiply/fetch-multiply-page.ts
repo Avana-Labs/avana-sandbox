@@ -7,6 +7,15 @@ import type { MultiplyPageData } from "./types"
 const multiplyPageSchema = z.object({
   markets: z.array(z.object({ symbol: z.string(), name: z.string(), price: z.number() }).passthrough()),
   lendRows: z.array(z.object({ protocol: z.string(), asset: z.string(), href: z.string() }).passthrough()),
+  trendingSnapshots: z.array(
+    z
+      .object({
+        marketId: z.string(),
+        label: z.string(),
+        href: z.string(),
+      })
+      .passthrough(),
+  ),
   pageSize: z.number().int().positive(),
   tokenBorrowApys: z.record(z.string(), z.string()),
   tokenLogos: z.record(z.string(), z.string()),
