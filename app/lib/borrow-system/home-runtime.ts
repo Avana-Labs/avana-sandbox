@@ -6,6 +6,7 @@ import {
   formatFixed,
   mulDiv,
   parseFixed,
+  type BorrowAction,
   type BorrowSystemState,
   type UserCollateralPosition,
   type UserDebtPosition,
