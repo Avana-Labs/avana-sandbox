@@ -287,7 +287,18 @@ export function buildHomeRemovePreview(
   const market = state.markets[marketId]
   const position = collateralPositionForMarket(state, walletId, marketId)
   if (!market || !position) {
-    throw new Error(`Unknown collateral position for ${marketId}`)
+    return {
+      percent,
+      safePercent: 0,
+      removeUsd: 0,
+      afterCollateralUsd: 0,
+      healthFactorAfter: null,
+      healthFactorAfterLabel: "—",
+      riskTone: "neutral",
+      isUnsafe: false,
+      liquidationThresholdAfterUsd: 0,
+      ctaLabel: "No collateral supplied",
+    }
   }
 
   const currentMetrics = calculateSpokeCreditMetrics(state, walletId, market.spokeId)

@@ -58,6 +58,15 @@ describe("home runtime", () => {
     expect(preview.safePercent).toBeLessThan(100)
   })
 
+  it("returns an empty remove preview when the wallet has no collateral in that market", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const preview = buildHomeRemovePreview(state, "demo-wallet", "aero-basic-volatile-well-weth", 25)
+
+    expect(preview.safePercent).toBe(0)
+    expect(preview.removeUsd).toBe(0)
+    expect(preview.ctaLabel).toBe("No collateral supplied")
+  })
+
   it("repay previews use the real debt position and improve health after repayment", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
     const debt = selectHomeDebtContextForMarket(state, "demo-wallet", "uni-v3-bluechip-weth-usdc")
