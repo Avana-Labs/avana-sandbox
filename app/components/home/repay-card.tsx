@@ -2,9 +2,9 @@
 
 import { ChevronDown } from "lucide-react"
 import {
-  HOME_BORROW_TOKENS,
   calculateRepayPreview,
   formatCompactUsd,
+  type HomeBorrowToken,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
@@ -13,6 +13,7 @@ import { PrimaryCardButton } from "./shared"
 
 export function CompactRepayCard({
   pool,
+  token,
   debtUsd,
   amount,
   preview,
@@ -26,6 +27,7 @@ export function CompactRepayCard({
   onSubmit,
 }: {
   pool: HomeCollateralPool
+  token: HomeBorrowToken | null
   debtUsd: number
   amount: string
   preview: ReturnType<typeof calculateRepayPreview>
@@ -38,6 +40,8 @@ export function CompactRepayCard({
   onSetMax: () => void
   onSubmit: () => void
 }) {
+  const repayAssetLabel = token?.symbol ?? "Repay asset"
+  const repayAssetVisual = token?.visual
   const wrapperClass = embedded
     ? "flex flex-col divide-y divide-border overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-none"
     : "flex flex-col gap-2.5"
@@ -113,14 +117,14 @@ export function CompactRepayCard({
 
         <div className={assetClass}>
           <span className="flex h-10 w-[3.2rem] items-center justify-center md:h-9 md:w-[2.75rem]">
-            <TokenBubble visual={HOME_BORROW_TOKENS[0].visual} className="size-10 shrink-0 md:size-8" />
+            {repayAssetVisual ? <TokenBubble visual={repayAssetVisual} className="size-10 shrink-0 md:size-8" /> : null}
           </span>
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="text-[12px] font-medium tracking-[0.02em] text-[hsl(var(--brand))] md:text-[11.5px]">
               Repay asset
             </span>
             <span className="truncate pt-1 text-[16px] font-medium text-foreground md:pt-0.5 md:text-[15px]">
-              USDC
+              {repayAssetLabel}
             </span>
           </span>
         </div>

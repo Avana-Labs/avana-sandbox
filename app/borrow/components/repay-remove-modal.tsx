@@ -209,6 +209,7 @@ export function RepayRemoveModal({ open, context, onClose, onConfirm }: Props) {
               ) : (
                 <CompactRepayCard
                   pool={pool}
+                  token={null}
                   debtUsd={currentDebtUsd}
                   amount={amountInput}
                   preview={repayPreview!}
