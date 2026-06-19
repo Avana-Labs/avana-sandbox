@@ -82,13 +82,23 @@ vi.mock("@/app/portfolio/use-portfolio-page", () => ({
   }),
 }))
 
-vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
-  useBorrowSession: () => ({
-    readAdapter: {
-      readPortfolioBorrow,
+vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  useAvanaSessions: () => ({
+    walletId: "demo-wallet",
+    borrow: {
+      readAdapter: {
+        readPortfolioBorrow,
+      },
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, assets: {}, accounts: {}, transactions: [] },
+      transactionHistory: [],
     },
-    state: { now: Date.UTC(2026, 5, 19), markets: {}, assets: {}, accounts: {}, transactions: [] },
-    transactionHistory: [],
+    multiply: {
+      readAdapter: {
+        readPortfolioMultiply: vi.fn(),
+      },
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
+      transactionHistory: [],
+    },
   }),
 }))
 
