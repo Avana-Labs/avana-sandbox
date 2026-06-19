@@ -38,7 +38,8 @@
  * ============================================================================
  */
 
-import type { BorrowAssetVisual, BorrowPoolRow, BorrowableAsset } from "@/app/lib/borrow-sim"
+import type { BorrowAssetVisual, BorrowPoolRow } from "@/app/lib/borrow-sim"
+import type { SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 
 // -------------------------------------------------------------------------
 // Primitive building blocks
@@ -414,7 +415,7 @@ export type AssetDetail = {
   transactions: TxHistoryRow[]
   related: RelatedAssetSummary[]
   /** Passthrough reference so sidebars can stay in sync. */
-  row: BorrowableAsset
+  row: SpokeBorrowableRecord
 }
 
 // -------------------------------------------------------------------------
