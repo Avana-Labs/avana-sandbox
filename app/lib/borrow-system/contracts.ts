@@ -1,6 +1,6 @@
 import type { BorrowAction, BorrowMarketRecord, BorrowSystemState } from "@/app/lib/credit-engine"
 
-export type TransactionActionType = BorrowAction["type"]
+export type TransactionActionType = "deposit" | "borrow" | "repay" | "withdraw" | "liquidate" | "claim"
 export type TransactionStatus = "idle" | "pending" | "success" | "failed"
 export type TransactionRiskLabel = "safe" | "warning" | "danger"
 
@@ -24,6 +24,7 @@ export type TransactionIntent = {
   amountUsd6: bigint
   requestedAt: number
   simulated: boolean
+  payload?: BorrowAction
 }
 
 export type TransactionPreview = {
