@@ -87,4 +87,20 @@ describe("credit engine action validation", () => {
     expect(result.allowed).toBe(true)
     expect(result.validationErrors).toEqual([])
   })
+
+  it.each([
+    ["borrow", { type: "borrow" as const, walletId: "wallet-1", marketId: EXAMPLE_UNI_MARKET_ID, assetId: EXAMPLE_UNI_USDC_ASSET_ID, amountUsd6: 0n }, "Borrow amount must be positive"],
+    ["repay", { type: "repay" as const, walletId: "wallet-1", debtPositionId: EXAMPLE_WALLET_1_DEBT_ID, amountUsd6: 0n }, "Repay amount must be positive"],
+    [
+      "supplyCollateral",
+      { type: "supplyCollateral" as const, walletId: "wallet-1", marketId: EXAMPLE_UNI_MARKET_ID, amountUsd6: 0n },
+      "Supply amount must be positive",
+    ],
+  ])("blocks invalid %s amounts with a clear validation error", (_label, action, message) => {
+    const state = makeExampleBorrowSystemState()
+    const result = validateAction(state, action)
+
+    expect(result.allowed).toBe(false)
+    expect(result.validationErrors).toContain(message)
+  })
 })
