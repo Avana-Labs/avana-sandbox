@@ -65,6 +65,7 @@ export type PortfolioBorrowTabData = {
     healthFactor: number | null
     pairApr: number
     feesUsd: number
+    feesLabel: string
   }>
   debtPositions: Array<{
     id: string

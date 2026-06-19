@@ -128,6 +128,10 @@ export function buildBorrowPageData(state: BorrowSystemState, walletId: string):
 
 export function buildPortfolioBorrowData(state: BorrowSystemState, walletId: string): PortfolioBorrowTabData {
   const snapshot = selectBorrowSnapshot(state, walletId)
+  const debtPositions = selectPortfolioDebtRows(state, walletId).map((position, index) => ({
+    ...position,
+    id: position.id ?? `${position.pool.id}:debt:${index}`,
+  }))
 
   return {
     creditLines: {
@@ -139,7 +143,7 @@ export function buildPortfolioBorrowData(state: BorrowSystemState, walletId: str
       totalCollateralUsd: snapshot.totalCollateralUsd,
     },
     collateralPositions: selectPortfolioSupplyRows(state, walletId),
-    debtPositions: selectPortfolioDebtRows(state, walletId),
+    debtPositions,
   }
 }
 
