@@ -223,10 +223,10 @@ export function PortfolioPositions({
           <Tabs value={marketsTab} onValueChange={(value) => setMarketsTab(value as "supplies" | "debts")}>
             <TabsList className="inline-flex w-max min-w-max justify-start">
               <TabsTrigger value="supplies" className="shrink-0 text-[14px] font-normal">
-                Collateral
+                Collateral Positions
               </TabsTrigger>
               <TabsTrigger value="debts" className="shrink-0 text-[14px] font-normal">
-                Borrowable
+                Debt Positions
               </TabsTrigger>
             </TabsList>
           </Tabs>
