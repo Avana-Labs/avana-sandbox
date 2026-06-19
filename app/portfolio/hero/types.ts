@@ -11,23 +11,3 @@ export type PortfolioHeroAction = {
   onClick?: () => void
   className?: string
 }
-
-export type NetworkId =
-  | "all"
-  | "ethereum"
-  | "unichain"
-  | "base"
-  | "arbitrum"
-  | "tempo"
-  | "monad"
-  | "solana"
-
-export type NetworkConfig = {
-  id: NetworkId
-  label: string
-  balance: string
-  delta: string
-  chartBase: number
-  chartVariance: number
-  isNew?: boolean
-}

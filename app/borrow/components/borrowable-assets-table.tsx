@@ -12,7 +12,11 @@ import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { cn } from "@/lib/utils"
 
-type AssetsTableProps = {
+const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
+const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
+const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+
+type BorrowableAssetsTableProps = {
   rows: BorrowableAsset[]
   onBorrow: (asset: BorrowableAsset) => void
   onViewMarket?: (asset: BorrowableAsset) => void
@@ -24,7 +28,13 @@ function formatAssetAmount(value: number, symbol: string) {
   return `${formatCompactUsd(value).replace(/^\$/, "")} ${symbol}`
 }
 
-export function AssetsPanel({ rows, onBorrow, onViewMarket, groupByCategory = true, variant = "default" }: AssetsTableProps) {
+export function BorrowableAssetsPanel({
+  rows,
+  onBorrow,
+  onViewMarket,
+  groupByCategory = true,
+  variant = "default",
+}: BorrowableAssetsTableProps) {
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
@@ -181,10 +191,13 @@ function LoanAssetsSection({
 
   const table = (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[920px] text-[12px]">
+          <table className="w-full min-w-[920px] text-[12px]">
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground dark:border-white/6 dark:text-white/52">
-                <th className="pb-3 pt-4 pl-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <tr className="bg-slate-50 text-left text-muted-foreground dark:bg-[#131820] dark:text-white/52">
+                <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  #
+                </th>
+                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -247,15 +260,18 @@ function LoanAssetsSection({
               </tr>
             </thead>
 
-            <tbody key={`loan-${sortKey}-${sortDirection}-${sortedAssets.length}`} className="divide-y divide-border dark:divide-white/6">
+            <tbody key={`loan-${sortKey}-${sortDirection}-${sortedAssets.length}`}>
               {sortedAssets.map((asset, index) => (
                 <tr
                   key={asset.id}
-                  className="asset-swap group cursor-pointer border-t border-border transition-colors hover:bg-surface-inset/60"
+                  className="asset-swap group cursor-pointer transition-colors"
                   onClick={() => onBorrow(asset)}
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
-                  <td className="py-2.5 pl-6 pr-4">
+                  <td className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                    {index + 1}
+                  </td>
+                  <td className={`py-2.5 px-4 ${ROW_HOVER_BG}`}>
                     <div className="flex min-w-0 items-center gap-4">
                       <TokenBubble visual={asset.visual} size="xl" ring={false} className="bg-transparent" />
                       <div className="min-w-0">
@@ -268,12 +284,12 @@ function LoanAssetsSection({
                       </div>
                     </div>
                   </td>
-                  <td className="py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
+                  <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px] ${ROW_HOVER_BG}`}>
                     <div className="flex items-center gap-2">
                       <span className="tabular-nums">{asset.borrowApr.toFixed(2)}%</span>
                     </div>
                   </td>
-                  <td className="py-2.5 px-4">
+                  <td className={`py-2.5 px-4 ${ROW_HOVER_BG}`}>
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
                       {formatAssetAmount(asset.totalBorrowedUsd, asset.symbol)}
                     </div>
@@ -281,7 +297,7 @@ function LoanAssetsSection({
                       {formatCompactUsd(asset.totalBorrowedUsd)}
                     </div>
                   </td>
-                  <td className="py-2.5 px-6">
+                  <td className={`py-2.5 px-6 ${ROW_HOVER_RIGHT}`}>
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
                       {formatAssetAmount(asset.availableUsd, asset.symbol)}
                     </div>
@@ -302,7 +318,7 @@ function LoanAssetsSection({
 
   return (
     <section className="space-y-5">
-      <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">{table}</div>
+    <div className="overflow-hidden rounded-[20px] bg-transparent">{table}</div>
     </section>
   )
 }
@@ -331,11 +347,12 @@ function AssetsSection({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1">
+      <div className="overflow-hidden rounded-radius-md bg-transparent">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] text-[13px]">
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
+              <tr className="bg-slate-50 text-left text-muted-foreground dark:bg-[#131820]">
+                <th className="pb-2 pt-3 pl-5 pr-3 text-[10.5px] font-medium uppercase tracking-[0.06em]">#</th>
                 <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">Asset</th>
                 <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Borrow APR</th>
                 <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Utilization</th>
@@ -345,34 +362,37 @@ function AssetsSection({
                 <th className="w-44 pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
-              {assets.map((asset) => (
-                <tr key={asset.id} className="transition-colors hover:bg-surface-inset/60">
-                  <td className="py-2.5 pl-5">
+            <tbody>
+              {assets.map((asset, index) => (
+                <tr key={asset.id} className="group transition-colors">
+                  <td className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                    {index + 1}
+                  </td>
+                  <td className={`py-2.5 pl-5 ${ROW_HOVER_BG}`}>
                     <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} size="md" />
                   </td>
-                  <td className="py-2.5 pl-4 text-right">
+                  <td className={`py-2.5 pl-4 text-right ${ROW_HOVER_BG}`}>
                     <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>
                       {asset.borrowApr.toFixed(1)}%
                     </span>
                   </td>
-                  <td className="py-2.5 pl-4 text-right">
+                  <td className={`py-2.5 pl-4 text-right ${ROW_HOVER_BG}`}>
                     <span className={cn("font-data text-[13px] font-medium tabular-nums", utilizationToneClass(asset.utilization))}>
                       {asset.utilization}%
                     </span>
                   </td>
-                  <td className="py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground">
+                  <td className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                     {formatCompactUsd(asset.availableUsd)}
                   </td>
-                  <td className={cn("py-2.5 pl-4 text-right font-data text-[13px] tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground")}>
+                  <td className={cn("py-2.5 pl-4 text-right font-data text-[13px] tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground", ROW_HOVER_BG)}>
                     {asset.walletBalanceLabel}
                   </td>
-                  <td className="py-2.5 pl-4">
+                  <td className={`py-2.5 pl-4 ${ROW_HOVER_BG}`}>
                     <div className="flex justify-end">
                       <TrendSpark isPositive={asset.trendUp} seed={`asset-${asset.id}`} values={asset.trendValues} />
                     </div>
                   </td>
-                  <td className="py-2.5 pl-4 pr-5 text-right">
+                  <td className={`py-2.5 pl-4 pr-5 text-right ${ROW_HOVER_RIGHT}`}>
                     <div className="inline-flex items-center gap-1.5">
                       <Link
                         href={`/borrow/assets/${asset.id}`}
