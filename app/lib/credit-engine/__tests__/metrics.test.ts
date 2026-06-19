@@ -78,6 +78,32 @@ describe("credit metrics", () => {
     expect(calculateBorrowCapacityUsd6(state, "wallet-1")).toBe(0n)
   })
 
+  it("returns zero borrow capacity when collateral value is zero", () => {
+    const state = makeExampleBorrowSystemState()
+    state.accounts["wallet-1"]!.collateralPositions = []
+
+    expect(calculateBorrowCapacityUsd6(state, "wallet-1")).toBe(0n)
+  })
+
+  it("applies lower borrow capacity for higher-risk volatile pool vs stable pool", () => {
+    const state = makeExampleBorrowSystemState()
+    const uniCapacity = calculateBorrowCapacityUsd6(state, "wallet-1", "uni-v3-bluechip")
+    const curveCapacity = calculateBorrowCapacityUsd6(state, "wallet-1", "curve-crypto")
+
+    expect(uniCapacity).toBeGreaterThan(curveCapacity)
+    expect(formatFixed(uniCapacity, 6)).toBe("10960.6068")
+    expect(formatFixed(curveCapacity, 6)).toBe("3519.7888")
+  })
+
+  it("never allows available credit above borrow capacity minus outstanding debt", () => {
+    const state = makeExampleBorrowSystemState()
+    const metrics = calculateCreditMetrics(state, "wallet-1")
+    const capacity = calculateBorrowCapacityUsd6(state, "wallet-1")
+
+    expect(metrics.availableCreditUsd6).toBeLessThanOrEqual(capacity)
+    expect(metrics.availableCreditUsd6).toBe(capacity - metrics.totalBorrowedUsd6)
+  })
+
   it("calculates current ltv from outstanding debt and collateral value", () => {
     const state = makeExampleBorrowSystemState()
 
@@ -132,5 +158,16 @@ describe("credit metrics", () => {
     expect(after).not.toBeNull()
     expect(after!).toBeLessThan(before!)
     expect(after!).toBeLessThan(parseFixed("1", 18))
+  })
+
+  it("flags unhealthy positions below the 1.0 health factor threshold", () => {
+    const state = makeExampleBorrowSystemState()
+    const debt = state.accounts["wallet-1"]!.debtPositions[0]!
+    debt.principalBorrowedUsd6 = parseFixed("20000", 6)
+    debt.debtSharesUsd6 = parseFixed("20000", 6)
+
+    const healthFactor = calculateHealthFactorWad(state, "wallet-1")
+    expect(healthFactor).not.toBeNull()
+    expect(healthFactor!).toBeLessThan(parseFixed("1", 18))
   })
 })
