@@ -35,6 +35,6 @@ export class SandboxMultiplyReadAdapter implements MultiplyReadAdapter {
   }
 
   async readPortfolioMultiply(walletId: string) {
-    return buildPortfolioMultiplyData(walletId, this.state)
+    return buildPortfolioMultiplyData(walletId, this.state, this.transactionHistory)
   }
 }
