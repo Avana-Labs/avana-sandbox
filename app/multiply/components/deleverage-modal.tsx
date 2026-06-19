@@ -14,6 +14,10 @@ function formatUsd(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
 }
 
+function formatPct(value: number) {
+  return `${(value * 100).toFixed(2)}%`
+}
+
 function formatMultiplier(value: number) {
   return `${value.toFixed(2)}x`
 }
@@ -94,9 +98,35 @@ export function DeleverageModal({
                 <dd className="mt-0.5 font-data tabular-nums">{formatUsd(preview.after.collateralValueUsd)}</dd>
               </div>
               <div>
+                <dt className="text-muted-foreground">LTV before</dt>
+                <dd className="mt-0.5 font-data tabular-nums">{formatPct(preview.before.ltv)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">LTV after</dt>
+                <dd className="mt-0.5 font-data tabular-nums">{formatPct(preview.after.ltv)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Liq. price before</dt>
+                <dd className="mt-0.5 font-data tabular-nums">
+                  {position.liquidationPrice ? formatUsd(position.liquidationPrice) : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Liq. price after</dt>
+                <dd className="mt-0.5 font-data tabular-nums">
+                  {preview.simulationSummary?.liquidationPrice ? formatUsd(preview.simulationSummary.liquidationPrice) : "—"}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-muted-foreground">Debt repaid</dt>
                 <dd className="mt-0.5 font-data tabular-nums">
                   {formatUsd(Math.max(0, preview.before.debtValueUsd - preview.after.debtValueUsd))}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Collateral released</dt>
+                <dd className="mt-0.5 font-data tabular-nums">
+                  {formatUsd(Math.max(0, preview.before.collateralValueUsd - preview.after.collateralValueUsd))}
                 </dd>
               </div>
               <div>

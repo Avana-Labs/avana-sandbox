@@ -320,6 +320,7 @@ function SingleSelectDropdown({
 
 type ExploreLoopsMarketsTableProps = {
   rows: MultiplyPageData["lendRows"]
+  trendingSnapshots: MultiplyPageData["trendingSnapshots"]
   pageSize: MultiplyPageData["pageSize"]
   tokenBorrowApys: MultiplyPageData["tokenBorrowApys"]
   tokenLogos: MultiplyPageData["tokenLogos"]
@@ -329,6 +330,7 @@ type ExploreLoopsMarketsTableProps = {
 
 export function ExploreLoopsMarketsTable({
   rows,
+  trendingSnapshots,
   pageSize,
   tokenBorrowApys,
   tokenLogos,
@@ -425,36 +427,20 @@ export function ExploreLoopsMarketsTable({
   const getAssetLogo = (asset: string) => tokenLogos[asset as keyof typeof tokenLogos]
   const getSupplyApy = (asset: string) => tokenSupplyApys[asset as keyof typeof tokenSupplyApys]
   const getBorrowApy = (asset: string) => tokenBorrowApys[asset as keyof typeof tokenBorrowApys]
-  const trendingRows = React.useMemo(() => {
-    const parsePct = (value?: string) => Number.parseFloat(value?.replace("%", "") ?? "")
-    const parseLeverage = (value?: string) => Number.parseFloat(value?.replace("x", "") ?? "")
-
-    return [...rows]
-      .filter((row) => parseLeverage(row.rewardRows?.[0]?.value) > 8)
-      .sort((a, b) => {
-        const apyDiff = parsePct(b.apy) - parsePct(a.apy)
-        if (apyDiff !== 0) return apyDiff
-        return parseLeverage(b.rewardRows?.[0]?.value) - parseLeverage(a.rewardRows?.[0]?.value)
-      })
-      .slice(0, 4)
-  }, [])
 
   return (
     <section className="mt-1 space-y-4">
       <div>
         <div>
           <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">Trending</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">Highest max-leverage APY markets in the sandbox catalog.</p>
         </div>
       </div>
 
       <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="grid min-w-max grid-flow-col gap-4 md:min-w-0 md:grid-flow-row md:grid-cols-2 xl:grid-cols-4">
-          {trendingRows.map((row) => (
-            <TrendingLoopCard
-              key={`${row.protocol}-${row.asset}`}
-              row={row}
-              borrowLogo={getAssetLogo(row.asset)}
-            />
+          {trendingSnapshots.map((snapshot) => (
+            <TrendingLoopCard key={snapshot.marketId} snapshot={snapshot} />
           ))}
         </div>
       </div>
@@ -735,17 +721,10 @@ export function ExploreLoopsMarketsTable({
   )
 }
 
-function TrendingLoopCard({
-  row,
-  borrowLogo,
-}: {
-  row: MultiplyPageData["lendRows"][number]
-  borrowLogo?: string
-}) {
-  const leverage = row.rewardRows?.[0]?.value ?? "—"
+function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSnapshots"][number] }) {
   return (
     <Link
-      href={row.href}
+      href={snapshot.href}
       className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-surface-raised p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:border-border/80 hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)]"
     >
       <div className="pointer-events-none absolute inset-0 z-0 opacity-100 [background-image:radial-gradient(circle,rgba(148,163,184,0.28)_1px,transparent_1.15px)] [background-position:0_4px] [background-size:16px_16px] dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1.15px)]" />
@@ -753,7 +732,7 @@ function TrendingLoopCard({
 
       <div className="pointer-events-none absolute -left-5 top-16 z-0 size-[274px] rounded-full opacity-10 blur-2xl saturate-150">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-full rounded-full object-cover" />
+        <img src={snapshot.collateralLogo} alt="" aria-hidden="true" className="size-full rounded-full object-cover" />
       </div>
 
       <div className="relative z-10 mb-3 flex items-start justify-between gap-3">
@@ -761,38 +740,33 @@ function TrendingLoopCard({
           <div className="relative flex h-10 w-[62px] items-center">
             <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={row.protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+              <img src={snapshot.collateralLogo} alt="" aria-hidden="true" className="size-full object-cover" />
             </div>
             <div className="absolute left-5 top-0 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={borrowLogo ?? row.protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+              <img src={snapshot.borrowLogo || snapshot.collateralLogo} alt="" aria-hidden="true" className="size-full object-cover" />
             </div>
           </div>
         </div>
         <span className="inline-flex h-8 items-center rounded-full bg-[hsl(var(--brand-soft))] px-3 text-[13px] font-medium text-[hsl(var(--brand))] dark:bg-[hsl(var(--brand-soft))]/20">
-          {leverage}
+          {snapshot.maxLeverageLabel}
         </span>
       </div>
 
       <div className="relative z-10 space-y-3">
-        <h3 className="font-compact text-[15px] font-medium tracking-tight text-foreground">{row.protocol}-{row.asset}</h3>
+        <h3 className="font-compact text-[15px] font-medium tracking-tight text-foreground">{snapshot.label}</h3>
 
         <div className="space-y-2.5">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[12px] leading-none text-muted-foreground">APY</span>
-            <span
-              className={cn(
-                "font-data text-[14px] font-medium tabular-nums leading-none",
-                row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400",
-              )}
-            >
-              {row.apy}
+            <span className="font-data text-[14px] font-medium tabular-nums leading-none text-emerald-600 dark:text-emerald-400">
+              {snapshot.apyLabel}
             </span>
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[12px] leading-none text-muted-foreground">Available</span>
             <span className="font-data text-[14px] font-medium tabular-nums leading-none text-foreground dark:text-white/88">
-              {row.points ?? "—"}
+              {snapshot.availableLabel}
             </span>
           </div>
         </div>
