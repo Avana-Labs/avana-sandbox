@@ -1,24 +1,21 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { ArrowLeft, ArrowRight, Lock } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { formatFixed, parseFixed } from "@/app/lib/credit-engine"
+import { BorrowActionBox } from "@/app/borrow/components/borrow-action-box"
+import { buildHomeBorrowPreview } from "@/app/lib/borrow-system/modal-preview-runtime"
+import type { BorrowModalSession } from "@/app/lib/borrow-system/modal-session"
+import { useBorrowActionBox } from "@/app/lib/borrow-system/use-borrow-action-box"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/components/transaction-flow"
 import {
   HOME_BORROW_TOKENS,
   HOME_COLLATERAL_POOLS,
-  type BorrowPreview,
-  formatHealthFactor,
   type HomeBorrowToken,
   type HomeCollateralPool,
-  formatUsdExact,
   homeVisualToBorrowVisual,
 } from "@/app/lib/data/borrow-domain"
 import { HomeBorrowPanel } from "@/app/components/home-borrow-panel"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
-import { PillButton, TokenBubble } from "./atoms"
-
-type ModalStage = "entry" | TransactionFlowStage
 
 export type BorrowModalContext = {
   pool: HomeCollateralPool
@@ -34,11 +31,14 @@ export type BorrowModalResult = {
   healthFactorBefore: number | null
   healthFactorAfter: number | null
   remainingBorrowPowerUsd: number
+  receiptHash?: string
 }
 
 type BorrowModalProps = {
   open: boolean
   context: BorrowModalContext | null
+  borrowSession: BorrowModalSession
+  walletId: string
   initialAmount?: string
   initialTokenId?: string | null
   startStage?: "entry" | "review"
@@ -46,45 +46,23 @@ type BorrowModalProps = {
   onConfirm: (result: BorrowModalResult) => void
 }
 
-function buildBorrowPreview(pool: HomeCollateralPool, currentDebtUsd: number, amountUsd: number): BorrowPreview {
-  const projectedDebtUsd = currentDebtUsd + amountUsd
-  const healthFactor = projectedDebtUsd > 0 ? pool.liquidationUsd / projectedDebtUsd : Number.POSITIVE_INFINITY
-  const exceedsBorrowPower = projectedDebtUsd > pool.borrowPowerUsd
-
-  return {
-    amountUsd,
-    amountLabel: formatUsdExact(amountUsd),
-    isEmpty: amountUsd <= 0,
-    isValid: amountUsd > 0 && !exceedsBorrowPower,
-    exceedsBorrowPower,
-    healthFactor: Number.isFinite(healthFactor) ? healthFactor : null,
-    healthFactorLabel: formatHealthFactor(Number.isFinite(healthFactor) ? healthFactor : null),
-    riskTone: exceedsBorrowPower ? "danger" : healthFactor < 1.2 ? "danger" : healthFactor < 1.5 ? "warning" : "positive",
-    progressPercent: Math.min(100, Math.max(0, (projectedDebtUsd / Math.max(pool.borrowPowerUsd, 1)) * 100)),
-    remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - projectedDebtUsd),
-    warningTitle: exceedsBorrowPower ? "Borrowing power exceeded" : healthFactor < 1.2 ? "Credit health is weak" : null,
-    warningMessage: exceedsBorrowPower
-      ? "Reduce the amount or add more collateral before borrowing."
-      : healthFactor < 1.2
-        ? "This borrow would move the position close to liquidation."
-        : null,
-    ctaLabel: exceedsBorrowPower ? "Adjust amount" : "Review borrow",
-  }
-}
-
 export function BorrowModal({
   open,
   context,
+  borrowSession,
+  walletId,
   initialAmount,
   initialTokenId,
   startStage = "entry",
   onClose,
   onConfirm,
 }: BorrowModalProps) {
-  const [amountInput, setAmountInput] = useState("")
-  const [tokenId, setTokenId] = useState("usdc")
-  const [stage, setStage] = useState<ModalStage>("entry")
+  const actionBox = useBorrowActionBox(borrowSession)
+  const [amountInput, setAmountInput] = useState(initialAmount ?? "")
+  const [tokenId, setTokenId] = useState(initialTokenId ?? context?.defaultTokenId ?? context?.tokenOptions?.[0]?.id ?? "usdc")
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false)
+  const [flowStarted, setFlowStarted] = useState(startStage === "review")
+  const [pendingReviewAdvance, setPendingReviewAdvance] = useState(false)
   const tokenOptions = context?.tokenOptions ?? []
   const availableTokens = tokenOptions.length > 0 ? tokenOptions : HOME_BORROW_TOKENS
 
@@ -92,9 +70,11 @@ export function BorrowModal({
     if (open && context) {
       setAmountInput(initialAmount ?? "")
       setTokenId(initialTokenId ?? context.defaultTokenId ?? context.tokenOptions?.[0]?.id ?? "usdc")
-      setStage(startStage)
+      setFlowStarted(startStage === "review")
       setTokenPickerOpen(false)
+      actionBox.reset()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when modal opens only
   }, [initialAmount, initialTokenId, open, context, startStage])
 
   const token = useMemo(
@@ -106,185 +86,88 @@ export function BorrowModal({
   const safeAmountUsd = Number.isFinite(amountUsd) && amountUsd > 0 ? amountUsd : 0
 
   const preview = useMemo(() => {
-    if (!context) return null
-    return buildBorrowPreview(context.pool, context.currentDebtUsd, safeAmountUsd)
-  }, [context, safeAmountUsd])
+    if (!context || !token) return null
+    return buildHomeBorrowPreview(borrowSession.state, walletId, context.pool.id, token.id, safeAmountUsd)
+  }, [borrowSession.state, context, safeAmountUsd, token, walletId])
 
   const pool = context?.pool ?? HOME_COLLATERAL_POOLS[0]
-  const currentDebtUsd = context?.currentDebtUsd ?? 0
-  const visuals = pool.visuals.map(homeVisualToBorrowVisual) as [
-    ReturnType<typeof homeVisualToBorrowVisual>,
-    ReturnType<typeof homeVisualToBorrowVisual>,
-  ]
-  const currentHealthFactor = currentDebtUsd > 0 ? pool.liquidationUsd / currentDebtUsd : Number.POSITIVE_INFINITY
-  const projectedDebtUsd = currentDebtUsd + safeAmountUsd
-  const projectedHealthFactor = projectedDebtUsd > 0 ? pool.liquidationUsd / projectedDebtUsd : Number.POSITIVE_INFINITY
-  const aaveFooterNote = (
-    <>
-      Powered by Aave v4.{" "}
-      <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
-        Learn More
-      </a>
-    </>
-  )
+
+  const handleClose = useCallback(() => {
+    if (actionBox.stage === "processing" || borrowSession.isPending) return
+    setFlowStarted(false)
+    actionBox.reset()
+    onClose()
+  }, [actionBox, borrowSession.isPending, onClose])
+
+  const startReviewFlow = useCallback(async () => {
+    if (!context || !token || !preview?.isValid) return
+
+    await actionBox.prepareAction({
+      type: "borrow",
+      walletId,
+      marketId: context.pool.id,
+      assetId: token.id,
+      amountUsd6: parseFixed(safeAmountUsd.toFixed(6), 6),
+    })
+    setFlowStarted(true)
+    setPendingReviewAdvance(true)
+  }, [actionBox, context, preview?.isValid, safeAmountUsd, token, walletId])
 
   useEffect(() => {
-    if (stage !== "processing") {
+    if (!pendingReviewAdvance || actionBox.stage !== "preview" || !actionBox.previewUi?.allowed) {
       return
     }
 
-    const timer = window.setTimeout(() => {
+    setPendingReviewAdvance(false)
+    void actionBox.advance()
+  }, [actionBox, pendingReviewAdvance])
+
+  useEffect(() => {
+    if (!open || !context || startStage !== "review" || flowStarted) return
+    if (safeAmountUsd <= 0 || !token) return
+    void startReviewFlow()
+  }, [context, flowStarted, open, safeAmountUsd, startReviewFlow, startStage, token])
+
+  const handlePrimary = useCallback(async () => {
+    if (actionBox.stage === "success") {
+      const transactionPreview = actionBox.preview
+      const healthFactorBefore = transactionPreview?.before.healthFactorWad
+      const healthFactorAfter = transactionPreview?.after.healthFactorWad
       onConfirm({
         pool,
-        token: token ?? { id: "usdc", name: "USD Coin", symbol: "USDC", subtitle: "Stablecoin", borrowApr: 0, visual: pool.visuals[0] },
+        token: token ?? availableTokens[0]!,
         amountUsd: safeAmountUsd,
-        healthFactorBefore: Number.isFinite(currentHealthFactor) ? currentHealthFactor : null,
-        healthFactorAfter: Number.isFinite(projectedHealthFactor) ? projectedHealthFactor : null,
-        remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - projectedDebtUsd),
+        healthFactorBefore: healthFactorBefore ? Number.parseFloat(formatFixed(healthFactorBefore, 18)) : null,
+        healthFactorAfter: healthFactorAfter ? Number.parseFloat(formatFixed(healthFactorAfter, 18)) : null,
+        remainingBorrowPowerUsd: transactionPreview
+          ? Number.parseFloat(formatFixed(transactionPreview.after.availableBorrowCapacityUsd6, 6))
+          : preview?.remainingBorrowPowerUsd ?? 0,
+        receiptHash: actionBox.successUi?.receipt.hash,
       })
-      setStage("success")
-    }, 5000)
+      handleClose()
+      return
+    }
 
-    return () => window.clearTimeout(timer)
-  }, [currentHealthFactor, onConfirm, pool, projectedDebtUsd, projectedHealthFactor, safeAmountUsd, stage, token])
+    if (actionBox.stage === "approve") {
+      await actionBox.advance()
+      return
+    }
+
+    await actionBox.advance()
+  }, [actionBox, availableTokens, handleClose, onConfirm, pool, preview?.remainingBorrowPowerUsd, safeAmountUsd, token])
+
+  const primaryLabel =
+    actionBox.stage === "success"
+      ? "Done"
+      : actionBox.stage === "approve"
+        ? "Approve wallet"
+        : actionBox.stage === "review"
+          ? "Borrow now"
+          : (actionBox.previewUi?.ctaLabel ?? "Continue")
 
   if (!context || !preview || !token) {
     return null
   }
-
-  const flowRows = [
-    { label: "Collateral", value: `${pool.name} · ${formatUsdExact(pool.collateralUsd)}` },
-    { label: "Current debt", value: formatUsdExact(currentDebtUsd) },
-    { label: "Borrow APR", value: `${token.borrowApr.toFixed(1)}%`, tone: "warning" as const },
-    {
-      label: "Health factor",
-      value: `${formatHealthFactor(currentHealthFactor)} -> ${formatHealthFactor(projectedHealthFactor)}`,
-      tone: projectedHealthFactor < 1.5 ? "danger" as const : "positive" as const,
-    },
-  ]
-
-  const handleClose = () => {
-    if (stage === "processing") return
-    setStage("entry")
-    onClose()
-  }
-
-  const renderReview = () => (
-    <div className="flex h-full min-h-0 flex-col bg-background sm:h-auto">
-      <div className="px-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-5 sm:pt-5">
-        <button
-          type="button"
-          onClick={() => setStage("entry")}
-          className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Back"
-        >
-          <ArrowLeft className="size-4" />
-        </button>
-      </div>
-
-      <div className="flex flex-1 flex-col px-5 pt-5 sm:px-8 sm:pt-6">
-        <div className="flex flex-col items-center text-center">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <TokenBubble visual={visuals[0]} size="xl" className="ring-0" />
-              <span className="absolute -bottom-0.5 -right-0.5 inline-flex size-5 items-center justify-center rounded-full border border-border bg-background">
-                <Lock className="size-2.5 text-foreground" />
-              </span>
-            </div>
-            <ArrowRight className="size-4 text-foreground" aria-hidden />
-            <TokenBubble visual={homeVisualToBorrowVisual(token.visual)} size="xl" className="ring-0" />
-          </div>
-
-          <h2 className="mt-5 font-sans text-[clamp(2rem,5vw,3rem)] font-medium tracking-tight text-foreground">
-            Borrow {formatUsdExact(safeAmountUsd)} in {token.symbol}
-          </h2>
-          <p className="mt-2 text-[15px] text-muted-foreground">
-            with {visuals[0].symbol} as collateral
-          </p>
-        </div>
-
-        <div className="mt-10 space-y-5">
-          <ReviewRow label="Receive" value={`${safeAmountUsd.toFixed(0)} ${token.symbol}`} />
-          <ReviewRow label="Collateral" value={`${(pool.collateralUsd / Math.max(pool.liquidationUsd, 1)).toFixed(5)} ${visuals[0].symbol}`} />
-          <ReviewRow label="Borrowing power used" value={`${Math.min(100, (projectedDebtUsd / Math.max(pool.borrowPowerUsd, 1)) * 100).toFixed(0)}%`} tone="positive" />
-          <ReviewRow label="Liquidation price" value={`${pool.liquidationUsd.toLocaleString("en-US", { maximumFractionDigits: 6 })} ${token.symbol}`} />
-          <ReviewRow label="Variable interest rate" value={`${token.borrowApr.toFixed(2)}%`} />
-        </div>
-
-      </div>
-
-      <div className="border-t border-border px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-8 sm:pb-5">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-            <div className="text-[13px] font-medium text-foreground">Fees paid</div>
-            <div className="mt-0.5 text-[12px] text-muted-foreground">Estimated transaction cost</div>
-            </div>
-            <div className="font-data text-[22px] font-medium tracking-tight text-foreground">
-            $0
-            </div>
-          </div>
-
-        <PillButton
-          variant="primary"
-          size="md"
-          className="mt-4 h-12 w-full rounded-[14px] bg-[hsl(var(--brand))] text-[15px] text-white shadow-elev-1 hover:bg-[hsl(var(--brand))]/90"
-          onClick={() => setStage("approve")}
-        >
-          Borrow now
-        </PillButton>
-
-        <div className="mt-3 text-center text-[12px] text-muted-foreground">
-          Powered by Aave v4.{" "}
-          <a
-            href="https://aave.com/docs/aave-v4"
-            target="_blank"
-            rel="noreferrer"
-            className="text-accent-emphasis"
-          >
-            Learn More
-          </a>
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderFlow = () => (
-    <TransactionFlowPanel
-      stage={stage as TransactionFlowStage}
-      actionLabel="borrow"
-      amountLabel={`${safeAmountUsd.toFixed(0)} ${token.symbol}`}
-      title="Borrow successful"
-      subtitle={
-        stage === "success"
-          ? "Borrow completed."
-          : `Borrow against ${pool.name}.`
-      }
-      visual={<TokenBubble visual={homeVisualToBorrowVisual(token.visual)} size="sm" />}
-      rows={
-        stage === "success"
-          ? [
-              { label: "Borrow APR", value: `${token.borrowApr.toFixed(1)}%`, tone: "warning" as const },
-              { label: "Health factor", value: formatHealthFactor(projectedHealthFactor), tone: "positive" as const },
-              { label: "Remaining borrow power", value: formatUsdExact(Math.max(0, pool.borrowPowerUsd - projectedDebtUsd)) },
-            ]
-          : flowRows
-      }
-      note={
-        preview.warningTitle ? "Borrow carefully." : undefined
-      }
-      footerNote={aaveFooterNote}
-      primaryLabel={stage === "review" ? "Borrow now" : stage === "approve" ? "Approve wallet" : "Done"}
-      onPrimary={() => {
-        if (stage === "review") setStage("approve")
-        else if (stage === "approve") setStage("processing")
-        else handleClose()
-      }}
-      onBack={() => setStage("entry")}
-      onClose={handleClose}
-      className="rounded-none border-0 bg-transparent shadow-none"
-      variant="bare"
-    />
-  )
 
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? handleClose() : null)}>
@@ -294,7 +177,7 @@ export function BorrowModal({
         className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-md overflow-hidden rounded-radius-md border border-border bg-background p-0 shadow-elev-3"
       >
         <DialogTitle className="sr-only">Borrow against collateral</DialogTitle>
-        {stage === "entry" ? (
+        {!flowStarted ? (
           <div className="flex h-full min-h-0 flex-col bg-background sm:h-auto">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:px-8 sm:pb-5 sm:pt-6">
               <HomeBorrowPanel
@@ -308,11 +191,16 @@ export function BorrowModal({
                 onAmountChange={setAmountInput}
                 onOpenPoolSheet={() => {}}
                 onOpenTokenSheet={() => setTokenPickerOpen(true)}
-                onSubmit={() => setStage("review")}
+                onSubmit={() => {
+                  void startReviewFlow()
+                }}
               />
 
               <div className="mt-auto pt-3 text-center text-[12px] text-muted-foreground">
-                {aaveFooterNote}
+                Powered by Aave v4.{" "}
+                <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
+                  Learn More
+                </a>
               </div>
             </div>
 
@@ -327,31 +215,29 @@ export function BorrowModal({
               }}
             />
           </div>
-        ) : stage === "review" ? (
-          renderReview()
         ) : (
-          renderFlow()
+          <BorrowActionBox
+            stage={actionBox.stage}
+            actionLabel="borrow"
+            amountLabel={`${safeAmountUsd.toFixed(0)} ${token.symbol}`}
+            title="Borrow successful"
+            subtitle={`Borrow against ${pool.name}.`}
+            previewUi={actionBox.previewUi}
+            successUi={actionBox.successUi}
+            simulated
+            isPending={borrowSession.isPending}
+            primaryLabel={primaryLabel}
+            onPrimary={() => {
+              void handlePrimary()
+            }}
+            onBack={() => {
+              setFlowStarted(false)
+              actionBox.reset()
+            }}
+            onClose={handleClose}
+          />
         )}
       </DialogContent>
     </Dialog>
-  )
-}
-
-function ReviewRow({
-  label,
-  value,
-  tone = "default",
-}: {
-  label: string
-  value: string
-  tone?: "default" | "positive"
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-[14px] text-foreground">{label}</span>
-      <span className={tone === "positive" ? "text-[14px] font-medium text-emerald-600" : "text-[14px] font-medium text-foreground"}>
-        {value}
-      </span>
-    </div>
   )
 }
