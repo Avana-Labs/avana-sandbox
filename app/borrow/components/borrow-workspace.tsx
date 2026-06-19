@@ -200,38 +200,13 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
     [marketSpokeById, session, supplies],
   )
 
-  const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
-    const action = {
-      type: "borrow",
-      walletId,
-      marketId: result.pool.id,
-      assetId: result.token.id,
-      amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-    } as const
+  const handleBorrowConfirm = useCallback((_result: BorrowModalResult) => {
+    setBorrowModal({ open: false, context: null })
+  }, [])
 
-    void (async () => {
-      const intent = session.createIntent(action)
-      const preview = await session.previewTransaction(intent)
-      if (!preview.allowed) return
-      await session.executeTransaction(preview.intent)
-    })()
-  }, [session, walletId])
-
-  const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
-    const action = {
-      type: "supplyCollateral",
-      walletId,
-      marketId: result.pool.id,
-      amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-    } as const
-
-    void (async () => {
-      const intent = session.createIntent(action)
-      const preview = await session.previewTransaction(intent)
-      if (!preview.allowed) return
-      await session.executeTransaction(preview.intent)
-    })()
-  }, [session, walletId])
+  const handleSupplyConfirm = useCallback((_result: SupplyCollateralResult) => {
+    setSupplyModal({ open: false, context: null })
+  }, [])
 
   return (
     <section className="pb-16">
@@ -274,6 +249,8 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
       <BorrowModal
         open={borrowModal.open}
         context={borrowModal.context}
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setBorrowModal({ open: false, context: null })}
         onConfirm={handleBorrowConfirm}
       />
@@ -281,6 +258,8 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
       <SupplyCollateralModal
         open={supplyModal.open}
         context={supplyModal.context}
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setSupplyModal({ open: false, context: null })}
         onConfirm={handleSupplyConfirm}
       />

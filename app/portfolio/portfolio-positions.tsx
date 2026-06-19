@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { parseFixed, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
+import { type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
 import type { SandboxActionResult, TransactionIntent, TransactionPreview } from "@/app/lib/borrow-system/contracts"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
@@ -54,6 +54,7 @@ type BorrowSessionAdapter = {
   createIntent: (action: BorrowAction) => TransactionIntent
   previewTransaction: (intent: TransactionIntent) => Promise<TransactionPreview>
   executeTransaction: (intent: TransactionIntent) => Promise<SandboxActionResult>
+  isPending: boolean
 }
 
 export function PortfolioPositions({
@@ -106,17 +107,6 @@ export function PortfolioPositions({
     return { totalBorrowed, totalCollateral, accruedInterest, averageHf, dailyInterest }
   }, [debtsRows])
 
-  const executeAction = useCallback(
-    async (action: BorrowAction) => {
-      if (!borrowSession) return
-      const intent = borrowSession.createIntent(action)
-      const preview = await borrowSession.previewTransaction(intent)
-      if (!preview.allowed) return
-      await borrowSession.executeTransaction(preview.intent)
-    },
-    [borrowSession],
-  )
-
   const handleSupplyBorrowMore = useCallback((context: SupplyRowContext) => {
     const tokenOptions = borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken) ?? []
     setBorrowModal({
@@ -153,19 +143,37 @@ export function PortfolioPositions({
     setSupplyModal({ open: true, context: { pool: borrowPoolRow } })
   }, [])
 
-  const handleSupplyRemove = useCallback((context: SupplyRowContext) => {
-    setRepayRemoveModal({
-      open: true,
-      context: { pool: context.pool, currentDebtUsd: context.borrowedUsd, mode: "remove" },
-    })
-  }, [])
+  const handleSupplyRemove = useCallback(
+    (context: SupplyRowContext) => {
+      const position = borrowSession?.state.accounts[walletId ?? ""]?.collateralPositions.find((entry) => entry.marketId === context.pool.id)
+      setRepayRemoveModal({
+        open: true,
+        context: {
+          pool: context.pool,
+          currentDebtUsd: context.borrowedUsd,
+          mode: "remove",
+          collateralPositionId: position?.id,
+        },
+      })
+    },
+    [borrowSession?.state.accounts, walletId],
+  )
 
-  const handleDebtRepay = useCallback((context: DebtRowContext) => {
-    setRepayRemoveModal({
-      open: true,
-      context: { pool: context.pool, currentDebtUsd: context.borrowedUsd, mode: "repay", borrowApr: context.borrowApr },
-    })
-  }, [])
+  const handleDebtRepay = useCallback(
+    (context: DebtRowContext) => {
+      setRepayRemoveModal({
+        open: true,
+        context: {
+          pool: context.pool,
+          currentDebtUsd: context.borrowedUsd,
+          mode: "repay",
+          borrowApr: context.borrowApr,
+          debtPositionId: context.id,
+        },
+      })
+    },
+    [],
+  )
 
   const handleDebtManage = useCallback((context: DebtRowContext) => {
     const tokenOptions = borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken) ?? []
@@ -183,50 +191,17 @@ export function PortfolioPositions({
     })
   }, [borrowSession, walletId])
 
-  const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
-    if (!borrowSession || !walletId) return
-    void executeAction({
-      type: "supplyCollateral",
-      walletId,
-      marketId: result.pool.id,
-      amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-    })
-  }, [borrowSession, executeAction, walletId])
+  const handleBorrowConfirm = useCallback((_result: BorrowModalResult) => {
+    setBorrowModal({ open: false, context: null })
+  }, [])
 
-  const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
-    if (!borrowSession || !walletId) return
-    void executeAction({
-      type: "borrow",
-      walletId,
-      marketId: result.pool.id,
-      assetId: result.token.id,
-      amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-    })
-  }, [borrowSession, executeAction, walletId])
+  const handleSupplyConfirm = useCallback((_result: SupplyCollateralResult) => {
+    setSupplyModal({ open: false, context: null })
+  }, [])
 
-  const handleRepayRemoveConfirm = useCallback((result: RepayRemoveResult) => {
-    if (!borrowSession || !walletId) return
-    if (result.mode === "repay") {
-      const debtRow = debtPositions.find((row) => row.pool.id === result.pool.id)
-      if (!debtRow?.id) return
-      void executeAction({
-        type: "repay",
-        walletId,
-        debtPositionId: debtRow.id,
-        amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-      })
-      return
-    }
-
-    const position = borrowSession.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === result.pool.id)
-    if (!position) return
-    void executeAction({
-      type: "removeCollateral",
-      walletId,
-      positionId: position.id,
-      amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-    })
-  }, [borrowSession, debtPositions, executeAction, walletId])
+  const handleRepayRemoveConfirm = useCallback((_result: RepayRemoveResult) => {
+    setRepayRemoveModal({ open: false, context: null })
+  }, [])
 
   return (
     <section className="space-y-8">
@@ -303,6 +278,8 @@ export function PortfolioPositions({
       <BorrowModal
         open={borrowModal.open}
         context={borrowModal.context}
+        borrowSession={borrowSession!}
+        walletId={walletId ?? "demo-wallet"}
         onClose={() => setBorrowModal({ open: false, context: null })}
         onConfirm={handleBorrowConfirm}
       />
@@ -310,6 +287,8 @@ export function PortfolioPositions({
       <SupplyCollateralModal
         open={supplyModal.open}
         context={supplyModal.context}
+        borrowSession={borrowSession!}
+        walletId={walletId ?? "demo-wallet"}
         onClose={() => setSupplyModal({ open: false, context: null })}
         onConfirm={handleSupplyConfirm}
       />
@@ -317,6 +296,8 @@ export function PortfolioPositions({
       <RepayRemoveModal
         open={repayRemoveModal.open}
         context={repayRemoveModal.context}
+        borrowSession={borrowSession!}
+        walletId={walletId ?? "demo-wallet"}
         onClose={() => setRepayRemoveModal({ open: false, context: null })}
         onConfirm={handleRepayRemoveConfirm}
       />
