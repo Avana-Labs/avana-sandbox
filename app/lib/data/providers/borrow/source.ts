@@ -1,4 +1,13 @@
 import { buildBorrowSnapshot } from "@/app/lib/borrow-data"
+import { serializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
+import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+import {
+  selectBorrowableAssets,
+  selectBorrowCollateralPools,
+  selectBorrowMarketSummaries,
+  selectInitialBorrowDebts,
+  selectWalletBorrowSnapshot,
+} from "@/app/lib/borrow-system/selectors"
 import {
   createDataSourceAdapter,
   createUnsupportedSourceError,
@@ -9,10 +18,8 @@ import {
 import {
   BORROW_DEXES,
   BORROW_PENDING_ROWS,
-  BORROW_POOL_CATALOG,
-  HOME_COLLATERAL_POOLS,
-  HOME_INITIAL_DEBTS,
 } from "@/app/lib/data/mock/shared/borrow"
+import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
 import type { BorrowPageData } from "./types"
 
 export type BorrowPageSource = {
@@ -36,16 +43,22 @@ export const mockBorrowPageSource: BorrowPageSource = {
   adapter: mockBorrowPageAdapter,
   async getBorrowPageData() {
     const snapshot = buildBorrowSnapshot()
+    const walletId = getDefaultWalletProfileId()
+    const systemState = buildMockBorrowSystemState(walletId)
 
     return {
       fetchedAt: new Date().toISOString(),
       data: {
         ...snapshot,
-        poolCatalog: BORROW_POOL_CATALOG,
+        walletId,
+        borrowSessionSeed: serializeBorrowSystemState(systemState),
+        poolCatalog: selectBorrowMarketSummaries(systemState, walletId),
+        borrowableAssets: selectBorrowableAssets(systemState, walletId),
         pendingRows: BORROW_PENDING_ROWS,
         dexes: BORROW_DEXES,
-        collateralPools: HOME_COLLATERAL_POOLS,
-        initialDebts: HOME_INITIAL_DEBTS,
+        collateralPools: selectBorrowCollateralPools(systemState, walletId),
+        initialDebts: selectInitialBorrowDebts(systemState, walletId),
+        borrowSnapshot: selectWalletBorrowSnapshot(systemState, walletId),
       },
     }
   },
