@@ -6,6 +6,7 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/mock/shared/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
+
 type AssetRow = LendPageData["assetGroups"][number]["rows"][number]
 type AssetGroup = LendPageData["assetGroups"][number]
 const DEFAULT_ASSET_GROUPS: AssetGroup[] = LEND_ASSET_GROUPS
@@ -14,6 +15,9 @@ const ALL_HUBS_LABEL = "All Hubs"
 const ALL_MARKETS_LABEL = "All Markets"
 const HUB_OPTIONS = ["Stable", "Volatile"]
 const MARKET_OPTIONS = DEFAULT_ASSET_GROUPS.map((group) => group.title)
+const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
+const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
+const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
 
 function getHubBucket(row: AssetRow) {
   return STABLE_SYMBOLS.has(row.symbol) ? "Stable" : "Volatile"
@@ -303,13 +307,13 @@ function AssetIcon({ row }: { row: AssetRow }) {
 function AssetRowView({ row, delay, index }: { row: AssetRow; delay: number; index: number }) {
   return (
     <tr
-      className="asset-swap group transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+      className="asset-swap group transition-colors"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
+      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
         {index + 1}
       </td>
-      <td className="py-3 pl-6 pr-4">
+      <td className={`py-3 pl-6 pr-4 ${ROW_HOVER_BG}`}>
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} />
           <div className="min-w-0">
@@ -323,14 +327,14 @@ function AssetRowView({ row, delay, index }: { row: AssetRow; delay: number; ind
         </div>
       </td>
 
-      <td className="py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
         <div className={cn("flex items-center gap-2", row.apyAccent && "text-[#6d6afb] dark:text-white")}>
           <YieldsBadge accent={row.apyAccent} />
           <span className="tabular-nums">{row.apy}</span>
         </div>
       </td>
 
-      <td className="py-3 px-4">
+      <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
         <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
           {row.totalDepositsPrimary}
         </div>
@@ -339,7 +343,7 @@ function AssetRowView({ row, delay, index }: { row: AssetRow; delay: number; ind
         </div>
       </td>
 
-      <td className="py-3 px-6">
+      <td className={`py-3 px-6 ${ROW_HOVER_RIGHT}`}>
         <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
           {row.availableLiquidityPrimary}
         </div>
@@ -409,7 +413,7 @@ function AssetSection({
         </div>
       </div>
 
-      <div className="rounded-[18px] bg-white dark:bg-slate-950">
+      <div className="rounded-[18px] bg-white dark:bg-transparent">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px]">
             <colgroup>
@@ -421,10 +425,10 @@ function AssetSection({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
+                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   #
                 </th>
-                <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -439,7 +443,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
@@ -454,7 +458,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
+                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("deposits")}
@@ -469,7 +473,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-slate-900/90 dark:text-white/70">
+                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("liquidity")}
