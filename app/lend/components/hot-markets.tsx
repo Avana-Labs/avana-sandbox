@@ -250,7 +250,7 @@ export function HotMarkets({
 }: {
   assets: LendPageData["featuredAssets"]
   sequence: LendPageData["featuredSequence"]
-  snapshots?: FeaturedSnapshot[]
+  snapshots?: ReadonlyArray<FeaturedSnapshot>
 }) {
   const [hover, setHover] = useState<HoverState | null>(null)
   const [sequenceWidth, setSequenceWidth] = useState(0)
