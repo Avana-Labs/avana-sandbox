@@ -15,6 +15,7 @@ import {
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
+import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
@@ -54,6 +55,7 @@ type CollateralPoolsTableProps = {
   groups: ReadonlyArray<DexGroup>
   borrowAssetsBySpoke: Readonly<Record<string, BorrowableAsset[]>>
   pending?: ReadonlyArray<PendingMarketRow>
+  onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAssetDesktop: (asset: BorrowableAsset) => void
   onBorrowAssetMobile: (asset: BorrowableAsset) => void
@@ -130,12 +132,12 @@ function formatPairAmount(value: number, pool: BorrowPoolRow) {
 function CollateralDesktopTable({
   rows,
   pending,
-  onUseAsCollateral,
+  onViewMarket,
   embedded = false,
 }: {
   rows: ReadonlyArray<BorrowPoolRow>
   pending: ReadonlyArray<PendingMarketRow>
-  onUseAsCollateral: (pool: BorrowPoolRow) => void
+  onViewMarket: (pool: BorrowPoolRow) => void
   embedded?: boolean
 }) {
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "risk" | "supplied">("asset")
@@ -251,7 +253,7 @@ function CollateralDesktopTable({
                 <tr
                   key={pool.id}
                   className="asset-swap group cursor-pointer transition-colors"
-                  onClick={() => onUseAsCollateral(pool)}
+                  onClick={() => onViewMarket(pool)}
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
                 <td className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
@@ -303,6 +305,7 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
   groups,
   borrowAssetsBySpoke,
   pending = [],
+  onViewMarket,
   onUseAsCollateral,
   onBorrowAssetDesktop,
 }: CollateralPoolsTableProps) {
@@ -316,6 +319,7 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
             rows={entry.rows}
             borrowAssets={borrowAssetsBySpoke[entry.spoke.id] ?? []}
             pending={pending.filter((row) => row.spoke === entry.spoke.id)}
+            onViewMarket={onViewMarket}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetDesktop}
           />
@@ -330,6 +334,7 @@ function SpokeDesktopSection({
   rows,
   borrowAssets,
   pending,
+  onViewMarket,
   onUseAsCollateral,
   onBorrowAsset,
 }: {
@@ -337,6 +342,7 @@ function SpokeDesktopSection({
   rows: BorrowPoolRow[]
   borrowAssets: BorrowableAsset[]
   pending: PendingMarketRow[]
+  onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
@@ -353,7 +359,7 @@ function SpokeDesktopSection({
         </div>
         <div className="bg-transparent">
           {activeTab === "collateral" ? (
-            <CollateralDesktopTable rows={rows} pending={pending} onUseAsCollateral={onUseAsCollateral} embedded />
+            <CollateralDesktopTable rows={rows} pending={pending} onViewMarket={onViewMarket} embedded />
           ) : (
             <BorrowableAssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
           )}
@@ -367,6 +373,7 @@ export function CollateralPoolsList({
   groups,
   borrowAssetsBySpoke,
   pending = [],
+  onViewMarket,
   onUseAsCollateral,
   onBorrowAssetMobile,
 }: CollateralPoolsTableProps) {
@@ -380,6 +387,7 @@ export function CollateralPoolsList({
             rows={entry.rows}
             borrowAssets={borrowAssetsBySpoke[entry.spoke.id] ?? []}
             pending={pending.filter((row) => row.spoke === entry.spoke.id)}
+            onViewMarket={onViewMarket}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetMobile}
           />
@@ -394,6 +402,7 @@ function SpokeMobileSection({
   rows,
   borrowAssets,
   pending,
+  onViewMarket,
   onUseAsCollateral,
   onBorrowAsset,
 }: {
@@ -401,6 +410,7 @@ function SpokeMobileSection({
   rows: BorrowPoolRow[]
   borrowAssets: BorrowableAsset[]
   pending: PendingMarketRow[]
+  onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
@@ -423,7 +433,7 @@ function SpokeMobileSection({
           <div className="overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
             <ul className="divide-y divide-border">
               {visibleRows.map((pool) => (
-                <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onUseAsCollateral(pool)}>
+                <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onViewMarket(pool)}>
                   <div className="flex items-center justify-between gap-3">
                     <TokenPairCell
                       visuals={pool.visuals}
@@ -458,7 +468,7 @@ function SpokeMobileSection({
                   </div>
                   <div className="flex gap-2">
                     <Link
-                      href={`/borrow/markets/${pool.id}`}
+                      href={borrowMarketDetailPath(pool.id)}
                       onClick={(event) => event.stopPropagation()}
                       className="flex h-9 flex-1 items-center justify-center rounded-xs border border-border bg-surface-raised text-[13px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
                     >
