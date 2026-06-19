@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine"
-import { buildMultiplySessionSeed, getMultiplySessionWalletId } from "@/app/lib/multiply-system/demo-session"
+import { calculateLoopSteps, calculateMaxLeverageApy, calculateTheoreticalMaxMultiplier } from "@/app/lib/multiply-engine"
+import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useMultiplyActionBox } from "@/app/lib/multiply-system/use-multiply-action-box"
-import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { TransactionFlowPanel } from "@/app/components/transaction-flow"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,12 +50,49 @@ export function MultiplyActionBox({
   className?: string
   onSuccess?: () => void
 }) {
-  const walletId = React.useMemo(() => getMultiplySessionWalletId(), [])
-  const sessionSeed = React.useMemo(() => buildMultiplySessionSeed(walletId), [walletId])
-  const session = useMultiplySession({ walletId, sessionSeed })
+  const session = useMultiplySessionContext()
+  const walletId = session.walletId
   const actionBox = useMultiplyActionBox(session)
   const [collateralAmount, setCollateralAmount] = React.useState("1")
-  const [selectedMultiplier, setSelectedMultiplier] = React.useState(Math.min(2, market.risk.publicMaxMultiplier))
+  const [selectedMultiplier, setSelectedMultiplier] = React.useState(
+    Math.min(2, market.risk.recommendedMaxMultiplier, market.risk.publicMaxMultiplier),
+  )
+
+  const theoreticalMaxMultiplier = React.useMemo(
+    () => calculateTheoreticalMaxMultiplier(market.risk.maxLtv),
+    [market.risk.maxLtv],
+  )
+  const maxLeverageApy = React.useMemo(
+    () =>
+      calculateMaxLeverageApy({
+        supplyApy: market.economics.supplyApy,
+        borrowApy: market.economics.borrowApy,
+        safeMaxMultiplier: market.risk.recommendedMaxMultiplier,
+      }),
+    [market.economics.borrowApy, market.economics.supplyApy, market.risk.recommendedMaxMultiplier],
+  )
+  const loopSteps = React.useMemo(
+    () => calculateLoopSteps(market.risk.maxLtv, selectedMultiplier),
+    [market.risk.maxLtv, selectedMultiplier],
+  )
+
+  React.useEffect(() => {
+    if (actionBox.stage !== "entry") return undefined
+    const amount = Number.parseFloat(collateralAmount)
+    if (!Number.isFinite(amount) || amount <= 0) return undefined
+
+    const handle = window.setTimeout(() => {
+      void actionBox.refreshPreview({
+        type: "multiply",
+        walletId,
+        marketId: market.id,
+        collateralAmount: amount,
+        selectedMultiplier,
+      })
+    }, 180)
+
+    return () => window.clearTimeout(handle)
+  }, [actionBox, collateralAmount, market.id, selectedMultiplier, walletId])
 
   const handleReview = React.useCallback(async () => {
     const amount = Number.parseFloat(collateralAmount)
@@ -88,6 +125,35 @@ export function MultiplyActionBox({
         </div>
 
         <div className="space-y-4">
+          <dl className="grid grid-cols-2 gap-3 rounded-radius-sm border border-border/70 bg-surface-inset/40 p-3 text-[12.5px]">
+            <div>
+              <dt className="text-muted-foreground">Max leverage APY</dt>
+              <dd className="mt-0.5 font-data tabular-nums text-emerald-600">{formatPct(maxLeverageApy)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Recommended max</dt>
+              <dd className="mt-0.5 font-data tabular-nums">{formatMultiplier(market.risk.recommendedMaxMultiplier)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Public max</dt>
+              <dd className="mt-0.5 font-data tabular-nums">{formatMultiplier(market.risk.publicMaxMultiplier)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Theoretical max</dt>
+              <dd className="mt-0.5 font-data tabular-nums">
+                {Number.isFinite(theoreticalMaxMultiplier) ? formatMultiplier(theoreticalMaxMultiplier) : "∞"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Collateral factor</dt>
+              <dd className="mt-0.5 font-data tabular-nums">{formatPct(market.risk.collateralFactor)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Loop steps</dt>
+              <dd className="mt-0.5 font-data tabular-nums">{loopSteps}</dd>
+            </div>
+          </dl>
+
           <div className="space-y-2">
             <label htmlFor={`multiply-collateral-${market.id}`} className="text-[13px] font-medium text-foreground">
               Collateral amount ({market.collateralAsset.symbol})
@@ -114,7 +180,7 @@ export function MultiplyActionBox({
             />
             <div className="flex justify-between text-[11px] text-muted-foreground">
               <span>1x</span>
-              <span>Public max {formatMultiplier(market.risk.publicMaxMultiplier)}</span>
+              <span>Recommended {formatMultiplier(market.risk.recommendedMaxMultiplier)}</span>
               <span>20x</span>
             </div>
           </div>

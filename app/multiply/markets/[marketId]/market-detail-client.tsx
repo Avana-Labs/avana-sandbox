@@ -5,6 +5,8 @@ import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard, StickyDetailHeader } from "@/app/borrow/_detail/ui"
 import { QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
+import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
+import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { cn } from "@/lib/utils"
 import {
   MarketHero,
@@ -23,6 +25,17 @@ const PAGE_MAX_W = "max-w-[1152px]"
 export function MarketDetailClient({ detail }: Props) {
   const heroRef = React.useRef<HTMLDivElement | null>(null)
   const [mobileOpen, setMobileOpen] = React.useState(false)
+  const session = useMultiplySessionContext()
+  const marketId = detail.id.toLowerCase().replaceAll("_", "-")
+
+  const transactions = React.useMemo(() => {
+    const sessionRows = mapMultiplyHistoryToDetailRows(
+      session.transactionHistory.filter((item) => item.marketId === marketId),
+      detail.row.protocol,
+      detail.row.asset,
+    )
+    return sessionRows.length > 0 ? sessionRows : detail.transactions
+  }, [detail.row.asset, detail.row.protocol, detail.transactions, marketId, session.transactionHistory])
 
   return (
     <div className="bg-background">
@@ -135,7 +148,7 @@ export function MarketDetailClient({ detail }: Props) {
                 ]}
               />
               <TransactionHistoryCard
-                transactions={detail.transactions}
+                transactions={transactions}
                 collateralSymbol={detail.row.protocol}
                 borrowableSymbol={detail.row.asset}
               />

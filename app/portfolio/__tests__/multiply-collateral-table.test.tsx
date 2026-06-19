@@ -6,6 +6,7 @@ import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-tab
 const rows: PortfolioMultiplyCollateral[] = [
   {
     id: "demo-wallet:eth-usdt",
+    marketId: "eth-usdt",
     label: "ETH/USDT",
     collateralToken: "ETH",
     borrowableToken: "USDT",
@@ -14,6 +15,11 @@ const rows: PortfolioMultiplyCollateral[] = [
     healthFactor: 1.45,
     collateralUsd: 7000,
     borrowPowerUsd: 3500,
+    debtUsd: 3500,
+    ltvPct: 50,
+    liquidationPriceUsd: 2100,
+    netApyPct: 3.2,
+    status: "open",
   },
 ]
 
