@@ -89,7 +89,7 @@ export function LendSessionModal({
             className="w-full rounded-md border border-border px-3 py-2"
             placeholder="Amount"
           />
-          <PrimaryCardButton type="button" disabled={isSubmitting || parsedAmount <= 0} onClick={() => void handleSubmit()}>
+          <PrimaryCardButton disabled={isSubmitting || parsedAmount <= 0} onClick={() => void handleSubmit()}>
             {isSubmitting ? "Processing..." : modalState.actionType === "deposit" ? "Deposit" : "Withdraw"}
           </PrimaryCardButton>
         </div>
