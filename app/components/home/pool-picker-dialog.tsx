@@ -3,11 +3,10 @@
 import { useEffect, useMemo, useState } from "react"
 import { Check, TrendingUp } from "lucide-react"
 import {
-  HOME_COLLATERAL_POOLS,
   formatCompactUsd,
   getHealthStatus,
-  getPoolById,
   healthGaugePercent,
+  type HomeCollateralPool,
 } from "@/app/lib/home-sim"
 import { PairVisual } from "@/app/components/home-workspace-primitives"
 import { Button } from "@/components/ui/button"
@@ -27,6 +26,7 @@ export function PoolPickerDialog({
   selectedPoolId,
   onSelect,
   mode,
+  pools,
   debts,
 }: {
   open: boolean
@@ -34,6 +34,7 @@ export function PoolPickerDialog({
   selectedPoolId: string
   onSelect: (poolId: string) => void
   mode: PoolDialogMode
+  pools: HomeCollateralPool[]
   debts: Record<string, number>
 }) {
   const [focusedPoolId, setFocusedPoolId] = useState(selectedPoolId)
@@ -44,7 +45,8 @@ export function PoolPickerDialog({
 
   const title = mode === "borrow" ? "Select LP pool" : mode === "repay" ? "Select debt position" : "Select collateral position"
 
-  const focusedPool = useMemo(() => getPoolById(focusedPoolId), [focusedPoolId])
+  const focusedPool = useMemo(() => pools.find((pool) => pool.id === focusedPoolId) ?? pools[0], [focusedPoolId, pools])
+  if (!focusedPool) return null
   const focusedDebt = debts[focusedPoolId] ?? 0
   const focusedHf = computeHealthFactor(focusedPool, focusedDebt)
   const focusedStatus = getHealthStatus(focusedHf)
@@ -74,7 +76,7 @@ export function PoolPickerDialog({
         </div>
 
         <div className="max-h-[240px] overflow-y-auto">
-          {HOME_COLLATERAL_POOLS.map((pool) => {
+          {pools.map((pool) => {
             const isFocused = pool.id === focusedPoolId
             const debtUsd = debts[pool.id] ?? 0
             const hf = computeHealthFactor(pool, debtUsd)
