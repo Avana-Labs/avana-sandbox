@@ -2,12 +2,12 @@
 
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
-import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
-import { buildMultiplySessionSeed } from "@/app/lib/multiply-system/demo-session"
+import { useAvanaSession } from "@/app/lib/avana-session"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import { DeleverageModal } from "@/app/multiply/components/deleverage-modal"
 import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
@@ -56,19 +56,19 @@ export function DashboardClient({
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
-  const borrowSessionWalletId = resolvedWalletProfileId ?? "demo-wallet"
-  const borrowSessionSeed = useMemo(() => buildBorrowSessionSeed(borrowSessionWalletId), [borrowSessionWalletId])
+  const [deleverageOpen, setDeleverageOpen] = useState(false)
+  const [deleveragePositionId, setDeleveragePositionId] = useState<string | null>(null)
+  const avanaSession = useAvanaSession(resolvedWalletProfileId ?? "demo-wallet")
   const borrowSession = useBorrowSession({
-    walletId: borrowSessionWalletId,
-    sessionSeed: borrowSessionSeed,
+    walletId: avanaSession.walletId,
+    sessionSeed: avanaSession.borrowSessionSeed,
   })
-  const multiplySessionSeed = useMemo(() => buildMultiplySessionSeed(borrowSessionWalletId), [borrowSessionWalletId])
   const multiplySession = useMultiplySession({
-    walletId: borrowSessionWalletId,
-    sessionSeed: multiplySessionSeed,
+    walletId: avanaSession.walletId,
+    sessionSeed: avanaSession.multiplySessionSeed,
   })
-  const portfolioBorrow = usePortfolioBorrowLive(borrowSessionWalletId, borrowSession)
-  const portfolioMultiply = usePortfolioMultiplyLive(borrowSessionWalletId, multiplySession)
+  const portfolioBorrow = usePortfolioBorrowLive(avanaSession.walletId, borrowSession)
+  const portfolioMultiply = usePortfolioMultiplyLive(avanaSession.walletId, multiplySession)
   const multiplySnapshot = useMemo<BorrowSnapshot>(
     () => ({
       approvedUsd: portfolioMultiply?.creditLines.approvedUsd ?? data?.multiply.creditLines.approvedUsd ?? initialData?.multiply.creditLines.approvedUsd ?? 0,
@@ -141,6 +141,15 @@ export function DashboardClient({
     [borrowSession.transactionHistory, multiplySession.transactionHistory, data?.activity.rows, initialData?.activity.rows],
   )
 
+  const deleverageTarget = useMemo(() => {
+    if (!deleveragePositionId) return null
+    const position = multiplySession.state.positions[deleveragePositionId]
+    if (!position) return null
+    const market = multiplySession.state.markets[position.marketId]
+    if (!market) return null
+    return { position, market }
+  }, [deleveragePositionId, multiplySession.state.markets, multiplySession.state.positions])
+
   if (!data || !resolvedWalletProfileId || !portfolioBorrow) return null
 
   return (
@@ -163,7 +172,7 @@ export function DashboardClient({
               collateralPositions={collateralPositions}
               debtPositions={debtPositions}
               showSummary={false}
-              walletId={borrowSessionWalletId}
+              walletId={avanaSession.walletId}
               borrowSession={borrowSession}
             />
           </DashboardSection>
@@ -175,11 +184,30 @@ export function DashboardClient({
           <DashboardSectionTitle title="Credit Limits" />
           <CreditLinesCard creditLines={multiplySnapshot} />
           <DashboardSection className="pt-8">
-            <MultiplyCollateralTable rows={portfolioMultiply?.lpCollaterals ?? data.multiply.lpCollaterals} />
+            <MultiplyCollateralTable
+              rows={portfolioMultiply?.lpCollaterals ?? data.multiply.lpCollaterals}
+              onDeleverage={(positionId) => {
+                setDeleveragePositionId(positionId)
+                setDeleverageOpen(true)
+              }}
+            />
           </DashboardSection>
         </div>
       ) : null}
       {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
+
+      {deleverageTarget ? (
+        <DeleverageModal
+          open={deleverageOpen}
+          onOpenChange={(open) => {
+            setDeleverageOpen(open)
+            if (!open) setDeleveragePositionId(null)
+          }}
+          market={deleverageTarget.market}
+          position={deleverageTarget.position}
+          session={multiplySession}
+        />
+      ) : null}
     </>
   )
 }
