@@ -158,7 +158,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   const handleAssetBorrowDesktop = useCallback(
     (asset: BorrowableAsset) => {
       triggerPageLoading()
-      router.push(`/borrow/asset/${asset.id}`)
+      router.push(`/borrow/assets/${asset.id}`)
     },
     [router],
   )
