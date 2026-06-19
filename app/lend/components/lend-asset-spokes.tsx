@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/mock/shared/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
@@ -304,7 +305,18 @@ function AssetIcon({ row }: { row: AssetRow }) {
   return <TokenIcon symbol={row.symbol} size="xl" ring className="bg-white dark:bg-[#111111]" />
 }
 
-function AssetRowView({ row, delay, index }: { row: AssetRow; delay: number; index: number }) {
+function AssetRowView({
+  row,
+  delay,
+  index,
+  onDeposit,
+}: {
+  row: AssetRow
+  delay: number
+  index: number
+  onDeposit?: (marketId: string) => void
+}) {
+  const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   return (
     <tr
       className="asset-swap group transition-colors"
@@ -343,13 +355,20 @@ function AssetRowView({ row, delay, index }: { row: AssetRow; delay: number; ind
         </div>
       </td>
 
-      <td className={`py-3 px-6 ${ROW_HOVER_RIGHT}`}>
+      <td className={`py-3 px-6 pr-4 ${ROW_HOVER_RIGHT}`}>
         <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
           {row.availableLiquidityPrimary}
         </div>
         <div className="mt-0.5 text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[12px]">
           {row.availableLiquiditySecondary}
         </div>
+      </td>
+      <td className={`py-3 px-4 pr-4 ${ROW_HOVER_RIGHT}`}>
+        {onDeposit ? (
+          <Button type="button" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]" onClick={() => onDeposit(marketId)}>
+            Deposit
+          </Button>
+        ) : null}
       </td>
     </tr>
   )
@@ -359,10 +378,12 @@ function AssetSection({
   title,
   subtitle,
   rows,
+  onDeposit,
 }: {
   title: string
   subtitle?: string
   rows: AssetRow[]
+  onDeposit?: (marketId: string) => void
 }) {
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "liquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
@@ -421,7 +442,8 @@ function AssetSection({
               <col className="w-[29%]" />
               <col className="w-[17%]" />
               <col className="w-[24%]" />
-              <col className="w-[25%]" />
+              <col className="w-[20%]" />
+              <col className="w-[12%]" />
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -473,7 +495,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("liquidity")}
@@ -488,16 +510,19 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
+                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                  ACTION
+                </th>
               </tr>
             </thead>
             <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
-                  <AssetRowView key={row.symbol} row={row} delay={index * 40} index={index} />
+                  <AssetRowView key={row.symbol} row={row} delay={index * 40} index={index} onDeposit={onDeposit} />
                 ))
               ) : (
                 <tr>
-                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={5}>
+                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={6}>
                     No assets match these filters.
                   </td>
                 </tr>
@@ -510,7 +535,13 @@ function AssetSection({
   )
 }
 
-export function LendAssetSpokes({ groups = DEFAULT_ASSET_GROUPS }: { groups?: LendPageData["assetGroups"] }) {
+export function LendAssetSpokes({
+  groups = DEFAULT_ASSET_GROUPS,
+  onDeposit,
+}: {
+  groups?: LendPageData["assetGroups"]
+  onDeposit?: (marketId: string) => void
+}) {
   const [search, setSearch] = useState("")
   const [selectedHubs, setSelectedHubs] = useState<string[]>([])
   const [selectedMarkets, setSelectedMarkets] = useState<string[]>([])
@@ -610,6 +641,7 @@ export function LendAssetSpokes({ groups = DEFAULT_ASSET_GROUPS }: { groups?: Le
                 title={group.title}
                 subtitle={group.subtitle}
                 rows={group.rows}
+                onDeposit={onDeposit}
               />
               {group.title === "Ethereum-Based" ? (
                 <div className="flex justify-center">

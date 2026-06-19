@@ -4,7 +4,7 @@ import dynamic from "next/dynamic"
 import { useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { LendHero } from "./components/lend-hero"
-import type { LendModalState } from "./components/lend-modals"
+import type { LendSessionModalState } from "./components/lend-session-modal"
 
 const HotMarkets = dynamic(() => import("./components/hot-markets").then((mod) => mod.HotMarkets), {
   loading: () => <div className="h-[228px] rounded-radius-md border border-border bg-surface-raised/60" />,
@@ -14,23 +14,17 @@ const LendAssetSpokes = dynamic(() => import("./components/lend-asset-spokes").t
   loading: () => <div className="mt-8 h-[640px] rounded-radius-md border border-border bg-surface-raised/60" />,
 })
 
-const LendModals = dynamic(() => import("./components/lend-modals").then((mod) => mod.LendModals), {
+const LendSessionModal = dynamic(() => import("./components/lend-session-modal").then((mod) => mod.LendSessionModal), {
   ssr: false,
 })
 
 export function LendClient({ pageData }: { pageData: LendPageData }) {
-  const { tokens, markets, featuredAssets, featuredSequence, assetGroups } = pageData
-  const [modalState, setModalState] = useState<LendModalState>({
+  const { markets, featuredAssets, featuredSequence, featuredSnapshots, assetGroups } = pageData
+  const [modalState, setModalState] = useState<LendSessionModalState>({
     isOpen: false,
-    type: "deposit",
+    marketId: "eth",
     actionType: "deposit",
-    token: null,
-    amount: "",
   })
-
-  const closeModal = () => {
-    setModalState((prev) => ({ ...prev, isOpen: false }))
-  }
 
   return (
     <div className="bg-background">
@@ -40,20 +34,23 @@ export function LendClient({ pageData }: { pageData: LendPageData }) {
             <LendHero markets={markets} />
 
             <div className="mt-12 space-y-8">
-              <HotMarkets assets={featuredAssets} sequence={featuredSequence} />
+              <HotMarkets assets={featuredAssets} sequence={featuredSequence} snapshots={featuredSnapshots} />
             </div>
 
-            <LendAssetSpokes groups={assetGroups} />
+            <LendAssetSpokes
+              groups={assetGroups}
+              onDeposit={(marketId) =>
+                setModalState({
+                  isOpen: true,
+                  marketId,
+                  actionType: "deposit",
+                })
+              }
+            />
           </div>
         </div>
 
-        <LendModals
-          tokens={tokens}
-          markets={markets}
-          modalState={modalState}
-          setModalState={setModalState}
-          closeModal={closeModal} 
-        />
+        <LendSessionModal modalState={modalState} onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))} />
       </main>
     </div>
   )
