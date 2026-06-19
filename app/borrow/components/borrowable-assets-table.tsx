@@ -8,6 +8,7 @@ import {
   utilizationToneClass,
   type BorrowableAsset,
 } from "@/app/lib/data/borrow-domain"
+import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { cn } from "@/lib/utils"
@@ -122,7 +123,7 @@ export function BorrowableAssetsPanel({
                         Borrow
                       </button>
                       <Link
-                        href={`/borrow/assets/${asset.id}`}
+                        href={borrowAssetDetailPath(asset.id)}
                         onClick={() => onViewMarket?.(asset)}
                         className="flex flex-1 items-center justify-center rounded-radius-sm border border-border bg-surface-raised px-4 py-2.5 text-center text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
                       >
@@ -395,7 +396,7 @@ function AssetsSection({
                   <td className={`py-2.5 pl-4 pr-5 text-right ${ROW_HOVER_RIGHT}`}>
                     <div className="inline-flex items-center gap-1.5">
                       <Link
-                        href={`/borrow/assets/${asset.id}`}
+                        href={borrowAssetDetailPath(asset.id)}
                         className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
                       >
                         Details

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import type { Metadata } from "next"
-import { getAssetDetail } from "@/app/lib/borrow-detail"
+import { borrowAssetDetailPath, getAssetDetail, normalizeBorrowAssetRouteId } from "@/app/lib/borrow-detail"
 
 type PageProps = {
   params: Promise<{ assetId: string }>
@@ -18,5 +18,5 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function AssetDetailPage({ params }: PageProps) {
   const { assetId } = await params
-  redirect(`/borrow/assets/${assetId}`)
+  redirect(borrowAssetDetailPath(normalizeBorrowAssetRouteId(assetId)))
 }

@@ -39,6 +39,7 @@ import { buildMockBorrowSystemState, HOME_POOL_TO_MARKET_ID } from "@/app/lib/bo
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import { selectBorrowMarketSummaries } from "@/app/lib/borrow-system/selectors"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
+import { normalizeBorrowAssetRouteId } from "@/app/lib/borrow-routes"
 import type { AssetDetail, PoolDetail } from "./types"
 
 const detailWalletId = getDefaultWalletProfileId()
@@ -90,6 +91,7 @@ export {
   riskLevelLabel,
   riskScoreFromBps,
 } from "./allocation"
+export { borrowAssetDetailPath, normalizeBorrowAssetRouteId } from "@/app/lib/borrow-routes"
 export { HOME_POOL_TO_MARKET_ID as HOME_POOL_ID_MAP } from "@/app/lib/borrow-system/mock"
 
 /**
@@ -113,7 +115,7 @@ export function listAllPoolDetails(): PoolDetail[] {
 
 /** Returns the detail view-model for a borrowable asset id. */
 export function getAssetDetail(id: string): AssetDetail | null {
-  return resolveAssetDetailFromState(id)
+  return resolveAssetDetailFromState(normalizeBorrowAssetRouteId(id))
 }
 
 export function listAllAssetDetails(): AssetDetail[] {

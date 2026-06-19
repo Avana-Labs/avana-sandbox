@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { triggerPageLoading } from "@/app/lib/page-loading"
+import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import type { BorrowAssetVisual } from "@/app/lib/borrow-sim"
 import { cn } from "@/lib/utils"
 
@@ -74,7 +75,7 @@ async function getSearchResults(): Promise<SearchResult[]> {
     subtitle: `${asset.symbol} / ${asset.subtitle} / ${formatCompactUsd(asset.availableUsd)} available`,
     eyebrow: "Borrow asset",
     metric: `${asset.borrowApr.toFixed(1)}% APR`,
-    href: `/borrow/assets/${asset.id}`,
+    href: borrowAssetDetailPath(asset.id),
     keywords: `${asset.id} ${asset.symbol} ${asset.name} borrow debt credit asset`,
     visual: asset.visual,
   }))
@@ -88,7 +89,7 @@ async function getSearchResults(): Promise<SearchResult[]> {
       subtitle: `${asset.symbol} lending market / ${asset.utilization}% utilization`,
       eyebrow: "Lend asset",
       metric: `${Math.max(asset.borrowApr - 0.8, 0.1).toFixed(1)}% APY`,
-      href: `/borrow/assets/${asset.id}`,
+      href: borrowAssetDetailPath(asset.id),
       keywords: `${asset.id} ${asset.symbol} ${asset.name} lend deposit supply yield apy`,
       visual: asset.visual,
     }))
