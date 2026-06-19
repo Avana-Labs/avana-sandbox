@@ -7,8 +7,7 @@ import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/component
 import {
   HOME_BORROW_TOKENS,
   HOME_COLLATERAL_POOLS,
-  BORROWABLE_TOKEN_OPTIONS,
-  calculateBorrowPreview,
+  type BorrowPreview,
   formatHealthFactor,
   type HomeBorrowToken,
   type HomeCollateralPool,
@@ -19,14 +18,13 @@ import { HomeBorrowPanel } from "@/app/components/home-borrow-panel"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
 import { PillButton, TokenBubble } from "./atoms"
 
-const BORROWABLE_IDS = new Set(BORROWABLE_TOKEN_OPTIONS.map((option) => option.id))
-
 type ModalStage = "entry" | TransactionFlowStage
 
 export type BorrowModalContext = {
   pool: HomeCollateralPool
   currentDebtUsd: number
   defaultTokenId?: string
+  tokenOptions?: HomeBorrowToken[]
 }
 
 export type BorrowModalResult = {
@@ -48,6 +46,32 @@ type BorrowModalProps = {
   onConfirm: (result: BorrowModalResult) => void
 }
 
+function buildBorrowPreview(pool: HomeCollateralPool, currentDebtUsd: number, amountUsd: number): BorrowPreview {
+  const projectedDebtUsd = currentDebtUsd + amountUsd
+  const healthFactor = projectedDebtUsd > 0 ? pool.liquidationUsd / projectedDebtUsd : Number.POSITIVE_INFINITY
+  const exceedsBorrowPower = projectedDebtUsd > pool.borrowPowerUsd
+
+  return {
+    amountUsd,
+    amountLabel: formatUsdExact(amountUsd),
+    isEmpty: amountUsd <= 0,
+    isValid: amountUsd > 0 && !exceedsBorrowPower,
+    exceedsBorrowPower,
+    healthFactor: Number.isFinite(healthFactor) ? healthFactor : null,
+    healthFactorLabel: formatHealthFactor(Number.isFinite(healthFactor) ? healthFactor : null),
+    riskTone: exceedsBorrowPower ? "danger" : healthFactor < 1.2 ? "danger" : healthFactor < 1.5 ? "warning" : "positive",
+    progressPercent: Math.min(100, Math.max(0, (projectedDebtUsd / Math.max(pool.borrowPowerUsd, 1)) * 100)),
+    remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - projectedDebtUsd),
+    warningTitle: exceedsBorrowPower ? "Borrowing power exceeded" : healthFactor < 1.2 ? "Credit health is weak" : null,
+    warningMessage: exceedsBorrowPower
+      ? "Reduce the amount or add more collateral before borrowing."
+      : healthFactor < 1.2
+        ? "This borrow would move the position close to liquidation."
+        : null,
+    ctaLabel: exceedsBorrowPower ? "Adjust amount" : "Review borrow",
+  }
+}
+
 export function BorrowModal({
   open,
   context,
@@ -61,29 +85,30 @@ export function BorrowModal({
   const [tokenId, setTokenId] = useState("usdc")
   const [stage, setStage] = useState<ModalStage>("entry")
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false)
+  const tokenOptions = context?.tokenOptions ?? []
+  const availableTokens = tokenOptions.length > 0 ? tokenOptions : HOME_BORROW_TOKENS
 
   useEffect(() => {
     if (open && context) {
       setAmountInput(initialAmount ?? "")
-      setTokenId(initialTokenId ?? context.defaultTokenId ?? "usdc")
+      setTokenId(initialTokenId ?? context.defaultTokenId ?? context.tokenOptions?.[0]?.id ?? "usdc")
       setStage(startStage)
       setTokenPickerOpen(false)
     }
   }, [initialAmount, initialTokenId, open, context, startStage])
 
   const token = useMemo(
-    () => HOME_BORROW_TOKENS.find((candidate) => candidate.id === tokenId) ?? HOME_BORROW_TOKENS[1],
-    [tokenId],
+    () => availableTokens.find((candidate) => candidate.id === tokenId) ?? availableTokens[0] ?? null,
+    [availableTokens, tokenId],
   )
-  const tokenOptions = useMemo(() => HOME_BORROW_TOKENS.filter((candidate) => BORROWABLE_IDS.has(candidate.id)), [])
 
   const amountUsd = Number.parseFloat(amountInput)
   const safeAmountUsd = Number.isFinite(amountUsd) && amountUsd > 0 ? amountUsd : 0
 
   const preview = useMemo(() => {
     if (!context) return null
-    return calculateBorrowPreview(context.pool, safeAmountUsd, token.symbol)
-  }, [context, safeAmountUsd, token.symbol])
+    return buildBorrowPreview(context.pool, context.currentDebtUsd, safeAmountUsd)
+  }, [context, safeAmountUsd])
 
   const pool = context?.pool ?? HOME_COLLATERAL_POOLS[0]
   const currentDebtUsd = context?.currentDebtUsd ?? 0
@@ -91,11 +116,9 @@ export function BorrowModal({
     ReturnType<typeof homeVisualToBorrowVisual>,
     ReturnType<typeof homeVisualToBorrowVisual>,
   ]
-  const currentHealthFactor =
-    currentDebtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd : Number.POSITIVE_INFINITY
+  const currentHealthFactor = currentDebtUsd > 0 ? pool.liquidationUsd / currentDebtUsd : Number.POSITIVE_INFINITY
   const projectedDebtUsd = currentDebtUsd + safeAmountUsd
-  const projectedHealthFactor =
-    projectedDebtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / projectedDebtUsd : Number.POSITIVE_INFINITY
+  const projectedHealthFactor = projectedDebtUsd > 0 ? pool.liquidationUsd / projectedDebtUsd : Number.POSITIVE_INFINITY
   const aaveFooterNote = (
     <>
       Powered by Aave v4.{" "}
@@ -113,7 +136,7 @@ export function BorrowModal({
     const timer = window.setTimeout(() => {
       onConfirm({
         pool,
-        token,
+        token: token ?? { id: "usdc", name: "USD Coin", symbol: "USDC", subtitle: "Stablecoin", borrowApr: 0, visual: pool.visuals[0] },
         amountUsd: safeAmountUsd,
         healthFactorBefore: Number.isFinite(currentHealthFactor) ? currentHealthFactor : null,
         healthFactorAfter: Number.isFinite(projectedHealthFactor) ? projectedHealthFactor : null,
@@ -125,7 +148,7 @@ export function BorrowModal({
     return () => window.clearTimeout(timer)
   }, [currentHealthFactor, onConfirm, pool, projectedDebtUsd, projectedHealthFactor, safeAmountUsd, stage, token])
 
-  if (!context || !preview) {
+  if (!context || !preview || !token) {
     return null
   }
 
@@ -183,7 +206,7 @@ export function BorrowModal({
         <div className="mt-10 space-y-5">
           <ReviewRow label="Receive" value={`${safeAmountUsd.toFixed(0)} ${token.symbol}`} />
           <ReviewRow label="Collateral" value={`${(pool.collateralUsd / Math.max(pool.liquidationUsd, 1)).toFixed(5)} ${visuals[0].symbol}`} />
-          <ReviewRow label="Loan-to-Value" value={`${Math.min(100, (projectedDebtUsd / Math.max(pool.collateralUsd, 1)) * 100).toFixed(0)}%`} tone="positive" />
+          <ReviewRow label="Borrowing power used" value={`${Math.min(100, (projectedDebtUsd / Math.max(pool.borrowPowerUsd, 1)) * 100).toFixed(0)}%`} tone="positive" />
           <ReviewRow label="Liquidation price" value={`${pool.liquidationUsd.toLocaleString("en-US", { maximumFractionDigits: 6 })} ${token.symbol}`} />
           <ReviewRow label="Variable interest rate" value={`${token.borrowApr.toFixed(2)}%`} />
         </div>
@@ -297,7 +320,7 @@ export function BorrowModal({
               open={tokenPickerOpen}
               onOpenChange={setTokenPickerOpen}
               selectedTokenId={token.id}
-              tokens={tokenOptions}
+              tokens={availableTokens}
               onSelect={(nextTokenId) => {
                 setTokenId(nextTokenId)
                 setTokenPickerOpen(false)
