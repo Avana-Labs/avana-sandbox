@@ -16,9 +16,18 @@ describe("page providers", () => {
   it("fetches borrow page data from the default source", async () => {
     const data = await fetchBorrowPage()
 
-    expect(data.allPools.length).toBeGreaterThan(0)
     expect(data.poolCatalog.length).toBeGreaterThan(0)
-    expect(Object.keys(data.protocols).length).toBeGreaterThan(1)
+    expect(data.heroMetrics.totalTvlUsd).toBeGreaterThan(0)
+    expect(data.heroMetrics.totalCollateralUsd).toBeGreaterThan(0)
+    expect(data.heroMetrics.availableCreditUsd).toBeGreaterThan(0)
+    expect(data.heroMetrics.outstandingLoansUsd).toBeGreaterThan(0)
+    expect(data.explore.trendingCollateral).toHaveLength(3)
+    expect(data.explore.highApyPools).toHaveLength(3)
+    expect(data.explore.topMarkets).toHaveLength(3)
+    expect(data.explore.trendingCollateral[0]!.availableUsd).toBeGreaterThanOrEqual(data.explore.trendingCollateral[1]!.availableUsd)
+    expect((data.explore.highApyPools[0]!.aprMin + data.explore.highApyPools[0]!.aprMax) / 2).toBeGreaterThanOrEqual(
+      (data.explore.highApyPools[1]!.aprMin + data.explore.highApyPools[1]!.aprMax) / 2,
+    )
   })
 
   it("accepts a borrow source override", async () => {
@@ -27,16 +36,18 @@ describe("page providers", () => {
       async getBorrowPageData() {
         return {
           data: {
-            protocols: { Custom: [{ name: "ETH-USDC", apy: 5, tvl: 1000, volume24h: 200, chain: "Ethereum", isUp: true, change: 1.2 }] },
-            allPools: [{ name: "ETH-USDC", apy: 5, tvl: 1000, volume24h: 200, chain: "Ethereum", isUp: true, change: 1.2, protocol: "Custom" }],
-            protocolLogos: { Custom: "https://example.com/logo.png" },
-            itemsPerPage: 12,
             walletId: "wallet-override",
             borrowSessionSeed: "{\"stub\":true}",
             poolCatalog: [
               {
                 id: "custom-eth-usdc",
                 name: "ETH / USDC",
+                tvlUsd: 1000,
+                availableUsd: 250,
+                totalBorrowedUsd: 750,
+                aprMin: 4.5,
+                aprMax: 5.5,
+                change24hPct: 1.2,
                 visuals: [
                   { symbol: "ETH", iconUrl: "https://example.com/eth.png" },
                   { symbol: "USDC", iconUrl: "https://example.com/usdc.png" },
@@ -61,6 +72,48 @@ describe("page providers", () => {
               liquidationValueUsd: 1200,
               healthFactor: null,
             },
+            heroMetrics: {
+              totalTvlUsd: 1000,
+              totalCollateralUsd: 1500,
+              availableCreditUsd: 250,
+              outstandingLoansUsd: 750,
+              totalTvlChangePct: 1.2,
+            },
+            explore: {
+              trendingCollateral: [
+                {
+                  id: "custom-eth-usdc",
+                  name: "ETH / USDC",
+                  tvlUsd: 1000,
+                  availableUsd: 250,
+                  totalBorrowedUsd: 750,
+                  aprMin: 4.5,
+                  aprMax: 5.5,
+                },
+              ],
+              topMarkets: [
+                {
+                  id: "custom-eth-usdc",
+                  name: "ETH / USDC",
+                  tvlUsd: 1000,
+                  availableUsd: 250,
+                  totalBorrowedUsd: 750,
+                  aprMin: 4.5,
+                  aprMax: 5.5,
+                },
+              ],
+              highApyPools: [
+                {
+                  id: "custom-eth-usdc",
+                  name: "ETH / USDC",
+                  tvlUsd: 1000,
+                  availableUsd: 250,
+                  totalBorrowedUsd: 750,
+                  aprMin: 4.5,
+                  aprMax: 5.5,
+                },
+              ],
+            },
           },
         }
       },
@@ -68,6 +121,8 @@ describe("page providers", () => {
 
     const data = await fetchBorrowPage(source)
     expect(data.poolCatalog[0]?.id).toBe("custom-eth-usdc")
+    expect(data.heroMetrics.totalTvlUsd).toBe(1000)
+    expect(data.explore.highApyPools[0]?.id).toBe("custom-eth-usdc")
   })
 
   it("fetches lend page data from the default source", async () => {
