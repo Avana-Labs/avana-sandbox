@@ -6,7 +6,6 @@ import {
   aprToneClass,
   formatCompactUsd,
   formatRiskPremium,
-  getBorrowAssetsForSpoke,
   getSpokeById,
   type BorrowPoolEvent,
   type BorrowPoolRow,
@@ -53,6 +52,7 @@ function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
 
 type CollateralPoolsTableProps = {
   groups: ReadonlyArray<DexGroup>
+  borrowAssetsBySpoke: Readonly<Record<string, BorrowableAsset[]>>
   pending?: ReadonlyArray<PendingMarketRow>
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAssetDesktop: (asset: BorrowableAsset) => void
@@ -72,8 +72,8 @@ function SectionTabs({
   return (
     <div className="flex flex-wrap gap-8 border-b border-border/50 md:border-b-0">
       {[
-        { id: "collateral", label: "Collateral" },
-        { id: "borrow", label: "Borrowable" },
+        { id: "collateral", label: "Markets" },
+        { id: "borrow", label: "Assets" },
       ].map((tab) => (
         <button
           key={tab.id}
@@ -301,6 +301,7 @@ function CollateralDesktopTable({
 
 export const CollateralPoolsTable = memo(function CollateralPoolsTable({
   groups,
+  borrowAssetsBySpoke,
   pending = [],
   onUseAsCollateral,
   onBorrowAssetDesktop,
@@ -313,6 +314,7 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
             key={entry.spoke.id}
             spoke={entry.spoke}
             rows={entry.rows}
+            borrowAssets={borrowAssetsBySpoke[entry.spoke.id] ?? []}
             pending={pending.filter((row) => row.spoke === entry.spoke.id)}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetDesktop}
@@ -326,18 +328,19 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
 function SpokeDesktopSection({
   spoke,
   rows,
+  borrowAssets,
   pending,
   onUseAsCollateral,
   onBorrowAsset,
 }: {
   spoke: BorrowSpoke
   rows: BorrowPoolRow[]
+  borrowAssets: BorrowableAsset[]
   pending: PendingMarketRow[]
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
-  const borrowAssets = useMemo(() => getBorrowAssetsForSpoke(spoke.id), [spoke.id])
 
   return (
     <section className="mb-2">
@@ -362,6 +365,7 @@ function SpokeDesktopSection({
 
 export function CollateralPoolsList({
   groups,
+  borrowAssetsBySpoke,
   pending = [],
   onUseAsCollateral,
   onBorrowAssetMobile,
@@ -374,6 +378,7 @@ export function CollateralPoolsList({
             key={entry.spoke.id}
             spoke={entry.spoke}
             rows={entry.rows}
+            borrowAssets={borrowAssetsBySpoke[entry.spoke.id] ?? []}
             pending={pending.filter((row) => row.spoke === entry.spoke.id)}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetMobile}
@@ -387,19 +392,20 @@ export function CollateralPoolsList({
 function SpokeMobileSection({
   spoke,
   rows,
+  borrowAssets,
   pending,
   onUseAsCollateral,
   onBorrowAsset,
 }: {
   spoke: BorrowSpoke
   rows: BorrowPoolRow[]
+  borrowAssets: BorrowableAsset[]
   pending: PendingMarketRow[]
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
-  const borrowAssets = useMemo(() => getBorrowAssetsForSpoke(spoke.id), [spoke.id])
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
@@ -452,7 +458,7 @@ function SpokeMobileSection({
                   </div>
                   <div className="flex gap-2">
                     <Link
-                      href={`/borrow/pool/${pool.id}`}
+                      href={`/borrow/markets/${pool.id}`}
                       onClick={(event) => event.stopPropagation()}
                       className="flex h-9 flex-1 items-center justify-center rounded-xs border border-border bg-surface-raised text-[13px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
                     >

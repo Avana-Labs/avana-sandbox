@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
+import type { SandboxActionResult, TransactionIntent, TransactionPreview } from "@/app/lib/borrow-system/contracts"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
-import type { BorrowSnapshot } from "./borrow-hero-state"
+import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow, type BorrowableAsset, type HomeBorrowToken } from "@/app/lib/data/borrow-domain"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "@/app/borrow/components/repay-remove-modal"
@@ -15,13 +16,6 @@ import {
 } from "@/app/borrow/components/supply-collateral-modal"
 import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/components/borrow-tab/debts-table"
 import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/dashboard/components/borrow-tab/supplies-table"
-
-type DebtsState = Record<string, number>
-
-function computeHealthFactor(pool: SupplyRowContext["pool"], debt: number): number | null {
-  if (debt <= 0) return Number.POSITIVE_INFINITY
-  return (pool.collateralUsd * (pool.maxLtv / 100)) / debt
-}
 
 function averageHealthFactor(rows: Array<{ healthFactor: number | null }>): number | null {
   const finite = rows
@@ -39,25 +33,48 @@ function sortByBorrowedDesc(rows: DebtRowContext[]) {
   return [...rows].sort((left, right) => right.borrowedUsd - left.borrowedUsd)
 }
 
+function toBorrowToken(asset: BorrowableAsset): HomeBorrowToken {
+  return {
+    id: asset.id,
+    name: asset.name,
+    symbol: asset.symbol,
+    subtitle: asset.subtitle,
+    borrowApr: asset.borrowApr,
+    visual: {
+      symbol: asset.visual.symbol,
+      shortLabel: asset.visual.shortLabel,
+      bgClassName: asset.visual.bgClass,
+      textClassName: asset.visual.textClass,
+    },
+  }
+}
+
+type BorrowSessionAdapter = {
+  state: BorrowSystemState
+  getBorrowableAssetsForMarket: (marketId?: string) => BorrowableAsset[]
+  createIntent: (action: BorrowAction) => TransactionIntent
+  previewTransaction: (intent: TransactionIntent) => Promise<TransactionPreview>
+  executeTransaction: (intent: TransactionIntent) => Promise<SandboxActionResult>
+  isPending: boolean
+}
+
 export function DashboardBorrowTab({
   section = "all",
   collateralPositions = [],
   debtPositions = [],
-  onSnapshotChange,
   showSummary = true,
+  walletId,
+  borrowSession,
 }: {
   section?: "all" | "supplies" | "debts"
   collateralPositions?: SupplyRowContext[]
   debtPositions?: DebtRowContext[]
-  onSnapshotChange?: (snapshot: BorrowSnapshot) => void
   showSummary?: boolean
+  walletId?: string
+  borrowSession?: BorrowSessionAdapter
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">(section === "debts" ? "debts" : "supplies")
-  const [collateralState, setCollateralState] = useState<SupplyRowContext[]>(() => collateralPositions)
-  const [debtState, setDebtState] = useState<DebtsState>(() =>
-    Object.fromEntries(debtPositions.map((row) => [row.pool.id, row.borrowedUsd])),
-  )
   const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
   const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
     open: false,
@@ -67,40 +84,8 @@ export function DashboardBorrowTab({
     open: false,
     context: null,
   })
-
-  useEffect(() => {
-    setCollateralState(collateralPositions)
-  }, [collateralPositions])
-
-  useEffect(() => {
-    setDebtState(Object.fromEntries(debtPositions.map((row) => [row.pool.id, row.borrowedUsd])))
-  }, [debtPositions])
-
-  const supplies = useMemo<SupplyRowContext[]>(() => {
-    return collateralState.map((row) => ({
-      ...row,
-      borrowedUsd: debtState[row.pool.id] ?? row.borrowedUsd,
-      remainingBorrowPowerUsd: Math.max(
-        0,
-        row.remainingBorrowPowerUsd + row.borrowedUsd - (debtState[row.pool.id] ?? row.borrowedUsd),
-      ),
-      liquidationThresholdUsd:
-        row.borrowedUsd > 0 ? (row.liquidationThresholdUsd / row.borrowedUsd) * (debtState[row.pool.id] ?? row.borrowedUsd) : 0,
-      healthFactor: computeHealthFactor(row.pool, debtState[row.pool.id] ?? row.borrowedUsd),
-    }))
-  }, [collateralState, debtState])
-
-  const debtsRows = useMemo<DebtRowContext[]>(() => {
-    return debtPositions
-      .map((row) => ({
-        ...row,
-        borrowedUsd: debtState[row.pool.id] ?? row.borrowedUsd,
-        liquidationThresholdUsd:
-          row.borrowedUsd > 0 ? (row.liquidationThresholdUsd / row.borrowedUsd) * (debtState[row.pool.id] ?? row.borrowedUsd) : 0,
-        healthFactor: computeHealthFactor(row.pool, debtState[row.pool.id] ?? row.borrowedUsd),
-      }))
-      .filter((row) => row.borrowedUsd > 0)
-  }, [debtPositions, debtState])
+  const supplies = collateralPositions
+  const debtsRows = useMemo(() => debtPositions.filter((row) => row.borrowedUsd > 0), [debtPositions])
 
   const sortedSupplies = useMemo(() => sortByCollateralDesc(supplies), [supplies])
   const sortedDebts = useMemo(() => sortByBorrowedDesc(debtsRows), [debtsRows])
@@ -124,15 +109,17 @@ export function DashboardBorrowTab({
   }, [debtsRows])
 
   const handleSupplyBorrowMore = useCallback((context: SupplyRowContext) => {
+    const tokenOptions = borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken) ?? []
     setBorrowModal({
       open: true,
       context: {
         pool: context.pool,
         currentDebtUsd: context.borrowedUsd,
-        defaultTokenId: "usdc",
+        defaultTokenId: tokenOptions[0]?.id,
+        tokenOptions,
       },
     })
-  }, [])
+  }, [borrowSession])
 
   const handleSupplyAddCollateral = useCallback((context: SupplyRowContext) => {
     const pool = context.pool
@@ -157,93 +144,65 @@ export function DashboardBorrowTab({
     setSupplyModal({ open: true, context: { pool: borrowPoolRow } })
   }, [])
 
-  const handleSupplyRemove = useCallback((context: SupplyRowContext) => {
-    setRepayRemoveModal({
-      open: true,
-      context: { pool: context.pool, currentDebtUsd: context.borrowedUsd, mode: "remove" },
-    })
-  }, [])
+  const handleSupplyRemove = useCallback(
+    (context: SupplyRowContext) => {
+      const position = borrowSession?.state.accounts[walletId ?? ""]?.collateralPositions.find((entry) => entry.marketId === context.pool.id)
+      setRepayRemoveModal({
+        open: true,
+        context: {
+          pool: context.pool,
+          currentDebtUsd: context.borrowedUsd,
+          mode: "remove",
+          collateralPositionId: position?.id,
+        },
+      })
+    },
+    [borrowSession?.state.accounts, walletId],
+  )
 
-  const handleDebtRepay = useCallback((context: DebtRowContext) => {
-    setRepayRemoveModal({
-      open: true,
-      context: { pool: context.pool, currentDebtUsd: context.borrowedUsd, mode: "repay", borrowApr: context.borrowApr },
-    })
-  }, [])
+  const handleDebtRepay = useCallback(
+    (context: DebtRowContext) => {
+      setRepayRemoveModal({
+        open: true,
+        context: {
+          pool: context.pool,
+          currentDebtUsd: context.borrowedUsd,
+          mode: "repay",
+          borrowApr: context.borrowApr,
+          debtPositionId: context.id,
+        },
+      })
+    },
+    [],
+  )
 
   const handleDebtManage = useCallback((context: DebtRowContext) => {
+    const tokenOptions = borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken) ?? []
+    const defaultTokenId =
+      borrowSession?.state.accounts[walletId ?? ""]?.debtPositions.find((position) => position.id === context.id)?.assetId ??
+      tokenOptions[0]?.id
     setBorrowModal({
       open: true,
-      context: { pool: context.pool, currentDebtUsd: context.borrowedUsd, defaultTokenId: "usdc" },
+      context: {
+        pool: context.pool,
+        currentDebtUsd: context.borrowedUsd,
+        defaultTokenId,
+        tokenOptions,
+      },
     })
+  }, [borrowSession, walletId])
+
+  const handleBorrowConfirm = useCallback((_result: BorrowModalResult) => {
+    setBorrowModal({ open: false, context: null })
   }, [])
 
-  const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
-    setCollateralState((previous) =>
-      previous.map((row) =>
-        row.pool.id === result.pool.id
-          ? {
-              ...row,
-              pool: {
-                ...row.pool,
-                collateralUsd: row.pool.collateralUsd + result.amountUsd,
-                borrowPowerUsd: row.pool.borrowPowerUsd + result.borrowPowerUsd,
-              },
-            }
-          : row,
-      ),
-    )
+  const handleSupplyConfirm = useCallback((_result: SupplyCollateralResult) => {
+    setSupplyModal({ open: false, context: null })
   }, [])
 
-  const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
-    setDebtState((previous) => ({ ...previous, [result.pool.id]: (previous[result.pool.id] ?? 0) + result.amountUsd }))
+  const handleRepayRemoveConfirm = useCallback((_result: RepayRemoveResult) => {
+    setRepayRemoveModal({ open: false, context: null })
   }, [])
-
-  const handleRepayRemoveConfirm = useCallback((result: RepayRemoveResult) => {
-    if (result.mode === "repay") {
-      setDebtState((previous) => ({
-        ...previous,
-        [result.pool.id]: Math.max(0, (previous[result.pool.id] ?? 0) - result.amountUsd),
-      }))
-      return
-    }
-
-    setCollateralState((previous) =>
-      previous.map((row) =>
-        row.pool.id === result.pool.id
-          ? {
-              ...row,
-              pool: {
-                ...row.pool,
-                collateralUsd: Math.max(0, row.pool.collateralUsd - result.amountUsd),
-                borrowPowerUsd: Math.max(0, row.pool.borrowPowerUsd - result.amountUsd * (row.pool.maxLtv / 100)),
-              },
-            }
-          : row,
-      ),
-    )
-  }, [])
-
-  const borrowSnapshot = useMemo<BorrowSnapshot>(() => {
-    const totalCollateralUsd = supplies.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
-    const totalBorrowedUsd = debtTotals.totalBorrowed
-    const approvedUsd = supplies.reduce((sum, row) => sum + row.remainingBorrowPowerUsd, 0)
-    const liquidationThresholdUsd = debtsRows.reduce((sum, row) => sum + row.liquidationThresholdUsd, 0)
-    const currentLtvPct = totalCollateralUsd > 0 ? (totalBorrowedUsd / totalCollateralUsd) * 100 : 0
-
-    return {
-      approvedUsd,
-      liquidationThresholdUsd,
-      totalBorrowedUsd,
-      totalCollateralUsd,
-      averageHealthFactor: debtTotals.averageHf ?? supplyTotals.averageHf,
-      currentLtvPct,
-    }
-  }, [debtTotals.averageHf, debtTotals.totalBorrowed, debtsRows, supplies, supplyTotals.averageHf])
-
-  useEffect(() => {
-    onSnapshotChange?.(borrowSnapshot)
-  }, [borrowSnapshot, onSnapshotChange])
 
   return (
     <section className="space-y-8">
@@ -259,10 +218,10 @@ export function DashboardBorrowTab({
           <Tabs value={marketsTab} onValueChange={(value) => setMarketsTab(value as "supplies" | "debts")}>
             <TabsList className="inline-flex w-max min-w-max justify-start">
               <TabsTrigger value="supplies" className="shrink-0 text-[14px] font-normal">
-                Collateral
+                Collateral Positions
               </TabsTrigger>
               <TabsTrigger value="debts" className="shrink-0 text-[14px] font-normal">
-                Borrowable
+                Debt Positions
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -320,6 +279,8 @@ export function DashboardBorrowTab({
       <BorrowModal
         open={borrowModal.open}
         context={borrowModal.context}
+        borrowSession={borrowSession!}
+        walletId={walletId ?? "demo-wallet"}
         onClose={() => setBorrowModal({ open: false, context: null })}
         onConfirm={handleBorrowConfirm}
       />
@@ -327,6 +288,8 @@ export function DashboardBorrowTab({
       <SupplyCollateralModal
         open={supplyModal.open}
         context={supplyModal.context}
+        borrowSession={borrowSession!}
+        walletId={walletId ?? "demo-wallet"}
         onClose={() => setSupplyModal({ open: false, context: null })}
         onConfirm={handleSupplyConfirm}
       />
@@ -334,6 +297,8 @@ export function DashboardBorrowTab({
       <RepayRemoveModal
         open={repayRemoveModal.open}
         context={repayRemoveModal.context}
+        borrowSession={borrowSession!}
+        walletId={walletId ?? "demo-wallet"}
         onClose={() => setRepayRemoveModal({ open: false, context: null })}
         onConfirm={handleRepayRemoveConfirm}
       />

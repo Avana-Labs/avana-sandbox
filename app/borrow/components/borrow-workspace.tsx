@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { parseFixed } from "@/app/lib/credit-engine"
+import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import {
   filterPools,
   groupByDex,
   type BorrowDexId,
   type BorrowPoolRow,
   type BorrowableAsset,
+  type HomeBorrowToken,
   type HomeCollateralPool,
 } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
@@ -17,14 +20,11 @@ import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./borrow-modal"
 import { SupplyCollateralModal, type SupplyCollateralContext, type SupplyCollateralResult } from "./supply-collateral-modal"
-import { useLiveBorrowMarket } from "./use-live-borrow-market"
 import { useMediaQuery } from "@/app/lib/use-media-query"
-
-type DebtsState = Record<string, number>
 
 function computeHealthFactor(pool: HomeCollateralPool, debt: number): number | null {
   if (debt <= 0) return Number.POSITIVE_INFINITY
-  return (pool.collateralUsd * (pool.maxLtv / 100)) / debt
+  return pool.liquidationUsd / debt
 }
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC"])
@@ -72,6 +72,22 @@ function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
   )
 }
 
+function toBorrowToken(asset: BorrowableAsset): HomeBorrowToken {
+  return {
+    id: asset.id,
+    name: asset.name,
+    symbol: asset.symbol,
+    subtitle: asset.subtitle,
+    borrowApr: asset.borrowApr,
+    visual: {
+      symbol: asset.visual.symbol,
+      shortLabel: asset.visual.shortLabel,
+      bgClassName: asset.visual.bgClass,
+      textClassName: asset.visual.textClass,
+    },
+  }
+}
+
 export type BorrowWorkspaceProps = {
   pageData: BorrowWorkspaceData
   onTabChange?: (tab: BorrowTabId) => void
@@ -80,42 +96,42 @@ export type BorrowWorkspaceProps = {
 export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps) {
   const router = useRouter()
   const isDesktop = useMediaQuery("(min-width: 768px)", true)
-  const { poolCatalog, pendingRows, dexes, collateralPools, initialDebts } = pageData
+  const { walletId, borrowSessionSeed, pendingRows, dexes } = pageData
+  const session = useBorrowSession({
+    walletId,
+    sessionSeed: borrowSessionSeed,
+  })
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
   const [search, setSearch] = useState("")
   const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
-  const [debts, setDebts] = useState<DebtsState>({ ...initialDebts })
 
   const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
   const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
     open: false,
     context: null,
   })
-  const { livePools, liveSupplyMetrics } = useLiveBorrowMarket({
-    debts,
-    poolCatalog,
-    collateralPools,
-  })
-  const livePoolById = useMemo(() => new Map(livePools.map((pool) => [pool.id, pool])), [livePools])
+  const marketSpokeById = useMemo(
+    () => new Map(session.marketSummaries.map((market) => [market.id, market.spoke])),
+    [session.marketSummaries],
+  )
 
   // Data for each tab
   const supplies = useMemo<SupplyRowContext[]>(() => {
-    return collateralPools.map((pool) => ({
+    return session.collateralPools.map((pool) => ({
       pool,
-      borrowedUsd: debts[pool.id] ?? 0,
-      remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - (debts[pool.id] ?? 0)),
+      borrowedUsd: session.initialDebts[pool.id] ?? 0,
+      remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - (session.initialDebts[pool.id] ?? 0)),
       liquidationThresholdUsd: pool.liquidationUsd,
-      healthFactor: liveSupplyMetrics[pool.id]?.healthFactor ?? computeHealthFactor(pool, debts[pool.id] ?? 0),
-      pairApr: liveSupplyMetrics[pool.id]?.pairApr ?? pool.pairApr,
-      feesUsd: liveSupplyMetrics[pool.id]?.feesUsd ?? 0,
-      feesLabel: liveSupplyMetrics[pool.id]?.feesLabel ?? "$0.00",
+      healthFactor: computeHealthFactor(pool, session.initialDebts[pool.id] ?? 0),
+      pairApr: pool.pairApr,
+      feesUsd: 0,
+      feesLabel: "$0.00",
     }))
-  }, [collateralPools, debts, liveSupplyMetrics])
+  }, [session.collateralPools, session.initialDebts])
 
   const filteredPools = useMemo(() => {
-    const filtered = filterPools([...poolCatalog], { text: search, dexes: selectedDexes })
-    return filtered.map((pool) => livePoolById.get(pool.id) ?? pool)
-  }, [livePoolById, poolCatalog, search, selectedDexes])
+    return filterPools([...session.marketSummaries], { text: search, dexes: selectedDexes })
+  }, [search, selectedDexes, session.marketSummaries])
 
   const visiblePools = useMemo(() => {
     if (!isPoolTab(currentTab)) return []
@@ -123,6 +139,21 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   }, [currentTab, filteredPools])
 
   const poolGroups = useMemo(() => groupByDex(visiblePools), [visiblePools])
+  const borrowAssetsBySpoke = useMemo(() => {
+    return Object.fromEntries(
+      poolGroups.flatMap((group) =>
+        group.spokes.map((entry) => {
+          const assets = new Map<string, BorrowableAsset>()
+          for (const row of entry.rows) {
+            for (const asset of session.getBorrowableAssetsForMarket(row.id)) {
+              assets.set(asset.id, asset)
+            }
+          }
+          return [entry.spoke.id, Array.from(assets.values())]
+        }),
+      ),
+    ) as Record<string, BorrowableAsset[]>
+  }, [poolGroups, session])
 
   useEffect(() => {
     onTabChange?.(currentTab)
@@ -135,15 +166,19 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   const handleAssetBorrowDesktop = useCallback(
     (asset: BorrowableAsset) => {
       triggerPageLoading()
-      router.push(`/borrow/asset/${asset.id}`)
+      router.push(`/borrow/assets/${asset.id}`)
     },
     [router],
   )
 
   const handleAssetBorrowMobile = useCallback(
     (asset: BorrowableAsset) => {
+      const assetSpokeId = asset.id.includes(":") ? asset.id.split(":")[0] : null
       const best = supplies
-        .filter((row) => Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0)
+        .filter((row) => {
+          if (assetSpokeId && marketSpokeById.get(row.pool.id) !== assetSpokeId) return false
+          return Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0
+        })
         .reduce<SupplyRowContext | null>((acc, row) => {
           if (!acc) return row
           const rowScore = Number.isFinite(row.healthFactor ?? NaN) ? (row.healthFactor as number) : 99
@@ -158,18 +193,19 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
           pool: fallback.pool,
           currentDebtUsd: fallback.borrowedUsd,
           defaultTokenId: asset.id,
+          tokenOptions: session.getBorrowableAssetsForMarket(fallback.pool.id).map(toBorrowToken),
         },
       })
     },
-    [supplies],
+    [marketSpokeById, session, supplies],
   )
 
-  const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
-    void result
+  const handleBorrowConfirm = useCallback((_result: BorrowModalResult) => {
+    setBorrowModal({ open: false, context: null })
   }, [])
 
-  const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
-    setDebts((previous) => ({ ...previous, [result.pool.id]: (previous[result.pool.id] ?? 0) + result.amountUsd }))
+  const handleSupplyConfirm = useCallback((_result: SupplyCollateralResult) => {
+    setSupplyModal({ open: false, context: null })
   }, [])
 
   return (
@@ -190,6 +226,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
             {isDesktop ? (
               <CollateralPoolsTable
                 groups={poolGroups}
+                borrowAssetsBySpoke={borrowAssetsBySpoke}
                 pending={pendingRows}
                 onUseAsCollateral={handlePoolsSupply}
                 onBorrowAssetDesktop={handleAssetBorrowDesktop}
@@ -198,6 +235,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
             ) : (
               <CollateralPoolsList
                 groups={poolGroups}
+                borrowAssetsBySpoke={borrowAssetsBySpoke}
                 pending={pendingRows}
                 onUseAsCollateral={handlePoolsSupply}
                 onBorrowAssetDesktop={handleAssetBorrowDesktop}
@@ -211,6 +249,8 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
       <BorrowModal
         open={borrowModal.open}
         context={borrowModal.context}
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setBorrowModal({ open: false, context: null })}
         onConfirm={handleBorrowConfirm}
       />
@@ -218,6 +258,8 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
       <SupplyCollateralModal
         open={supplyModal.open}
         context={supplyModal.context}
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setSupplyModal({ open: false, context: null })}
         onConfirm={handleSupplyConfirm}
       />

@@ -81,5 +81,5 @@ export function PrimaryCardButton({
 
 export function computeHealthFactor(pool: HomeCollateralPool, debtUsd: number): number {
   if (debtUsd <= 0) return Number.POSITIVE_INFINITY
-  return (pool.collateralUsd * (pool.maxLtv / 100)) / debtUsd
+  return pool.liquidationUsd / debtUsd
 }

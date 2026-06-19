@@ -1,0 +1,345 @@
+import type { BorrowAssetRecord, BorrowMarketRecord, BorrowSystemState, BorrowVisual, UserCollateralPosition, UserDebtPosition } from "@/app/lib/credit-engine"
+import { RAY, clampMax, clampMin, parseFixed } from "@/app/lib/credit-engine"
+import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
+import { HOME_COLLATERAL_POOLS, HOME_INITIAL_DEBTS } from "@/app/lib/home-sim"
+
+export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
+  "eth-usdc": "uni-v3-bluechip-weth-usdc",
+  "wbtc-eth": "uni-v3-bluechip-wbtc-weth",
+  "usdc-usdt": "uni-v3-stable-usdc-usdt",
+}
+
+const HOME_POOL_TO_DEBT_ASSET_ID: Record<string, string> = {
+  "eth-usdc": "usdc",
+  "wbtc-eth": "weth",
+  "usdc-usdt": "usdt",
+}
+
+const ASSET_PRICE_USD: Record<string, string> = {
+  usdc: "1",
+  usdt: "1",
+  dai: "1",
+  gho: "1",
+  frax: "1",
+  "usd+": "1",
+  eurc: "1.08",
+  usde: "1",
+  sdai: "1.04",
+  weth: "2021.44",
+  eth: "2021.44",
+  wbtc: "68422.18",
+  cbbtc: "68455.10",
+  steth: "2112.30",
+  wsteth: "2210.80",
+  reth: "2249.15",
+  cbeth: "2148.09",
+  weeth: "2066.42",
+  link: "16.48",
+  uni: "8.27",
+  aave: "109.55",
+  arb: "0.92",
+  op: "2.11",
+  crv: "0.61",
+  ldo: "2.21",
+  bal: "3.14",
+  aura: "0.59",
+}
+
+const ASSET_PRICE_CHANGE_24H: Record<string, string> = {
+  usdc: "0.0002",
+  usdt: "0.0001",
+  dai: "0.0001",
+  gho: "0.0001",
+  weth: "-0.0512",
+  eth: "-0.0512",
+  wbtc: "-0.0241",
+  cbbtc: "-0.0234",
+}
+
+function usd6(value: number | string) {
+  return parseFixed(typeof value === "number" ? value.toFixed(6) : value, 6)
+}
+
+function wadFromPct(value: number) {
+  return parseFixed((value / 100).toFixed(18), 18)
+}
+
+function wadFromRatio(value: number) {
+  return parseFixed(value.toFixed(18), 18)
+}
+
+function normalizeVisual(visual: BorrowAssetVisual): BorrowVisual {
+  return {
+    symbol: visual.symbol,
+    shortLabel: visual.shortLabel,
+    iconUrl: visual.iconUrl,
+    bgClassName: visual.bgClass,
+    textClassName: visual.textClass,
+  }
+}
+
+function estimateRiskScoreWad(pool: BorrowPoolRow) {
+  const estimated = pool.riskPremiumBps / 250
+  return clampMax(clampMin(wadFromPct(estimated), parseFixed("0.08", 18)), parseFixed("0.9", 18))
+}
+
+function estimateLiquidationThresholdWad(pool: BorrowPoolRow) {
+  return clampMax(wadFromRatio(pool.ltv / 100 + 0.1), parseFixed("0.95", 18))
+}
+
+function assetPriceUsd6(asset: SpokeBorrowableRecord) {
+  const byId = ASSET_PRICE_USD[asset.id]
+  const byBaseAssetId = ASSET_PRICE_USD[asset.baseAssetId]
+  const fallback =
+    asset.category === "stable"
+      ? "1"
+      : asset.category === "btc"
+        ? "68422.18"
+        : asset.category === "eth"
+          ? "2021.44"
+          : "8.5"
+  return usd6(byId ?? byBaseAssetId ?? fallback)
+}
+
+function assetPriceChangeWad(asset: SpokeBorrowableRecord) {
+  const byId = ASSET_PRICE_CHANGE_24H[asset.id]
+  const byBaseAssetId = ASSET_PRICE_CHANGE_24H[asset.baseAssetId]
+  const fallback = asset.category === "stable" ? "0.0001" : asset.category === "btc" ? "-0.0241" : "-0.031"
+  return parseFixed(byId ?? byBaseAssetId ?? fallback, 18)
+}
+
+function buildMarketRecord(pool: BorrowPoolRow, borrowAssetIdsBySymbol: Map<string, string>): BorrowMarketRecord {
+  const avgApr = (pool.aprMin + pool.aprMax) / 2
+  const totalBorrowedUsd = Math.max(pool.tvlUsd * 0.18, pool.availableUsd * 0.42)
+  const volume24hUsd = Math.max(pool.availableUsd * 0.12, pool.tvlUsd * 0.035)
+  const fees24hUsd = (pool.tvlUsd * (avgApr / 100)) / 365
+  const lpTokenPriceUsd = Math.max(1, pool.collateralExampleUsd / 2.5)
+
+  return {
+    id: pool.id,
+    spokeId: pool.spoke,
+    display: {
+      name: pool.name,
+      lpSymbol: `${pool.venue.toUpperCase()} ${pool.name}`,
+      venue: pool.venue,
+      chain: "Ethereum",
+      feeTier: pool.feeTier,
+      subtitle: `${pool.name} LP collateral market on ${pool.venue}.`,
+      visuals: pool.visuals.map(normalizeVisual) as [BorrowVisual, BorrowVisual],
+    },
+    riskConfig: {
+      collateralFactorWad: wadFromPct(pool.ltv),
+      liquidationThresholdWad: estimateLiquidationThresholdWad(pool),
+      riskScoreWad: estimateRiskScoreWad(pool),
+    },
+    relations: {
+      supportedBorrowAssetIds: pool.borrowableTokens
+        .map((visual) => borrowAssetIdsBySymbol.get(visual.symbol.toUpperCase()))
+        .filter((value): value is string => Boolean(value)),
+      relatedMarketIds: BORROW_POOL_CATALOG.filter((candidate) => candidate.id !== pool.id && candidate.spoke === pool.spoke)
+        .slice(0, 3)
+        .map((candidate) => candidate.id),
+    },
+    snapshot: {
+      lpTokenPriceUsd6: usd6(lpTokenPriceUsd),
+      feeApyWad: wadFromPct(avgApr),
+      totalLiquidityUsd6: usd6(pool.tvlUsd),
+      totalBorrowedUsd6: usd6(totalBorrowedUsd),
+      availableUsd6: usd6(pool.availableUsd),
+      volume24hUsd6: usd6(volume24hUsd),
+      fees24hUsd6: usd6(fees24hUsd),
+      totalCollateralShares: parseFixed((pool.tvlUsd / lpTokenPriceUsd).toFixed(18), 18),
+      supplyIndexRay: RAY,
+    },
+    detail: {
+      about: `${pool.name} is supported as collateral through the ${pool.venue} ${pool.feeTier} route.`,
+      faqs: [
+        {
+          question: `What is ${pool.name}?`,
+          answer: `${pool.name} is an LP collateral market used to unlock borrow capacity across supported assets.`,
+        },
+        {
+          question: "How is borrowing power determined?",
+          answer: "Borrowing power is derived from collateral factor, liquidation threshold, account utilization, and current debt.",
+        },
+      ],
+      parameterChanges: [
+        { date: "2026-03-18", title: "Risk review completed", body: `Risk inputs for ${pool.name} were refreshed.` },
+      ],
+      governanceNotes: [
+        {
+          title: "Risk council note",
+          body: `${pool.name} remains eligible for borrowing routes supported by the ${pool.spoke} market family.`,
+          tone: "info",
+        },
+      ],
+    },
+    analytics: {
+      keyMetrics: {},
+      cashflow: {
+        label: "Cashflow",
+        unit: "usd",
+        points: [],
+      },
+      engagement: {
+        label: "Engagement",
+        unit: "count",
+        points: [],
+      },
+    },
+  }
+}
+
+function buildAssetRecord(asset: SpokeBorrowableRecord): BorrowAssetRecord {
+  return {
+    id: asset.id,
+    baseAssetId: asset.baseAssetId,
+    spokeId: asset.spokeId,
+    marketIds: [...asset.marketIds],
+    slug: asset.slug,
+    contextLabel: asset.contextLabel,
+    symbol: asset.symbol,
+    display: {
+      name: asset.name,
+      subtitle: asset.subtitle,
+      chain: "Ethereum",
+      category: asset.category,
+      visual: normalizeVisual(asset.visual),
+    },
+    borrowConfig: {
+      baseBorrowAprWad: wadFromPct(asset.borrowApr),
+    },
+    snapshot: {
+      priceUsd6: assetPriceUsd6(asset),
+      priceChange24hWad: assetPriceChangeWad(asset),
+      availableLiquidityUsd6: usd6(asset.availableUsd),
+      totalBorrowedUsd6: usd6(asset.totalBorrowedUsd),
+      totalDebtSharesUsd6: usd6(asset.totalBorrowedUsd),
+    },
+    detail: {
+      about: `${asset.name} is a borrowable asset within the ${asset.spokeLabel} spoke.`,
+      faqs: [
+        {
+          question: `What is ${asset.symbol}?`,
+          answer: `${asset.name} can be borrowed only from collateral supplied inside the ${asset.spokeLabel} spoke.`,
+        },
+      ],
+    },
+    analytics: {
+      utilization: {
+        label: "Utilization",
+        unit: "pct",
+        points: [],
+      },
+      supplyBorrow: {},
+    },
+  }
+}
+
+function collateralPositionFromHomePool(walletId: string, poolId: string, collateralUsd: number, markets: Record<string, BorrowMarketRecord>): UserCollateralPosition | null {
+  const marketId = HOME_POOL_TO_MARKET_ID[poolId]
+  if (!marketId) return null
+  const market = markets[marketId]
+  if (!market) return null
+  const lpTokenPriceUsd = Number(market.snapshot.lpTokenPriceUsd6) / 1_000_000
+  const tokenAmountLabel = (collateralUsd / Math.max(lpTokenPriceUsd, 0.000001)).toFixed(18)
+
+  return {
+    id: `${walletId}:${marketId}`,
+    marketId,
+    collateralShares: parseFixed(tokenAmountLabel, 18),
+    principalTokenAmount: parseFixed(tokenAmountLabel, 18),
+    collateralEnabled: true,
+  }
+}
+
+function debtPositionFromHomePool(
+  walletId: string,
+  poolId: string,
+  debtUsd: number,
+  markets: Record<string, BorrowMarketRecord>,
+  assets: Record<string, BorrowAssetRecord>,
+): UserDebtPosition | null {
+  const assetId = HOME_POOL_TO_DEBT_ASSET_ID[poolId]
+  if (!assetId || debtUsd <= 0) return null
+  const marketId = HOME_POOL_TO_MARKET_ID[poolId]
+  if (!marketId) return null
+  const market = markets[marketId]
+  if (!market) return null
+  const scopedAssetId = `${market.spokeId}:${assetId}`
+  const asset = assets[scopedAssetId]
+  if (!asset) return null
+  return {
+    id: `${walletId}:${scopedAssetId}`,
+    assetId: scopedAssetId,
+    baseAssetId: asset.baseAssetId,
+    spokeId: market.spokeId,
+    marketId,
+    debtSharesUsd6: usd6(debtUsd),
+    debtIndexRay: RAY,
+    borrowRateWad: asset.borrowConfig.baseBorrowAprWad,
+    principalBorrowedUsd6: usd6(debtUsd),
+  }
+}
+
+export function buildMockBorrowCatalog() {
+  const spokeBorrowables = listSpokeBorrowables()
+  const borrowAssetIdsBySpoke = new Map(
+    spokeBorrowables.map((asset) => [`${asset.spokeId}:${asset.symbol.toUpperCase()}`, asset.id]),
+  )
+  const markets = Object.fromEntries(
+    BORROW_POOL_CATALOG.map((pool) => [
+      pool.id,
+      buildMarketRecord(
+        pool,
+        new Map(
+          pool.borrowableTokens.map((visual) => [
+            visual.symbol.toUpperCase(),
+            borrowAssetIdsBySpoke.get(`${pool.spoke}:${visual.symbol.toUpperCase()}`) ?? "",
+          ]),
+        ),
+      ),
+    ]),
+  )
+  const assets = Object.fromEntries(spokeBorrowables.map((asset) => [asset.id, buildAssetRecord(asset)]))
+  return { markets, assets }
+}
+
+export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSystemState {
+  const { markets, assets } = buildMockBorrowCatalog()
+  const collateralPositions = HOME_COLLATERAL_POOLS.map((pool) =>
+    collateralPositionFromHomePool(walletId, pool.id, pool.collateralUsd, markets),
+  ).filter((position): position is UserCollateralPosition => Boolean(position))
+  const debtPositions = Object.entries(HOME_INITIAL_DEBTS)
+    .map(([poolId, debtUsd]) => debtPositionFromHomePool(walletId, poolId, debtUsd, markets, assets))
+    .filter((position): position is UserDebtPosition => Boolean(position))
+
+  return {
+    now: Date.UTC(2026, 5, 19),
+    markets,
+    assets,
+    accounts: {
+      [walletId]: {
+        walletId,
+        walletBalanceUsd6: usd6(12_500),
+        interestSettledUsd6: 0n,
+        lastUpdatedAt: Date.UTC(2026, 5, 18, 12),
+        collateralPositions,
+        debtPositions,
+      },
+    },
+    transactions: [],
+  }
+}
+
+export function buildMockBorrowSystemCatalog() {
+  const { accounts: _accounts, transactions: _transactions, now: _now, ...catalog } = buildMockBorrowSystemState()
+  void _accounts
+  void _transactions
+  void _now
+  return catalog
+}
+
+export const MOCK_BORROW_SYSTEM_STATE = buildMockBorrowSystemState()
+export const MOCK_BORROW_SYSTEM_CATALOG = buildMockBorrowSystemCatalog()

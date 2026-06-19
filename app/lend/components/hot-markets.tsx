@@ -224,7 +224,7 @@ function FeaturedCard({
   return (
     <Link
       data-featured-card={cardKey}
-      href={`/borrow/asset/${asset.id}`}
+      href={`/borrow/assets/${asset.id}`}
       onMouseLeave={onLeave}
       onMouseMove={(event) => {
         const bounds = event.currentTarget.getBoundingClientRect()

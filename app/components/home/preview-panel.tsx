@@ -244,7 +244,7 @@ function RepayPreviewPanel({
   preview: ReturnType<typeof calculateRepayPreview>
 }) {
   const hfAfter = preview.healthFactorAfter ?? Number.POSITIVE_INFINITY
-  const hfBefore = debtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / debtUsd : Number.POSITIVE_INFINITY
+  const hfBefore = debtUsd > 0 ? pool.liquidationUsd / debtUsd : Number.POSITIVE_INFINITY
   const status = getHealthStatus(hfAfter)
   const gaugePercent = healthGaugePercent(hfAfter)
 
@@ -307,7 +307,7 @@ function RemovePreviewPanel({
 }) {
   void percent
   const hfAfter = preview.healthFactorAfter ?? Number.POSITIVE_INFINITY
-  const hfBefore = debtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / debtUsd : Number.POSITIVE_INFINITY
+  const hfBefore = debtUsd > 0 ? pool.liquidationUsd / debtUsd : Number.POSITIVE_INFINITY
   const status = preview.isUnsafe
     ? { label: "UNSAFE", dotClass: "bg-rose-500", textClass: "text-rose-600", barClass: "bg-rose-500" }
     : getHealthStatus(hfAfter)

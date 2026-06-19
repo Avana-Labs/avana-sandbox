@@ -3,6 +3,7 @@
 import * as React from "react"
 import { toast } from "sonner"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
+import { parseFixed, type BorrowAction } from "@/app/lib/credit-engine"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { SupplyCollateralModal } from "@/app/borrow/components/supply-collateral-modal"
 import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
@@ -10,11 +11,11 @@ import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/component
 import { CompactClaimCard } from "@/app/components/home/claim-card"
 import { CompactRemoveCard } from "@/app/components/home/remove-card"
 import { PairVisual } from "@/app/components/home-workspace-primitives"
+import { buildHomeRemovePreview } from "@/app/lib/borrow-system/modal-preview-runtime"
 import {
   HOME_INITIAL_CLAIMABLE_TOTALS,
   HOME_INITIAL_DEBTS,
   calculateClaimPreview,
-  calculateRemovePreview,
   formatCompactUsd,
   formatUsd,
   getClaimBreakdownLabel,
@@ -26,6 +27,8 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { buildBorrowSessionSeed, getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
+import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 
 type Props = {
   detail: PoolDetail
@@ -68,9 +71,18 @@ function PoolActionRail({ detail, className }: Props) {
   const [supplyOpen, setSupplyOpen] = React.useState(false)
   const [removeOpen, setRemoveOpen] = React.useState(false)
   const [claimOpen, setClaimOpen] = React.useState(false)
+  const walletId = React.useMemo(() => getBorrowSessionWalletId(), [])
+  const sessionSeed = React.useMemo(() => buildBorrowSessionSeed(walletId), [walletId])
+  const session = useBorrowSession({ walletId, sessionSeed })
 
-  const pool = React.useMemo(() => resolvePool(detail), [detail])
-  const currentDebtUsd = React.useMemo(() => resolveCurrentDebtUsd(pool.id, pool.borrowPowerUsd), [pool.id, pool.borrowPowerUsd])
+  const pool = React.useMemo(
+    () => session.collateralPools.find((entry) => entry.id === detail.id) ?? resolvePool(detail),
+    [detail, session.collateralPools],
+  )
+  const currentDebtUsd = React.useMemo(
+    () => session.initialDebts[pool.id] ?? resolveCurrentDebtUsd(pool.id, pool.borrowPowerUsd),
+    [pool.borrowPowerUsd, pool.id, session.initialDebts],
+  )
   const claimPosition = React.useMemo(() => resolveClaimPosition(detail, pool), [detail, pool])
 
   const claimableTotals = React.useMemo(
@@ -84,8 +96,17 @@ function PoolActionRail({ detail, className }: Props) {
     [claimAmount, claimPositions, claimSelections, claimableTotals],
   )
   const removePreview = React.useMemo(
-    () => calculateRemovePreview(pool, currentDebtUsd, removePercent),
-    [currentDebtUsd, pool, removePercent],
+    () => buildHomeRemovePreview(session.state, walletId, pool.id, removePercent),
+    [pool.id, removePercent, session.state, walletId],
+  )
+  const executeAction = React.useCallback(
+    async (action: BorrowAction) => {
+      const intent = session.createIntent(action)
+      const preview = await session.previewTransaction(intent)
+      if (!preview.allowed) return
+      await session.executeTransaction(preview.intent)
+    },
+    [session],
   )
 
   React.useEffect(() => {
@@ -191,11 +212,10 @@ function PoolActionRail({ detail, className }: Props) {
       <SupplyCollateralModal
         open={supplyOpen}
         context={{ pool: toBorrowPoolRow(detail) }}
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setSupplyOpen(false)}
-        onConfirm={() => {
-          setSupplyOpen(false)
-          toast.success(`Pledged ${formatCompactUsd(pool.collateralUsd)} of ${pool.name}`)
-        }}
+        onConfirm={() => setSupplyOpen(false)}
       />
 
       <RepayRemoveModal
@@ -204,12 +224,12 @@ function PoolActionRail({ detail, className }: Props) {
           pool,
           currentDebtUsd,
           mode: "remove",
+          collateralPositionId: session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === pool.id)?.id,
         }}
+        borrowSession={session}
+        walletId={walletId}
         onClose={() => setRemoveOpen(false)}
-        onConfirm={(result) => {
-          setRemoveOpen(false)
-          toast.success(`Removed ${result.percent ?? removePercent}% from ${pool.name}`)
-        }}
+        onConfirm={() => setRemoveOpen(false)}
       />
 
       <Dialog

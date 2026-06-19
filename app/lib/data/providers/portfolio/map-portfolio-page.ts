@@ -301,6 +301,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         ...row,
         remainingBorrowPowerUsd: Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd),
         liquidationThresholdUsd: row.pool.liquidationUsd,
+        feesLabel: formatUsd(row.feesUsd),
       })),
       debtPositions: walletDebts.map((debt, index) => {
         const matchingCollateral = walletCollaterals.find((row) => row.pool.id === debt.poolId)
