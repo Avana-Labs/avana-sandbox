@@ -1,4 +1,4 @@
-import { currentDebtValueUsd6, debtInterestOwedUsd6, formatFixed, totalDebtValueUsd6, type BorrowSystemState } from "@/app/lib/credit-engine"
+import { calculateSpokeCreditMetrics, currentDebtValueUsd6, debtInterestOwedUsd6, formatFixed, totalDebtValueUsd6, type BorrowSpokeId, type BorrowSystemState } from "@/app/lib/credit-engine"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import type { DebtRowContext } from "@/app/borrow/components/debts-table"
 import type { SupplyRowContext } from "@/app/borrow/components/supplies-table"
@@ -59,12 +59,32 @@ export function selectBorrowSnapshot(state: BorrowSystemState, walletId: string)
       totalCollateralUsd: 0,
       averageHealthFactor: null,
       currentLtvPct: 0,
+      spokeBreakdown: [],
     }
   }
 
   const walletSnapshot = selectWalletBorrowSnapshot(state, walletId)
   const totalCollateralUsd = walletSnapshot.totalCollateralUsd
   const totalBorrowedUsd = fixedToNumber(totalDebtValueUsd6(account), 6)
+  const ownedSpokes = Array.from(
+    new Set(account.collateralPositions.map((position) => state.markets[position.marketId]?.spokeId).filter(Boolean)),
+  ) as BorrowSpokeId[]
+  const spokeBreakdown = ownedSpokes
+    .map((spokeId) => {
+      const metrics = calculateSpokeCreditMetrics(state, walletId, spokeId)
+      const label =
+        Object.values(state.markets).find((market) => market.spokeId === spokeId)?.display.venue ?? spokeId
+
+      return {
+        spokeId,
+        label,
+        availableCreditUsd: fixedToNumber(metrics.availableCreditUsd6, 6),
+        totalBorrowedUsd: fixedToNumber(metrics.totalBorrowedUsd6, 6),
+        liquidationBufferUsd: fixedToNumber(metrics.liquidationBufferUsd6 > 0n ? metrics.liquidationBufferUsd6 : 0n, 6),
+        healthFactor: metrics.totalBorrowedUsd6 > 0n ? fixedToNumber(metrics.healthFactorWad, 18) : null,
+      }
+    })
+    .sort((left, right) => right.totalBorrowedUsd - left.totalBorrowedUsd)
 
   return {
     approvedUsd: walletSnapshot.availableCreditUsd,
@@ -73,5 +93,6 @@ export function selectBorrowSnapshot(state: BorrowSystemState, walletId: string)
     totalCollateralUsd,
     averageHealthFactor: walletSnapshot.healthFactor,
     currentLtvPct: totalCollateralUsd > 0 ? (totalBorrowedUsd / totalCollateralUsd) * 100 : 0,
+    spokeBreakdown,
   }
 }

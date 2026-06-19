@@ -15,6 +15,8 @@ describe("borrow dashboard selectors", () => {
     expect(debts).toHaveLength(2)
     expect(snapshot.totalBorrowedUsd).toBe(2000)
     expect(snapshot.approvedUsd).toBeGreaterThan(0)
+    expect(snapshot.spokeBreakdown).toHaveLength(2)
+    expect(snapshot.spokeBreakdown.reduce((sum, row) => sum + row.totalBorrowedUsd, 0)).toBe(snapshot.totalBorrowedUsd)
   })
 
   it("reflects shared-session borrow activity in debt and collateral rows", () => {
@@ -33,5 +35,24 @@ describe("borrow dashboard selectors", () => {
     expect(supplies.find((row) => row.pool.id === "uni-v3-bluechip-weth-usdc")?.borrowedUsd).toBeGreaterThan(1200)
     expect(debts.find((row) => row.pool.id === "uni-v3-bluechip-weth-usdc")?.borrowedUsd).toBeGreaterThan(1200)
     expect(debts.some((row) => row.id.includes("uni-v3-bluechip:usdc"))).toBe(true)
+  })
+
+  it("keeps wallet-wide totals while exposing the spoke that changed", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const next = applyBorrowAction(state, {
+      type: "borrow",
+      walletId: "demo-wallet",
+      marketId: "uni-v3-bluechip-weth-usdc",
+      assetId: "uni-v3-bluechip:usdc",
+      amountUsd6: parseFixed("150", 6),
+    })
+
+    const snapshot = selectBorrowSnapshot(next, "demo-wallet")
+    const bluechip = snapshot.spokeBreakdown.find((row) => row.spokeId === "uni-v3-bluechip")
+    const stable = snapshot.spokeBreakdown.find((row) => row.spokeId === "uni-v3-stable")
+
+    expect(snapshot.totalBorrowedUsd).toBe(2150)
+    expect(bluechip?.totalBorrowedUsd).toBe(1350)
+    expect(stable?.totalBorrowedUsd).toBe(800)
   })
 })
