@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import type { RewardsPromoTabId, RewardsQuest, RewardsQuestIconId } from "@/app/lib/data/mock/shared/rewards"
 import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -86,32 +86,33 @@ function mapTaskToQuest(task: RewardTask, progress: UserRewardProgress): RewardC
 }
 
 export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
-  const rewards = useRewardsSessionContext()
+  const {
+    walletId,
+    state,
+    tasks,
+    readAdapter,
+    claimReward,
+    claimAllRewards,
+    completeSandboxTask,
+  } = useRewardsSessionContext()
   const [snapshot, setSnapshot] = useState<RewardsSnapshot | null>(null)
 
+  const reloadSnapshot = useCallback(async () => {
+    const [summary, progress] = await Promise.all([
+      readAdapter.readRewardSummary(walletId),
+      readAdapter.readProgress(walletId),
+    ])
+
+    setSnapshot({ summary, progress })
+  }, [readAdapter, walletId])
+
   useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      const [summary, progress] = await Promise.all([
-        rewards.readAdapter.readRewardSummary(rewards.walletId),
-        rewards.readAdapter.readProgress(rewards.walletId),
-      ])
-
-      if (!cancelled) {
-        setSnapshot({ summary, progress })
-      }
-    }
-
-    void load()
-    return () => {
-      cancelled = true
-    }
-  }, [rewards, rewards.state])
+    void reloadSnapshot()
+  }, [reloadSnapshot, state.events.length, state.claims.length])
 
   const questsByTab = useMemo(() => {
     const progressByTaskId = new Map(snapshot?.progress.map((item) => [item.taskId, item]))
-    return rewards.tasks.reduce<Record<RewardsPromoTabId, RewardCardViewModel[]>>(
+    return tasks.reduce<Record<RewardsPromoTabId, RewardCardViewModel[]>>(
       (accumulator, task) => {
         const progress = progressByTaskId.get(task.id)
         if (!progress) return accumulator
@@ -124,9 +125,34 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         "refer-a-friend": [],
       },
     )
-  }, [rewards.tasks, snapshot?.progress])
+  }, [tasks, snapshot?.progress])
 
-  const progressPercentage = snapshot ? Math.round((snapshot.summary.completedTaskCount / Math.max(1, snapshot.summary.totalTaskCount)) * 100) : pageData.progressPercentage
+  const progressPercentage = snapshot
+    ? Math.round((snapshot.summary.completedTaskCount / Math.max(1, snapshot.summary.totalTaskCount)) * 100)
+    : pageData.progressPercentage
+
+  const handleTaskAction = useCallback(
+    async (taskId: string) => {
+      const progress = snapshot?.progress.find((item) => item.taskId === taskId)
+      if (!progress) return
+
+      if (progress.status === "claimable") {
+        await claimReward(taskId)
+      } else if (progress.status === "available" || progress.status === "in_progress") {
+        await completeSandboxTask(taskId)
+      } else {
+        return
+      }
+
+      await reloadSnapshot()
+    },
+    [claimReward, completeSandboxTask, reloadSnapshot, snapshot?.progress],
+  )
+
+  const handleClaimAll = useCallback(async () => {
+    await claimAllRewards()
+    await reloadSnapshot()
+  }, [claimAllRewards, reloadSnapshot])
 
   return (
     <>
@@ -137,13 +163,15 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         completedCount={snapshot?.summary.completedTaskCount ?? pageData.completedPools}
         totalCount={snapshot?.summary.totalTaskCount ?? pageData.totalPools}
         progressPercentage={progressPercentage}
-        onClaimAll={() => rewards.claimAllRewards()}
+        onClaimAll={() => {
+          void handleClaimAll()
+        }}
       />
 
       <RewardsTabs
         promoTabs={pageData.promoTabs}
         questsByTab={questsByTab}
-        onClaimTask={(taskId) => rewards.claimReward(taskId)}
+        onTaskAction={(taskId) => handleTaskAction(taskId)}
       />
     </>
   )

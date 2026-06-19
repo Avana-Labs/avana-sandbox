@@ -49,6 +49,10 @@ describe("sandbox rewards adapters", () => {
     const summary = await readAdapter.readRewardSummary(wallet)
     expect(summary.totalClaimedAmount).toBe(40)
 
+    await actionAdapter.completeSandboxTask(wallet, "review-risk-basics")
+    const progressAfterCompletion = await actionAdapter.refreshTaskProgress(wallet)
+    expect(progressAfterCompletion.find((item) => item.taskId === "review-risk-basics")?.status).toBe("claimable")
+
     expect(deserializeBorrowSystemState(buildBorrowSessionSeed(wallet))).toEqual(borrowBefore)
     expect(deserializeLendSystemState(buildLendSessionSeed(wallet))).toEqual(lendBefore)
     expect(deserializeMultiplySystemState(buildMultiplySessionSeed(wallet))).toEqual(multiplyBefore)

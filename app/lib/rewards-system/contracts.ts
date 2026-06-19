@@ -39,6 +39,7 @@ export type RewardsActionAdapter = {
   mode: "sandbox" | "production"
   initializeRewardsForWallet(wallet: string): Promise<RewardsSessionState>
   recordActivityEvent(event: RewardActivityEvent): Promise<RewardsSessionState>
+  completeSandboxTask(wallet: string, taskId: string): Promise<RewardsSessionState>
   refreshTaskProgress(wallet: string): Promise<UserRewardProgress[]>
   claimReward(wallet: string, taskId: string): Promise<RewardClaim>
   claimAllRewards(wallet: string): Promise<RewardClaim[]>

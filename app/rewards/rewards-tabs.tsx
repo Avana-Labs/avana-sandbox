@@ -6,15 +6,15 @@ import type { RewardsPromoTabId, RewardsQuest } from "@/app/lib/data/mock/shared
 export function RewardsTabs({
   promoTabs,
   questsByTab,
-  onClaimTask,
+  onTaskAction,
 }: {
   promoTabs: ReadonlyArray<{ id: RewardsPromoTabId; label: string }>
   questsByTab: Record<RewardsPromoTabId, RewardsQuest[]>
-  onClaimTask: (taskId: string) => Promise<unknown>
+  onTaskAction: (taskId: string) => Promise<unknown>
 }) {
   return (
     <div id="rewards-tabs" className="space-y-6">
-      <QuestsTab promoTabs={promoTabs} questsByTab={questsByTab} onClaimTask={onClaimTask} />
+      <QuestsTab promoTabs={promoTabs} questsByTab={questsByTab} onTaskAction={onTaskAction} />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { applyActivityEvent, buildDefaultRewardsCatalog, claimReward as buildClaimReward, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
+import { buildSandboxCompletionEvents } from "@/app/lib/rewards-engine/task-completion"
 import type {
   ReferralProfile,
   ReferralRelationship,
@@ -112,6 +113,21 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
     const nextState = applyActivityEventToSession(this.readState(), event)
     this.updateState((currentState) => applyActivityEventToSession(currentState, event))
     return nextState
+  }
+
+  async completeSandboxTask(wallet: string, taskId: string) {
+    const events = buildSandboxCompletionEvents(taskId, wallet, this.now())
+    if (events.length === 0) {
+      throw new Error(`No sandbox completion path for reward task ${taskId}`)
+    }
+
+    let state = this.readState()
+    for (const event of events) {
+      state = applyActivityEventToSession(state, event)
+    }
+
+    this.writeState(state)
+    return state
   }
 
   async refreshTaskProgress(wallet: string) {
