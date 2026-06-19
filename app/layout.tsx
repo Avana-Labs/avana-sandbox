@@ -16,22 +16,24 @@ const diatypeSans = localFont({
       weight: "400",
       style: "normal",
     },
-  ],
-  variable: "--font-diatype-sans",
-  display: "swap",
-})
-
-const diatypeData = localFont({
-  src: [
     {
-      path: "../public/fonts/diatype/data/ABCDiatypeSemi-MonoVariable-Trial.woff2",
-      weight: "400 700",
+      path: "../public/fonts/diatype/core/ABCDiatype-Medium-Trial.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/diatype/core/ABCDiatypeVariable-Trial.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/diatype/core/ABCDiatype-Bold-Trial.woff2",
+      weight: "700",
       style: "normal",
     },
   ],
-  variable: "--font-diatype-data",
+  variable: "--font-diatype-sans",
   display: "swap",
-  preload: false,
 })
 
 export const metadata: Metadata = {
@@ -104,7 +106,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${diatypeSans.variable} ${diatypeData.variable}`}
+      className={diatypeSans.variable}
       suppressHydrationWarning
     >
       <head>

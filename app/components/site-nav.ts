@@ -1,6 +1,6 @@
 import type { ComponentType } from "react"
 import type { LucideIcon } from "lucide-react"
-import { Reward24Regular, Wallet24Regular } from "@fluentui/react-icons"
+import { Grid24Regular, Reward24Regular } from "@fluentui/react-icons"
 import {
   ChartCandlestick,
   ChartNoAxesColumnIncreasing,
@@ -98,7 +98,7 @@ export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
   { href: "/lend", label: "Lend" },
   { href: "/borrow", label: "Borrow" },
   { href: "/multiply", label: "Multiply" },
-  { href: "/portfolio", label: "Portfolio", icon: Wallet24Regular },
+  { href: "/dashboard", label: "Dashboard", icon: Grid24Regular },
   { href: "/rewards", label: "Rewards", icon: Reward24Regular },
 ]
 

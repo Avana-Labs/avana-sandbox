@@ -321,7 +321,7 @@ export function Header() {
               <div className="mr-0.5 flex items-center gap-0.5">
                 {desktopLinks.slice(4).map((link) => {
                   const isActive = pathname.startsWith(link.href)
-                  const isUtilityLink = link.href === "/portfolio" || link.href === "/rewards"
+                  const isUtilityLink = link.href === "/dashboard" || link.href === "/rewards"
 
                   return (
                     <Link
