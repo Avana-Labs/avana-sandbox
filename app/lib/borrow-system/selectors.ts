@@ -59,6 +59,10 @@ export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: 
       venue: market.display.venue,
       feeTier: market.display.feeTier,
       tvlUsd: fixedToNumber(market.snapshot.totalLiquidityUsd6, 6),
+      change24hPct:
+        market.snapshot.totalLiquidityUsd6 > 0n
+          ? fixedToNumber((market.snapshot.fees24hUsd6 * 10_000n) / market.snapshot.totalLiquidityUsd6, 2)
+          : 0,
       spoke: market.spokeId,
       ltv: fixedToNumber(market.riskConfig.collateralFactorWad, 18) * 100,
       dexes: [{ id: market.display.venue.toLowerCase(), label: venueChipLabel(market.display.venue) }],
