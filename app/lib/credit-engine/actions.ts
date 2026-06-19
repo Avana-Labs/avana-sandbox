@@ -334,6 +334,9 @@ export function applyBorrowAction(state: BorrowSystemState, action: BorrowAction
     case "liquidate":
       return applyLiquidationAction(next, action)
     default:
-      throw new Error(`Unsupported action ${action.type}`)
+      {
+        const exhaustiveAction: never = action
+        throw new Error(`Unsupported action: ${String(exhaustiveAction)}`)
+      }
   }
 }

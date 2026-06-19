@@ -39,6 +39,9 @@ export {
   calculateRepayPreview,
   formatHealthFactor,
   getHealthStatus,
+  type BorrowPreview,
   type HomeBorrowToken,
   type HomeCollateralPool,
+  type RemovePreview,
+  type RepayPreview,
 } from "@/app/lib/home-sim"
