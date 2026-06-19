@@ -207,7 +207,7 @@ export function buildLendWalletSnapshot(
       suppliedAmount: portfolio.investments.reduce((sum, item) => sum + item.balance, 0),
       suppliedValueUsd: totalSuppliedUsd,
       principalAmount: portfolio.investments.reduce((sum, item) => sum + item.principalAmount, 0),
-      interestEarned: portfolio.investments.reduce((sum, item) => sum + item.interestEarned, 0),
+      interestEarned: portfolio.investments.reduce((sum, item) => sum + (item.interestEarned ?? 0), 0),
       currentApy: averageApy,
     },
     yieldSnapshots: buildLendYieldSnapshots(state),

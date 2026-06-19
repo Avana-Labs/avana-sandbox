@@ -289,7 +289,7 @@ export function HotMarkets({
     return snapshot?.href ?? `/lend/markets/${assetId}`
   }
 
-  const renderSequence = (copy: "a" | "b") =>
+  const renderSequence = (copy: "a" | "b", interactive = true) =>
     sequence.map((assetId, index) => {
       const cardKey = `${copy}-${assetId}-${index}`
       return (
@@ -301,6 +301,7 @@ export function HotMarkets({
           hover={hover}
           onHover={setHover}
           onLeave={() => setHover(null)}
+          interactive={interactive}
         />
       )
     })
@@ -323,17 +324,7 @@ export function HotMarkets({
               {renderSequence("a")}
             </div>
             <div aria-hidden="true" className="flex shrink-0 items-start gap-3 pr-3">
-              {sequence.map((assetId, index) => (
-                <FeaturedCard
-                  key={`b-${assetId}-${index}`}
-                  asset={assets[assetId]}
-                  cardKey={`b-${assetId}-${index}`}
-                  hover={hover}
-                  onHover={setHover}
-                  onLeave={() => setHover(null)}
-                  interactive={false}
-                />
-              ))}
+              {renderSequence("b", false)}
             </div>
           </motion.div>
         </div>
