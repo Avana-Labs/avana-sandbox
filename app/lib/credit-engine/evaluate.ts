@@ -1,10 +1,15 @@
 import { applyBorrowAction } from "./actions"
 import type { BorrowAction, BorrowSystemState } from "./types"
 
+function cloneState(state: BorrowSystemState): BorrowSystemState {
+  return structuredClone(state)
+}
+
 export function evaluateBorrowAction(
   state: BorrowSystemState,
   action: BorrowAction,
-  _mode: "dry-run" | "commit" = "commit",
+  mode: "dry-run" | "commit" = "commit",
 ): BorrowSystemState {
-  return applyBorrowAction(state, action)
+  const source = mode === "dry-run" ? cloneState(state) : state
+  return applyBorrowAction(source, action)
 }
