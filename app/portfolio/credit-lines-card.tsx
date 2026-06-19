@@ -58,24 +58,27 @@ export function CreditLinesCard({
   }
 }) {
   const averageHealthFactor = creditLines.averageHealthFactor
-  const currentLtv = creditLines.currentLtvPct
+  const availableCredit = creditLines.approvedUsd
+  const liquidationBuffer = Math.max(0, creditLines.liquidationThresholdUsd - creditLines.totalBorrowedUsd)
   const totalBorrowed = creditLines.totalBorrowedUsd
+  const creditHealthTone =
+    averageHealthFactor == null ? undefined : averageHealthFactor >= 1.5 ? "positive" : "negative"
 
   return (
     <section className="w-full space-y-4">
       <div className="grid w-full grid-cols-2 gap-x-5 gap-y-4 md:grid-cols-4 md:gap-x-8 md:gap-y-5">
         <StoryMetric
-          value={`$${creditLines.liquidationThresholdUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
-          label="Liquidation Number"
+          value={`$${availableCredit.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+          label="Available Credit"
         />
         <StoryMetric
           value={averageHealthFactor ? averageHealthFactor.toFixed(2) : "—"}
           label="Credit Health"
-          delta="+0.2 pts"
-          deltaTone="positive"
+          delta={averageHealthFactor ? (averageHealthFactor >= 1.5 ? "GOOD" : "WATCH") : undefined}
+          deltaTone={creditHealthTone}
         />
-        <StoryMetric value={`${currentLtv.toFixed(2)}%`} label="Current LTV" delta="-2.1 pts" deltaTone="negative" />
-        <StoryMetric value={`$${totalBorrowed.toLocaleString("en-US")}`} label="You borrowed" delta="+4.4%" deltaTone="negative" />
+        <StoryMetric value={`$${liquidationBuffer.toLocaleString("en-US", { maximumFractionDigits: 0 })}`} label="Liquidation Buffer" />
+        <StoryMetric value={`$${totalBorrowed.toLocaleString("en-US")}`} label="Total Borrowed" />
       </div>
     </section>
   )
