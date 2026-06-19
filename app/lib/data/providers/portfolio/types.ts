@@ -130,6 +130,7 @@ export type PortfolioLendTabData = {
 
 export type PortfolioMultiplyCollateral = {
   id: string
+  marketId: string
   label: string
   collateralToken: string
   borrowableToken: string
@@ -138,6 +139,11 @@ export type PortfolioMultiplyCollateral = {
   healthFactor: number
   collateralUsd: number
   borrowPowerUsd: number
+  debtUsd: number
+  ltvPct: number
+  liquidationPriceUsd: number | null
+  netApyPct: number
+  status: "open" | "closed"
 }
 
 export type PortfolioMultiplyPosition = {
