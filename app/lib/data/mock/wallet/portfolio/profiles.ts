@@ -4,8 +4,6 @@ export const WALLET_PROFILES: PortfolioWalletProfileRecord[] = [
   {
     id: "demo-wallet",
     walletAddress: "0x4b9815d5a010bee5ef34ee531a7ae15667fd7acc",
-    selectedNetwork: "all",
-    networks: ["all", "ethereum", "base", "arbitrum"],
   },
 ]
 

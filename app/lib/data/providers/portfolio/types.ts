@@ -1,6 +1,5 @@
 import type { ChartRangeData } from "@/app/components/charts"
 import type { DataSourcePageInfo } from "@/app/lib/data/core/source-runtime"
-import type { NetworkId } from "@/app/portfolio/hero/types"
 import type {
   PortfolioActivityKind,
   PortfolioActivityProduct,
@@ -17,8 +16,6 @@ export type FetchPortfolioPageInput = {
 export type PortfolioWalletProfile = {
   id: string
   walletAddress: string
-  selectedNetwork: NetworkId
-  networks: NetworkId[]
 }
 
 export type PortfolioHeroData = {

@@ -59,7 +59,6 @@ export function PortfolioTabs({ activeTab, onTabChange, pageData, borrowSnapshot
       <PortfolioHero
         tab={activeTab}
         tabs={tabBar}
-        initialNetwork={pageData.walletProfile.selectedNetwork}
         headlineValue={activeHero.headlineValue}
         headlineDelta={activeHero.headlineDelta}
         statOneValue={activeHero.statOneValue}

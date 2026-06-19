@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import type { ReactNode } from "react"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { Info } from "lucide-react"
 import {
   ArrowCircleDown24Filled,
@@ -21,15 +21,13 @@ import {
 import { formatChartValue } from "@/app/components/charts/format"
 import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
 import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/types"
-import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { CurrentLtvCard } from "@/app/borrow/components/debts-table"
 import { SuppliesHealthFactorCard } from "@/app/borrow/components/supplies-table"
 import { PortfolioHeroActions } from "./portfolio-hero-actions"
 import { PortfolioHeroHeader } from "./portfolio-hero-header"
-import { PORTFOLIO_NETWORKS } from "./portfolio-network-data"
 import type { BorrowSnapshot } from "../borrow-hero-state"
-import type { NetworkId, PortfolioHeroAction } from "./types"
+import type { PortfolioHeroAction } from "./types"
 
 const HeroChartSection = dynamic(
   () => import("@/app/components/charts/hero-chart-section").then((mod) => mod.HeroChartSection),
@@ -52,7 +50,6 @@ const RANGE_PERIOD_WORD: Record<ChartRangeOption, string> = {
 type PortfolioHeroProps = {
   tab: "overview" | "lending" | "looping" | "activity"
   tabs?: ReactNode
-  initialNetwork?: NetworkId
   headlineValue?: string
   headlineDelta?: string
   rangeData?: ChartRangeData
@@ -174,7 +171,6 @@ function StatCard({ label, value, helpText }: { label: string; value: string; he
 export function PortfolioHero({
   tab,
   tabs,
-  initialNetwork = "all",
   headlineValue,
   headlineDelta,
   rangeData = DEFAULT_RANGE_DATA,
@@ -185,41 +181,18 @@ export function PortfolioHero({
 }: PortfolioHeroProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const [selectedNetwork, setSelectedNetwork] = useState<NetworkId>(initialNetwork)
   const { showDollarAmounts } = useDisplayPreferences()
 
-  const activeNetwork = PORTFOLIO_NETWORKS.find((network) => network.id === selectedNetwork) ?? PORTFOLIO_NETWORKS[0]
   const uiConfig = HERO_UI_CONFIG[tab]
   const isBorrowOverview = tab === "overview"
   const isLoopingOverview = tab === "looping"
   const showBalance = !uiConfig.hideBalance
 
-  const resolvedHeadlineValue = selectedNetwork === "all" ? (headlineValue ?? activeNetwork.balance) : activeNetwork.balance
+  const resolvedHeadlineValue = headlineValue
   const showChart = !isBorrowOverview && !isLoopingOverview && !uiConfig.hideChart
   const showActions = !uiConfig.hideActions
   const showStats = !uiConfig.hideStats
-  const networkFeed = useMemo(
-    () =>
-      showChart
-        ? getPortfolioHeroFeed({
-            balance: activeNetwork.balance,
-            delta: activeNetwork.delta,
-            chartBase: activeNetwork.chartBase,
-            chartVariance: activeNetwork.chartVariance,
-          })
-        : null,
-    [activeNetwork.balance, activeNetwork.delta, activeNetwork.chartBase, activeNetwork.chartVariance, showChart],
-  )
-
-  const displayRangeData = useMemo(() => {
-    if (!showChart) {
-      return null
-    }
-    if (selectedNetwork === "all" && rangeData) {
-      return rangeData
-    }
-    return networkFeed?.rangeData ?? DEFAULT_RANGE_DATA
-  }, [networkFeed?.rangeData, rangeData, selectedNetwork, showChart])
+  const displayRangeData = showChart ? rangeData ?? DEFAULT_RANGE_DATA : null
 
   // Delta + color track the active range's real trend, so a dip turns red.
   const activePoints = displayRangeData?.[activeRange] ?? []
@@ -260,10 +233,7 @@ export function PortfolioHero({
 
   return (
     <section className="mb-8">
-      <PortfolioHeroHeader
-        selectedNetwork={selectedNetwork}
-        onNetworkChange={setSelectedNetwork}
-      />
+      <PortfolioHeroHeader />
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
