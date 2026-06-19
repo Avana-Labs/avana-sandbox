@@ -1,19 +1,19 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
-import { PortfolioPositions } from "@/app/portfolio/portfolio-positions"
+import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 
 vi.mock("@/app/components/display-preferences", () => ({
   useDisplayPreferences: () => ({ showDollarAmounts: true }),
 }))
 
-vi.mock("@/app/borrow/components/supplies-table", () => ({
+vi.mock("@/app/dashboard/components/borrow-tab/supplies-table", () => ({
   SuppliesHealthFactorCard: () => null,
   SuppliesPanel: ({ rows }: { rows: Array<{ remainingBorrowPowerUsd: number }> }) => (
     <div>remaining:{rows[0]?.remainingBorrowPowerUsd ?? 0}</div>
   ),
 }))
 
-vi.mock("@/app/borrow/components/debts-table", () => ({
+vi.mock("@/app/dashboard/components/borrow-tab/debts-table", () => ({
   CurrentLtvCard: () => null,
   DebtsPanel: ({ rows }: { rows: Array<{ borrowedUsd: number }> }) => <div>borrowed:{rows[0]?.borrowedUsd ?? 0}</div>,
 }))
@@ -38,10 +38,10 @@ const pool = {
   ] as const,
 }
 
-describe("PortfolioPositions live rows", () => {
+describe("DashboardBorrowTab live rows", () => {
   it("renders refreshed debt amounts from updated props", () => {
     const { rerender } = render(
-      <PortfolioPositions
+      <DashboardBorrowTab
         section="debts"
         debtPositions={[
           {
@@ -63,7 +63,7 @@ describe("PortfolioPositions live rows", () => {
     expect(screen.getByText("borrowed:50")).toBeInTheDocument()
 
     rerender(
-      <PortfolioPositions
+      <DashboardBorrowTab
         section="debts"
         debtPositions={[
           {

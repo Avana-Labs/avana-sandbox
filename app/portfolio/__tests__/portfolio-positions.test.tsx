@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { PortfolioPositions } from "@/app/portfolio/portfolio-positions"
+import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 
 const createIntent = vi.fn()
 const previewTransaction = vi.fn()
@@ -62,7 +62,7 @@ vi.mock("@/app/components/display-preferences", () => ({
   useDisplayPreferences: () => ({ showDollarAmounts: true }),
 }))
 
-vi.mock("@/app/borrow/components/supplies-table", () => ({
+vi.mock("@/app/dashboard/components/borrow-tab/supplies-table", () => ({
   SuppliesHealthFactorCard: () => null,
   SuppliesPanel: ({
     rows,
@@ -89,7 +89,7 @@ vi.mock("@/app/borrow/components/supplies-table", () => ({
   ),
 }))
 
-vi.mock("@/app/borrow/components/debts-table", () => ({
+vi.mock("@/app/dashboard/components/borrow-tab/debts-table", () => ({
   CurrentLtvCard: () => null,
   DebtsPanel: ({
     rows,
@@ -158,14 +158,14 @@ vi.mock("@/app/borrow/components/repay-remove-modal", () => ({
     ) : null,
 }))
 
-describe("PortfolioPositions", () => {
+describe("DashboardBorrowTab", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it("opens portfolio modals and closes after mocked confirm", async () => {
     render(
-      <PortfolioPositions
+      <DashboardBorrowTab
         section="supplies"
         collateralPositions={[supplyRow] as never}
         walletId="demo-wallet"
@@ -201,7 +201,7 @@ describe("PortfolioPositions", () => {
 
   it("opens debt modals and closes after mocked confirm", async () => {
     render(
-      <PortfolioPositions
+      <DashboardBorrowTab
         section="debts"
         debtPositions={[debtRow] as never}
         walletId="demo-wallet"

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { parseFixed } from "@/app/lib/credit-engine"
-import { PortfolioDashboard } from "@/app/portfolio/portfolio-dashboard"
+import { DashboardClient } from "@/app/dashboard/dashboard-client"
 
 const readPortfolioBorrow = vi.fn()
 let transactionHistory: Array<Record<string, unknown>> = []
@@ -32,8 +32,8 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
   }),
 }))
 
-vi.mock("@/app/portfolio/portfolio-tabs", () => ({
-  PortfolioTabs: ({ onTabChange }: { onTabChange: (tab: string) => void }) => (
+vi.mock("@/app/dashboard/dashboard-tabs", () => ({
+  DashboardTabs: ({ onTabChange }: { onTabChange: (tab: string) => void }) => (
     <button type="button" onClick={() => onTabChange("activity")}>
       Activity tab
     </button>
@@ -41,7 +41,7 @@ vi.mock("@/app/portfolio/portfolio-tabs", () => ({
 }))
 
 vi.mock("@/app/portfolio/credit-lines-card", () => ({ CreditLinesCard: () => null }))
-vi.mock("@/app/portfolio/portfolio-positions", () => ({ PortfolioPositions: () => null }))
+vi.mock("@/app/portfolio/dashboard-borrow-tab", () => ({ DashboardBorrowTab: () => null }))
 vi.mock("@/app/portfolio/portfolio-investments", () => ({ PortfolioInvestments: () => null }))
 vi.mock("@/app/portfolio/multiply-collateral-table", () => ({ MultiplyCollateralTable: () => null }))
 vi.mock("@/app/portfolio/recent-activity", () => ({
@@ -57,7 +57,7 @@ vi.mock("@/app/portfolio/recent-activity", () => ({
   ),
 }))
 
-describe("PortfolioDashboard activity", () => {
+describe("DashboardClient activity", () => {
   it("maps transactionHistory to activity rows with synthetic hash and simulated label", async () => {
     transactionHistory = [
       {
@@ -82,7 +82,7 @@ describe("PortfolioDashboard activity", () => {
       debtPositions: [],
     })
 
-    render(<PortfolioDashboard walletProfileId="demo-wallet" />)
+    render(<DashboardClient walletProfileId="demo-wallet" />)
 
     await waitFor(() => expect(readPortfolioBorrow).toHaveBeenCalled())
     await waitFor(() => expect(screen.getByText("Activity tab")).toBeInTheDocument())
