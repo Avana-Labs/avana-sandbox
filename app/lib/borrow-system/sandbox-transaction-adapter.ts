@@ -120,6 +120,40 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
     const preview = await this.previewTransaction(intent)
     const timestamp = this.now()
 
+    if (action.type === "liquidate") {
+      const receipt = {
+        id: this.generateId("receipt"),
+        hash: this.generateId("sim"),
+        status: "failed" as const,
+        actionType: intent.actionType,
+        simulated: true,
+        timestamp,
+        error: "Liquidation is preview-only in sandbox mode",
+      }
+      const historyItem: TransactionHistoryItem = {
+        id: this.generateId("history"),
+        intentId: intent.id,
+        walletId: intent.walletId,
+        marketId: intent.marketId,
+        assetId: intent.assetId,
+        kind: intent.actionType,
+        status: "failed",
+        requestedAmountUsd6: intent.amountUsd6,
+        executedAmountUsd6: 0n,
+        simulated: true,
+        timestamp,
+        hash: receipt.hash,
+      }
+
+      return {
+        preview,
+        receipt,
+        result: receipt,
+        historyItem,
+        state: current,
+      }
+    }
+
     if (!preview.allowed) {
       const receipt = {
         id: this.generateId("receipt"),
