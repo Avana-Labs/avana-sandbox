@@ -88,6 +88,27 @@ describe("sandbox transaction adapter", () => {
     expect(result.state.transactions.at(-1)?.kind).toBe("repay")
   })
 
+  it("claim satisfies the sandbox action contract", async () => {
+    const harness = createHarness()
+    const beforeBalance = harness.getState().accounts["wallet-1"]!.walletBalanceUsd6
+    const action: BorrowAction = {
+      type: "claim",
+      walletId: "wallet-1",
+      rewardPositionIds: ["claim-eth-usdc"],
+      amountUsd6: parseFixed("80", 6),
+    }
+
+    const { preview, result } = await assertSandboxActionContract(harness, action, {
+      expectedActionType: "claim",
+      walletId: "wallet-1",
+    })
+
+    expect(preview.allowed).toBe(true)
+    expect(preview.before.totalBorrowedUsd6).toBe(preview.after.totalBorrowedUsd6)
+    expect(result.state.accounts["wallet-1"]!.walletBalanceUsd6).toBe(beforeBalance + parseFixed("80", 6))
+    expect(result.historyItem.kind).toBe("claim")
+  })
+
   it("withdraw satisfies the sandbox action contract for safe removals", async () => {
     const harness = createHarness()
     const action: BorrowAction = {

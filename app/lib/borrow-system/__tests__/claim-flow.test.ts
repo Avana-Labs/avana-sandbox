@@ -1,29 +1,35 @@
 import { describe, expect, it } from "vitest"
 import { readFileSync } from "node:fs"
 import path from "node:path"
-import { buildHomeClaimPreview } from "@/app/lib/borrow-system/home-runtime"
+import { parseFixed } from "@/app/lib/credit-engine"
+import { EXAMPLE_WALLET_1_REWARD_ID } from "@/app/lib/credit-engine/__tests__/fixtures"
 import {
-  CLAIM_ADAPTER_EXCLUSION_REASON,
+  buildClaimBorrowAction,
+  buildHomeClaimPreview,
+} from "@/app/lib/borrow-system/home-runtime"
+import {
   isClaimSupportedByTransactionAdapter,
 } from "@/app/lib/borrow-system/claim-adapter-policy"
 import {
   HOME_CLAIM_POSITIONS,
-  HOME_INITIAL_CLAIMABLE_TOTALS,
   HOME_INITIAL_CLAIM_SELECTIONS,
 } from "@/app/lib/home-sim"
+import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+import { createBorrowFlowHarness, runBorrowActionBoxFlow } from "./flow.harness"
 
 describe("claim adapter policy", () => {
-  it("explicitly excludes claim from the canonical transaction adapter path", () => {
-    expect(isClaimSupportedByTransactionAdapter()).toBe(false)
-    expect(CLAIM_ADAPTER_EXCLUSION_REASON).toContain("BorrowAction")
+  it("routes claim through the canonical transaction adapter path", () => {
+    expect(isClaimSupportedByTransactionAdapter()).toBe(true)
   })
 })
 
 describe("home claim preview runtime", () => {
-  it("builds claim preview from home-sim position state", () => {
+  it("builds claim preview from engine reward positions", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
     const preview = buildHomeClaimPreview(
+      state,
+      "demo-wallet",
       HOME_CLAIM_POSITIONS,
-      HOME_INITIAL_CLAIMABLE_TOTALS,
       HOME_INITIAL_CLAIM_SELECTIONS,
       null,
     )
@@ -35,9 +41,11 @@ describe("home claim preview runtime", () => {
   })
 
   it("caps partial claim amounts at the selected position total", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
     const preview = buildHomeClaimPreview(
+      state,
+      "demo-wallet",
       HOME_CLAIM_POSITIONS,
-      HOME_INITIAL_CLAIMABLE_TOTALS,
       { "claim-eth-usdc": true, "claim-usdc-usdt": false, "claim-wbtc-eth": false },
       200,
     )
@@ -46,16 +54,41 @@ describe("home claim preview runtime", () => {
     expect(preview.hasCustomAmount).toBe(true)
   })
 
-  it("requires at least one selected position before allowing claim", () => {
+  it("builds a canonical claim BorrowAction from preview state", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
     const preview = buildHomeClaimPreview(
+      state,
+      "demo-wallet",
       HOME_CLAIM_POSITIONS,
-      HOME_INITIAL_CLAIMABLE_TOTALS,
-      { "claim-eth-usdc": false, "claim-usdc-usdt": false, "claim-wbtc-eth": false },
+      { "claim-eth-usdc": true, "claim-usdc-usdt": false, "claim-wbtc-eth": false },
       null,
     )
+    const action = buildClaimBorrowAction("demo-wallet", preview)
 
-    expect(preview.hasSelection).toBe(false)
-    expect(preview.ctaLabel).toBe("Select positions to claim")
+    expect(action).toEqual({
+      type: "claim",
+      walletId: "demo-wallet",
+      rewardPositionIds: ["claim-eth-usdc"],
+      amountUsd6: parseFixed("142", 6),
+    })
+  })
+})
+
+describe("claim action box flow", () => {
+  it("executes claim through adapter-backed action box contract", async () => {
+    const harness = createBorrowFlowHarness()
+    const beforeBalance = harness.getState().accounts["wallet-1"]!.walletBalanceUsd6
+
+    const { result, executeResult } = await runBorrowActionBoxFlow(harness, {
+      type: "claim",
+      walletId: "wallet-1",
+      rewardPositionIds: [EXAMPLE_WALLET_1_REWARD_ID],
+      amountUsd6: parseFixed("75", 6),
+    })
+
+    expect(result.current.successUi?.receipt.status).toBe("success")
+    expect(executeResult?.historyItem.kind).toBe("claim")
+    expect(harness.getState().accounts["wallet-1"]!.walletBalanceUsd6).toBe(beforeBalance + parseFixed("75", 6))
   })
 })
 
@@ -76,7 +109,7 @@ describe("claim flow surfaces", () => {
       path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"),
       "utf8",
     )
-    expect(source).toContain("buildHomeClaimPreview")
+    expect(source).toContain("buildClaimBorrowAction")
     expect(source).toMatch(/TransactionFlowPanel[\s\S]*simulated/)
   })
 })
