@@ -1,5 +1,5 @@
 import { accrueBorrowSystemState } from "./accrue"
-import { calculateCreditMetrics } from "./metrics"
+import { calculateCreditMetrics, calculateSpokeCreditMetrics } from "./metrics"
 import type { BorrowAction, BorrowSystemState } from "./types"
 import { TOKEN_SCALE, WAD, assetsToShares, mulDiv } from "./units"
 import { currentCollateralValueUsd6, currentDebtValueUsd6, debtInterestOwedUsd6 } from "./valuation"
@@ -26,15 +26,24 @@ function cloneState(state: BorrowSystemState): BorrowSystemState {
 function syncBorrowRates(state: BorrowSystemState, walletId: string) {
   const account = state.accounts[walletId]
   if (!account || account.debtPositions.length === 0) return
-  const metrics = calculateCreditMetrics(state, walletId)
   account.debtPositions = account.debtPositions.map((position) => ({
     ...position,
-    borrowRateWad: state.assets[position.assetId]!.borrowConfig.baseBorrowAprWad + metrics.riskPremiumWad,
+    borrowRateWad:
+      state.assets[position.assetId]!.borrowConfig.baseBorrowAprWad +
+      calculateSpokeCreditMetrics(state, walletId, position.spokeId).riskPremiumWad,
   }))
 }
 
 function usd6ToTokenAmount(amountUsd6: bigint, lpTokenPriceUsd6: bigint) {
   return mulDiv(amountUsd6, TOKEN_SCALE, lpTokenPriceUsd6)
+}
+
+function hasCollateralInSpoke(state: BorrowSystemState, walletId: string, spokeId: string) {
+  const account = state.accounts[walletId]
+  if (!account) return false
+  return account.collateralPositions.some(
+    (position) => position.collateralEnabled && state.markets[position.marketId]?.spokeId === spokeId,
+  )
 }
 
 function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowAction, { type: "borrow" }>) {
@@ -45,6 +54,9 @@ function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowA
   if (!market) throw new Error(`Unknown market ${action.marketId}`)
   if (!asset) throw new Error(`Unknown asset ${action.assetId}`)
   if (!account) throw new Error(`Unknown wallet ${action.walletId}`)
+  if (asset.spokeId !== market.spokeId) {
+    throw new Error(`Asset ${action.assetId} does not belong to spoke ${market.spokeId}`)
+  }
   if (!market.relations.supportedBorrowAssetIds.includes(action.assetId)) {
     throw new Error(`Asset ${action.assetId} is not supported by market ${action.marketId}`)
   }
@@ -52,23 +64,31 @@ function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowA
   if (asset.snapshot.availableLiquidityUsd6 < action.amountUsd6) {
     throw new Error(`Asset ${action.assetId} does not have enough liquidity`)
   }
-
-  const currentMetrics = calculateCreditMetrics(state, action.walletId)
-  if (currentMetrics.availableCreditUsd6 < action.amountUsd6) {
-    throw new Error(`Wallet ${action.walletId} does not have enough available credit`)
+  if (!hasCollateralInSpoke(state, action.walletId, market.spokeId)) {
+    throw new Error(`Wallet ${action.walletId} has no collateral in spoke ${market.spokeId}`)
   }
 
-  const existing = account.debtPositions.find((position) => position.assetId === action.assetId && position.marketId === action.marketId)
+  const currentMetrics = calculateSpokeCreditMetrics(state, action.walletId, market.spokeId)
+  if (currentMetrics.availableCreditUsd6 < action.amountUsd6) {
+    throw new Error(`Wallet ${action.walletId} does not have enough available credit in spoke ${market.spokeId}`)
+  }
+
+  const existing = account.debtPositions.find(
+    (position) => position.assetId === action.assetId && position.spokeId === market.spokeId,
+  )
   const debtIndexRay = existing?.debtIndexRay ?? state.accounts[action.walletId]!.debtPositions[0]?.debtIndexRay ?? state.markets[action.marketId]!.snapshot.supplyIndexRay
   const debtSharesUsd6 = assetsToShares(action.amountUsd6, debtIndexRay)
 
   if (existing) {
     existing.debtSharesUsd6 += debtSharesUsd6
     existing.principalBorrowedUsd6 += action.amountUsd6
+    existing.marketId = existing.marketId ?? action.marketId
   } else {
     account.debtPositions.push({
-      id: `${action.walletId}:${action.marketId}:${action.assetId}`,
+      id: `${action.walletId}:${action.assetId}`,
       assetId: action.assetId,
+      baseAssetId: asset.baseAssetId,
+      spokeId: market.spokeId,
       marketId: action.marketId,
       debtSharesUsd6,
       debtIndexRay,
@@ -83,12 +103,18 @@ function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowA
   state.transactions.push({
     id: `tx-${state.transactions.length + 1}`,
     walletId: action.walletId,
+    spokeId: market.spokeId,
     marketId: action.marketId,
     assetId: action.assetId,
     kind: "borrow",
     amountUsd6: action.amountUsd6,
     at: action.at ?? state.now,
   })
+
+  const postBorrowMetrics = calculateSpokeCreditMetrics(state, action.walletId, market.spokeId)
+  if (postBorrowMetrics.totalBorrowedUsd6 > 0n && postBorrowMetrics.healthFactorWad < WAD) {
+    throw new Error(`Borrowing would make spoke ${market.spokeId} insolvent`)
+  }
 
   syncBorrowRates(state, action.walletId)
   return state
@@ -125,6 +151,7 @@ function applySupplyCollateralAction(state: BorrowSystemState, action: Extract<B
   state.transactions.push({
     id: `tx-${state.transactions.length + 1}`,
     walletId: action.walletId,
+    spokeId: market.spokeId,
     marketId: action.marketId,
     kind: "deposit",
     amountUsd6: action.amountUsd6,
@@ -168,6 +195,7 @@ function applyRepayAction(state: BorrowSystemState, action: Extract<BorrowAction
   state.transactions.push({
     id: `tx-${state.transactions.length + 1}`,
     walletId: action.walletId,
+    spokeId: position.spokeId,
     marketId: position.marketId,
     assetId: position.assetId,
     kind: "repay",
@@ -216,14 +244,20 @@ function applyRemoveCollateralAction(state: BorrowSystemState, action: Extract<B
     account.collateralPositions.splice(positionIndex, 1)
   }
 
-  const metrics = calculateCreditMetrics(state, action.walletId)
-  if (metrics.totalBorrowedUsd6 > 0n && metrics.healthFactorWad < WAD) {
+  const walletMetrics = calculateCreditMetrics(state, action.walletId)
+  if (walletMetrics.totalBorrowedUsd6 > 0n && walletMetrics.healthFactorWad < WAD) {
     throw new Error(`Removing collateral would make wallet ${action.walletId} insolvent`)
+  }
+
+  const spokeMetrics = calculateSpokeCreditMetrics(state, action.walletId, market.spokeId)
+  if (spokeMetrics.totalBorrowedUsd6 > 0n && spokeMetrics.healthFactorWad < WAD) {
+    throw new Error(`Removing collateral would make spoke ${market.spokeId} insolvent`)
   }
 
   state.transactions.push({
     id: `tx-${state.transactions.length + 1}`,
     walletId: action.walletId,
+    spokeId: market.spokeId,
     marketId: position.marketId,
     kind: "withdraw",
     amountUsd6: removeUsd6,
@@ -239,28 +273,33 @@ function applyLiquidationAction(state: BorrowSystemState, action: Extract<Borrow
   if (!account) throw new Error(`Unknown wallet ${action.walletId}`)
   if (action.repayAmountUsd6 <= 0n) throw new Error("Liquidation repay amount must be positive")
 
-  const metricsBefore = calculateCreditMetrics(state, action.walletId)
+  const collateralPosition = account.collateralPositions.find((position) => position.id === action.positionId)
+  if (!collateralPosition) throw new Error(`Unknown collateral position ${action.positionId}`)
+  const market = state.markets[collateralPosition.marketId]
+  if (!market) throw new Error(`Unknown market ${collateralPosition.marketId}`)
+
+  const metricsBefore = calculateSpokeCreditMetrics(state, action.walletId, market.spokeId)
   if (metricsBefore.totalBorrowedUsd6 === 0n) throw new Error(`Wallet ${action.walletId} has no debt to liquidate`)
   if (metricsBefore.healthFactorWad >= WAD) throw new Error(`Wallet ${action.walletId} is not eligible for liquidation`)
 
   const positionIndex = account.collateralPositions.findIndex((position) => position.id === action.positionId)
   if (positionIndex === -1) throw new Error(`Unknown collateral position ${action.positionId}`)
-
-  const collateralPosition = account.collateralPositions[positionIndex]!
-  const market = state.markets[collateralPosition.marketId]
-  if (!market) throw new Error(`Unknown market ${collateralPosition.marketId}`)
+  const scopedCollateralPosition = account.collateralPositions[positionIndex]!
 
   const debtIndex =
     action.debtPositionId != null
       ? account.debtPositions.findIndex((position) => position.id === action.debtPositionId)
-      : account.debtPositions.findIndex((position) => position.marketId === collateralPosition.marketId)
+      : account.debtPositions.findIndex((position) => position.spokeId === market.spokeId)
   if (debtIndex === -1) throw new Error(`Unknown debt position ${action.debtPositionId ?? "(auto)"}`)
 
   const debtPosition = account.debtPositions[debtIndex]!
+  if (debtPosition.spokeId !== market.spokeId) {
+    throw new Error(`Debt position ${debtPosition.id} does not belong to spoke ${market.spokeId}`)
+  }
   const asset = state.assets[debtPosition.assetId]
   if (!asset) throw new Error(`Unknown asset ${debtPosition.assetId}`)
 
-  const currentCollateralUsd6 = currentCollateralValueUsd6(collateralPosition, market)
+  const currentCollateralUsd6 = currentCollateralValueUsd6(scopedCollateralPosition, market)
   const currentDebtUsd6 = currentDebtValueUsd6(debtPosition)
   const actualRepayUsd6 = [action.repayAmountUsd6, currentDebtUsd6, currentCollateralUsd6].reduce((min, value) =>
     value < min ? value : min,
@@ -271,17 +310,17 @@ function applyLiquidationAction(state: BorrowSystemState, action: Extract<Borrow
   const seizedCollateralShares =
     actualRepayUsd6 >= currentCollateralUsd6 ? collateralPosition.collateralShares : assetsToShares(seizedTokenAmount, market.snapshot.supplyIndexRay)
   const principalReduction =
-    collateralPosition.collateralShares > 0n
-      ? mulDiv(collateralPosition.principalTokenAmount, seizedCollateralShares, collateralPosition.collateralShares)
+    scopedCollateralPosition.collateralShares > 0n
+      ? mulDiv(scopedCollateralPosition.principalTokenAmount, seizedCollateralShares, scopedCollateralPosition.collateralShares)
       : 0n
   const interestOwedUsd6 = debtInterestOwedUsd6(debtPosition)
   const sharesToBurn = actualRepayUsd6 === currentDebtUsd6 ? debtPosition.debtSharesUsd6 : assetsToShares(actualRepayUsd6, debtPosition.debtIndexRay)
   const principalReductionUsd6 = actualRepayUsd6 > interestOwedUsd6 ? actualRepayUsd6 - interestOwedUsd6 : 0n
 
-  collateralPosition.collateralShares =
-    collateralPosition.collateralShares > seizedCollateralShares ? collateralPosition.collateralShares - seizedCollateralShares : 0n
-  collateralPosition.principalTokenAmount =
-    collateralPosition.principalTokenAmount > principalReduction ? collateralPosition.principalTokenAmount - principalReduction : 0n
+  scopedCollateralPosition.collateralShares =
+    scopedCollateralPosition.collateralShares > seizedCollateralShares ? scopedCollateralPosition.collateralShares - seizedCollateralShares : 0n
+  scopedCollateralPosition.principalTokenAmount =
+    scopedCollateralPosition.principalTokenAmount > principalReduction ? scopedCollateralPosition.principalTokenAmount - principalReduction : 0n
 
   market.snapshot.totalCollateralShares =
     market.snapshot.totalCollateralShares > seizedCollateralShares ? market.snapshot.totalCollateralShares - seizedCollateralShares : 0n
@@ -297,7 +336,7 @@ function applyLiquidationAction(state: BorrowSystemState, action: Extract<Borrow
   asset.snapshot.totalBorrowedUsd6 = asset.snapshot.totalBorrowedUsd6 > actualRepayUsd6 ? asset.snapshot.totalBorrowedUsd6 - actualRepayUsd6 : 0n
   asset.snapshot.totalDebtSharesUsd6 = asset.snapshot.totalDebtSharesUsd6 > sharesToBurn ? asset.snapshot.totalDebtSharesUsd6 - sharesToBurn : 0n
 
-  if (collateralPosition.collateralShares === 0n) {
+  if (scopedCollateralPosition.collateralShares === 0n) {
     account.collateralPositions.splice(positionIndex, 1)
   }
   if (debtPosition.debtSharesUsd6 === 0n || debtPosition.principalBorrowedUsd6 === 0n) {
@@ -307,7 +346,8 @@ function applyLiquidationAction(state: BorrowSystemState, action: Extract<Borrow
   state.transactions.push({
     id: `tx-${state.transactions.length + 1}`,
     walletId: action.walletId,
-    marketId: collateralPosition.marketId,
+    spokeId: market.spokeId,
+    marketId: scopedCollateralPosition.marketId,
     assetId: debtPosition.assetId,
     kind: "liquidate",
     amountUsd6: actualRepayUsd6,

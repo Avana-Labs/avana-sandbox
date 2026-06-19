@@ -50,6 +50,7 @@ export type BorrowTransactionKind = "deposit" | "withdraw" | "borrow" | "repay" 
 export type BorrowTransaction = {
   id: string
   walletId: string
+  spokeId?: BorrowSpokeId
   marketId?: string
   assetId?: string
   kind: BorrowTransactionKind
@@ -104,6 +105,11 @@ export type BorrowMarketRecord = {
 
 export type BorrowAssetRecord = {
   id: string
+  baseAssetId: string
+  spokeId: BorrowSpokeId
+  marketIds: string[]
+  slug: string
+  contextLabel: string
   symbol: string
   display: {
     name: string
@@ -143,6 +149,8 @@ export type UserCollateralPosition = {
 export type UserDebtPosition = {
   id: string
   assetId: string
+  baseAssetId: string
+  spokeId: BorrowSpokeId
   marketId?: string
   debtSharesUsd6: bigint
   debtIndexRay: bigint

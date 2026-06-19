@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { assertBorrowSystemInvariants, calculateCreditMetrics, currentDebtValueUsd6, parseFixed } from "@/app/lib/credit-engine"
 import { applyBorrowAction } from "@/app/lib/credit-engine/actions"
-import { makeExampleBorrowSystemState } from "./fixtures"
+import { EXAMPLE_WALLET_1_DEBT_ID, makeExampleBorrowSystemState } from "./fixtures"
 
 describe("borrow liquidation actions", () => {
   it("rejects liquidation while the account is still solvent", () => {
@@ -12,7 +12,7 @@ describe("borrow liquidation actions", () => {
         type: "liquidate",
         walletId: "wallet-1",
         positionId: "wallet-1:weth-usdc",
-        debtPositionId: "wallet-1:usdc",
+        debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
         repayAmountUsd6: parseFixed("1000", 6),
       }),
     ).toThrow("Wallet wallet-1 is not eligible for liquidation")
@@ -33,7 +33,7 @@ describe("borrow liquidation actions", () => {
       type: "liquidate",
       walletId: "wallet-1",
       positionId: "wallet-1:weth-usdc",
-      debtPositionId: "wallet-1:usdc",
+      debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
       repayAmountUsd6: parseFixed("2000", 6),
     })
 
