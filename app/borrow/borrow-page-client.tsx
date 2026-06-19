@@ -22,11 +22,15 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
   const heroSectionClassName = "mb-4 px-1 md:px-2"
   const { allPools, poolCatalog } = pageData
   const workspaceData: BorrowWorkspaceData = {
+    walletId: pageData.walletId,
+    borrowSessionSeed: pageData.borrowSessionSeed,
     poolCatalog: pageData.poolCatalog,
+    borrowableAssets: pageData.borrowableAssets,
     pendingRows: pageData.pendingRows,
     dexes: pageData.dexes,
     collateralPools: pageData.collateralPools,
     initialDebts: pageData.initialDebts,
+    borrowSnapshot: pageData.borrowSnapshot,
   }
 
   const totalCollaterals = allPools.reduce((sum, pool) => sum + Math.max(pool.tvl, 0), 0)

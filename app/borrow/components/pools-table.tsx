@@ -6,7 +6,6 @@ import {
   aprToneClass,
   formatCompactUsd,
   formatRiskPremium,
-  getBorrowAssetsForSpoke,
   getSpokeById,
   type BorrowPoolEvent,
   type BorrowPoolRow,
@@ -49,6 +48,7 @@ function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
 
 type PoolsTableProps = {
   groups: ReadonlyArray<DexGroup>
+  borrowAssetsBySpoke: Readonly<Record<string, BorrowableAsset[]>>
   pending?: ReadonlyArray<PendingMarketRow>
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAssetDesktop: (asset: BorrowableAsset) => void
@@ -289,7 +289,7 @@ function CollateralDesktopTable({
   return <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised shadow-elev-1">{table}</div>
 }
 
-export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUseAsCollateral, onBorrowAssetDesktop }: PoolsTableProps) {
+export const PoolsTable = memo(function PoolsTable({ groups, borrowAssetsBySpoke, pending = [], onUseAsCollateral, onBorrowAssetDesktop }: PoolsTableProps) {
   return (
     <div className="hidden space-y-10 md:block">
       {groups.flatMap((group) =>
@@ -298,6 +298,7 @@ export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUse
             key={entry.spoke.id}
             spoke={entry.spoke}
             rows={entry.rows}
+            borrowAssets={borrowAssetsBySpoke[entry.spoke.id] ?? []}
             pending={pending.filter((row) => row.spoke === entry.spoke.id)}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetDesktop}
@@ -311,18 +312,19 @@ export const PoolsTable = memo(function PoolsTable({ groups, pending = [], onUse
 function SpokeDesktopSection({
   spoke,
   rows,
+  borrowAssets,
   pending,
   onUseAsCollateral,
   onBorrowAsset,
 }: {
   spoke: BorrowSpoke
   rows: BorrowPoolRow[]
+  borrowAssets: BorrowableAsset[]
   pending: PendingMarketRow[]
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
-  const borrowAssets = useMemo(() => getBorrowAssetsForSpoke(spoke.id), [spoke.id])
 
   return (
     <section className="mb-2">
@@ -345,7 +347,7 @@ function SpokeDesktopSection({
   )
 }
 
-export function PoolsList({ groups, pending = [], onUseAsCollateral, onBorrowAssetMobile }: PoolsTableProps) {
+export function PoolsList({ groups, borrowAssetsBySpoke, pending = [], onUseAsCollateral, onBorrowAssetMobile }: PoolsTableProps) {
   return (
     <div className="space-y-8 md:hidden">
       {groups.flatMap((group) =>
@@ -354,6 +356,7 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral, onBorrowAss
             key={entry.spoke.id}
             spoke={entry.spoke}
             rows={entry.rows}
+            borrowAssets={borrowAssetsBySpoke[entry.spoke.id] ?? []}
             pending={pending.filter((row) => row.spoke === entry.spoke.id)}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetMobile}
@@ -367,19 +370,20 @@ export function PoolsList({ groups, pending = [], onUseAsCollateral, onBorrowAss
 function SpokeMobileSection({
   spoke,
   rows,
+  borrowAssets,
   pending,
   onUseAsCollateral,
   onBorrowAsset,
 }: {
   spoke: BorrowSpoke
   rows: BorrowPoolRow[]
+  borrowAssets: BorrowableAsset[]
   pending: PendingMarketRow[]
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
-  const borrowAssets = useMemo(() => getBorrowAssetsForSpoke(spoke.id), [spoke.id])
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
