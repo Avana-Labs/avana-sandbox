@@ -35,6 +35,10 @@ const FILTERS = [
   { id: "rewards", label: "Claim" },
 ] as const
 
+const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
+const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
+const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+
 export function CollateralHistoryCard({
   transactions,
   tokenLabels,
@@ -70,64 +74,154 @@ export function CollateralHistoryCard({
         </div>
       </div>
 
-      <div className="max-w-[760px] overflow-x-auto rounded-[18px] bg-white dark:bg-slate-950">
-        <table className="min-w-[760px] w-full table-fixed border-separate border-spacing-0 text-[14px]">
-          <colgroup>
-            <col className="w-[96px]" />
-            <col className="w-[118px]" />
-            <col className="w-[112px]" />
-            <col className="w-[112px]" />
-            <col className="w-[112px]" />
-            <col />
-          </colgroup>
-          <thead>
-            <tr className="bg-slate-50 text-left text-[11.5px] font-medium text-muted-foreground dark:bg-slate-900/90">
-              <th className="rounded-l-2xl px-5 py-3.5">Time</th>
-              <th className="px-5 py-3.5">Type</th>
-              <th className="px-5 py-3.5 text-right">USD</th>
-              <th className="px-5 py-3.5 text-right">{tokenLabels[0]}</th>
-              <th className="px-5 py-3.5 text-right">{tokenLabels[1]}</th>
-              <th className="rounded-r-2xl px-5 py-3.5 text-right">Wallet</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleTransactions.map((tx) => (
-              <tr key={tx.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-900/70">
-                <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
-                  {tx.timeLabel}
-                </td>
-                <td className="px-5 py-4 align-middle">
-                  <span className={cn("text-[15px] font-medium", KIND_TONE[tx.kind])}>{KIND_LABEL[tx.kind]}</span>
-                </td>
-                <td className="px-5 py-4 text-right align-middle font-data text-[14px] tabular-nums text-foreground">
-                  {tx.amountLabel.replace(/^\+/, "")}
-                </td>
-                <td className="px-5 py-4 text-right align-middle font-data text-[14px] tabular-nums text-foreground">
-                  {tx.token0AmountLabel ?? "-"}
-                </td>
-                <td className="px-5 py-4 text-right align-middle font-data text-[14px] tabular-nums text-foreground">
-                  {tx.token1AmountLabel ?? "-"}
-                </td>
-                <td className="px-5 py-4 text-right align-middle font-data text-[14px] tabular-nums text-foreground">
-                  {tx.walletHref ? (
-                    <a
-                      href={tx.walletHref}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
-                    >
-                      {tx.walletLabel ?? tx.txHashShort}
-                    </a>
-                  ) : (
-                    <span className="inline-block max-w-full truncate whitespace-nowrap align-middle">
-                      {tx.walletLabel ?? tx.txHashShort}
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="overflow-hidden">
+          <div className="hidden md:block">
+            <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]">
+              <colgroup>
+                <col className="w-[96px]" />
+                <col className="w-[118px]" />
+                <col className="w-[112px]" />
+                <col className="w-[112px]" />
+                <col className="w-[112px]" />
+                <col />
+              </colgroup>
+              <thead>
+                <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                  <th className="rounded-l-2xl bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    Time
+                  </th>
+                  <th className="bg-slate-50 px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                    Type
+                  </th>
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    USD
+                  </th>
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    {tokenLabels[0]}
+                  </th>
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    {tokenLabels[1]}
+                  </th>
+                  <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    Wallet
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleTransactions.map((tx) => (
+                  <tr key={tx.id} className="group transition-colors">
+                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
+                      {tx.timeLabel}
+                    </td>
+                    <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
+                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                        {KIND_LABEL[tx.kind]}
+                      </span>
+                    </td>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                      {tx.amountLabel.replace(/^\+/, "")}
+                    </td>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                      {tx.token0AmountLabel ?? "-"}
+                    </td>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                      {tx.token1AmountLabel ?? "-"}
+                    </td>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
+                      {tx.walletHref ? (
+                        <a
+                          href={tx.walletHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
+                        >
+                          {tx.walletLabel ?? tx.txHashShort}
+                        </a>
+                      ) : (
+                        <span className="inline-block max-w-full truncate whitespace-nowrap align-middle">
+                          {tx.walletLabel ?? tx.txHashShort}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="overflow-x-auto md:hidden">
+            <table className="w-full min-w-[760px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <colgroup>
+                <col className="w-[96px]" />
+                <col className="w-[118px]" />
+                <col className="w-[112px]" />
+                <col className="w-[112px]" />
+                <col className="w-[112px]" />
+                <col />
+              </colgroup>
+              <thead>
+                <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                  <th className="rounded-l-2xl bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    Time
+                  </th>
+                  <th className="bg-slate-50 px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                    Type
+                  </th>
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    USD
+                  </th>
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    {tokenLabels[0]}
+                  </th>
+                  <th className="bg-slate-50 px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    {tokenLabels[1]}
+                  </th>
+                  <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                    Wallet
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleTransactions.map((tx) => (
+                  <tr key={tx.id} className="group transition-colors">
+                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
+                      {tx.timeLabel}
+                    </td>
+                    <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
+                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                        {KIND_LABEL[tx.kind]}
+                      </span>
+                    </td>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                      {tx.amountLabel.replace(/^\+/, "")}
+                    </td>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                      {tx.token0AmountLabel ?? "-"}
+                    </td>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                      {tx.token1AmountLabel ?? "-"}
+                    </td>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
+                      {tx.walletHref ? (
+                        <a
+                          href={tx.walletHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
+                        >
+                          {tx.walletLabel ?? tx.txHashShort}
+                        </a>
+                      ) : (
+                        <span className="inline-block max-w-full truncate whitespace-nowrap align-middle">
+                          {tx.walletLabel ?? tx.txHashShort}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
       </div>
     </section>
   )
