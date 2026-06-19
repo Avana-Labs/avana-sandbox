@@ -1,5 +1,6 @@
 export {
   buildHomeBorrowPreview,
+  buildHomeClaimPreview,
   buildHomeRepayPreview,
   buildHomeRemovePreview,
   buildHomeSupplyPreview,

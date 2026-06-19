@@ -11,11 +11,10 @@ import { TransactionFlowPanel, type TransactionFlowStage } from "@/app/component
 import { CompactClaimCard } from "@/app/components/home/claim-card"
 import { CompactRemoveCard } from "@/app/components/home/remove-card"
 import { PairVisual } from "@/app/components/home-workspace-primitives"
-import { buildHomeRemovePreview } from "@/app/lib/borrow-system/modal-preview-runtime"
+import { buildHomeClaimPreview, buildHomeRemovePreview } from "@/app/lib/borrow-system/modal-preview-runtime"
 import {
   HOME_INITIAL_CLAIMABLE_TOTALS,
   HOME_INITIAL_DEBTS,
-  calculateClaimPreview,
   formatCompactUsd,
   formatUsd,
   getClaimBreakdownLabel,
@@ -92,7 +91,7 @@ function PoolActionRail({ detail, className }: Props) {
   const claimSelections = React.useMemo(() => ({ [claimPosition.id]: true }), [claimPosition.id])
   const claimPositions = React.useMemo(() => [claimPosition], [claimPosition])
   const claimPreview = React.useMemo(
-    () => calculateClaimPreview(claimPositions, claimableTotals, claimSelections, Number.parseFloat(claimAmount) || null),
+    () => buildHomeClaimPreview(claimPositions, claimableTotals, claimSelections, Number.parseFloat(claimAmount) || null),
     [claimAmount, claimPositions, claimSelections, claimableTotals],
   )
   const removePreview = React.useMemo(
@@ -271,6 +270,7 @@ function PoolActionRail({ detail, className }: Props) {
               amountLabel={formatUsd(claimPreview.effectiveClaimUsd)}
               title="Claim successful"
               subtitle="Fees claimed."
+              simulated
               visual={
                 <div className="flex items-center">
                   <span className="scale-[1.8]">

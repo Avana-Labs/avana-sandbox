@@ -11,12 +11,15 @@ import {
   type UserDebtPosition,
 } from "@/app/lib/credit-engine"
 import {
+  calculateClaimPreview,
   formatCompactUsd,
   formatHealthFactor,
   formatUsd,
   getRiskTone,
   type BorrowPreview,
+  type ClaimPreview,
   type HomeBorrowToken,
+  type HomeClaimPosition,
   type HomeCollateralPool,
   type RemovePreview,
   type RepayPreview,
@@ -331,6 +334,19 @@ export function buildHomeRemovePreview(
     liquidationThresholdAfterUsd: fixedToNumber(currentMetrics.liquidationValueUsd6, 6),
     ctaLabel: `Remove ${percent}% · ${formatCompactUsd(removeUsd)}`,
   }
+}
+
+/**
+ * Home-sim claim preview. Intentionally off SandboxTransactionAdapter until BorrowAction supports claim.
+ * @see claim-adapter-policy.ts
+ */
+export function buildHomeClaimPreview(
+  positions: HomeClaimPosition[],
+  claimableTotals: Record<string, number>,
+  selections: Record<string, boolean>,
+  partialAmountUsd: number | null,
+): ClaimPreview {
+  return calculateClaimPreview(positions, claimableTotals, selections, partialAmountUsd)
 }
 
 export type SupplyPreview = {

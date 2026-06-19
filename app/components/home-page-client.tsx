@@ -8,6 +8,7 @@ import { calculateSpokeCreditMetrics, formatFixed, parseFixed, type BorrowAction
 import { buildBorrowSessionSeed, getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
 import {
   buildHomeBorrowPreview,
+  buildHomeClaimPreview,
   buildHomeRemovePreview,
   buildHomeRepayPreview,
   selectHomeBorrowTokensForMarket,
@@ -22,7 +23,6 @@ import {
   HOME_DEFAULT_SELECTIONS,
   HOME_INITIAL_CLAIMABLE_TOTALS,
   HOME_INITIAL_CLAIM_SELECTIONS,
-  calculateClaimPreview,
   formatCompactUsd,
   formatHealthFactor,
   formatUsd,
@@ -160,7 +160,7 @@ export function HomePageClient() {
   )
 
   const claimPreview = useMemo(
-    () => calculateClaimPreview(HOME_CLAIM_POSITIONS, claimableTotals, claimSelections, Number.parseFloat(claimAmount) || null),
+    () => buildHomeClaimPreview(HOME_CLAIM_POSITIONS, claimableTotals, claimSelections, Number.parseFloat(claimAmount) || null),
     [claimAmount, claimSelections, claimableTotals],
   )
 
