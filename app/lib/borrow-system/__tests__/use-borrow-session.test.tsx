@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react"
+import { act, renderHook, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import { parseFixed } from "@/app/lib/credit-engine"
 import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
@@ -151,5 +151,65 @@ describe("useBorrowSession", () => {
       const snapshot = await result.current.readAdapter.readWalletSnapshot(walletId)
       expect(snapshot.transactionHistory[0]?.intentId).toBe("intent-1")
     })
+  })
+
+  it("dedupes concurrent execute calls for the same intent", async () => {
+    const walletId = "demo-wallet"
+    const { result } = renderHook(() =>
+      useBorrowSession({
+        walletId,
+        sessionSeed: buildBorrowSessionSeed(walletId),
+      }),
+    )
+
+    const intent = result.current.createIntent({
+      type: "borrow",
+      walletId,
+      marketId: "uni-v3-bluechip-weth-usdc",
+      assetId: "uni-v3-bluechip:usdc",
+      amountUsd6: parseFixed("100", 6),
+    })
+
+    const historyBefore = result.current.transactionHistory.length
+
+    await act(async () => {
+      await Promise.all([result.current.executeTransaction(intent), result.current.executeTransaction(intent)])
+    })
+
+    expect(result.current.transactionHistory.length).toBe(historyBefore + 1)
+  })
+
+  it("exposes isPending while execute is in flight", async () => {
+    const walletId = "demo-wallet"
+    const { result } = renderHook(() =>
+      useBorrowSession({
+        walletId,
+        sessionSeed: buildBorrowSessionSeed(walletId),
+      }),
+    )
+
+    const debtPosition = result.current.state.accounts[walletId]?.debtPositions[0]
+    expect(debtPosition).toBeDefined()
+
+    const intent = result.current.createIntent({
+      type: "repay",
+      walletId,
+      debtPositionId: debtPosition!.id,
+      amountUsd6: parseFixed("50", 6),
+    })
+
+    act(() => {
+      void result.current.executeTransaction(intent)
+    })
+
+    await waitFor(() => {
+      expect(result.current.isPending).toBe(true)
+    })
+
+    await act(async () => {
+      await result.current.executeTransaction(intent)
+    })
+
+    expect(result.current.isPending).toBe(false)
   })
 })
