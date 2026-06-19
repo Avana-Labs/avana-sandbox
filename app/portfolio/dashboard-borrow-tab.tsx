@@ -6,6 +6,7 @@ import type { SandboxActionResult, TransactionIntent, TransactionPreview } from 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow, type BorrowableAsset, type HomeBorrowToken } from "@/app/lib/data/borrow-domain"
+import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "@/app/borrow/components/borrow-modal"
 import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "@/app/borrow/components/repay-remove-modal"
 import {
@@ -13,8 +14,8 @@ import {
   type SupplyCollateralContext,
   type SupplyCollateralResult,
 } from "@/app/borrow/components/supply-collateral-modal"
-import { CurrentLtvCard, DebtsPanel, type DebtRowContext } from "@/app/borrow/components/debts-table"
-import { SuppliesHealthFactorCard, SuppliesPanel, type SupplyRowContext } from "@/app/borrow/components/supplies-table"
+import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/components/borrow-tab/debts-table"
+import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/dashboard/components/borrow-tab/supplies-table"
 
 function averageHealthFactor(rows: Array<{ healthFactor: number | null }>): number | null {
   const finite = rows
@@ -57,7 +58,7 @@ type BorrowSessionAdapter = {
   isPending: boolean
 }
 
-export function PortfolioPositions({
+export function DashboardBorrowTab({
   section = "all",
   collateralPositions = [],
   debtPositions = [],

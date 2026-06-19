@@ -14,12 +14,12 @@ import {
   type HomeCollateralPool,
 } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
+import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
-import { PoolsList, PoolsTable } from "./pools-table"
+import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
 import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./borrow-modal"
 import { SupplyCollateralModal, type SupplyCollateralContext, type SupplyCollateralResult } from "./supply-collateral-modal"
-import { type SupplyRowContext } from "./supplies-table"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 
 function computeHealthFactor(pool: HomeCollateralPool, debt: number): number | null {
@@ -224,7 +224,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
         {isPoolTab(currentTab) ? (
           <>
             {isDesktop ? (
-              <PoolsTable
+              <CollateralPoolsTable
                 groups={poolGroups}
                 borrowAssetsBySpoke={borrowAssetsBySpoke}
                 pending={pendingRows}
@@ -233,7 +233,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
                 onBorrowAssetMobile={handleAssetBorrowMobile}
               />
             ) : (
-              <PoolsList
+              <CollateralPoolsList
                 groups={poolGroups}
                 borrowAssetsBySpoke={borrowAssetsBySpoke}
                 pending={pendingRows}

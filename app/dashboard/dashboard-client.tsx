@@ -1,22 +1,22 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
-import type { PortfolioBorrowTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
-import { CreditLinesCard } from "./credit-lines-card"
-import { PortfolioInvestments } from "./portfolio-investments"
-import { PortfolioPositions } from "./portfolio-positions"
-import { RecentActivity } from "./recent-activity"
-import { PortfolioTabs, type PortfolioTab } from "./portfolio-tabs"
-import { MultiplyCollateralTable } from "./multiply-collateral-table"
-import type { BorrowSnapshot } from "./borrow-hero-state"
-import { usePortfolioPage } from "./use-portfolio-page"
-import { usePortfolioBorrowLive } from "./use-portfolio-borrow-live"
+import type { PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
+import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
+import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
+import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
+import { RecentActivity } from "@/app/portfolio/recent-activity"
+import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
+import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
+import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-live"
+import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
 
-function PortfolioSection({
+function DashboardSection({
   title,
   className,
   children,
@@ -35,7 +35,7 @@ function PortfolioSection({
   )
 }
 
-function PortfolioSectionTitle({ title }: { title: string }) {
+function DashboardSectionTitle({ title }: { title: string }) {
   return (
     <h2 className="mb-3 mt-1 text-[19px] font-medium tracking-[-0.03em] text-foreground no-underline md:text-[20px]">
       {title}
@@ -43,7 +43,7 @@ function PortfolioSectionTitle({ title }: { title: string }) {
   )
 }
 
-export function PortfolioDashboard({
+export function DashboardClient({
   initialData,
   walletProfileId,
 }: {
@@ -52,7 +52,7 @@ export function PortfolioDashboard({
 }) {
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
-  const [activeTab, setActiveTab] = useState<PortfolioTab>("lending")
+  const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const borrowSessionWalletId = resolvedWalletProfileId ?? "demo-wallet"
   const borrowSessionSeed = useMemo(() => buildBorrowSessionSeed(borrowSessionWalletId), [borrowSessionWalletId])
   const borrowSession = useBorrowSession({
@@ -108,7 +108,7 @@ export function PortfolioDashboard({
 
   return (
     <>
-      <PortfolioTabs
+      <DashboardTabs
         activeTab={activeTab}
         onTabChange={setActiveTab}
         pageData={data}
@@ -118,10 +118,10 @@ export function PortfolioDashboard({
 
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-5">
-          <PortfolioSectionTitle title="Credit Limits" />
+          <DashboardSectionTitle title="Credit Limits" />
           <CreditLinesCard creditLines={borrowSnapshot} />
-          <PortfolioSection className="pt-8">
-            <PortfolioPositions
+          <DashboardSection className="pt-8">
+            <DashboardBorrowTab
               section="all"
               collateralPositions={collateralPositions}
               debtPositions={debtPositions}
@@ -129,17 +129,17 @@ export function PortfolioDashboard({
               walletId={borrowSessionWalletId}
               borrowSession={borrowSession}
             />
-          </PortfolioSection>
+          </DashboardSection>
         </div>
       ) : null}
       {activeTab === "lending" ? <PortfolioInvestments investments={data.lend.investments} /> : null}
       {activeTab === "looping" ? (
         <div className="mt-12 space-y-5">
-          <PortfolioSectionTitle title="Credit Limits" />
+          <DashboardSectionTitle title="Credit Limits" />
           <CreditLinesCard creditLines={fetchedMultiplySnapshot} />
-          <PortfolioSection className="pt-8">
+          <DashboardSection className="pt-8">
             <MultiplyCollateralTable rows={data.multiply.lpCollaterals} />
-          </PortfolioSection>
+          </DashboardSection>
         </div>
       ) : null}
       {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
