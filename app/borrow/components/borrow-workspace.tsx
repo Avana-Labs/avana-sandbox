@@ -201,22 +201,36 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   )
 
   const handleBorrowConfirm = useCallback((result: BorrowModalResult) => {
-    session.dispatch({
+    const action = {
       type: "borrow",
       walletId,
       marketId: result.pool.id,
       assetId: result.token.id,
       amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-    })
+    } as const
+
+    void (async () => {
+      const intent = session.createIntent(action)
+      const preview = await session.previewTransaction(intent)
+      if (!preview.allowed) return
+      await session.executeTransaction(preview.intent)
+    })()
   }, [session, walletId])
 
   const handleSupplyConfirm = useCallback((result: SupplyCollateralResult) => {
-    session.dispatch({
+    const action = {
       type: "supplyCollateral",
       walletId,
       marketId: result.pool.id,
       amountUsd6: parseFixed(result.amountUsd.toFixed(6), 6),
-    })
+    } as const
+
+    void (async () => {
+      const intent = session.createIntent(action)
+      const preview = await session.previewTransaction(intent)
+      if (!preview.allowed) return
+      await session.executeTransaction(preview.intent)
+    })()
   }, [session, walletId])
 
   return (
