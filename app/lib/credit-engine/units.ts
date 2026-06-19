@@ -91,8 +91,8 @@ export function sharesToAssets(shares: bigint, indexRay: bigint) {
 
 export function accrueLinearIndex(indexRay: bigint, aprWad: bigint, elapsedSeconds: bigint) {
   if (elapsedSeconds <= 0n || aprWad <= 0n) return indexRay
-  const growthWad = wadMul(aprWad, wadDiv(elapsedSeconds, SECONDS_PER_YEAR))
-  return rayMul(indexRay, RAY + wadToRay(growthWad))
+  const growthRay = mulDiv(wadToRay(aprWad), elapsedSeconds, SECONDS_PER_YEAR)
+  return rayMul(indexRay, RAY + growthRay)
 }
 
 export function clampMin(value: bigint, min: bigint) {
