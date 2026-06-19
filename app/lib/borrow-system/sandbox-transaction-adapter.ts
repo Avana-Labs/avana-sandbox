@@ -77,6 +77,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
   private readonly now: () => number
   private readonly generateId: (prefix: string) => string
   private readonly seed: BorrowSystemState
+  private readonly previewCache = new Map<string, TransactionPreview>()
 
   constructor(options: SandboxAdapterOptions) {
     this.readStateImpl = options.readState
@@ -103,11 +104,18 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
   }
 
   async previewTransaction(intent: TransactionIntent): Promise<TransactionPreview> {
+    const cached = this.previewCache.get(intent.id)
+    if (cached) {
+      return cached
+    }
+
     const action = intent.payload
     if (!action) {
       throw new Error("Sandbox transaction intent is missing its borrow action payload")
     }
-    return toPreview(this.readStateImpl(), action, intent)
+    const preview = toPreview(this.readStateImpl(), action, intent)
+    this.previewCache.set(intent.id, preview)
+    return preview
   }
 
   async executeTransaction(intent: TransactionIntent): Promise<SandboxActionResult> {

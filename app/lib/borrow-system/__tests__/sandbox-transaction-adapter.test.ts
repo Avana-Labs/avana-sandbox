@@ -151,6 +151,23 @@ describe("sandbox transaction adapter", () => {
     expect(harness.getState().transactions).toHaveLength(beforeTransactions)
   })
 
+  it("reuses cached preview evaluation during execute", async () => {
+    const harness = createHarness()
+    const action: BorrowAction = {
+      type: "borrow",
+      walletId: "wallet-1",
+      marketId: EXAMPLE_UNI_MARKET_ID,
+      assetId: EXAMPLE_UNI_USDC_ASSET_ID,
+      amountUsd6: parseFixed("300", 6),
+    }
+
+    const intent = harness.adapter.createIntent(action)
+    const preview = await harness.adapter.previewTransaction(intent)
+    const result = await harness.adapter.executeTransaction(intent)
+
+    expect(result.preview).toBe(preview)
+  })
+
   it("resets sandbox state back to the original seed", async () => {
     const harness = createHarness()
     const action: BorrowAction = {
