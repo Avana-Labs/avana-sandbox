@@ -1,0 +1,149 @@
+import { accrueBorrowSystemState } from "./accrue"
+import { calculateCreditMetrics } from "./metrics"
+import type { BorrowAction, BorrowSystemState } from "./types"
+import { assetsToShares } from "./units"
+import { currentDebtValueUsd6, debtInterestOwedUsd6 } from "./valuation"
+
+function cloneState(state: BorrowSystemState): BorrowSystemState {
+  return {
+    ...state,
+    markets: Object.fromEntries(Object.entries(state.markets).map(([id, market]) => [id, { ...market, snapshot: { ...market.snapshot } }])),
+    assets: Object.fromEntries(Object.entries(state.assets).map(([id, asset]) => [id, { ...asset, snapshot: { ...asset.snapshot }, borrowConfig: { ...asset.borrowConfig } }])),
+    accounts: Object.fromEntries(
+      Object.entries(state.accounts).map(([id, account]) => [
+        id,
+        {
+          ...account,
+          collateralPositions: account.collateralPositions.map((position) => ({ ...position })),
+          debtPositions: account.debtPositions.map((position) => ({ ...position })),
+        },
+      ]),
+    ),
+    transactions: [...state.transactions],
+  }
+}
+
+function syncBorrowRates(state: BorrowSystemState, walletId: string) {
+  const account = state.accounts[walletId]
+  if (!account || account.debtPositions.length === 0) return
+  const metrics = calculateCreditMetrics(state, walletId)
+  account.debtPositions = account.debtPositions.map((position) => ({
+    ...position,
+    borrowRateWad: state.assets[position.assetId]!.borrowConfig.baseBorrowAprWad + metrics.riskPremiumWad,
+  }))
+}
+
+function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowAction, { type: "borrow" }>) {
+  const market = state.markets[action.marketId]
+  const asset = state.assets[action.assetId]
+  const account = state.accounts[action.walletId]
+
+  if (!market) throw new Error(`Unknown market ${action.marketId}`)
+  if (!asset) throw new Error(`Unknown asset ${action.assetId}`)
+  if (!account) throw new Error(`Unknown wallet ${action.walletId}`)
+  if (!market.relations.supportedBorrowAssetIds.includes(action.assetId)) {
+    throw new Error(`Asset ${action.assetId} is not supported by market ${action.marketId}`)
+  }
+  if (action.amountUsd6 <= 0n) throw new Error("Borrow amount must be positive")
+  if (asset.snapshot.availableLiquidityUsd6 < action.amountUsd6) {
+    throw new Error(`Asset ${action.assetId} does not have enough liquidity`)
+  }
+
+  const currentMetrics = calculateCreditMetrics(state, action.walletId)
+  if (currentMetrics.availableCreditUsd6 < action.amountUsd6) {
+    throw new Error(`Wallet ${action.walletId} does not have enough available credit`)
+  }
+
+  const existing = account.debtPositions.find((position) => position.assetId === action.assetId && position.marketId === action.marketId)
+  const debtIndexRay = existing?.debtIndexRay ?? state.accounts[action.walletId]!.debtPositions[0]?.debtIndexRay ?? state.markets[action.marketId]!.snapshot.supplyIndexRay
+  const debtSharesUsd6 = assetsToShares(action.amountUsd6, debtIndexRay)
+
+  if (existing) {
+    existing.debtSharesUsd6 += debtSharesUsd6
+    existing.principalBorrowedUsd6 += action.amountUsd6
+  } else {
+    account.debtPositions.push({
+      id: `${action.walletId}:${action.marketId}:${action.assetId}`,
+      assetId: action.assetId,
+      marketId: action.marketId,
+      debtSharesUsd6,
+      debtIndexRay,
+      borrowRateWad: asset.borrowConfig.baseBorrowAprWad,
+      principalBorrowedUsd6: action.amountUsd6,
+    })
+  }
+
+  asset.snapshot.availableLiquidityUsd6 -= action.amountUsd6
+  asset.snapshot.totalBorrowedUsd6 += action.amountUsd6
+  asset.snapshot.totalDebtSharesUsd6 += debtSharesUsd6
+  state.transactions.push({
+    id: `tx-${state.transactions.length + 1}`,
+    walletId: action.walletId,
+    marketId: action.marketId,
+    assetId: action.assetId,
+    kind: "borrow",
+    amountUsd6: action.amountUsd6,
+    at: action.at ?? state.now,
+  })
+
+  syncBorrowRates(state, action.walletId)
+  return state
+}
+
+function applyRepayAction(state: BorrowSystemState, action: Extract<BorrowAction, { type: "repay" }>) {
+  const account = state.accounts[action.walletId]
+  if (!account) throw new Error(`Unknown wallet ${action.walletId}`)
+  if (action.amountUsd6 <= 0n) throw new Error("Repay amount must be positive")
+
+  const debtIndex = account.debtPositions.findIndex((position) => position.id === action.debtPositionId)
+  if (debtIndex === -1) throw new Error(`Unknown debt position ${action.debtPositionId}`)
+
+  const position = account.debtPositions[debtIndex]!
+  const asset = state.assets[position.assetId]
+  if (!asset) throw new Error(`Unknown asset ${position.assetId}`)
+
+  const currentDebtUsd6 = currentDebtValueUsd6(position)
+  const repayAmountUsd6 = action.amountUsd6 > currentDebtUsd6 ? currentDebtUsd6 : action.amountUsd6
+  const interestOwedUsd6 = debtInterestOwedUsd6(position)
+  const sharesToBurn = repayAmountUsd6 === currentDebtUsd6 ? position.debtSharesUsd6 : assetsToShares(repayAmountUsd6, position.debtIndexRay)
+  const principalReductionUsd6 = repayAmountUsd6 > interestOwedUsd6 ? repayAmountUsd6 - interestOwedUsd6 : 0n
+
+  position.debtSharesUsd6 = position.debtSharesUsd6 > sharesToBurn ? position.debtSharesUsd6 - sharesToBurn : 0n
+  position.principalBorrowedUsd6 =
+    position.principalBorrowedUsd6 > principalReductionUsd6 ? position.principalBorrowedUsd6 - principalReductionUsd6 : 0n
+
+  asset.snapshot.availableLiquidityUsd6 += repayAmountUsd6
+  asset.snapshot.totalBorrowedUsd6 = asset.snapshot.totalBorrowedUsd6 > repayAmountUsd6 ? asset.snapshot.totalBorrowedUsd6 - repayAmountUsd6 : 0n
+  asset.snapshot.totalDebtSharesUsd6 = asset.snapshot.totalDebtSharesUsd6 > sharesToBurn ? asset.snapshot.totalDebtSharesUsd6 - sharesToBurn : 0n
+
+  if (position.debtSharesUsd6 === 0n || position.principalBorrowedUsd6 === 0n) {
+    account.debtPositions.splice(debtIndex, 1)
+  }
+
+  state.transactions.push({
+    id: `tx-${state.transactions.length + 1}`,
+    walletId: action.walletId,
+    marketId: position.marketId,
+    assetId: position.assetId,
+    kind: "repay",
+    amountUsd6: repayAmountUsd6,
+    at: action.at ?? state.now,
+  })
+
+  syncBorrowRates(state, action.walletId)
+  return state
+}
+
+export function applyBorrowAction(state: BorrowSystemState, action: BorrowAction): BorrowSystemState {
+  const accrued = accrueBorrowSystemState(state, action.at ?? state.now)
+  const next = cloneState(accrued)
+
+  switch (action.type) {
+    case "borrow":
+      return applyBorrowDebtAction(next, action)
+    case "repay":
+      return applyRepayAction(next, action)
+    default:
+      throw new Error(`Unsupported action ${action.type}`)
+  }
+}
