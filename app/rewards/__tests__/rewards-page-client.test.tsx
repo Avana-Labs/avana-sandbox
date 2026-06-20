@@ -275,4 +275,77 @@ describe("RewardsPageClient", () => {
     expect(createReferralCode).toHaveBeenCalled()
     expect(recordReferralLinkCopied).toHaveBeenCalledTimes(1)
   })
+
+  it("runs the referral invite action through its dialog flow", async () => {
+    readProgress.mockResolvedValue(
+      buildProgress({
+        "invite-first-wallet": { status: "available", progress: 0, target: 1 },
+      }),
+    )
+    renderRewardsPage()
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Refer a friend" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Refer a friend" }))
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Send invite" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Send invite" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Send sandbox invite" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Send sandbox invite" }))
+
+    expect(runReferralSandboxStep).toHaveBeenCalledWith("invite")
+  })
+
+  it("runs the referral activate action through its dialog flow", async () => {
+    readProgress.mockResolvedValue(
+      buildProgress({
+        "bring-3-active-users": { status: "in_progress", progress: 1, target: 3 },
+      }),
+    )
+    renderRewardsPage()
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Refer a friend" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Refer a friend" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Activate" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Activate" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Activate next friend" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Activate next friend" }))
+
+    expect(runReferralSandboxStep).toHaveBeenCalledWith("activate")
+  })
+
+  it("runs the referral fund action through its dialog flow", async () => {
+    readProgress.mockResolvedValue(
+      buildProgress({
+        "first-funded-referral": { status: "available", progress: 0, target: 1 },
+      }),
+    )
+    renderRewardsPage()
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Refer a friend" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Refer a friend" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Mark funded" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Mark funded" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Mark next friend funded" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Mark next friend funded" }))
+
+    expect(runReferralSandboxStep).toHaveBeenCalledWith("fund")
+  })
+
+  it("opens claimable referral quests in the dialog and claims from there", async () => {
+    readProgress.mockResolvedValue(
+      buildProgress({
+        "bring-3-active-users": { status: "claimable", progress: 3, target: 3 },
+      }),
+    )
+    renderRewardsPage()
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Refer a friend" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Refer a friend" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "View crew & claim" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "View crew & claim" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Claim 140 AVA" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Claim 140 AVA" }))
+
+    expect(claimReward).toHaveBeenCalledWith("bring-3-active-users")
+  })
 })
