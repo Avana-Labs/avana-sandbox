@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest"
 import { DashboardClient } from "@/app/dashboard/dashboard-client"
 
 const readPortfolioBorrow = vi.fn()
+const readPortfolioLend = vi.fn()
+const readPortfolioMultiply = vi.fn()
 
 vi.mock("@/app/portfolio/use-portfolio-page", () => ({
   usePortfolioPage: ({ walletProfileId }: { walletProfileId: string }) => ({
@@ -94,7 +96,14 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
     },
     multiply: {
       readAdapter: {
-        readPortfolioMultiply: vi.fn(),
+        readPortfolioMultiply,
+      },
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
+      transactionHistory: [],
+    },
+    lend: {
+      readAdapter: {
+        readPortfolioLend,
       },
       state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
       transactionHistory: [],
@@ -175,6 +184,27 @@ describe("DashboardClient", () => {
           dailyInterestUsd: 0,
         },
       ],
+    })
+    readPortfolioLend.mockResolvedValue({
+      investments: [],
+      positions: [],
+      strategyBuckets: [],
+      history: [],
+    })
+    readPortfolioMultiply.mockResolvedValue({
+      creditLines: {
+        approvedUsd: 0,
+        liquidationThresholdUsd: 0,
+        averageHealthFactor: null,
+        currentLtvPct: 0,
+        totalBorrowedUsd: 0,
+        totalCollateralUsd: 0,
+      },
+      lpCollaterals: [],
+      positions: [],
+      openOrders: [],
+      twapOrders: [],
+      history: [],
     })
 
     render(<DashboardClient walletProfileId="demo-wallet" />)
