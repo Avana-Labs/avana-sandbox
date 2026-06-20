@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest"
 import { buildLendSessionSeed } from "@/app/lib/lend-system/demo-session"
 import { writeLendSessionState } from "@/app/lib/lend-system/storage"
 import { buildMockLendSystemStateWithSeedPosition } from "@/app/lib/lend-system/mock"
+import { ProductionLendReadAdapter } from "@/app/lib/lend-system/production-read-adapter"
+import { ProductionLendTransactionAdapter } from "@/app/lib/lend-system/production-transaction-adapter"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 
 describe("useLendSession", () => {
@@ -85,5 +87,110 @@ describe("useLendSession", () => {
     })
 
     expect(result.current.state.walletBalances[walletId]?.eth).toBeCloseTo(beforeBalance - 0.5, 6)
+  })
+
+  it("disables sandbox persistence automatically for injected production adapters", async () => {
+    const walletId = "demo-wallet"
+    const state = buildMockLendSystemStateWithSeedPosition(walletId)
+    const sessionSeed = buildLendSessionSeed(walletId)
+    const readAdapter = new ProductionLendReadAdapter({
+      readMarkets: async () => Object.values(state.markets),
+      readLendPage: async () => ({}) as never,
+      readPortfolioLend: async () => ({}) as never,
+      readWalletSnapshot: async () => ({}) as never,
+    })
+    const preview = {
+      intent: {
+        id: "intent-live",
+        actionType: "claim" as const,
+        walletId,
+        marketId: "rewards",
+        requestedAt: 123,
+        simulated: false,
+        payload: {
+          type: "claim" as const,
+          walletId,
+        },
+      },
+      allowed: true,
+      warnings: [],
+      validationErrors: [],
+      before: {
+        suppliedAmount: 10,
+        suppliedValueUsd: 100,
+        principalAmount: 9,
+        interestEarned: 1,
+        rewardsEarnedUsd: 12,
+        totalEarnedUsd: 13,
+        currentApy: 0.08,
+      },
+      after: {
+        suppliedAmount: 10,
+        suppliedValueUsd: 100,
+        principalAmount: 9,
+        interestEarned: 1,
+        rewardsEarnedUsd: 0,
+        totalEarnedUsd: 1,
+        currentApy: 0.08,
+      },
+    }
+    const transactionAdapter = new ProductionLendTransactionAdapter({
+      now: () => 123,
+      generateId: () => "intent-live",
+      previewTransaction: async () => preview,
+      executeTransaction: async () => ({
+        preview,
+        receipt: {
+          id: "tx-live",
+          hash: "0xlive",
+          status: "success",
+          actionType: "claim",
+          simulated: false,
+          timestamp: 456,
+        },
+        historyItem: {
+          id: "tx-live",
+          intentId: "intent-live",
+          walletId,
+          marketId: "rewards",
+          kind: "claim",
+          status: "success",
+          asset: "Rewards",
+          amount: 12,
+          simulated: false,
+          timestamp: 456,
+          hash: "0xlive",
+        },
+        state: {
+          ...state,
+          now: 456,
+        },
+      }),
+    })
+
+    const { result } = renderHook(() =>
+      useLendSession({
+        walletId,
+        sessionSeed,
+        readAdapter,
+        transactionAdapter,
+      }),
+    )
+
+    expect(result.current.readAdapter).toBe(readAdapter)
+    expect(window.localStorage.length).toBe(0)
+
+    await act(async () => {
+      const intent = result.current.createIntent({
+        type: "claim",
+        walletId,
+      })
+      expect(intent.simulated).toBe(false)
+      await result.current.executeTransaction(intent)
+    })
+
+    expect(result.current.transactionHistory[0]?.kind).toBe("claim")
+    expect(result.current.state.now).toBe(456)
+    expect(window.localStorage.length).toBe(0)
   })
 })
