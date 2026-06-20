@@ -52,5 +52,6 @@ export type RewardsActionAdapter = {
   claimReward(wallet: string, taskId: string): Promise<RewardClaim>
   claimAllRewards(wallet: string): Promise<RewardClaim[]>
   createReferralCode(wallet: string): Promise<ReferralProfile>
+  recordReferralLinkCopied(wallet: string): Promise<RewardsSessionState>
   applyReferralCode(wallet: string, referralCode: string): Promise<ReferralRelationship>
 }

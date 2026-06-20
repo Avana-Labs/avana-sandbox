@@ -16,6 +16,7 @@ const recordSandboxTour = vi.fn()
 const recordDailyCheckin = vi.fn()
 const runReferralSandboxStep = vi.fn()
 const createReferralCode = vi.fn()
+const recordReferralLinkCopied = vi.fn()
 const readRewardSummary = vi.fn()
 const readProgress = vi.fn()
 const rewardsState = { events: [], claims: [], referralProfiles: {}, relationships: [], firstLoginAt: Date.UTC(2026, 5, 19), favoriteMarketIds: [] }
@@ -34,6 +35,7 @@ const rewardsSessionContext = {
   recordDailyCheckin,
   runReferralSandboxStep,
   createReferralCode,
+  recordReferralLinkCopied,
   readAdapter: {
     readRewardSummary,
     readProgress,
@@ -116,14 +118,14 @@ describe("RewardsPageClient", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Claim 1 rewards" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Claim 50 AVA" })).toBeInTheDocument()
     })
 
-    await userEvent.click(screen.getByRole("button", { name: "Claim 1 rewards" }))
+    await userEvent.click(screen.getByRole("button", { name: "Claim all ready rewards" }))
     expect(claimAllRewards).toHaveBeenCalledTimes(1)
     expect(readRewardSummary.mock.calls.length).toBeGreaterThan(1)
 
-    await userEvent.click(screen.getAllByRole("button", { name: "Claim" })[0]!)
+    await userEvent.click(screen.getAllByRole("button", { name: "Claim 50 AVA" })[0]!)
     expect(claimReward).toHaveBeenCalledWith("first-borrow")
     expect(readProgress.mock.calls.length).toBeGreaterThan(1)
   })

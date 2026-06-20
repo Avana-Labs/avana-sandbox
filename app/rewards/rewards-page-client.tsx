@@ -13,10 +13,11 @@ import {
   getSandboxTour,
   getTaskActionKind,
   getTaskDeepLink,
+  isReferralTaskAction,
 } from "@/app/lib/rewards-engine/task-actions"
 import { RewardsBalanceHero } from "./rewards-balance-hero"
 import { RewardsTabs } from "./rewards-tabs"
-import { RewardsEducationDialog, RewardsFavoriteDialog, RewardsSimulateDialog } from "./rewards-task-dialogs"
+import { RewardsEducationDialog, RewardsFavoriteDialog, RewardsReferralDialog, RewardsSimulateDialog } from "./rewards-task-dialogs"
 
 type RewardsSnapshot = {
   summary: {
@@ -82,6 +83,14 @@ function formatDuration(ms: number) {
   return `${seconds}s`
 }
 
+function isReferralClaimCta(task: RewardTask) {
+  const actionKind = getTaskActionKind(task)
+  if (actionKind === "copy_referral") return "View link & claim"
+  if (actionKind === "sandbox_referral_invite") return "View invite & claim"
+  if (isReferralTaskAction(actionKind)) return "View crew & claim"
+  return `Claim ${task.rewardAmount} AVA`
+}
+
 function buildProgressLabel(task: RewardTask, progress: UserRewardProgress, firstLoginAt: number, now: number) {
   if (progress.status === "claimed") return "Claimed"
   if (progress.status === "claimable") return "Ready to claim"
@@ -112,7 +121,7 @@ function mapTaskToQuest(
     reward: `${task.rewardAmount} ${task.rewardSymbol}`,
     cta:
       progress.status === "claimable"
-        ? "Claim"
+        ? isReferralClaimCta(task)
         : progress.status === "claimed"
           ? "Claimed"
           : task.actionKind === "wait_timer"
@@ -142,13 +151,19 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
     recordDailyCheckin,
     runReferralSandboxStep,
     createReferralCode,
+    recordReferralLinkCopied,
   } = useRewardsSessionContext()
 
   const [snapshot, setSnapshot] = useState<RewardsSnapshot | null>(null)
   const [now, setNow] = useState(Date.now())
+  const [isClaiming, setIsClaiming] = useState(false)
   const [educationOpen, setEducationOpen] = useState(false)
   const [favoriteOpen, setFavoriteOpen] = useState(false)
   const [simulateOpen, setSimulateOpen] = useState(false)
+  const [referralOpen, setReferralOpen] = useState(false)
+  const [referralTaskId, setReferralTaskId] = useState<string | null>(null)
+  const [referralLink, setReferralLink] = useState("")
+  const [referralCode, setReferralCode] = useState("")
 
   const reloadSnapshot = useCallback(async () => {
     const [summary, progress] = await Promise.all([
@@ -205,16 +220,19 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
     : pageData.progressPercentage
 
   const runReferralActivations = useCallback(
-    async (taskId: string) => {
-      const progress = snapshot?.progress.find((item) => item.taskId === taskId)
-      if (!progress) return
-      const remaining = Math.max(0, Math.ceil(progress.target - progress.progress))
-      for (let index = 0; index < remaining; index += 1) {
-        await runReferralSandboxStep("activate")
-      }
+    async () => {
+      await runReferralSandboxStep("activate")
     },
-    [runReferralSandboxStep, snapshot?.progress],
+    [runReferralSandboxStep],
   )
+
+  const referralTask = referralTaskId ? tasks.find((task) => task.id === referralTaskId) ?? null : null
+  const referralProgress = snapshot?.progress.find((item) => item.taskId === referralTaskId) ?? null
+
+  const openReferralDialog = useCallback((taskId: string) => {
+    setReferralTaskId(taskId)
+    setReferralOpen(true)
+  }, [])
 
   const handleSimulate = useCallback(
     async (product: "borrow" | "lend" | "multiply") => {
@@ -262,13 +280,25 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
       const progress = snapshot?.progress.find((item) => item.taskId === taskId)
       if (!task || !progress) return
 
-      if (progress.status === "claimable") {
-        await claimReward(taskId)
-        await reloadSnapshot()
+      const actionKind = getTaskActionKind(task)
+
+      if (isReferralTaskAction(actionKind)) {
+        openReferralDialog(taskId)
         return
       }
 
-      const actionKind = getTaskActionKind(task)
+      if (progress.status === "claimable") {
+        if (isClaiming) return
+        setIsClaiming(true)
+        try {
+          await claimReward(taskId)
+          await reloadSnapshot()
+        } finally {
+          setIsClaiming(false)
+        }
+        return
+      }
+
       if (!canRunTaskAction(progress, actionKind)) return
 
       switch (actionKind) {
@@ -284,30 +314,6 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         case "deep_link": {
           const href = getTaskDeepLink(taskId)
           if (href) router.push(href)
-          return
-        }
-        case "copy_referral": {
-          const profile = await createReferralCode()
-          if (typeof navigator !== "undefined" && navigator.clipboard) {
-            await navigator.clipboard.writeText(profile.referralLink)
-          }
-          await reloadSnapshot()
-          return
-        }
-        case "sandbox_referral_invite":
-          await runReferralSandboxStep("invite")
-          await reloadSnapshot()
-          return
-        case "sandbox_referral_activate":
-          await runReferralActivations(taskId)
-          await reloadSnapshot()
-          return
-        case "sandbox_referral_fund": {
-          const remaining = Math.max(1, Math.ceil(progress.target - progress.progress))
-          for (let index = 0; index < remaining; index += 1) {
-            await runReferralSandboxStep("fund")
-          }
-          await reloadSnapshot()
           return
         }
         case "sandbox_tour": {
@@ -333,31 +339,38 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
     },
     [
       claimReward,
-      createReferralCode,
+      isClaiming,
+      openReferralDialog,
       recordDailyCheckin,
       recordSandboxTour,
       reloadSnapshot,
       router,
-      runReferralActivations,
-      runReferralSandboxStep,
       snapshot?.progress,
     ],
   )
 
   const handleClaimAll = useCallback(async () => {
-    await claimAllRewards()
-    await reloadSnapshot()
-  }, [claimAllRewards, reloadSnapshot])
+    if (isClaiming) return
+    setIsClaiming(true)
+    try {
+      await claimAllRewards()
+      await reloadSnapshot()
+    } finally {
+      setIsClaiming(false)
+    }
+  }, [claimAllRewards, isClaiming, reloadSnapshot])
 
   return (
     <>
       <RewardsBalanceHero
         rewardPools={pageData.rewardPools}
-        balanceTotal={snapshot?.summary.totalEarnedAmount ?? pageData.balanceTotal}
+        balanceTotal={snapshot?.summary.totalClaimedAmount ?? pageData.balanceTotal}
+        claimableAmount={snapshot?.summary.totalClaimableAmount ?? 0}
         claimableCount={snapshot?.summary.claimableTaskCount ?? 0}
         completedCount={snapshot?.summary.completedTaskCount ?? pageData.completedPools}
         totalCount={snapshot?.summary.totalTaskCount ?? pageData.totalPools}
         progressPercentage={progressPercentage}
+        isClaiming={isClaiming}
         onClaimAll={() => {
           void handleClaimAll()
         }}
@@ -391,6 +404,52 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         open={simulateOpen}
         onOpenChange={setSimulateOpen}
         onSimulate={handleSimulate}
+      />
+
+      <RewardsReferralDialog
+        open={referralOpen}
+        onOpenChange={setReferralOpen}
+        task={referralTask}
+        progress={referralProgress}
+        referralLink={referralLink}
+        referralCode={referralCode}
+        onEnsureProfile={async () => {
+          const profile = await createReferralCode()
+          setReferralLink(profile.referralLink)
+          setReferralCode(profile.referralCode)
+        }}
+        onCopyLink={async () => {
+          const profile = await createReferralCode()
+          setReferralLink(profile.referralLink)
+          setReferralCode(profile.referralCode)
+          await recordReferralLinkCopied()
+          if (typeof navigator !== "undefined" && navigator.clipboard) {
+            await navigator.clipboard.writeText(profile.referralLink)
+          }
+          await reloadSnapshot()
+        }}
+        onSendInvite={async () => {
+          await runReferralSandboxStep("invite")
+          await reloadSnapshot()
+        }}
+        onActivateNext={async () => {
+          await runReferralActivations()
+          await reloadSnapshot()
+        }}
+        onMarkFunded={async () => {
+          await runReferralSandboxStep("fund")
+          await reloadSnapshot()
+        }}
+        onClaim={async () => {
+          if (!referralTaskId || isClaiming) return
+          setIsClaiming(true)
+          try {
+            await claimReward(referralTaskId)
+            await reloadSnapshot()
+          } finally {
+            setIsClaiming(false)
+          }
+        }}
       />
     </>
   )

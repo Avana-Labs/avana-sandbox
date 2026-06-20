@@ -53,7 +53,7 @@ describe("full rewards catalog", () => {
     await adapter.recordSandboxTour(wallet, "activate-5-markets")
     await adapter.recordSandboxTour(wallet, "activate-5-markets")
     await adapter.recordDailyCheckin(wallet)
-    await adapter.createReferralCode(wallet)
+    await adapter.recordReferralLinkCopied(wallet)
     await adapter.runReferralSandboxStep(wallet, "invite")
     await adapter.runReferralSandboxStep(wallet, "activate")
     await adapter.runReferralSandboxStep(wallet, "fund")

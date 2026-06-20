@@ -211,8 +211,8 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
     const referredWallet = `${wallet}-crew-${index}`
 
     if (step === "invite") {
-      await this.createReferralCode(wallet)
-      state = this.readState()
+      const initialized = this.ensureReferralProfile(state, wallet)
+      state = initialized[0]
       state = applyActivityEventToSession(state, {
         id: `${wallet}:referral_connected:${referredWallet}`,
         wallet,
@@ -278,6 +278,9 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
 
   async claimReward(wallet: string, taskId: string) {
     const state = this.readState()
+    const existingClaim = state.claims.find((claim) => claim.wallet === wallet && claim.taskId === taskId)
+    if (existingClaim) return existingClaim
+
     const task = this.tasks.find((entry) => entry.id === taskId)
     if (!task) throw new Error(`Unknown reward task ${taskId}`)
 
@@ -291,6 +294,9 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
     }).find((entry) => entry.taskId === taskId)
 
     if (!progress) throw new Error(`Missing reward progress for task ${taskId}`)
+    if (progress.status !== "claimable") {
+      throw new Error(`Task ${taskId} is not claimable for wallet ${wallet}`)
+    }
 
     const { claim, event } = buildClaimReward({
       wallet,
@@ -299,44 +305,110 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
       now: this.now(),
     })
 
-    this.updateState((currentState) =>
-      applyActivityEventToSession(
+    this.updateState((currentState) => {
+      if (currentState.claims.some((entry) => entry.wallet === wallet && entry.taskId === taskId)) {
+        return currentState
+      }
+
+      const latestProgress = evaluateAllTasksForUser({
+        tasks: this.tasks,
+        wallet,
+        events: currentState.events,
+        claims: currentState.claims,
+        now: this.now(),
+        firstLoginAt: currentState.firstLoginAt,
+      }).find((entry) => entry.taskId === taskId)
+
+      if (!latestProgress || latestProgress.status !== "claimable") {
+        return currentState
+      }
+
+      return applyActivityEventToSession(
         {
           ...currentState,
           claims: [...currentState.claims, claim],
         },
         event,
-      ),
-    )
-    return claim
+      )
+    })
+
+    const confirmedClaim = this.readState().claims.find((entry) => entry.wallet === wallet && entry.taskId === taskId)
+    if (!confirmedClaim) {
+      throw new Error(`Task ${taskId} is not claimable for wallet ${wallet}`)
+    }
+
+    return confirmedClaim
   }
 
   async claimAllRewards(wallet: string) {
-    const progress = await this.refreshTaskProgress(wallet)
-    const claimableIds = progress.filter((entry) => entry.status === "claimable").map((entry) => entry.taskId)
-    const claims: RewardClaim[] = []
+    const createdClaims: RewardClaim[] = []
 
-    for (const taskId of claimableIds) {
-      claims.push(await this.claimReward(wallet, taskId))
-    }
+    this.updateState((currentState) => {
+      let nextState = currentState
+      const now = this.now()
+      const progress = evaluateAllTasksForUser({
+        tasks: this.tasks,
+        wallet,
+        events: nextState.events,
+        claims: nextState.claims,
+        now,
+        firstLoginAt: nextState.firstLoginAt,
+      }).filter((entry) => entry.status === "claimable")
 
-    return claims
+      for (const [index, entry] of progress.entries()) {
+        if (nextState.claims.some((claim) => claim.wallet === wallet && claim.taskId === entry.taskId)) {
+          continue
+        }
+
+        const task = this.tasks.find((item) => item.id === entry.taskId)
+        if (!task) continue
+
+        const { claim, event } = buildClaimReward({
+          wallet,
+          task,
+          progress: entry,
+          now: now + index,
+        })
+
+        createdClaims.push(claim)
+        nextState = applyActivityEventToSession(
+          {
+            ...nextState,
+            claims: [...nextState.claims, claim],
+          },
+          event,
+        )
+      }
+
+      return nextState
+    })
+
+    return createdClaims
   }
 
   async createReferralCode(wallet: string) {
     const initialized = this.ensureReferralProfile(this.readState(), wallet)
-    let state = initialized[0]
-    const profile = initialized[1]
+    this.writeState(initialized[0])
+    return initialized[1]
+  }
 
-    state = applyActivityEventToSession(state, {
+  async recordReferralLinkCopied(wallet: string) {
+    const state = this.readState()
+    const alreadyCopied = state.events.some(
+      (event) => event.wallet === wallet && event.type === "referral_link_created",
+    )
+    if (alreadyCopied) return state
+
+    const initialized = this.ensureReferralProfile(state, wallet)
+    const nextState = applyActivityEventToSession(initialized[0], {
       id: `${wallet}:referral_link_created`,
       wallet,
       product: "referral",
       type: "referral_link_created",
       timestamp: this.now(),
     })
-    this.writeState(state)
-    return profile
+    this.writeState(nextState)
+    return nextState
   }
 
   async applyReferralCode(wallet: string, referralCode: string) {

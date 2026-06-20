@@ -5,6 +5,7 @@ import { SandboxRewardsActionAdapter } from "./sandbox-action-adapter"
 import { SandboxRewardsReadAdapter } from "./sandbox-read-adapter"
 import { buildDefaultRewardsCatalog } from "@/app/lib/rewards-engine"
 import type { RewardActivityEvent } from "@/app/lib/rewards-engine"
+import type { RewardsSessionState } from "./contracts"
 import { clearRewardsSessionState, readRewardsSessionState, writeRewardsSessionState } from "./storage"
 import { REWARDS_SESSION_SYNC_EVENT } from "./session-sync"
 
@@ -65,14 +66,23 @@ export function useRewardsSession({
     }
   }, [sessionSeed, walletId])
 
+  const writeRewardsState = useCallback(
+    (next: RewardsSessionState | ((current: RewardsSessionState) => RewardsSessionState)) => {
+      const resolved = typeof next === "function" ? next(stateRef.current) : next
+      stateRef.current = resolved
+      setState(resolved)
+    },
+    [],
+  )
+
   const actionAdapter = useMemo(
     () =>
       new SandboxRewardsActionAdapter({
         readState: () => stateRef.current,
-        writeState: setState,
+        writeState: writeRewardsState,
         tasks,
       }),
-    [tasks],
+    [tasks, writeRewardsState],
   )
 
   const readAdapter = useMemo(
@@ -109,6 +119,7 @@ export function useRewardsSession({
     [actionAdapter, walletId],
   )
   const createReferralCode = useCallback(() => actionAdapter.createReferralCode(walletId), [actionAdapter, walletId])
+  const recordReferralLinkCopied = useCallback(() => actionAdapter.recordReferralLinkCopied(walletId), [actionAdapter, walletId])
   const applyReferralCode = useCallback((referralCode: string) => actionAdapter.applyReferralCode(walletId, referralCode), [actionAdapter, walletId])
   const refreshTaskProgress = useCallback(() => actionAdapter.refreshTaskProgress(walletId), [actionAdapter, walletId])
   const reset = useCallback(() => {
@@ -132,6 +143,7 @@ export function useRewardsSession({
     recordDailyCheckin,
     runReferralSandboxStep,
     createReferralCode,
+    recordReferralLinkCopied,
     applyReferralCode,
     refreshTaskProgress,
     reset,

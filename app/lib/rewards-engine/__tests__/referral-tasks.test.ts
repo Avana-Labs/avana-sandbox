@@ -18,8 +18,12 @@ describe("referral reward tasks", () => {
     })
 
     await adapter.initializeRewardsForWallet(wallet)
-    await adapter.createReferralCode(wallet)
     await adapter.runReferralSandboxStep(wallet, "invite")
+
+    const progressBeforeCopy = await adapter.refreshTaskProgress(wallet)
+    expect(progressBeforeCopy.find((item) => item.taskId === "share-referral-link")?.status).not.toBe("claimable")
+
+    await adapter.recordReferralLinkCopied(wallet)
     await adapter.runReferralSandboxStep(wallet, "activate")
     await adapter.runReferralSandboxStep(wallet, "fund")
 

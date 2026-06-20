@@ -14,10 +14,18 @@ export function getTaskActionKind(task: RewardTask): RewardTaskActionKind {
 }
 
 export function canRunTaskAction(progress: UserRewardProgress, actionKind: RewardTaskActionKind) {
-  if (progress.status === "claimable") return true
   if (progress.status === "claimed" || progress.status === "expired") return false
   if (actionKind === "auto" || actionKind === "wait_timer") return false
-  return progress.status === "available" || progress.status === "in_progress"
+  return progress.status === "available" || progress.status === "in_progress" || progress.status === "claimable"
+}
+
+export function isReferralTaskAction(actionKind: RewardTaskActionKind) {
+  return (
+    actionKind === "copy_referral" ||
+    actionKind === "sandbox_referral_invite" ||
+    actionKind === "sandbox_referral_activate" ||
+    actionKind === "sandbox_referral_fund"
+  )
 }
 
 export function findTaskById(taskId: string, now = Date.UTC(2026, 5, 19)) {

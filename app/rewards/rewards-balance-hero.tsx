@@ -18,19 +18,23 @@ function formatTokenAmount(value: number) {
 export function RewardsBalanceHero({
   rewardPools,
   balanceTotal,
+  claimableAmount,
   claimableCount,
   completedCount,
   totalCount,
   progressPercentage,
   onClaimAll,
+  isClaiming = false,
 }: {
   rewardPools: RewardsHeroPoolRow[]
   balanceTotal: number
+  claimableAmount: number
   claimableCount: number
   completedCount: number
   totalCount: number
   progressPercentage: number
   onClaimAll: () => void
+  isClaiming?: boolean
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
 
@@ -70,9 +74,16 @@ export function RewardsBalanceHero({
                 </div>
               </div>
 
-              <div className="mt-1 flex items-center gap-1.5 text-[11px] font-normal tracking-[0.14em] text-muted-foreground">
-                <span>Rewards earned</span>
-                <Info className="h-3 w-3" />
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-normal tracking-[0.14em] text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  AVA balance
+                  <Info className="h-3 w-3" />
+                </span>
+                {claimableAmount > 0 ? (
+                  <span className="text-foreground/80">
+                    +{formatTokenAmount(claimableAmount)} AVA ready to claim
+                  </span>
+                ) : null}
               </div>
             </div>
 
@@ -80,9 +91,14 @@ export function RewardsBalanceHero({
               variant="outline"
               className="h-8 shrink-0 rounded-[14px] px-3.5 text-[11px] font-medium shadow-none"
               onClick={onClaimAll}
-              disabled={claimableCount === 0}
+              disabled={claimableCount === 0 || isClaiming}
+              aria-label="Claim all ready rewards"
             >
-              {claimableCount > 0 ? `Claim ${claimableCount} rewards` : "No rewards ready"}
+              {isClaiming
+                ? "Claiming..."
+                : claimableCount > 0
+                  ? `Claim ${formatTokenAmount(claimableAmount)} AVA`
+                  : "No rewards ready"}
             </Button>
           </div>
 

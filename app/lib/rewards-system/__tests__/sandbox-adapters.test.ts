@@ -57,4 +57,63 @@ describe("sandbox rewards adapters", () => {
     expect(deserializeLendSystemState(buildLendSessionSeed(wallet))).toEqual(lendBefore)
     expect(deserializeMultiplySystemState(buildMultiplySessionSeed(wallet))).toEqual(multiplyBefore)
   })
+
+  it("prevents duplicate claims for the same task during rapid clicks", async () => {
+    const wallet = "demo-wallet"
+
+    let state = buildDefaultRewardsSessionState()
+    const actionAdapter = new SandboxRewardsActionAdapter({
+      readState: () => state,
+      writeState: (nextState) => {
+        state = typeof nextState === "function" ? nextState(state) : nextState
+      },
+      now: () => Date.UTC(2026, 5, 19),
+    })
+    const readAdapter = new SandboxRewardsReadAdapter({
+      state: () => state,
+      now: () => Date.UTC(2026, 5, 19),
+    })
+
+    await actionAdapter.initializeRewardsForWallet(wallet)
+
+    const firstClaim = await actionAdapter.claimReward(wallet, "connect-wallet")
+    const secondClaim = await actionAdapter.claimReward(wallet, "connect-wallet")
+
+    expect(secondClaim).toEqual(firstClaim)
+    expect(state.claims.filter((claim) => claim.taskId === "connect-wallet")).toHaveLength(1)
+
+    const summary = await readAdapter.readRewardSummary(wallet)
+    expect(summary.totalClaimedAmount).toBe(25)
+  })
+
+  it("claims every claimable task once in a single batch update", async () => {
+    const wallet = "demo-wallet"
+
+    let state = buildDefaultRewardsSessionState()
+    const actionAdapter = new SandboxRewardsActionAdapter({
+      readState: () => state,
+      writeState: (nextState) => {
+        state = typeof nextState === "function" ? nextState(state) : nextState
+      },
+      now: () => Date.UTC(2026, 5, 19),
+    })
+    const readAdapter = new SandboxRewardsReadAdapter({
+      state: () => state,
+      now: () => Date.UTC(2026, 5, 19),
+    })
+
+    await actionAdapter.initializeRewardsForWallet(wallet)
+    const claims = await actionAdapter.claimAllRewards(wallet)
+
+    expect(claims).toHaveLength(2)
+    expect(state.claims).toHaveLength(2)
+
+    const summary = await readAdapter.readRewardSummary(wallet)
+    expect(summary.totalClaimedAmount).toBe(45)
+    expect(summary.claimableTaskCount).toBe(1)
+    expect(summary.totalClaimableAmount).toBe(30)
+
+    const progressAfterClaimAll = await actionAdapter.refreshTaskProgress(wallet)
+    expect(progressAfterClaimAll.find((item) => item.taskId === "first-reward-claim")?.status).toBe("claimable")
+  })
 })
