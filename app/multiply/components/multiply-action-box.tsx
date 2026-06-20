@@ -104,7 +104,6 @@ export function MultiplyActionBox({
       collateralAmount: amount,
       selectedMultiplier,
     })
-    await actionBox.advance()
   }, [actionBox, collateralAmount, market.id, selectedMultiplier, walletId])
 
   const preview = actionBox.preview

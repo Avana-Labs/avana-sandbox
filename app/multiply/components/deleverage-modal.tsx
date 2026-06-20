@@ -7,7 +7,7 @@ import type { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-
 import { TransactionFlowPanel } from "@/app/components/transaction-flow"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
 function formatUsd(value: number) {
@@ -56,7 +56,6 @@ export function DeleverageModal({
       positionId: position.id,
       targetMultiplier,
     })
-    await actionBox.advance()
   }, [actionBox, position.id, targetMultiplier, walletId])
 
   const preview = actionBox.preview
@@ -66,6 +65,9 @@ export function DeleverageModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg border-border bg-surface-raised p-0">
         <DialogTitle className="sr-only">Deleverage {market.collateralAsset.symbol}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Review a simulated deleverage flow for the selected {market.collateralAsset.symbol} position.
+        </DialogDescription>
         <div className="space-y-4 p-5">
           <div>
             <div className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Simulated deleverage</div>

@@ -94,7 +94,7 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
       multiplier: simulation.after.multiplier,
       ltv: simulation.after.ltv,
       healthFactor: simulation.after.healthFactor,
-      netApy: position.netApy,
+      netApy: simulation.economics.netApy,
     },
     simulationSummary: {
       liquidationPrice: simulation.after.liquidationPrice,

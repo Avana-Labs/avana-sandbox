@@ -173,16 +173,22 @@ export function simulateDeleverage(params: {
   })
 
   const equityValueUsd = currentCollateralValueUsd - currentDebtValueUsd
-  const targetCollateralValueUsd = equityValueUsd * targetMultiplier
-  const targetDebtValueUsd = targetCollateralValueUsd - equityValueUsd
-  const debtToRepayUsd = currentDebtValueUsd - targetDebtValueUsd
-  const collateralToUnwindUsd = currentCollateralValueUsd - targetCollateralValueUsd
+  const denominator = 1 - targetMultiplier * priceImpactPct
+  const collateralToUnwindUsd =
+    denominator <= 0
+      ? currentCollateralValueUsd
+      : Math.min(
+          currentCollateralValueUsd,
+          Math.max(0, (currentCollateralValueUsd - targetMultiplier * equityValueUsd) / denominator),
+        )
   const effectiveRepayUsd = collateralToUnwindUsd * (1 - priceImpactPct)
   const newDebtValueUsd = Math.max(0, currentDebtValueUsd - effectiveRepayUsd)
   const newCollateralValueUsd = currentCollateralValueUsd - collateralToUnwindUsd
+  const targetDebtValueUsd = Math.max(0, newDebtValueUsd)
+  const debtToRepayUsd = currentDebtValueUsd - newDebtValueUsd
   const newCollateralAmount = newCollateralValueUsd / collateralPriceUsd
-  const newMultiplier =
-    equityValueUsd > 0 ? newCollateralValueUsd / equityValueUsd : 1
+  const newEquityValueUsd = newCollateralValueUsd - newDebtValueUsd
+  const newMultiplier = newEquityValueUsd > 0 ? newCollateralValueUsd / newEquityValueUsd : 1
   const newLtv = calculateMultiplyLtv(newDebtValueUsd, newCollateralValueUsd)
   const newHealthFactor = calculateMultiplyHealthFactor(
     newCollateralValueUsd,
@@ -193,6 +199,13 @@ export function simulateDeleverage(params: {
     debtValueUsd: newDebtValueUsd,
     collateralAmount: newCollateralAmount,
     liquidationThreshold: market.risk.liquidationThreshold,
+  })
+  const newNetApy = calculateNetApy({
+    supplyApy: market.economics.supplyApy,
+    borrowApy: market.economics.borrowApy,
+    finalCollateralValueUsd: newCollateralValueUsd,
+    debtValueUsd: newDebtValueUsd,
+    initialCollateralValueUsd: Math.max(1, newCollateralValueUsd - newDebtValueUsd),
   })
 
   const validation = validateDeleverageAction({
@@ -230,6 +243,7 @@ export function simulateDeleverage(params: {
     economics: {
       priceImpactPct,
       effectiveRepayUsd,
+      netApy: newNetApy,
     },
     validation,
   }

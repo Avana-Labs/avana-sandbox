@@ -166,6 +166,7 @@ export type DeleverageSimulation = {
   economics: {
     priceImpactPct: number
     effectiveRepayUsd: number
+    netApy: number
   }
   validation: {
     allowed: boolean

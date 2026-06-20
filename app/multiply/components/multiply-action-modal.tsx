@@ -3,7 +3,7 @@
 import * as React from "react"
 import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine"
 import { MultiplyActionBox } from "./multiply-action-box"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 
 export function MultiplyActionModal({
   open,
@@ -20,6 +20,9 @@ export function MultiplyActionModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl border-border bg-surface-raised p-0">
         <DialogTitle className="sr-only">Multiply {market.collateralAsset.symbol}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Review a simulated multiply position for {market.collateralAsset.symbol} backed exposure.
+        </DialogDescription>
         <MultiplyActionBox market={market} className="p-5" onSuccess={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
