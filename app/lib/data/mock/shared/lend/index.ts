@@ -1,5 +1,6 @@
 import { LEND_ASSET_GROUPS } from "./asset-groups"
 import { LEND_FEATURED_ASSETS, LEND_FEATURED_SEQUENCE } from "./featured-assets"
+import { getWalletLendAssets } from "@/app/lib/data/mock/wallet/portfolio/lend-wallet-assets"
 
 export { LEND_ASSET_GROUPS, type LendAssetGroup, type LendAssetRow } from "./asset-groups"
 export {
@@ -9,11 +10,7 @@ export {
   type LendFeaturedAssetId,
 } from "./featured-assets"
 
-export const TOKENS = [
-  { symbol: "USDC", name: "USD Coin", balance: 8200.0, price: 1.0, color: "text-[#2775CA]", bg: "bg-[#EBF5FF]", apy: 5.2, earned: 344.4, daily: 12.4, utilization: 68 },
-  { symbol: "ETH", name: "Ethereum", balance: 1.28, price: 3281.25, color: "text-[#627EEA]", bg: "bg-[#EEF0FF]", apy: 3.82, earned: 153.8, daily: 4.4, utilization: 54 },
-  { symbol: "USDT", name: "Tether USD", balance: 2000.0, price: 1.0, color: "text-[#26A17B]", bg: "bg-[#E8FAF0]", apy: 4.8, earned: 0.0, daily: 0.26, utilization: 31 },
-] as const
+export const TOKENS = getWalletLendAssets("demo-wallet")
 
 export const MARKETS = [
   { symbol: "wstETH", name: "Lido Wrapped stETH", apy: 5.14, apyChange24h: 0.18, tvl: "$8.4M", utilization: 38, type: "Liquid", protocol: "Lido", color: "text-[#627EEA]", bg: "bg-[#EEF0FF]", soon: false, event: null },

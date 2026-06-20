@@ -1,12 +1,12 @@
 import type { LendAction, LendMarket, LendSystemState } from "@/app/lib/lend-engine"
-import { TOKENS } from "@/app/lib/data/mock/shared/lend"
+import { getWalletLendAssets } from "@/app/lib/data/mock/wallet/portfolio/lend-wallet-assets"
 import { buildLendCatalogMarketsRecord } from "./catalog"
 import { resolveLendMarketId } from "./catalog"
 
 function buildMockWalletBalances(walletId: string) {
   return {
     [walletId]: Object.fromEntries(
-      TOKENS.map((token) => [resolveLendMarketId(token.symbol), token.balance]),
+      getWalletLendAssets(walletId).map((token) => [resolveLendMarketId(token.symbol), token.balance]),
     ),
   }
 }
