@@ -31,9 +31,10 @@ export function buildLendSnapshotFromTabData(data: PortfolioLendTabData): LendSn
     positions: data.positions ?? investments,
     strategyBuckets: data.strategyBuckets ?? [],
     history: data.history ?? [],
+    rewardsSummary: data.rewardsSummary,
   }
   const totalSuppliedUsd = investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
-  const totalEarnedUsd = investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  const totalEarnedUsd = data.rewardsSummary?.totalEarnedUsd ?? investments.reduce((sum, item) => sum + item.earnedUsd, 0)
   const averageApyPct = investments.length
     ? investments.reduce((sum, item) => sum + item.apyPct, 0) / investments.length
     : 0

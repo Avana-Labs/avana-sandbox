@@ -32,6 +32,7 @@ function mergeLendTabData(
     positions: liveData.positions.length > 0 ? liveData.positions : staticData.positions,
     strategyBuckets: staticData.strategyBuckets,
     history: liveData.history.length > 0 ? liveData.history : staticData.history,
+    rewardsSummary: liveData.rewardsSummary ?? staticData.rewardsSummary,
   }
 }
 

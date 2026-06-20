@@ -155,9 +155,13 @@ export function buildPortfolioLendData(
   state: LendSystemState,
   history: LendTransactionHistoryItem[] = [],
 ): PortfolioLendTabData {
-  const positions = Object.values(state.positions).filter(
+  const walletPositions = Object.values(state.positions).filter((position) => position.walletId === walletId)
+  const positions = walletPositions.filter(
     (position) => position.walletId === walletId && position.status === "active",
   )
+  const closedRewardsUsd = walletPositions
+    .filter((position) => position.status === "closed")
+    .reduce((sum, position) => sum + position.rewardsEarnedUsd, 0)
 
   const investments = positions.map((position) => {
     const market = state.markets[position.marketId]!
@@ -186,6 +190,10 @@ export function buildPortfolioLendData(
     positions: investments,
     strategyBuckets: [],
     history: buildLendActivityHistory(walletId, history, state),
+    rewardsSummary: {
+      claimableUsd: closedRewardsUsd,
+      totalEarnedUsd: investments.reduce((sum, item) => sum + item.earnedUsd, 0) + closedRewardsUsd,
+    },
   }
 }
 
@@ -196,6 +204,10 @@ export function buildLendWalletSnapshot(
 ): LendWalletReadSnapshot {
   const portfolio = buildPortfolioLendData(walletId, state, transactionHistory)
   const totalSuppliedUsd = portfolio.investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
+  const totalEarnedUsd = portfolio.rewardsSummary?.totalEarnedUsd ?? portfolio.investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  const rewardsEarnedUsd =
+    portfolio.rewardsSummary?.claimableUsd ??
+    portfolio.investments.reduce((sum, item) => sum + (item.earnedUsd - ((item.interestEarned ?? 0) * item.priceUsd)), 0)
   const averageApy =
     portfolio.investments.length === 0
       ? 0
@@ -209,8 +221,8 @@ export function buildLendWalletSnapshot(
       suppliedValueUsd: totalSuppliedUsd,
       principalAmount: portfolio.investments.reduce((sum, item) => sum + (item.principalAmount ?? 0), 0),
       interestEarned: portfolio.investments.reduce((sum, item) => sum + (item.interestEarned ?? 0), 0),
-      rewardsEarnedUsd: portfolio.investments.reduce((sum, item) => sum + (item.earnedUsd - ((item.interestEarned ?? 0) * item.priceUsd)), 0),
-      totalEarnedUsd: portfolio.investments.reduce((sum, item) => sum + item.earnedUsd, 0),
+      rewardsEarnedUsd,
+      totalEarnedUsd,
       currentApy: averageApy,
     },
     yieldSnapshots: buildLendYieldSnapshots(state),
