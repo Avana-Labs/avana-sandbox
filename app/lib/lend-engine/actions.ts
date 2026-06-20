@@ -1,6 +1,6 @@
 import { calculateAvailableLiquidity, calculateCurrentSuppliedBalance, calculateInterestEarned, calculateSuppliedValueUsd, calculateUtilization } from "./formulas"
 import { simulateDeposit, simulateWithdraw } from "./simulation"
-import type { LendAction, LendDepositIntent, LendPosition, LendSystemState, LendWithdrawIntent } from "./types"
+import type { LendAction, LendClaimRewardsIntent, LendDepositIntent, LendPosition, LendSystemState, LendWithdrawIntent } from "./types"
 
 function findWalletPosition(state: LendSystemState, walletId: string, marketId: string): LendPosition | undefined {
   return Object.values(state.positions).find(
@@ -23,6 +23,9 @@ export function applyLendAction(state: LendSystemState, action: LendAction, ids:
   const now = action.at ?? state.now
   if (action.type === "deposit") {
     return applyDeposit(state, action, now, ids)
+  }
+  if (action.type === "claim") {
+    return applyClaimRewards(state, action, now, ids)
   }
   return applyWithdraw(state, action, now, ids)
 }
@@ -144,6 +147,49 @@ function applyWithdraw(
         kind: "withdraw",
         asset: market.asset.symbol,
         amount: action.withdrawAmount,
+        at: now,
+      },
+    ],
+  }
+}
+
+function applyClaimRewards(
+  state: LendSystemState,
+  action: LendClaimRewardsIntent,
+  now: number,
+  ids: { positionId: string; transactionId: string },
+): LendSystemState {
+  const walletPositions = Object.entries(state.positions).filter(([, position]) => position.walletId === action.walletId)
+  const claimableUsd = walletPositions.reduce((sum, [, position]) => sum + position.rewardsEarnedUsd, 0)
+  if (claimableUsd <= 0) return state
+
+  const nextPositions = Object.fromEntries(
+    Object.entries(state.positions).map(([positionId, position]) => {
+      if (position.walletId !== action.walletId) return [positionId, position]
+      return [
+        positionId,
+        {
+          ...position,
+          rewardsEarnedUsd: 0,
+          updatedAt: now,
+        },
+      ]
+    }),
+  )
+
+  return {
+    ...state,
+    now,
+    positions: nextPositions,
+    transactions: [
+      ...state.transactions,
+      {
+        id: ids.transactionId,
+        walletId: action.walletId,
+        marketId: "rewards",
+        kind: "claim",
+        asset: "Rewards",
+        amount: claimableUsd,
         at: now,
       },
     ],

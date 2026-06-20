@@ -1,4 +1,5 @@
 import { applyLendAction, simulateDeposit, simulateWithdraw, type LendAction, type LendSystemState } from "@/app/lib/lend-engine"
+import { buildLendWalletSnapshot } from "./read-model"
 import type {
   LendSandboxActionResult,
   LendTransactionAdapter,
@@ -47,6 +48,8 @@ function toPreview(state: LendSystemState, action: LendAction, intent: LendTrans
         suppliedValueUsd: simulation.before.suppliedValueUsd,
         principalAmount: simulation.before.principalAmount,
         interestEarned: simulation.before.interestEarned,
+        rewardsEarnedUsd: simulation.before.rewardsEarnedUsd,
+        totalEarnedUsd: simulation.before.totalEarnedUsd,
         currentApy: simulation.market.totalApy,
       },
       after: {
@@ -54,7 +57,40 @@ function toPreview(state: LendSystemState, action: LendAction, intent: LendTrans
         suppliedValueUsd: simulation.after.suppliedValueUsd,
         principalAmount: simulation.after.principalAmount,
         interestEarned: simulation.after.interestEarned,
+        rewardsEarnedUsd: simulation.after.rewardsEarnedUsd,
+        totalEarnedUsd: simulation.after.totalEarnedUsd,
         currentApy: simulation.market.totalApy,
+      },
+    }
+  }
+
+  if (action.type === "claim") {
+    const walletSnapshot = buildLendWalletSnapshot(action.walletId, state, [])
+    const before = walletSnapshot.metrics
+    const claimableUsd = before.rewardsEarnedUsd
+
+    return {
+      intent,
+      allowed: claimableUsd > 0,
+      warnings: [],
+      validationErrors: claimableUsd > 0 ? [] : ["No lend rewards are available to claim."],
+      before: {
+        suppliedAmount: before.suppliedAmount,
+        suppliedValueUsd: before.suppliedValueUsd,
+        principalAmount: before.principalAmount,
+        interestEarned: before.interestEarned,
+        rewardsEarnedUsd: before.rewardsEarnedUsd,
+        totalEarnedUsd: before.totalEarnedUsd,
+        currentApy: before.currentApy,
+      },
+      after: {
+        suppliedAmount: before.suppliedAmount,
+        suppliedValueUsd: before.suppliedValueUsd,
+        principalAmount: before.principalAmount,
+        interestEarned: before.interestEarned,
+        rewardsEarnedUsd: 0,
+        totalEarnedUsd: before.totalEarnedUsd - claimableUsd,
+        currentApy: before.currentApy,
       },
     }
   }
@@ -80,6 +116,8 @@ function toPreview(state: LendSystemState, action: LendAction, intent: LendTrans
       suppliedValueUsd: simulation.before.suppliedValueUsd,
       principalAmount: simulation.before.principalAmount,
       interestEarned: simulation.before.interestEarned,
+      rewardsEarnedUsd: simulation.before.rewardsEarnedUsd,
+      totalEarnedUsd: simulation.before.totalEarnedUsd,
       currentApy: simulation.market.totalApy,
     },
     after: {
@@ -87,6 +125,8 @@ function toPreview(state: LendSystemState, action: LendAction, intent: LendTrans
       suppliedValueUsd: simulation.after.suppliedValueUsd,
       principalAmount: simulation.after.principalAmount,
       interestEarned: simulation.after.interestEarned,
+      rewardsEarnedUsd: simulation.after.rewardsEarnedUsd,
+      totalEarnedUsd: simulation.after.totalEarnedUsd,
       currentApy: simulation.market.totalApy,
     },
     maxWithdrawable: simulation.withdrawal.maxWithdrawable,
@@ -113,7 +153,7 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
       id: this.generateId("intent"),
       actionType: action.type,
       walletId: action.walletId,
-      marketId: action.marketId,
+      marketId: action.type === "claim" ? "rewards" : action.marketId,
       positionId: action.type === "withdraw" ? action.positionId : undefined,
       requestedAt: this.now(),
       simulated: true,
@@ -142,6 +182,8 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
     const positionId =
       action.type === "withdraw"
         ? action.positionId
+        : action.type === "claim"
+          ? `${action.walletId}:rewards`
         : findWalletPosition(state, action.walletId, action.marketId)?.positionId ?? `${action.walletId}:${action.marketId}`
     const transactionId = this.generateId("tx")
     const nextState = applyLendAction(state, action, { positionId, transactionId })
@@ -160,12 +202,12 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
       id: transactionId,
       intentId: intent.id,
       walletId: action.walletId,
-      marketId: action.marketId,
+      marketId: action.type === "claim" ? "rewards" : action.marketId,
       positionId,
       kind: action.type,
       status: "success",
-      asset: state.markets[action.marketId]?.asset.symbol ?? "",
-      amount: action.type === "deposit" ? action.depositAmount : action.withdrawAmount,
+      asset: action.type === "claim" ? "Rewards" : state.markets[action.marketId]?.asset.symbol ?? "",
+      amount: action.type === "deposit" ? action.depositAmount : action.type === "withdraw" ? action.withdrawAmount : preview.before.rewardsEarnedUsd,
       simulated: true,
       timestamp: receipt.timestamp,
       hash: receipt.hash,

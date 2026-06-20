@@ -159,6 +159,7 @@ export function buildPortfolioLendData(
   const positions = walletPositions.filter(
     (position) => position.walletId === walletId && position.status === "active",
   )
+  const claimableRewardsUsd = walletPositions.reduce((sum, position) => sum + position.rewardsEarnedUsd, 0)
   const closedRewardsUsd = walletPositions
     .filter((position) => position.status === "closed")
     .reduce((sum, position) => sum + position.rewardsEarnedUsd, 0)
@@ -191,7 +192,7 @@ export function buildPortfolioLendData(
     strategyBuckets: [],
     history: buildLendActivityHistory(walletId, history, state),
     rewardsSummary: {
-      claimableUsd: closedRewardsUsd,
+      claimableUsd: claimableRewardsUsd,
       totalEarnedUsd: investments.reduce((sum, item) => sum + item.earnedUsd, 0) + closedRewardsUsd,
     },
   }
@@ -254,11 +255,21 @@ export function buildLendActivityHistory(
       id: item.id,
       at: new Date(item.timestamp).toISOString(),
       product: "lend" as const,
-      kind: item.kind === "deposit" ? ("open" as const) : ("reduce" as const),
+      kind:
+        item.kind === "deposit"
+          ? ("open" as const)
+          : item.kind === "withdraw"
+            ? ("reduce" as const)
+            : ("claim" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
-      amountUsd: item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
-      primaryLabel: item.kind === "deposit" ? "Simulated deposit" : "Simulated withdraw",
-      secondaryLabel: `${item.amount.toFixed(4)} ${item.asset}`,
+      amountUsd: item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
+      primaryLabel:
+        item.kind === "deposit"
+          ? "Simulated deposit"
+          : item.kind === "withdraw"
+            ? "Simulated withdraw"
+            : "Simulated rewards claim",
+      secondaryLabel: item.kind === "claim" ? `${item.amount.toFixed(2)} USD rewards` : `${item.amount.toFixed(4)} ${item.asset}`,
       txHash: item.hash,
     }))
 }

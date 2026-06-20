@@ -1,21 +1,43 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { TokenIcon } from "@/app/components/token-icon"
-import type { PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
+import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
 
 function formatUsd(value: number) {
   return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-export function PortfolioInvestments({ investments }: { investments: PortfolioSupplyPosition[] }) {
+export function PortfolioInvestments({
+  investments,
+  rewardsSummary,
+  onClaimRewards,
+  isClaimingRewards = false,
+}: {
+  investments: PortfolioSupplyPosition[]
+  rewardsSummary?: PortfolioLendTabData["rewardsSummary"]
+  onClaimRewards?: () => void
+  isClaimingRewards?: boolean
+}) {
   const { showDollarAmounts } = useDisplayPreferences()
+  const claimableUsd = rewardsSummary?.claimableUsd ?? 0
 
   return (
     <section className="mb-8">
-      <div className="mb-3">
-        <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">Positions</h2>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">Positions</h2>
+          {claimableUsd > 0 ? (
+            <p className="mt-1 text-[12px] text-muted-foreground">Claimable rewards</p>
+          ) : null}
+        </div>
+        {claimableUsd > 0 && onClaimRewards ? (
+          <Button type="button" size="sm" disabled={isClaimingRewards} onClick={onClaimRewards}>
+            {isClaimingRewards ? "Claiming..." : `Claim ${formatUsd(claimableUsd)}`}
+          </Button>
+        ) : null}
       </div>
 
       <Card className="overflow-hidden rounded-[18px] border-0 bg-white shadow-none dark:bg-slate-950">

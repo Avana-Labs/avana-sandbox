@@ -56,7 +56,7 @@ export type LendPosition = {
   status: LendPositionStatus
 }
 
-export type LendTransactionKind = "deposit" | "withdraw"
+export type LendTransactionKind = "deposit" | "withdraw" | "claim"
 
 export type LendTransaction = {
   id: string
@@ -93,7 +93,13 @@ export type LendWithdrawIntent = {
   at?: number
 }
 
-export type LendAction = LendDepositIntent | LendWithdrawIntent
+export type LendClaimRewardsIntent = {
+  type: "claim"
+  walletId: string
+  at?: number
+}
+
+export type LendAction = LendDepositIntent | LendWithdrawIntent | LendClaimRewardsIntent
 
 export type LendValidationResult = {
   allowed: boolean

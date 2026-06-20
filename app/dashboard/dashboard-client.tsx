@@ -89,6 +89,7 @@ export function DashboardClient({
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
+  const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const [deleverageOpen, setDeleverageOpen] = useState(false)
   const [deleveragePositionId, setDeleveragePositionId] = useState<string | null>(null)
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
@@ -184,6 +185,16 @@ export function DashboardClient({
 
   const lendSnapshot = useMemo(() => buildLendSnapshotFromTabData(lendTabData), [lendTabData])
 
+  const handleClaimLendRewards = async () => {
+    if (isClaimingLendRewards) return
+    setIsClaimingLendRewards(true)
+    try {
+      await lendSession.claimRewards()
+    } finally {
+      setIsClaimingLendRewards(false)
+    }
+  }
+
   const multiplyTabData = useMemo(() => {
     if (!data) {
       return portfolioMultiply ?? initialData?.multiply ?? {
@@ -234,7 +245,14 @@ export function DashboardClient({
           </DashboardSection>
         </div>
       ) : null}
-      {activeTab === "lending" ? <PortfolioInvestments investments={lendTabData.investments} /> : null}
+      {activeTab === "lending" ? (
+        <PortfolioInvestments
+          investments={lendTabData.investments}
+          rewardsSummary={lendTabData.rewardsSummary}
+          onClaimRewards={handleClaimLendRewards}
+          isClaimingRewards={isClaimingLendRewards}
+        />
+      ) : null}
       {activeTab === "looping" ? (
         <div className="mt-12 space-y-5">
           <DashboardSectionTitle title="Credit Limits" />

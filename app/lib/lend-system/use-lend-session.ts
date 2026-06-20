@@ -131,6 +131,18 @@ export function useLendSession({
     [transactionAdapter],
   )
 
+  const claimRewards = useCallback(async () => {
+    const intent = transactionAdapter.createIntent({
+      type: "claim",
+      walletId,
+    })
+    const result = await transactionAdapter.executeTransaction(intent)
+    setState(result.state)
+    setTransactionHistory((current) => mergeHistory(result.historyItem, current))
+    setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
+    return result
+  }, [transactionAdapter, walletId])
+
   const reset = useCallback(() => {
     clearLendSessionState(walletId)
     setState(seededState)
@@ -147,6 +159,7 @@ export function useLendSession({
     createIntent,
     previewTransaction,
     executeTransaction,
+    claimRewards,
     reset,
     isPending: false,
   }

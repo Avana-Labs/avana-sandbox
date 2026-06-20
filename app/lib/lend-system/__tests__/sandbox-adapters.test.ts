@@ -74,4 +74,36 @@ describe("SandboxLendTransactionAdapter", () => {
     expect(buildMockBorrowSystemState("wallet-1").positions).toEqual(borrowBefore.positions)
     expect(buildMockMultiplySystemState("wallet-1").positions).toEqual(multiplyBefore.positions)
   })
+
+  it("claims wallet-level lend rewards through the transaction adapter", async () => {
+    let state = buildMockLendSystemStateWithSeedPosition("wallet-1")
+    state.positions["wallet-1:eth"] = {
+      ...state.positions["wallet-1:eth"]!,
+      rewardsEarnedUsd: 88,
+    }
+
+    const adapter = new SandboxLendTransactionAdapter({
+      readState: () => state,
+      writeState: (next) => {
+        state = next
+      },
+      now: () => state.now,
+      generateId: (prefix) => `${prefix}-claim`,
+    })
+
+    const intent = adapter.createIntent({
+      type: "claim",
+      walletId: "wallet-1",
+    })
+
+    const preview = await adapter.previewTransaction(intent)
+    expect(preview.allowed).toBe(true)
+    expect(preview.before.rewardsEarnedUsd).toBe(88)
+    expect(preview.after.rewardsEarnedUsd).toBe(0)
+
+    const result = await adapter.executeTransaction(intent)
+
+    expect(result.historyItem.kind).toBe("claim")
+    expect(result.state.positions["wallet-1:eth"]?.rewardsEarnedUsd).toBe(0)
+  })
 })
