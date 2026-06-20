@@ -56,6 +56,23 @@ export function calculateSimpleInterestAccrued(principalAmount: number, totalApy
   return principalAmount * totalApy * elapsedYears
 }
 
+export function calculateRewardYieldAccruedUsd(params: {
+  suppliedAmount: number
+  assetPriceUsd: number
+  rewardsApy: number
+  elapsedYears: number
+  existingRewardsEarnedUsd?: number
+}) {
+  if (params.elapsedYears <= 0 || params.rewardsApy <= 0) {
+    return params.existingRewardsEarnedUsd ?? 0
+  }
+
+  return (
+    (params.existingRewardsEarnedUsd ?? 0) +
+    params.suppliedAmount * params.assetPriceUsd * params.rewardsApy * params.elapsedYears
+  )
+}
+
 export function calculateWithdrawSplit(params: {
   withdrawAmount: number
   currentBalance: number

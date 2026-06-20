@@ -21,6 +21,8 @@ export type LendPositionMetricsSnapshot = {
   suppliedValueUsd: number
   principalAmount: number
   interestEarned: number
+  rewardsEarnedUsd: number
+  totalEarnedUsd: number
   currentApy: number
 }
 

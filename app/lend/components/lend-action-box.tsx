@@ -24,6 +24,8 @@ function previewRows(preview: NonNullable<ReturnType<typeof useLendActionBox>["p
     { label: "Supplied value", value: formatUsd(preview.after.suppliedValueUsd) },
     { label: "Principal", value: preview.after.principalAmount.toFixed(4) },
     { label: "Interest earned", value: preview.after.interestEarned.toFixed(4) },
+    { label: "Rewards earned", value: formatUsd(preview.after.rewardsEarnedUsd) },
+    { label: "Total earned", value: formatUsd(preview.after.totalEarnedUsd) },
     { label: "Current APY", value: formatPct(preview.after.currentApy) },
   ]
 }

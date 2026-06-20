@@ -44,15 +44,18 @@ const SPEC_UTILIZATION: Record<string, number> = {
 
 const SPEC_SUPPLY_APY: Record<string, number> = {
   EURC: 0.0049,
-  FRXUSD: 0.062,
   GHO: 0.0299,
-  USDG: 0.08,
   ETH: 0.0382,
   WSTETH: 0.0514,
   CBBTC: 0.0425,
   WBTC: 0.0348,
   AAVE: 0.076,
   UNI: 0.064,
+}
+
+const SPEC_REWARDS_APY: Record<string, number> = {
+  FRXUSD: 0.01,
+  USDG: 0.0125,
 }
 
 function reserveFactorForGroup(title: string): number {
@@ -86,8 +89,9 @@ function buildMarketFromRow(
   const totalBorrowed = Math.max(0, totalSupplied - availableLiquidity)
   const utilization =
     SPEC_UTILIZATION[symbol] ?? calculateUtilization(totalBorrowed, totalSupplied)
-  const supplyApy = (SPEC_SUPPLY_APY[symbol] ?? row.apyValue / 100)
-  const rewardsApy = 0
+  const rewardsApy = SPEC_REWARDS_APY[symbol] ?? 0
+  const totalDisplayApy = row.apyValue / 100
+  const supplyApy = SPEC_SUPPLY_APY[symbol] ?? Math.max(0, totalDisplayApy - rewardsApy)
   const totalApy = calculateTotalApy(supplyApy, rewardsApy)
   const assetPriceUsd = ASSET_PRICES_USD[symbol] ?? 1
 

@@ -27,6 +27,7 @@ export function makeStressLendSystemState(userCount = 100): LendSystemState {
       liquidityIndexAtLastAction: market.liquidityIndex,
       currentSuppliedAmount: principalAmount,
       interestEarned: principalAmount * 0.01,
+      rewardsEarnedUsd: principalAmount * market.assetPriceUsd * 0.002,
       suppliedValueUsd: principalAmount * market.assetPriceUsd,
       openedAt: base.now - index * 60_000,
       updatedAt: base.now - index * 30_000,

@@ -1,7 +1,8 @@
 import type { LendAction, LendMarket, LendSystemState } from "@/app/lib/lend-engine"
 import { buildLendCatalogMarketsRecord } from "./catalog"
 
-export function buildMockLendSystemState(_walletId = "demo-wallet", now = Date.UTC(2026, 5, 19)): LendSystemState {
+export function buildMockLendSystemState(walletId = "demo-wallet", now = Date.UTC(2026, 5, 19)): LendSystemState {
+  void walletId
   return {
     now,
     markets: buildLendCatalogMarketsRecord(now),
@@ -35,6 +36,7 @@ export function buildMockLendSystemStateWithSeedPosition(walletId = "demo-wallet
     liquidityIndexAtLastAction: market.liquidityIndex,
     currentSuppliedAmount: principalAmount,
     interestEarned: 0,
+    rewardsEarnedUsd: 0,
     suppliedValueUsd: principalAmount * market.assetPriceUsd,
     openedAt: state.now - 86_400_000,
     updatedAt: state.now - 3_600_000,

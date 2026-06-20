@@ -49,6 +49,7 @@ export type LendPosition = {
   liquidityIndexAtLastAction: number
   currentSuppliedAmount: number
   interestEarned: number
+  rewardsEarnedUsd: number
   suppliedValueUsd: number
   openedAt: number
   updatedAt: number
@@ -105,6 +106,8 @@ export type LendPositionMetrics = {
   suppliedValueUsd: number
   principalAmount: number
   interestEarned: number
+  rewardsEarnedUsd: number
+  totalEarnedUsd: number
   scaledBalance: number
   liquidityIndex: number
 }

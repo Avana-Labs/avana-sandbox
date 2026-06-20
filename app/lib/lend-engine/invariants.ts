@@ -17,5 +17,6 @@ export function assertLendSystemInvariants(state: LendSystemState) {
     assertNonNegative(`${position.positionId}.currentSuppliedAmount`, position.currentSuppliedAmount)
     assertNonNegative(`${position.positionId}.principalAmount`, position.principalAmount)
     assertNonNegative(`${position.positionId}.interestEarned`, position.interestEarned)
+    assertNonNegative(`${position.positionId}.rewardsEarnedUsd`, position.rewardsEarnedUsd)
   }
 }

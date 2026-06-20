@@ -19,6 +19,17 @@ describe("SandboxLendReadAdapter", () => {
     expect(page.marketRows.length).toBeGreaterThan(10)
     expect(portfolio.investments.length).toBe(1)
   })
+
+  it("surfaces non-zero rewards APY for boosted lend markets", async () => {
+    const state = buildMockLendSystemState("wallet-1")
+    const adapter = new SandboxLendReadAdapter({ state })
+
+    const page = await adapter.readLendPage("wallet-1")
+    const boosted = page.marketRows.find((row) => row.asset === "USDG")
+
+    expect(boosted?.rewardsApy).toBeGreaterThan(0)
+    expect(boosted?.rewardsApyLabel).not.toBe("0.00%")
+  })
 })
 
 describe("SandboxLendTransactionAdapter", () => {
