@@ -10,6 +10,7 @@ import { DeleverageModal } from "@/app/multiply/components/deleverage-modal"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
+import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
 import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
 import { PortfolioPositionsTabs } from "@/app/portfolio/portfolio-positions-tabs"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
@@ -158,7 +159,7 @@ export function DashboardClient({
         product: "multiply" as const,
         kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
         status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
-        amountUsd: 0,
+        amountUsd: item.kind === "multiply" ? item.amountUsd : -item.amountUsd,
         primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
         secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
         txHash: item.hash,
@@ -216,6 +217,11 @@ export function DashboardClient({
     return mergeMultiplyTabData(data.multiply, portfolioMultiply)
   }, [data, initialData, portfolioMultiply])
 
+  const multiplyHero = useMemo(() => {
+    const template = data?.heroByTab.looping ?? initialData?.heroByTab.looping ?? {}
+    return buildMultiplyHeroData(template, buildMultiplySnapshotFromTabData(multiplyTabData))
+  }, [data, initialData, multiplyTabData])
+
   if (!data || !resolvedWalletProfileId || !portfolioBorrow) return null
 
   return (
@@ -227,6 +233,7 @@ export function DashboardClient({
         borrowSnapshot={borrowSnapshot}
         multiplySnapshot={multiplySnapshot}
         lendSnapshot={lendSnapshot}
+        multiplyHero={multiplyHero}
       />
 
       {activeTab === "overview" ? (
