@@ -4,7 +4,7 @@ const MINUTE_MS = 60 * 1000
 const HOUR_MS = 60 * MINUTE_MS
 const DAY_MS = 24 * HOUR_MS
 
-export function buildDefaultRewardsCatalog(now = Date.UTC(2026, 5, 19)): RewardTask[] {
+export function buildDefaultRewardsCatalog(now = Date.now()): RewardTask[] {
   return [
     // —— New users: onboarding sandbox checklist ——
     {
@@ -438,13 +438,13 @@ export function buildDefaultRewardsCatalog(now = Date.UTC(2026, 5, 19)): RewardT
       id: "bring-5-active-users",
       category: "referral",
       tag: "referral",
-      title: "Grow crew to 3 actives",
-      description: "Same as the trio quest — three active referrals unlock this milestone.",
+      title: "Grow crew to 5 actives",
+      description: "Five referred wallets complete a product action in your sandbox network.",
       rewardAmount: 220,
       rewardSymbol: "AVA",
       actionLabel: "Grow crew",
       actionKind: "sandbox_referral_activate",
-      requirement: { type: "referral_count", eventTypes: ["referral_activated"], targetCount: 3 },
+      requirement: { type: "referral_count", eventTypes: ["referral_activated"], targetCount: 5 },
       repeatable: false,
     },
     {
@@ -464,8 +464,8 @@ export function buildDefaultRewardsCatalog(now = Date.UTC(2026, 5, 19)): RewardT
       id: "referral-streak",
       category: "referral",
       tag: "streak",
-      title: "Referral streak (2 days)",
-      description: "Wait 2 days from first login, then activate two sandbox referrals.",
+      title: "Referral streak (2 activations)",
+      description: "Activate two sandbox referrals to keep your invite momentum going.",
       rewardAmount: 240,
       rewardSymbol: "AVA",
       actionLabel: "Continue",
@@ -495,6 +495,10 @@ export const REWARD_TASK_DEEP_LINKS: Record<string, string> = {
   "first-multiply": "/multiply",
   "first-repay": "/borrow",
   "first-deleverage": "/multiply",
+  "use-3-products": "/lend",
+  "claim-rewards-5-times": "/rewards",
+  "grow-portfolio-10k": "/lend",
+  "open-8-active-positions": "/lend",
   "supply-5k-lend": "/lend",
   "borrow-2k": "/borrow",
   "open-2x-multiply": "/multiply",

@@ -28,6 +28,6 @@ export function isReferralTaskAction(actionKind: RewardTaskActionKind) {
   )
 }
 
-export function findTaskById(taskId: string, now = Date.UTC(2026, 5, 19)) {
+export function findTaskById(taskId: string, now = Date.now()) {
   return buildDefaultRewardsCatalog(now).find((task) => task.id === taskId)
 }
