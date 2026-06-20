@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
-import { RewardsTabs } from "./rewards-tabs"
-import { RewardsBalanceHero } from "./rewards-balance-hero"
+import { RewardsPageClient } from "./rewards-page-client"
 import { fetchRewardsPage } from "@/app/lib/data/providers/rewards"
 import { resolvePortfolioWalletProfileId } from "@/app/lib/data/providers/portfolio"
 
@@ -17,9 +16,7 @@ export default async function RewardsPage() {
     <div className="bg-background">
       <main className="container mx-auto px-4 py-8 md:py-10">
         <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
-          <RewardsBalanceHero pageData={pageData} />
-
-          <RewardsTabs pageData={pageData} />
+          <RewardsPageClient pageData={pageData} />
         </div>
       </main>
     </div>
