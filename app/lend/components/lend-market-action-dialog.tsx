@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getLendMarketById } from "@/app/lib/lend-system/catalog"
+import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { LendActionBox } from "./lend-action-box"
 
 export function LendMarketActionDialog({
@@ -15,7 +16,8 @@ export function LendMarketActionDialog({
   marketId: string
   initialAction?: "deposit" | "withdraw"
 }) {
-  const market = getLendMarketById(marketId)
+  const lendSession = useLendSessionContext()
+  const market = lendSession.state.markets[marketId] ?? getLendMarketById(marketId)
   if (!market) return null
 
   return (

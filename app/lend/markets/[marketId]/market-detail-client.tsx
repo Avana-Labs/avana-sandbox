@@ -8,7 +8,7 @@ import { LendMarketActionDialog } from "@/app/lend/components/lend-market-action
 
 export function LendMarketDetailClient({ marketId }: { marketId: string }) {
   const lendSession = useLendSessionContext()
-  const market = getLendMarketById(marketId)
+  const market = lendSession.state.markets[marketId] ?? getLendMarketById(marketId)
   const [dialogState, setDialogState] = useState<{ open: boolean; action: "deposit" | "withdraw" }>({
     open: false,
     action: "deposit",

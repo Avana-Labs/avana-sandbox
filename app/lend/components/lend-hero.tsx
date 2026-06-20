@@ -11,6 +11,18 @@ const LEND_METRICS = [
   { label: "Active Markets", tone: "amber" },
 ] as const
 
+function parseMarketUsd(value: string) {
+  const normalized = value.trim().replace(/[$,]/g, "")
+  const suffix = normalized.slice(-1).toUpperCase()
+  const numericPortion = suffix >= "A" && suffix <= "Z" ? normalized.slice(0, -1) : normalized
+  const amount = Number.parseFloat(numericPortion)
+  if (!Number.isFinite(amount)) return 0
+  if (suffix === "B") return amount * 1_000_000_000
+  if (suffix === "M") return amount * 1_000_000
+  if (suffix === "K") return amount * 1_000
+  return amount
+}
+
 function formatMarketUsd(value: number) {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
   if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`
@@ -24,7 +36,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
     const activeMarkets = markets.filter((market) => !market.soon)
     const marketValues = activeMarkets.map((market) => ({
       ...market,
-      tvlUsd: Number.parseFloat(market.tvl.replace(/[$,M]/g, "")) * 1_000_000,
+      tvlUsd: parseMarketUsd(market.tvl),
     }))
     const totalTvl = marketValues.reduce((sum, market) => sum + market.tvlUsd, 0)
     const weightedApy =

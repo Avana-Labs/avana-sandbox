@@ -1,9 +1,11 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
+import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { LendHero } from "./components/lend-hero"
+import { useLendPageLive } from "./use-lend-page-live"
 
 const HotMarkets = dynamic(() => import("./components/hot-markets").then((mod) => mod.HotMarkets), {
   loading: () => <div className="h-[228px] rounded-radius-md border border-border bg-surface-raised/60" />,
@@ -19,7 +21,10 @@ const LendMarketActionDialog = dynamic(
 )
 
 export function LendClient({ pageData }: { pageData: LendPageData }) {
-  const { markets, featuredAssets, featuredSequence, featuredSnapshots, assetGroups } = pageData
+  const lendSession = useLendSessionContext()
+  const livePageData = useLendPageLive(lendSession.walletId, lendSession)
+  const resolvedPageData = useMemo(() => livePageData ?? pageData, [livePageData, pageData])
+  const { markets, featuredAssets, featuredSequence, featuredSnapshots, assetGroups } = resolvedPageData
   const [dialogState, setDialogState] = useState<{ open: boolean; marketId: string; action: "deposit" | "withdraw" }>({
     open: false,
     marketId: "eth",

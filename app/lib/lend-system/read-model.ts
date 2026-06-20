@@ -126,7 +126,7 @@ export function buildLendPageData(_walletId: string, state?: LendSystemState): L
 
   return {
     tokens: [],
-    markets: markets.slice(0, 6).map((market) => ({
+    markets: markets.map((market) => ({
       symbol: market.asset.symbol,
       name: market.asset.name,
       apy: market.totalApy * 100,
