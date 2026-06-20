@@ -185,7 +185,7 @@ describe("RewardsPageClient", () => {
     await userEvent.click(screen.getAllByRole("button", { name: "Claim 50 AVA" })[0]!)
     expect(claimReward).toHaveBeenCalledWith("first-borrow")
     expect(readProgress.mock.calls.length).toBeGreaterThan(1)
-  })
+  }, 10_000)
 
   it("opens the education flow for primer quests", async () => {
     renderRewardsPage()

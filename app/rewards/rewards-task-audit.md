@@ -12,7 +12,7 @@ It records what each live quest requires and where its current verification evid
 | `review-risk-basics` | Read the sandbox risk primer | `education_completed` once | `task-requirements.test.ts`, `rewards-page-client.test.tsx` education dialog |
 | `favorite-market` | Pin a market to your watchlist | `market_favorited` once | `task-requirements.test.ts`, `rewards-page-client.test.tsx` favorite dialog |
 | `run-first-simulation` | Preview your first trade | `simulation_created` once | `task-requirements.test.ts`, `rewards-page-client.test.tsx` simulate dialog |
-| `first-lend-deposit` | Make your first sandbox lend | `lend_deposited` once | `task-requirements.test.ts`, `rewards-bridge.test.tsx`, deep-link CTA verified in page test |
+| `first-lend-deposit` | Make your first sandbox lend | `lend_deposited` once | `task-requirements.test.ts`, `rewards-bridge.test.tsx`, deep-link CTA verified in page test, live browser deposit on `/lend` moved card to `Claim 40 AVA` |
 | `first-borrow` | Open your first sandbox borrow | `borrow_opened` once | `task-requirements.test.ts`, `rewards-bridge.test.tsx`, `rewards-product-flows.test.tsx`, claim flow in page test |
 | `first-multiply` | Open your first sandbox multiply | `multiply_opened` once | `task-requirements.test.ts`, `rewards-bridge.test.tsx`, `rewards-product-flows.test.tsx` |
 | `first-repay` | Repay a sandbox loan | `borrow_repaid` once | `task-requirements.test.ts`, `rewards-product-flows.test.tsx` |
@@ -24,7 +24,7 @@ It records what each live quest requires and where its current verification evid
 
 | Task ID | Card title | Requirement | Current evidence |
 | --- | --- | --- | --- |
-| `supply-5k-lend` | Lend $500 in the sandbox | aggregate `lend_deposited >= 500 USD` | `task-requirements.test.ts`, `catalog-audit.test.ts`, `rewards-product-flows.test.tsx` |
+| `supply-5k-lend` | Lend $500 in the sandbox | aggregate `lend_deposited >= 500 USD` | `task-requirements.test.ts`, `catalog-audit.test.ts`, `rewards-product-flows.test.tsx`, live browser deposit of `500 GHO` moved challenge card to `Claim 100 AVA` |
 | `borrow-2k` | Borrow $200 in the sandbox | aggregate `borrow_opened >= 200 USD` | `task-requirements.test.ts`, `rewards-product-flows.test.tsx` |
 | `open-2x-multiply` | Launch a multiply position | `multiply_opened` once | `task-requirements.test.ts` |
 | `use-3-products` | Tour all three products | one qualifying action in `lend`, `borrow`, and `multiply` | `task-requirements.test.ts`, `rewards-product-flows.test.tsx` |
@@ -66,6 +66,7 @@ It records what each live quest requires and where its current verification evid
 
 ## Known remaining gaps
 
-- Not every deep-link task has been manually executed end-to-end through the Lend, Borrow, and Multiply product screens in the browser yet.
+- Live browser verification now covers the lend success path after fixing the trapped success CTA in `lend-action-box.tsx`, `multiply-action-box.tsx`, and `deleverage-modal.tsx`.
+- Not every deep-link task has been manually executed end-to-end through the Borrow and Multiply product screens in the browser yet.
 - The current PR is not split into 35 separate commits; evidence is consolidated in broader audit commits.
 - `/rewards` still emits a non-blocking Next/Image sizing warning for `avana-icon.svg` during local runtime verification.

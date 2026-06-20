@@ -109,6 +109,7 @@ export function LendActionBox({
   }, [actionBox, actionType, amount, market.marketId, position, session.walletId])
 
   const preview = actionBox.preview
+  const submitDisabled = actionBox.stage !== "success" && !actionBox.canAdvance
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -203,7 +204,7 @@ export function LendActionBox({
           rows={preview ? previewRows(preview) : []}
           primaryLabel={actionBox.stage === "success" ? "Done" : `Confirm simulated ${actionType}`}
           simulated
-          submitDisabled={!actionBox.canAdvance}
+          submitDisabled={submitDisabled}
           blockedReason={preview?.validationErrors[0] ?? null}
           onPrimary={() => {
             if (actionBox.stage === "success") {

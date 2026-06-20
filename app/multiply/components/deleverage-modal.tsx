@@ -60,6 +60,7 @@ export function DeleverageModal({
   }, [actionBox, position.id, targetMultiplier, walletId])
 
   const preview = actionBox.preview
+  const submitDisabled = actionBox.stage !== "success" && !actionBox.canAdvance
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -172,7 +173,7 @@ export function DeleverageModal({
               }
               primaryLabel={actionBox.stage === "success" ? "Done" : "Confirm simulated deleverage"}
               simulated
-              submitDisabled={!actionBox.canAdvance}
+              submitDisabled={submitDisabled}
               onPrimary={() => {
                 if (actionBox.stage === "success") {
                   actionBox.reset()
