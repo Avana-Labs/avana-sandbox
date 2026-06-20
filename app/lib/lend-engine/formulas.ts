@@ -1,4 +1,4 @@
-import { INITIAL_LIQUIDITY_INDEX, SECONDS_PER_YEAR } from "./constants"
+import { INITIAL_LIQUIDITY_INDEX, MILLISECONDS_PER_SECOND, SECONDS_PER_YEAR } from "./constants"
 
 export function calculateUtilization(totalBorrowed: number, totalSupplied: number): number {
   if (totalSupplied <= 0) return 0
@@ -19,7 +19,7 @@ export function calculateSuppliedValueUsd(suppliedAmount: number, assetPriceUsd:
 
 export function calculateElapsedYears(currentTimestamp: number, lastAccrualTimestamp: number): number {
   const elapsedSeconds = Math.max(0, currentTimestamp - lastAccrualTimestamp)
-  return elapsedSeconds / SECONDS_PER_YEAR
+  return elapsedSeconds / (SECONDS_PER_YEAR * MILLISECONDS_PER_SECOND)
 }
 
 export function accrueLiquidityIndex(params: {

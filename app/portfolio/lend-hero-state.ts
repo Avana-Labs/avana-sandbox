@@ -1,13 +1,16 @@
 "use client"
 
+import type { ChartRangeData } from "@/app/components/charts"
 import { buildRangeData } from "@/app/components/charts"
 import type { PortfolioHeroData, PortfolioLendTabData } from "@/app/lib/data/providers/portfolio"
+import { buildLendRangeData } from "@/app/lib/lend-system/read-model"
 
 export type LendSnapshot = {
   totalSuppliedUsd: number
   totalEarnedUsd: number
   averageApyPct: number
   openPositions: number
+  rangeData: ChartRangeData
 }
 
 function formatUsd(value: number) {
@@ -22,7 +25,13 @@ function buildSuppliedRangeData(totalSuppliedUsd: number) {
 }
 
 export function buildLendSnapshotFromTabData(data: PortfolioLendTabData): LendSnapshot {
-  const investments = data.investments
+  const investments = data.investments ?? []
+  const normalizedData: PortfolioLendTabData = {
+    investments,
+    positions: data.positions ?? investments,
+    strategyBuckets: data.strategyBuckets ?? [],
+    history: data.history ?? [],
+  }
   const totalSuppliedUsd = investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
   const totalEarnedUsd = investments.reduce((sum, item) => sum + item.earnedUsd, 0)
   const averageApyPct = investments.length
@@ -34,6 +43,7 @@ export function buildLendSnapshotFromTabData(data: PortfolioLendTabData): LendSn
     totalEarnedUsd,
     averageApyPct,
     openPositions: investments.length,
+    rangeData: buildLendRangeData(normalizedData),
   }
 }
 
@@ -44,7 +54,7 @@ export function buildLendHeroData(template: PortfolioHeroData, snapshot: LendSna
     ...template,
     headlineValue: formatUsd(snapshot.totalSuppliedUsd),
     headlineDelta: snapshot.openPositions > 0 ? positionLabel : `${formatUsd(snapshot.totalEarnedUsd)} earned`,
-    rangeData: buildSuppliedRangeData(snapshot.totalSuppliedUsd),
+    rangeData: snapshot.rangeData ?? buildSuppliedRangeData(snapshot.totalSuppliedUsd),
     statOneValue: `${snapshot.averageApyPct.toFixed(2)}%`,
     statTwoValue: formatUsd(snapshot.totalEarnedUsd),
   }

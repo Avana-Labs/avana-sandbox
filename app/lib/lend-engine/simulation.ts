@@ -25,7 +25,7 @@ function accrueMarket(market: LendMarket, now: number): LendMarket {
   const elapsedYears = calculateElapsedYears(now, market.lastAccrualTimestamp)
   const liquidityIndex = accrueLiquidityIndex({
     oldLiquidityIndex: market.liquidityIndex,
-    supplyApy: market.totalApy,
+    supplyApy: market.supplyApy,
     elapsedYears,
   })
   return {
