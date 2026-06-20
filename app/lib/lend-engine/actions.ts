@@ -8,6 +8,20 @@ function findWalletPosition(state: LendSystemState, walletId: string, marketId: 
   )
 }
 
+function readWalletBalance(state: LendSystemState, walletId: string, marketId: string) {
+  return state.walletBalances[walletId]?.[marketId] ?? 0
+}
+
+function writeWalletBalance(state: LendSystemState, walletId: string, marketId: string, nextBalance: number) {
+  return {
+    ...state.walletBalances,
+    [walletId]: {
+      ...(state.walletBalances[walletId] ?? {}),
+      [marketId]: Math.max(0, nextBalance),
+    },
+  }
+}
+
 function updateMarketTotals(market: LendSystemState["markets"][string], deltaSupplied: number) {
   const totalSupplied = Math.max(0, market.totalSupplied + deltaSupplied)
   const availableLiquidity = calculateAvailableLiquidity(totalSupplied, market.totalBorrowed)
@@ -79,6 +93,12 @@ function applyDeposit(
     now,
     markets: { ...state.markets, [action.marketId]: updatedMarket },
     positions: { ...state.positions, [positionId]: position },
+    walletBalances: writeWalletBalance(
+      state,
+      action.walletId,
+      action.marketId,
+      readWalletBalance(state, action.walletId, action.marketId) - action.depositAmount,
+    ),
     transactions: [
       ...state.transactions,
       {
@@ -138,6 +158,12 @@ function applyWithdraw(
     now,
     markets: { ...state.markets, [action.marketId]: updatedMarket },
     positions: { ...state.positions, [action.positionId]: updatedPosition },
+    walletBalances: writeWalletBalance(
+      state,
+      action.walletId,
+      action.marketId,
+      readWalletBalance(state, action.walletId, action.marketId) + action.withdrawAmount,
+    ),
     transactions: [
       ...state.transactions,
       {
@@ -181,6 +207,7 @@ function applyClaimRewards(
     ...state,
     now,
     positions: nextPositions,
+    walletBalances: state.walletBalances,
     transactions: [
       ...state.transactions,
       {

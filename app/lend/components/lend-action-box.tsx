@@ -46,8 +46,8 @@ export function LendActionBox({
   const [actionType, setActionType] = React.useState<"deposit" | "withdraw">(initialAction)
   const [amount, setAmount] = React.useState("100")
   const walletBalance = React.useMemo(
-    () => getWalletBalanceForLendMarket(session.walletId, market),
-    [market, session.walletId],
+    () => getWalletBalanceForLendMarket(session.state, session.walletId, market),
+    [market, session.state, session.walletId],
   )
 
   const position = React.useMemo(

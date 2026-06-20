@@ -20,6 +20,7 @@ describe("lend accrual semantics", () => {
         now: openedAt,
         markets: { [market.marketId]: market },
         positions: {},
+        walletBalances: { "wallet-1": { [market.marketId]: 5000 } },
         transactions: [],
       },
       {

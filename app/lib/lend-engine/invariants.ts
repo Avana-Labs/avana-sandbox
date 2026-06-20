@@ -19,4 +19,10 @@ export function assertLendSystemInvariants(state: LendSystemState) {
     assertNonNegative(`${position.positionId}.interestEarned`, position.interestEarned)
     assertNonNegative(`${position.positionId}.rewardsEarnedUsd`, position.rewardsEarnedUsd)
   }
+
+  for (const [walletId, balances] of Object.entries(state.walletBalances)) {
+    for (const [marketId, balance] of Object.entries(balances)) {
+      assertNonNegative(`${walletId}.${marketId}.walletBalance`, balance)
+    }
+  }
 }

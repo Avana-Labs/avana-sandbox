@@ -41,4 +41,49 @@ describe("useLendSession", () => {
 
     expect(result.current.transactionHistory.length).toBeGreaterThan(0)
   })
+
+  it("updates wallet balances after deposit and withdraw", async () => {
+    const walletId = "demo-wallet"
+    const seededState = buildMockLendSystemStateWithSeedPosition(walletId)
+    const sessionSeed = buildLendSessionSeed(walletId)
+
+    writeLendSessionState(walletId, seededState)
+
+    const { result } = renderHook(() =>
+      useLendSession({
+        walletId,
+        sessionSeed,
+      }),
+    )
+
+    const beforeBalance = result.current.state.walletBalances[walletId]?.eth ?? 0
+
+    await act(async () => {
+      const depositIntent = result.current.createIntent({
+        type: "deposit",
+        walletId,
+        marketId: "eth",
+        depositAmount: 1,
+        walletBalance: beforeBalance,
+      })
+      await result.current.executeTransaction(depositIntent)
+    })
+
+    expect(result.current.state.walletBalances[walletId]?.eth).toBeCloseTo(beforeBalance - 1, 6)
+
+    const positionId = Object.keys(result.current.state.positions).find((id) => id.includes(":eth"))!
+
+    await act(async () => {
+      const withdrawIntent = result.current.createIntent({
+        type: "withdraw",
+        walletId,
+        marketId: "eth",
+        positionId,
+        withdrawAmount: 0.5,
+      })
+      await result.current.executeTransaction(withdrawIntent)
+    })
+
+    expect(result.current.state.walletBalances[walletId]?.eth).toBeCloseTo(beforeBalance - 0.5, 6)
+  })
 })

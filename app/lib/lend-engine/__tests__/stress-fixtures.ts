@@ -38,6 +38,20 @@ export function makeStressLendSystemState(userCount = 100): LendSystemState {
   return {
     ...base,
     positions,
+    walletBalances: {
+      ...base.walletBalances,
+      ...Object.fromEntries(
+        Array.from({ length: userCount }, (_, index) => {
+          const walletId = `wallet-lend-stress-${index}`
+          return [
+            walletId,
+            Object.fromEntries(
+              Object.keys(base.markets).map((marketId) => [marketId, 10_000]),
+            ),
+          ]
+        }),
+      ),
+    },
     transactions: [],
   }
 }

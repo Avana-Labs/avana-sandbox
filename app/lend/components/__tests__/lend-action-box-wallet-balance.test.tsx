@@ -8,7 +8,7 @@ const refreshPreview = vi.fn()
 vi.mock("@/app/lib/lend-system/lend-session-context", () => ({
   useLendSessionContext: () => ({
     walletId: "demo-wallet",
-    state: { positions: {} },
+    state: { positions: {}, walletBalances: { "demo-wallet": { eth: 1.5 } } },
   }),
 }))
 

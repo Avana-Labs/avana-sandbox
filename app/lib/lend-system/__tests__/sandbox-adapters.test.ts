@@ -106,4 +106,41 @@ describe("SandboxLendTransactionAdapter", () => {
     expect(result.historyItem.kind).toBe("claim")
     expect(result.state.positions["wallet-1:eth"]?.rewardsEarnedUsd).toBe(0)
   })
+
+  it("blocks redepositing funds that were already supplied from the wallet balance", async () => {
+    let state = buildMockLendSystemState("wallet-1")
+    state.walletBalances["wallet-1"] = { ...(state.walletBalances["wallet-1"] ?? {}), eth: 1.28 }
+    let nextId = 0
+
+    const adapter = new SandboxLendTransactionAdapter({
+      readState: () => state,
+      writeState: (next) => {
+        state = next
+      },
+      now: () => state.now,
+      generateId: (prefix) => `${prefix}-wallet-${nextId++}`,
+    })
+
+    const firstDeposit = adapter.createIntent({
+      type: "deposit",
+      walletId: "wallet-1",
+      marketId: "eth",
+      depositAmount: 1,
+      walletBalance: state.walletBalances["wallet-1"]!.eth,
+    })
+    await adapter.executeTransaction(firstDeposit)
+
+    const secondDeposit = adapter.createIntent({
+      type: "deposit",
+      walletId: "wallet-1",
+      marketId: "eth",
+      depositAmount: 0.5,
+      walletBalance: state.walletBalances["wallet-1"]!.eth,
+    })
+    const preview = await adapter.previewTransaction(secondDeposit)
+
+    expect(state.walletBalances["wallet-1"]!.eth).toBeCloseTo(0.28, 6)
+    expect(preview.allowed).toBe(false)
+    expect(preview.validationErrors[0]).toContain("Insufficient wallet balance")
+  })
 })

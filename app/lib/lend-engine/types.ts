@@ -72,6 +72,7 @@ export type LendSystemState = {
   now: number
   markets: Record<string, LendMarket>
   positions: Record<string, LendPosition>
+  walletBalances: Record<string, Record<string, number>>
   transactions: LendTransaction[]
 }
 

@@ -36,12 +36,12 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
     },
     multiply: {
       readAdapter: { readPortfolioMultiply },
-      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, walletBalances: {}, transactions: [] },
       transactionHistory: [],
     },
     lend: {
       readAdapter: { readPortfolioLend },
-      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, walletBalances: {}, transactions: [] },
       transactionHistory: [],
     },
   }),

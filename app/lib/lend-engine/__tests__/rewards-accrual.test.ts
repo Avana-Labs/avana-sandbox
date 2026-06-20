@@ -20,6 +20,7 @@ describe("lend rewards accrual", () => {
         now: openedAt,
         markets: { [market.marketId]: market },
         positions: {},
+        walletBalances: { "wallet-1": { [market.marketId]: 5 } },
         transactions: [],
       },
       {
