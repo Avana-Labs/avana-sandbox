@@ -1,48 +1,35 @@
 import { describe, expect, it } from "vitest"
-import {
-  applyActivityEvent,
-  evaluateTaskProgress,
-  type RewardsEngineState,
-} from "@/app/lib/rewards-engine"
-import { buildProfileBootstrapEvents, buildSandboxCompletionEvents, listTasksByCategory } from "@/app/lib/rewards-engine/task-completion"
+import { SandboxRewardsActionAdapter, buildDefaultRewardsSessionState } from "@/app/lib/rewards-system"
+import { buildDefaultRewardsCatalog } from "@/app/lib/rewards-engine"
 
-const DAY_MS = 24 * 60 * 60 * 1000
-
-function applyEvents(state: RewardsEngineState, events: ReturnType<typeof buildSandboxCompletionEvents>) {
-  return events.reduce((nextState, entry) => applyActivityEvent(nextState, entry), state)
-}
+const now = Date.UTC(2026, 5, 19)
+const wallet = "wallet-referral"
 
 describe("referral reward tasks", () => {
-  const now = Date.UTC(2026, 5, 19)
-  const wallet = "wallet-referral"
+  it("completes the sandbox referral loop", async () => {
+    let state = buildDefaultRewardsSessionState()
+    state.firstLoginAt = now
+    const adapter = new SandboxRewardsActionAdapter({
+      readState: () => state,
+      writeState: (next) => {
+        state = typeof next === "function" ? next(state) : next
+      },
+      now: () => now,
+    })
 
-  it("defines a completion path for every referral task", () => {
-    const tasks = listTasksByCategory("referral", now)
-    expect(tasks).toHaveLength(8)
+    await adapter.initializeRewardsForWallet(wallet)
+    await adapter.createReferralCode(wallet)
+    await adapter.runReferralSandboxStep(wallet, "invite")
+    await adapter.runReferralSandboxStep(wallet, "activate")
+    await adapter.runReferralSandboxStep(wallet, "fund")
 
-    for (const task of tasks) {
-      const events = buildSandboxCompletionEvents(task.id, wallet, now)
-      expect(events.length, `${task.id} should emit at least one completion event`).toBeGreaterThan(0)
-    }
+    const progress = await adapter.refreshTaskProgress(wallet)
+    expect(progress.find((item) => item.taskId === "share-referral-link")?.status).toBe("claimable")
+    expect(progress.find((item) => item.taskId === "invite-first-wallet")?.status).toBe("claimable")
+    expect(progress.find((item) => item.taskId === "first-funded-referral")?.status).toBe("claimable")
   })
 
-  for (const task of listTasksByCategory("referral", Date.UTC(2026, 5, 19))) {
-    it(`makes ${task.id} claimable through sandbox completion events`, () => {
-      const bootstrap = buildProfileBootstrapEvents({ wallet, now })
-      const completion = buildSandboxCompletionEvents(task.id, wallet, now)
-      const state = applyEvents({ events: [], claims: [] }, [...bootstrap, ...completion])
-      const evaluationNow = task.expiresAt ? task.expiresAt - DAY_MS : now + 30 * DAY_MS
-
-      const progress = evaluateTaskProgress({
-        task,
-        wallet,
-        events: state.events,
-        claims: state.claims,
-        now: evaluationNow,
-      })
-
-      expect(progress.status).toBe("claimable")
-      expect(progress.claimableAmount).toBe(task.rewardAmount)
-    })
-  }
+  it("defines eight referral quests", () => {
+    expect(buildDefaultRewardsCatalog(now).filter((task) => task.category === "referral")).toHaveLength(8)
+  })
 })

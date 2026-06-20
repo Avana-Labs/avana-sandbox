@@ -55,6 +55,8 @@ export type RewardActivityType =
   | "referral_activated"
   | "referral_funded"
   | "education_completed"
+  | "sandbox_tour_completed"
+  | "daily_checkin"
 
 export type RewardTaskRequirement =
   | {
@@ -64,6 +66,7 @@ export type RewardTaskRequirement =
       product?: RewardProduct
       minAmountUsd?: number
       distinctProducts?: RewardProduct[]
+      marketId?: string
     }
   | {
       type: "aggregate_volume"
@@ -96,6 +99,10 @@ export type RewardTaskRequirement =
       type: "profile_completed"
       targetCount: number
     }
+  | {
+      type: "wait_since_login"
+      waitMs: number
+    }
 
 export type RewardTask = {
   id: string
@@ -110,7 +117,22 @@ export type RewardTask = {
   expiresAt?: number
   repeatable: boolean
   status?: RewardTaskStatus
+  actionKind?: RewardTaskActionKind
 }
+
+export type RewardTaskActionKind =
+  | "auto"
+  | "education_modal"
+  | "favorite_modal"
+  | "simulate_modal"
+  | "deep_link"
+  | "copy_referral"
+  | "sandbox_referral_invite"
+  | "sandbox_referral_activate"
+  | "sandbox_referral_fund"
+  | "sandbox_tour"
+  | "wait_timer"
+  | "product_action"
 
 export type UserRewardProgress = {
   wallet: string

@@ -12,6 +12,8 @@ export function buildDefaultRewardsSessionState(): RewardsSessionState {
     claims: [],
     referralProfiles: {},
     relationships: [],
+    firstLoginAt: 0,
+    favoriteMarketIds: [],
   }
 }
 

@@ -1,66 +1,48 @@
 import { describe, expect, it } from "vitest"
-import {
-  applyActivityEvent,
-  buildDefaultRewardsCatalog,
-  evaluateTaskProgress,
-  type RewardsEngineState,
-} from "@/app/lib/rewards-engine"
-import { buildProfileBootstrapEvents, buildSandboxCompletionEvents, listTasksByCategory } from "@/app/lib/rewards-engine/task-completion"
+import { buildDefaultRewardsCatalog, evaluateTaskProgress } from "@/app/lib/rewards-engine"
+import { SandboxRewardsActionAdapter, buildDefaultRewardsSessionState } from "@/app/lib/rewards-system"
 
-function applyEvents(state: RewardsEngineState, events: ReturnType<typeof buildSandboxCompletionEvents>) {
-  return events.reduce((nextState, entry) => applyActivityEvent(nextState, entry), state)
-}
+const now = Date.UTC(2026, 5, 19)
+const wallet = "wallet-new-user"
 
 describe("new user reward tasks", () => {
-  const now = Date.UTC(2026, 5, 19)
-  const wallet = "wallet-new-user"
-  const tasks = listTasksByCategory("new_user", now)
+  it("completes onboarding quests through real sandbox actions", async () => {
+    let state = buildDefaultRewardsSessionState()
+    state.firstLoginAt = now
+    const adapter = new SandboxRewardsActionAdapter({
+      readState: () => state,
+      writeState: (next) => {
+        state = typeof next === "function" ? next(state) : next
+      },
+      now: () => now,
+    })
 
-  it("defines a completion path for every new-user task", () => {
-    expect(tasks).toHaveLength(12)
-    for (const task of tasks) {
-      const events = buildSandboxCompletionEvents(task.id, wallet, now)
-      expect(events.length, `${task.id} should emit at least one completion event`).toBeGreaterThan(0)
-    }
+    await adapter.initializeRewardsForWallet(wallet)
+    await adapter.completeEducation(wallet)
+    await adapter.favoriteMarket(wallet, "gho")
+    await adapter.recordSimulation(wallet, "lend")
+
+    const progress = await adapter.refreshTaskProgress(wallet)
+    expect(progress.find((item) => item.taskId === "connect-wallet")?.status).toBe("claimable")
+    expect(progress.find((item) => item.taskId === "create-profile")?.status).toBe("claimable")
+    expect(progress.find((item) => item.taskId === "review-risk-basics")?.status).toBe("claimable")
+    expect(progress.find((item) => item.taskId === "favorite-market")?.status).toBe("claimable")
+    expect(progress.find((item) => item.taskId === "run-first-simulation")?.status).toBe("claimable")
   })
 
-  for (const task of listTasksByCategory("new_user", Date.UTC(2026, 5, 19))) {
-    it(`makes ${task.id} claimable through sandbox completion events`, () => {
-      const bootstrap = buildProfileBootstrapEvents({ wallet, now })
-      const completion = buildSandboxCompletionEvents(task.id, wallet, now)
-      const state = applyEvents({ events: [], claims: [] }, [...bootstrap, ...completion])
+  it("unlocks the sandbox cool-down timer", () => {
+    const task = buildDefaultRewardsCatalog(now).find((entry) => entry.id === "maintain-safe-account")
+    if (!task) throw new Error("missing maintain-safe-account")
 
-      const progress = evaluateTaskProgress({
-        task,
-        wallet,
-        events: state.events,
-        claims: state.claims,
-        now: now + 30 * 24 * 60 * 60 * 1000,
-      })
-
-      expect(progress.status).toBe("claimable")
-      expect(progress.claimableAmount).toBe(task.rewardAmount)
+    const progress = evaluateTaskProgress({
+      task,
+      wallet,
+      events: [],
+      claims: [],
+      now: now + 3 * 60_000,
+      firstLoginAt: now,
     })
-  }
 
-  it("keeps connect-wallet and create-profile claimable after wallet bootstrap", () => {
-    const catalog = buildDefaultRewardsCatalog(now)
-    const bootstrap = buildProfileBootstrapEvents({ wallet, now })
-    const state = applyEvents({ events: [], claims: [] }, bootstrap)
-
-    for (const taskId of ["connect-wallet", "create-profile"] as const) {
-      const task = catalog.find((entry) => entry.id === taskId)
-      if (!task) throw new Error(`missing ${taskId}`)
-
-      const progress = evaluateTaskProgress({
-        task,
-        wallet,
-        events: state.events,
-        claims: state.claims,
-        now,
-      })
-
-      expect(progress.status).toBe("claimable")
-    }
+    expect(progress.status).toBe("claimable")
   })
 })

@@ -1,5 +1,7 @@
 export { buildDefaultRewardsCatalog } from "./catalog"
 export { buildProfileBootstrapEvents, buildSandboxCompletionEvents, listTasksByCategory } from "./task-completion"
+export { canRunTaskAction, findTaskById, getSandboxTour, getTaskActionKind, getTaskDeepLink } from "./task-actions"
+export { REWARD_SANDBOX_TOURS, REWARD_TASK_DEEP_LINKS } from "./catalog"
 export {
   applyActivityEvent,
   calculateRewardSummary,

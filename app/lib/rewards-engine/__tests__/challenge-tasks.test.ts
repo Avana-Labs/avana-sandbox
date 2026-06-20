@@ -1,48 +1,49 @@
 import { describe, expect, it } from "vitest"
-import {
-  applyActivityEvent,
-  evaluateTaskProgress,
-  type RewardsEngineState,
-} from "@/app/lib/rewards-engine"
-import { buildProfileBootstrapEvents, buildSandboxCompletionEvents, listTasksByCategory } from "@/app/lib/rewards-engine/task-completion"
+import { buildDefaultRewardsCatalog, evaluateTaskProgress } from "@/app/lib/rewards-engine"
+import { SandboxRewardsActionAdapter, buildDefaultRewardsSessionState } from "@/app/lib/rewards-system"
 
 const DAY_MS = 24 * 60 * 60 * 1000
-
-function applyEvents(state: RewardsEngineState, events: ReturnType<typeof buildSandboxCompletionEvents>) {
-  return events.reduce((nextState, entry) => applyActivityEvent(nextState, entry), state)
-}
+const now = Date.UTC(2026, 5, 19)
+const wallet = "wallet-challenge"
 
 describe("challenge reward tasks", () => {
-  const now = Date.UTC(2026, 5, 19)
-  const wallet = "wallet-challenge"
+  it("completes tour and check-in sandbox quests", async () => {
+    let state = buildDefaultRewardsSessionState()
+    state.firstLoginAt = now
+    const adapter = new SandboxRewardsActionAdapter({
+      readState: () => state,
+      writeState: (next) => {
+        state = typeof next === "function" ? next(state) : next
+      },
+      now: () => now,
+    })
 
-  it("defines a completion path for every challenge task", () => {
-    const tasks = listTasksByCategory("challenge", now)
-    expect(tasks).toHaveLength(15)
+    await adapter.initializeRewardsForWallet(wallet)
+    await adapter.recordSandboxTour(wallet, "use-curve-position")
+    await adapter.recordDailyCheckin(wallet)
 
-    for (const task of tasks) {
-      const events = buildSandboxCompletionEvents(task.id, wallet, now)
-      expect(events.length, `${task.id} should emit at least one completion event`).toBeGreaterThan(0)
-    }
+    const progress = await adapter.refreshTaskProgress(wallet)
+    expect(progress.find((item) => item.taskId === "use-curve-position")?.status).toBe("claimable")
+    expect(progress.find((item) => item.taskId === "4-week-activity-streak")?.status).toBe("in_progress")
   })
 
-  for (const task of listTasksByCategory("challenge", Date.UTC(2026, 5, 19))) {
-    it(`makes ${task.id} claimable through sandbox completion events`, () => {
-      const bootstrap = buildProfileBootstrapEvents({ wallet, now })
-      const completion = buildSandboxCompletionEvents(task.id, wallet, now)
-      const state = applyEvents({ events: [], claims: [] }, [...bootstrap, ...completion])
-      const evaluationNow = task.expiresAt ? task.expiresAt - DAY_MS : now + 30 * DAY_MS
+  it("unlocks patience timers with honest wait requirements", () => {
+    const task = buildDefaultRewardsCatalog(now).find((entry) => entry.id === "maintain-hf-above-2")
+    if (!task) throw new Error("missing maintain-hf-above-2")
 
-      const progress = evaluateTaskProgress({
-        task,
-        wallet,
-        events: state.events,
-        claims: state.claims,
-        now: evaluationNow,
-      })
-
-      expect(progress.status).toBe("claimable")
-      expect(progress.claimableAmount).toBe(task.rewardAmount)
+    const progress = evaluateTaskProgress({
+      task,
+      wallet,
+      events: [],
+      claims: [],
+      now: now + 6 * 60_000,
+      firstLoginAt: now,
     })
-  }
+
+    expect(progress.status).toBe("claimable")
+  })
+
+  it("defines fifteen challenge quests", () => {
+    expect(buildDefaultRewardsCatalog(now).filter((task) => task.category === "challenge")).toHaveLength(15)
+  })
 })

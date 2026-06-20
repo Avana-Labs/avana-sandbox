@@ -9,9 +9,16 @@ import { RewardsPageClient } from "@/app/rewards/rewards-page-client"
 const claimReward = vi.fn()
 const claimAllRewards = vi.fn()
 const completeSandboxTask = vi.fn()
+const completeEducation = vi.fn()
+const favoriteMarket = vi.fn()
+const recordSimulation = vi.fn()
+const recordSandboxTour = vi.fn()
+const recordDailyCheckin = vi.fn()
+const runReferralSandboxStep = vi.fn()
+const createReferralCode = vi.fn()
 const readRewardSummary = vi.fn()
 const readProgress = vi.fn()
-const rewardsState = { events: [], claims: [], referralProfiles: {}, relationships: [] }
+const rewardsState = { events: [], claims: [], referralProfiles: {}, relationships: [], firstLoginAt: Date.UTC(2026, 5, 19), favoriteMarketIds: [] }
 
 const rewardsSessionContext = {
   walletId: "demo-wallet",
@@ -20,6 +27,13 @@ const rewardsSessionContext = {
   claimReward,
   claimAllRewards,
   completeSandboxTask,
+  completeEducation,
+  favoriteMarket,
+  recordSimulation,
+  recordSandboxTour,
+  recordDailyCheckin,
+  runReferralSandboxStep,
+  createReferralCode,
   readAdapter: {
     readRewardSummary,
     readProgress,
@@ -28,6 +42,23 @@ const rewardsSessionContext = {
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useRewardsSessionContext: () => rewardsSessionContext,
+  useAvanaSessions: () => ({
+    walletId: "demo-wallet",
+    lend: {
+      createIntent: vi.fn(() => ({ id: "lend-intent" })),
+      previewTransaction: vi.fn(async () => ({ allowed: true })),
+    },
+    borrow: {
+      collateralPools: [{ id: "uni-v3-bluechip-weth-usdc" }],
+      getBorrowableAssetsForMarket: () => [{ id: "uni-v3-bluechip:usdc" }],
+      createIntent: vi.fn(() => ({ id: "borrow-intent" })),
+      previewTransaction: vi.fn(async () => ({ allowed: true })),
+    },
+    multiply: {
+      createIntent: vi.fn(() => ({ id: "multiply-intent" })),
+      previewTransaction: vi.fn(async () => ({ allowed: true })),
+    },
+  }),
 }))
 
 describe("RewardsPageClient", () => {
@@ -35,6 +66,7 @@ describe("RewardsPageClient", () => {
     claimReward.mockReset()
     claimAllRewards.mockReset()
     completeSandboxTask.mockReset()
+    completeEducation.mockReset()
     readRewardSummary.mockReset()
     readProgress.mockReset()
 
@@ -96,7 +128,7 @@ describe("RewardsPageClient", () => {
     expect(readProgress.mock.calls.length).toBeGreaterThan(1)
   })
 
-  it("completes available tasks through sandbox actions and refreshes progress", async () => {
+  it("opens the education flow for primer quests", async () => {
     render(
       <DisplayPreferencesProvider>
         <RewardsPageClient
@@ -118,10 +150,10 @@ describe("RewardsPageClient", () => {
       </DisplayPreferencesProvider>,
     )
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Read" })).toBeInTheDocument())
-
-    await userEvent.click(screen.getByRole("button", { name: "Read" }))
-    expect(completeSandboxTask).toHaveBeenCalledWith("review-risk-basics")
-    expect(readProgress.mock.calls.length).toBeGreaterThan(1)
+    await waitFor(() => expect(screen.getByRole("button", { name: "Read primer" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "Read primer" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "I read it" })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole("button", { name: "I read it" }))
+    expect(completeEducation).toHaveBeenCalledTimes(1)
   })
 })

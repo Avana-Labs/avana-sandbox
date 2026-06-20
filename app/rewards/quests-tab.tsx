@@ -75,8 +75,8 @@ function AvanaQuestCard({
 }) {
   const Icon = QUEST_ICON_MAP[quest.iconId]
   const isClaimable = quest.status === "claimable"
-  const isDisabled = quest.status === "claimed" || quest.status === "expired"
-  const canAct = isClaimable || quest.status === "available" || quest.status === "in_progress"
+  const isDisabled = quest.status === "claimed" || quest.status === "expired" || quest.cta === "Waiting"
+  const canAct = isClaimable || (quest.status === "available" || quest.status === "in_progress") && quest.cta !== "Waiting"
 
   return (
     <Card className="flex h-full flex-col overflow-hidden rounded-[14px] border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">

@@ -13,6 +13,8 @@ export type RewardsSessionState = {
   claims: RewardClaim[]
   referralProfiles: Record<string, ReferralProfile>
   relationships: ReferralRelationship[]
+  firstLoginAt: number
+  favoriteMarketIds: string[]
 }
 
 export type RewardsReadSnapshot = {
@@ -40,6 +42,12 @@ export type RewardsActionAdapter = {
   initializeRewardsForWallet(wallet: string): Promise<RewardsSessionState>
   recordActivityEvent(event: RewardActivityEvent): Promise<RewardsSessionState>
   completeSandboxTask(wallet: string, taskId: string): Promise<RewardsSessionState>
+  completeEducation(wallet: string): Promise<RewardsSessionState>
+  favoriteMarket(wallet: string, marketId: string): Promise<RewardsSessionState>
+  recordSimulation(wallet: string, product: "borrow" | "lend" | "multiply"): Promise<RewardsSessionState>
+  recordSandboxTour(wallet: string, taskId: string): Promise<RewardsSessionState>
+  recordDailyCheckin(wallet: string): Promise<RewardsSessionState>
+  runReferralSandboxStep(wallet: string, step: "invite" | "activate" | "fund"): Promise<RewardsSessionState>
   refreshTaskProgress(wallet: string): Promise<UserRewardProgress[]>
   claimReward(wallet: string, taskId: string): Promise<RewardClaim>
   claimAllRewards(wallet: string): Promise<RewardClaim[]>

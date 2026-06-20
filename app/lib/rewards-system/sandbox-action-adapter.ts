@@ -84,20 +84,25 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
     const initialized = this.ensureReferralProfile(this.readState(), wallet)
     let state = initialized[0]
     const referralProfile = initialized[1]
+    const loginAt = this.now()
+
+    if (!state.firstLoginAt) {
+      state = { ...state, firstLoginAt: loginAt }
+    }
 
     state = applyActivityEventToSession(state, {
       id: `${wallet}:wallet_connected`,
       wallet,
       product: "profile",
       type: "wallet_connected",
-      timestamp: this.now(),
+      timestamp: loginAt,
     })
     state = applyActivityEventToSession(state, {
       id: `${wallet}:profile_completed`,
       wallet,
       product: "profile",
       type: "profile_completed",
-      timestamp: this.now(),
+      timestamp: loginAt + 1,
     })
 
     state.referralProfiles = {
@@ -130,13 +135,144 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
     return state
   }
 
+  async completeEducation(wallet: string) {
+    return this.recordActivityEvent({
+      id: `${wallet}:education_completed`,
+      wallet,
+      product: "education",
+      type: "education_completed",
+      timestamp: this.now(),
+    })
+  }
+
+  async favoriteMarket(wallet: string, marketId: string) {
+    const state = this.readState()
+    const nextFavorites = state.favoriteMarketIds.includes(marketId)
+      ? state.favoriteMarketIds
+      : [...state.favoriteMarketIds, marketId]
+
+    this.writeState({ ...state, favoriteMarketIds: nextFavorites })
+    return this.recordActivityEvent({
+      id: `${wallet}:favorite:${marketId}`,
+      wallet,
+      product: "profile",
+      type: "market_favorited",
+      marketId,
+      timestamp: this.now(),
+    })
+  }
+
+  async recordSimulation(wallet: string, product: "borrow" | "lend" | "multiply") {
+    return this.recordActivityEvent({
+      id: `${wallet}:simulation:${product}:${this.now()}`,
+      wallet,
+      product,
+      type: "simulation_created",
+      timestamp: this.now(),
+    })
+  }
+
+  async recordSandboxTour(wallet: string, taskId: string) {
+    const state = this.readState()
+    const existingTours = state.events.filter(
+      (event) => event.wallet === wallet && event.type === "sandbox_tour_completed",
+    ).length
+    const marketId =
+      taskId === "use-curve-position"
+        ? "curve-sandbox-tour"
+        : taskId === "use-uniswap-v4-position"
+          ? "uniswap-v4-sandbox-tour"
+          : `market-tour-${existingTours + 1}`
+
+    return this.recordActivityEvent({
+      id: `${wallet}:tour:${marketId}`,
+      wallet,
+      product: "borrow",
+      type: "sandbox_tour_completed",
+      marketId,
+      timestamp: this.now(),
+    })
+  }
+
+  async recordDailyCheckin(wallet: string) {
+    const day = Math.floor(this.now() / (24 * 60 * 60 * 1000))
+    return this.recordActivityEvent({
+      id: `${wallet}:checkin:${day}`,
+      wallet,
+      product: "profile",
+      type: "daily_checkin",
+      timestamp: this.now(),
+    })
+  }
+
+  async runReferralSandboxStep(wallet: string, step: "invite" | "activate" | "fund") {
+    let state = this.readState()
+    const index = state.relationships.length
+    const referredWallet = `${wallet}-crew-${index}`
+
+    if (step === "invite") {
+      await this.createReferralCode(wallet)
+      state = this.readState()
+      state = applyActivityEventToSession(state, {
+        id: `${wallet}:referral_connected:${referredWallet}`,
+        wallet,
+        product: "referral",
+        type: "referral_connected",
+        referredWallet,
+        timestamp: this.now(),
+      })
+      state = {
+        ...state,
+        relationships: [
+          ...state.relationships,
+          { referrerWallet: wallet, referredWallet, createdAt: this.now() },
+        ],
+      }
+      this.writeState(state)
+      return state
+    }
+
+    if (step === "activate") {
+      const activatedCount = state.events.filter(
+        (event) => event.wallet === wallet && event.type === "referral_activated",
+      ).length
+      const referredWallet = `${wallet}-crew-${activatedCount}`
+      state = applyActivityEventToSession(state, {
+        id: `${wallet}:referral_activated:${referredWallet}`,
+        wallet,
+        product: "referral",
+        type: "referral_activated",
+        referredWallet,
+        timestamp: this.now(),
+      })
+      this.writeState(state)
+      return state
+    }
+
+    const fundedCount = state.events.filter((event) => event.wallet === wallet && event.type === "referral_funded").length
+    const fundedWallet = `${wallet}-crew-${fundedCount}`
+    state = applyActivityEventToSession(state, {
+      id: `${wallet}:referral_funded:${fundedWallet}`,
+      wallet,
+      product: "referral",
+      type: "referral_funded",
+      referredWallet: fundedWallet,
+      amountUsd: 250,
+      timestamp: this.now(),
+    })
+    this.writeState(state)
+    return state
+  }
+
   async refreshTaskProgress(wallet: string) {
+    const state = this.readState()
     return evaluateAllTasksForUser({
       tasks: this.tasks,
       wallet,
-      events: this.readState().events,
-      claims: this.readState().claims,
+      events: state.events,
+      claims: state.claims,
       now: this.now(),
+      firstLoginAt: state.firstLoginAt,
     })
   }
 
@@ -151,6 +287,7 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
       events: state.events,
       claims: state.claims,
       now: this.now(),
+      firstLoginAt: state.firstLoginAt,
     }).find((entry) => entry.taskId === taskId)
 
     if (!progress) throw new Error(`Missing reward progress for task ${taskId}`)

@@ -96,6 +96,18 @@ export function useRewardsSession({
   const claimReward = useCallback((taskId: string) => actionAdapter.claimReward(walletId, taskId), [actionAdapter, walletId])
   const claimAllRewards = useCallback(() => actionAdapter.claimAllRewards(walletId), [actionAdapter, walletId])
   const completeSandboxTask = useCallback((taskId: string) => actionAdapter.completeSandboxTask(walletId, taskId), [actionAdapter, walletId])
+  const completeEducation = useCallback(() => actionAdapter.completeEducation(walletId), [actionAdapter, walletId])
+  const favoriteMarket = useCallback((marketId: string) => actionAdapter.favoriteMarket(walletId, marketId), [actionAdapter, walletId])
+  const recordSimulation = useCallback(
+    (product: "borrow" | "lend" | "multiply") => actionAdapter.recordSimulation(walletId, product),
+    [actionAdapter, walletId],
+  )
+  const recordSandboxTour = useCallback((taskId: string) => actionAdapter.recordSandboxTour(walletId, taskId), [actionAdapter, walletId])
+  const recordDailyCheckin = useCallback(() => actionAdapter.recordDailyCheckin(walletId), [actionAdapter, walletId])
+  const runReferralSandboxStep = useCallback(
+    (step: "invite" | "activate" | "fund") => actionAdapter.runReferralSandboxStep(walletId, step),
+    [actionAdapter, walletId],
+  )
   const createReferralCode = useCallback(() => actionAdapter.createReferralCode(walletId), [actionAdapter, walletId])
   const applyReferralCode = useCallback((referralCode: string) => actionAdapter.applyReferralCode(walletId, referralCode), [actionAdapter, walletId])
   const refreshTaskProgress = useCallback(() => actionAdapter.refreshTaskProgress(walletId), [actionAdapter, walletId])
@@ -113,6 +125,12 @@ export function useRewardsSession({
     claimReward,
     claimAllRewards,
     completeSandboxTask,
+    completeEducation,
+    favoriteMarket,
+    recordSimulation,
+    recordSandboxTour,
+    recordDailyCheckin,
+    runReferralSandboxStep,
     createReferralCode,
     applyReferralCode,
     refreshTaskProgress,

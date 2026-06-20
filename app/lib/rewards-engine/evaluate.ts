@@ -20,6 +20,8 @@ function getRequirementTarget(requirement: RewardTaskRequirement) {
       return requirement.targetUsd
     case "education_completed":
     case "profile_completed":
+    case "wait_since_login":
+      return 1
     case "event_count":
     case "holding_period":
     case "referral_count":
@@ -35,6 +37,7 @@ function countMatchingEvents(task: RewardTask, events: RewardActivityEvent[]) {
   const matches = events.filter((event) => {
     if (!requirement.eventTypes.includes(event.type)) return false
     if (requirement.product && event.product !== requirement.product) return false
+    if (requirement.marketId && event.marketId !== requirement.marketId) return false
     if (requirement.minAmountUsd != null && (event.amountUsd ?? 0) < requirement.minAmountUsd) return false
     return true
   })
@@ -98,7 +101,13 @@ export function evaluateHoldingPeriodProgress(task: RewardTask, events: RewardAc
   return elapsedDays >= requirement.durationDays ? requirement.targetCount : Math.max(0, Math.min(requirement.targetCount, elapsedDays / requirement.durationDays))
 }
 
-function evaluateRawProgress(task: RewardTask, events: RewardActivityEvent[]) {
+function evaluateWaitSinceLoginProgress(firstLoginAt: number | undefined, waitMs: number, now: number) {
+  if (!firstLoginAt || firstLoginAt <= 0) return 0
+  const elapsed = Math.max(0, now - firstLoginAt)
+  return Math.min(1, elapsed / waitMs)
+}
+
+function evaluateRawProgress(task: RewardTask, events: RewardActivityEvent[], firstLoginAt: number | undefined, now: number) {
   switch (task.requirement.type) {
     case "event_count":
       return countMatchingEvents(task, events)
@@ -114,6 +123,8 @@ function evaluateRawProgress(task: RewardTask, events: RewardActivityEvent[]) {
       return events.filter((event) => event.type === "education_completed").length
     case "profile_completed":
       return events.filter((event) => event.type === "profile_completed").length
+    case "wait_since_login":
+      return evaluateWaitSinceLoginProgress(firstLoginAt, task.requirement.waitMs, now)
   }
 }
 
@@ -133,18 +144,23 @@ export function evaluateTaskProgress({
   events,
   claims,
   now,
+  firstLoginAt,
 }: {
   task: RewardTask
   wallet: string
   events: RewardActivityEvent[]
   claims: RewardClaim[]
   now: number
+  firstLoginAt?: number
 }): UserRewardProgress {
   const walletEvents = events.filter((event) => event.wallet === wallet)
   const walletClaims = claims.filter((claim) => claim.wallet === wallet && claim.taskId === task.id)
-  const rawProgress = evaluateRawProgress(task, walletEvents)
+  const rawProgress = evaluateRawProgress(task, walletEvents, firstLoginAt, now)
   const target = getRequirementTarget(task.requirement)
-  const cappedProgress = task.requirement.type === "aggregate_volume" ? rawProgress : Math.min(rawProgress, target)
+  const cappedProgress =
+    task.requirement.type === "aggregate_volume" || task.requirement.type === "wait_since_login"
+      ? rawProgress
+      : Math.min(rawProgress, target)
   const claimedAmount = walletClaims.reduce((total, claim) => total + claim.amount, 0)
   const completedAt = walletEvents
     .filter((event) => {
@@ -180,14 +196,16 @@ export function evaluateAllTasksForUser({
   events,
   claims,
   now,
+  firstLoginAt,
 }: {
   tasks: RewardTask[]
   wallet: string
   events: RewardActivityEvent[]
   claims: RewardClaim[]
   now: number
+  firstLoginAt?: number
 }) {
-  return tasks.map((task) => evaluateTaskProgress({ task, wallet, events, claims, now }))
+  return tasks.map((task) => evaluateTaskProgress({ task, wallet, events, claims, now, firstLoginAt }))
 }
 
 export function getClaimableRewards(progress: UserRewardProgress[]) {
@@ -200,14 +218,16 @@ export function calculateRewardSummary({
   events,
   claims,
   now,
+  firstLoginAt,
 }: {
   tasks: RewardTask[]
   wallet: string
   events: RewardActivityEvent[]
   claims: RewardClaim[]
   now: number
+  firstLoginAt?: number
 }): RewardsSummary {
-  const progress = evaluateAllTasksForUser({ tasks, wallet, events, claims, now })
+  const progress = evaluateAllTasksForUser({ tasks, wallet, events, claims, now, firstLoginAt })
   return {
     wallet,
     completedTaskCount: progress.filter((item) => item.status === "claimable" || item.status === "claimed").length,

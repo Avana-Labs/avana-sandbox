@@ -28,22 +28,26 @@ export class SandboxRewardsReadAdapter implements RewardsReadAdapter {
   }
 
   async readProgress(wallet: string) {
+    const state = this.getState()
     return evaluateAllTasksForUser({
       tasks: this.tasks,
       wallet,
-      events: this.getState().events,
-      claims: this.getState().claims,
+      events: state.events,
+      claims: state.claims,
       now: (this.source.now ?? Date.now)(),
+      firstLoginAt: state.firstLoginAt,
     })
   }
 
   async readRewardSummary(wallet: string) {
+    const state = this.getState()
     return calculateRewardSummary({
       tasks: this.tasks,
       wallet,
-      events: this.getState().events,
-      claims: this.getState().claims,
+      events: state.events,
+      claims: state.claims,
       now: (this.source.now ?? Date.now)(),
+      firstLoginAt: state.firstLoginAt,
     })
   }
 
