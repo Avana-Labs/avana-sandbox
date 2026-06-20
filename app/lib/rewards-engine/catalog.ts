@@ -376,7 +376,12 @@ export function buildDefaultRewardsCatalog(now = Date.now()): RewardTask[] {
       rewardSymbol: "AVA",
       actionLabel: "Open",
       actionKind: "product_action",
-      requirement: { type: "event_count", eventTypes: ["lend_deposited", "borrow_opened", "multiply_opened"], targetCount: 3 },
+      requirement: {
+        type: "event_count",
+        eventTypes: ["lend_deposited", "borrow_opened", "multiply_opened"],
+        targetCount: 3,
+        distinctMarketIds: true,
+      },
       expiresAt: now + 30 * DAY_MS,
       repeatable: false,
     },
