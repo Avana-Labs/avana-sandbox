@@ -27,4 +27,26 @@ describe("mapTransactionHistoryToActivityRows", () => {
     expect(rows[0]?.secondaryLabel).toContain("Simulated")
     expect(rows[0]?.amountUsd).toBeLessThan(0)
   })
+
+  it("maps collateral withdrawals using the executed USD amount", () => {
+    const rows = mapTransactionHistoryToActivityRows([
+      {
+        id: "history-2",
+        intentId: "intent-2",
+        walletId: "demo-wallet",
+        marketId: "uni-v3-bluechip-weth-usdc",
+        kind: "withdraw",
+        status: "success",
+        requestedAmountUsd6: 0n,
+        executedAmountUsd6: parseFixed("421.75", 6),
+        simulated: true,
+        timestamp: Date.UTC(2026, 5, 19),
+        hash: "sim_withdraw",
+      },
+    ])
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.kind).toBe("withdraw")
+    expect(rows[0]?.amountUsd).toBeCloseTo(-421.75, 6)
+  })
 })
