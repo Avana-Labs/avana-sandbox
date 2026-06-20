@@ -87,6 +87,8 @@ function useRewardsEventBridge({
       if (item.status !== "success" || seenIdsRef.current.has(bridgeId)) continue
       seenIdsRef.current.add(bridgeId)
 
+      if (item.kind === "claim") continue
+
       void rewards.recordActivityEvent({
         id: bridgeId,
         wallet: walletId,
