@@ -166,7 +166,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
         positionId: intent.positionId,
         kind: intent.actionType,
         status: "failed",
-        amountUsd: action.type === "multiply" ? action.collateralAmount : 0,
+        amountUsd: action.type === "multiply" ? Math.max(0, preview.after.collateralValueUsd - preview.before.collateralValueUsd) : 0,
         multiplierBefore: preview.before.multiplier,
         multiplierAfter: preview.after.multiplier,
         simulated: true,
@@ -201,7 +201,10 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
       positionId: intent.positionId,
       kind: intent.actionType,
       status: "success",
-      amountUsd: action.type === "multiply" ? action.collateralAmount : Math.max(0, preview.before.collateralValueUsd - preview.after.collateralValueUsd),
+      amountUsd:
+        action.type === "multiply"
+          ? Math.max(0, preview.after.collateralValueUsd - preview.before.collateralValueUsd)
+          : Math.max(0, preview.before.collateralValueUsd - preview.after.collateralValueUsd),
       multiplierBefore: preview.before.multiplier,
       multiplierAfter: preview.after.multiplier,
       simulated: true,

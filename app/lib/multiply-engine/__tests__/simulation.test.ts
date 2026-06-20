@@ -16,6 +16,27 @@ describe("multiply engine simulation", () => {
     expect(simulation.validation.allowed).toBe(true)
   })
 
+  it("adds new multiply exposure to an existing same-market position", () => {
+    const state = makeExampleMultiplySystemState()
+    const position = Object.values(state.positions).find((item) => item.marketId === EXAMPLE_ETH_USDT_MARKET.id)!
+
+    const simulation = simulateMultiply({
+      market: EXAMPLE_ETH_USDT_MARKET,
+      collateralAmount: 0.5,
+      selectedMultiplier: 2,
+      existingPosition: position,
+    })
+
+    expect(simulation.validation.allowed).toBe(true)
+    expect(simulation.before.collateralValueUsd).toBe(position.collateralValueUsd)
+    expect(simulation.after.collateralValueUsd).toBeGreaterThan(position.collateralValueUsd)
+    expect(simulation.after.debtValueUsd).toBeGreaterThan(position.debtValueUsd)
+    expect(simulation.after.multiplier).toBeCloseTo(
+      simulation.after.collateralValueUsd / (simulation.after.collateralValueUsd - simulation.after.debtValueUsd),
+      5,
+    )
+  })
+
   it("simulates deleverage and improves health factor", () => {
     const state = makeExampleMultiplySystemState()
     const position = Object.values(state.positions)[0]!

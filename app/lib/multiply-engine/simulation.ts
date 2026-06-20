@@ -51,12 +51,19 @@ export function simulateMultiply(params: {
     liquidationThreshold: market.risk.liquidationThreshold,
   })
 
-  const totalExposureUsd = calculateTotalExposure(initialCollateralValueUsd, selectedMultiplier)
-  const addedExposureUsd = totalExposureUsd - initialCollateralValueUsd
-  const effectiveAddedExposureUsd = addedExposureUsd * (1 - priceImpactPct)
-  const debtValueUsd = addedExposureUsd
-  const finalCollateralValueUsd = initialCollateralValueUsd + effectiveAddedExposureUsd
-  const finalCollateralAmount = finalCollateralValueUsd / collateralPriceUsd
+  const newTotalExposureUsd = calculateTotalExposure(initialCollateralValueUsd, selectedMultiplier)
+  const newBorrowedExposureUsd = newTotalExposureUsd - initialCollateralValueUsd
+  const effectiveAddedExposureUsd = newBorrowedExposureUsd * (1 - priceImpactPct)
+  const newCollateralValueUsd = initialCollateralValueUsd + effectiveAddedExposureUsd
+  const newDebtValueUsd = newBorrowedExposureUsd
+  const existingCollateralValueUsd = existingPosition?.collateralValueUsd ?? 0
+  const existingDebtValueUsd = existingPosition?.debtValueUsd ?? 0
+  const finalCollateralValueUsd = existingCollateralValueUsd + newCollateralValueUsd
+  const debtValueUsd = existingDebtValueUsd + newDebtValueUsd
+  const finalCollateralAmount =
+    (existingPosition?.collateralAmount ?? 0) + newCollateralValueUsd / collateralPriceUsd
+  const equityValueUsd = finalCollateralValueUsd - debtValueUsd
+  const effectiveMultiplier = equityValueUsd > 0 ? finalCollateralValueUsd / equityValueUsd : selectedMultiplier
   const ltv = calculateMultiplyLtv(debtValueUsd, finalCollateralValueUsd)
   const healthFactor = calculateMultiplyHealthFactor(
     finalCollateralValueUsd,
@@ -73,7 +80,7 @@ export function simulateMultiply(params: {
     borrowApy: market.economics.borrowApy,
     finalCollateralValueUsd,
     debtValueUsd,
-    initialCollateralValueUsd,
+    initialCollateralValueUsd: Math.max(1, finalCollateralValueUsd - debtValueUsd),
   })
   const maxLeverageApy = calculateMaxLeverageApy({
     supplyApy: market.economics.supplyApy,
@@ -123,7 +130,7 @@ export function simulateMultiply(params: {
       debtValueUsd,
       ltv,
       healthFactor,
-      multiplier: selectedMultiplier,
+      multiplier: effectiveMultiplier,
       liquidationPrice,
       priceDropToLiquidationPct: calculatePriceDropToLiquidationPct(liquidationPrice, collateralPriceUsd),
     },

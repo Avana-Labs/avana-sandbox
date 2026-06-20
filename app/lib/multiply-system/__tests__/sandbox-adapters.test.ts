@@ -70,4 +70,38 @@ describe("SandboxMultiplyTransactionAdapter", () => {
     expect(borrowState.accounts["wallet-1"]?.debtPositions.length).toBeGreaterThan(0)
     expect(Object.keys(multiplyState.positions).length).toBeGreaterThan(0)
   })
+
+  it("keeps repeated multiply actions additive in state and portfolio reads", async () => {
+    let multiplyState = makeExampleMultiplySystemState()
+    const existing = multiplyState.positions["wallet-1:eth-usdt"]!
+    const adapter = new SandboxMultiplyTransactionAdapter({
+      readState: () => multiplyState,
+      writeState: (nextState) => {
+        multiplyState = nextState
+      },
+      now: () => 1_718_800_000_000,
+      generateId: (() => {
+        let count = 0
+        return (prefix: string) => `${prefix}-${++count}`
+      })(),
+    })
+
+    const intent = adapter.createIntent({
+      type: "multiply",
+      walletId: existing.walletId,
+      marketId: existing.marketId,
+      collateralAmount: 0.5,
+      selectedMultiplier: 2,
+    })
+    const result = await adapter.executeTransaction(intent)
+    const updated = multiplyState.positions[existing.id]!
+    const readAdapter = new SandboxMultiplyReadAdapter({ state: multiplyState, transactionHistory: [result.historyItem] })
+    const portfolio = await readAdapter.readPortfolioMultiply(existing.walletId)
+
+    expect(updated.collateralValueUsd).toBeGreaterThan(existing.collateralValueUsd)
+    expect(updated.debtValueUsd).toBeGreaterThan(existing.debtValueUsd)
+    expect(result.historyItem.amountUsd).toBeCloseTo(result.preview.after.collateralValueUsd - result.preview.before.collateralValueUsd)
+    expect(portfolio.creditLines.totalCollateralUsd).toBeCloseTo(updated.collateralValueUsd)
+    expect(portfolio.creditLines.totalBorrowedUsd).toBeCloseTo(updated.debtValueUsd)
+  })
 })
