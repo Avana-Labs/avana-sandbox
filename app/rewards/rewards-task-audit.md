@@ -13,10 +13,10 @@ It records what each live quest requires and where its current verification evid
 | `favorite-market` | Pin a market to your watchlist | `market_favorited` once | `task-requirements.test.ts`, `rewards-page-client.test.tsx` favorite dialog |
 | `run-first-simulation` | Preview your first trade | `simulation_created` once | `task-requirements.test.ts`, `rewards-page-client.test.tsx` simulate dialog |
 | `first-lend-deposit` | Make your first sandbox lend | `lend_deposited` once | `task-requirements.test.ts`, `rewards-bridge.test.tsx`, deep-link CTA verified in page test |
-| `first-borrow` | Open your first sandbox borrow | `borrow_opened` once | `task-requirements.test.ts`, `rewards-bridge.test.tsx`, claim flow in page test |
-| `first-multiply` | Open your first sandbox multiply | `multiply_opened` once | `task-requirements.test.ts`, `rewards-bridge.test.tsx` |
-| `first-repay` | Repay a sandbox loan | `borrow_repaid` once | `task-requirements.test.ts` |
-| `first-deleverage` | Deleverage a sandbox position | `multiply_deleveraged` once | `task-requirements.test.ts` |
+| `first-borrow` | Open your first sandbox borrow | `borrow_opened` once | `task-requirements.test.ts`, `rewards-bridge.test.tsx`, `rewards-product-flows.test.tsx`, claim flow in page test |
+| `first-multiply` | Open your first sandbox multiply | `multiply_opened` once | `task-requirements.test.ts`, `rewards-bridge.test.tsx`, `rewards-product-flows.test.tsx` |
+| `first-repay` | Repay a sandbox loan | `borrow_repaid` once | `task-requirements.test.ts`, `rewards-product-flows.test.tsx` |
+| `first-deleverage` | Deleverage a sandbox position | `multiply_deleveraged` once | `task-requirements.test.ts`, `rewards-product-flows.test.tsx` |
 | `first-reward-claim` | Claim your first AVA reward | `reward_claimed` once | `task-requirements.test.ts`, live chained claim verification on `/rewards` |
 | `maintain-safe-account` | Sandbox cool-down | `wait_since_login` for 2 minutes | `task-requirements.test.ts`, live `/rewards` countdown verification |
 
@@ -24,21 +24,21 @@ It records what each live quest requires and where its current verification evid
 
 | Task ID | Card title | Requirement | Current evidence |
 | --- | --- | --- | --- |
-| `supply-5k-lend` | Lend $500 in the sandbox | aggregate `lend_deposited >= 500 USD` | `task-requirements.test.ts`, `catalog-audit.test.ts` |
-| `borrow-2k` | Borrow $200 in the sandbox | aggregate `borrow_opened >= 200 USD` | `task-requirements.test.ts` |
+| `supply-5k-lend` | Lend $500 in the sandbox | aggregate `lend_deposited >= 500 USD` | `task-requirements.test.ts`, `catalog-audit.test.ts`, `rewards-product-flows.test.tsx` |
+| `borrow-2k` | Borrow $200 in the sandbox | aggregate `borrow_opened >= 200 USD` | `task-requirements.test.ts`, `rewards-product-flows.test.tsx` |
 | `open-2x-multiply` | Launch a multiply position | `multiply_opened` once | `task-requirements.test.ts` |
-| `use-3-products` | Tour all three products | one qualifying action in `lend`, `borrow`, and `multiply` | `task-requirements.test.ts` |
+| `use-3-products` | Tour all three products | one qualifying action in `lend`, `borrow`, and `multiply` | `task-requirements.test.ts`, `rewards-product-flows.test.tsx` |
 | `use-curve-position` | Curve sandbox tour | `sandbox_tour_completed` for `curve-sandbox-tour` | `task-requirements.test.ts`, `rewards-page-client.test.tsx` sandbox tour CTA |
 | `use-uniswap-v4-position` | Uniswap v4 sandbox tour | `sandbox_tour_completed` for `uniswap-v4-sandbox-tour` | `task-requirements.test.ts` |
 | `maintain-hf-above-2` | Risk check-in (5 min) | `wait_since_login` for 5 minutes | `task-requirements.test.ts`, live `/rewards` countdown verification |
 | `keep-multiply-safe` | Multiply mindfulness (3 min) | `wait_since_login` for 3 minutes | `task-requirements.test.ts`, live `/rewards` countdown verification |
-| `complete-5-borrow-repay-cycles` | 3 borrow / repay loops | `borrow_repaid` three times | `task-requirements.test.ts` |
-| `complete-3-multiply-deleverage-cycles` | 2 deleverage drills | `multiply_deleveraged` twice | `task-requirements.test.ts` |
+| `complete-5-borrow-repay-cycles` | 3 borrow / repay loops | `borrow_repaid` three times | `task-requirements.test.ts`, `rewards-product-flows.test.tsx` |
+| `complete-3-multiply-deleverage-cycles` | 2 deleverage drills | `multiply_deleveraged` twice | `task-requirements.test.ts`, `rewards-product-flows.test.tsx` |
 | `activate-5-markets` | Explore 3 sandbox markets | `sandbox_tour_completed` three times | `task-requirements.test.ts` |
-| `claim-rewards-5-times` | Claim 3 quest rewards | `reward_claimed` three times | `task-requirements.test.ts`, live chained claim verification on `/rewards` |
+| `claim-rewards-5-times` | Claim 3 quest rewards | `reward_claimed` three times | `task-requirements.test.ts`, `rewards-product-flows.test.tsx`, live chained claim verification on `/rewards` |
 | `4-week-activity-streak` | 3-day sandbox streak | `daily_checkin` streak of three days | `task-requirements.test.ts`, `rewards-page-client.test.tsx`, live `0/3 -> 1/3` verification |
-| `grow-portfolio-10k` | Grow sandbox portfolio by $1K | aggregate lend/borrow/multiply volume `>= 1000 USD` | `task-requirements.test.ts` |
-| `open-8-active-positions` | Open 3 sandbox positions | three distinct qualifying `marketId`s across lend/borrow/multiply | `task-requirements.test.ts`, engine fix in `evaluate.ts` |
+| `grow-portfolio-10k` | Grow sandbox portfolio by $1K | aggregate lend/borrow/multiply volume `>= 1000 USD` | `task-requirements.test.ts`, `rewards-product-flows.test.tsx`, multiply amount bridge fix in `avana-sessions-provider.tsx` |
+| `open-8-active-positions` | Open 3 sandbox positions | three distinct qualifying `marketId`s across lend/borrow/multiply | `task-requirements.test.ts`, `rewards-product-flows.test.tsx`, engine fix in `evaluate.ts` |
 
 ## Refer a friend
 
@@ -61,6 +61,7 @@ It records what each live quest requires and where its current verification evid
 - 1,000-wallet scale run: `app/lib/rewards-engine/__tests__/scale-1000-users.test.ts`
 - Session adapters: `app/lib/rewards-system/__tests__/sandbox-adapters.test.ts`, `app/lib/rewards-system/__tests__/use-rewards-session.test.tsx`
 - Transaction bridge: `app/lib/avana-session/__tests__/rewards-bridge.test.tsx`
+- Cross-product sandbox flow: `app/lib/avana-session/__tests__/rewards-product-flows.test.tsx`
 - Rewards page actions: `app/rewards/__tests__/rewards-page-client.test.tsx`
 
 ## Known remaining gaps

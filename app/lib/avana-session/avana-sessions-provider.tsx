@@ -74,6 +74,7 @@ function useRewardsEventBridge({
         wallet: walletId,
         product: "multiply",
         type: item.kind === "multiply" ? "multiply_opened" : "multiply_deleveraged",
+        amountUsd: item.amountUsd,
         marketId: item.marketId,
         timestamp: item.timestamp,
       })
