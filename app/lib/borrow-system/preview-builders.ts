@@ -95,7 +95,7 @@ export function buildRepayPreviewModel(
     exceedsDebt: amountUsd > currentDebtUsd,
     remainingDebtUsd: nextPosition ? fixedToNumber(currentDebtValueUsd6(nextPosition), 6) : 0,
     healthFactorAfter: healthFactorToNumber(preview.after.metrics.healthFactorWad),
-      yearlyInterestSavedUsd: debtPosition ? (Math.min(amountUsd, currentDebtUsd) * fixedToNumber(debtPosition.borrowRateWad, 18) * 100) / 100 : 0,
+      yearlyInterestSavedUsd: debtPosition ? Math.min(amountUsd, currentDebtUsd) * fixedToNumber(debtPosition.borrowRateWad, 18) : 0,
       warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,
     }
 }
@@ -171,6 +171,7 @@ export function buildDepositPreviewModel(
       isEmpty: true,
       isValid: false,
       borrowCapacityUsd: 0,
+      borrowPowerDeltaUsd: 0,
       collateralValueUsd: 0,
       healthFactor: null as number | null,
       warningMessage: null as string | null,
@@ -188,6 +189,10 @@ export function buildDepositPreviewModel(
     isEmpty: false,
     isValid: preview.allowed,
     borrowCapacityUsd: fixedToNumber(preview.after.metrics.borrowCapacityUsd6, 6),
+    borrowPowerDeltaUsd: fixedToNumber(
+      preview.after.metrics.availableBorrowCapacityUsd6 - preview.before.metrics.availableBorrowCapacityUsd6,
+      6,
+    ),
     collateralValueUsd: fixedToNumber(preview.after.metrics.collateralValueUsd6, 6),
     healthFactor: healthFactorToNumber(preview.after.metrics.healthFactorWad),
     warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,

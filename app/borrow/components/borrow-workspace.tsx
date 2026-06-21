@@ -8,10 +8,10 @@ import {
   type BorrowDexId,
   type BorrowPoolRow,
   type BorrowableAsset,
-  type HomeCollateralPool,
 } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
+import { selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowAssetDetailPath, borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { triggerPageLoading } from "@/app/lib/page-loading"
@@ -19,11 +19,6 @@ import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
 import { useMediaQuery } from "@/app/lib/use-media-query"
-
-function computeHealthFactor(pool: HomeCollateralPool, debt: number): number | null {
-  if (debt <= 0) return Number.POSITIVE_INFINITY
-  return pool.liquidationUsd / debt
-}
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -91,17 +86,8 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
 
   // Data for each tab
   const supplies = useMemo<SupplyRowContext[]>(() => {
-    return session.collateralPools.map((pool) => ({
-      pool,
-      borrowedUsd: session.initialDebts[pool.id] ?? 0,
-      remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - (session.initialDebts[pool.id] ?? 0)),
-      liquidationThresholdUsd: pool.liquidationUsd,
-      healthFactor: computeHealthFactor(pool, session.initialDebts[pool.id] ?? 0),
-      pairApr: pool.pairApr,
-      feesUsd: 0,
-      feesLabel: "$0.00",
-    }))
-  }, [session.collateralPools, session.initialDebts])
+    return selectPortfolioSupplyRows(session.state, pageData.walletId)
+  }, [pageData.walletId, session.state])
 
   const filteredPools = useMemo(() => {
     return filterPools([...session.marketSummaries], { text: search, dexes: selectedDexes })

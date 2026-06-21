@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { formatFixed, parseFixed, simulateBorrow, simulateLiquidation, simulateRepay, simulateWithdraw } from "@/app/lib/credit-engine"
-import { buildBorrowPreviewModel, buildLiquidationPreviewModel, buildRepayPreviewModel, buildWithdrawPreviewModel } from "@/app/lib/borrow-system/preview-builders"
+import { formatFixed, parseFixed, simulateBorrow, simulateDeposit, simulateLiquidation, simulateRepay, simulateWithdraw } from "@/app/lib/credit-engine"
+import { buildBorrowPreviewModel, buildDepositPreviewModel, buildLiquidationPreviewModel, buildRepayPreviewModel, buildWithdrawPreviewModel } from "@/app/lib/borrow-system/preview-builders"
 import { EXAMPLE_UNI_MARKET_ID, EXAMPLE_UNI_USDC_ASSET_ID, EXAMPLE_WALLET_1_DEBT_ID, makeExampleBorrowSystemState } from "@/app/lib/credit-engine/__tests__/fixtures"
 
 describe("borrow preview builders", () => {
@@ -31,6 +31,24 @@ describe("borrow preview builders", () => {
 
     expect(model.isValid).toBe(simulation.allowed)
     expect(model.remainingDebtUsd).toBe(Number.parseFloat(formatFixed(simulation.after.metrics.totalBorrowedUsd6, 6)))
+    expect(model.yearlyInterestSavedUsd).toBeCloseTo(300 * 0.052, 2)
+  })
+
+  it("matches engine deposit borrow-power delta", () => {
+    const state = makeExampleBorrowSystemState()
+    const model = buildDepositPreviewModel(state, "wallet-1", EXAMPLE_UNI_MARKET_ID, 1000)
+    const simulation = simulateDeposit(state, {
+      type: "supplyCollateral",
+      walletId: "wallet-1",
+      marketId: EXAMPLE_UNI_MARKET_ID,
+      amountUsd6: parseFixed("1000", 6),
+    })
+
+    expect(model.isValid).toBe(simulation.allowed)
+    expect(model.borrowPowerDeltaUsd).toBeCloseTo(
+      Number.parseFloat(formatFixed(simulation.after.metrics.availableBorrowCapacityUsd6 - simulation.before.metrics.availableBorrowCapacityUsd6, 6)),
+      2,
+    )
   })
 
   it("matches engine withdraw simulations", () => {

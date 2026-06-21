@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
+import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { BorrowWorkspace } from "@/app/borrow/components/borrow-workspace"
 
 const push = vi.fn()
@@ -57,6 +58,7 @@ vi.mock("@/app/lib/use-media-query", () => ({
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useBorrowSessionContext: () => ({
+    state: buildMockBorrowSystemState("wallet-1"),
     marketSummaries: [market],
     collateralPools: [
       {

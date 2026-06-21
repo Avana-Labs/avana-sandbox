@@ -399,9 +399,6 @@ export function buildHomeSupplyPreview(
   marketId: string,
   amountUsd: number,
 ): SupplyPreview {
-  const market = state.markets[marketId]
-  const ltvPct = market ? fixedToNumber(market.riskConfig.collateralFactorWad, 18) * 100 : 0
-
   if (amountUsd <= 0) {
     return {
       amountUsd,
@@ -418,13 +415,12 @@ export function buildHomeSupplyPreview(
   }
 
   const model = buildDepositPreviewModel(state, walletId, marketId, amountUsd)
-  const borrowPowerUsd = model.collateralValueUsd * (ltvPct / 100)
 
   return {
     amountUsd,
     isEmpty: model.isEmpty,
     isValid: model.isValid,
-    borrowPowerUsd,
+    borrowPowerUsd: model.borrowPowerDeltaUsd,
     collateralValueUsd: model.collateralValueUsd,
     healthFactor: model.healthFactor,
     healthFactorLabel: formatHealthFactor(model.healthFactor),

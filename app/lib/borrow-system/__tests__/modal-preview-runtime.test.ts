@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { parseFixed, simulateBorrow } from "@/app/lib/credit-engine"
+import { parseFixed, simulateBorrow, simulateDeposit } from "@/app/lib/credit-engine"
 import {
   EXAMPLE_UNI_MARKET_ID,
   EXAMPLE_UNI_USDC_ASSET_ID,
@@ -37,6 +37,7 @@ describe("modal preview runtime", () => {
     expect(preview.isValid).toBe(true)
     expect(preview.remainingDebtUsd).toBeLessThan(debtBefore + 2000)
     expect(preview.healthFactorAfter).not.toBeNull()
+    expect(preview.yearlyInterestSavedUsd).toBeCloseTo(250 * 0.052, 2)
   })
 
   it("buildHomeRemovePreview flags unsafe large removals", () => {
@@ -50,9 +51,18 @@ describe("modal preview runtime", () => {
   it("buildHomeSupplyPreview uses engine deposit simulation", () => {
     const state = makeExampleBorrowSystemState()
     const preview = buildHomeSupplyPreview(state, "wallet-1", EXAMPLE_UNI_MARKET_ID, 1000)
+    const engine = simulateDeposit(state, {
+      type: "supplyCollateral",
+      walletId: "wallet-1",
+      marketId: EXAMPLE_UNI_MARKET_ID,
+      amountUsd6: parseFixed("1000", 6),
+    })
+    const borrowPowerDeltaUsd =
+      Number.parseFloat(engine.after.metrics.availableBorrowCapacityUsd6.toString()) / 1e6 -
+      Number.parseFloat(engine.before.metrics.availableBorrowCapacityUsd6.toString()) / 1e6
 
     expect(preview.isValid).toBe(true)
     expect(preview.collateralValueUsd).toBeGreaterThan(0)
-    expect(preview.borrowPowerUsd).toBeGreaterThan(0)
+    expect(preview.borrowPowerUsd).toBeCloseTo(borrowPowerDeltaUsd, 2)
   })
 })
