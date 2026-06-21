@@ -147,7 +147,7 @@ export function LendActionPageClient({
   if (!market) return null
 
   return (
-    <ActionPageShell mode={mode} title={descriptor.title} subtitle={descriptor.subtitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref}>
+    <ActionPageShell mode={mode} title={descriptor.title} subtitle={descriptor.subtitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
       {stage === "success" && successUi ? (
         <ActionSuccessStage success={successUi} onSecondary={() => router.push(closeHref)} />
       ) : (

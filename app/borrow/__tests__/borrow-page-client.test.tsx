@@ -3,6 +3,19 @@ import { describe, expect, it, vi } from "vitest"
 import { BorrowPageClient } from "@/app/borrow/borrow-page-client"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 
+vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  useBorrowSessionContext: () => ({
+    walletId: "wallet-1",
+    state: {},
+    readAdapter: { readBorrowPage: vi.fn() },
+    transactionHistory: [],
+  }),
+}))
+
+vi.mock("@/app/borrow/use-borrow-page-live", () => ({
+  useBorrowPageLive: () => null,
+}))
+
 vi.mock("@/app/borrow/borrow-workspace-shell", () => ({
   BorrowWorkspaceShell: () => <div data-testid="borrow-workspace-shell" />,
 }))

@@ -297,7 +297,7 @@ export function BorrowActionPageClient({
   }, [amount, assetId, closeHref, descriptor.primaryVerb, kind, marketId, percent, previewUi, router, session, stage, walletId])
 
   return (
-    <ActionPageShell mode={mode} title={descriptor.title} subtitle={descriptor.subtitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref}>
+    <ActionPageShell mode={mode} title={descriptor.title} subtitle={descriptor.subtitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
       {stage === "select" ? (
         <ActionSelectStage
           title={descriptor.title}

@@ -22,6 +22,16 @@ describe("ActionPageShell", () => {
     expect(screen.getByText("Body")).toBeInTheDocument()
   })
 
+  it("shows sandbox badge when simulated", () => {
+    render(
+      <ActionPageShell title="Borrow" subtitle="Configure and review your loan." simulated>
+        <div>Body</div>
+      </ActionPageShell>,
+    )
+
+    expect(screen.getByText("Simulated transaction")).toBeInTheDocument()
+  })
+
   it("hides top chrome in embedded mode", () => {
     render(
       <ActionPageShell mode="embedded" title="Deposit" subtitle="Configure and review your deposit.">

@@ -11,6 +11,7 @@ type ActionPageShellProps = {
   title: string
   subtitle: string
   walletLabel?: string
+  simulated?: boolean
   onClose?: () => void
   closeHref?: string
   children: ReactNode
@@ -23,6 +24,7 @@ export function ActionPageShell({
   title,
   subtitle,
   walletLabel,
+  simulated = false,
   onClose,
   closeHref,
   children,
@@ -78,6 +80,11 @@ export function ActionPageShell({
         <div className="pb-6 pt-2">
           <h1 className="text-[clamp(2rem,6vw,2.75rem)] font-medium tracking-[-0.04em]">{title}</h1>
           <p className="mt-2 text-[15px] text-muted-foreground">{subtitle}</p>
+          {simulated ? (
+            <span className="mt-3 inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-amber-700 dark:text-amber-300">
+              Simulated transaction
+            </span>
+          ) : null}
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4">{children}</div>

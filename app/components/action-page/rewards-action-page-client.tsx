@@ -85,7 +85,7 @@ export function RewardsActionPageClient({ mode = "page", closeHref = "/rewards" 
   }, [claimUsd, closeHref, descriptor.primaryVerb, previewUi, rewards, router, stage])
 
   return (
-    <ActionPageShell mode={mode} title={descriptor.title} subtitle={descriptor.subtitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref}>
+    <ActionPageShell mode={mode} title={descriptor.title} subtitle={descriptor.subtitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={rewards.readAdapter.mode === "sandbox"}>
       {stage === "success" && successUi ? (
         <ActionSuccessStage success={successUi} onSecondary={() => router.push(closeHref)} />
       ) : (
