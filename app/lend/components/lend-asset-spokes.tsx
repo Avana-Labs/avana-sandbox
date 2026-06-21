@@ -276,28 +276,6 @@ function MultiSelectDropdown({
   )
 }
 
-function YieldsBadge({ accent }: { accent?: boolean }) {
-  if (!accent) return null
-
-  return (
-    <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-[#8f8cff]/70 text-[#8f8cff]">
-      <svg aria-hidden="true" viewBox="0 0 14 14" fill="none" className="size-[8px]">
-        <path
-          d="M2.5 7c0-2.485 2.015-4.5 4.5-4.5S11.5 4.515 11.5 7 9.485 11.5 7 11.5 2.5 9.485 2.5 7Z"
-          stroke="currentColor"
-          strokeWidth="1.4"
-        />
-        <path
-          d="M5.1 7.05c.37-.92 1.08-1.47 1.9-1.47.82 0 1.53.56 1.9 1.47"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
-      </svg>
-    </span>
-  )
-}
-
 function AssetIcon({ row }: { row: AssetRow }) {
   if (row.logoSrc) {
     return (

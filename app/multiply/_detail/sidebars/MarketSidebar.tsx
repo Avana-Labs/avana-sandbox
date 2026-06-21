@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { EmbeddedActionPage } from "@/app/components/action-page/embedded-action-page"
+import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
@@ -94,7 +94,7 @@ export function MarketSidebar({ detail, className }: Props) {
                 type="button"
                 variant="secondary"
                 className="h-9 flex-1 rounded-radius-sm"
-                onClick={() => router.push(actionPagePath("multiply", "deleverage", { market: marketId }))}
+                onClick={() => router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: `/multiply/market/${marketId}` }))}
               >
                 Deleverage
               </Button>
@@ -104,11 +104,11 @@ export function MarketSidebar({ detail, className }: Props) {
       ) : null}
 
       {market ? (
-        <EmbeddedActionPage
+        <ActionPageLaunchCta
           product="multiply"
           kind="multiply"
-          closeHref={`/multiply/market/${marketId}`}
-          initialMarketId={marketId}
+          market={marketId}
+          returnTo={`/multiply/market/${marketId}`}
         />
       ) : (
         <Card className="relative overflow-hidden border-border bg-surface-raised shadow-elev-1">
