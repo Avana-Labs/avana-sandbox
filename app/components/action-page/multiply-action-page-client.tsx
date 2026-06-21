@@ -3,14 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import type { ActionPageMode } from "@/app/lib/action-system/contracts"
-import { getActionDescriptor } from "@/app/lib/action-system/contracts"
-import { mapMultiplyPreviewToActionUi } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
-import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
+import { getActionDescriptor } from "@/app/lib/action-system/contracts"
+import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
+import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
+import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
+import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { isConfigureVisibleStage } from "@/app/lib/action-system/stage-machine"
 
 function truncateWallet(id: string) {
   return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
@@ -18,14 +20,12 @@ function truncateWallet(id: string) {
 
 export function MultiplyActionPageClient({
   kind,
-  mode = "page",
   closeHref = "/multiply",
   initialMarketId,
   initialAmount = "1",
   initialMultiplier = "2",
 }: {
   kind: "multiply" | "deleverage"
-  mode?: ActionPageMode
   closeHref?: string
   initialMarketId?: string
   initialAmount?: string
@@ -59,9 +59,7 @@ export function MultiplyActionPageClient({
 
     const position =
       session.state.positions[`${walletId}:${market.id}`] ??
-      Object.values(session.state.positions).find(
-        (entry) => entry.walletId === walletId && entry.marketId === market.id,
-      )
+      Object.values(session.state.positions).find((entry) => entry.walletId === walletId && entry.marketId === market.id)
 
     const action =
       kind === "multiply"
@@ -81,12 +79,17 @@ export function MultiplyActionPageClient({
 
     void session.previewTransaction(session.createIntent(action)).then((preview) => {
       setPreviewUi(
-        mapMultiplyPreviewToActionUi(preview, {
-          collateralSymbol: market.collateralAsset.symbol,
-          collateralAmount: parsedAmount,
-          marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
-          multiplier: parsedMultiplier,
-        }),
+        kind === "multiply"
+          ? mapMultiplyPreviewToActionUi(preview, {
+              collateralSymbol: market.collateralAsset.symbol,
+              collateralAmount: parsedAmount,
+              marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
+              multiplier: parsedMultiplier,
+            })
+          : mapDeleveragePreviewToActionUi(preview, {
+              marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
+              targetMultiplier: parsedMultiplier,
+            }),
       )
     })
   }, [amount, kind, market, multiplier, session, walletId])
@@ -97,17 +100,18 @@ export function MultiplyActionPageClient({
       return
     }
     if (!market || !previewUi?.allowed) return
-    setStage("submitting")
+
     setIsPending(true)
+    setOutcome(null)
+
     try {
       const parsedAmount = Number.parseFloat(amount)
       const parsedMultiplier = Number.parseFloat(multiplier)
       const position =
         session.state.positions[`${walletId}:${market.id}`] ??
-        Object.values(session.state.positions).find(
-          (entry) => entry.walletId === walletId && entry.marketId === market.id,
-        )
+        Object.values(session.state.positions).find((entry) => entry.walletId === walletId && entry.marketId === market.id)
       if (kind === "deleverage" && !position) throw new Error("No position selected")
+
       const action =
         kind === "multiply"
           ? {
@@ -123,18 +127,31 @@ export function MultiplyActionPageClient({
               positionId: position!.id,
               targetMultiplier: parsedMultiplier,
             }
+
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
       if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
-      const result = await session.executeTransaction(preview.intent)
+
+      const simulated = session.readAdapter.mode === "sandbox"
+      const result = await runActionSubmitFlow({
+        simulated,
+        needsAllowance: false,
+        onStage: setStage,
+        execute: async () => session.executeTransaction(preview.intent),
+      })
+
       if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? "Transaction failed")
+
       setSuccessUi(
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
           description: `${parsedMultiplier.toFixed(2)}x on ${market.collateralAsset.symbol} processed.`,
-          receiptHash: result.receipt.hash,
+          receiptHash: result.receipt.hash ?? null,
           metrics: previewUi.metrics,
           href: "/multiply",
+          primaryCtaLabel: "View multiply dashboard",
+          preview: previewUi,
+          verb: descriptor.primaryVerb,
         }),
       )
       setStage("success")
@@ -152,23 +169,30 @@ export function MultiplyActionPageClient({
 
   if (!market) return null
 
+  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked"
+
   return (
-    <ActionPageShell mode={mode} title={descriptor.title} subtitle={descriptor.subtitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
-      {stage === "success" && successUi ? (
-        <ActionSuccessStage success={successUi} onSecondary={() => router.push(closeHref)} />
-      ) : (
+    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
+      {stage === "processing" ? (
+        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
+      ) : null}
+
+      {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
+
+      {isConfigureVisibleStage(stage) ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
           amount={amount}
           onAmountChange={setAmount}
           preview={previewUi}
+          assetSymbol={market.collateralAsset.symbol}
           onPrimary={() => void handlePrimary()}
-          onSecondary={() => router.push(closeHref)}
+          secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
         />
-      )}
+      ) : null}
     </ActionPageShell>
   )
 }
