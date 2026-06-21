@@ -78,6 +78,11 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
   )
 
   useEffect(() => {
+    if (previewUi.allowed && stage === "blocked") {
+      setBlockedUi(null)
+      setStage("configure")
+      return
+    }
     if (!previewUi.allowed && stage === "configure") {
       const blocked = mapPreviewToBlockedUi({ product: "rewards", kind: "claim", blockedReason: previewUi.blockedReason })
       if (blocked) {

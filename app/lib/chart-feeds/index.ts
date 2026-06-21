@@ -31,6 +31,11 @@ function deltaTone(pct: number): "positive" | "negative" {
   return pct < 0 ? "negative" : "positive"
 }
 
+export type LiveChartInput = {
+  baseValue: number
+  changePct?: number
+}
+
 // ---------------------------------------------------------------------------
 // Portfolio
 // ---------------------------------------------------------------------------
@@ -60,12 +65,11 @@ export function getPortfolioHeroFeed(input: PortfolioFeedInput): ChartFeed {
 // ---------------------------------------------------------------------------
 
 /** @swap-to-api Replace with `GET /pools/{poolId}/chart`. */
-export function getPoolHeroFeed(poolId: string): ChartFeed {
+export function getPoolHeroFeed(poolId: string, live?: LiveChartInput): ChartFeed {
   const seed = hashString(poolId)
-  // Base TVL between ~$40M and ~$760M, deterministic per pool.
-  const base = 40_000_000 + (seed % 720) * 1_000_000
+  const base = live?.baseValue ?? 40_000_000 + (seed % 720) * 1_000_000
   const variance = base * 0.05
-  const pct = ((seed % 900) / 100 - 4) // ~ -4%..+5%
+  const pct = live?.changePct ?? (seed % 900) / 100 - 4
   const format: ChartValueFormat = "usdCompact"
 
   return {
@@ -83,11 +87,11 @@ export function getPoolHeroFeed(poolId: string): ChartFeed {
 // ---------------------------------------------------------------------------
 
 /** @swap-to-api Replace with `GET /multiply/markets/{marketId}/chart`. */
-export function getMultiplyMarketHeroFeed(marketId: string): ChartFeed {
+export function getMultiplyMarketHeroFeed(marketId: string, live?: LiveChartInput): ChartFeed {
   const seed = hashString(`multiply:${marketId}`)
-  const base = 2_000_000 + (seed % 280) * 150_000
+  const base = live?.baseValue ?? 2_000_000 + (seed % 280) * 150_000
   const variance = base * 0.065
-  const pct = ((seed % 1_100) / 100 - 5.5)
+  const pct = live?.changePct ?? (seed % 1_100) / 100 - 5.5
 
   return {
     headlineValue: formatChartValue("usdCompact", base),
@@ -104,13 +108,14 @@ export function getMultiplyMarketHeroFeed(marketId: string): ChartFeed {
 // ---------------------------------------------------------------------------
 
 /** @swap-to-api Replace with `GET /assets/{assetId}/chart`. */
-export function getAssetHeroFeed(assetId: string): ChartFeed {
+export function getAssetHeroFeed(assetId: string, live?: LiveChartInput): ChartFeed {
   const seed = hashString(assetId)
-  // Spread bases so different assets look distinct (stables ~$1, blue chips higher).
   const tier = seed % 4
-  const base = tier === 0 ? 1 + (seed % 50) / 1000 : tier === 1 ? 20 + (seed % 400) : tier === 2 ? 1500 + (seed % 1200) : 60_000 + (seed % 9000)
+  const fallbackBase =
+    tier === 0 ? 1 + (seed % 50) / 1000 : tier === 1 ? 20 + (seed % 400) : tier === 2 ? 1500 + (seed % 1200) : 60_000 + (seed % 9000)
+  const base = live?.baseValue ?? fallbackBase
   const variance = base * 0.045
-  const pct = ((seed % 700) / 100 - 3)
+  const pct = live?.changePct ?? (seed % 700) / 100 - 3
   const format: ChartValueFormat = "price"
 
   return {

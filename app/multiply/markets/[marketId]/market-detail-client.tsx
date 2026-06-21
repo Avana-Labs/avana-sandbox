@@ -7,6 +7,7 @@ import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard, StickyDetailH
 import { QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
+import { mergeMultiplyDetailWithSession } from "@/app/lib/detail-live-feeds"
 import { cn } from "@/lib/utils"
 import {
   MarketHero,
@@ -27,15 +28,16 @@ export function MarketDetailClient({ detail }: Props) {
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const session = useMultiplySessionContext()
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
+  const liveDetail = React.useMemo(() => mergeMultiplyDetailWithSession(detail, session.state), [detail, session.state])
 
   const transactions = React.useMemo(() => {
     const sessionRows = mapMultiplyHistoryToDetailRows(
       session.transactionHistory.filter((item) => item.marketId === marketId),
-      detail.row.protocol,
-      detail.row.asset,
+      liveDetail.row.protocol,
+      liveDetail.row.asset,
     )
-    return sessionRows.length > 0 ? sessionRows : detail.transactions
-  }, [detail.row.asset, detail.row.protocol, detail.transactions, marketId, session.transactionHistory])
+    return sessionRows.length > 0 ? sessionRows : liveDetail.transactions
+  }, [liveDetail.row.asset, liveDetail.row.protocol, liveDetail.transactions, marketId, session.transactionHistory])
 
   return (
     <div className="bg-background">
@@ -44,10 +46,10 @@ export function MarketDetailClient({ detail }: Props) {
         title={
           <div className="flex items-center gap-2.5">
             <div className="flex -space-x-2">
-              <TokenAvatar visual={detail.hero.visuals[0]} />
-              <TokenAvatar visual={detail.hero.visuals[1]} />
+              <TokenAvatar visual={liveDetail.hero.visuals[0]} />
+              <TokenAvatar visual={liveDetail.hero.visuals[1]} />
             </div>
-            <span className="text-[13px] font-medium text-foreground">{detail.hero.name}</span>
+            <span className="text-[13px] font-medium text-foreground">{liveDetail.hero.name}</span>
           </div>
         }
         subtitle={
@@ -79,24 +81,24 @@ export function MarketDetailClient({ detail }: Props) {
           <span aria-hidden className="text-border">
             ›
           </span>
-          <span className="font-normal text-foreground">{detail.hero.name}</span>
+          <span className="font-normal text-foreground">{liveDetail.hero.name}</span>
         </nav>
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
           <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
-            <MarketHeroIdentity detail={detail} className="pb-0" />
+            <MarketHeroIdentity detail={liveDetail} className="pb-0" />
           </div>
 
           <div ref={heroRef} className="min-w-0 lg:col-start-1 lg:row-start-2">
-            <MarketHero detail={detail} hideIdentity className="mb-6" />
+            <MarketHero detail={liveDetail} hideIdentity className="mb-6" />
 
             <section aria-label="Multiply market analytics" className="space-y-8 pt-8">
               <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]">Market data</h2>
-              <QuickStatsGrid detail={detail} />
-              <SupplyBorrowCard detail={detail} />
+              <QuickStatsGrid detail={liveDetail} />
+              <SupplyBorrowCard detail={liveDetail} />
               <EngagementTrendsCard
-                engagement={detail.engagement}
-                accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
+                engagement={liveDetail.engagement}
+                accentClassName={[liveDetail.hero.visuals[0].textClass, liveDetail.hero.visuals[1].textClass]}
               />
               <RiskSection detail={detail} />
               <AboutNewsSection

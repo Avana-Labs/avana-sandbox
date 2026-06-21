@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { MarketHeroChart } from "@/app/components/charts"
 import { getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
+import { multiplyMarketChartBase } from "@/app/lib/detail-live-feeds"
+import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 
 type MarketHeroProps = {
   detail: MultiplyMarketDetail
@@ -99,7 +101,11 @@ export function MarketHeroIdentity({
 }
 
 export function MarketHero({ detail, leading, actions, className, hideIdentity = false }: MarketHeroProps) {
-  const feed = React.useMemo(() => getMultiplyMarketHeroFeed(detail.id), [detail.id])
+  const session = useMultiplySessionContext()
+  const feed = React.useMemo(() => {
+    const baseValue = multiplyMarketChartBase(session.state, detail.id)
+    return getMultiplyMarketHeroFeed(detail.id, { baseValue })
+  }, [detail.id, session.state])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="market-hero">

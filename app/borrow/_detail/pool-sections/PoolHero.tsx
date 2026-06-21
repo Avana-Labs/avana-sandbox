@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts"
 import { getPoolHeroFeed } from "@/app/lib/chart-feeds"
+import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { formatFixed } from "@/app/lib/credit-engine"
 
 type PoolHeroProps = {
   detail: PoolDetail
@@ -104,7 +106,12 @@ export function PoolHeroIdentity({
 }
 
 export function PoolHero({ detail, leading, actions, className, hideIdentity = false }: PoolHeroProps) {
-  const feed = React.useMemo(() => getPoolHeroFeed(detail.id), [detail.id])
+  const session = useBorrowSessionContext()
+  const feed = React.useMemo(() => {
+    const market = session.state.markets[detail.id]
+    const baseValue = market ? Number.parseFloat(formatFixed(market.snapshot.totalLiquidityUsd6, 6)) : undefined
+    return getPoolHeroFeed(detail.id, baseValue != null ? { baseValue } : undefined)
+  }, [detail.id, session.state.markets])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="pool-hero">

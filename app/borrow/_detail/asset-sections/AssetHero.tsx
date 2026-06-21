@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts"
 import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
+import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { formatFixed } from "@/app/lib/credit-engine"
 
 type Props = {
   detail: AssetDetail
@@ -109,7 +111,12 @@ export function AssetHeroIdentity({
 }
 
 export function AssetHero({ detail, leading, actions, className, hideIdentity = false }: Props) {
-  const feed = React.useMemo(() => getAssetHeroFeed(detail.id), [detail.id])
+  const session = useBorrowSessionContext()
+  const feed = React.useMemo(() => {
+    const asset = session.state.assets[detail.id]
+    const baseValue = asset ? Number.parseFloat(formatFixed(asset.snapshot.priceUsd6, 6)) : undefined
+    return getAssetHeroFeed(detail.id, baseValue != null ? { baseValue } : undefined)
+  }, [detail.id, session.state.assets])
 
   return (
     <section className={cn(className)} data-testid="asset-hero">
