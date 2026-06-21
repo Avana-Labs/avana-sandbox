@@ -10,8 +10,8 @@ const ACTION_ROUTES = [
   { name: "borrow-claim", path: "/actions/borrow/claim" },
   { name: "lend-deposit", path: "/actions/lend/deposit?amount=10&market=usdc" },
   { name: "lend-withdraw-select", path: "/actions/lend/withdraw" },
-  { name: "lend-withdraw-configure", path: "/actions/lend/withdraw?market=gho&amount=1" },
-  { name: "multiply-configure", path: "/actions/multiply/multiply?multiplier=2&amount=1" },
+  { name: "lend-withdraw-configure", path: "/actions/lend/withdraw?market=usdc&amount=1" },
+  { name: "multiply-configure", path: "/actions/multiply/multiply?multiplier=1.5&amount=1" },
   { name: "deleverage-configure", path: "/actions/multiply/deleverage?multiplier=1.5&amount=1" },
   { name: "rewards-claim", path: "/actions/rewards/claim" },
 ] as const
