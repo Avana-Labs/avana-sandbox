@@ -1,11 +1,25 @@
 import { calculateAvailableLiquidity, calculateCurrentSuppliedBalance, calculateInterestEarned, calculateSuppliedValueUsd, calculateUtilization } from "./formulas"
 import { simulateDeposit, simulateWithdraw } from "./simulation"
-import type { LendAction, LendDepositIntent, LendPosition, LendSystemState, LendWithdrawIntent } from "./types"
+import type { LendAction, LendClaimRewardsIntent, LendDepositIntent, LendPosition, LendSystemState, LendWithdrawIntent } from "./types"
 
 function findWalletPosition(state: LendSystemState, walletId: string, marketId: string): LendPosition | undefined {
   return Object.values(state.positions).find(
     (position) => position.walletId === walletId && position.marketId === marketId && position.status === "active",
   )
+}
+
+function readWalletBalance(state: LendSystemState, walletId: string, marketId: string) {
+  return state.walletBalances[walletId]?.[marketId] ?? 0
+}
+
+function writeWalletBalance(state: LendSystemState, walletId: string, marketId: string, nextBalance: number) {
+  return {
+    ...state.walletBalances,
+    [walletId]: {
+      ...(state.walletBalances[walletId] ?? {}),
+      [marketId]: Math.max(0, nextBalance),
+    },
+  }
 }
 
 function updateMarketTotals(market: LendSystemState["markets"][string], deltaSupplied: number) {
@@ -23,6 +37,9 @@ export function applyLendAction(state: LendSystemState, action: LendAction, ids:
   const now = action.at ?? state.now
   if (action.type === "deposit") {
     return applyDeposit(state, action, now, ids)
+  }
+  if (action.type === "claim") {
+    return applyClaimRewards(state, action, now, ids)
   }
   return applyWithdraw(state, action, now, ids)
 }
@@ -65,6 +82,7 @@ function applyDeposit(
     liquidityIndexAtLastAction: simulation.after.liquidityIndex,
     currentSuppliedAmount: simulation.after.suppliedAmount,
     interestEarned: simulation.after.interestEarned,
+    rewardsEarnedUsd: simulation.after.rewardsEarnedUsd,
     suppliedValueUsd: simulation.after.suppliedValueUsd,
     openedAt: existing?.openedAt ?? now,
     updatedAt: now,
@@ -75,6 +93,12 @@ function applyDeposit(
     now,
     markets: { ...state.markets, [action.marketId]: updatedMarket },
     positions: { ...state.positions, [positionId]: position },
+    walletBalances: writeWalletBalance(
+      state,
+      action.walletId,
+      action.marketId,
+      readWalletBalance(state, action.walletId, action.marketId) - action.depositAmount,
+    ),
     transactions: [
       ...state.transactions,
       {
@@ -124,6 +148,7 @@ function applyWithdraw(
     liquidityIndexAtLastAction: simulation.after.liquidityIndex,
     currentSuppliedAmount: simulation.after.suppliedAmount,
     interestEarned: simulation.after.interestEarned,
+    rewardsEarnedUsd: simulation.after.rewardsEarnedUsd,
     suppliedValueUsd: simulation.after.suppliedValueUsd,
     updatedAt: now,
     status: simulation.after.suppliedAmount <= 1e-12 ? "closed" : "active",
@@ -133,6 +158,12 @@ function applyWithdraw(
     now,
     markets: { ...state.markets, [action.marketId]: updatedMarket },
     positions: { ...state.positions, [action.positionId]: updatedPosition },
+    walletBalances: writeWalletBalance(
+      state,
+      action.walletId,
+      action.marketId,
+      readWalletBalance(state, action.walletId, action.marketId) + action.withdrawAmount,
+    ),
     transactions: [
       ...state.transactions,
       {
@@ -142,6 +173,50 @@ function applyWithdraw(
         kind: "withdraw",
         asset: market.asset.symbol,
         amount: action.withdrawAmount,
+        at: now,
+      },
+    ],
+  }
+}
+
+function applyClaimRewards(
+  state: LendSystemState,
+  action: LendClaimRewardsIntent,
+  now: number,
+  ids: { positionId: string; transactionId: string },
+): LendSystemState {
+  const walletPositions = Object.entries(state.positions).filter(([, position]) => position.walletId === action.walletId)
+  const claimableUsd = walletPositions.reduce((sum, [, position]) => sum + position.rewardsEarnedUsd, 0)
+  if (claimableUsd <= 0) return state
+
+  const nextPositions = Object.fromEntries(
+    Object.entries(state.positions).map(([positionId, position]) => {
+      if (position.walletId !== action.walletId) return [positionId, position]
+      return [
+        positionId,
+        {
+          ...position,
+          rewardsEarnedUsd: 0,
+          updatedAt: now,
+        },
+      ]
+    }),
+  )
+
+  return {
+    ...state,
+    now,
+    positions: nextPositions,
+    walletBalances: state.walletBalances,
+    transactions: [
+      ...state.transactions,
+      {
+        id: ids.transactionId,
+        walletId: action.walletId,
+        marketId: "rewards",
+        kind: "claim",
+        asset: "Rewards",
+        amount: claimableUsd,
         at: now,
       },
     ],

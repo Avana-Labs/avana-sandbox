@@ -1,6 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import { AvanaSessionsProvider, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+import { buildMockLendSystemStateWithSeedPosition } from "@/app/lib/lend-system/mock"
+import { writeLendSessionState } from "@/app/lib/lend-system/storage"
 
 describe("Avana rewards bridge", () => {
   beforeEach(() => {
@@ -50,5 +52,35 @@ describe("Avana rewards bridge", () => {
       expect(progress.find((item) => item.taskId === "first-borrow")?.status).toBe("claimable")
       expect(progress.find((item) => item.taskId === "first-multiply")?.status).toBe("claimable")
     })
+  })
+
+  it("does not misclassify lend reward claims as rewards or withdraw activity", async () => {
+    const walletId = "demo-wallet"
+    const seededState = buildMockLendSystemStateWithSeedPosition(walletId)
+    seededState.positions[`${walletId}:eth`] = {
+      ...seededState.positions[`${walletId}:eth`]!,
+      rewardsEarnedUsd: 42,
+    }
+    writeLendSessionState(walletId, seededState)
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    const { result } = renderHook(() => useAvanaSessions(), { wrapper })
+
+    const eventsBeforeClaim = await result.current.rewards.readAdapter.readRecentActivity(walletId)
+    const withdrawCountBeforeClaim = eventsBeforeClaim.filter((event) => event.type === "lend_withdrawn").length
+    const rewardClaimCountBeforeClaim = eventsBeforeClaim.filter((event) => event.type === "reward_claimed").length
+
+    await act(async () => {
+      await result.current.lend.claimRewards()
+    })
+
+    await waitFor(() => {
+      expect(result.current.lend.transactionHistory[0]?.kind).toBe("claim")
+    })
+
+    const eventsAfterClaim = await result.current.rewards.readAdapter.readRecentActivity(walletId)
+
+    expect(eventsAfterClaim.filter((event) => event.type === "lend_withdrawn")).toHaveLength(withdrawCountBeforeClaim)
+    expect(eventsAfterClaim.filter((event) => event.type === "reward_claimed")).toHaveLength(rewardClaimCountBeforeClaim)
   })
 })

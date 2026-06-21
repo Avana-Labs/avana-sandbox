@@ -4,6 +4,7 @@ import * as React from "react"
 import type { LendMarket } from "@/app/lib/lend-engine"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { useLendActionBox } from "@/app/lib/lend-system/use-lend-action-box"
+import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { TransactionFlowPanel } from "@/app/components/transaction-flow"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +24,8 @@ function previewRows(preview: NonNullable<ReturnType<typeof useLendActionBox>["p
     { label: "Supplied value", value: formatUsd(preview.after.suppliedValueUsd) },
     { label: "Principal", value: preview.after.principalAmount.toFixed(4) },
     { label: "Interest earned", value: preview.after.interestEarned.toFixed(4) },
+    { label: "Rewards earned", value: formatUsd(preview.after.rewardsEarnedUsd) },
+    { label: "Total earned", value: formatUsd(preview.after.totalEarnedUsd) },
     { label: "Current APY", value: formatPct(preview.after.currentApy) },
   ]
 }
@@ -42,6 +45,10 @@ export function LendActionBox({
   const actionBox = useLendActionBox(session)
   const [actionType, setActionType] = React.useState<"deposit" | "withdraw">(initialAction)
   const [amount, setAmount] = React.useState("100")
+  const walletBalance = React.useMemo(
+    () => getWalletBalanceForLendMarket(session.state, session.walletId, market),
+    [market, session.state, session.walletId],
+  )
 
   const position = React.useMemo(
     () =>
@@ -67,7 +74,7 @@ export function LendActionBox({
           walletId: session.walletId,
           marketId: market.marketId,
           depositAmount: parsedAmount,
-          walletBalance: 10_000,
+          walletBalance,
         })
         return
       }
@@ -96,7 +103,7 @@ export function LendActionBox({
             walletId: session.walletId,
             marketId: market.marketId,
             depositAmount: parsedAmount,
-            walletBalance: 10_000,
+            walletBalance,
           }
         : {
             type: "withdraw",
@@ -109,6 +116,7 @@ export function LendActionBox({
   }, [actionBox, actionType, amount, market.marketId, position, session.walletId])
 
   const preview = actionBox.preview
+  const submitDisabled = actionBox.stage !== "success" && !actionBox.canAdvance
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -203,7 +211,7 @@ export function LendActionBox({
           rows={preview ? previewRows(preview) : []}
           primaryLabel={actionBox.stage === "success" ? "Done" : `Confirm simulated ${actionType}`}
           simulated
-          submitDisabled={!actionBox.canAdvance}
+          submitDisabled={submitDisabled}
           blockedReason={preview?.validationErrors[0] ?? null}
           onPrimary={() => {
             if (actionBox.stage === "success") {

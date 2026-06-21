@@ -238,7 +238,7 @@ export function buildMultiplyActivityHistory(
       product: "multiply" as const,
       kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
-      amountUsd: 0,
+      amountUsd: item.amountUsd,
       primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
       secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
       txHash: item.hash,

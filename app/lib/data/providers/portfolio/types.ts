@@ -134,6 +134,10 @@ export type PortfolioLendTabData = {
   positions: PortfolioSupplyPosition[]
   strategyBuckets: PortfolioStrategyBucket[]
   history: PortfolioActivityRow[]
+  rewardsSummary?: {
+    claimableUsd: number
+    totalEarnedUsd: number
+  }
 }
 
 export type PortfolioMultiplyCollateral = {

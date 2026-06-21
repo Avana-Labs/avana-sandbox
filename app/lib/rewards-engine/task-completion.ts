@@ -2,7 +2,6 @@ import type { RewardActivityEvent, RewardTask, RewardTaskCategory } from "./type
 import { buildDefaultRewardsCatalog } from "./catalog"
 
 const DAY_MS = 24 * 60 * 60 * 1000
-const WEEK_MS = 7 * DAY_MS
 
 type CompletionContext = {
   wallet: string
@@ -34,8 +33,6 @@ export function buildProfileBootstrapEvents(context: CompletionContext): RewardA
 }
 
 function buildNewUserCompletionEvents(taskId: string, context: CompletionContext): RewardActivityEvent[] {
-  const { wallet, now } = context
-
   switch (taskId) {
     case "connect-wallet":
       return [event(context, "wallet_connected", "profile", "wallet_connected")]
@@ -60,23 +57,20 @@ function buildNewUserCompletionEvents(taskId: string, context: CompletionContext
     case "first-reward-claim":
       return [event(context, "reward_claimed", "rewards", "reward_claimed", { amountUsd: 25 })]
     case "maintain-safe-account":
-      return [
-        event(context, "borrow_healthy_start", "borrow", "borrow_position_healthy", { timestamp: now }),
-        event(context, "borrow_healthy_end", "borrow", "borrow_position_healthy", { timestamp: now + 7 * DAY_MS }),
-      ]
+      return []
     default:
       return []
   }
 }
 
 function buildChallengeCompletionEvents(taskId: string, context: CompletionContext): RewardActivityEvent[] {
-  const { wallet, now } = context
+  const { now } = context
 
   switch (taskId) {
     case "supply-5k-lend":
-      return [event(context, "lend_5k", "lend", "lend_deposited", { amountUsd: 5_000, marketId: "gho" })]
+      return [event(context, "lend_500", "lend", "lend_deposited", { amountUsd: 500, marketId: "gho" })]
     case "borrow-2k":
-      return [event(context, "borrow_2k", "borrow", "borrow_opened", { amountUsd: 2_000, marketId: "borrow-1" })]
+      return [event(context, "borrow_200", "borrow", "borrow_opened", { amountUsd: 200, marketId: "borrow-1" })]
     case "open-2x-multiply":
       return [event(context, "multiply_2x", "multiply", "multiply_opened", { amountUsd: 2_500, marketId: "multiply-1" })]
     case "use-3-products":
@@ -86,21 +80,15 @@ function buildChallengeCompletionEvents(taskId: string, context: CompletionConte
         event(context, "multiply_product", "multiply", "multiply_opened", { amountUsd: 100, marketId: "multiply-1", timestamp: now + 2 }),
       ]
     case "use-curve-position":
-      return [event(context, "curve_lp", "borrow", "curve_lp_used")]
+      return [event(context, "curve_tour", "borrow", "sandbox_tour_completed", { marketId: "curve-sandbox-tour" })]
     case "use-uniswap-v4-position":
-      return [event(context, "uni_v4_lp", "borrow", "uniswap_v4_lp_used")]
+      return [event(context, "uni_v4_tour", "borrow", "sandbox_tour_completed", { marketId: "uniswap-v4-sandbox-tour" })]
     case "maintain-hf-above-2":
-      return [
-        event(context, "hf_start", "borrow", "borrow_position_healthy", { timestamp: now }),
-        event(context, "hf_end", "borrow", "borrow_position_healthy", { timestamp: now + 14 * DAY_MS }),
-      ]
+      return []
     case "keep-multiply-safe":
-      return [
-        event(context, "multiply_safe_start", "multiply", "multiply_safe_period_completed", { timestamp: now }),
-        event(context, "multiply_safe_end", "multiply", "multiply_safe_period_completed", { timestamp: now + 14 * DAY_MS }),
-      ]
+      return []
     case "complete-5-borrow-repay-cycles":
-      return Array.from({ length: 5 }, (_, index) =>
+      return Array.from({ length: 3 }, (_, index) =>
         event(context, `repay_cycle_${index}`, "borrow", "borrow_repaid", {
           amountUsd: 100,
           marketId: `borrow-${index}`,
@@ -108,7 +96,7 @@ function buildChallengeCompletionEvents(taskId: string, context: CompletionConte
         }),
       )
     case "complete-3-multiply-deleverage-cycles":
-      return Array.from({ length: 3 }, (_, index) =>
+      return Array.from({ length: 2 }, (_, index) =>
         event(context, `deleverage_cycle_${index}`, "multiply", "multiply_deleveraged", {
           amountUsd: 100,
           marketId: `multiply-${index}`,
@@ -116,36 +104,33 @@ function buildChallengeCompletionEvents(taskId: string, context: CompletionConte
         }),
       )
     case "activate-5-markets":
-      return [
-        event(context, "market_0", "lend", "lend_deposited", { amountUsd: 50, marketId: "market-0", timestamp: now }),
-        event(context, "market_1", "borrow", "borrow_opened", { amountUsd: 50, marketId: "market-1", timestamp: now + 1 }),
-        event(context, "market_2", "multiply", "multiply_opened", { amountUsd: 50, marketId: "market-2", timestamp: now + 2 }),
-        event(context, "market_3", "lend", "lend_deposited", { amountUsd: 50, marketId: "market-3", timestamp: now + 3 }),
-        event(context, "market_4", "borrow", "borrow_opened", { amountUsd: 50, marketId: "market-4", timestamp: now + 4 }),
-      ]
+      return Array.from({ length: 3 }, (_, index) =>
+        event(context, `market_tour_${index}`, "borrow", "sandbox_tour_completed", {
+          marketId: `market-tour-${index + 1}`,
+          timestamp: now + index,
+        }),
+      )
     case "claim-rewards-5-times":
-      return Array.from({ length: 5 }, (_, index) =>
+      return Array.from({ length: 3 }, (_, index) =>
         event(context, `reward_claim_${index}`, "rewards", "reward_claimed", {
           amountUsd: 10,
           timestamp: now + index,
         }),
       )
     case "4-week-activity-streak":
-      return Array.from({ length: 4 }, (_, week) =>
-        event(context, `weekly_${week}`, "lend", "lend_deposited", {
-          amountUsd: 100,
-          marketId: "gho",
-          timestamp: now + week * WEEK_MS,
+      return Array.from({ length: 3 }, (_, day) =>
+        event(context, `daily_${day}`, "profile", "daily_checkin", {
+          timestamp: now + day * DAY_MS,
         }),
       )
     case "grow-portfolio-10k":
       return [
-        event(context, "grow_lend", "lend", "lend_deposited", { amountUsd: 4_000, marketId: "gho", timestamp: now }),
-        event(context, "grow_borrow", "borrow", "borrow_opened", { amountUsd: 3_000, marketId: "borrow-1", timestamp: now + 1 }),
-        event(context, "grow_multiply", "multiply", "multiply_opened", { amountUsd: 3_500, marketId: "multiply-1", timestamp: now + 2 }),
+        event(context, "grow_lend", "lend", "lend_deposited", { amountUsd: 400, marketId: "gho", timestamp: now }),
+        event(context, "grow_borrow", "borrow", "borrow_opened", { amountUsd: 300, marketId: "borrow-1", timestamp: now + 1 }),
+        event(context, "grow_multiply", "multiply", "multiply_opened", { amountUsd: 350, marketId: "multiply-1", timestamp: now + 2 }),
       ]
     case "open-8-active-positions":
-      return Array.from({ length: 8 }, (_, index) => {
+      return Array.from({ length: 3 }, (_, index) => {
         const kinds = ["lend_deposited", "borrow_opened", "multiply_opened"] as const
         const products = ["lend", "borrow", "multiply"] as const
         const kindIndex = index % 3
@@ -199,24 +184,24 @@ function buildReferralCompletionEvents(taskId: string, context: CompletionContex
       return [
         event(context, "referral_funded_a", "referral", "referral_funded", {
           referredWallet: `${wallet}-cohort-a`,
-          amountUsd: 12_500,
+          amountUsd: 250,
           timestamp: now,
         }),
         event(context, "referral_funded_b", "referral", "referral_funded", {
           referredWallet: `${wallet}-cohort-b`,
-          amountUsd: 12_500,
+          amountUsd: 250,
           timestamp: now + 1,
         }),
       ]
     case "referral-streak":
-      return Array.from({ length: 4 }, (_, week) =>
-        event(context, `referral_streak_${week}`, "referral", "referral_activated", {
-          referredWallet: `${wallet}-streak-${week}`,
-          timestamp: now + week * WEEK_MS,
+      return Array.from({ length: 2 }, (_, index) =>
+        event(context, `referral_streak_${index}`, "referral", "referral_activated", {
+          referredWallet: `${wallet}-streak-${index}`,
+          timestamp: now + index,
         }),
       )
     case "avana-ambassador":
-      return Array.from({ length: 10 }, (_, index) =>
+      return Array.from({ length: 5 }, (_, index) =>
         event(context, `referral_ambassador_${index}`, "referral", "referral_activated", {
           referredWallet: `${wallet}-ambassador-${index}`,
           timestamp: now + index,
@@ -230,7 +215,7 @@ function buildReferralCompletionEvents(taskId: string, context: CompletionContex
 export function buildSandboxCompletionEvents(
   taskId: string,
   wallet: string,
-  now = Date.UTC(2026, 5, 19),
+  now = Date.now(),
 ): RewardActivityEvent[] {
   const context: CompletionContext = { wallet, now }
   const task = buildDefaultRewardsCatalog(now).find((entry) => entry.id === taskId)
@@ -246,6 +231,6 @@ export function buildSandboxCompletionEvents(
   }
 }
 
-export function listTasksByCategory(category: RewardTaskCategory, now = Date.UTC(2026, 5, 19)): RewardTask[] {
+export function listTasksByCategory(category: RewardTaskCategory, now = Date.now()): RewardTask[] {
   return buildDefaultRewardsCatalog(now).filter((task) => task.category === category)
 }

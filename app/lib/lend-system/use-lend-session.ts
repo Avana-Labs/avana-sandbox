@@ -3,7 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { LendAction, LendSystemState } from "@/app/lib/lend-engine"
 import { deserializeLendSystemState } from "./codec"
-import type { LendSandboxActionResult, LendTransactionHistoryItem, LendTransactionIntent, LendTransactionResult } from "./contracts"
+import type {
+  LendReadAdapter,
+  LendSandboxActionResult,
+  LendTransactionAdapter,
+  LendTransactionHistoryItem,
+  LendTransactionIntent,
+  LendTransactionResult,
+} from "./contracts"
 import { SandboxLendReadAdapter } from "./sandbox-read-adapter"
 import { SandboxLendTransactionAdapter } from "./sandbox-transaction-adapter"
 import {
@@ -26,39 +33,55 @@ function mergeReceipts(nextReceipt: LendTransactionResult, receipts: LendTransac
 export function useLendSession({
   walletId,
   sessionSeed,
+  readAdapter: injectedReadAdapter,
+  transactionAdapter: injectedTransactionAdapter,
+  persistState,
 }: {
   walletId: string
   sessionSeed: string
+  readAdapter?: LendReadAdapter
+  transactionAdapter?: LendTransactionAdapter
+  persistState?: boolean
 }) {
+  const adapterMode = injectedReadAdapter?.mode ?? injectedTransactionAdapter?.mode ?? "sandbox"
+  const shouldPersistState = persistState ?? adapterMode === "sandbox"
   const seededState = useMemo(() => deserializeLendSystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<LendSystemState>(seededState)
   const [transactionHistory, setTransactionHistory] = useState<LendTransactionHistoryItem[]>(
-    () => readLendSessionMetadata(walletId).transactionHistory,
+    () => (shouldPersistState ? readLendSessionMetadata(walletId).transactionHistory : []),
   )
   const [transactionReceipts, setTransactionReceipts] = useState<LendTransactionResult[]>(
-    () => readLendSessionMetadata(walletId).receipts,
+    () => (shouldPersistState ? readLendSessionMetadata(walletId).receipts : []),
   )
   const stateRef = useRef(state)
   stateRef.current = state
   const isPersistingRef = useRef(false)
 
   useEffect(() => {
+    if (!shouldPersistState) {
+      setState(seededState)
+      setTransactionHistory([])
+      setTransactionReceipts([])
+      return
+    }
     const nextState = readLendSessionState(walletId, sessionSeed)
     const metadata = readLendSessionMetadata(walletId)
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory)
     setTransactionReceipts(metadata.receipts)
-  }, [walletId, sessionSeed])
+  }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
+    if (!shouldPersistState) return
     isPersistingRef.current = true
     writeLendSessionState(walletId, state)
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [walletId, state])
+  }, [shouldPersistState, walletId, state])
 
   useEffect(() => {
+    if (!shouldPersistState) return
     isPersistingRef.current = true
     writeLendSessionMetadata(walletId, {
       transactionHistory,
@@ -67,9 +90,10 @@ export function useLendSession({
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [walletId, transactionHistory, transactionReceipts])
+  }, [shouldPersistState, walletId, transactionHistory, transactionReceipts])
 
   useEffect(() => {
+    if (!shouldPersistState || typeof window === "undefined") return undefined
     if (typeof window === "undefined") return undefined
 
     const reloadFromStorage = () => {
@@ -97,20 +121,25 @@ export function useLendSession({
       window.removeEventListener("storage", handleStorage)
       window.removeEventListener(LEND_SESSION_SYNC_EVENT, handleSameTabSync)
     }
-  }, [sessionSeed, walletId])
+  }, [sessionSeed, shouldPersistState, walletId])
 
   const transactionAdapter = useMemo(
-    () =>
-      new SandboxLendTransactionAdapter({
+    () => {
+      if (injectedTransactionAdapter) return injectedTransactionAdapter
+      return new SandboxLendTransactionAdapter({
         readState: () => stateRef.current,
         writeState: setState,
-      }),
-    [],
+      })
+    },
+    [injectedTransactionAdapter],
   )
 
   const readAdapter = useMemo(
-    () => new SandboxLendReadAdapter({ state, transactionHistory }),
-    [state, transactionHistory],
+    () => {
+      if (injectedReadAdapter) return injectedReadAdapter
+      return new SandboxLendReadAdapter({ state, transactionHistory })
+    },
+    [injectedReadAdapter, state, transactionHistory],
   )
 
   const createIntent = useCallback((action: LendAction) => transactionAdapter.createIntent(action), [transactionAdapter])
@@ -131,12 +160,26 @@ export function useLendSession({
     [transactionAdapter],
   )
 
+  const claimRewards = useCallback(async () => {
+    const intent = transactionAdapter.createIntent({
+      type: "claim",
+      walletId,
+    })
+    const result = await transactionAdapter.executeTransaction(intent)
+    setState(result.state)
+    setTransactionHistory((current) => mergeHistory(result.historyItem, current))
+    setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
+    return result
+  }, [transactionAdapter, walletId])
+
   const reset = useCallback(() => {
-    clearLendSessionState(walletId)
+    if (shouldPersistState) {
+      clearLendSessionState(walletId)
+    }
     setState(seededState)
     setTransactionHistory([])
     setTransactionReceipts([])
-  }, [seededState, walletId])
+  }, [seededState, shouldPersistState, walletId])
 
   return {
     walletId,
@@ -147,6 +190,7 @@ export function useLendSession({
     createIntent,
     previewTransaction,
     executeTransaction,
+    claimRewards,
     reset,
     isPending: false,
   }

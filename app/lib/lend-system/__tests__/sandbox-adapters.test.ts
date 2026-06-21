@@ -4,6 +4,7 @@ import { SandboxLendReadAdapter } from "@/app/lib/lend-system/sandbox-read-adapt
 import { SandboxLendTransactionAdapter } from "@/app/lib/lend-system/sandbox-transaction-adapter"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { buildMockMultiplySystemState } from "@/app/lib/multiply-system/mock"
+import { getWalletLendAssets } from "@/app/lib/data/mock/wallet/portfolio/lend-wallet-assets"
 
 describe("SandboxLendReadAdapter", () => {
   it("loads markets and wallet positions", async () => {
@@ -18,6 +19,26 @@ describe("SandboxLendReadAdapter", () => {
     expect(page.featuredSnapshots.length).toBe(3)
     expect(page.marketRows.length).toBeGreaterThan(10)
     expect(portfolio.investments.length).toBe(1)
+  })
+
+  it("surfaces non-zero rewards APY for boosted lend markets", async () => {
+    const state = buildMockLendSystemState("wallet-1")
+    const adapter = new SandboxLendReadAdapter({ state })
+
+    const page = await adapter.readLendPage("wallet-1")
+    const boosted = page.marketRows.find((row) => row.asset === "USDG")
+
+    expect(boosted?.rewardsApy).toBeGreaterThan(0)
+    expect(boosted?.rewardsApyLabel).not.toBe("0.00%")
+  })
+
+  it("seeds wallet balances from the shared wallet lend asset source", async () => {
+    const state = buildMockLendSystemState("demo-wallet")
+    const walletAssets = getWalletLendAssets("demo-wallet")
+
+    expect(state.walletBalances["demo-wallet"]?.usdc).toBe(walletAssets.find((asset) => asset.symbol === "USDC")?.balance)
+    expect(state.walletBalances["demo-wallet"]?.eth).toBe(walletAssets.find((asset) => asset.symbol === "ETH")?.balance)
+    expect(state.walletBalances["demo-wallet"]?.usdt).toBe(walletAssets.find((asset) => asset.symbol === "USDT")?.balance)
   })
 })
 
@@ -62,5 +83,74 @@ describe("SandboxLendTransactionAdapter", () => {
     expect(withdrawResult.state.transactions.length).toBe(2)
     expect(buildMockBorrowSystemState("wallet-1").positions).toEqual(borrowBefore.positions)
     expect(buildMockMultiplySystemState("wallet-1").positions).toEqual(multiplyBefore.positions)
+  })
+
+  it("claims wallet-level lend rewards through the transaction adapter", async () => {
+    let state = buildMockLendSystemStateWithSeedPosition("wallet-1")
+    state.positions["wallet-1:eth"] = {
+      ...state.positions["wallet-1:eth"]!,
+      rewardsEarnedUsd: 88,
+    }
+
+    const adapter = new SandboxLendTransactionAdapter({
+      readState: () => state,
+      writeState: (next) => {
+        state = next
+      },
+      now: () => state.now,
+      generateId: (prefix) => `${prefix}-claim`,
+    })
+
+    const intent = adapter.createIntent({
+      type: "claim",
+      walletId: "wallet-1",
+    })
+
+    const preview = await adapter.previewTransaction(intent)
+    expect(preview.allowed).toBe(true)
+    expect(preview.before.rewardsEarnedUsd).toBe(88)
+    expect(preview.after.rewardsEarnedUsd).toBe(0)
+
+    const result = await adapter.executeTransaction(intent)
+
+    expect(result.historyItem.kind).toBe("claim")
+    expect(result.state.positions["wallet-1:eth"]?.rewardsEarnedUsd).toBe(0)
+  })
+
+  it("blocks redepositing funds that were already supplied from the wallet balance", async () => {
+    let state = buildMockLendSystemState("wallet-1")
+    state.walletBalances["wallet-1"] = { ...(state.walletBalances["wallet-1"] ?? {}), eth: 1.28 }
+    let nextId = 0
+
+    const adapter = new SandboxLendTransactionAdapter({
+      readState: () => state,
+      writeState: (next) => {
+        state = next
+      },
+      now: () => state.now,
+      generateId: (prefix) => `${prefix}-wallet-${nextId++}`,
+    })
+
+    const firstDeposit = adapter.createIntent({
+      type: "deposit",
+      walletId: "wallet-1",
+      marketId: "eth",
+      depositAmount: 1,
+      walletBalance: state.walletBalances["wallet-1"]!.eth,
+    })
+    await adapter.executeTransaction(firstDeposit)
+
+    const secondDeposit = adapter.createIntent({
+      type: "deposit",
+      walletId: "wallet-1",
+      marketId: "eth",
+      depositAmount: 0.5,
+      walletBalance: state.walletBalances["wallet-1"]!.eth,
+    })
+    const preview = await adapter.previewTransaction(secondDeposit)
+
+    expect(state.walletBalances["wallet-1"]!.eth).toBeCloseTo(0.28, 6)
+    expect(preview.allowed).toBe(false)
+    expect(preview.validationErrors[0]).toContain("Insufficient wallet balance")
   })
 })

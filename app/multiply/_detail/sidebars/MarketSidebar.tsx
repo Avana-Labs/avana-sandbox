@@ -1,14 +1,15 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { EmbeddedActionPage } from "@/app/components/action-page/embedded-action-page"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { DeleverageModal } from "@/app/multiply/components/deleverage-modal"
-import { MultiplyActionBox } from "@/app/multiply/components/multiply-action-box"
 import { cn } from "@/lib/utils"
 
 type Props = { detail: MultiplyMarketDetail; className?: string }
@@ -26,10 +27,10 @@ function formatPct(value: number) {
 }
 
 export function MarketSidebar({ detail, className }: Props) {
+  const router = useRouter()
   const session = useMultiplySessionContext()
   const marketId = normalizeMarketId(detail.id)
   const market = getMultiplyMarketById(marketId)
-  const [deleverageOpen, setDeleverageOpen] = React.useState(false)
 
   const position = React.useMemo(() => {
     return Object.values(session.state.positions).find(
@@ -89,7 +90,12 @@ export function MarketSidebar({ detail, className }: Props) {
             </dl>
 
             <div className="flex gap-2">
-              <Button type="button" variant="secondary" className="h-9 flex-1 rounded-radius-sm" onClick={() => setDeleverageOpen(true)}>
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-9 flex-1 rounded-radius-sm"
+                onClick={() => router.push(actionPagePath("multiply", "deleverage", { market: marketId }))}
+              >
                 Deleverage
               </Button>
             </div>
@@ -97,7 +103,14 @@ export function MarketSidebar({ detail, className }: Props) {
         </Card>
       ) : null}
 
-      {market ? <MultiplyActionBox market={market} /> : (
+      {market ? (
+        <EmbeddedActionPage
+          product="multiply"
+          kind="multiply"
+          closeHref={`/multiply/market/${marketId}`}
+          initialMarketId={marketId}
+        />
+      ) : (
         <Card className="relative overflow-hidden border-border bg-surface-raised shadow-elev-1">
           <CardContent className="relative z-10 space-y-4 p-5">
             <div className="flex items-start justify-between gap-4">
@@ -135,16 +148,6 @@ export function MarketSidebar({ detail, className }: Props) {
           </CardContent>
         </Card>
       )}
-
-      {position && market ? (
-        <DeleverageModal
-          open={deleverageOpen}
-          onOpenChange={setDeleverageOpen}
-          market={market}
-          position={position}
-          session={session}
-        />
-      ) : null}
 
       <AboutNewsSection
         about={detail.about}

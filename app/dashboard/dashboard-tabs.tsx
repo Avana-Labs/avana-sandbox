@@ -27,6 +27,7 @@ type DashboardTabsProps = {
   borrowSnapshot: BorrowSnapshot
   multiplySnapshot: BorrowSnapshot
   lendSnapshot?: LendSnapshot | null
+  multiplyHero?: PortfolioPageData["heroByTab"]["looping"] | null
 }
 
 export function DashboardTabs({
@@ -36,10 +37,13 @@ export function DashboardTabs({
   borrowSnapshot,
   multiplySnapshot,
   lendSnapshot,
+  multiplyHero,
 }: DashboardTabsProps) {
   const activeHero =
     activeTab === "lending" && lendSnapshot
       ? buildLendHeroData(pageData.heroByTab.lending, lendSnapshot)
+      : activeTab === "looping" && multiplyHero
+        ? multiplyHero
       : pageData.heroByTab[activeTab]
 
   const tabBar = (

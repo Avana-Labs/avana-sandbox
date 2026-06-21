@@ -1,28 +1,26 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
-import { LendMarketActionDialog } from "@/app/lend/components/lend-market-action-dialog"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 
 type Props = { detail: AssetDetail; className?: string; embedded?: boolean }
 
 /**
  * Right-column sidebar on the asset detail page.
  *
- * Keeps the page-visible surface tiny (summary + two buttons) and delegates
- * deposit / withdraw to the session-backed lend action dialog.
+ * Keeps the page-visible surface tiny (summary + two buttons) and routes
+ * deposit / withdraw to the shared lend action pages.
  */
 export function AssetDepositSidebar({ detail, className, embedded = false }: Props) {
+  const router = useRouter()
   const lendSession = useLendSessionContext()
   const marketId = resolveLendMarketId(detail.hero.symbol)
-  const [dialogState, setDialogState] = React.useState<{ open: boolean; action: "deposit" | "withdraw" }>({
-    open: false,
-    action: "deposit",
-  })
 
   const position = React.useMemo(
     () =>
@@ -36,10 +34,6 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
   const suppliedLabel = position
     ? `$${position.suppliedValueUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : "$0.00"
-
-  const open = (action: "deposit" | "withdraw") => {
-    setDialogState({ open: true, action })
-  }
 
   return (
     <>
@@ -75,43 +69,29 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() => open("deposit")}
+            onClick={() => router.push(actionPagePath("lend", "deposit", { market: marketId }))}
             className="h-9 rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
           >
             Deposit
           </button>
           <button
             type="button"
-            onClick={() => open("withdraw")}
+            onClick={() => router.push(actionPagePath("lend", "withdraw", { market: marketId }))}
             disabled={!position}
             className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset disabled:cursor-not-allowed disabled:opacity-50"
           >
             Withdraw
           </button>
         </div>
-
-        <p className="text-[11px] text-muted-foreground">
-          Deposits earn {apyLabel} from the base supply rate plus the spoke&apos;s risk premium.
-        </p>
       </aside>
 
-      {embedded ? null : (
-        <div className={cn("mt-4 flex w-full flex-col gap-4", className)}>
-          <AboutNewsSection
-            className="pt-0"
-            about={detail.about}
-            newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
-            newsImageLabel={detail.hero.symbol}
-            mediaVariant="icon"
-          />
-        </div>
-      )}
-
-      <LendMarketActionDialog
-        open={dialogState.open}
-        onOpenChange={(open) => setDialogState((prev) => ({ ...prev, open }))}
-        marketId={marketId}
-        initialAction={dialogState.action}
+      <AboutNewsSection
+        about={detail.about}
+        aboutTitle={`About ${detail.hero.name}`}
+        compactAboutTitle
+        newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
+        newsImageLabel={detail.hero.symbol}
+        mediaVariant="icon"
       />
     </>
   )

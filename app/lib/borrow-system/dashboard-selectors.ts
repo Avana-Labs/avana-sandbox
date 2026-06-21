@@ -1,10 +1,26 @@
-import { calculateSpokeCreditMetrics, currentDebtValueUsd6, debtInterestOwedUsd6, formatFixed, totalDebtValueUsd6, type BorrowSpokeId, type BorrowSystemState } from "@/app/lib/credit-engine"
+import {
+  calculateHealthFactorWad,
+  calculateSpokeCreditMetrics,
+  currentDebtValueUsd6,
+  debtInterestOwedUsd6,
+  formatFixed,
+  totalDebtValueUsd6,
+  type BorrowSpokeId,
+  type BorrowSystemState,
+} from "@/app/lib/credit-engine"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { selectBorrowCollateralPools, selectInitialBorrowDebts, selectWalletBorrowSnapshot } from "@/app/lib/borrow-system/selectors"
 
 function fixedToNumber(value: bigint, decimals: number) {
   return Number.parseFloat(formatFixed(value, decimals))
+}
+
+function spokeHealthFactor(state: BorrowSystemState, walletId: string, marketId: string) {
+  const spokeId = state.markets[marketId]?.spokeId
+  if (!spokeId) return Number.POSITIVE_INFINITY
+  const healthFactorWad = calculateHealthFactorWad(state, walletId, spokeId)
+  return healthFactorWad != null ? fixedToNumber(healthFactorWad, 18) : Number.POSITIVE_INFINITY
 }
 
 export function selectPortfolioSupplyRows(state: BorrowSystemState, walletId: string): SupplyRowContext[] {
@@ -16,7 +32,7 @@ export function selectPortfolioSupplyRows(state: BorrowSystemState, walletId: st
     borrowedUsd: debts[pool.id] ?? 0,
     remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - (debts[pool.id] ?? 0)),
     liquidationThresholdUsd: pool.liquidationUsd,
-    healthFactor: debts[pool.id] ? pool.liquidationUsd / debts[pool.id] : Number.POSITIVE_INFINITY,
+    healthFactor: spokeHealthFactor(state, walletId, pool.id),
     pairApr: pool.pairApr,
     feesUsd: 0,
     feesLabel: "$0.00",
@@ -38,7 +54,7 @@ export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: stri
       pool,
       borrowedUsd,
       liquidationThresholdUsd: pool.liquidationUsd,
-      healthFactor: borrowedUsd > 0 ? pool.liquidationUsd / borrowedUsd : Number.POSITIVE_INFINITY,
+      healthFactor: spokeHealthFactor(state, walletId, pool.id),
       borrowApr: fixedToNumber(position.borrowRateWad, 18) * 100,
       accruedInterestUsd: fixedToNumber(debtInterestOwedUsd6(position), 6),
       dailyInterestUsd: (borrowedUsd * fixedToNumber(position.borrowRateWad, 18)) / 365,

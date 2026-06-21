@@ -188,7 +188,7 @@ export function DashboardHero({
   const isLoopingOverview = tab === "looping"
   const showBalance = !uiConfig.hideBalance
 
-  const showChart = !isBorrowOverview && !isLoopingOverview && !uiConfig.hideChart
+  const showChart = !isBorrowOverview && !uiConfig.hideChart
   const showActions = !uiConfig.hideActions
   const showStats = !uiConfig.hideStats
   const displayRangeData = showChart ? rangeData ?? DEFAULT_RANGE_DATA : null
@@ -237,12 +237,12 @@ export function DashboardHero({
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-      {isBorrowOverview || isLoopingOverview ? (
+      {isBorrowOverview ? (
         <div className="mt-5">
           <HeroBalanceDisplay
             value={resolvedDisplayValue}
-            delta={headlineDelta ?? (isLoopingOverview ? "" : overviewDelta ?? "")}
-            deltaTone={isLoopingOverview ? (headlineDelta?.includes("-") ? "negative" : "positive") : "positive"}
+            delta={headlineDelta ?? overviewDelta ?? ""}
+            deltaTone="positive"
             meta={uiConfig.headlineMeta}
             hidden={!showDollarAmounts}
           />
@@ -252,16 +252,6 @@ export function DashboardHero({
               <CurrentLtvCard
                 borrowedUsd={borrowSnapshot.totalBorrowedUsd}
                 collateralUsd={borrowSnapshot.totalCollateralUsd}
-                showBalance={showDollarAmounts}
-              />
-            </div>
-          ) : null}
-          {isLoopingOverview && multiplySnapshot ? (
-            <div className="mt-4 grid gap-4 xl:grid-cols-2">
-              <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
-              <CurrentLtvCard
-                borrowedUsd={multiplySnapshot.totalBorrowedUsd}
-                collateralUsd={multiplySnapshot.totalCollateralUsd}
                 showBalance={showDollarAmounts}
               />
             </div>
@@ -309,6 +299,17 @@ export function DashboardHero({
               ) : null}
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {isLoopingOverview && multiplySnapshot ? (
+        <div className="mt-4 grid gap-4 xl:grid-cols-2">
+          <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+          <CurrentLtvCard
+            borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+            collateralUsd={multiplySnapshot.totalCollateralUsd}
+            showBalance={showDollarAmounts}
+          />
         </div>
       ) : null}
     </section>

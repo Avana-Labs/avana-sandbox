@@ -78,6 +78,6 @@ describe("home runtime", () => {
 
     expect(preview.isValid).toBe(true)
     expect(preview.remainingDebtUsd).toBeLessThan(debt.amountUsd)
-    expect(preview.yearlyInterestSavedUsd).toBeGreaterThan(0)
+    expect(preview.yearlyInterestSavedUsd).toBeCloseTo(300 * (debt.borrowApr / 100), 2)
   })
 })

@@ -127,6 +127,24 @@ describe("sandbox transaction adapter", () => {
     expect(result.historyItem.kind).toBe("withdraw")
   })
 
+  it("records the executed USD amount for percent-based collateral removals", async () => {
+    const harness = createHarness()
+    const action: BorrowAction = {
+      type: "removeCollateral",
+      walletId: "wallet-1",
+      positionId: "wallet-1:weth-usdc",
+      percentBps: 1_000,
+    }
+
+    const intent = harness.adapter.createIntent(action)
+    const preview = await harness.adapter.previewTransaction(intent)
+    const result = await harness.adapter.executeTransaction(intent)
+
+    expect(result.receipt.status).toBe("success")
+    expect(result.historyItem.executedAmountUsd6).toBe(preview.before.collateralValueUsd6 - preview.after.collateralValueUsd6)
+    expect(result.historyItem.executedAmountUsd6).toBeGreaterThan(0n)
+  })
+
   it("blocks unsafe withdraw before mutating sandbox state", async () => {
     const harness = createHarness()
     const beforeTransactions = harness.getState().transactions.length

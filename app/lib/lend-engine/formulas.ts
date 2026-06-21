@@ -1,4 +1,4 @@
-import { INITIAL_LIQUIDITY_INDEX, SECONDS_PER_YEAR } from "./constants"
+import { INITIAL_LIQUIDITY_INDEX, MILLISECONDS_PER_SECOND, SECONDS_PER_YEAR } from "./constants"
 
 export function calculateUtilization(totalBorrowed: number, totalSupplied: number): number {
   if (totalSupplied <= 0) return 0
@@ -19,7 +19,7 @@ export function calculateSuppliedValueUsd(suppliedAmount: number, assetPriceUsd:
 
 export function calculateElapsedYears(currentTimestamp: number, lastAccrualTimestamp: number): number {
   const elapsedSeconds = Math.max(0, currentTimestamp - lastAccrualTimestamp)
-  return elapsedSeconds / SECONDS_PER_YEAR
+  return elapsedSeconds / (SECONDS_PER_YEAR * MILLISECONDS_PER_SECOND)
 }
 
 export function accrueLiquidityIndex(params: {
@@ -54,6 +54,23 @@ export function calculateMaxWithdrawable(currentSuppliedBalance: number, availab
 
 export function calculateSimpleInterestAccrued(principalAmount: number, totalApy: number, elapsedYears: number): number {
   return principalAmount * totalApy * elapsedYears
+}
+
+export function calculateRewardYieldAccruedUsd(params: {
+  suppliedAmount: number
+  assetPriceUsd: number
+  rewardsApy: number
+  elapsedYears: number
+  existingRewardsEarnedUsd?: number
+}) {
+  if (params.elapsedYears <= 0 || params.rewardsApy <= 0) {
+    return params.existingRewardsEarnedUsd ?? 0
+  }
+
+  return (
+    (params.existingRewardsEarnedUsd ?? 0) +
+    params.suppliedAmount * params.assetPriceUsd * params.rewardsApy * params.elapsedYears
+  )
 }
 
 export function calculateWithdrawSplit(params: {

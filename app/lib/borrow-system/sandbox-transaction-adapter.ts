@@ -50,6 +50,14 @@ function toIntentAmount(action: BorrowAction) {
   }
 }
 
+function executedAmountFromPreview(action: BorrowAction, preview: TransactionPreview) {
+  if (action.type === "removeCollateral") {
+    const delta = preview.before.collateralValueUsd6 - preview.after.collateralValueUsd6
+    return delta > 0n ? delta : 0n
+  }
+  return toIntentAmount(action)
+}
+
 function toPreview(state: BorrowSystemState, action: BorrowAction, intent: TransactionIntent): TransactionPreview {
   const simulation =
     action.type === "supplyCollateral"
@@ -221,14 +229,14 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
       walletId: intent.walletId,
       marketId: intent.marketId,
       assetId: intent.assetId,
-      kind: intent.actionType,
-      status: "success",
-      requestedAmountUsd6: intent.amountUsd6,
-      executedAmountUsd6: intent.amountUsd6,
-      simulated: true,
-      timestamp,
-      hash: receipt.hash,
-    }
+        kind: intent.actionType,
+        status: "success",
+        requestedAmountUsd6: intent.amountUsd6,
+        executedAmountUsd6: executedAmountFromPreview(action, preview),
+        simulated: true,
+        timestamp,
+        hash: receipt.hash,
+      }
 
     return {
       preview,

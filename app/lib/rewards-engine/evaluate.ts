@@ -47,6 +47,10 @@ function countMatchingEvents(task: RewardTask, events: RewardActivityEvent[]) {
     return products.size
   }
 
+  if (requirement.distinctMarketIds) {
+    return new Set(matches.map((event) => event.marketId).filter((marketId): marketId is string => Boolean(marketId))).size
+  }
+
   return matches.length
 }
 

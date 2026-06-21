@@ -59,6 +59,7 @@ export type MultiplyTransactionHistoryItem = {
   positionId?: string
   kind: MultiplyTransactionActionType
   status: MultiplyTransactionStatus
+  amountUsd: number
   multiplierBefore: number
   multiplierAfter: number
   simulated: boolean

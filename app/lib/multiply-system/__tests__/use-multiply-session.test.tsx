@@ -58,6 +58,7 @@ describe("useMultiplySession", () => {
           marketId: "eth-usdt",
           kind: "multiply",
           status: "success",
+          amountUsd: 500,
           multiplierBefore: 1,
           multiplierAfter: 2,
           simulated: true,

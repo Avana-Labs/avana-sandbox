@@ -2,31 +2,23 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { parseFixed } from "@/app/lib/credit-engine"
-import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import {
   filterPools,
   groupByDex,
   type BorrowDexId,
   type BorrowPoolRow,
   type BorrowableAsset,
-  type HomeBorrowToken,
-  type HomeCollateralPool,
 } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
+import { selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowAssetDetailPath, borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { triggerPageLoading } from "@/app/lib/page-loading"
+import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
-import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "./borrow-modal"
-import { SupplyCollateralModal, type SupplyCollateralContext, type SupplyCollateralResult } from "./supply-collateral-modal"
 import { useMediaQuery } from "@/app/lib/use-media-query"
-
-function computeHealthFactor(pool: HomeCollateralPool, debt: number): number | null {
-  if (debt <= 0) return Number.POSITIVE_INFINITY
-  return pool.liquidationUsd / debt
-}
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -73,21 +65,6 @@ function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
   )
 }
 
-function toBorrowToken(asset: BorrowableAsset): HomeBorrowToken {
-  return {
-    id: asset.id,
-    name: asset.name,
-    symbol: asset.symbol,
-    subtitle: asset.subtitle,
-    borrowApr: asset.borrowApr,
-    visual: {
-      symbol: asset.visual.symbol,
-      shortLabel: asset.visual.shortLabel,
-      bgClassName: asset.visual.bgClass,
-      textClassName: asset.visual.textClass,
-    },
-  }
-}
 
 export type BorrowWorkspaceProps = {
   pageData: BorrowWorkspaceData
@@ -97,17 +74,11 @@ export type BorrowWorkspaceProps = {
 export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps) {
   const router = useRouter()
   const isDesktop = useMediaQuery("(min-width: 768px)", true)
-  const { walletId, borrowSessionSeed, pendingRows, dexes } = pageData
+  const { pendingRows, dexes } = pageData
   const session = useBorrowSessionContext()
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
   const [search, setSearch] = useState("")
   const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
-
-  const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
-  const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
-    open: false,
-    context: null,
-  })
   const marketSpokeById = useMemo(
     () => new Map(session.marketSummaries.map((market) => [market.id, market.spoke])),
     [session.marketSummaries],
@@ -115,17 +86,8 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
 
   // Data for each tab
   const supplies = useMemo<SupplyRowContext[]>(() => {
-    return session.collateralPools.map((pool) => ({
-      pool,
-      borrowedUsd: session.initialDebts[pool.id] ?? 0,
-      remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - (session.initialDebts[pool.id] ?? 0)),
-      liquidationThresholdUsd: pool.liquidationUsd,
-      healthFactor: computeHealthFactor(pool, session.initialDebts[pool.id] ?? 0),
-      pairApr: pool.pairApr,
-      feesUsd: 0,
-      feesLabel: "$0.00",
-    }))
-  }, [session.collateralPools, session.initialDebts])
+    return selectPortfolioSupplyRows(session.state, pageData.walletId)
+  }, [pageData.walletId, session.state])
 
   const filteredPools = useMemo(() => {
     return filterPools([...session.marketSummaries], { text: search, dexes: selectedDexes })
@@ -157,9 +119,13 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
     onTabChange?.(currentTab)
   }, [currentTab, onTabChange])
 
-  const handlePoolsSupply = useCallback((pool: BorrowPoolRow) => {
-    setSupplyModal({ open: true, context: { pool } })
-  }, [])
+  const handlePoolsSupply = useCallback(
+    (pool: BorrowPoolRow) => {
+      triggerPageLoading()
+      router.push(actionPagePath("borrow", "supply", { market: pool.id }))
+    },
+    [router],
+  )
 
   const handleMarketDetail = useCallback(
     (pool: BorrowPoolRow) => {
@@ -193,26 +159,16 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
         }, null)
       const fallback = best ?? supplies[0]
       if (!fallback) return
-      setBorrowModal({
-        open: true,
-        context: {
-          pool: fallback.pool,
-          currentDebtUsd: fallback.borrowedUsd,
-          defaultTokenId: asset.id,
-          tokenOptions: session.getBorrowableAssetsForMarket(fallback.pool.id).map(toBorrowToken),
-        },
-      })
+      triggerPageLoading()
+      router.push(
+        actionPagePath("borrow", "borrow", {
+          market: fallback.pool.id,
+          asset: asset.id,
+        }),
+      )
     },
-    [marketSpokeById, session, supplies],
+    [marketSpokeById, router, supplies],
   )
-
-  const handleBorrowConfirm = useCallback((_result: BorrowModalResult) => {
-    setBorrowModal({ open: false, context: null })
-  }, [])
-
-  const handleSupplyConfirm = useCallback((_result: SupplyCollateralResult) => {
-    setSupplyModal({ open: false, context: null })
-  }, [])
 
   return (
     <section className="pb-16">
@@ -253,24 +209,6 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
           </>
         ) : null}
       </div>
-
-      <BorrowModal
-        open={borrowModal.open}
-        context={borrowModal.context}
-        borrowSession={session}
-        walletId={walletId}
-        onClose={() => setBorrowModal({ open: false, context: null })}
-        onConfirm={handleBorrowConfirm}
-      />
-
-      <SupplyCollateralModal
-        open={supplyModal.open}
-        context={supplyModal.context}
-        borrowSession={session}
-        walletId={walletId}
-        onClose={() => setSupplyModal({ open: false, context: null })}
-        onConfirm={handleSupplyConfirm}
-      />
     </section>
   )
 }

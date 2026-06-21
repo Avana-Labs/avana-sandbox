@@ -1,19 +1,11 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
-import type { SandboxActionResult, TransactionIntent, TransactionPreview } from "@/app/lib/borrow-system/contracts"
+import { useRouter } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { homePoolSpoke, homeVisualToBorrowVisual, type BorrowPoolRow, type BorrowableAsset, type HomeBorrowToken } from "@/app/lib/data/borrow-domain"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
-import { BorrowModal, type BorrowModalContext, type BorrowModalResult } from "@/app/borrow/components/borrow-modal"
-import { RepayRemoveModal, type RepayRemoveContext, type RepayRemoveResult } from "@/app/borrow/components/repay-remove-modal"
-import {
-  SupplyCollateralModal,
-  type SupplyCollateralContext,
-  type SupplyCollateralResult,
-} from "@/app/borrow/components/supply-collateral-modal"
 import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/components/borrow-tab/debts-table"
 import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/dashboard/components/borrow-tab/supplies-table"
 
@@ -33,57 +25,20 @@ function sortByBorrowedDesc(rows: DebtRowContext[]) {
   return [...rows].sort((left, right) => right.borrowedUsd - left.borrowedUsd)
 }
 
-function toBorrowToken(asset: BorrowableAsset): HomeBorrowToken {
-  return {
-    id: asset.id,
-    name: asset.name,
-    symbol: asset.symbol,
-    subtitle: asset.subtitle,
-    borrowApr: asset.borrowApr,
-    visual: {
-      symbol: asset.visual.symbol,
-      shortLabel: asset.visual.shortLabel,
-      bgClassName: asset.visual.bgClass,
-      textClassName: asset.visual.textClass,
-    },
-  }
-}
-
-type BorrowSessionAdapter = {
-  state: BorrowSystemState
-  getBorrowableAssetsForMarket: (marketId?: string) => BorrowableAsset[]
-  createIntent: (action: BorrowAction) => TransactionIntent
-  previewTransaction: (intent: TransactionIntent) => Promise<TransactionPreview>
-  executeTransaction: (intent: TransactionIntent) => Promise<SandboxActionResult>
-  isPending: boolean
-}
-
 export function DashboardBorrowTab({
   section = "all",
   collateralPositions = [],
   debtPositions = [],
   showSummary = true,
-  walletId,
-  borrowSession,
 }: {
   section?: "all" | "supplies" | "debts"
   collateralPositions?: SupplyRowContext[]
   debtPositions?: DebtRowContext[]
   showSummary?: boolean
-  walletId?: string
-  borrowSession?: BorrowSessionAdapter
 }) {
+  const router = useRouter()
   const { showDollarAmounts } = useDisplayPreferences()
   const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">(section === "debts" ? "debts" : "supplies")
-  const [borrowModal, setBorrowModal] = useState<{ open: boolean; context: BorrowModalContext | null }>({ open: false, context: null })
-  const [supplyModal, setSupplyModal] = useState<{ open: boolean; context: SupplyCollateralContext | null }>({
-    open: false,
-    context: null,
-  })
-  const [repayRemoveModal, setRepayRemoveModal] = useState<{ open: boolean; context: RepayRemoveContext | null }>({
-    open: false,
-    context: null,
-  })
   const supplies = collateralPositions
   const debtsRows = useMemo(() => debtPositions.filter((row) => row.borrowedUsd > 0), [debtPositions])
 
@@ -108,101 +63,40 @@ export function DashboardBorrowTab({
     return { totalBorrowed, totalCollateral, accruedInterest, averageHf, dailyInterest }
   }, [debtsRows])
 
-  const handleSupplyBorrowMore = useCallback((context: SupplyRowContext) => {
-    const tokenOptions = borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken) ?? []
-    setBorrowModal({
-      open: true,
-      context: {
-        pool: context.pool,
-        currentDebtUsd: context.borrowedUsd,
-        defaultTokenId: tokenOptions[0]?.id,
-        tokenOptions,
-      },
-    })
-  }, [borrowSession])
+  const handleSupplyBorrowMore = useCallback(
+    (context: SupplyRowContext) => {
+      router.push(actionPagePath("borrow", "borrow", { market: context.pool.id }))
+    },
+    [router],
+  )
 
-  const handleSupplyAddCollateral = useCallback((context: SupplyRowContext) => {
-    const pool = context.pool
-    const borrowPoolRow: BorrowPoolRow = {
-      id: pool.id,
-      name: pool.name,
-      venue: pool.venue,
-      feeTier: pool.category,
-      tvlUsd: pool.collateralUsd,
-      spoke: homePoolSpoke(pool.category),
-      ltv: pool.maxLtv,
-      dexes: [],
-      borrowableTokens: [],
-      aprMin: context.pairApr,
-      aprMax: context.pairApr,
-      availableUsd: Math.max(0, pool.borrowPowerUsd - context.borrowedUsd),
-      riskPremiumBps: 0,
-      visuals: pool.visuals.map(homeVisualToBorrowVisual) as BorrowPoolRow["visuals"],
-      collateralExampleUsd: pool.collateralUsd,
-      trendUp: true,
-    }
-    setSupplyModal({ open: true, context: { pool: borrowPoolRow } })
-  }, [])
+  const handleSupplyAddCollateral = useCallback(
+    (context: SupplyRowContext) => {
+      router.push(actionPagePath("borrow", "supply", { market: context.pool.id }))
+    },
+    [router],
+  )
 
   const handleSupplyRemove = useCallback(
     (context: SupplyRowContext) => {
-      const position = borrowSession?.state.accounts[walletId ?? ""]?.collateralPositions.find((entry) => entry.marketId === context.pool.id)
-      setRepayRemoveModal({
-        open: true,
-        context: {
-          pool: context.pool,
-          currentDebtUsd: context.borrowedUsd,
-          mode: "remove",
-          collateralPositionId: position?.id,
-        },
-      })
+      router.push(actionPagePath("borrow", "remove", { market: context.pool.id, amount: "25" }))
     },
-    [borrowSession?.state.accounts, walletId],
+    [router],
   )
 
   const handleDebtRepay = useCallback(
     (context: DebtRowContext) => {
-      setRepayRemoveModal({
-        open: true,
-        context: {
-          pool: context.pool,
-          currentDebtUsd: context.borrowedUsd,
-          mode: "repay",
-          borrowApr: context.borrowApr,
-          debtPositionId: context.id,
-        },
-      })
+      router.push(actionPagePath("borrow", "repay", { market: context.pool.id }))
     },
-    [],
+    [router],
   )
 
-  const handleDebtManage = useCallback((context: DebtRowContext) => {
-    const tokenOptions = borrowSession?.getBorrowableAssetsForMarket(context.pool.id).map(toBorrowToken) ?? []
-    const defaultTokenId =
-      borrowSession?.state.accounts[walletId ?? ""]?.debtPositions.find((position) => position.id === context.id)?.assetId ??
-      tokenOptions[0]?.id
-    setBorrowModal({
-      open: true,
-      context: {
-        pool: context.pool,
-        currentDebtUsd: context.borrowedUsd,
-        defaultTokenId,
-        tokenOptions,
-      },
-    })
-  }, [borrowSession, walletId])
-
-  const handleBorrowConfirm = useCallback((_result: BorrowModalResult) => {
-    setBorrowModal({ open: false, context: null })
-  }, [])
-
-  const handleSupplyConfirm = useCallback((_result: SupplyCollateralResult) => {
-    setSupplyModal({ open: false, context: null })
-  }, [])
-
-  const handleRepayRemoveConfirm = useCallback((_result: RepayRemoveResult) => {
-    setRepayRemoveModal({ open: false, context: null })
-  }, [])
+  const handleDebtManage = useCallback(
+    (context: DebtRowContext) => {
+      router.push(actionPagePath("borrow", "borrow", { market: context.pool.id }))
+    },
+    [router],
+  )
 
   return (
     <section className="space-y-8">
@@ -253,8 +147,8 @@ export function DashboardBorrowTab({
           </div>
         </>
       ) : (
-        <div className="flex flex-col gap-8">
-          {section !== "debts" ? (
+        <>
+          {section === "supplies" ? (
             <SuppliesPanel
               rows={sortedSupplies}
               totals={supplyTotals}
@@ -262,46 +156,21 @@ export function DashboardBorrowTab({
               onAddCollateral={handleSupplyAddCollateral}
               onRemove={handleSupplyRemove}
               showBalance={showDollarAmounts}
+              showSummary={showSummary}
             />
           ) : null}
-          {section !== "supplies" ? (
+          {section === "debts" ? (
             <DebtsPanel
               rows={sortedDebts}
               totals={debtTotals}
               onRepay={handleDebtRepay}
               onManage={handleDebtManage}
               showBalance={showDollarAmounts}
+              showSummary={showSummary}
             />
           ) : null}
-        </div>
+        </>
       )}
-
-      <BorrowModal
-        open={borrowModal.open}
-        context={borrowModal.context}
-        borrowSession={borrowSession!}
-        walletId={walletId ?? "demo-wallet"}
-        onClose={() => setBorrowModal({ open: false, context: null })}
-        onConfirm={handleBorrowConfirm}
-      />
-
-      <SupplyCollateralModal
-        open={supplyModal.open}
-        context={supplyModal.context}
-        borrowSession={borrowSession!}
-        walletId={walletId ?? "demo-wallet"}
-        onClose={() => setSupplyModal({ open: false, context: null })}
-        onConfirm={handleSupplyConfirm}
-      />
-
-      <RepayRemoveModal
-        open={repayRemoveModal.open}
-        context={repayRemoveModal.context}
-        borrowSession={borrowSession!}
-        walletId={walletId ?? "demo-wallet"}
-        onClose={() => setRepayRemoveModal({ open: false, context: null })}
-        onConfirm={handleRepayRemoveConfirm}
-      />
     </section>
   )
 }

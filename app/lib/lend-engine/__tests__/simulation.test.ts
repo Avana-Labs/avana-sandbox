@@ -29,7 +29,13 @@ describe("lend engine simulation and validation", () => {
 
   it("simulates withdraw with principal/interest split", () => {
     const deposited = applyLendAction(
-      { now: market.lastAccrualTimestamp, markets: { [market.marketId]: market }, positions: {}, transactions: [] },
+      {
+        now: market.lastAccrualTimestamp,
+        markets: { [market.marketId]: market },
+        positions: {},
+        walletBalances: { "wallet-1": { [market.marketId]: 5000 } },
+        transactions: [],
+      },
       { type: "deposit", walletId: "wallet-1", marketId: market.marketId, depositAmount: 1000, walletBalance: 5000 },
       { positionId: "pos-1", transactionId: "tx-1" },
     )
@@ -59,6 +65,7 @@ describe("lend engine simulation and validation", () => {
       liquidityIndexAtLastAction: 1,
       currentSuppliedAmount: 1000,
       interestEarned: 0,
+      rewardsEarnedUsd: 0,
       suppliedValueUsd: 3_500_000,
       openedAt: market.lastAccrualTimestamp,
       updatedAt: market.lastAccrualTimestamp,

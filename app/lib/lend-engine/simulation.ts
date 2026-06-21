@@ -5,6 +5,7 @@ import {
   calculateElapsedYears,
   calculateInterestEarned,
   calculateMaxWithdrawable,
+  calculateRewardYieldAccruedUsd,
   calculateScaledDepositAmount,
   calculateSuppliedValueUsd,
   calculateTotalApy,
@@ -25,7 +26,7 @@ function accrueMarket(market: LendMarket, now: number): LendMarket {
   const elapsedYears = calculateElapsedYears(now, market.lastAccrualTimestamp)
   const liquidityIndex = accrueLiquidityIndex({
     oldLiquidityIndex: market.liquidityIndex,
-    supplyApy: market.totalApy,
+    supplyApy: market.supplyApy,
     elapsedYears,
   })
   return {
@@ -36,13 +37,22 @@ function accrueMarket(market: LendMarket, now: number): LendMarket {
 }
 
 function accruePosition(position: LendPosition, market: LendMarket): LendPosition {
+  const elapsedYears = calculateElapsedYears(market.lastAccrualTimestamp, position.updatedAt)
   const currentSuppliedAmount = calculateCurrentSuppliedBalance(position.scaledBalance, market.liquidityIndex)
   const interestEarned = calculateInterestEarned(currentSuppliedAmount, position.principalAmount)
+  const rewardsEarnedUsd = calculateRewardYieldAccruedUsd({
+    suppliedAmount: currentSuppliedAmount,
+    assetPriceUsd: market.assetPriceUsd,
+    rewardsApy: market.rewardsApy,
+    elapsedYears,
+    existingRewardsEarnedUsd: position.rewardsEarnedUsd,
+  })
   return {
     ...position,
     liquidityIndexAtLastAction: market.liquidityIndex,
     currentSuppliedAmount,
     interestEarned,
+    rewardsEarnedUsd,
     suppliedValueUsd: calculateSuppliedValueUsd(currentSuppliedAmount, market.assetPriceUsd),
     updatedAt: market.lastAccrualTimestamp,
   }
@@ -54,6 +64,8 @@ function emptyPositionMetrics(liquidityIndex: number): LendPositionMetricsShape 
     suppliedValueUsd: 0,
     principalAmount: 0,
     interestEarned: 0,
+    rewardsEarnedUsd: 0,
+    totalEarnedUsd: 0,
     scaledBalance: 0,
     liquidityIndex,
   }
@@ -70,6 +82,8 @@ function toPositionMetrics(position: LendPosition | undefined, market: LendMarke
     suppliedValueUsd: position.suppliedValueUsd,
     principalAmount: position.principalAmount,
     interestEarned: position.interestEarned,
+    rewardsEarnedUsd: position.rewardsEarnedUsd,
+    totalEarnedUsd: position.interestEarned * market.assetPriceUsd + position.rewardsEarnedUsd,
     scaledBalance: position.scaledBalance,
     liquidityIndex: market.liquidityIndex,
   }
@@ -127,6 +141,8 @@ export function simulateDeposit(params: {
       suppliedValueUsd: calculateSuppliedValueUsd(afterSuppliedAmount, market.assetPriceUsd),
       principalAmount: afterPrincipal,
       interestEarned: afterInterest,
+      rewardsEarnedUsd: before.rewardsEarnedUsd,
+      totalEarnedUsd: afterInterest * market.assetPriceUsd + before.rewardsEarnedUsd,
       scaledBalance: afterScaledBalance,
       liquidityIndex,
     },
@@ -203,6 +219,8 @@ export function simulateWithdraw(params: {
       suppliedValueUsd: calculateSuppliedValueUsd(afterSuppliedAmount, market.assetPriceUsd),
       principalAmount: afterPrincipal,
       interestEarned: afterInterest,
+      rewardsEarnedUsd: before.rewardsEarnedUsd,
+      totalEarnedUsd: afterInterest * market.assetPriceUsd + before.rewardsEarnedUsd,
       scaledBalance: afterScaledBalance,
       liquidityIndex,
     },

@@ -74,6 +74,7 @@ function useRewardsEventBridge({
         wallet: walletId,
         product: "multiply",
         type: item.kind === "multiply" ? "multiply_opened" : "multiply_deleveraged",
+        amountUsd: item.amountUsd,
         marketId: item.marketId,
         timestamp: item.timestamp,
       })
@@ -85,6 +86,8 @@ function useRewardsEventBridge({
       const bridgeId = `lend:${item.id}`
       if (item.status !== "success" || seenIdsRef.current.has(bridgeId)) continue
       seenIdsRef.current.add(bridgeId)
+
+      if (item.kind === "claim") continue
 
       void rewards.recordActivityEvent({
         id: bridgeId,

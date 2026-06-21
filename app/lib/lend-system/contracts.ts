@@ -2,7 +2,7 @@ import type { LendAction, LendMarket, LendSystemState } from "@/app/lib/lend-eng
 import type { LendPageData } from "@/app/lib/data/providers/lend/types"
 import type { PortfolioLendTabData } from "@/app/lib/data/providers/portfolio/types"
 
-export type LendTransactionActionType = "deposit" | "withdraw"
+export type LendTransactionActionType = "deposit" | "withdraw" | "claim"
 export type LendTransactionStatus = "idle" | "pending" | "success" | "failed"
 
 export type LendTransactionIntent = {
@@ -21,6 +21,8 @@ export type LendPositionMetricsSnapshot = {
   suppliedValueUsd: number
   principalAmount: number
   interestEarned: number
+  rewardsEarnedUsd: number
+  totalEarnedUsd: number
   currentApy: number
 }
 
