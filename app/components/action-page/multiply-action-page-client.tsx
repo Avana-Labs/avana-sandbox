@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation"
 import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
+import {
+  clampMultiplyDefaultMultiplier,
+  hasMultiplyLiquidationRisk,
+  MULTIPLY_UI_MAX_MULTIPLIER,
+} from "@/app/lib/action-system/multiply-defaults"
 import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
@@ -25,7 +30,7 @@ export function MultiplyActionPageClient({
   closeHref = "/multiply",
   initialMarketId,
   initialAmount = "",
-  initialMultiplier = "2",
+  initialMultiplier,
 }: {
   kind: "multiply" | "deleverage"
   closeHref?: string
@@ -58,22 +63,25 @@ export function MultiplyActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
-  const multiplierOptions = useMemo(() => {
-    const max = market?.risk.publicMaxMultiplier ?? 5
-    const presets = [1.5, 2, 3, 5, 7, 10]
-    const withinRange = presets.filter((preset) => preset <= max + 1e-9)
-    const rounded = Math.round(max * 10) / 10
-    if (!withinRange.includes(rounded) && rounded >= 1.5) withinRange.push(rounded)
-    return withinRange.length > 0 ? withinRange : [Math.max(1.5, rounded)]
-  }, [market])
+  const resolvedInitialMultiplier = useMemo(() => {
+    if (initialMultiplier) return initialMultiplier
+    return clampMultiplyDefaultMultiplier(market?.risk.publicMaxMultiplier)
+  }, [initialMultiplier, market?.risk.publicMaxMultiplier])
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
-  const [multiplier, setMultiplier] = useState(initialMultiplier)
+  const [multiplier, setMultiplier] = useState(resolvedInitialMultiplier)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
+
+  useEffect(() => {
+    if (initialMultiplier) return
+    setMultiplier(clampMultiplyDefaultMultiplier(market?.risk.publicMaxMultiplier))
+  }, [initialMultiplier, market?.id, market?.risk.publicMaxMultiplier])
+
+  const showLiquidationMaxMessage = Boolean(previewUi && hasMultiplyLiquidationRisk(previewUi.validationErrors))
 
   useEffect(() => {
     if (!market) return
@@ -248,7 +256,9 @@ export function MultiplyActionPageClient({
           }}
           multiplier={multiplier}
           onMultiplierChange={setMultiplier}
-          multiplierOptions={multiplierOptions}
+          leverageMin={1}
+          leverageMax={MULTIPLY_UI_MAX_MULTIPLIER}
+          showLiquidationMaxMessage={showLiquidationMaxMessage}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}

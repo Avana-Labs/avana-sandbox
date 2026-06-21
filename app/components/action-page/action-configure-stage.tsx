@@ -2,7 +2,7 @@
 
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
-import { ActionLeverageSelector } from "@/app/components/action-page/action-leverage-selector"
+import { ActionLeverageScrollPicker } from "@/app/components/action-page/action-leverage-scroll-picker"
 import { ActionOutcomeBanner, ActionRiskBanner, ActionWalletToast } from "@/app/components/action-page/action-banners"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import {
@@ -37,7 +37,9 @@ type ActionConfigureStageProps = {
   onAssetSelect?: (id: string) => void
   multiplier?: string
   onMultiplierChange?: (value: string) => void
-  multiplierOptions?: number[]
+  leverageMin?: number
+  leverageMax?: number
+  showLiquidationMaxMessage?: boolean
   canGoBack?: boolean
 }
 
@@ -64,7 +66,9 @@ export function ActionConfigureStage({
   onAssetSelect,
   multiplier,
   onMultiplierChange,
-  multiplierOptions,
+  leverageMin = 1,
+  leverageMax = 20,
+  showLiquidationMaxMessage = false,
   canGoBack = false,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
@@ -103,8 +107,14 @@ export function ActionConfigureStage({
         footer={preview ? <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" /> : null}
       />
 
-      {multiplierOptions && multiplierOptions.length > 0 && onMultiplierChange ? (
-        <ActionLeverageSelector value={multiplier ?? ""} onChange={onMultiplierChange} options={multiplierOptions} />
+      {onMultiplierChange ? (
+        <ActionLeverageScrollPicker
+          value={multiplier ?? String(leverageMin)}
+          onChange={onMultiplierChange}
+          min={leverageMin}
+          max={leverageMax}
+          showLiquidationMaxMessage={showLiquidationMaxMessage}
+        />
       ) : null}
 
       {preview ? (
@@ -115,7 +125,7 @@ export function ActionConfigureStage({
 
       {preview && preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
 
-      {preview?.risk?.title && preview.risk.message ? (
+      {preview?.risk?.title && preview.risk.message && !showLiquidationMaxMessage ? (
         <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
       ) : null}
 
