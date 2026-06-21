@@ -237,8 +237,6 @@ export function DashboardClient({
               collateralPositions={collateralPositions}
               debtPositions={debtPositions}
               showSummary={false}
-              walletId={walletId}
-              borrowSession={borrowSession}
             />
           </DashboardSection>
         </div>

@@ -57,9 +57,11 @@ export function MultiplyActionPageClient({
       return
     }
 
-    const position = Object.values(session.state.positions).find(
-      (entry) => entry.walletId === walletId && entry.marketId === market.id && entry.status === "active",
-    )
+    const position =
+      session.state.positions[`${walletId}:${market.id}`] ??
+      Object.values(session.state.positions).find(
+        (entry) => entry.walletId === walletId && entry.marketId === market.id,
+      )
 
     const action =
       kind === "multiply"
@@ -73,7 +75,7 @@ export function MultiplyActionPageClient({
         : ({
             type: "deleverage" as const,
             walletId,
-            positionId: position?.positionId ?? "missing",
+            positionId: position?.id ?? "missing",
             targetMultiplier: parsedMultiplier,
           } as const)
 
@@ -100,9 +102,12 @@ export function MultiplyActionPageClient({
     try {
       const parsedAmount = Number.parseFloat(amount)
       const parsedMultiplier = Number.parseFloat(multiplier)
-      const position = Object.values(session.state.positions).find(
-        (entry) => entry.walletId === walletId && entry.marketId === market.id && entry.status === "active",
-      )
+      const position =
+        session.state.positions[`${walletId}:${market.id}`] ??
+        Object.values(session.state.positions).find(
+          (entry) => entry.walletId === walletId && entry.marketId === market.id,
+        )
+      if (kind === "deleverage" && !position) throw new Error("No position selected")
       const action =
         kind === "multiply"
           ? {
@@ -115,7 +120,7 @@ export function MultiplyActionPageClient({
           : {
               type: "deleverage" as const,
               walletId,
-              positionId: position!.positionId,
+              positionId: position!.id,
               targetMultiplier: parsedMultiplier,
             }
       const intent = session.createIntent(action)

@@ -74,7 +74,8 @@ export function BorrowActionPageClient({
         account.debtPositions.find((position) => position.marketId === marketId) ??
         account.debtPositions.find((position) => {
           const spokeId = session.state.markets[marketId]?.spokeId
-          return spokeId ? session.state.markets[position.marketId]?.spokeId === spokeId : false
+          if (!spokeId || !position.marketId) return false
+          return session.state.markets[position.marketId]?.spokeId === spokeId
         }) ??
         null
       )

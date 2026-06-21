@@ -66,7 +66,7 @@ export function RewardsActionPageClient({ mode = "page", closeHref = "/rewards" 
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
           description: `${formatActionUsd(claimUsd)} in rewards claimed.`,
-          receiptHash: claims[0]?.id ?? "sandbox-receipt",
+          receiptHash: claims[0]?.syntheticTxHash ?? claims[0]?.claimId ?? "sandbox-receipt",
           metrics: previewUi.metrics,
           href: "/rewards",
         }),
