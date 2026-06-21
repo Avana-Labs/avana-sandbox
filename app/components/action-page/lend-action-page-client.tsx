@@ -16,10 +16,12 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
+import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
+import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
-import { isConfigureVisibleStage } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 
 function truncateWallet(id: string) {
   return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
@@ -182,11 +184,32 @@ export function LendActionPageClient({
     }
   }, [kind, previewUi, stage])
 
-  const handlePrimary = useCallback(async () => {
-    if (stage === "success") {
-      router.push(closeHref)
+  const canGoBackToSelect = kind === "withdraw" && withdrawItems.length > 1 && !initialMarketId
+
+  const handleBack = useCallback(() => {
+    if (stage === "review") {
+      setStage("configure")
+      setOutcome(null)
       return
     }
+    if (stage === "configure" && canGoBackToSelect) {
+      setStage("select")
+      return
+    }
+    router.push(closeHref)
+  }, [canGoBackToSelect, closeHref, router, stage])
+
+  const handlePrimary = useCallback(async () => {
+    if (stage === "success") {
+      router.push(successUi?.primaryCtaHref ?? dashboardHrefForProduct("lend"))
+      return
+    }
+    if (stage === "configure") {
+      if (!market || !previewUi?.allowed) return
+      setStage("review")
+      return
+    }
+    if (stage !== "review") return
     if (!market || !previewUi?.allowed) return
 
     setIsPending(true)
@@ -229,8 +252,8 @@ export function LendActionPageClient({
           description: `${parsed.toFixed(4)} ${market.asset.symbol} processed.`,
           receiptHash: result.receipt.hash ?? null,
           metrics: previewUi.metrics,
-          href: "/lend",
-          primaryCtaLabel: "View lend dashboard",
+          href: dashboardHrefForProduct("lend"),
+          primaryCtaLabel: successDashboardCtaLabel("lend"),
           preview: previewUi,
           verb: descriptor.primaryVerb,
         }),
@@ -246,7 +269,7 @@ export function LendActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, kind, market, position, previewUi, router, session, stage, walletId])
+  }, [amount, closeHref, descriptor.primaryVerb, kind, market, position, previewUi, router, session, stage, successUi, walletId])
 
   const applyPercent = useCallback(
     (pct: number) => {
@@ -266,9 +289,13 @@ export function LendActionPageClient({
     )
   }
 
-  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked"
+  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const shellSubtitle =
-    stage === "select" && kind === "withdraw" ? "Choose the market to withdraw from." : stage === "success" || stage === "processing" ? undefined : descriptor.subtitle
+    stage === "select" && kind === "withdraw"
+      ? "Choose the market to withdraw from."
+      : stage === "success" || stage === "processing" || stage === "review"
+        ? undefined
+        : descriptor.subtitle
 
   return (
     <ActionPageShell title={descriptor.title} subtitle={shellSubtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
@@ -288,7 +315,24 @@ export function LendActionPageClient({
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}
 
-      {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
+      {stage === "review" && previewUi ? (
+        <ActionReviewStage
+          title={reviewStageTitle(descriptor.primaryVerb)}
+          subtitle="Confirm the details below before signing."
+          preview={previewUi}
+          primaryLabel={descriptor.primaryVerb}
+          onPrimary={() => void handlePrimary()}
+          onSecondary={handleBack}
+        />
+      ) : null}
+
+      {stage === "success" && successUi ? (
+        <ActionSuccessStage
+          success={successUi}
+          closeHref={closeHref}
+          onPrimary={() => router.push(successUi.primaryCtaHref)}
+        />
+      ) : null}
 
       {isConfigureVisibleStage(stage) && market ? (
         <ActionConfigureStage
@@ -305,7 +349,9 @@ export function LendActionPageClient({
             setAmount("")
           }}
           onPrimary={() => void handlePrimary()}
-          secondaryHref={closeHref}
+          onSecondary={handleBack}
+          secondaryHref={canGoBackToSelect ? undefined : closeHref}
+          canGoBack={canGoBackToSelect}
           onMax={() => {
             if (kind === "deposit") {
               setAmount(String(getWalletBalanceForLendMarket(session.state, walletId, market)))

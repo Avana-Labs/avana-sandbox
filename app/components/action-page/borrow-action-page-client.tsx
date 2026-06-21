@@ -28,11 +28,13 @@ import { ActionSelectStage } from "@/app/components/action-page/action-select-st
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
+import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
+import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { borrowSelectItemsForMarket, repaySelectItemsForWallet, resolveBorrowMarketForAsset } from "@/app/lib/action-system/resolve-borrow-context"
-import { isConfigureVisibleStage } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 
 function resolveClaimPositions(marketId: string) {
   const scoped = HOME_CLAIM_POSITIONS.filter((position) => position.poolId === marketId)
@@ -325,11 +327,36 @@ export function BorrowActionPageClient({
     }
   }, [kind, previewUi, stage])
 
-  const handlePrimary = useCallback(async () => {
-    if (stage === "success") {
-      router.push(closeHref)
+  const canGoBackToSelect = useMemo(() => {
+    if (kind === "borrow" && !initialAssetId) return true
+    if (kind === "repay" && debtPositions.length > 1 && !initialMarketId) return true
+    return false
+  }, [debtPositions.length, initialAssetId, initialMarketId, kind])
+
+  const handleBack = useCallback(() => {
+    if (stage === "review") {
+      setStage("configure")
+      setOutcome(null)
       return
     }
+    if (stage === "configure" && canGoBackToSelect) {
+      setStage("select")
+      return
+    }
+    router.push(closeHref)
+  }, [canGoBackToSelect, closeHref, router, stage])
+
+  const handlePrimary = useCallback(async () => {
+    if (stage === "success") {
+      router.push(successUi?.primaryCtaHref ?? dashboardHrefForProduct("borrow"))
+      return
+    }
+    if (stage === "configure") {
+      if (!previewUi?.allowed) return
+      setStage("review")
+      return
+    }
+    if (stage !== "review") return
     if (!previewUi?.allowed) return
 
     setOutcome(null)
@@ -400,8 +427,8 @@ export function BorrowActionPageClient({
           description: `${formatActionUsd(safeAmount || previewUi.maxAmount || 0)} processed.`,
           receiptHash: result.receipt.hash ?? null,
           metrics: previewUi.metrics,
-          href: "/borrow",
-          primaryCtaLabel: "View borrow dashboard",
+          href: dashboardHrefForProduct("borrow"),
+          primaryCtaLabel: successDashboardCtaLabel("borrow"),
           preview: previewUi,
           verb: descriptor.primaryVerb,
         }),
@@ -417,7 +444,7 @@ export function BorrowActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, assetId, closeHref, debtPosition, descriptor.primaryVerb, kind, marketId, percent, previewUi, router, session, stage, walletId])
+  }, [amount, assetId, closeHref, debtPosition, descriptor.primaryVerb, kind, marketId, percent, previewUi, router, session, stage, successUi, walletId])
 
   const applyPercent = useCallback(
     (pct: number) => {
@@ -437,10 +464,10 @@ export function BorrowActionPageClient({
       ? kind === "repay"
         ? "Choose the debt to repay."
         : "Choose the asset to borrow."
-      : stage === "success" || stage === "processing"
+      : stage === "success" || stage === "processing" || stage === "review"
         ? undefined
         : descriptor.subtitle
-  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked"
+  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
 
   return (
     <ActionPageShell
@@ -476,7 +503,24 @@ export function BorrowActionPageClient({
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}
 
-      {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
+      {stage === "review" && previewUi ? (
+        <ActionReviewStage
+          title={reviewStageTitle(descriptor.primaryVerb)}
+          subtitle="Confirm the details below before signing."
+          preview={previewUi}
+          primaryLabel={descriptor.primaryVerb}
+          onPrimary={() => void handlePrimary()}
+          onSecondary={handleBack}
+        />
+      ) : null}
+
+      {stage === "success" && successUi ? (
+        <ActionSuccessStage
+          success={successUi}
+          closeHref={closeHref}
+          onPrimary={() => router.push(successUi.primaryCtaHref)}
+        />
+      ) : null}
 
       {isConfigureVisibleStage(stage) ? (
         <ActionConfigureStage
@@ -494,7 +538,9 @@ export function BorrowActionPageClient({
             setAmount("")
           }}
           onPrimary={() => void handlePrimary()}
-          secondaryHref={closeHref}
+          onSecondary={handleBack}
+          secondaryHref={canGoBackToSelect ? undefined : closeHref}
+          canGoBack={canGoBackToSelect}
           onMax={() => {
             if (kind === "remove") setPercent("100")
             else if (previewUi?.maxAmount != null) setAmount(String(previewUi.maxAmount))

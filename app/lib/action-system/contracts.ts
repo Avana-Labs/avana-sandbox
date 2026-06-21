@@ -16,6 +16,7 @@ export type ActionPageMode = "page" | "overlay"
 export type ActionStage =
   | "select"
   | "configure"
+  | "review"
   | "approve_allowance"
   | "wallet_sign"
   | "processing"

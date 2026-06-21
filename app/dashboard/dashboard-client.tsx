@@ -1,9 +1,10 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
@@ -90,8 +91,10 @@ export function DashboardClient({
 }) {
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const tabFromUrl = parseDashboardTab(searchParams.get("tab"))
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
-  const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
+  const [activeTab, setActiveTab] = useState<DashboardTab>(tabFromUrl ?? "lending")
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
@@ -213,13 +216,23 @@ export function DashboardClient({
     return buildMultiplyHeroData(template, buildMultiplySnapshotFromTabData(multiplyTabData))
   }, [data, initialData, multiplyTabData])
 
+  useEffect(() => {
+    const tab = parseDashboardTab(searchParams.get("tab"))
+    if (tab) setActiveTab(tab)
+  }, [searchParams])
+
+  const handleTabChange = (tab: DashboardTab) => {
+    setActiveTab(tab)
+    router.replace(`/dashboard?tab=${tab}`, { scroll: false })
+  }
+
   if (!data || !resolvedWalletProfileId || !portfolioBorrow) return null
 
   return (
     <>
       <DashboardTabs
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         pageData={data}
         borrowSnapshot={borrowSnapshot}
         multiplySnapshot={multiplySnapshot}
