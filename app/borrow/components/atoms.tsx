@@ -188,7 +188,7 @@ export function DeltaPill({ isPositive, value }: { isPositive: boolean; value: s
         isPositive ? "text-emerald-600" : "text-rose-600",
       )}
     >
-      <span aria-hidden className="text-[9px]">
+      <span aria-hidden className="text-[10px]">
         {isPositive ? "▲" : "▼"}
       </span>
       {value}

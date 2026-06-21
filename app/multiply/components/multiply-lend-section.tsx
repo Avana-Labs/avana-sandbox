@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/data/mock/shared/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { hasImageSrc } from "@/lib/image-src"
 
 export {
   MULTIPLY_TOKEN_BORROW_APYS as TOKEN_BORROW_APYS,
@@ -84,13 +85,17 @@ function InlineTableSection({ rows, pagination }: { title: string; rows: LendRow
                 <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="transition-colors hover:bg-surface-inset/60">
                   <td className="py-2.5 pl-5">
                     <CellLink href={row.href} className="flex items-center gap-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={row.protocolLogo}
-                        alt=""
-                        aria-hidden="true"
-                        className="size-9 shrink-0 rounded-full bg-card object-cover ring-2 ring-background"
-                      />
+                      {hasImageSrc(row.protocolLogo) ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={row.protocolLogo}
+                            alt=""
+                            aria-hidden="true"
+                            className="size-9 shrink-0 rounded-full bg-card object-cover ring-2 ring-background"
+                          />
+                        </>
+                      ) : null}
                       <span className="min-w-0">
                         <span className="block text-[14px] font-medium leading-tight text-foreground">{row.protocol}</span>
                         <span className="mt-0.5 block truncate text-xs text-muted-foreground">{row.kind}</span>

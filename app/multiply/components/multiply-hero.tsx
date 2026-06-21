@@ -62,7 +62,7 @@ export function MultiplyHero({ markets }: { markets: ReadonlyArray<Market> }) {
               {showDollarAmounts ? formatUsd(metrics.totalTvl) : "••••••••"}
             </p>
             <span className={cn("inline-flex items-center gap-1 font-data text-[11px] font-medium tabular-nums", metrics.totalChange >= 0 ? "text-emerald-600" : "text-rose-600")}>
-              <span aria-hidden className="text-[9px] leading-none">
+              <span aria-hidden className="text-[10px] leading-none">
                 {metrics.totalChange >= 0 ? "▲" : "▼"}
               </span>
               {showDollarAmounts ? `${metrics.totalChange >= 0 ? "+" : ""}${metrics.totalChange.toFixed(2)}% Today` : "••••••"}

@@ -4,6 +4,7 @@ import { calculateMaxLeverageApy, calculateTheoreticalMaxMultiplier } from "@/ap
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { MULTIPLY_TOKEN_BORROW_APYS, MULTIPLY_TOKEN_LOGOS, MULTIPLY_TOKEN_SUPPLY_APYS } from "@/app/lib/multiply-sim"
+import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
 import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult, MultiplyWalletReadSnapshot } from "./contracts"
@@ -58,8 +59,8 @@ export function buildMultiplyTrendingSnapshots(markets: MultiplyMarketRecord[]):
           availableLabel: formatCompactUsd(market.economics.availableLiquidityUsd),
           collateralSymbol,
           borrowSymbol,
-          collateralLogo: MULTIPLY_TOKEN_LOGOS[collateralSymbol as keyof typeof MULTIPLY_TOKEN_LOGOS] ?? "",
-          borrowLogo: MULTIPLY_TOKEN_LOGOS[borrowSymbol as keyof typeof MULTIPLY_TOKEN_LOGOS] ?? "",
+          collateralLogo: resolveMultiplyTokenLogo(collateralSymbol),
+          borrowLogo: resolveMultiplyTokenLogo(borrowSymbol),
         },
       }
     })
@@ -72,7 +73,7 @@ export function buildMultiplyTrendingSnapshots(markets: MultiplyMarketRecord[]):
 export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarketRow {
   const collateralSymbol = market.collateralAsset.symbol
   const borrowSymbol = market.borrowAsset.symbol
-  const collateralLogo = MULTIPLY_TOKEN_LOGOS[collateralSymbol as keyof typeof MULTIPLY_TOKEN_LOGOS] ?? ""
+  const collateralLogo = resolveMultiplyTokenLogo(collateralSymbol)
   return {
     href: `/multiply/markets/${market.id}`,
     protocol: collateralSymbol,
