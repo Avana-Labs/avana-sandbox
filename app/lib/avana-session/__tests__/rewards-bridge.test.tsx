@@ -40,8 +40,8 @@ describe("Avana rewards bridge", () => {
         type: "multiply",
         walletId: result.current.walletId,
         marketId: "eth-usdt",
-        depositAmountUsd: 3_000,
-        targetMultiplier: 2.4,
+        collateralAmount: 300,
+        selectedMultiplier: 2,
       })
       await result.current.multiply.executeTransaction(multiplyIntent)
     })
