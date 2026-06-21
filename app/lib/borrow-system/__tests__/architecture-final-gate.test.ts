@@ -3,12 +3,10 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 
 const actionSurfaces = [
-  "app/borrow/components/borrow-modal.tsx",
-  "app/borrow/components/repay-remove-modal.tsx",
-  "app/borrow/components/supply-collateral-modal.tsx",
   "app/components/home-page-client.tsx",
   "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx",
   "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx",
+  "app/portfolio/dashboard-borrow-tab.tsx",
 ]
 
 const legacyPreviewFunctions = [
@@ -37,12 +35,11 @@ describe("borrow architecture final gate", () => {
     expect(offenders).toEqual([])
   })
 
-  it("routes modal and home flows through adapter preview runtime or action box", () => {
-    expect(readFileSync(path.join(process.cwd(), "app/borrow/components/borrow-modal.tsx"), "utf8")).toContain("buildHomeBorrowPreview")
-    expect(readFileSync(path.join(process.cwd(), "app/borrow/components/repay-remove-modal.tsx"), "utf8")).toContain("buildHomeRepayPreview")
-    expect(readFileSync(path.join(process.cwd(), "app/borrow/components/supply-collateral-modal.tsx"), "utf8")).toContain("buildHomeSupplyPreview")
+  it("routes primary borrow flows through shared action pages", () => {
+    expect(readFileSync(path.join(process.cwd(), "app/components/home-page-client.tsx"), "utf8")).toContain("actionPagePath")
     expect(readFileSync(path.join(process.cwd(), "app/components/home-page-client.tsx"), "utf8")).toContain("buildHomeBorrowPreview")
-    expect(readFileSync(path.join(process.cwd(), "app/components/home-page-client.tsx"), "utf8")).toContain("buildHomeClaimPreview")
+    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8")).toContain("actionPagePath")
+    expect(readFileSync(path.join(process.cwd(), "app/portfolio/dashboard-borrow-tab.tsx"), "utf8")).toContain("actionPagePath")
     expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")).toContain("buildHomeClaimPreview")
   })
 

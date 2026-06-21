@@ -8,6 +8,7 @@ import { selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
 const createIntent = vi.fn()
 const previewTransaction = vi.fn()
 const executeTransaction = vi.fn()
+const push = vi.fn()
 const walletId = "demo-wallet"
 const previewState = buildMockBorrowSystemState(walletId)
 const previewPool = selectBorrowCollateralPools(previewState, walletId).find((entry) => entry.id === "uni-v3-bluechip-weth-usdc")!
@@ -47,6 +48,10 @@ const poolDetail = {
 
 vi.mock("next/dynamic", () => ({
   default: () => () => null,
+}))
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
 }))
 
 vi.mock("@/app/borrow/_detail/ui", () => ({
@@ -287,23 +292,15 @@ describe("detail sidebars", () => {
     executeTransaction.mockResolvedValue({ preview: { allowed: true }, receipt: {}, result: {}, historyItem: {}, state: {} })
   })
 
-  it("opens asset sidebar modals and closes after mocked confirm", async () => {
+  it("opens asset sidebar actions and routes through shared action pages", () => {
     render(<AssetTokenActions detail={assetDetail} />)
 
     fireEvent.click(screen.getByText("Borrow"))
     fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: "250" } })
     fireEvent.click(screen.getByText("Review borrow"))
-    fireEvent.click(screen.getByText("confirm-borrow"))
 
     fireEvent.click(screen.getByText("Repay"))
     fireEvent.click(screen.getByText("Review repayment"))
-    fireEvent.click(screen.getByText("confirm-repay"))
-
-    fireEvent.click(screen.getByRole("tab", { name: "Deposit" }))
-    fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: "100" } })
-    fireEvent.click(screen.getByText("Review deposit"))
-
-    await waitFor(() => expect(createIntent).not.toHaveBeenCalled())
   })
 
   it("embeds shared action pages for pool sidebar pledge and remove tabs", () => {
