@@ -230,13 +230,7 @@ export function MultiplyActionPageClient({
         />
       ) : null}
 
-      {stage === "success" && successUi ? (
-        <ActionSuccessStage
-          success={successUi}
-          closeHref={closeHref}
-          onPrimary={() => router.push(successUi.primaryCtaHref)}
-        />
-      ) : null}
+      {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
 
       {isConfigureVisibleStage(stage) ? (
         <ActionConfigureStage

@@ -2,13 +2,13 @@ import { expect, test } from "@playwright/test"
 
 const ACTION_ROUTES = [
   { name: "borrow-select", path: "/actions/borrow/borrow" },
-  { name: "borrow-configure", path: "/actions/borrow/borrow?asset=usdc&amount=1000" },
+  { name: "borrow-configure", path: "/actions/borrow/borrow?asset=uni-v3-bluechip:usdc&amount=500" },
   { name: "repay-select", path: "/actions/borrow/repay" },
   { name: "repay-configure", path: "/actions/borrow/repay?amount=500" },
   { name: "supply-configure", path: "/actions/borrow/supply?amount=1000" },
   { name: "remove-configure", path: "/actions/borrow/remove" },
   { name: "borrow-claim", path: "/actions/borrow/claim" },
-  { name: "lend-deposit", path: "/actions/lend/deposit?amount=10&market=gho" },
+  { name: "lend-deposit", path: "/actions/lend/deposit?amount=10&market=usdc" },
   { name: "lend-withdraw-select", path: "/actions/lend/withdraw" },
   { name: "lend-withdraw-configure", path: "/actions/lend/withdraw?market=gho&amount=1" },
   { name: "multiply-configure", path: "/actions/multiply/multiply?multiplier=2&amount=1" },
