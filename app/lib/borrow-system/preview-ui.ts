@@ -1,22 +1,44 @@
 import { formatFixed } from "@/app/lib/credit-engine"
 import type { TransactionPreview } from "./contracts"
 import type { ActionBoxMetricRow, ActionBoxPreviewUi } from "./action-box-contract"
+import {
+  formatActionHealthFactor,
+  formatActionUsd,
+  formatActionUsdBeforeAfter,
+} from "@/app/lib/action-system/formatters"
+
+function fixedToNumber(value: bigint, decimals: number) {
+  return Number.parseFloat(formatFixed(value, decimals))
+}
 
 function metricRow(label: string, before: bigint, after: bigint, decimals: number, tone?: ActionBoxMetricRow["tone"]): ActionBoxMetricRow {
+  if (decimals === 6) {
+    return {
+      label,
+      value: formatActionUsdBeforeAfter(fixedToNumber(before, decimals), fixedToNumber(after, decimals)),
+      tone,
+    }
+  }
+
   return {
     label,
-    value: `${formatFixed(before, decimals)} → ${formatFixed(after, decimals)}`,
+    value: `${formatActionHealthFactor(fixedToNumber(before, decimals))} → ${formatActionHealthFactor(fixedToNumber(after, decimals))}`,
     tone,
   }
 }
 
 function healthFactorRow(before: bigint | null, after: bigint | null): ActionBoxMetricRow {
-  const format = (value: bigint | null) => (value == null ? "∞" : formatFixed(value, 18))
+  const beforeValue = before == null ? null : fixedToNumber(before, 18)
+  const afterValue = after == null ? null : fixedToNumber(after, 18)
   const tone =
-    after != null && after < 10n ** 18n ? "danger" : after != null && after < 15n * 10n ** 17n ? "warning" : "positive"
+    afterValue != null && afterValue < 1.05
+      ? "danger"
+      : afterValue != null && afterValue < 1.5
+        ? "warning"
+        : "positive"
   return {
     label: "Health factor",
-    value: `${format(before)} → ${format(after)}`,
+    value: `${formatActionHealthFactor(beforeValue)} → ${formatActionHealthFactor(afterValue)}`,
     tone,
   }
 }
@@ -39,4 +61,8 @@ export function mapPreviewToActionBoxUi(preview: TransactionPreview): ActionBoxP
     ctaLabel: preview.allowed ? "Continue" : (blockedReason ?? "Action unavailable"),
     blockedReason,
   }
+}
+
+export function formatPreviewUsd(value: bigint) {
+  return formatActionUsd(fixedToNumber(value, 6))
 }

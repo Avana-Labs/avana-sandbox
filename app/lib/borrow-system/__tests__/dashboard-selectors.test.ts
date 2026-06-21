@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { parseFixed } from "@/app/lib/credit-engine"
+import { calculateHealthFactorWad, formatFixed, parseFixed } from "@/app/lib/credit-engine"
 import { applyBorrowAction } from "@/app/lib/credit-engine/actions"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { selectBorrowSnapshot, selectPortfolioDebtRows, selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
@@ -55,5 +55,18 @@ describe("borrow dashboard selectors", () => {
     expect(snapshot.totalBorrowedUsd).toBe(2150)
     expect(bluechip?.totalBorrowedUsd).toBe(1350)
     expect(stable?.totalBorrowedUsd).toBe(800)
+  })
+
+  it("uses spoke-level engine health factors for portfolio rows", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const supplies = selectPortfolioSupplyRows(state, "demo-wallet")
+    const debts = selectPortfolioDebtRows(state, "demo-wallet")
+    const bluechipMarketId = "uni-v3-bluechip-weth-usdc"
+    const expectedHealthFactor = Number.parseFloat(
+      formatFixed(calculateHealthFactorWad(state, "demo-wallet", "uni-v3-bluechip")!, 18),
+    )
+
+    expect(supplies.find((row) => row.pool.id === bluechipMarketId)?.healthFactor).toBeCloseTo(expectedHealthFactor, 2)
+    expect(debts.find((row) => row.pool.id === bluechipMarketId)?.healthFactor).toBeCloseTo(expectedHealthFactor, 2)
   })
 })

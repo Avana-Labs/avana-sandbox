@@ -49,13 +49,14 @@ export type LendPosition = {
   liquidityIndexAtLastAction: number
   currentSuppliedAmount: number
   interestEarned: number
+  rewardsEarnedUsd: number
   suppliedValueUsd: number
   openedAt: number
   updatedAt: number
   status: LendPositionStatus
 }
 
-export type LendTransactionKind = "deposit" | "withdraw"
+export type LendTransactionKind = "deposit" | "withdraw" | "claim"
 
 export type LendTransaction = {
   id: string
@@ -71,6 +72,7 @@ export type LendSystemState = {
   now: number
   markets: Record<string, LendMarket>
   positions: Record<string, LendPosition>
+  walletBalances: Record<string, Record<string, number>>
   transactions: LendTransaction[]
 }
 
@@ -92,7 +94,13 @@ export type LendWithdrawIntent = {
   at?: number
 }
 
-export type LendAction = LendDepositIntent | LendWithdrawIntent
+export type LendClaimRewardsIntent = {
+  type: "claim"
+  walletId: string
+  at?: number
+}
+
+export type LendAction = LendDepositIntent | LendWithdrawIntent | LendClaimRewardsIntent
 
 export type LendValidationResult = {
   allowed: boolean
@@ -105,6 +113,8 @@ export type LendPositionMetrics = {
   suppliedValueUsd: number
   principalAmount: number
   interestEarned: number
+  rewardsEarnedUsd: number
+  totalEarnedUsd: number
   scaledBalance: number
   liquidityIndex: number
 }

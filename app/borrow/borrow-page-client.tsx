@@ -1,41 +1,43 @@
+"use client"
+
 import Link from "next/link"
+import { useMemo } from "react"
 import { formatCompactUsd, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
 import type { BorrowPageData, BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
+import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { cn } from "@/lib/utils"
 import { TokenPairCell } from "./components/atoms"
 import { BorrowWorkspaceShell } from "./borrow-workspace-shell"
+import { useBorrowPageLive } from "./use-borrow-page-live"
 
 type BorrowPageClientProps = { pageData: BorrowPageData }
 
 function formatUsd(value: number) {
-  if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`
-  }
-  if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`
-  }
-  return `$${Math.round(value)}`
+  return formatCompactUsd(value)
 }
 
 /** Borrow markets UI: hero-level metrics (from server-prepared data) + the 4-tab Borrow workspace. */
 export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
+  const session = useBorrowSessionContext()
+  const livePageData = useBorrowPageLive(pageData.walletId, session)
+  const resolvedPageData = useMemo(() => livePageData ?? pageData, [livePageData, pageData])
   const heroSectionClassName = "mb-4 px-1 md:px-2"
   const workspaceData: BorrowWorkspaceData = {
-    walletId: pageData.walletId,
-    borrowSessionSeed: pageData.borrowSessionSeed,
-    poolCatalog: pageData.poolCatalog,
-    borrowableAssets: pageData.borrowableAssets,
-    pendingRows: pageData.pendingRows,
-    dexes: pageData.dexes,
-    collateralPools: pageData.collateralPools,
-    initialDebts: pageData.initialDebts,
-    borrowSnapshot: pageData.borrowSnapshot,
+    walletId: resolvedPageData.walletId,
+    borrowSessionSeed: resolvedPageData.borrowSessionSeed,
+    poolCatalog: resolvedPageData.poolCatalog,
+    borrowableAssets: resolvedPageData.borrowableAssets,
+    pendingRows: resolvedPageData.pendingRows,
+    dexes: resolvedPageData.dexes,
+    collateralPools: resolvedPageData.collateralPools,
+    initialDebts: resolvedPageData.initialDebts,
+    borrowSnapshot: resolvedPageData.borrowSnapshot,
   }
   const heroCards = [
     {
       title: "Trending Collateral",
-      rows: pageData.explore.trendingCollateral.map((pool) => ({
+      rows: resolvedPageData.explore.trendingCollateral.map((pool) => ({
         id: `trending-${pool.id}`,
         href: borrowMarketDetailPath(pool.id),
         pool,
@@ -48,7 +50,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
     },
     {
       title: "Top Markets",
-      rows: pageData.explore.topMarkets.map((pool) => ({
+      rows: resolvedPageData.explore.topMarkets.map((pool) => ({
         id: `top-${pool.id}`,
         href: borrowMarketDetailPath(pool.id),
         pool,
@@ -61,7 +63,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
     },
     {
       title: "High APY Pools",
-      rows: pageData.explore.highApyPools.map((pool) => ({
+      rows: resolvedPageData.explore.highApyPools.map((pool) => ({
         id: `apy-${pool.id}`,
         href: borrowMarketDetailPath(pool.id),
         pool,
@@ -74,7 +76,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
     },
   ]
 
-  const totalTvlChange = pageData.heroMetrics.totalTvlChangePct
+  const totalTvlChange = resolvedPageData.heroMetrics.totalTvlChangePct
   const totalTvlChangeIsUp = totalTvlChange >= 0
   const totalTvlChangeLabel = `${totalTvlChangeIsUp ? "+" : ""}${totalTvlChange.toFixed(2)}%`
 
@@ -89,7 +91,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total TVL</p>
                     <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
-                      {formatUsd(pageData.heroMetrics.totalTvlUsd)}
+                      {formatUsd(resolvedPageData.heroMetrics.totalTvlUsd)}
                     </p>
                     <span
                       className={cn(
@@ -113,7 +115,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
                     Total Collateral
                   </div>
                   <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-                    {formatUsd(pageData.heroMetrics.totalCollateralUsd)}
+                    {formatUsd(resolvedPageData.heroMetrics.totalCollateralUsd)}
                   </p>
                 </div>
 
@@ -123,7 +125,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
                     Available Credit
                   </div>
                   <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-                    {formatUsd(pageData.heroMetrics.availableCreditUsd)}
+                    {formatUsd(resolvedPageData.heroMetrics.availableCreditUsd)}
                   </p>
                 </div>
 
@@ -133,7 +135,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
                     Outstanding Loans
                   </div>
                   <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-                    {formatUsd(pageData.heroMetrics.outstandingLoansUsd)}
+                    {formatUsd(resolvedPageData.heroMetrics.outstandingLoansUsd)}
                   </p>
                 </div>
               </div>

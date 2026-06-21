@@ -27,11 +27,13 @@ describe("lend architecture final gate", () => {
     expect(readFileSync(path.join(process.cwd(), "app/lib/avana-session/avana-sessions-provider.tsx"), "utf8")).toContain("lend:")
   })
 
-  it("keeps production lend adapters stubbed", () => {
+  it("keeps production lend adapters injectable for live integration", () => {
     const readAdapter = readFileSync(path.join(process.cwd(), "app/lib/lend-system/production-read-adapter.ts"), "utf8")
     const txAdapter = readFileSync(path.join(process.cwd(), "app/lib/lend-system/production-transaction-adapter.ts"), "utf8")
 
-    expect(readAdapter).toContain("not implemented")
-    expect(txAdapter).toContain("not implemented")
+    expect(readAdapter).toContain("constructor(private readonly source")
+    expect(readAdapter).toContain("this.source.readWalletSnapshot")
+    expect(txAdapter).toContain("createIntent(action: LendAction)")
+    expect(txAdapter).toContain("this.source.previewTransaction")
   })
 })

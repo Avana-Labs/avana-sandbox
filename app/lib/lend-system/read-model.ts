@@ -1,3 +1,5 @@
+import type { ChartPoint, ChartRangeData, ChartRangeOption } from "@/app/components/charts"
+import { CHART_RANGE_LABELS, CHART_RANGE_OPTIONS, buildRangeData } from "@/app/components/charts"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { calculateMaxWithdrawable, calculateTotalApy } from "@/app/lib/lend-engine/formulas"
 import type { LendMarket, LendSystemState } from "@/app/lib/lend-engine"
@@ -124,7 +126,7 @@ export function buildLendPageData(_walletId: string, state?: LendSystemState): L
 
   return {
     tokens: [],
-    markets: markets.slice(0, 6).map((market) => ({
+    markets: markets.map((market) => ({
       symbol: market.asset.symbol,
       name: market.asset.name,
       apy: market.totalApy * 100,
@@ -153,9 +155,14 @@ export function buildPortfolioLendData(
   state: LendSystemState,
   history: LendTransactionHistoryItem[] = [],
 ): PortfolioLendTabData {
-  const positions = Object.values(state.positions).filter(
+  const walletPositions = Object.values(state.positions).filter((position) => position.walletId === walletId)
+  const positions = walletPositions.filter(
     (position) => position.walletId === walletId && position.status === "active",
   )
+  const claimableRewardsUsd = walletPositions.reduce((sum, position) => sum + position.rewardsEarnedUsd, 0)
+  const closedRewardsUsd = walletPositions
+    .filter((position) => position.status === "closed")
+    .reduce((sum, position) => sum + position.rewardsEarnedUsd, 0)
 
   const investments = positions.map((position) => {
     const market = state.markets[position.marketId]!
@@ -169,7 +176,7 @@ export function buildPortfolioLendData(
       priceUsd: market.assetPriceUsd,
       suppliedUsd: position.suppliedValueUsd,
       principalUsd: position.principalAmount * market.assetPriceUsd,
-      earnedUsd: position.interestEarned * market.assetPriceUsd,
+      earnedUsd: position.interestEarned * market.assetPriceUsd + position.rewardsEarnedUsd,
       dailyEarnedUsd: (position.suppliedValueUsd * market.totalApy) / 365,
       apyPct: market.totalApy * 100,
       principalAmount: position.principalAmount,
@@ -183,7 +190,11 @@ export function buildPortfolioLendData(
     investments,
     positions: investments,
     strategyBuckets: [],
-    history: buildLendActivityHistory(walletId, history),
+    history: buildLendActivityHistory(walletId, history, state),
+    rewardsSummary: {
+      claimableUsd: claimableRewardsUsd,
+      totalEarnedUsd: investments.reduce((sum, item) => sum + item.earnedUsd, 0) + closedRewardsUsd,
+    },
   }
 }
 
@@ -194,7 +205,10 @@ export function buildLendWalletSnapshot(
 ): LendWalletReadSnapshot {
   const portfolio = buildPortfolioLendData(walletId, state, transactionHistory)
   const totalSuppliedUsd = portfolio.investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
-  const totalEarnedUsd = portfolio.investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  const totalEarnedUsd = portfolio.rewardsSummary?.totalEarnedUsd ?? portfolio.investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  const rewardsEarnedUsd =
+    portfolio.rewardsSummary?.claimableUsd ??
+    portfolio.investments.reduce((sum, item) => sum + (item.earnedUsd - ((item.interestEarned ?? 0) * item.priceUsd)), 0)
   const averageApy =
     portfolio.investments.length === 0
       ? 0
@@ -208,6 +222,8 @@ export function buildLendWalletSnapshot(
       suppliedValueUsd: totalSuppliedUsd,
       principalAmount: portfolio.investments.reduce((sum, item) => sum + (item.principalAmount ?? 0), 0),
       interestEarned: portfolio.investments.reduce((sum, item) => sum + (item.interestEarned ?? 0), 0),
+      rewardsEarnedUsd,
+      totalEarnedUsd,
       currentApy: averageApy,
     },
     yieldSnapshots: buildLendYieldSnapshots(state),
@@ -231,6 +247,7 @@ export function buildLendYieldSnapshots(state: LendSystemState): LendYieldSnapsh
 export function buildLendActivityHistory(
   walletId: string,
   history: LendTransactionHistoryItem[],
+  state?: LendSystemState,
 ): PortfolioLendTabData["history"] {
   return history
     .filter((item) => item.walletId === walletId)
@@ -238,14 +255,96 @@ export function buildLendActivityHistory(
       id: item.id,
       at: new Date(item.timestamp).toISOString(),
       product: "lend" as const,
-      kind: item.kind === "deposit" ? ("open" as const) : ("reduce" as const),
+      kind:
+        item.kind === "deposit"
+          ? ("open" as const)
+          : item.kind === "withdraw"
+            ? ("reduce" as const)
+            : ("claim" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
-      amountUsd: 0,
-      primaryLabel: item.kind === "deposit" ? "Simulated deposit" : "Simulated withdraw",
-      secondaryLabel: `${item.amount.toFixed(4)} ${item.asset}`,
+      amountUsd: item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
+      primaryLabel:
+        item.kind === "deposit"
+          ? "Simulated deposit"
+          : item.kind === "withdraw"
+            ? "Simulated withdraw"
+            : "Simulated rewards claim",
+      secondaryLabel: item.kind === "claim" ? `${item.amount.toFixed(2)} USD rewards` : `${item.amount.toFixed(4)} ${item.asset}`,
       txHash: item.hash,
     }))
 }
+
+function buildLendRangeData(data: PortfolioLendTabData): ChartRangeData {
+  const totalSuppliedUsd = data.investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
+  const totalEarnedUsd = data.investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  const confirmedHistory = [...data.history]
+    .filter((item) => item.status === "confirmed")
+    .sort((left, right) => new Date(left.at).getTime() - new Date(right.at).getTime())
+
+  if (totalSuppliedUsd <= 0 && confirmedHistory.length === 0) {
+    return buildRangeData(0, 42)
+  }
+
+  const netFlowUsd = confirmedHistory.reduce((sum, item) => {
+    return sum + (item.kind === "open" ? item.amountUsd : -item.amountUsd)
+  }, 0)
+  const baseSuppliedUsd = Math.max(0, totalSuppliedUsd - netFlowUsd)
+  const rangeStartValue = Math.max(0, baseSuppliedUsd)
+  const rangeEndValue = totalSuppliedUsd
+
+  return CHART_RANGE_OPTIONS.reduce((accumulator, range) => {
+    accumulator[range] = buildRangePoints({
+      range,
+      history: confirmedHistory,
+      startValue: rangeStartValue,
+      endValue: rangeEndValue,
+      earnedUsd: totalEarnedUsd,
+    })
+    return accumulator
+  }, {} as ChartRangeData)
+}
+
+function buildRangePoints(params: {
+  range: ChartRangeOption
+  history: PortfolioLendTabData["history"]
+  startValue: number
+  endValue: number
+  earnedUsd: number
+}): ChartPoint[] {
+  const labels = CHART_RANGE_LABELS[params.range]
+  const pointCount = params.range === "1H" ? 24 : 63
+  const points = Array.from({ length: pointCount }, (_, index) => ({
+    time: index,
+    value: params.startValue,
+    label: labels[Math.min(labels.length - 1, Math.floor((index / Math.max(1, pointCount - 1)) * labels.length))] ?? labels.at(-1) ?? "Now",
+  }))
+
+  if (points.length === 0) return points
+
+  const historyCount = params.history.length
+  for (const [index, item] of params.history.entries()) {
+    const pointIndex = historyCount === 1 ? Math.floor(pointCount * 0.6) : Math.round((index / Math.max(1, historyCount - 1)) * (pointCount - 2))
+    const delta = item.kind === "open" ? item.amountUsd : -item.amountUsd
+    for (let cursor = pointIndex; cursor < points.length; cursor += 1) {
+      points[cursor]!.value = Math.max(0, points[cursor]!.value + delta)
+    }
+  }
+
+  const earnedStep = points.length > 1 ? params.earnedUsd / (points.length - 1) : 0
+  for (let index = 0; index < points.length; index += 1) {
+    points[index]!.value = Math.max(0, points[index]!.value + earnedStep * index)
+  }
+
+  points[0]!.value = params.startValue
+  points[points.length - 1]!.value = params.endValue
+  return points.map((point, index) => ({
+    ...point,
+    time: index,
+    value: Math.round(point.value * 100) / 100,
+  }))
+}
+
+export { buildLendRangeData }
 
 export function mapLendHistoryToDetailRows(
   history: LendTransactionHistoryItem[],

@@ -104,10 +104,10 @@ export function MultiplyActionBox({
       collateralAmount: amount,
       selectedMultiplier,
     })
-    await actionBox.advance()
   }, [actionBox, collateralAmount, market.id, selectedMultiplier, walletId])
 
   const preview = actionBox.preview
+  const submitDisabled = actionBox.stage !== "success" && !actionBox.canAdvance
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -267,7 +267,7 @@ export function MultiplyActionBox({
           rows={preview ? previewRows(preview) : []}
           primaryLabel={actionBox.stage === "success" ? "Done" : "Confirm simulated multiply"}
           simulated
-          submitDisabled={!actionBox.canAdvance}
+          submitDisabled={submitDisabled}
           blockedReason={preview?.validationErrors[0] ?? null}
           onPrimary={() => {
             if (actionBox.stage === "success") {

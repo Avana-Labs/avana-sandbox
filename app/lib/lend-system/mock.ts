@@ -1,11 +1,22 @@
 import type { LendAction, LendMarket, LendSystemState } from "@/app/lib/lend-engine"
+import { getWalletLendAssets } from "@/app/lib/data/mock/wallet/portfolio/lend-wallet-assets"
 import { buildLendCatalogMarketsRecord } from "./catalog"
+import { resolveLendMarketId } from "./catalog"
 
-export function buildMockLendSystemState(_walletId = "demo-wallet", now = Date.UTC(2026, 5, 19)): LendSystemState {
+function buildMockWalletBalances(walletId: string) {
+  return {
+    [walletId]: Object.fromEntries(
+      getWalletLendAssets(walletId).map((token) => [resolveLendMarketId(token.symbol), token.balance]),
+    ),
+  }
+}
+
+export function buildMockLendSystemState(walletId = "demo-wallet", now = Date.UTC(2026, 5, 19)): LendSystemState {
   return {
     now,
     markets: buildLendCatalogMarketsRecord(now),
     positions: {},
+    walletBalances: buildMockWalletBalances(walletId),
     transactions: [],
   }
 }
@@ -35,6 +46,7 @@ export function buildMockLendSystemStateWithSeedPosition(walletId = "demo-wallet
     liquidityIndexAtLastAction: market.liquidityIndex,
     currentSuppliedAmount: principalAmount,
     interestEarned: 0,
+    rewardsEarnedUsd: 0,
     suppliedValueUsd: principalAmount * market.assetPriceUsd,
     openedAt: state.now - 86_400_000,
     updatedAt: state.now - 3_600_000,
