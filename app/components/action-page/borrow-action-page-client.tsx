@@ -123,13 +123,14 @@ export function BorrowActionPageClient({
 
   const borrowAssetOptions = useMemo(() => {
     if (kind !== "borrow") return undefined
-    const options = session.getBorrowableAssetsForMarket(marketId).map((asset) => ({
+    const options = session.borrowableAssets.map((asset) => ({
       id: asset.id,
-      label: asset.symbol,
+      label: asset.name,
       symbol: asset.symbol,
+      sublabel: `${asset.borrowApr.toFixed(2)}% APY`,
     }))
     return options.length > 1 ? options : undefined
-  }, [kind, marketId, session])
+  }, [kind, session.borrowableAssets])
 
   const assetSymbol = useMemo(() => {
     if (kind === "remove") return "%"
@@ -148,19 +149,6 @@ export function BorrowActionPageClient({
     }
     if (debtPositions.length > 1) setStage("select")
   }, [debtPositionId, debtPositions, initialMarketId, kind])
-
-  useEffect(() => {
-    if (initialAssetId) {
-      setAssetId(initialAssetId)
-      setStage("configure")
-    }
-  }, [initialAssetId])
-
-  useEffect(() => {
-    if (initialAssetId && resolvedInitialMarket) {
-      setMarketId(resolvedInitialMarket)
-    }
-  }, [initialAssetId, resolvedInitialMarket])
 
   useEffect(() => {
     if (debtPosition?.marketId) setMarketId(debtPosition.marketId)

@@ -45,13 +45,8 @@ export function MultiplyActionPageClient({
   const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(initialMarketId)
   const market = useMemo(() => {
     const markets = Object.values(session.state.markets)
-    return (
-      markets.find((entry) => entry.id === selectedMarketId) ??
-      markets.find((entry) => entry.id === initialMarketId) ??
-      markets[0] ??
-      null
-    )
-  }, [initialMarketId, selectedMarketId, session.state.markets])
+    return markets.find((entry) => entry.id === selectedMarketId) ?? markets[0] ?? null
+  }, [selectedMarketId, session.state.markets])
 
   const marketOptions = useMemo(() => {
     if (kind !== "multiply") return undefined

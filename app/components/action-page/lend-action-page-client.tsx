@@ -78,6 +78,17 @@ export function LendActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
+  const withdrawAssetOptions = useMemo(() => {
+    if (kind !== "withdraw") return undefined
+    const options = withdrawItems.map((item) => ({
+      id: item.id,
+      label: item.name,
+      symbol: item.symbol,
+      sublabel: item.trailingLabel,
+    }))
+    return options.length > 1 ? options : undefined
+  }, [kind, withdrawItems])
+
   useEffect(() => {
     if (kind !== "withdraw" || initialMarketId || marketId) return
     if (withdrawItems.length === 1) {
@@ -87,10 +98,6 @@ export function LendActionPageClient({
     }
     if (withdrawItems.length > 1) setStage("select")
   }, [initialMarketId, kind, marketId, withdrawItems])
-
-  useEffect(() => {
-    if (initialMarketId) setMarketId(initialMarketId)
-  }, [initialMarketId])
 
   const position = useMemo(
     () =>
@@ -336,7 +343,7 @@ export function LendActionPageClient({
           onAmountChange={setAmount}
           preview={previewUi}
           assetSymbol={market.asset.symbol}
-          assetOptions={depositAssetOptions}
+          assetOptions={kind === "deposit" ? depositAssetOptions : withdrawAssetOptions}
           selectedAssetId={market.marketId}
           onAssetSelect={(id) => {
             setMarketId(id)
