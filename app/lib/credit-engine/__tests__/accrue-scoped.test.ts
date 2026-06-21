@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { accrueBorrowSystemState, accrueBorrowSystemStateForWallet } from "@/app/lib/credit-engine/accrue"
+import { accrueBorrowSystemStateForWallet } from "@/app/lib/credit-engine/accrue"
 import { makeExampleBorrowSystemState } from "./fixtures"
 
 describe("scoped accrue", () => {

@@ -335,7 +335,6 @@ function SpokeDesktopSection({
   borrowAssets,
   pending,
   onViewMarket,
-  onUseAsCollateral,
   onBorrowAsset,
 }: {
   spoke: BorrowSpoke

@@ -111,6 +111,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Intentional blocking script: applies stored theme before first paint to prevent FOUC. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/theme-bootstrap.js" />
       </head>
       <body className="min-h-screen bg-background">

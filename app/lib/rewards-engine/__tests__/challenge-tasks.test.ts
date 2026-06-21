@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest"
 import { buildDefaultRewardsCatalog, evaluateTaskProgress } from "@/app/lib/rewards-engine"
 import { SandboxRewardsActionAdapter, buildDefaultRewardsSessionState } from "@/app/lib/rewards-system"
 
-const DAY_MS = 24 * 60 * 60 * 1000
 const now = Date.UTC(2026, 5, 19)
 const wallet = "wallet-challenge"
 
