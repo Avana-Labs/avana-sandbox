@@ -26,7 +26,6 @@ export function ActionPageShell({
   title,
   subtitle,
   walletLabel,
-  simulated = false,
   hideTitle = false,
   onClose,
   closeHref,

@@ -8,7 +8,6 @@ export function ActionTokenIcon({ symbol, className }: { symbol: string; classNa
 
   if (icon.iconUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
       <img src={icon.iconUrl} alt="" className={cn("size-6 rounded-full", className)} />
     )
   }

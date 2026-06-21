@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { LoaderCircle, X } from "lucide-react"
+import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ActionBlockedUi } from "@/app/lib/action-system/contracts"
 
