@@ -99,4 +99,36 @@ describe("BorrowPageClient", () => {
     expect(screen.getByText("5.3% APY")).toBeInTheDocument()
     expect(screen.getByTestId("borrow-workspace-shell")).toBeInTheDocument()
   })
+
+  it("formats billion-scale hero metrics with compact suffix", () => {
+    const pageData = {
+      walletId: "wallet-1",
+      borrowSessionSeed: "{\"stub\":true}",
+      poolCatalog: [],
+      heroMetrics: {
+        totalTvlUsd: 6_885_000_000,
+        totalCollateralUsd: 315_700_000,
+        availableCreditUsd: 92_700_000,
+        outstandingLoansUsd: 159_800_000,
+        totalTvlChangePct: 2.03,
+      },
+      explore: { trendingCollateral: [], topMarkets: [], highApyPools: [] },
+      borrowableAssets: [],
+      pendingRows: [],
+      dexes: [],
+      collateralPools: [],
+      initialDebts: {},
+      borrowSnapshot: {
+        totalBorrowedUsd: 0,
+        availableCreditUsd: 0,
+        totalCollateralUsd: 0,
+        liquidationValueUsd: 0,
+        healthFactor: null,
+      },
+    } as unknown as BorrowPageData
+
+    render(<BorrowPageClient pageData={pageData} />)
+    expect(screen.getByText("$6.9B")).toBeInTheDocument()
+    expect(screen.queryByText("$6885.0M")).not.toBeInTheDocument()
+  })
 })

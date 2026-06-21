@@ -9,13 +9,7 @@ import { BorrowWorkspaceShell } from "./borrow-workspace-shell"
 type BorrowPageClientProps = { pageData: BorrowPageData }
 
 function formatUsd(value: number) {
-  if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`
-  }
-  if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`
-  }
-  return `$${Math.round(value)}`
+  return formatCompactUsd(value)
 }
 
 /** Borrow markets UI: hero-level metrics (from server-prepared data) + the 4-tab Borrow workspace. */
