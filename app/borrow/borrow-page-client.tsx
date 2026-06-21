@@ -99,7 +99,7 @@ export function BorrowPageClient({ pageData }: BorrowPageClientProps) {
                         totalTvlChangeIsUp ? "text-emerald-600" : "text-rose-600",
                       )}
                     >
-                      <span aria-hidden className="text-[9px] leading-none">
+                      <span aria-hidden className="text-[10px] leading-none">
                         {totalTvlChangeIsUp ? "▲" : "▼"}
                       </span>
                       {totalTvlChangeLabel}

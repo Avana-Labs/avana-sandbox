@@ -52,6 +52,8 @@ function PromoTabButton({
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
       data-state={active ? "active" : "inactive"}
       className={[
@@ -85,7 +87,7 @@ function AvanaQuestCard({
           <div className={`flex h-9 w-9 items-center justify-center rounded-[11px] ${accent === "challenge" ? "bg-[#EAFF72]/90" : "bg-[#9CDD4C]/14"}`}>
             <Icon className={`h-4 w-4 ${accent === "challenge" ? "text-[#7D8D24]" : "text-[#4E9D73]"}`} strokeWidth={1.9} />
           </div>
-          <span className="rounded-full border border-border bg-surface-inset px-2.5 py-0.5 text-[9px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="rounded-full border border-border bg-surface-inset px-2.5 py-0.5 text-[10px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
             {quest.category}
           </span>
         </div>
