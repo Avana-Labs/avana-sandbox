@@ -65,8 +65,11 @@ export function useBorrowSession({
   }, [walletId, sessionSeed])
 
   useEffect(() => {
+    // Skip while state is still the SSR seed (pre-hydration); persisting it here
+    // would clobber richer data already in storage before the restore effect runs.
+    if (state === seededState) return
     writeBorrowSessionState(walletId, state)
-  }, [walletId, state])
+  }, [walletId, state, seededState])
 
   useEffect(() => {
     writeBorrowSessionMetadata(walletId, {
