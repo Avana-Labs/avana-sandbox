@@ -117,6 +117,9 @@ function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowA
     throw new Error(`Borrowing would make spoke ${market.spokeId} insolvent`)
   }
 
+  // Borrowed funds land in the wallet as spendable balance.
+  account.walletBalanceUsd6 += action.amountUsd6
+
   syncBorrowRates(state, action.walletId)
   return state
 }
@@ -176,7 +179,12 @@ function applyRepayAction(state: BorrowSystemState, action: Extract<BorrowAction
   if (!asset) throw new Error(`Unknown asset ${position.assetId}`)
 
   const currentDebtUsd6 = currentDebtValueUsd6(position)
-  const repayAmountUsd6 = action.amountUsd6 > currentDebtUsd6 ? currentDebtUsd6 : action.amountUsd6
+  // Repayment is bounded both by the outstanding debt and by what the wallet can fund.
+  const cappedByDebtUsd6 = action.amountUsd6 > currentDebtUsd6 ? currentDebtUsd6 : action.amountUsd6
+  const repayAmountUsd6 = cappedByDebtUsd6 > account.walletBalanceUsd6 ? account.walletBalanceUsd6 : cappedByDebtUsd6
+  if (repayAmountUsd6 <= 0n) {
+    throw new Error(`Wallet ${action.walletId} has insufficient balance to repay`)
+  }
   const interestOwedUsd6 = debtInterestOwedUsd6(position)
   const sharesToBurn = repayAmountUsd6 === currentDebtUsd6 ? position.debtSharesUsd6 : assetsToShares(repayAmountUsd6, position.debtIndexRay)
   const principalReductionUsd6 = repayAmountUsd6 > interestOwedUsd6 ? repayAmountUsd6 - interestOwedUsd6 : 0n
@@ -184,6 +192,9 @@ function applyRepayAction(state: BorrowSystemState, action: Extract<BorrowAction
   position.debtSharesUsd6 = position.debtSharesUsd6 > sharesToBurn ? position.debtSharesUsd6 - sharesToBurn : 0n
   position.principalBorrowedUsd6 =
     position.principalBorrowedUsd6 > principalReductionUsd6 ? position.principalBorrowedUsd6 - principalReductionUsd6 : 0n
+
+  // Repaying spends wallet balance.
+  account.walletBalanceUsd6 -= repayAmountUsd6
 
   asset.snapshot.availableLiquidityUsd6 += repayAmountUsd6
   asset.snapshot.totalBorrowedUsd6 = asset.snapshot.totalBorrowedUsd6 > repayAmountUsd6 ? asset.snapshot.totalBorrowedUsd6 - repayAmountUsd6 : 0n
