@@ -7,8 +7,19 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
-    include: ["app/**/__tests__/**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["**/node_modules/**", "**/.next/**", "**/__tests__/flow.harness.ts", "**/__tests__/**/stress-fixtures.ts", "**/__tests__/**/fixtures.ts", "**/__tests__/**/oracle.ts", "**/__tests__/**/sandbox-adapter-contract.ts"],
+    include: [
+      "app/**/__tests__/**/*.{test,spec}.{ts,tsx}",
+      "tests/unit/**/*.test.ts",
+    ],
+    exclude: [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/__tests__/flow.harness.ts",
+      "**/__tests__/**/stress-fixtures.ts",
+      "**/__tests__/**/fixtures.ts",
+      "**/__tests__/**/oracle.ts",
+      "**/__tests__/**/sandbox-adapter-contract.ts",
+    ],
   },
   resolve: {
     alias: {
