@@ -56,6 +56,15 @@ export function MultiplyActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
+  const multiplierOptions = useMemo(() => {
+    const max = market?.risk.publicMaxMultiplier ?? 5
+    const presets = [1.5, 2, 3, 5, 7, 10]
+    const withinRange = presets.filter((preset) => preset <= max + 1e-9)
+    const rounded = Math.round(max * 10) / 10
+    if (!withinRange.includes(rounded) && rounded >= 1.5) withinRange.push(rounded)
+    return withinRange.length > 0 ? withinRange : [Math.max(1.5, rounded)]
+  }, [market])
+
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
   const [multiplier, setMultiplier] = useState(initialMultiplier)
@@ -209,6 +218,9 @@ export function MultiplyActionPageClient({
             setSelectedMarketId(id)
             setAmount("")
           }}
+          multiplier={multiplier}
+          onMultiplierChange={setMultiplier}
+          multiplierOptions={multiplierOptions}
           onPrimary={() => void handlePrimary()}
           secondaryHref={closeHref}
           isPending={isPending}

@@ -2,6 +2,7 @@
 
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
+import { ActionLeverageSelector } from "@/app/components/action-page/action-leverage-selector"
 import { ActionOutcomeBanner, ActionRiskBanner, ActionWalletToast } from "@/app/components/action-page/action-banners"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import {
@@ -34,6 +35,9 @@ type ActionConfigureStageProps = {
   assetOptions?: ActionAssetOption[]
   selectedAssetId?: string
   onAssetSelect?: (id: string) => void
+  multiplier?: string
+  onMultiplierChange?: (value: string) => void
+  multiplierOptions?: number[]
 }
 
 export function ActionConfigureStage({
@@ -57,6 +61,9 @@ export function ActionConfigureStage({
   assetOptions,
   selectedAssetId,
   onAssetSelect,
+  multiplier,
+  onMultiplierChange,
+  multiplierOptions,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -93,6 +100,10 @@ export function ActionConfigureStage({
         onAssetSelect={onAssetSelect}
         footer={preview ? <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" /> : null}
       />
+
+      {multiplierOptions && multiplierOptions.length > 0 && onMultiplierChange ? (
+        <ActionLeverageSelector value={multiplier ?? ""} onChange={onMultiplierChange} options={multiplierOptions} />
+      ) : null}
 
       {preview ? (
         <ActionCard>
