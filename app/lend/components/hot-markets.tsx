@@ -253,10 +253,12 @@ export function HotMarkets({
   snapshots?: ReadonlyArray<FeaturedSnapshot>
 }) {
   const [hover, setHover] = useState<HoverState | null>(null)
+  const [carouselHovered, setCarouselHovered] = useState(false)
   const [sequenceWidth, setSequenceWidth] = useState(0)
   const sequenceRef = useRef<HTMLDivElement | null>(null)
   const x = useMotionValue(0)
   const reduceMotion = useReducedMotion()
+  const marqueePaused = hover !== null || carouselHovered || reduceMotion
 
   useEffect(() => {
     const sequence = sequenceRef.current
@@ -274,7 +276,7 @@ export function HotMarkets({
   }, [x])
 
   useAnimationFrame((_, delta) => {
-    if (hover || reduceMotion || sequenceWidth === 0) return
+    if (marqueePaused || sequenceWidth === 0) return
 
     const speed = sequenceWidth / MARQUEE_DURATION_SECONDS
     const nextX = x.get() - speed * (delta / 1000)
@@ -316,8 +318,16 @@ export function HotMarkets({
         <div
           data-featured-carousel
           className="relative h-[176px] w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)]"
-          onMouseLeave={() => setHover(null)}
-          onPointerLeave={() => setHover(null)}
+          onMouseEnter={() => setCarouselHovered(true)}
+          onMouseLeave={() => {
+            setCarouselHovered(false)
+            setHover(null)
+          }}
+          onPointerEnter={() => setCarouselHovered(true)}
+          onPointerLeave={() => {
+            setCarouselHovered(false)
+            setHover(null)
+          }}
         >
           <motion.div style={{ x }} className="flex w-max items-start">
             <div ref={sequenceRef} className="flex shrink-0 items-start gap-3 pr-3">

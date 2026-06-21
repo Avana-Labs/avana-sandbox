@@ -46,3 +46,4 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 stress-report.json
+tests/e2e/results.json

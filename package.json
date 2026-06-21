@@ -15,7 +15,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
     "test:e2e": "playwright test",
+    "test:e2e:audit": "playwright test tests/e2e/app-audit.spec.ts",
     "test:e2e:update": "playwright test --update-snapshots",
     "start": "node scripts/run-next.mjs start",
     "lighthouse:budgets": "node scripts/lighthouse-budgets.mjs"
