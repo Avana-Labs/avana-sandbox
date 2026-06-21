@@ -52,12 +52,15 @@ export function useMultiplySession({
   }, [walletId, sessionSeed])
 
   useEffect(() => {
+    // Skip while state is still the SSR seed (pre-hydration); persisting it here
+    // would clobber richer data already in storage before the restore effect runs.
+    if (state === seededState) return
     isPersistingRef.current = true
     writeMultiplySessionState(walletId, state)
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [walletId, state])
+  }, [walletId, state, seededState])
 
   useEffect(() => {
     isPersistingRef.current = true
