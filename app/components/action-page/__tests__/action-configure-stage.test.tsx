@@ -41,6 +41,7 @@ describe("ActionConfigureStage", () => {
     expect(screen.getByTestId("action-amount-card")).toBeInTheDocument()
     expect(screen.getByText("Health factor")).toBeInTheDocument()
     expect(screen.getByTestId("action-footer")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument()
   })
 
   it("shows percent shortcuts and receive WETH toggle when enabled", async () => {

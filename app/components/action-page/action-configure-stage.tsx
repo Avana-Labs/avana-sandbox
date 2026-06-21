@@ -38,6 +38,7 @@ type ActionConfigureStageProps = {
   multiplier?: string
   onMultiplierChange?: (value: string) => void
   multiplierOptions?: number[]
+  canGoBack?: boolean
 }
 
 export function ActionConfigureStage({
@@ -64,6 +65,7 @@ export function ActionConfigureStage({
   multiplier,
   onMultiplierChange,
   multiplierOptions,
+  canGoBack = false,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -73,7 +75,7 @@ export function ActionConfigureStage({
     blockedReason: preview?.blockedReason ?? null,
     isValid,
   })
-  const secondaryLabel = secondaryCtaLabel(stage)
+  const secondaryLabel = secondaryCtaLabel(stage, { canGoBack })
   const walletStage = stage === "approve_allowance" || stage === "wallet_sign" ? stage : null
 
   const pillLabel = assetSymbol ?? preview?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"

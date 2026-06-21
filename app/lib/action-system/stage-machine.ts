@@ -2,6 +2,7 @@ import type { ActionStage } from "./contracts"
 
 export type ActionStageEvent =
   | "continue"
+  | "review"
   | "submit"
   | "allowance_complete"
   | "signed"
@@ -9,6 +10,7 @@ export type ActionStageEvent =
   | "success"
   | "error"
   | "reset"
+  | "back"
   | "block"
 
 export function nextActionStage(stage: ActionStage, event: ActionStageEvent): ActionStage {
@@ -18,17 +20,24 @@ export function nextActionStage(stage: ActionStage, event: ActionStageEvent): Ac
       if (event === "block") return "blocked"
       return stage
     case "configure":
-      if (event === "submit") return "wallet_sign"
+      if (event === "review") return "review"
       if (event === "block") return "blocked"
-      if (event === "reset") return "select"
+      if (event === "back" || event === "reset") return "select"
+      return stage
+    case "review":
+      if (event === "submit") return "wallet_sign"
+      if (event === "back" || event === "reset") return "configure"
+      if (event === "block") return "blocked"
       return stage
     case "approve_allowance":
       if (event === "allowance_complete") return "wallet_sign"
       if (event === "error") return "error"
+      if (event === "back") return "review"
       return stage
     case "wallet_sign":
       if (event === "signed") return "processing"
       if (event === "error") return "error"
+      if (event === "back") return "review"
       return stage
     case "processing":
       if (event === "success") return "success"
@@ -48,6 +57,17 @@ export function isConfigureVisibleStage(stage: ActionStage) {
   return stage === "configure" || stage === "approve_allowance" || stage === "wallet_sign" || stage === "error"
 }
 
+export function isReviewStage(stage: ActionStage) {
+  return stage === "review"
+}
+
+export function secondaryCtaLabel(stage: ActionStage, options?: { canGoBack?: boolean }) {
+  if (stage === "success") return "Done"
+  if (stage === "review") return "Back"
+  if (stage === "configure" && options?.canGoBack) return "Back"
+  return "Cancel"
+}
+
 export function primaryCtaLabel(options: {
   stage: ActionStage
   verb: string
@@ -58,14 +78,11 @@ export function primaryCtaLabel(options: {
   if (options.stage === "processing") return "Processing…"
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return options.verb
   if (options.stage === "error") return options.verb
+  if (options.stage === "review") return options.verb
   if (options.blockedReason) return options.blockedReason
   if (!options.isValid) return "Enter an amount"
+  if (options.stage === "configure") return "Review"
   return options.verb
-}
-
-export function secondaryCtaLabel(stage: ActionStage) {
-  if (stage === "success") return "Done"
-  return "Cancel"
 }
 
 export function shouldShowWalletToast(stage: ActionStage) {
@@ -77,6 +94,7 @@ export function shouldDisablePrimaryCta(options: { stage: ActionStage; isValid: 
   if (options.stage === "processing") return true
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return true
   if (options.stage === "configure" && !options.isValid) return true
+  if (options.stage === "review" && !options.isValid) return true
   return false
 }
 
@@ -85,4 +103,8 @@ export function walletToastMessage(stage: ActionStage, amountLabel: string) {
     return `To continue, approve token allowance for ${amountLabel} in your wallet.`
   }
   return `To continue, confirm ${amountLabel} in your wallet.`
+}
+
+export function reviewStageTitle(verb: string) {
+  return `Review ${verb.toLowerCase()}`
 }

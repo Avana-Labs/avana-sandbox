@@ -13,10 +13,12 @@ import { ActionConfigureStage } from "@/app/components/action-page/action-config
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
+import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
-import { isConfigureVisibleStage } from "@/app/lib/action-system/stage-machine"
+import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
+import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 
 function truncateWallet(id: string) {
   return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
@@ -85,11 +87,26 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
     }
   }, [previewUi.allowed, previewUi.blockedReason, stage])
 
-  const handlePrimary = useCallback(async () => {
-    if (stage === "success") {
-      router.push(closeHref)
+  const handleBack = useCallback(() => {
+    if (stage === "review") {
+      setStage("configure")
+      setOutcome(null)
       return
     }
+    router.push(closeHref)
+  }, [closeHref, router, stage])
+
+  const handlePrimary = useCallback(async () => {
+    if (stage === "success") {
+      router.push(successUi?.primaryCtaHref ?? dashboardHrefForProduct("rewards"))
+      return
+    }
+    if (stage === "configure") {
+      if (!previewUi.allowed) return
+      setStage("review")
+      return
+    }
+    if (stage !== "review") return
     if (!previewUi.allowed) return
 
     setIsPending(true)
@@ -119,8 +136,8 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
           description: `${formatActionUsd(claimSummary.claimUsd)} in rewards claimed.`,
           receiptHash: claims.receipt.hash ?? null,
           metrics: previewUi.metrics,
-          href: "/rewards",
-          primaryCtaLabel: "View rewards",
+          href: dashboardHrefForProduct("rewards"),
+          primaryCtaLabel: successDashboardCtaLabel("rewards"),
           preview: previewUi,
           verb: descriptor.primaryVerb,
         }),
@@ -136,9 +153,9 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
     } finally {
       setIsPending(false)
     }
-  }, [claimSummary.claimUsd, closeHref, descriptor.primaryVerb, previewUi, rewards, router, stage])
+  }, [claimSummary.claimUsd, closeHref, descriptor.primaryVerb, previewUi, rewards, router, stage, successUi])
 
-  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked"
+  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
 
   return (
     <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={rewards.readAdapter.mode === "sandbox"}>
@@ -146,7 +163,24 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}
 
-      {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
+      {stage === "review" ? (
+        <ActionReviewStage
+          title={reviewStageTitle(descriptor.primaryVerb)}
+          subtitle="Confirm the details below before signing."
+          preview={previewUi}
+          primaryLabel={descriptor.primaryVerb}
+          onPrimary={() => void handlePrimary()}
+          onSecondary={handleBack}
+        />
+      ) : null}
+
+      {stage === "success" && successUi ? (
+        <ActionSuccessStage
+          success={successUi}
+          closeHref={closeHref}
+          onPrimary={() => router.push(successUi.primaryCtaHref)}
+        />
+      ) : null}
 
       {isConfigureVisibleStage(stage) ? (
         <ActionConfigureStage
@@ -156,6 +190,7 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
           onAmountChange={setAmount}
           preview={previewUi}
           onPrimary={() => void handlePrimary()}
+          onSecondary={handleBack}
           secondaryHref={closeHref}
           onMax={() => setAmount(String(claimSummary.claimUsd))}
           isPending={isPending}

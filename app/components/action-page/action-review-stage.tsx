@@ -9,8 +9,10 @@ export function ActionReviewStage({
   title,
   subtitle,
   preview,
-  primaryLabel = "Close",
+  primaryLabel = "Confirm",
   onPrimary,
+  secondaryLabel = "Back",
+  onSecondary,
   secondaryHref,
 }: {
   title: string
@@ -18,6 +20,8 @@ export function ActionReviewStage({
   preview: ActionPreviewUi
   primaryLabel?: string
   onPrimary?: () => void
+  secondaryLabel?: string
+  onSecondary?: () => void
   secondaryHref?: string
 }) {
   return (
@@ -49,7 +53,14 @@ export function ActionReviewStage({
         <ActionInfoRow label="Network Fee" value={preview.networkFeeLabel} tooltip="fee" />
       </ActionCard>
 
-      <ActionFooter primaryLabel={primaryLabel} secondaryLabel="Cancel" onPrimary={onPrimary} secondaryHref={secondaryHref} primaryDisabled={!preview.allowed && Boolean(preview.blockedReason)} />
+      <ActionFooter
+        primaryLabel={primaryLabel}
+        secondaryLabel={secondaryLabel}
+        onPrimary={onPrimary}
+        onSecondary={onSecondary}
+        secondaryHref={secondaryHref}
+        primaryDisabled={!preview.allowed && Boolean(preview.blockedReason)}
+      />
     </div>
   )
 }
