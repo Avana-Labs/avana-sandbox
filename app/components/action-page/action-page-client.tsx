@@ -1,6 +1,8 @@
 "use client"
 
 import type { ActionKind, ActionProduct } from "@/app/lib/action-system/contracts"
+import { isValidAction } from "@/app/lib/action-system/contracts"
+import { ActionNotFound } from "@/app/components/action-page/action-not-found"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { LendActionPageClient } from "@/app/components/action-page/lend-action-page-client"
 import { MultiplyActionPageClient } from "@/app/components/action-page/multiply-action-page-client"
@@ -23,6 +25,12 @@ export function ActionPageClient({
   initialAmount?: string
   initialMultiplier?: string
 }) {
+  if (!isValidAction(product, kind)) {
+    const fallbackHref =
+      closeHref ?? (product === "lend" || product === "multiply" || product === "borrow" ? `/${product}` : "/")
+    return <ActionNotFound closeHref={fallbackHref} />
+  }
+
   if (product === "borrow") {
     return (
       <BorrowActionPageClient
