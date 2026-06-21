@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest"
 import { repaySelectItemsForWallet } from "@/app/lib/action-system/resolve-borrow-context"
 import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
-import { borrowPreviewFixture } from "@/app/lib/action-system/__tests__/fixtures"
 
 describe("repaySelectItemsForWallet", () => {
   it("maps debt positions to select items", () => {
-    const preview = borrowPreviewFixture()
     const session = {
       state: {
         accounts: {

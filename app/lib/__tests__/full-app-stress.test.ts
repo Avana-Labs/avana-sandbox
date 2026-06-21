@@ -40,7 +40,6 @@ import {
   applyMultiplyAction,
   assertMultiplySystemInvariants,
   type MultiplyAction,
-  type MultiplySystemState,
 } from "@/app/lib/multiply-engine"
 import { buildMockMultiplySystemState } from "@/app/lib/multiply-system/mock"
 import { serializeMultiplySystemState, deserializeMultiplySystemState } from "@/app/lib/multiply-system/codec"
@@ -51,7 +50,6 @@ import {
   claimReward as buildClaimReward,
   evaluateAllTasksForUser,
   type RewardActivityEvent,
-  type RewardClaim,
   type RewardsEngineState,
 } from "@/app/lib/rewards-engine"
 
@@ -267,7 +265,7 @@ describe("full-app engine stress (10k personas)", () => {
         let lend = buildMockLendSystemState(walletId)
         let multiply = buildMockMultiplySystemState(walletId)
         let rewards: RewardsEngineState = { events: [], claims: [] }
-        let firstLoginAt = Date.UTC(2026, 5, 19)
+        const firstLoginAt = Date.UTC(2026, 5, 19)
         let now = firstLoginAt
 
         const bMarkets = borrowMarketChoices(borrow)
@@ -349,7 +347,7 @@ describe("full-app engine stress (10k personas)", () => {
           if (engine === "lend") {
             const marketId = pick(rng, lendMarketIds)
             const kind = pick(rng, ["deposit", "deposit", "withdraw", "claim"] as const)
-            let action: LendAction | null = null
+            let action: LendAction
             const existing = findLendPosition(lend, walletId, marketId)
 
             if (kind === "withdraw" && existing) {
