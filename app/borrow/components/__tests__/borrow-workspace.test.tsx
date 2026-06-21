@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { BorrowWorkspace } from "@/app/borrow/components/borrow-workspace"
 
@@ -55,8 +55,8 @@ vi.mock("@/app/lib/use-media-query", () => ({
   useMediaQuery: () => true,
 }))
 
-vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
-  useBorrowSession: () => ({
+vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  useBorrowSessionContext: () => ({
     marketSummaries: [market],
     collateralPools: [
       {
@@ -108,66 +108,36 @@ vi.mock("@/app/borrow/components/collateral-pools-table", () => ({
   CollateralPoolsList: () => null,
 }))
 
-vi.mock("@/app/borrow/components/borrow-modal", () => ({
-  BorrowModal: ({
-    open,
-    onConfirm,
-  }: {
-    open: boolean
-    onConfirm: (result: { pool: typeof market; token: typeof asset; amountUsd: number }) => void
-  }) =>
-    open ? (
-      <button type="button" onClick={() => onConfirm({ pool: market, token: asset, amountUsd: 250 })}>
-        confirm-borrow
-      </button>
-    ) : null,
-}))
-
-vi.mock("@/app/borrow/components/supply-collateral-modal", () => ({
-  SupplyCollateralModal: ({
-    open,
-    onConfirm,
-  }: {
-    open: boolean
-    onConfirm: (result: { pool: typeof market; amountUsd: number }) => void
-  }) =>
-    open ? (
-      <button type="button" onClick={() => onConfirm({ pool: market, amountUsd: 500 })}>
-        confirm-supply
-      </button>
-    ) : null,
-}))
-
 describe("BorrowWorkspace", () => {
-  it("routes supply and borrow confirms through the transaction adapter", async () => {
-    createIntent.mockImplementation((action) => ({ id: `intent-${action.type}`, payload: action }))
-    previewTransaction.mockImplementation(async (intent) => ({ allowed: true, intent }))
-    executeTransaction.mockResolvedValue({
-      receipt: { id: "receipt-1", hash: "sim_1", status: "success", actionType: "borrow", simulated: true, timestamp: Date.now() },
-      result: { id: "receipt-1", hash: "sim_1", status: "success", actionType: "borrow", simulated: true, timestamp: Date.now() },
-      historyItem: { id: "history-1" },
-      preview: { allowed: true },
-      state: {},
-    })
-
+  it("routes supply and borrow actions to the shared action pages", () => {
     render(
       <BorrowWorkspace
-        pageData={
-          {
-            walletId: "demo-wallet",
-            borrowSessionSeed: "seed",
-            pendingRows: [],
-            dexes: [],
-          } as never
-        }
+        pageData={{
+          walletId: "wallet-1",
+          borrowSessionSeed: "{}",
+          poolCatalog: [market],
+          borrowableAssets: [asset],
+          pendingRows: [],
+          dexes: [],
+          collateralPools: [],
+          initialDebts: {},
+          borrowSnapshot: {
+            totalBorrowedUsd: 0,
+            availableCreditUsd: 0,
+            totalCollateralUsd: 0,
+            liquidationValueUsd: 0,
+            healthFactor: null,
+          },
+        }}
       />,
     )
 
     fireEvent.click(screen.getByText("open-supply"))
-    fireEvent.click(screen.getByText("confirm-supply"))
-    fireEvent.click(screen.getByText("open-borrow"))
-    fireEvent.click(screen.getByText("confirm-borrow"))
+    expect(push).toHaveBeenCalledWith("/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc")
 
-    expect(createIntent).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByText("open-borrow"))
+    expect(push).toHaveBeenCalledWith(
+      "/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&asset=uni-v3-bluechip%3Ausdc",
+    )
   })
 })
