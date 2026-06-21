@@ -1,18 +1,16 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { getLendMarketById } from "@/app/lib/lend-system/catalog"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { mapLendHistoryToDetailRows } from "@/app/lib/lend-system/read-model"
-import { LendMarketActionDialog } from "@/app/lend/components/lend-market-action-dialog"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 
 export function LendMarketDetailClient({ marketId }: { marketId: string }) {
+  const router = useRouter()
   const lendSession = useLendSessionContext()
   const market = lendSession.state.markets[marketId] ?? getLendMarketById(marketId)
-  const [dialogState, setDialogState] = useState<{ open: boolean; action: "deposit" | "withdraw" }>({
-    open: false,
-    action: "deposit",
-  })
 
   const position = useMemo(
     () =>
@@ -54,7 +52,7 @@ export function LendMarketDetailClient({ marketId }: { marketId: string }) {
         <button
           type="button"
           className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
-          onClick={() => setDialogState({ open: true, action: "deposit" })}
+          onClick={() => router.push(actionPagePath("lend", "deposit", { market: marketId }))}
         >
           Deposit
         </button>
@@ -62,7 +60,7 @@ export function LendMarketDetailClient({ marketId }: { marketId: string }) {
           <button
             type="button"
             className="rounded-md border border-border px-4 py-2 text-sm"
-            onClick={() => setDialogState({ open: true, action: "withdraw" })}
+            onClick={() => router.push(actionPagePath("lend", "withdraw", { market: marketId }))}
           >
             Withdraw
           </button>
@@ -82,13 +80,6 @@ export function LendMarketDetailClient({ marketId }: { marketId: string }) {
           <p className="text-sm text-muted-foreground">No lend activity yet.</p>
         )}
       </section>
-
-      <LendMarketActionDialog
-        open={dialogState.open}
-        onOpenChange={(open) => setDialogState((prev) => ({ ...prev, open }))}
-        marketId={marketId}
-        initialAction={dialogState.action}
-      />
     </main>
   )
 }
