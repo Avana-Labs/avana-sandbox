@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 
 vi.mock("next/navigation", () => ({
@@ -7,6 +7,10 @@ vi.mock("next/navigation", () => ({
 }))
 
 describe("ActionPageShell", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it("renders Avana action shell title, subtitle, wallet pill, and close control", () => {
     render(
       <ActionPageShell
@@ -37,12 +41,14 @@ describe("ActionPageShell", () => {
   })
 
   it("renders overlay mode on the shell root", async () => {
-    render(
+    const { container } = render(
       <ActionPageShell mode="overlay" title="Deposit" subtitle="Configure and review your deposit.">
         <div>Overlay body</div>
       </ActionPageShell>,
     )
 
-    expect(await screen.findByTestId("action-page-shell")).toHaveAttribute("data-mode", "overlay")
+    const shell = container.querySelector('[data-testid="action-page-shell"]')
+    expect(shell).toHaveAttribute("data-mode", "overlay")
+    expect(await screen.findByText("Overlay body")).toBeInTheDocument()
   })
 })
