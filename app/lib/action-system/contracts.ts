@@ -183,6 +183,15 @@ export function getActionDescriptor(product: ActionProduct, kind: ActionKind): A
   return descriptor
 }
 
+export function isValidActionProduct(product: string): product is ActionProduct {
+  return product === "borrow" || product === "lend" || product === "multiply" || product === "rewards"
+}
+
+export function isValidAction(product: string, kind: string): product is ActionProduct {
+  if (!isValidActionProduct(product)) return false
+  return Boolean(ACTION_DESCRIPTORS[product][kind as keyof (typeof ACTION_DESCRIPTORS)[typeof product]])
+}
+
 export function actionPagePath(product: ActionProduct, kind: ActionKind, params?: Record<string, string>) {
   const search = params ? `?${new URLSearchParams(params).toString()}` : ""
   return `/actions/${product}/${kind}${search}`
