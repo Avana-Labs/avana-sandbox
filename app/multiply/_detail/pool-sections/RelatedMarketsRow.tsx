@@ -3,6 +3,7 @@
 import Link from "next/link"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
+import { resolveImageSrc } from "@/lib/image-src"
 
 type Props = { detail: MultiplyMarketDetail }
 
@@ -14,13 +15,15 @@ export function RelatedMarketsRow({ detail }: Props) {
         <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]">Related markets</h2>
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {detail.related.map((rel) => (
+        {detail.related.map((rel) => {
+          const backgroundSrc = resolveImageSrc(rel.visuals[0].iconUrl, rel.visuals[1].iconUrl)
+          return (
           <li key={rel.id} className="shrink-0">
             <Link
               href={`/multiply/markets/${rel.id}`}
               className="group relative flex h-[120px] w-60 flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
             >
-              {rel.visuals[0].iconUrl || rel.visuals[1].iconUrl ? (
+              {backgroundSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   alt=""
@@ -30,7 +33,7 @@ export function RelatedMarketsRow({ detail }: Props) {
                   className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-3xl saturate-150 mix-blend-screen"
                   loading="lazy"
                   decoding="async"
-                  src={rel.visuals[0].iconUrl ?? rel.visuals[1].iconUrl}
+                  src={backgroundSrc}
                 />
               ) : null}
 
@@ -59,18 +62,19 @@ export function RelatedMarketsRow({ detail }: Props) {
                 </div>
                 <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
                   <div>
-                    <div className="text-[9px] text-muted-foreground">Max APY</div>
+                    <div className="text-[10px] text-muted-foreground">Max APY</div>
                     <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.maxApyLabel}</div>
                   </div>
                   <div>
-                    <div className="text-[9px] text-muted-foreground">Available</div>
+                    <div className="text-[10px] text-muted-foreground">Available</div>
                     <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.availableLabel}</div>
                   </div>
                 </div>
               </div>
             </Link>
           </li>
-        ))}
+          )
+        })}
       </ul>
     </section>
   )
