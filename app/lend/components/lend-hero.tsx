@@ -71,7 +71,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
               {showDollarAmounts ? formatMarketUsd(metrics.totalTvl) : "••••••••"}
             </p>
             <span className="inline-flex items-center gap-1 font-data text-[11px] font-medium tabular-nums text-emerald-600">
-              <span aria-hidden className="text-[9px] leading-none">
+              <span aria-hidden className="text-[10px] leading-none">
                 {metrics.weightedChange24h >= 0 ? "▲" : "▼"}
               </span>
               {showDollarAmounts ? `${metrics.weightedChange24h >= 0 ? "+" : ""}${metrics.weightedChange24h.toFixed(2)}% Today` : "••••••"}
