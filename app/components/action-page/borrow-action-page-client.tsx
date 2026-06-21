@@ -119,6 +119,16 @@ export function BorrowActionPageClient({
     return market ? `${market.venue} · ${market.name}` : "Main · Core"
   }, [marketId, session.marketSummaries])
 
+  const borrowAssetOptions = useMemo(() => {
+    if (kind !== "borrow") return undefined
+    const options = session.getBorrowableAssetsForMarket(marketId).map((asset) => ({
+      id: asset.id,
+      label: asset.symbol,
+      symbol: asset.symbol,
+    }))
+    return options.length > 1 ? options : undefined
+  }, [kind, marketId, session])
+
   const assetSymbol = useMemo(() => {
     if (kind === "remove") return "%"
     if (assetId) return session.state.assets[assetId]?.symbol ?? previewUi?.amountLabel.split(" ").slice(-1)[0]
@@ -476,6 +486,13 @@ export function BorrowActionPageClient({
           onAmountChange={kind === "remove" ? setPercent : setAmount}
           preview={previewUi}
           assetSymbol={assetSymbol}
+          assetOptions={borrowAssetOptions}
+          selectedAssetId={assetId}
+          onAssetSelect={(id) => {
+            setAssetId(id)
+            setMarketId(resolveBorrowMarketForAsset(session, id, selectMarketId))
+            setAmount("")
+          }}
           onPrimary={() => void handlePrimary()}
           secondaryHref={closeHref}
           onMax={() => {

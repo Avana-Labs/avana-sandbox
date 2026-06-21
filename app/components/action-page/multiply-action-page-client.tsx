@@ -22,7 +22,7 @@ export function MultiplyActionPageClient({
   kind,
   closeHref = "/multiply",
   initialMarketId,
-  initialAmount = "1",
+  initialAmount = "",
   initialMultiplier = "2",
 }: {
   kind: "multiply" | "deleverage"
@@ -35,10 +35,26 @@ export function MultiplyActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useMultiplySessionContext()
+  const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(initialMarketId)
   const market = useMemo(() => {
     const markets = Object.values(session.state.markets)
-    return markets.find((entry) => entry.id === initialMarketId) ?? markets[0] ?? null
-  }, [initialMarketId, session.state.markets])
+    return (
+      markets.find((entry) => entry.id === selectedMarketId) ??
+      markets.find((entry) => entry.id === initialMarketId) ??
+      markets[0] ??
+      null
+    )
+  }, [initialMarketId, selectedMarketId, session.state.markets])
+
+  const marketOptions = useMemo(() => {
+    if (kind !== "multiply") return undefined
+    const options = Object.values(session.state.markets).map((entry) => ({
+      id: entry.id,
+      label: `${entry.collateralAsset.symbol} · ${entry.borrowAsset.symbol}`,
+      symbol: entry.collateralAsset.symbol,
+    }))
+    return options.length > 1 ? options : undefined
+  }, [kind, session.state.markets])
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
@@ -187,6 +203,12 @@ export function MultiplyActionPageClient({
           onAmountChange={setAmount}
           preview={previewUi}
           assetSymbol={market.collateralAsset.symbol}
+          assetOptions={marketOptions}
+          selectedAssetId={market.id}
+          onAssetSelect={(id) => {
+            setSelectedMarketId(id)
+            setAmount("")
+          }}
           onPrimary={() => void handlePrimary()}
           secondaryHref={closeHref}
           isPending={isPending}
