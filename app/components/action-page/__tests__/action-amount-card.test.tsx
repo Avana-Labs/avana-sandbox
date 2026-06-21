@@ -1,8 +1,17 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, cleanup } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionAmountCard } from "@/app/components/action-page/action-amount-card"
 
-afterEach(() => vi.restoreAllMocks())
+vi.mock("@/app/lib/use-media-query", () => ({
+  useMediaQuery: vi.fn(() => false),
+}))
+
+import { useMediaQuery } from "@/app/lib/use-media-query"
+
+afterEach(() => {
+  cleanup()
+  vi.mocked(useMediaQuery).mockReturnValue(false)
+})
 
 const baseProps = {
   label: "Deposit",
@@ -53,5 +62,18 @@ describe("ActionAmountCard", () => {
     expect(onAssetSelect).toHaveBeenCalledWith("usdc")
     // Menu closes after selection.
     expect(screen.queryByRole("listbox")).toBeNull()
+  })
+
+  it("shows a custom keypad on mobile instead of the native keyboard", () => {
+    vi.mocked(useMediaQuery).mockReturnValue(true)
+    const onAmountChange = vi.fn()
+    render(<ActionAmountCard {...baseProps} onAmountChange={onAmountChange} />)
+
+    const input = screen.getByLabelText("Deposit amount") as HTMLInputElement
+    expect(input.readOnly).toBe(true)
+    expect(screen.getByTestId("action-numeric-keypad")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "7" }))
+    expect(onAmountChange).toHaveBeenCalledWith("7")
   })
 })

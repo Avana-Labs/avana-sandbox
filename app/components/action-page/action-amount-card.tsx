@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
+import { ActionNumericKeypad } from "@/app/components/action-page/action-numeric-keypad"
+import { useMediaQuery } from "@/app/lib/use-media-query"
 
 export type ActionAssetOption = {
   id: string
@@ -57,8 +59,10 @@ export function ActionAmountCard({
 }: ActionAmountCardProps) {
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
   const switchable = Boolean(onAssetSelect && assetOptions && assetOptions.length > 1)
+  const isMobile = useMediaQuery("(max-width: 639px)")
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -84,10 +88,15 @@ export function ActionAmountCard({
           <label className="min-w-0 flex-1">
             <span className="sr-only">{label} amount</span>
             <input
-              inputMode="decimal"
+              ref={inputRef}
+              inputMode={isMobile ? "none" : "decimal"}
+              readOnly={isMobile}
               value={amount}
               onChange={(event) => onAmountChange(event.target.value)}
-              className="w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none"
+              onFocus={() => {
+                if (isMobile) inputRef.current?.blur()
+              }}
+              className="w-full border-0 bg-transparent p-0 text-[clamp(1.75rem,6vw,2.5rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none"
               placeholder="0"
             />
           </label>
@@ -190,6 +199,12 @@ export function ActionAmountCard({
       ) : null}
 
       {footer ? <div className="border-t border-border">{footer}</div> : null}
+
+      {isMobile ? (
+        <div className="border-t border-border px-2 pb-2 pt-1">
+          <ActionNumericKeypad value={amount} onChange={onAmountChange} />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -216,7 +231,7 @@ export function ActionFooter({
   className?: string
 }) {
   const primaryClassName = cn(
-    "flex h-12 items-center justify-center rounded-full bg-foreground text-[15px] font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
+    "flex h-12 items-center justify-center rounded-full bg-foreground text-[15px] font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground",
     primaryPending && "opacity-70",
   )
   const secondaryClassName =
