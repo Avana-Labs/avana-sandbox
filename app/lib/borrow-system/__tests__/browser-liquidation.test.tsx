@@ -19,7 +19,8 @@ describe("browser liquidation preview", () => {
       />,
     )
 
-    expect(screen.getByText("Preview only")).toBeInTheDocument()
-    expect(screen.getByText("Simulated transaction")).toBeInTheDocument()
+    expect(screen.getByTestId("action-review-stage")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Liquidation preview" })).toBeInTheDocument()
+    expect(screen.getByText(/No transaction will be submitted/i)).toBeInTheDocument()
   })
 })
