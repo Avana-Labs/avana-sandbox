@@ -55,8 +55,6 @@ describe("DashboardBorrowTab live rows", () => {
             dailyInterestUsd: 0,
           },
         ]}
-        walletId="demo-wallet"
-        borrowSession={{ state: { accounts: {} } } as never}
       />,
     )
 
@@ -77,8 +75,6 @@ describe("DashboardBorrowTab live rows", () => {
             dailyInterestUsd: 0,
           },
         ]}
-        walletId="demo-wallet"
-        borrowSession={{ state: { accounts: {} } } as never}
       />,
     )
 
