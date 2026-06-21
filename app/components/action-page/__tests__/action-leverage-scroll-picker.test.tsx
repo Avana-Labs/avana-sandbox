@@ -35,4 +35,18 @@ describe("ActionLeverageScrollPicker", () => {
     )
     expect(screen.getByTestId("leverage-max-risk")).toHaveTextContent(/liquidation/i)
   })
+
+  it("updates value when the ruler is dragged", () => {
+    const onChange = vi.fn()
+    const { container } = render(<ActionLeverageScrollPicker value="1.5" onChange={onChange} min={1} max={20} />)
+    const slider = container.querySelector('[role="slider"]') as HTMLDivElement
+    Object.defineProperty(slider, "clientWidth", { configurable: true, value: 280 })
+    slider.scrollLeft = 0
+
+    fireEvent.pointerDown(slider, { clientX: 180, pointerId: 1 })
+    fireEvent.pointerMove(slider, { clientX: 80, pointerId: 1 })
+    fireEvent.pointerUp(slider, { clientX: 80, pointerId: 1 })
+
+    expect(onChange).toHaveBeenCalled()
+  })
 })
