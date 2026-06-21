@@ -95,6 +95,10 @@ vi.mock("@/app/components/home/repay-card", () => ({
   ),
 }))
 
+vi.mock("@/app/components/action-page/embedded-action-page", () => ({
+  EmbeddedActionPage: ({ kind }: { kind: string }) => <div data-testid={`embedded-action-${kind}`} />,
+}))
+
 vi.mock("@/app/borrow/components/borrow-modal", () => ({
   BorrowModal: ({
     open,
@@ -302,16 +306,12 @@ describe("detail sidebars", () => {
     await waitFor(() => expect(createIntent).not.toHaveBeenCalled())
   })
 
-  it("routes pool sidebar pledge and remove modals through mocked confirm", async () => {
+  it("embeds shared action pages for pool sidebar pledge and remove tabs", () => {
     render(<PoolBorrowActions detail={poolDetail} />)
 
-    fireEvent.click(screen.getByText("Review pledge"))
-    fireEvent.click(screen.getByText("confirm-supply"))
+    expect(screen.getByTestId("embedded-action-supply")).toBeInTheDocument()
 
-    fireEvent.click(screen.getByText("Remove"))
-    fireEvent.click(screen.getByText("Review removal"))
-    fireEvent.click(screen.getByText("confirm-remove"))
-
-    expect(createIntent).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("tab", { name: "Remove" }))
+    expect(screen.getByTestId("embedded-action-remove")).toBeInTheDocument()
   })
 })

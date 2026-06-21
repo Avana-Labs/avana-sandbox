@@ -104,12 +104,13 @@ describe("claim flow surfaces", () => {
     expect(offenders).toEqual([])
   })
 
-  it("labels pool-detail claim transaction flow as simulated", () => {
+  it("routes pool-detail claim through the shared action page", () => {
     const source = readFileSync(
       path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"),
       "utf8",
     )
-    expect(source).toContain("buildClaimBorrowAction")
-    expect(source).toMatch(/TransactionFlowPanel[\s\S]*simulated/)
+    expect(source).toContain("buildHomeClaimPreview")
+    expect(source).toContain("actionPagePath")
+    expect(source).toContain('"borrow", "claim"')
   })
 })
