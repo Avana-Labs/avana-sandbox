@@ -2,10 +2,11 @@
 
 import * as React from "react"
 import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { getMultiplyMarketById, MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
-import { MultiplyActionModal } from "./components/multiply-action-modal"
 import { MultiplyHero } from "./components/multiply-hero"
 
 const ExploreLoopsMarketsTable = dynamic(
@@ -22,15 +23,16 @@ function resolveMarketFromRowHref(href: string): MultiplyMarketRecord | null {
 }
 
 export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
-  const [selectedMarket, setSelectedMarket] = React.useState<MultiplyMarketRecord | null>(null)
-  const [modalOpen, setModalOpen] = React.useState(false)
+  const router = useRouter()
 
-  const handleOpenMultiply = React.useCallback((marketId: string) => {
-    const market = getMultiplyMarketById(marketId.toLowerCase())
-    if (!market) return
-    setSelectedMarket(market)
-    setModalOpen(true)
-  }, [])
+  const handleOpenMultiply = React.useCallback(
+    (marketId: string) => {
+      const market = getMultiplyMarketById(marketId.toLowerCase())
+      if (!market) return
+      router.push(actionPagePath("multiply", "multiply", { market: market.id }))
+    },
+    [router],
+  )
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -52,8 +54,6 @@ export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
           Showing {pageData.lendRows.length} sandbox multiply markets from the unified catalog.
         </p>
       </div>
-
-      <MultiplyActionModal open={modalOpen} onOpenChange={setModalOpen} market={selectedMarket} />
     </main>
   )
 }
