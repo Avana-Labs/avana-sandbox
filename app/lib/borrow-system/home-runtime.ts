@@ -21,7 +21,6 @@ import {
   type ClaimPreview,
   type HomeBorrowToken,
   type HomeClaimPosition,
-  type HomeCollateralPool,
   type RemovePreview,
   type RepayPreview,
 } from "@/app/lib/home-sim"
@@ -222,7 +221,6 @@ export function buildHomeRepayPreview(
   const spokeId = debtPosition?.spokeId
   const currentMetrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : null
   const currentHealthFactor = currentMetrics ? healthFactorToNumber(currentMetrics.healthFactorWad) : Number.POSITIVE_INFINITY
-  const borrowApr = debtPosition ? fixedToNumber(debtPosition.borrowRateWad, 18) * 100 : 0
   const exceedsDebt = amountUsd > currentDebtUsd
 
   if (amountUsd <= 0) {

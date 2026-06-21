@@ -233,6 +233,7 @@ export function Header() {
   const pathname = usePathname()
   const desktopLinks = personalDesktopHeaderLinks
   const [showDivider, setShowDivider] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
@@ -249,6 +250,10 @@ export function Header() {
       </button>
     </>
   )
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const resolveThreshold = () => headerRef.current?.offsetHeight ?? 68
@@ -291,7 +296,8 @@ export function Header() {
 
               <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5">
                 {desktopLinks.slice(0, 4).map((link) => {
-                  const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+                  const isActive =
+                    mounted && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href))
 
                   return (
                     <Link
@@ -320,7 +326,7 @@ export function Header() {
             <div className="flex shrink-0 items-center gap-1.5">
               <div className="mr-0.5 flex items-center gap-0.5">
                 {desktopLinks.slice(4).map((link) => {
-                  const isActive = pathname.startsWith(link.href)
+                  const isActive = mounted && pathname.startsWith(link.href)
                   const isUtilityLink = link.href === "/dashboard" || link.href === "/rewards"
 
                   return (

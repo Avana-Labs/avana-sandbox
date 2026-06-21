@@ -1,0 +1,291 @@
+import { describe, expect, it } from "vitest"
+import { createDataSourceAdapter } from "@/app/lib/data/core/source-runtime"
+import { fetchBorrowPage } from "@/app/lib/data/providers/borrow"
+import type { BorrowPageData, BorrowPageSource } from "@/app/lib/data/providers/borrow"
+import { fetchLendPage } from "@/app/lib/data/providers/lend"
+import type { LendPageData, LendPageSource } from "@/app/lib/data/providers/lend"
+import { fetchMultiplyPage } from "@/app/lib/data/providers/multiply"
+import type { MultiplyPageData, MultiplyPageSource } from "@/app/lib/data/providers/multiply"
+import { fetchPortfolioPage, resolvePortfolioWalletProfileId } from "@/app/lib/data/providers/portfolio"
+import type { PortfolioPageSource } from "@/app/lib/data/providers/portfolio"
+import { fetchRewardsPage } from "@/app/lib/data/providers/rewards"
+import type { RewardsPageData, RewardsPageSource } from "@/app/lib/data/providers/rewards"
+import { mockPortfolioPageSource } from "@/app/lib/data/mock/wallet/portfolio/source"
+
+describe("page providers", () => {
+  it("fetches borrow page data from the default source", async () => {
+    const data = await fetchBorrowPage()
+
+    expect(data.poolCatalog.length).toBeGreaterThan(0)
+    expect(data.heroMetrics.totalTvlUsd).toBeGreaterThan(0)
+    expect(data.heroMetrics.totalCollateralUsd).toBeGreaterThan(0)
+    expect(data.heroMetrics.availableCreditUsd).toBeGreaterThan(0)
+    expect(data.heroMetrics.outstandingLoansUsd).toBeGreaterThan(0)
+    expect(data.explore.trendingCollateral).toHaveLength(3)
+    expect(data.explore.highApyPools).toHaveLength(3)
+    expect(data.explore.topMarkets).toHaveLength(3)
+    expect(data.explore.trendingCollateral[0]!.availableUsd).toBeGreaterThanOrEqual(data.explore.trendingCollateral[1]!.availableUsd)
+    expect((data.explore.highApyPools[0]!.aprMin + data.explore.highApyPools[0]!.aprMax) / 2).toBeGreaterThanOrEqual(
+      (data.explore.highApyPools[1]!.aprMin + data.explore.highApyPools[1]!.aprMax) / 2,
+    )
+  })
+
+  it("accepts a borrow source override", async () => {
+    const source: BorrowPageSource = {
+      adapter: createDataSourceAdapter({ id: "borrow-test", label: "Borrow test source", mode: "mock" }),
+      async getBorrowPageData() {
+        return {
+          data: {
+            walletId: "wallet-override",
+            borrowSessionSeed: "{\"stub\":true}",
+            poolCatalog: [
+              {
+                id: "custom-eth-usdc",
+                name: "ETH / USDC",
+                tvlUsd: 1000,
+                availableUsd: 250,
+                totalBorrowedUsd: 750,
+                aprMin: 4.5,
+                aprMax: 5.5,
+                change24hPct: 1.2,
+                visuals: [
+                  { symbol: "ETH", iconUrl: "https://example.com/eth.png" },
+                  { symbol: "USDC", iconUrl: "https://example.com/usdc.png" },
+                ],
+              },
+            ] as unknown as BorrowPageData["poolCatalog"],
+            borrowableAssets: [
+              {
+                id: "usdc",
+                symbol: "USDC",
+                name: "USD Coin",
+              },
+            ] as unknown as BorrowPageData["borrowableAssets"],
+            pendingRows: [{ id: "pending-1" }] as unknown as BorrowPageData["pendingRows"],
+            dexes: [{ id: "custom", label: "Custom" }] as unknown as BorrowPageData["dexes"],
+            collateralPools: [{ id: "pool-1", name: "ETH / USDC" }] as unknown as BorrowPageData["collateralPools"],
+            initialDebts: { "pool-1": 0 },
+            borrowSnapshot: {
+              totalBorrowedUsd: 0,
+              availableCreditUsd: 1000,
+              totalCollateralUsd: 1500,
+              liquidationValueUsd: 1200,
+              healthFactor: null,
+            },
+            heroMetrics: {
+              totalTvlUsd: 1000,
+              totalCollateralUsd: 1500,
+              availableCreditUsd: 250,
+              outstandingLoansUsd: 750,
+              totalTvlChangePct: 1.2,
+            },
+            explore: {
+              trendingCollateral: [
+                {
+                  id: "custom-eth-usdc",
+                  name: "ETH / USDC",
+                  tvlUsd: 1000,
+                  availableUsd: 250,
+                  totalBorrowedUsd: 750,
+                  aprMin: 4.5,
+                  aprMax: 5.5,
+                },
+              ],
+              topMarkets: [
+                {
+                  id: "custom-eth-usdc",
+                  name: "ETH / USDC",
+                  tvlUsd: 1000,
+                  availableUsd: 250,
+                  totalBorrowedUsd: 750,
+                  aprMin: 4.5,
+                  aprMax: 5.5,
+                },
+              ],
+              highApyPools: [
+                {
+                  id: "custom-eth-usdc",
+                  name: "ETH / USDC",
+                  tvlUsd: 1000,
+                  availableUsd: 250,
+                  totalBorrowedUsd: 750,
+                  aprMin: 4.5,
+                  aprMax: 5.5,
+                },
+              ],
+            },
+          },
+        }
+      },
+    }
+
+    const data = await fetchBorrowPage(source)
+    expect(data.poolCatalog[0]?.id).toBe("custom-eth-usdc")
+    expect(data.heroMetrics.totalTvlUsd).toBe(1000)
+    expect(data.explore.highApyPools[0]?.id).toBe("custom-eth-usdc")
+  })
+
+  it("fetches lend page data from the default source", async () => {
+    const data = await fetchLendPage()
+
+    expect(data.markets.length).toBeGreaterThan(0)
+    expect(data.assetGroups.length).toBeGreaterThan(0)
+    expect(data.featuredSequence.length).toBeGreaterThan(0)
+    expect(data.featuredSnapshots.length).toBe(3)
+    expect(data.marketRows.length).toBeGreaterThan(10)
+  })
+
+  it("accepts a lend source override", async () => {
+    const source: LendPageSource = {
+      adapter: createDataSourceAdapter({ id: "lend-test", label: "Lend test source", mode: "mock" }),
+      async getLendPageData() {
+        return {
+          data: {
+            tokens: [{ symbol: "USDC", name: "USD Coin", balance: 1, price: 1, color: "blue", bg: "bg", apy: 5, earned: 1, daily: 1, utilization: 10 }] as unknown as LendPageData["tokens"],
+            markets: [{ symbol: "DAI", name: "Dai", apy: 4, apyChange24h: 0.2, tvl: "$1.0M", utilization: 50, type: "Liquid", protocol: "Maker", color: "orange", bg: "bg", soon: false, event: null }] as unknown as LendPageData["markets"],
+            activity: [{ type: "deposit", asset: "USDC", amount: "+10", date: "Today" }] as unknown as LendPageData["activity"],
+            chartSeries: [{ time: "00:00", value: 1 }],
+            featuredAssets: {
+              usdc: {
+                id: "usdc",
+                symbol: "USDC",
+                displayName: "USD Coin",
+                eyebrow: "Prime",
+                apy: 3.2,
+                tone: "blue",
+                iconUrl: "https://example.com/usdc.png",
+                path: "M0,0L10,10",
+              },
+            } as unknown as LendPageData["featuredAssets"],
+            featuredSequence: ["usdc"] as unknown as LendPageData["featuredSequence"],
+            featuredSnapshots: [{ marketId: "usdc", symbol: "USDC", href: "/lend/markets/usdc", apyLabel: "3.20%" }],
+            marketRows: [{ marketId: "usdc", asset: "USDC", href: "/lend/markets/usdc" }],
+            assetGroups: [{ title: "Stablecoins", rows: [{ symbol: "USDC", name: "USD Coin", apy: "3.2%" }] }] as unknown as LendPageData["assetGroups"],
+          },
+        }
+      },
+    }
+
+    const data = await fetchLendPage(source)
+    expect(data.featuredSequence).toEqual(["usdc"])
+  })
+
+  it("fetches multiply page data from the default source", async () => {
+    const data = await fetchMultiplyPage()
+
+    expect(data.markets.length).toBeGreaterThan(0)
+    expect(data.lendRows.length).toBeGreaterThan(0)
+    expect(data.trendingSnapshots.length).toBe(4)
+    expect(data.pageSize).toBeGreaterThan(0)
+  })
+
+  it("accepts a multiply source override", async () => {
+    const source: MultiplyPageSource = {
+      adapter: createDataSourceAdapter({ id: "multiply-test", label: "Multiply test source", mode: "mock" }),
+      async getMultiplyPageData() {
+        return {
+          data: {
+            markets: [{ symbol: "ETH", name: "Ethereum", price: 3000, funding: 0.01, change: 1, volume: 1000, maxLeverage: 10, longOi: 60, shortOi: 40 }] as unknown as MultiplyPageData["markets"],
+            lendRows: [{ href: "/multiply/markets/eth-usdc", protocol: "ETH", protocolLogo: "https://example.com/eth.png", asset: "USDC", kind: "Loop", apy: "7.50%", apyLabel: "Custom", collateralFactor: 0.8, liquidationThreshold: 0.85 }] as unknown as MultiplyPageData["lendRows"],
+            trendingSnapshots: [],
+            pageSize: 24,
+            tokenBorrowApys: { USDC: "5.00%" } as unknown as MultiplyPageData["tokenBorrowApys"],
+            tokenLogos: { ETH: "https://example.com/eth.png" } as unknown as MultiplyPageData["tokenLogos"],
+            tokenSupplyApys: { ETH: "3.50%" } as unknown as MultiplyPageData["tokenSupplyApys"],
+          },
+        }
+      },
+    }
+
+    const data = await fetchMultiplyPage(source)
+    expect(data.pageSize).toBe(24)
+  })
+
+  it("fetches rewards page data from the default source", async () => {
+    const data = await fetchRewardsPage({ walletProfileId: resolvePortfolioWalletProfileId() })
+
+    expect(data.rewardPools.length).toBeGreaterThan(0)
+    expect(data.promoTabs.length).toBeGreaterThan(0)
+    expect(data.questsByTab["new-users"].length).toBeGreaterThan(0)
+  })
+
+  it("accepts a rewards source override", async () => {
+    const source: RewardsPageSource = {
+      adapter: createDataSourceAdapter({ id: "rewards-test", label: "Rewards test source", mode: "mock" }),
+      async getRewardsPageData(input) {
+        return {
+          data: {
+            walletProfileId: input.walletProfileId,
+            totalPools: 10,
+            completedPools: 3,
+            progressPercentage: 30,
+            balanceTotal: 1200,
+            rewardPools: [
+              {
+                id: "reward-1",
+                href: "/borrow/markets/custom",
+                title: "Custom Pool",
+                subtitle: "0.30% fee",
+                value: "$1.2M",
+                delta: "7.0% APY",
+                deltaClassName: "text-emerald-500",
+              },
+            ] as RewardsPageData["rewardPools"],
+            promoTabs: [{ id: "new-users", label: "New users" }] as unknown as RewardsPageData["promoTabs"],
+            questsByTab: {
+              "new-users": [
+                {
+                  id: "quest-1",
+                  title: "Connect wallet",
+                  description: "Start profile",
+                  reward: "25 AVA",
+                  cta: "Connect",
+                  category: "Setup",
+                  iconId: "wallet",
+                },
+              ],
+            } as unknown as RewardsPageData["questsByTab"],
+          },
+        }
+      },
+    }
+
+    const data = await fetchRewardsPage({ walletProfileId: "wallet-1" }, source)
+    expect(data.balanceTotal).toBe(1200)
+  })
+
+  it("fetches portfolio page data from the default source", async () => {
+    const data = await fetchPortfolioPage({ walletProfileId: resolvePortfolioWalletProfileId() })
+
+    expect(data.walletProfile.id).toBeTruthy()
+    expect(data.activity.rows.length).toBeGreaterThan(0)
+    expect(data.borrow.collateralPositions.length).toBeGreaterThan(0)
+  })
+
+  it("accepts a portfolio source override", async () => {
+    const source: PortfolioPageSource = {
+      adapter: createDataSourceAdapter({ id: "portfolio-test", label: "Portfolio test source", mode: "mock" }),
+      getDefaultWalletProfileId() {
+        return "wallet-override"
+      },
+      async getPortfolioPageRecords(walletProfileId) {
+        const records = await mockPortfolioPageSource.getPortfolioPageRecords(resolvePortfolioWalletProfileId())
+        return {
+          ...records,
+          data: {
+            ...records.data,
+            walletProfile: {
+              ...records.data.walletProfile,
+              id: walletProfileId,
+              displayName: "Override wallet",
+            },
+          },
+        }
+      },
+    }
+
+    const data = await fetchPortfolioPage({ walletProfileId: "wallet-override" }, { source })
+    expect(data.walletProfile.id).toBe("wallet-override")
+    expect(data.walletProfile.displayName).toBe("Override wallet")
+  })
+})

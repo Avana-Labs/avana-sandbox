@@ -8,7 +8,7 @@ import { selectHomeBorrowTokensForMarket, selectHomeDebtMap } from "@/app/lib/bo
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { HOME_DEFAULT_SELECTIONS, type HomeMode } from "@/app/lib/home-sim"
-import { EmbeddedActionPage } from "@/app/components/action-page/embedded-action-page"
+import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { HomeActionContextBar } from "@/app/components/home/home-action-context-bar"
 import { PoolPickerDialog } from "./home/pool-picker-dialog"
 import { TokenPickerDialog } from "./home/token-picker-dialog"
@@ -36,6 +36,11 @@ export function HomePageClient() {
   const [removePoolId, setRemovePoolId] = useState(defaultRemovePoolId)
   const [poolDialogMode, setPoolDialogMode] = useState<PoolDialogMode | null>(null)
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const debts = useMemo(() => selectHomeDebtMap(session.state, walletId), [session.state, walletId])
   const borrowPool = useMemo(
@@ -132,72 +137,70 @@ export function HomePageClient() {
       <main className="px-4">
         <section className="flex items-start justify-center py-4 md:py-6">
           <div className="w-full max-w-[560px]">
-            <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
-              <div className="mb-4 flex items-center justify-between">
-                <TabsList className="w-full justify-start">
-                  {HOME_MODE_ITEMS.map((item) => (
-                    <TabsTrigger
-                      key={item.value}
-                      value={item.value}
-                      className="text-[14px] font-normal data-[state=active]:text-[hsl(var(--brand))] data-[state=active]:after:bg-[hsl(var(--brand))]"
-                    >
-                      {item.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                <button
-                  type="button"
-                  className="ml-2 inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-                  aria-label="Settings"
-                >
-                  <Settings className="h-4 w-4" />
-                </button>
-              </div>
+            {mounted ? (
+              <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
+                <div className="mb-4 flex items-center justify-between">
+                  <TabsList className="w-full justify-start">
+                    {HOME_MODE_ITEMS.map((item) => (
+                      <TabsTrigger
+                        key={item.value}
+                        value={item.value}
+                        className="text-[14px] font-normal data-[state=active]:text-[hsl(var(--brand))] data-[state=active]:after:bg-[hsl(var(--brand))]"
+                      >
+                        {item.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  <button
+                    type="button"
+                    className="ml-2 inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+                    aria-label="Settings"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </button>
+                </div>
 
-              <TabsContent value="borrow" className="mt-0">
-                <HomeActionContextBar
-                  pool={borrowPool}
-                  token={borrowToken}
-                  onOpenPool={() => setPoolDialogMode("borrow")}
-                  onOpenToken={() => setTokenDialogOpen(true)}
-                />
-                <EmbeddedActionPage
-                  key={`borrow-${borrowPoolId}-${borrowTokenId ?? "none"}`}
-                  product="borrow"
-                  kind="borrow"
-                  closeHref="/"
-                  initialMarketId={borrowPoolId}
-                  initialAssetId={borrowTokenId ?? undefined}
-                />
-              </TabsContent>
+                <TabsContent value="borrow" className="mt-0 space-y-4">
+                  <HomeActionContextBar
+                    pool={borrowPool}
+                    token={borrowToken}
+                    onOpenPool={() => setPoolDialogMode("borrow")}
+                    onOpenToken={() => setTokenDialogOpen(true)}
+                  />
+                  <ActionPageLaunchCta
+                    product="borrow"
+                    kind="borrow"
+                    market={borrowPoolId}
+                    asset={borrowTokenId ?? undefined}
+                    returnTo="/"
+                    label="Continue to borrow"
+                  />
+                </TabsContent>
 
-              <TabsContent value="repay" className="mt-0">
-                <HomeActionContextBar pool={repayPool} showToken={false} onOpenPool={() => setPoolDialogMode("repay")} />
-                <EmbeddedActionPage
-                  key={`repay-${repayPoolId}`}
-                  product="borrow"
-                  kind="repay"
-                  closeHref="/"
-                  initialMarketId={repayPoolId}
-                />
-              </TabsContent>
+                <TabsContent value="repay" className="mt-0 space-y-4">
+                  <HomeActionContextBar pool={repayPool} showToken={false} onOpenPool={() => setPoolDialogMode("repay")} />
+                  <ActionPageLaunchCta product="borrow" kind="repay" market={repayPoolId} returnTo="/" label="Continue to repay" />
+                </TabsContent>
 
-              <TabsContent value="claim" className="mt-0">
-                <EmbeddedActionPage product="borrow" kind="claim" closeHref="/" />
-              </TabsContent>
+                <TabsContent value="claim" className="mt-0">
+                  <ActionPageLaunchCta product="borrow" kind="claim" returnTo="/" label="Continue to claim" />
+                </TabsContent>
 
-              <TabsContent value="remove" className="mt-0">
-                <HomeActionContextBar pool={removePool} showToken={false} onOpenPool={() => setPoolDialogMode("remove")} />
-                <EmbeddedActionPage
-                  key={`remove-${removePoolId}`}
-                  product="borrow"
-                  kind="remove"
-                  closeHref="/"
-                  initialMarketId={removePoolId}
-                  initialAmount="25"
-                />
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="remove" className="mt-0 space-y-4">
+                  <HomeActionContextBar pool={removePool} showToken={false} onOpenPool={() => setPoolDialogMode("remove")} />
+                  <ActionPageLaunchCta
+                    product="borrow"
+                    kind="remove"
+                    market={removePoolId}
+                    amount="25"
+                    returnTo="/"
+                    label="Continue to withdraw"
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <div className="min-h-[360px] rounded-[20px] border border-border bg-surface-raised/40" aria-hidden />
+            )}
           </div>
         </section>
       </main>

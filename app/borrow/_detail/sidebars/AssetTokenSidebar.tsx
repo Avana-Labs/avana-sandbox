@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { EmbeddedActionPage } from "@/app/components/action-page/embedded-action-page"
+import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { HomeAssetVisual, HomeCollateralPool } from "@/app/lib/home-sim"
@@ -97,21 +97,21 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
 
           <div className="pt-1">
             {tab === "deposit" ? (
-              <EmbeddedActionPage product="lend" kind="deposit" closeHref={closeHref} initialMarketId={lendMarketId} />
+              <ActionPageLaunchCta product="lend" kind="deposit" market={lendMarketId} returnTo={closeHref} />
             ) : null}
 
             {tab === "withdraw" ? (
-              <EmbeddedActionPage product="lend" kind="withdraw" closeHref={closeHref} initialMarketId={lendMarketId} />
+              <ActionPageLaunchCta product="lend" kind="withdraw" market={lendMarketId} returnTo={closeHref} />
             ) : null}
 
             {tab === "borrow" ? (
               canBorrowFromSession && borrowContext ? (
-                <EmbeddedActionPage
+                <ActionPageLaunchCta
                   product="borrow"
                   kind="borrow"
-                  closeHref={closeHref}
-                  initialMarketId={borrowContext.id}
-                  initialAssetId={detail.row.id}
+                  market={borrowContext.id}
+                  asset={detail.row.id}
+                  returnTo={closeHref}
                 />
               ) : (
                 <div className="rounded-radius-md border border-border bg-surface-raised px-5 py-4">
@@ -131,12 +131,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
             ) : null}
 
             {tab === "repay" && borrowContext ? (
-              <EmbeddedActionPage
-                product="borrow"
-                kind="repay"
-                closeHref={closeHref}
-                initialMarketId={borrowContext.id}
-              />
+              <ActionPageLaunchCta product="borrow" kind="repay" market={borrowContext.id} returnTo={closeHref} />
             ) : null}
           </div>
         </div>
@@ -161,7 +156,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                 onClick={() => {
                   setDepositPromptOpen(false)
                   if (fallbackMarket) {
-                    router.push(actionPagePath("borrow", "supply", { market: fallbackMarket.id }))
+                    router.push(actionPagePath("borrow", "supply", { market: fallbackMarket.id, return: closeHref }))
                   }
                 }}
                 disabled={!fallbackMarket}
