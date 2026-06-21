@@ -5,29 +5,38 @@ import { useRouter } from "next/navigation"
 import { useLendSessionContext, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { getLendMarketById } from "@/app/lib/lend-system/catalog"
-import type { ActionPageMode } from "@/app/lib/action-system/contracts"
+import type { ActionBlockedUi, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
-import { mapLendPreviewToActionUi } from "@/app/lib/action-system/adapters/lend-preview-mapper"
+import { mapLendDepositPreviewToActionUi, mapLendWithdrawPreviewToActionUi } from "@/app/lib/action-system/adapters/lend-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
-import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
-import { formatActionUsd } from "@/app/lib/action-system/formatters"
+import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
+import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
+import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
+import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
+import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
+import { isConfigureVisibleStage } from "@/app/lib/action-system/stage-machine"
 
 function truncateWallet(id: string) {
   return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
 }
 
+function isHardBlock(reason: string | null) {
+  if (!reason) return false
+  const lower = reason.toLowerCase()
+  return lower.includes("insufficient") || lower.includes("balance") || lower.includes("unavailable")
+}
+
 export function LendActionPageClient({
   kind,
-  mode = "page",
   closeHref = "/lend",
-  initialMarketId = "gho",
+  initialMarketId,
   initialAmount = "1",
 }: {
   kind: "deposit" | "withdraw"
-  mode?: ActionPageMode
   closeHref?: string
   initialMarketId?: string
   initialAmount?: string
@@ -36,13 +45,38 @@ export function LendActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useLendSessionContext()
-  const market = session.state.markets[initialMarketId] ?? getLendMarketById(initialMarketId)
-  const [stage, setStage] = useState<ActionStage>("configure")
+  const withdrawItems = useMemo(
+    () => (kind === "withdraw" ? lendWithdrawSelectItems(session, walletId) : []),
+    [kind, session, walletId],
+  )
+  const [marketId, setMarketId] = useState(() => initialMarketId ?? (kind === "deposit" ? "gho" : ""))
+  const [stage, setStage] = useState<ActionStage>(() => (kind === "withdraw" && !initialMarketId ? "select" : "configure"))
   const [amount, setAmount] = useState(initialAmount)
+  const [receiveWeth, setReceiveWeth] = useState(false)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
+  const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
+
+  const market = useMemo(
+    () => (marketId ? (session.state.markets[marketId] ?? getLendMarketById(marketId)) : null),
+    [marketId, session.state.markets],
+  )
+
+  useEffect(() => {
+    if (kind !== "withdraw" || initialMarketId || marketId) return
+    if (withdrawItems.length === 1) {
+      setMarketId(withdrawItems[0]!.id)
+      setStage("configure")
+      return
+    }
+    if (withdrawItems.length > 1) setStage("select")
+  }, [initialMarketId, kind, marketId, withdrawItems])
+
+  useEffect(() => {
+    if (initialMarketId) setMarketId(initialMarketId)
+  }, [initialMarketId])
 
   const position = useMemo(
     () =>
@@ -60,6 +94,28 @@ export function LendActionPageClient({
       return
     }
 
+    if (kind === "withdraw" && !position) {
+      setPreviewUi({
+        allowed: false,
+        amountLabel: `${parsed} ${market.asset.symbol}`,
+        amountUsdLabel: "≈ $0.00",
+        rateLabel: "Withdrawal",
+        rateValue: "—",
+        marketLabel: "Market",
+        marketValue: `${market.asset.symbol} · Core`,
+        balanceLabel: "Deposited",
+        balanceValue: "0",
+        maxAmount: 0,
+        metrics: [],
+        networkFeeLabel: "≈ $0.03",
+        risk: null,
+        blockedReason: "No deposited position found for this market.",
+        validationErrors: ["No deposited position found for this market."],
+        warnings: [],
+      })
+      return
+    }
+
     const action =
       kind === "deposit"
         ? ({
@@ -73,23 +129,46 @@ export function LendActionPageClient({
             type: "withdraw" as const,
             walletId,
             marketId: market.marketId,
-            positionId: position?.positionId ?? "missing",
+            positionId: position!.positionId,
             withdrawAmount: parsed,
           } as const)
 
-    void session.previewTransaction(session.createIntent(action)).then((preview) => {
-      setPreviewUi(
-        mapLendPreviewToActionUi(preview, {
-          symbol: market.asset.symbol,
-          amount: parsed,
-          marketLabel: `${market.asset.symbol} · Core`,
-          balanceLabel: kind === "deposit" ? "Balance" : "Deposited",
-          balanceAmount: kind === "deposit" ? getWalletBalanceForLendMarket(session.state, walletId, market) : (position?.currentSuppliedAmount ?? 0),
-          rateLabel: kind === "deposit" ? "Deposit APY" : "Withdrawal",
-        }),
-      )
-    })
+    void session
+      .previewTransaction(session.createIntent(action))
+      .then((preview) => {
+        if (kind === "deposit") {
+          setPreviewUi(
+            mapLendDepositPreviewToActionUi(preview, {
+              symbol: market.asset.symbol,
+              amount: parsed,
+              marketLabel: `${market.asset.symbol} · Core`,
+              balanceAmount: getWalletBalanceForLendMarket(session.state, walletId, market),
+              rewardsApy: market.rewardsApy,
+            }),
+          )
+          return
+        }
+        setPreviewUi(
+          mapLendWithdrawPreviewToActionUi(preview, {
+            symbol: market.asset.symbol,
+            amount: parsed,
+            marketLabel: `${market.asset.symbol} · Core`,
+            balanceAmount: position?.currentSuppliedAmount ?? 0,
+          }),
+        )
+      })
+      .catch(() => setPreviewUi(null))
   }, [amount, kind, market, position, session, walletId])
+
+  useEffect(() => {
+    if (!previewUi || previewUi.allowed || stage !== "configure") return
+    if (!isHardBlock(previewUi.blockedReason)) return
+    const blocked = mapPreviewToBlockedUi({ product: "lend", kind, blockedReason: previewUi.blockedReason })
+    if (blocked) {
+      setBlockedUi(blocked)
+      setStage("blocked")
+    }
+  }, [kind, previewUi, stage])
 
   const handlePrimary = useCallback(async () => {
     if (stage === "success") {
@@ -97,8 +176,10 @@ export function LendActionPageClient({
       return
     }
     if (!market || !previewUi?.allowed) return
-    setStage("submitting")
+
     setIsPending(true)
+    setOutcome(null)
+
     try {
       const parsed = Number.parseFloat(amount)
       const action =
@@ -120,15 +201,26 @@ export function LendActionPageClient({
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
       if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
-      const result = await session.executeTransaction(preview.intent)
+
+      const simulated = session.readAdapter.mode === "sandbox"
+      const result = await runActionSubmitFlow({
+        simulated,
+        needsAllowance: kind === "deposit",
+        onStage: setStage,
+        execute: async () => session.executeTransaction(preview.intent),
+      })
+
       if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? "Transaction failed")
       setSuccessUi(
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
           description: `${parsed.toFixed(4)} ${market.asset.symbol} processed.`,
-          receiptHash: result.receipt.hash,
+          receiptHash: result.receipt.hash ?? null,
           metrics: previewUi.metrics,
           href: "/lend",
+          primaryCtaLabel: "View lend dashboard",
+          preview: previewUi,
+          verb: descriptor.primaryVerb,
         }),
       )
       setStage("success")
@@ -144,21 +236,50 @@ export function LendActionPageClient({
     }
   }, [amount, closeHref, descriptor.primaryVerb, kind, market, position, previewUi, router, session, stage, walletId])
 
-  if (!market) return null
+  const applyPercent = useCallback(
+    (pct: number) => {
+      const balance = kind === "deposit" ? getWalletBalanceForLendMarket(session.state, walletId, market!) : (position?.currentSuppliedAmount ?? 0)
+      setAmount(String((balance * pct) / 100))
+    },
+    [kind, market, position, session.state, walletId],
+  )
+
+  if (!market && stage !== "select") return null
+
+  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked"
+  const shellSubtitle =
+    stage === "select" && kind === "withdraw" ? "Choose the market to withdraw from." : stage === "success" || stage === "processing" ? undefined : descriptor.subtitle
 
   return (
-    <ActionPageShell mode={mode} title={descriptor.title} subtitle={descriptor.subtitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
-      {stage === "success" && successUi ? (
-        <ActionSuccessStage success={successUi} onSecondary={() => router.push(closeHref)} />
-      ) : (
+    <ActionPageShell title={descriptor.title} subtitle={shellSubtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
+      {stage === "select" && kind === "withdraw" ? (
+        <ActionSelectStage
+          items={withdrawItems}
+          emptyTitle="No deposits found"
+          emptyDescription="Deposit first, then withdraw from here."
+          onSelect={(id) => {
+            setMarketId(id)
+            setStage("configure")
+          }}
+        />
+      ) : null}
+
+      {stage === "processing" ? (
+        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
+      ) : null}
+
+      {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
+
+      {isConfigureVisibleStage(stage) && market ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
           amount={amount}
           onAmountChange={setAmount}
           preview={previewUi}
+          assetSymbol={market.asset.symbol}
           onPrimary={() => void handlePrimary()}
-          onSecondary={() => router.push(closeHref)}
+          secondaryHref={closeHref}
           onMax={() => {
             if (kind === "deposit") {
               setAmount(String(getWalletBalanceForLendMarket(session.state, walletId, market)))
@@ -166,10 +287,17 @@ export function LendActionPageClient({
               setAmount(String(position.currentSuppliedAmount))
             }
           }}
+          onPercent={applyPercent}
+          showPercentShortcuts
+          showReceiveWethToggle={kind === "withdraw"}
+          receiveWeth={receiveWeth}
+          onReceiveWethChange={setReceiveWeth}
           isPending={isPending}
           outcome={outcome}
         />
-      )}
+      ) : null}
+
+      {blockedUi ? <ActionBlockedDialog blocked={blockedUi} open={stage === "blocked"} onClose={() => setStage("configure")} /> : null}
     </ActionPageShell>
   )
 }

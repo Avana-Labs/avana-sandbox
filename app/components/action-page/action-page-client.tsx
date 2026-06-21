@@ -1,6 +1,6 @@
 "use client"
 
-import type { ActionKind, ActionPageMode, ActionProduct } from "@/app/lib/action-system/contracts"
+import type { ActionKind, ActionProduct } from "@/app/lib/action-system/contracts"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { LendActionPageClient } from "@/app/components/action-page/lend-action-page-client"
 import { MultiplyActionPageClient } from "@/app/components/action-page/multiply-action-page-client"
@@ -9,7 +9,6 @@ import { RewardsActionPageClient } from "@/app/components/action-page/rewards-ac
 export function ActionPageClient({
   product,
   kind,
-  mode = "page",
   closeHref,
   initialAssetId,
   initialMarketId,
@@ -18,7 +17,6 @@ export function ActionPageClient({
 }: {
   product: ActionProduct
   kind: ActionKind
-  mode?: ActionPageMode
   closeHref?: string
   initialAssetId?: string
   initialMarketId?: string
@@ -29,7 +27,6 @@ export function ActionPageClient({
     return (
       <BorrowActionPageClient
         kind={kind as "borrow" | "repay" | "supply" | "remove" | "claim"}
-        mode={mode}
         closeHref={closeHref}
         initialAssetId={initialAssetId}
         initialMarketId={initialMarketId}
@@ -42,7 +39,6 @@ export function ActionPageClient({
     return (
       <LendActionPageClient
         kind={kind as "deposit" | "withdraw"}
-        mode={mode}
         closeHref={closeHref ?? "/lend"}
         initialMarketId={initialMarketId}
         initialAmount={initialAmount}
@@ -54,7 +50,6 @@ export function ActionPageClient({
     return (
       <MultiplyActionPageClient
         kind={kind as "multiply" | "deleverage"}
-        mode={mode}
         closeHref={closeHref ?? "/multiply"}
         initialMarketId={initialMarketId}
         initialAmount={initialAmount}
@@ -63,5 +58,5 @@ export function ActionPageClient({
     )
   }
 
-  return <RewardsActionPageClient mode={mode} closeHref={closeHref ?? "/rewards"} />
+  return <RewardsActionPageClient closeHref={closeHref ?? "/rewards"} />
 }

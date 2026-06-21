@@ -1,0 +1,71 @@
+import { describe, expect, it } from "vitest"
+import { readFileSync } from "node:fs"
+import path from "node:path"
+
+const actionSurfaces = [
+  "app/components/home-page-client.tsx",
+  "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx",
+  "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx",
+  "app/portfolio/dashboard-borrow-tab.tsx",
+]
+
+const legacyPreviewFunctions = [
+  "buildBorrowPreview(",
+  "buildRepayPreview(",
+  "buildRemovePreview(",
+  "calculateRepayPreview(",
+  "calculateRemovePreview(",
+  "calculateClaimPreview(",
+]
+
+const legacyModalFiles = [
+  "app/borrow/components/borrow-modal.tsx",
+  "app/borrow/components/repay-remove-modal.tsx",
+  "app/borrow/components/supply-collateral-modal.tsx",
+  "app/multiply/components/multiply-action-modal.tsx",
+  "app/multiply/components/deleverage-modal.tsx",
+  "app/lend/components/lend-market-action-dialog.tsx",
+]
+
+describe("borrow architecture final gate", () => {
+  it("keeps requirements matrix green", () => {
+    expect(readFileSync(path.join(process.cwd(), "app/lib/credit-engine/__tests__/requirements-matrix.test.ts"), "utf8")).not.toContain("it.todo")
+  })
+
+  it("removes legacy home-sim preview math from action surfaces", () => {
+    const offenders = actionSurfaces.filter((file) => {
+      const source = readFileSync(path.join(process.cwd(), file), "utf8")
+      return legacyPreviewFunctions.some((symbol) => source.includes(symbol))
+    })
+
+    expect(offenders).toEqual([])
+  })
+
+  it("removes legacy modal components from the repo", () => {
+    const offenders = legacyModalFiles.filter((file) => {
+      try {
+        readFileSync(path.join(process.cwd(), file), "utf8")
+        return true
+      } catch {
+        return false
+      }
+    })
+
+    expect(offenders).toEqual([])
+  })
+
+  it("routes borrow surfaces through action page launch CTAs", () => {
+    const homeSource = readFileSync(path.join(process.cwd(), "app/components/home-page-client.tsx"), "utf8")
+    expect(homeSource).toContain("ActionPageLaunchCta")
+    expect(homeSource).not.toContain("EmbeddedActionPage")
+    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8")).toContain("ActionPageLaunchCta")
+    expect(readFileSync(path.join(process.cwd(), "app/portfolio/dashboard-borrow-tab.tsx"), "utf8")).toContain("actionPagePath")
+    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")).toContain("ActionPageLaunchCta")
+  })
+
+  it("keeps claim on adapter-backed preview runtime with canonical BorrowAction support", () => {
+    const policy = readFileSync(path.join(process.cwd(), "app/lib/borrow-system/claim-adapter-policy.ts"), "utf8")
+    expect(policy).toContain("isClaimSupportedByTransactionAdapter")
+    expect(policy).toMatch(/return true/)
+  })
+})
