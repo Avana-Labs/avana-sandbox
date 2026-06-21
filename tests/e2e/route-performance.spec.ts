@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test"
 import {
+  ACTION_LIGHTHOUSE_ROUTES,
   LIGHTHOUSE_ROUTES,
   ROUTE_HERO_SELECTORS,
   getNavigationTimingBudget,
@@ -30,6 +31,15 @@ for (const { route, heroText, heroRole } of PRIMARY_ROUTES) {
     await expect(heroLocator).toBeVisible({
       timeout: timingBudget.heroVisibleMs,
     })
+  })
+}
+
+for (const { name, path } of ACTION_LIGHTHOUSE_ROUTES) {
+  test(`action route ${name} loads shell within budget`, async ({ page }) => {
+    const startedAt = Date.now()
+    await page.goto(path, { waitUntil: "domcontentloaded", timeout: 60_000 })
+    expect(Date.now() - startedAt).toBeLessThanOrEqual(4_000)
+    await expect(page.getByTestId("action-page-shell")).toBeVisible({ timeout: 10_000 })
   })
 }
 

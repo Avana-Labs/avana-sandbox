@@ -88,6 +88,11 @@ export function MultiplyActionPageClient({
       session.state.positions[`${walletId}:${market.id}`] ??
       Object.values(session.state.positions).find((entry) => entry.walletId === walletId && entry.marketId === market.id)
 
+    if (kind === "deleverage" && !position) {
+      setPreviewUi(null)
+      return
+    }
+
     const action =
       kind === "multiply"
         ? ({
@@ -104,21 +109,26 @@ export function MultiplyActionPageClient({
             targetMultiplier: parsedMultiplier,
           } as const)
 
-    void session.previewTransaction(session.createIntent(action)).then((preview) => {
-      setPreviewUi(
-        kind === "multiply"
-          ? mapMultiplyPreviewToActionUi(preview, {
-              collateralSymbol: market.collateralAsset.symbol,
-              collateralAmount: parsedAmount,
-              marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
-              multiplier: parsedMultiplier,
-            })
-          : mapDeleveragePreviewToActionUi(preview, {
-              marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
-              targetMultiplier: parsedMultiplier,
-            }),
-      )
-    })
+    void session
+      .previewTransaction(session.createIntent(action))
+      .then((preview) => {
+        setPreviewUi(
+          kind === "multiply"
+            ? mapMultiplyPreviewToActionUi(preview, {
+                collateralSymbol: market.collateralAsset.symbol,
+                collateralAmount: parsedAmount,
+                marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
+                multiplier: parsedMultiplier,
+              })
+            : mapDeleveragePreviewToActionUi(preview, {
+                marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
+                targetMultiplier: parsedMultiplier,
+              }),
+        )
+      })
+      .catch(() => {
+        setPreviewUi(null)
+      })
   }, [amount, kind, market, multiplier, session, walletId])
 
   const handleBack = useCallback(() => {

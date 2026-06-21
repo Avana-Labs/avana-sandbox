@@ -118,7 +118,7 @@ export function MarketSidebar({ detail, className }: Props) {
                 <div className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Multiply</div>
                 <h3 className="mt-1 text-[18px] font-normal tracking-[-0.02em] text-foreground">Open position</h3>
               </div>
-              <span className="rounded-full bg-[hsl(var(--brand-soft))] px-2.5 py-1 text-[11px] font-medium text-[hsl(var(--brand))]">
+              <span className="rounded-full bg-[hsl(var(--brand-soft))] px-2.5 py-1 text-[11px] font-medium text-brand-readable">
                 {detail.hero.feeTier ?? "Leverage"}
               </span>
             </div>

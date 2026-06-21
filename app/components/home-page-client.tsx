@@ -138,7 +138,7 @@ export function HomePageClient() {
                     <TabsTrigger
                       key={item.value}
                       value={item.value}
-                      className="text-[14px] font-normal data-[state=active]:text-[hsl(var(--brand))] data-[state=active]:after:bg-[hsl(var(--brand))]"
+                      className="text-[14px] font-normal"
                     >
                       {item.label}
                     </TabsTrigger>

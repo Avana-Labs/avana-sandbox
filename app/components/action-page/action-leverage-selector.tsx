@@ -42,7 +42,7 @@ export function ActionLeverageSelector({
               className={[
                 "h-8 rounded-md border px-3 text-[12.5px] font-medium tabular-nums transition-colors",
                 isActive
-                  ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand-soft))] text-[hsl(var(--brand))]"
+                  ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand-soft))] text-brand-readable"
                   : "border-border bg-surface-raised text-muted-foreground hover:text-foreground",
               ].join(" ")}
             >

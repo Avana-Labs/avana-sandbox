@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
+  ACTION_LIGHTHOUSE_ROUTES,
+  ALL_LIGHTHOUSE_ROUTE_PATHS,
   LIGHTHOUSE_CATEGORY_BUDGETS,
   LIGHTHOUSE_ROUTES,
   NAVIGATION_TIMING_BUDGETS,
@@ -18,6 +20,13 @@ describe("performance route budgets", () => {
     }
   })
 
+  it("includes detail and action routes in the lighthouse manifest", () => {
+    expect(LIGHTHOUSE_ROUTES.some((route) => route.includes("/markets/"))).toBe(true)
+    expect(LIGHTHOUSE_ROUTES.some((route) => route.includes("/assets/"))).toBe(true)
+    expect(ACTION_LIGHTHOUSE_ROUTES.length).toBeGreaterThanOrEqual(10)
+    expect(ALL_LIGHTHOUSE_ROUTE_PATHS.length).toBeGreaterThan(LIGHTHOUSE_ROUTES.length)
+  })
+
   it("maps each primary route to an early-visible hero marker", () => {
     const primaryRoutes = ["/", "/borrow", "/lend", "/multiply", "/dashboard", "/rewards", "/support-center"]
 
@@ -31,10 +40,10 @@ describe("performance route budgets", () => {
     expect(scoreLighthouseCategory(null)).toBe(0)
   })
 
-  it("enforces documented lighthouse floors", () => {
-    expect(isLighthouseScoreWithinBudget("performance", LIGHTHOUSE_CATEGORY_BUDGETS.performance)).toBe(true)
-    expect(isLighthouseScoreWithinBudget("performance", LIGHTHOUSE_CATEGORY_BUDGETS.performance - 1)).toBe(false)
-    expect(isLighthouseScoreWithinBudget("accessibility", 90)).toBe(true)
+  it("targets perfect lighthouse category floors", () => {
+    expect(LIGHTHOUSE_CATEGORY_BUDGETS.performance).toBe(100)
+    expect(isLighthouseScoreWithinBudget("performance", 100)).toBe(true)
+    expect(isLighthouseScoreWithinBudget("accessibility", 100)).toBe(true)
   })
 
   it("keeps navigation timing budgets realistic for CI", () => {

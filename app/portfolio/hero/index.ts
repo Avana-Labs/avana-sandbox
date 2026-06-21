@@ -1,5 +1,0 @@
-export { DashboardHero as PortfolioHero } from "@/app/dashboard/dashboard-hero"
-export { PortfolioHeroActions } from "./portfolio-hero-actions"
-export { PortfolioHeroActionCard } from "./portfolio-hero-action-card"
-export { PortfolioHeroHeader } from "./portfolio-hero-header"
-export type { PortfolioHeroAction, PortfolioHeroActionId } from "./types"

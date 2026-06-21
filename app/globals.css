@@ -47,7 +47,7 @@
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 191 100% 95%;
-    --brand-soft-foreground: 191 99% 41%;
+    --brand-soft-foreground: 192 100% 26%;
 
     --radius: 0.5rem;
 
@@ -224,6 +224,26 @@
 
 .font-brand {
   font-family: var(--font-diatype-sans), system-ui, sans-serif;
+}
+
+.text-brand-readable {
+  color: hsl(var(--brand-soft-foreground));
+}
+
+.text-hero-metric-emerald {
+  color: #2f6b4f;
+}
+
+.text-hero-metric-violet {
+  color: #5a4d9e;
+}
+
+.text-hero-metric-amber {
+  color: #8a5c38;
+}
+
+.text-apy-positive {
+  color: #047857;
 }
 
 .no-number-spinner {
