@@ -1,8 +1,10 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useMemo } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { LendHero } from "./components/lend-hero"
 import { useLendPageLive } from "./use-lend-page-live"
@@ -15,21 +17,12 @@ const LendAssetSpokes = dynamic(() => import("./components/lend-asset-spokes").t
   loading: () => <div className="mt-8 h-[640px] rounded-radius-md border border-border bg-surface-raised/60" />,
 })
 
-const LendMarketActionDialog = dynamic(
-  () => import("./components/lend-market-action-dialog").then((mod) => mod.LendMarketActionDialog),
-  { ssr: false },
-)
-
 export function LendClient({ pageData }: { pageData: LendPageData }) {
+  const router = useRouter()
   const lendSession = useLendSessionContext()
   const livePageData = useLendPageLive(lendSession.walletId, lendSession)
   const resolvedPageData = useMemo(() => livePageData ?? pageData, [livePageData, pageData])
   const { markets, featuredAssets, featuredSequence, featuredSnapshots, assetGroups } = resolvedPageData
-  const [dialogState, setDialogState] = useState<{ open: boolean; marketId: string; action: "deposit" | "withdraw" }>({
-    open: false,
-    marketId: "eth",
-    action: "deposit",
-  })
 
   return (
     <div className="bg-background">
@@ -44,23 +37,10 @@ export function LendClient({ pageData }: { pageData: LendPageData }) {
 
             <LendAssetSpokes
               groups={assetGroups}
-              onDeposit={(marketId) =>
-                setDialogState({
-                  open: true,
-                  marketId,
-                  action: "deposit",
-                })
-              }
+              onDeposit={(marketId) => router.push(actionPagePath("lend", "deposit", { market: marketId }))}
             />
           </div>
         </div>
-
-        <LendMarketActionDialog
-          open={dialogState.open}
-          onOpenChange={(open) => setDialogState((prev) => ({ ...prev, open }))}
-          marketId={dialogState.marketId}
-          initialAction={dialogState.action}
-        />
       </main>
     </div>
   )
