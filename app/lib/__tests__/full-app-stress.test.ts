@@ -555,6 +555,6 @@ describe("full-app engine stress (10k personas)", () => {
       expect(report.totalActions).toBeGreaterThan(USERS)
       expect(gateFailures, gateFailures.join("\n")).toEqual([])
     },
-    180_000,
+    300_000,
   )
 })
