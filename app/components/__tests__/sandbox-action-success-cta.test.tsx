@@ -11,7 +11,7 @@ let currentMultiplyActionBox: unknown
 vi.mock("@/app/lib/lend-system/lend-session-context", () => ({
   useLendSessionContext: () => ({
     walletId: "wallet-1",
-    state: { positions: {} },
+    state: { positions: {}, walletBalances: { "wallet-1": { gho: 1000 } } },
   }),
 }))
 
@@ -34,6 +34,7 @@ vi.mock("@/components/ui/dialog", () => ({
   DialogContent: ({ children, className }: { children: ReactNode; className?: string }) => <div className={className}>{children}</div>,
   DialogHeader: ({ children, className }: { children: ReactNode; className?: string }) => <div className={className}>{children}</div>,
   DialogTitle: ({ children, className }: { children: ReactNode; className?: string }) => <h2 className={className}>{children}</h2>,
+  DialogDescription: ({ children, className }: { children: ReactNode; className?: string }) => <p className={className}>{children}</p>,
 }))
 
 function createLendPreview() {

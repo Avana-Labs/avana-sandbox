@@ -129,6 +129,19 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
   }),
 }))
 
+vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  useAvanaSessions: () => ({
+    walletId,
+    borrow: {
+      state,
+      collateralPools: selectBorrowCollateralPools(state, walletId),
+      createIntent,
+      previewTransaction,
+      executeTransaction,
+    },
+  }),
+}))
+
 vi.mock("@/components/ui/tabs", async () => {
   const React = await import("react")
   const TabsContext = React.createContext<{ value: string; onValueChange?: (value: string) => void } | null>(null)
