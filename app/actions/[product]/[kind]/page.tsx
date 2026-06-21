@@ -18,15 +18,15 @@ export default async function ActionPage({ params, searchParams }: PageProps) {
     <ActionPageClient
       product={product}
       kind={kind}
-      mode="page"
       closeHref={
-        product === "borrow"
+        readParam(query.return) ??
+        (product === "borrow"
           ? "/borrow"
           : product === "lend"
             ? "/lend"
             : product === "multiply"
               ? "/multiply"
-              : "/rewards"
+              : "/rewards")
       }
       initialAssetId={readParam(query.asset)}
       initialMarketId={readParam(query.market)}

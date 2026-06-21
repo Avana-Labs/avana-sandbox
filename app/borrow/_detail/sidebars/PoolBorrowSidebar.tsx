@@ -3,7 +3,7 @@
 import * as React from "react"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { EmbeddedActionPage } from "@/app/components/action-page/embedded-action-page"
+import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { getPoolById, type HomeAssetVisual, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { cn } from "@/lib/utils"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -85,31 +85,26 @@ function PoolActionRail({ detail, className }: Props) {
 
         <div className="pt-1">
           {tab === "pledge" ? (
-            <EmbeddedActionPage
+            <ActionPageLaunchCta
               product="borrow"
               kind="supply"
-              closeHref={`/borrow/pool/${detail.id}`}
-              initialMarketId={pool.id}
+              market={pool.id}
+              returnTo={`/borrow/pool/${detail.id}`}
             />
           ) : null}
 
           {tab === "remove" ? (
-            <EmbeddedActionPage
+            <ActionPageLaunchCta
               product="borrow"
               kind="remove"
-              closeHref={`/borrow/pool/${detail.id}`}
-              initialMarketId={pool.id}
-              initialAmount="25"
+              market={pool.id}
+              amount="25"
+              returnTo={`/borrow/pool/${detail.id}`}
             />
           ) : null}
 
           {tab === "claim" ? (
-            <EmbeddedActionPage
-              product="borrow"
-              kind="claim"
-              closeHref={`/borrow/pool/${detail.id}`}
-              initialMarketId={pool.id}
-            />
+            <ActionPageLaunchCta product="borrow" kind="claim" market={pool.id} returnTo={`/borrow/pool/${detail.id}`} />
           ) : null}
         </div>
       </div>
