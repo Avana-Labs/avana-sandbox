@@ -36,12 +36,6 @@ export function HomePageClient() {
   const [removePoolId, setRemovePoolId] = useState(defaultRemovePoolId)
   const [poolDialogMode, setPoolDialogMode] = useState<PoolDialogMode | null>(null)
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const debts = useMemo(() => selectHomeDebtMap(session.state, walletId), [session.state, walletId])
   const borrowPool = useMemo(
     () => session.collateralPools.find((pool) => pool.id === borrowPoolId) ?? session.collateralPools[0] ?? null,
@@ -137,70 +131,66 @@ export function HomePageClient() {
       <main className="px-4">
         <section className="flex items-start justify-center py-4 md:py-6">
           <div className="w-full max-w-[560px]">
-            {mounted ? (
-              <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
-                <div className="mb-4 flex items-center justify-between">
-                  <TabsList className="w-full justify-start">
-                    {HOME_MODE_ITEMS.map((item) => (
-                      <TabsTrigger
-                        key={item.value}
-                        value={item.value}
-                        className="text-[14px] font-normal data-[state=active]:text-[hsl(var(--brand))] data-[state=active]:after:bg-[hsl(var(--brand))]"
-                      >
-                        {item.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  <button
-                    type="button"
-                    className="ml-2 inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-                    aria-label="Settings"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </button>
-                </div>
+            <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
+              <div className="mb-4 flex items-center justify-between">
+                <TabsList className="w-full justify-start">
+                  {HOME_MODE_ITEMS.map((item) => (
+                    <TabsTrigger
+                      key={item.value}
+                      value={item.value}
+                      className="text-[14px] font-normal data-[state=active]:text-[hsl(var(--brand))] data-[state=active]:after:bg-[hsl(var(--brand))]"
+                    >
+                      {item.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <button
+                  type="button"
+                  className="ml-2 inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+                  aria-label="Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </button>
+              </div>
 
-                <TabsContent value="borrow" className="mt-0 space-y-4">
-                  <HomeActionContextBar
-                    pool={borrowPool}
-                    token={borrowToken}
-                    onOpenPool={() => setPoolDialogMode("borrow")}
-                    onOpenToken={() => setTokenDialogOpen(true)}
-                  />
-                  <ActionPageLaunchCta
-                    product="borrow"
-                    kind="borrow"
-                    market={borrowPoolId}
-                    asset={borrowTokenId ?? undefined}
-                    returnTo="/"
-                    label="Continue to borrow"
-                  />
-                </TabsContent>
+              <TabsContent value="borrow" className="mt-0 space-y-4">
+                <HomeActionContextBar
+                  pool={borrowPool}
+                  token={borrowToken}
+                  onOpenPool={() => setPoolDialogMode("borrow")}
+                  onOpenToken={() => setTokenDialogOpen(true)}
+                />
+                <ActionPageLaunchCta
+                  product="borrow"
+                  kind="borrow"
+                  market={borrowPoolId}
+                  asset={borrowTokenId ?? undefined}
+                  returnTo="/"
+                  label="Continue to borrow"
+                />
+              </TabsContent>
 
-                <TabsContent value="repay" className="mt-0 space-y-4">
-                  <HomeActionContextBar pool={repayPool} showToken={false} onOpenPool={() => setPoolDialogMode("repay")} />
-                  <ActionPageLaunchCta product="borrow" kind="repay" market={repayPoolId} returnTo="/" label="Continue to repay" />
-                </TabsContent>
+              <TabsContent value="repay" className="mt-0 space-y-4">
+                <HomeActionContextBar pool={repayPool} showToken={false} onOpenPool={() => setPoolDialogMode("repay")} />
+                <ActionPageLaunchCta product="borrow" kind="repay" market={repayPoolId} returnTo="/" label="Continue to repay" />
+              </TabsContent>
 
-                <TabsContent value="claim" className="mt-0">
-                  <ActionPageLaunchCta product="borrow" kind="claim" returnTo="/" label="Continue to claim" />
-                </TabsContent>
+              <TabsContent value="claim" className="mt-0">
+                <ActionPageLaunchCta product="borrow" kind="claim" returnTo="/" label="Continue to claim" />
+              </TabsContent>
 
-                <TabsContent value="remove" className="mt-0 space-y-4">
-                  <HomeActionContextBar pool={removePool} showToken={false} onOpenPool={() => setPoolDialogMode("remove")} />
-                  <ActionPageLaunchCta
-                    product="borrow"
-                    kind="remove"
-                    market={removePoolId}
-                    amount="25"
-                    returnTo="/"
-                    label="Continue to withdraw"
-                  />
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <div className="min-h-[360px] rounded-[20px] border border-border bg-surface-raised/40" aria-hidden />
-            )}
+              <TabsContent value="remove" className="mt-0 space-y-4">
+                <HomeActionContextBar pool={removePool} showToken={false} onOpenPool={() => setPoolDialogMode("remove")} />
+                <ActionPageLaunchCta
+                  product="borrow"
+                  kind="remove"
+                  market={removePoolId}
+                  amount="25"
+                  returnTo="/"
+                  label="Continue to withdraw"
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </section>
       </main>

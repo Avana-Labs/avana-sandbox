@@ -226,7 +226,7 @@ export function DashboardClient({
     router.replace(`/dashboard?tab=${tab}`, { scroll: false })
   }
 
-  if (!data || !resolvedWalletProfileId || !portfolioBorrow) return null
+  if (!data || !resolvedWalletProfileId) return null
 
   return (
     <>

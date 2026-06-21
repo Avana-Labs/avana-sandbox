@@ -1,7 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
-
 function resolveGreeting(date = new Date()) {
   const hour = date.getHours()
 
@@ -11,11 +9,7 @@ function resolveGreeting(date = new Date()) {
 }
 
 export function PortfolioHeroHeader() {
-  const [title, setTitle] = useState("Welcome back")
-
-  useEffect(() => {
-    setTitle(resolveGreeting())
-  }, [])
+  const title = resolveGreeting()
 
   return (
     <div className="mb-4 sm:mb-6">
