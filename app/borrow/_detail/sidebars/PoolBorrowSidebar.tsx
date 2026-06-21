@@ -1,26 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { EmbeddedActionPage } from "@/app/components/action-page/embedded-action-page"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { CompactClaimCard } from "@/app/components/home/claim-card"
-import {
-  buildHomeClaimPreview,
-  selectRewardClaimableTotals,
-} from "@/app/lib/borrow-system/modal-preview-runtime"
-import {
-  HOME_INITIAL_DEBTS,
-  getPoolById,
-  type HomeAssetVisual,
-  type HomeClaimPosition,
-  type HomeCollateralPool,
-} from "@/app/lib/home-sim"
-import { Button } from "@/components/ui/button"
+import { getPoolById, type HomeAssetVisual, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { cn } from "@/lib/utils"
-import { getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 
 type Props = {
@@ -56,30 +41,16 @@ export function PoolBorrowActions({ detail, className }: Props) {
 }
 
 function PoolActionRail({ detail, className }: Props) {
-  const router = useRouter()
   const [tab, setTab] = React.useState<SidebarTab>("pledge")
-  const [claimAmount, setClaimAmount] = React.useState("")
-  const walletId = React.useMemo(() => getBorrowSessionWalletId(), [])
   const session = useBorrowSessionContext()
 
   const pool = React.useMemo(
     () => session.collateralPools.find((entry) => entry.id === detail.id) ?? resolvePool(detail),
     [detail, session.collateralPools],
   )
-  const claimPosition = React.useMemo(() => resolveClaimPosition(detail, pool), [detail, pool])
-  const claimableTotals = React.useMemo(
-    () => selectRewardClaimableTotals(session.state, walletId),
-    [session.state, walletId],
-  )
-  const claimSelections = React.useMemo(() => ({ [claimPosition.id]: true }), [claimPosition.id])
-  const claimPositions = React.useMemo(() => [claimPosition], [claimPosition])
-  const claimPreview = React.useMemo(
-    () => buildHomeClaimPreview(session.state, walletId, claimPositions, claimSelections, Number.parseFloat(claimAmount) || null),
-    [claimAmount, claimPositions, claimSelections, session.state, walletId],
-  )
 
   React.useEffect(() => {
-    setClaimAmount("")
+    setTab("pledge")
   }, [detail.id])
 
   return (
@@ -133,20 +104,12 @@ function PoolActionRail({ detail, className }: Props) {
           ) : null}
 
           {tab === "claim" ? (
-            <div className="space-y-3">
-              <CompactClaimCard
-                amount={claimAmount}
-                positions={claimPositions}
-                preview={claimPreview}
-                claimableTotals={claimableTotals}
-                selections={claimSelections}
-                submitLabel="Review claim"
-                onToggleSelection={() => {}}
-                onAmountChange={setClaimAmount}
-                onSetAll={() => setClaimAmount(claimPreview.selectedTotalUsd.toFixed(2))}
-                onSubmit={() => router.push(actionPagePath("borrow", "claim", { market: pool.id }))}
-              />
-            </div>
+            <EmbeddedActionPage
+              product="borrow"
+              kind="claim"
+              closeHref={`/borrow/pool/${detail.id}`}
+              initialMarketId={pool.id}
+            />
           ) : null}
         </div>
       </div>
@@ -169,33 +132,6 @@ function resolvePool(detail: PoolDetail): HomeCollateralPool {
     liquidationUsd: Math.round(detail.row.collateralExampleUsd * ((detail.row.ltv + 10) / 100)),
     pairApr: (detail.row.aprMin + detail.row.aprMax) / 2,
     visuals: [toHomeVisual(detail.hero.visuals[0]), toHomeVisual(detail.hero.visuals[1])],
-  }
-}
-
-function resolveClaimPosition(detail: PoolDetail, pool: HomeCollateralPool): HomeClaimPosition {
-  const totalUsd = Math.max(24, Math.round(pool.pairApr * 12))
-  return {
-    id: `claim-${pool.id}`,
-    poolId: pool.id,
-    name: detail.hero.name,
-    subtitle: `${detail.hero.venue} · ${detail.hero.feeTier ?? detail.hero.chain}`,
-    totalUsd,
-    breakdown: [
-      {
-        id: `${pool.id}-${detail.hero.visuals[0].symbol.toLowerCase()}`,
-        symbol: detail.hero.visuals[0].symbol,
-        amountLabel: `${(totalUsd * 0.55).toFixed(2)} ${detail.hero.visuals[0].symbol}`,
-        usdValue: Number((totalUsd * 0.55).toFixed(2)),
-        visual: toHomeVisual(detail.hero.visuals[0]),
-      },
-      {
-        id: `${pool.id}-${detail.hero.visuals[1].symbol.toLowerCase()}`,
-        symbol: detail.hero.visuals[1].symbol,
-        amountLabel: `${(totalUsd * 0.45).toFixed(2)} ${detail.hero.visuals[1].symbol}`,
-        usdValue: Number((totalUsd * 0.45).toFixed(2)),
-        visual: toHomeVisual(detail.hero.visuals[1]),
-      },
-    ],
   }
 }
 

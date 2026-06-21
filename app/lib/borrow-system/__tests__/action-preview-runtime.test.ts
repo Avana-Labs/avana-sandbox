@@ -11,9 +11,9 @@ import {
   buildHomeRemovePreview,
   buildHomeRepayPreview,
   buildHomeSupplyPreview,
-} from "@/app/lib/borrow-system/modal-preview-runtime"
+} from "@/app/lib/borrow-system/action-preview-runtime"
 
-describe("modal preview runtime", () => {
+describe("action preview runtime", () => {
   it("buildHomeBorrowPreview matches engine simulateBorrow health factor", () => {
     const state = makeExampleBorrowSystemState()
     const preview = buildHomeBorrowPreview(state, "wallet-1", EXAMPLE_UNI_MARKET_ID, EXAMPLE_UNI_USDC_ASSET_ID, 300)

@@ -104,13 +104,19 @@ describe("claim flow surfaces", () => {
     expect(offenders).toEqual([])
   })
 
-  it("routes pool-detail claim through the shared action page", () => {
+  it("routes pool-detail claim through embedded Avana action structure", () => {
     const source = readFileSync(
       path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"),
       "utf8",
     )
-    expect(source).toContain("buildHomeClaimPreview")
-    expect(source).toContain("actionPagePath")
-    expect(source).toContain('"borrow", "claim"')
+    expect(source).toContain("EmbeddedActionPage")
+    expect(source).toContain('kind="claim"')
+  })
+
+  it("keeps home claim inline through embedded Avana action structure", () => {
+    const source = readFileSync(path.join(process.cwd(), "app/components/home-page-client.tsx"), "utf8")
+    expect(source).toContain("EmbeddedActionPage")
+    expect(source).toContain('kind="claim"')
+    expect(source).not.toContain("actionPagePath")
   })
 })

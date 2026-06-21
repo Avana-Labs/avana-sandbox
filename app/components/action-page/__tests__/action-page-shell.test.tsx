@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 
 describe("ActionPageShell", () => {
-  it("renders Aave-style title, subtitle, wallet pill, and close control", () => {
+  it("renders Avana action shell title, subtitle, wallet pill, and close control", () => {
     render(
       <ActionPageShell
         title="Borrow"

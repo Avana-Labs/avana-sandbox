@@ -18,10 +18,6 @@ vi.mock("@/app/dashboard/components/borrow-tab/debts-table", () => ({
   DebtsPanel: ({ rows }: { rows: Array<{ borrowedUsd: number }> }) => <div>borrowed:{rows[0]?.borrowedUsd ?? 0}</div>,
 }))
 
-vi.mock("@/app/borrow/components/borrow-modal", () => ({ BorrowModal: () => null }))
-vi.mock("@/app/borrow/components/supply-collateral-modal", () => ({ SupplyCollateralModal: () => null }))
-vi.mock("@/app/borrow/components/repay-remove-modal", () => ({ RepayRemoveModal: () => null }))
-
 const pool = {
   id: "pool-a",
   name: "Pool",

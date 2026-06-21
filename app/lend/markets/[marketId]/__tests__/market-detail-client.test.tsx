@@ -33,10 +33,6 @@ vi.mock("@/app/lib/lend-system/lend-session-context", () => ({
   }),
 }))
 
-vi.mock("@/app/lend/components/lend-market-action-dialog", () => ({
-  LendMarketActionDialog: () => null,
-}))
-
 describe("LendMarketDetailClient", () => {
   it("renders live session market metrics instead of the catalog defaults", () => {
     render(<LendMarketDetailClient marketId="eth" />)

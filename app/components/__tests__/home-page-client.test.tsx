@@ -4,9 +4,6 @@ import { HomePageClient } from "@/app/components/home-page-client"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
 
-const push = vi.fn()
-const toastWarning = vi.fn()
-
 const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)
 
@@ -14,21 +11,13 @@ vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
-    warning: (...args: unknown[]) => toastWarning(...args),
+    warning: vi.fn(),
   },
-}))
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
 }))
 
 vi.mock("@/app/components/home-workspace-primitives", () => ({
   PairVisual: () => <div />,
   TokenBubble: () => <div />,
-}))
-
-vi.mock("@/app/components/home/preview-panel", () => ({
-  HomePreviewPanel: () => null,
 }))
 
 vi.mock("@/app/components/home/pool-picker-dialog", () => ({
@@ -39,60 +28,8 @@ vi.mock("@/app/components/home/token-picker-dialog", () => ({
   TokenPickerDialog: () => null,
 }))
 
-vi.mock("@/app/components/home-borrow-panel", () => ({
-  HomeBorrowPanel: ({
-    onAmountChange,
-    onSubmit,
-  }: {
-    onAmountChange: (value: string) => void
-    onSubmit: () => void
-  }) => (
-    <button
-      type="button"
-      onClick={() => {
-        onAmountChange("250")
-        onSubmit()
-      }}
-    >
-      Review borrow
-    </button>
-  ),
-}))
-
-vi.mock("@/app/components/home/repay-card", () => ({
-  CompactRepayCard: ({
-    onAmountChange,
-    onSubmit,
-  }: {
-    onAmountChange: (value: string) => void
-    onSubmit: () => void
-  }) => (
-    <button
-      type="button"
-      onClick={() => {
-        onAmountChange("150")
-        onSubmit()
-      }}
-    >
-      Review repayment
-    </button>
-  ),
-}))
-
-vi.mock("@/app/components/home/remove-card", () => ({
-  CompactRemoveCard: ({ onSubmit }: { onSubmit: () => void }) => (
-    <button type="button" onClick={onSubmit}>
-      Review removal
-    </button>
-  ),
-}))
-
-vi.mock("@/app/components/home/claim-card", () => ({
-  CompactClaimCard: ({ onSubmit }: { onSubmit: () => void }) => (
-    <button type="button" onClick={onSubmit}>
-      Review claim
-    </button>
-  ),
+vi.mock("@/app/components/action-page/embedded-action-page", () => ({
+  EmbeddedActionPage: ({ kind }: { kind: string }) => <div data-testid={`embedded-${kind}`} />,
 }))
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
@@ -149,27 +86,26 @@ vi.mock("@/components/ui/tabs", async () => {
 
 describe("HomePageClient", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     state = buildMockBorrowSystemState(walletId)
   })
 
-  it("routes borrow review to the shared action page", () => {
+  it("renders inline Avana action flows instead of routing to action pages", () => {
     render(<HomePageClient />)
-    fireEvent.click(screen.getByText("Review borrow"))
-    expect(push).toHaveBeenCalledWith(expect.stringContaining("/actions/borrow/borrow"))
+
+    expect(screen.getByTestId("embedded-borrow")).toBeInTheDocument()
+    expect(screen.queryByText(/\/actions\//)).not.toBeInTheDocument()
   })
 
-  it("routes repay review to the shared action page", () => {
+  it("switches tabs to embedded repay, claim, and remove flows", () => {
     render(<HomePageClient />)
+
     fireEvent.click(screen.getByText("Repay"))
-    fireEvent.click(screen.getByText("Review repayment"))
-    expect(push).toHaveBeenCalledWith(expect.stringContaining("/actions/borrow/repay"))
-  })
+    expect(screen.getByTestId("embedded-repay")).toBeInTheDocument()
 
-  it("routes remove review to the shared action page", () => {
-    render(<HomePageClient />)
+    fireEvent.click(screen.getByText("Claim"))
+    expect(screen.getByTestId("embedded-claim")).toBeInTheDocument()
+
     fireEvent.click(screen.getByText("Remove"))
-    fireEvent.click(screen.getByText("Review removal"))
-    expect(push).toHaveBeenCalledWith(expect.stringContaining("/actions/borrow/remove"))
+    expect(screen.getByTestId("embedded-remove")).toBeInTheDocument()
   })
 })

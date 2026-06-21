@@ -26,7 +26,7 @@ const preview: ActionPreviewUi = {
 }
 
 describe("ActionConfigureStage", () => {
-  it("renders Aave-style amount card, market row, metrics, fee, and action footer", () => {
+  it("renders Avana action configure amount card, market row, metrics, fee, and footer", () => {
     render(
       <ActionConfigureStage
         stage="configure"

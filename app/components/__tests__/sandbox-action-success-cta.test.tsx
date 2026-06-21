@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 import { render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { LendActionBox } from "@/app/lend/components/lend-action-box"
-import { DeleverageModal } from "@/app/multiply/components/deleverage-modal"
 import { MultiplyActionBox } from "@/app/multiply/components/multiply-action-box"
 
 let currentLendActionBox: unknown
@@ -152,34 +151,6 @@ describe("sandbox action success CTAs", () => {
               collateralFactor: 0.7,
               liquidationThreshold: 0.8,
             },
-          } as never
-        }
-      />,
-    )
-
-    expect(screen.getByRole("button", { name: "Done" })).toBeEnabled()
-  })
-
-  it("keeps the deleverage success Done button enabled after execution completes", () => {
-    render(
-      <DeleverageModal
-        open
-        onOpenChange={vi.fn()}
-        market={
-          {
-            collateralAsset: { symbol: "ETH" },
-          } as never
-        }
-        position={
-          {
-            id: "position-1",
-            multiplier: 2,
-            liquidationPrice: 1000,
-          } as never
-        }
-        session={
-          {
-            walletId: "wallet-1",
           } as never
         }
       />,

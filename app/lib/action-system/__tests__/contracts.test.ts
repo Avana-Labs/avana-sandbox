@@ -25,7 +25,7 @@ describe("action-system contracts", () => {
     expect(actionPagePath("lend", "deposit")).toBe("/actions/lend/deposit")
   })
 
-  it("uses Aave-style configure subtitles", () => {
+  it("uses Avana action configure subtitles", () => {
     expect(getActionDescriptor("borrow", "borrow").subtitle).toContain("Configure and review")
     expect(getActionDescriptor("lend", "withdraw").subtitle).toContain("Configure and review")
   })

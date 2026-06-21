@@ -10,7 +10,7 @@ import {
   buildHomeSupplyPreview,
   buildClaimBorrowAction,
   buildHomeClaimPreview,
-} from "@/app/lib/borrow-system/modal-preview-runtime"
+} from "@/app/lib/borrow-system/action-preview-runtime"
 import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
 import { useAvanaSessions, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionKind, ActionPageMode, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
@@ -65,6 +65,22 @@ export function BorrowActionPageClient({
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
+
+  const debtPosition = useMemo(() => {
+    const account = session.state.accounts[walletId]
+    if (!account) return null
+    if (kind === "repay" && marketId) {
+      return (
+        account.debtPositions.find((position) => position.marketId === marketId) ??
+        account.debtPositions.find((position) => {
+          const spokeId = session.state.markets[marketId]?.spokeId
+          return spokeId ? session.state.markets[position.marketId]?.spokeId === spokeId : false
+        }) ??
+        null
+      )
+    }
+    return account.debtPositions[0] ?? null
+  }, [kind, marketId, session.state, walletId])
 
   const selectItems = useMemo(
     () =>
@@ -142,12 +158,11 @@ export function BorrowActionPageClient({
     }
 
     if (kind === "repay") {
-      const debtPosition = session.state.accounts[walletId]?.debtPositions[0]
-      const repayPreview = buildHomeRepayPreview(session.state, walletId, debtPosition?.id ?? null, safeAmount)
       if (safeAmount <= 0 || !debtPosition) {
         setPreviewUi(null)
         return
       }
+      const repayPreview = buildHomeRepayPreview(session.state, walletId, debtPosition.id, safeAmount)
       void session
         .previewTransaction(
           session.createIntent({
@@ -209,7 +224,7 @@ export function BorrowActionPageClient({
         }),
       )
     }
-  }, [amount, assetId, kind, marketId, marketLabel, percent, session, walletId])
+  }, [amount, assetId, debtPosition, kind, marketId, marketLabel, percent, session, walletId])
 
   const handlePrimary = useCallback(async () => {
     if (stage === "success") {
@@ -243,7 +258,6 @@ export function BorrowActionPageClient({
           amountUsd6: parseFixed(safeAmount.toFixed(6), 6),
         })
       } else if (kind === "repay") {
-        const debtPosition = session.state.accounts[walletId]?.debtPositions[0]
         if (!debtPosition) throw new Error("No debt selected")
         intent = session.createIntent({
           type: "repay",
@@ -294,7 +308,7 @@ export function BorrowActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, assetId, closeHref, descriptor.primaryVerb, kind, marketId, percent, previewUi, router, session, stage, walletId])
+  }, [amount, assetId, closeHref, debtPosition, descriptor.primaryVerb, kind, marketId, percent, previewUi, router, session, stage, walletId])
 
   return (
     <ActionPageShell mode={mode} title={descriptor.title} subtitle={descriptor.subtitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>

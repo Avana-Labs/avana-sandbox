@@ -27,7 +27,7 @@ describe("action formatters", () => {
     expect(formatActionBeforeAfter("1.36%", "0.79%")).toBe("1.36% → 0.79%")
   })
 
-  it("formats network fee like Aave", () => {
+  it("formats network fee for Avana action pages", () => {
     expect(formatActionNetworkFee(0.04)).toBe("~ $0.04")
   })
 
