@@ -1,9 +1,16 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
+
+export type ActionAssetOption = {
+  id: string
+  label: string
+  symbol: string
+  sublabel?: string
+}
 
 type ActionAmountCardProps = {
   label: string
@@ -21,6 +28,9 @@ type ActionAmountCardProps = {
   onReceiveWethChange?: (value: boolean) => void
   showReceiveWethToggle?: boolean
   footer?: ReactNode
+  assetOptions?: ActionAssetOption[]
+  selectedAssetId?: string
+  onAssetSelect?: (id: string) => void
 }
 
 const PERCENT_PRESETS = [25, 50, 75, 100] as const
@@ -41,8 +51,30 @@ export function ActionAmountCard({
   onReceiveWethChange,
   showReceiveWethToggle = false,
   footer,
+  assetOptions,
+  selectedAssetId,
+  onAssetSelect,
 }: ActionAmountCardProps) {
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
+  const switchable = Boolean(onAssetSelect && assetOptions && assetOptions.length > 1)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return undefined
+    const handlePointer = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false)
+    }
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false)
+    }
+    document.addEventListener("mousedown", handlePointer)
+    document.addEventListener("keydown", handleKey)
+    return () => {
+      document.removeEventListener("mousedown", handlePointer)
+      document.removeEventListener("keydown", handleKey)
+    }
+  }, [menuOpen])
 
   return (
     <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised" data-testid="action-amount-card">
@@ -59,14 +91,51 @@ export function ActionAmountCard({
               placeholder="0"
             />
           </label>
-          <button
-            type="button"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium"
-          >
-            <ActionTokenIcon symbol={symbol} className="size-5" />
-            <span>{assetLabel}</span>
-            <span className="text-muted-foreground">▾</span>
-          </button>
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              type="button"
+              onClick={switchable ? () => setMenuOpen((open) => !open) : undefined}
+              aria-haspopup={switchable ? "listbox" : undefined}
+              aria-expanded={switchable ? menuOpen : undefined}
+              aria-label={switchable ? `Change asset, current ${assetLabel}` : undefined}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium",
+                switchable ? "cursor-pointer hover:bg-muted" : "cursor-default",
+              )}
+            >
+              <ActionTokenIcon symbol={symbol} className="size-5" />
+              <span>{assetLabel}</span>
+              {switchable ? <span className="text-muted-foreground" aria-hidden>▾</span> : null}
+            </button>
+            {switchable && menuOpen ? (
+              <div
+                role="listbox"
+                aria-label="Select asset"
+                className="absolute right-0 z-30 mt-2 max-h-64 w-60 overflow-auto rounded-2xl border border-border bg-surface-raised p-1 shadow-lg"
+              >
+                {assetOptions!.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="option"
+                    aria-selected={option.id === selectedAssetId}
+                    onClick={() => {
+                      onAssetSelect!(option.id)
+                      setMenuOpen(false)
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-[14px] hover:bg-muted",
+                      option.id === selectedAssetId && "bg-muted",
+                    )}
+                  >
+                    <ActionTokenIcon symbol={option.symbol} className="size-5" />
+                    <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                    {option.sublabel ? <span className="shrink-0 text-[12px] text-muted-foreground">{option.sublabel}</span> : null}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className="mt-3 flex items-center justify-between gap-3 text-[13px] text-muted-foreground">
           <span>{approxUsdLabel}</span>

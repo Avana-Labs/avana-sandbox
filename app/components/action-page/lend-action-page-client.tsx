@@ -34,7 +34,7 @@ export function LendActionPageClient({
   kind,
   closeHref = "/lend",
   initialMarketId,
-  initialAmount = "1",
+  initialAmount = "",
 }: {
   kind: "deposit" | "withdraw"
   closeHref?: string
@@ -63,6 +63,17 @@ export function LendActionPageClient({
     () => (marketId ? (session.state.markets[marketId] ?? getLendMarketById(marketId)) : null),
     [marketId, session.state.markets],
   )
+
+  const depositAssetOptions = useMemo(() => {
+    if (kind !== "deposit") return undefined
+    const options = Object.values(session.state.markets).map((entry) => ({
+      id: entry.marketId,
+      label: entry.asset.symbol,
+      symbol: entry.asset.symbol,
+      sublabel: "Core",
+    }))
+    return options.length > 1 ? options : undefined
+  }, [kind, session.state.markets])
 
   useEffect(() => {
     if (kind !== "withdraw" || initialMarketId || marketId) return
@@ -278,6 +289,12 @@ export function LendActionPageClient({
           onAmountChange={setAmount}
           preview={previewUi}
           assetSymbol={market.asset.symbol}
+          assetOptions={depositAssetOptions}
+          selectedAssetId={market.marketId}
+          onAssetSelect={(id) => {
+            setMarketId(id)
+            setAmount("")
+          }}
           onPrimary={() => void handlePrimary()}
           secondaryHref={closeHref}
           onMax={() => {

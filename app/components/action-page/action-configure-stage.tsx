@@ -1,7 +1,7 @@
 "use client"
 
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
-import { ActionAmountCard, ActionFooter } from "@/app/components/action-page/action-amount-card"
+import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
 import { ActionOutcomeBanner, ActionRiskBanner, ActionWalletToast } from "@/app/components/action-page/action-banners"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import {
@@ -31,6 +31,9 @@ type ActionConfigureStageProps = {
   onReceiveWethChange?: (value: boolean) => void
   isPending?: boolean
   outcome?: { tone: "error" | "success"; title: string; message: string } | null
+  assetOptions?: ActionAssetOption[]
+  selectedAssetId?: string
+  onAssetSelect?: (id: string) => void
 }
 
 export function ActionConfigureStage({
@@ -51,6 +54,9 @@ export function ActionConfigureStage({
   onReceiveWethChange,
   isPending = false,
   outcome = null,
+  assetOptions,
+  selectedAssetId,
+  onAssetSelect,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -82,6 +88,9 @@ export function ActionConfigureStage({
         showReceiveWethToggle={showReceiveWethToggle}
         receiveWeth={receiveWeth}
         onReceiveWethChange={onReceiveWethChange}
+        assetOptions={assetOptions}
+        selectedAssetId={selectedAssetId}
+        onAssetSelect={onAssetSelect}
         footer={preview ? <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" /> : null}
       />
 
