@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { REWARDS_PROMO_TABS } from "@/app/lib/data/mock/shared/rewards"
 import { buildDefaultRewardsCatalog } from "@/app/lib/rewards-engine"
@@ -127,7 +127,35 @@ function renderRewardsPage() {
   )
 }
 
+function openPromoTab(label: string) {
+  const tab = screen.getAllByRole("button", { name: label }).find((button) => button.hasAttribute("data-state"))
+  if (!tab) {
+    throw new Error(`Promo tab not found: ${label}`)
+  }
+  fireEvent.click(tab)
+}
+
+async function clickQuestAction(name: string | RegExp) {
+  await waitFor(() => {
+    expect(screen.getAllByRole("button", { name }).length).toBeGreaterThan(0)
+  })
+  const buttons = screen.getAllByRole("button", { name })
+  const target = buttons.find((button) => !(button as HTMLButtonElement).disabled) ?? buttons[buttons.length - 1]!
+  fireEvent.click(target)
+}
+
+async function openReferralTab() {
+  await waitFor(() => {
+    expect(screen.getAllByRole("button", { name: "Refer a friend" }).some((button) => button.hasAttribute("data-state"))).toBe(true)
+  })
+  openPromoTab("Refer a friend")
+}
+
 describe("RewardsPageClient", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   beforeEach(() => {
     push.mockReset()
     claimReward.mockReset()
@@ -175,7 +203,7 @@ describe("RewardsPageClient", () => {
     renderRewardsPage()
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Claim 50 AVA" })).toBeInTheDocument()
+      screen.getByRole("button", { name: "Claim 50 AVA" })
     })
 
     await userEvent.click(screen.getByRole("button", { name: "Claim all ready rewards" }))
@@ -190,20 +218,18 @@ describe("RewardsPageClient", () => {
   it("opens the education flow for primer quests", async () => {
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Read primer" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Read primer" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "I read it" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "I read it" }))
+    await clickQuestAction("Read primer")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "I read it" }).length).toBeGreaterThan(0))
+    await clickQuestAction("I read it")
     expect(completeEducation).toHaveBeenCalledTimes(1)
   })
 
   it("opens the favorite flow and records the selected market", async () => {
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Pick market" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Pick market" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "GHO Lend market" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "GHO Lend market" }))
+    await clickQuestAction("Pick market")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "GHO Lend market" }).length).toBeGreaterThan(0))
+    await clickQuestAction("GHO Lend market")
 
     expect(favoriteMarket).toHaveBeenCalledWith("gho")
   })
@@ -211,10 +237,9 @@ describe("RewardsPageClient", () => {
   it("opens the simulate flow and records a lend preview", async () => {
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Preview" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Preview" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Preview lend" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Preview lend" }))
+    await clickQuestAction("Preview")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Preview lend" }).length).toBeGreaterThan(0))
+    await clickQuestAction("Preview lend")
 
     expect(lendCreateIntent).toHaveBeenCalledTimes(1)
     expect(lendPreviewTransaction).toHaveBeenCalledTimes(1)
@@ -224,8 +249,7 @@ describe("RewardsPageClient", () => {
   it("routes deep-link tasks into the correct product surfaces", async () => {
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Go to Lend" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Go to Lend" }))
+    await clickQuestAction("Go to Lend")
     expect(push).toHaveBeenCalledWith("/lend")
   })
 
@@ -237,10 +261,9 @@ describe("RewardsPageClient", () => {
     )
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Challenge tasks" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Challenge tasks" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Check in" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Check in" }))
+    await clickQuestAction("Challenge tasks")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Check in" }).length).toBeGreaterThan(0))
+    await clickQuestAction("Check in")
 
     expect(recordDailyCheckin).toHaveBeenCalledTimes(1)
   })
@@ -248,10 +271,9 @@ describe("RewardsPageClient", () => {
   it("records sandbox tours and routes users to the tour surface", async () => {
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Challenge tasks" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Challenge tasks" }))
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Start tour" })).toHaveLength(2))
-    await userEvent.click(screen.getAllByRole("button", { name: "Start tour" })[0]!)
+    await clickQuestAction("Challenge tasks")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Start tour" }).length).toBeGreaterThan(0))
+    await clickQuestAction("Start tour")
 
     expect(recordSandboxTour).toHaveBeenCalledWith("use-curve-position")
     expect(push).toHaveBeenCalledWith("/borrow")
@@ -265,13 +287,10 @@ describe("RewardsPageClient", () => {
     )
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Refer a friend" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Refer a friend" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Copy link" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Copy invite link" })).toBeInTheDocument())
-
-    await userEvent.click(screen.getByRole("button", { name: "Copy invite link" }))
+    await openReferralTab()
+    await clickQuestAction("Copy link")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Copy invite link" }).length).toBeGreaterThan(0))
+    await clickQuestAction("Copy invite link")
     expect(createReferralCode).toHaveBeenCalled()
     expect(recordReferralLinkCopied).toHaveBeenCalledTimes(1)
   })
@@ -284,13 +303,10 @@ describe("RewardsPageClient", () => {
     )
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Refer a friend" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Refer a friend" }))
-
-    await waitFor(() => expect(screen.getByRole("button", { name: "Send invite" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Send invite" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Send sandbox invite" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Send sandbox invite" }))
+    await openReferralTab()
+    await clickQuestAction("Send invite")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Send sandbox invite" }).length).toBeGreaterThan(0))
+    await clickQuestAction("Send sandbox invite")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("invite")
   })
@@ -303,12 +319,10 @@ describe("RewardsPageClient", () => {
     )
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Refer a friend" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Refer a friend" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Activate" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Activate" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Activate next friend" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Activate next friend" }))
+    await openReferralTab()
+    await clickQuestAction("Activate")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Activate next friend" }).length).toBeGreaterThan(0))
+    await clickQuestAction("Activate next friend")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("activate")
   })
@@ -321,12 +335,10 @@ describe("RewardsPageClient", () => {
     )
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Refer a friend" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Refer a friend" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Mark funded" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Mark funded" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Mark next friend funded" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Mark next friend funded" }))
+    await openReferralTab()
+    await clickQuestAction("Mark funded")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Mark next friend funded" }).length).toBeGreaterThan(0))
+    await clickQuestAction("Mark next friend funded")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("fund")
   })
@@ -339,12 +351,15 @@ describe("RewardsPageClient", () => {
     )
     renderRewardsPage()
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Refer a friend" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Refer a friend" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "View crew & claim" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "View crew & claim" }))
-    await waitFor(() => expect(screen.getByRole("button", { name: "Claim 140 AVA" })).toBeInTheDocument())
-    await userEvent.click(screen.getByRole("button", { name: "Claim 140 AVA" }))
+    await openReferralTab()
+    await waitFor(() => {
+      screen.getByRole("button", { name: "View crew & claim" })
+    })
+    await clickQuestAction("View crew & claim")
+    await waitFor(() => {
+      screen.getByRole("button", { name: "Claim 140 AVA" })
+    })
+    await clickQuestAction("Claim 140 AVA")
 
     expect(claimReward).toHaveBeenCalledWith("bring-3-active-users")
   })

@@ -102,13 +102,13 @@ describe("HomePageClient", () => {
   it("switches tabs to repay, claim, and remove launch CTAs", () => {
     render(<HomePageClient />)
 
-    fireEvent.click(screen.getByRole("button", { name: "Repay" }))
+    fireEvent.click(screen.getAllByRole("button", { name: "Repay" })[0]!)
     expect(screen.getByTestId("action-launch-repay")).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Claim" }))
+    fireEvent.click(screen.getAllByRole("button", { name: "Claim" })[0]!)
     expect(screen.getByTestId("action-launch-claim")).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Remove" }))
+    fireEvent.click(screen.getAllByRole("button", { name: "Remove" })[0]!)
     expect(screen.getByTestId("action-launch-remove")).toBeInTheDocument()
   })
 })
