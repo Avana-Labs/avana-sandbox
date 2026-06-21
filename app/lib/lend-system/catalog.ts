@@ -4,6 +4,8 @@ import { INITIAL_LIQUIDITY_INDEX } from "@/app/lib/lend-engine/constants"
 import type { LendMarket, LendRiskTier } from "@/app/lib/lend-engine/types"
 
 const ASSET_PRICES_USD: Record<string, number> = {
+  USDC: 1,
+  USDT: 1,
   EURC: 1.08,
   ETH: 3500,
   BTC: 95000,
@@ -30,6 +32,8 @@ const ASSET_PRICES_USD: Record<string, number> = {
 }
 
 const SPEC_UTILIZATION: Record<string, number> = {
+  USDC: 0.32,
+  USDT: 0.3183,
   EURC: 0.298,
   FRXUSD: 0.1537,
   GHO: 0.6411,
@@ -43,6 +47,8 @@ const SPEC_UTILIZATION: Record<string, number> = {
 }
 
 const SPEC_SUPPLY_APY: Record<string, number> = {
+  USDC: 0.0485,
+  USDT: 0.048,
   EURC: 0.0049,
   GHO: 0.0299,
   ETH: 0.0382,

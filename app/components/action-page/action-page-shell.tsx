@@ -1,17 +1,19 @@
 "use client"
 
-import { ArrowLeft, HelpCircle, X } from "lucide-react"
-import Link from "next/link"
+import { HelpCircle, X } from "lucide-react"
+import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import type { ActionPageMode } from "@/app/lib/action-system/contracts"
 
 type ActionPageShellProps = {
   mode?: ActionPageMode
   title: string
-  subtitle: string
+  subtitle?: string
   walletLabel?: string
   simulated?: boolean
+  hideTitle?: boolean
   onClose?: () => void
   closeHref?: string
   children: ReactNode
@@ -24,19 +26,36 @@ export function ActionPageShell({
   title,
   subtitle,
   walletLabel,
-  simulated = false,
+  hideTitle = false,
   onClose,
   closeHref,
   children,
   footer,
   className,
 }: ActionPageShellProps) {
-  const showChrome = mode !== "embedded"
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+  const showChrome = true
+  const showTitleBlock = showChrome && !hideTitle
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose()
+      return
+    }
+    if (closeHref) {
+      router.push(closeHref)
+    }
+  }
 
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-col bg-background text-foreground",
+        "flex min-h-0 w-full flex-col bg-background text-foreground",
         mode === "page" && "min-h-[100dvh]",
         mode === "overlay" && "fixed inset-0 z-50 min-h-[100dvh]",
         className,
@@ -44,26 +63,16 @@ export function ActionPageShell({
       data-testid="action-page-shell"
       data-mode={mode}
     >
-      {showChrome ? (
+      {showChrome && mounted ? (
         <header className="flex items-center justify-between px-4 pb-2 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-6">
-          {closeHref ? (
-            <Link
-              href={closeHref}
-              aria-label="Close"
-              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <X className="size-4" />
-            </Link>
-          ) : (
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={onClose}
-              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <X className="size-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={handleClose}
+            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <X className="size-4" />
+          </button>
 
           {walletLabel ? (
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[12px] font-medium">
@@ -74,22 +83,21 @@ export function ActionPageShell({
             <div className="size-9" aria-hidden />
           )}
         </header>
+      ) : showChrome ? (
+        <div className="h-[52px] shrink-0" aria-hidden />
       ) : null}
 
-      <div className={cn("mx-auto flex w-full max-w-[560px] flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6", !showChrome && "pt-2")}>
-        <div className="pb-6 pt-2">
-          <h1 className="text-[clamp(2rem,6vw,2.75rem)] font-medium tracking-[-0.04em]">{title}</h1>
-          <p className="mt-2 text-[15px] text-muted-foreground">{subtitle}</p>
-          {simulated ? (
-            <span className="mt-3 inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-amber-700 dark:text-amber-300">
-              Simulated transaction
-            </span>
-          ) : null}
-        </div>
+      <div className={cn("mx-auto flex w-full max-w-[560px] flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6 pt-1")}>
+        {showTitleBlock && mounted ? (
+          <div className="pb-5 pt-1">
+            <h1 className="text-[1.375rem] font-medium tracking-[-0.03em] sm:text-[1.5rem]">{title}</h1>
+            {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
+          </div>
+        ) : null}
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col gap-3">{mounted ? children : null}</div>
 
-        {footer ? <div className="mt-6">{footer}</div> : null}
+        {footer ? <div className="mt-4">{footer}</div> : null}
       </div>
 
       {showChrome ? (
@@ -100,21 +108,5 @@ export function ActionPageShell({
         </div>
       ) : null}
     </div>
-  )
-}
-
-export function ActionPageBackButton({ onClick, className }: { onClick?: () => void; className?: string }) {
-  return (
-    <button
-      type="button"
-      aria-label="Back"
-      onClick={onClick}
-      className={cn(
-        "inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-        className,
-      )}
-    >
-      <ArrowLeft className="size-4" />
-    </button>
   )
 }
