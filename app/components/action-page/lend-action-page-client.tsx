@@ -10,6 +10,7 @@ import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import { mapLendDepositPreviewToActionUi, mapLendWithdrawPreviewToActionUi } from "@/app/lib/action-system/adapters/lend-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
+import { ActionNotFound } from "@/app/components/action-page/action-not-found"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
@@ -255,7 +256,15 @@ export function LendActionPageClient({
     [kind, market, position, session.state, walletId],
   )
 
-  if (!market && stage !== "select") return null
+  if (!market && stage !== "select") {
+    return (
+      <ActionNotFound
+        closeHref={closeHref}
+        title="Market unavailable"
+        message="We couldn't find that lending market. Pick one from the lend page to continue."
+      />
+    )
+  }
 
   const hideTitle = stage === "success" || stage === "processing" || stage === "blocked"
   const shellSubtitle =
