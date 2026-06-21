@@ -1,9 +1,9 @@
 "use client"
 
 import { useMemo } from "react"
-import { formatFixed, parseFixed, simulateLiquidation, type BorrowSystemState } from "@/app/lib/credit-engine"
-import { BorrowActionBox } from "@/app/borrow/components/borrow-action-box"
-import { mapPreviewToActionBoxUi } from "@/app/lib/borrow-system/preview-ui"
+import { parseFixed, simulateLiquidation, type BorrowSystemState } from "@/app/lib/credit-engine"
+import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
+import { mapLiquidationPreviewToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 
 type LiquidationPreviewPanelProps = {
   state: BorrowSystemState
@@ -11,52 +11,45 @@ type LiquidationPreviewPanelProps = {
   positionId: string
   debtPositionId: string
   amountUsd: number
+  onClose?: () => void
 }
 
-export function LiquidationPreviewPanel({ state, walletId, positionId, debtPositionId, amountUsd }: LiquidationPreviewPanelProps) {
-  const preview = useMemo(
-    () =>
-      simulateLiquidation(state, {
-        type: "liquidate",
-        walletId,
-        positionId,
-        debtPositionId,
-        repayAmountUsd6: parseFixed(amountUsd.toFixed(6), 6),
-      }),
-    [amountUsd, debtPositionId, positionId, state, walletId],
-  )
-
-  const previewUi = mapPreviewToActionBoxUi({
-    intent: {
-      id: "liquidation-preview",
-      actionType: "liquidate",
+export function LiquidationPreviewPanel({
+  state,
+  walletId,
+  positionId,
+  debtPositionId,
+  amountUsd,
+  onClose,
+}: LiquidationPreviewPanelProps) {
+  const previewUi = useMemo(() => {
+    const simulation = simulateLiquidation(state, {
+      type: "liquidate",
       walletId,
       positionId,
       debtPositionId,
-      amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
-      requestedAt: Date.now(),
-      simulated: true,
-    },
-    allowed: preview.allowed,
-    warnings: preview.warnings,
-    validationErrors: preview.validationErrors,
-    riskLabel: preview.riskLabel,
-    before: preview.before.metrics,
-    after: preview.after.metrics,
-  })
+      repayAmountUsd6: parseFixed(amountUsd.toFixed(6), 6),
+    })
+
+    const debtPosition = state.accounts[walletId]?.debtPositions.find((entry) => entry.id === debtPositionId)
+    const debtAsset = debtPosition ? state.assets[debtPosition.assetId] : null
+    const collateralPosition = state.accounts[walletId]?.collateralPositions.find((entry) => entry.id === positionId)
+    const market = collateralPosition?.marketId ? state.markets[collateralPosition.marketId] : null
+
+    return mapLiquidationPreviewToActionUi(simulation, {
+      amountUsd,
+      marketLabel: market?.display.name ?? "Collateral market",
+      debtSymbol: debtAsset?.symbol ?? "Asset",
+    })
+  }, [amountUsd, debtPositionId, positionId, state, walletId])
 
   return (
-    <BorrowActionBox
-      stage="review"
-      actionLabel="liquidation"
-      amountLabel={formatFixed(parseFixed(amountUsd.toFixed(6), 6), 6)}
+    <ActionReviewStage
       title="Liquidation preview"
       subtitle="Estimated liquidation outcome. No transaction will be submitted."
-      previewUi={previewUi}
-      successUi={null}
-      previewOnly
-      simulated
+      preview={previewUi}
       primaryLabel="Close preview"
+      onPrimary={onClose}
     />
   )
 }

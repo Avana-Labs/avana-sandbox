@@ -11,9 +11,17 @@ export type ActionKind =
   | MultiplyActionKind
   | RewardsActionKind
 
-export type ActionPageMode = "page" | "overlay" | "embedded"
+export type ActionPageMode = "page" | "overlay"
 
-export type ActionStage = "select" | "configure" | "submitting" | "success" | "error" | "blocked"
+export type ActionStage =
+  | "select"
+  | "configure"
+  | "approve_allowance"
+  | "wallet_sign"
+  | "processing"
+  | "success"
+  | "error"
+  | "blocked"
 
 export type ActionMetricTone = "default" | "positive" | "warning" | "danger"
 
@@ -25,6 +33,7 @@ export type ActionMetricRow = {
   after?: string
   tone?: ActionMetricTone
   tooltip?: string
+  tokenSymbols?: string[]
 }
 
 export type ActionRiskLevel = "safe" | "warning" | "danger"
@@ -60,6 +69,13 @@ export type ActionSuccessUi = {
   primaryCtaLabel: string
   primaryCtaHref: string
   secondaryCtaLabel: string
+  receiptContext?: {
+    verb: string
+    amountLabel: string
+    rateLabel: string
+    rateValue: string
+    marketValue: string
+  }
 }
 
 export type ActionBlockedUi = {
