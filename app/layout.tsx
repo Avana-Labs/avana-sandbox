@@ -3,12 +3,12 @@ import type { Metadata } from "next"
 import localFont from "next/font/local"
 import type React from "react"
 import { Suspense } from "react"
-import { Header } from "./components/header"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { AvanaSessionProviders } from "./components/avana-session-providers"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
+import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 
 const diatypeSans = localFont({
   src: [
@@ -111,6 +111,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Intentional blocking script: applies stored theme before first paint to prevent FOUC. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/theme-bootstrap.js" />
       </head>
       <body className="min-h-screen bg-background">
@@ -122,14 +124,13 @@ export default function RootLayout({
         >
           <DisplayPreferencesProvider>
             <AvanaSessionProviders>
-              <div className="flex min-h-screen flex-col">
+              <ConditionalSiteChrome>
                 <Suspense fallback={null}>
                   <PageLoadingBar />
                 </Suspense>
-                <Header />
-                <div className="flex-1">{children}</div>
-                <DeferredGlobalChrome />
-              </div>
+                {children}
+              </ConditionalSiteChrome>
+              <DeferredGlobalChrome />
             </AvanaSessionProviders>
           </DisplayPreferencesProvider>
         </ThemeProvider>

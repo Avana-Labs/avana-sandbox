@@ -43,6 +43,13 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
   const at = action.at ?? state.now
 
   if (action.type === "multiply") {
+    if (!Number.isFinite(action.collateralAmount) || action.collateralAmount <= 0) {
+      throw new Error("Collateral amount must be a positive, finite number")
+    }
+    if (!Number.isFinite(action.selectedMultiplier) || action.selectedMultiplier < 1) {
+      throw new Error("Multiplier must be a finite number of at least 1x")
+    }
+
     const market = next.markets[action.marketId]
     if (!market) throw new Error(`Unknown market ${action.marketId}`)
 
@@ -80,6 +87,10 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
     } satisfies MultiplyTransaction)
 
     return next
+  }
+
+  if (!Number.isFinite(action.targetMultiplier) || action.targetMultiplier < 1) {
+    throw new Error("Target multiplier must be a finite number of at least 1x")
   }
 
   const position = next.positions[action.positionId]
