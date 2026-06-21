@@ -11,8 +11,10 @@ import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
+import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
-import { isConfigureVisibleStage } from "@/app/lib/action-system/stage-machine"
+import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
+import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 
 function truncateWallet(id: string) {
   return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
@@ -119,11 +121,26 @@ export function MultiplyActionPageClient({
     })
   }, [amount, kind, market, multiplier, session, walletId])
 
-  const handlePrimary = useCallback(async () => {
-    if (stage === "success") {
-      router.push(closeHref)
+  const handleBack = useCallback(() => {
+    if (stage === "review") {
+      setStage("configure")
+      setOutcome(null)
       return
     }
+    router.push(closeHref)
+  }, [closeHref, router, stage])
+
+  const handlePrimary = useCallback(async () => {
+    if (stage === "success") {
+      router.push(successUi?.primaryCtaHref ?? dashboardHrefForProduct("multiply"))
+      return
+    }
+    if (stage === "configure") {
+      if (!market || !previewUi?.allowed) return
+      setStage("review")
+      return
+    }
+    if (stage !== "review") return
     if (!market || !previewUi?.allowed) return
 
     setIsPending(true)
@@ -173,8 +190,8 @@ export function MultiplyActionPageClient({
           description: `${parsedMultiplier.toFixed(2)}x on ${market.collateralAsset.symbol} processed.`,
           receiptHash: result.receipt.hash ?? null,
           metrics: previewUi.metrics,
-          href: "/multiply",
-          primaryCtaLabel: "View multiply dashboard",
+          href: dashboardHrefForProduct("multiply"),
+          primaryCtaLabel: successDashboardCtaLabel("multiply"),
           preview: previewUi,
           verb: descriptor.primaryVerb,
         }),
@@ -190,11 +207,11 @@ export function MultiplyActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, kind, market, multiplier, previewUi, router, session, stage, walletId])
+  }, [amount, closeHref, descriptor.primaryVerb, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId])
 
   if (!market) return null
 
-  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked"
+  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
 
   return (
     <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
@@ -202,7 +219,24 @@ export function MultiplyActionPageClient({
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}
 
-      {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
+      {stage === "review" && previewUi ? (
+        <ActionReviewStage
+          title={reviewStageTitle(descriptor.primaryVerb)}
+          subtitle="Confirm the details below before signing."
+          preview={previewUi}
+          primaryLabel={descriptor.primaryVerb}
+          onPrimary={() => void handlePrimary()}
+          onSecondary={handleBack}
+        />
+      ) : null}
+
+      {stage === "success" && successUi ? (
+        <ActionSuccessStage
+          success={successUi}
+          closeHref={closeHref}
+          onPrimary={() => router.push(successUi.primaryCtaHref)}
+        />
+      ) : null}
 
       {isConfigureVisibleStage(stage) ? (
         <ActionConfigureStage
@@ -222,6 +256,7 @@ export function MultiplyActionPageClient({
           onMultiplierChange={setMultiplier}
           multiplierOptions={multiplierOptions}
           onPrimary={() => void handlePrimary()}
+          onSecondary={handleBack}
           secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
