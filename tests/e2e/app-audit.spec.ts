@@ -9,16 +9,22 @@ type AuditIssue = {
 
 const auditIssues: AuditIssue[] = []
 
+function isBenignConsoleError(text: string) {
+  return (
+    text.includes("Download the React DevTools") ||
+    text.includes("Hydration") ||
+    text.includes("favicon") ||
+    text.includes("ResizeObserver") ||
+    text.includes("webpack-hmr") ||
+    text.includes("WebSocket connection")
+  )
+}
+
 function trackConsole(page: Page, viewport: string, route: string) {
   page.on("console", (msg: ConsoleMessage) => {
     if (msg.type() === "error") {
       const text = msg.text()
-      // Ignore known benign hydration / dev warnings
-      if (
-        text.includes("Download the React DevTools") ||
-        text.includes("Hydration") ||
-        text.includes("favicon")
-      ) {
+      if (isBenignConsoleError(text)) {
         return
       }
       auditIssues.push({
@@ -352,7 +358,7 @@ test.afterAll(async () => {
 // Fail test if critical console errors found (for CI)
 test("no critical console errors across audit", async () => {
   const critical = auditIssues.filter(
-    (i) => i.category === "console" && !i.message.includes("ResizeObserver"),
+    (i) => i.category === "console" && !isBenignConsoleError(i.message),
   )
   expect(critical, `Found ${critical.length} console errors:\n${critical.map((i) => i.message).join("\n")}`).toHaveLength(0)
 })

@@ -73,12 +73,15 @@ export function useLendSession({
 
   useEffect(() => {
     if (!shouldPersistState) return
+    // Skip while state is still the SSR seed (pre-hydration); persisting it here
+    // would clobber richer data already in storage before the restore effect runs.
+    if (state === seededState) return
     isPersistingRef.current = true
     writeLendSessionState(walletId, state)
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [shouldPersistState, walletId, state])
+  }, [shouldPersistState, walletId, state, seededState])
 
   useEffect(() => {
     if (!shouldPersistState) return

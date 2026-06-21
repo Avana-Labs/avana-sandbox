@@ -1,13 +1,16 @@
 import { formatFixed } from "@/app/lib/credit-engine"
 import type { TransactionPreview } from "@/app/lib/borrow-system/contracts"
+import type { BorrowSimulationResult } from "@/app/lib/credit-engine/simulation"
 import type { ActionPreviewUi, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import {
   formatActionApproxUsd,
   formatActionAmount,
+  formatActionBeforeAfter,
   formatActionHealthFactor,
   formatActionNetworkFee,
   formatActionPercent,
   formatActionRatioPercent,
+  formatActionPercentBeforeAfter,
   formatActionUsd,
   formatActionUsdBeforeAfter,
 } from "@/app/lib/action-system/formatters"
@@ -21,18 +24,18 @@ function hfToNumber(value: bigint | null) {
   return fixedToNumber(value, 18)
 }
 
-function hfTone(value: number | null): "default" | "warning" | "danger" {
-  if (value == null || !Number.isFinite(value)) return "default"
+function hfTone(value: number | null): "default" | "positive" | "warning" | "danger" {
+  if (value == null || !Number.isFinite(value)) return "positive"
   if (value < 1.05) return "danger"
   if (value < 1.5) return "warning"
-  return "default"
+  return "positive"
 }
 
 function riskFromPreview(preview: TransactionPreview, healthAfter: number) {
   if (preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < 1.05)) {
     return {
       level: "danger" as const,
-      title: "This action puts your position at risk",
+      title: "This borrow puts your position at risk",
       message: `Health factor will drop to ${formatActionHealthFactor(healthAfter)} after this transaction. You are at risk of liquidation.`,
     }
   }
@@ -44,6 +47,18 @@ function riskFromPreview(preview: TransactionPreview, healthAfter: number) {
     }
   }
   return null
+}
+
+function netBalanceUsd(preview: TransactionPreview, side: "before" | "after") {
+  const snapshot = side === "before" ? preview.before : preview.after
+  const collateral = fixedToNumber(snapshot.collateralValueUsd6, 6)
+  const borrowed = fixedToNumber(snapshot.totalBorrowedUsd6, 6)
+  return collateral - borrowed
+}
+
+function borrowingPowerUsd(preview: TransactionPreview, side: "before" | "after") {
+  const snapshot = side === "before" ? preview.before : preview.after
+  return fixedToNumber(snapshot.availableBorrowCapacityUsd6, 6)
 }
 
 export function mapBorrowTransactionPreviewToActionUi(
@@ -58,13 +73,12 @@ export function mapBorrowTransactionPreviewToActionUi(
     rateLabel?: string
   },
 ): ActionPreviewUi {
-  const beforeBorrowed = fixedToNumber(preview.before.totalBorrowedUsd6, 6)
-  const afterBorrowed = fixedToNumber(preview.after.totalBorrowedUsd6, 6)
-  const beforeCapacity = fixedToNumber(preview.before.availableBorrowCapacityUsd6, 6)
-  const afterCapacity = fixedToNumber(preview.after.availableBorrowCapacityUsd6, 6)
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
   const afterCollateral = fixedToNumber(preview.after.collateralValueUsd6, 6)
+  const healthBefore = hfToNumber(preview.before.healthFactorWad)
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
+  const beforeApy = options.ratePct
+  const afterApy = options.ratePct
 
   return {
     allowed: preview.allowed,
@@ -79,19 +93,39 @@ export function mapBorrowTransactionPreviewToActionUi(
     maxAmount: options.balanceUsd,
     metrics: [
       {
+        id: "position-apy",
+        label: "Position APY",
+        value: formatActionPercentBeforeAfter(beforeApy, afterApy),
+        before: formatActionPercent(beforeApy),
+        after: formatActionPercent(afterApy),
+      },
+      {
         id: "borrowing-power",
         label: "Borrowing power",
-        value: formatActionUsdBeforeAfter(beforeCapacity + beforeBorrowed - beforeBorrowed, afterCapacity + afterBorrowed - afterBorrowed),
+        value: formatActionUsdBeforeAfter(borrowingPowerUsd(preview, "before"), borrowingPowerUsd(preview, "after")),
+        before: formatActionUsd(borrowingPowerUsd(preview, "before")),
+        after: formatActionUsd(borrowingPowerUsd(preview, "after")),
+      },
+      {
+        id: "net-balance",
+        label: "Net balance",
+        value: formatActionUsdBeforeAfter(netBalanceUsd(preview, "before"), netBalanceUsd(preview, "after")),
+        before: formatActionUsd(netBalanceUsd(preview, "before")),
+        after: formatActionUsd(netBalanceUsd(preview, "after")),
       },
       {
         id: "net-collateral",
         label: "Net collateral",
         value: formatActionUsdBeforeAfter(beforeCollateral, afterCollateral),
+        before: formatActionUsd(beforeCollateral),
+        after: formatActionUsd(afterCollateral),
       },
       {
         id: "health-factor",
         label: "Health factor",
-        value: formatActionHealthFactor(healthAfter),
+        value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
+        before: formatActionHealthFactor(healthBefore),
+        after: formatActionHealthFactor(healthAfter),
         tone: hfTone(healthAfter),
       },
     ],
@@ -103,17 +137,80 @@ export function mapBorrowTransactionPreviewToActionUi(
   }
 }
 
-export function mapBorrowSupplyPreviewToActionUi(options: {
-  allowed: boolean
-  amountUsd: number
-  symbol: string
-  marketLabel: string
-  borrowPowerUsd: number
-  collateralFactorPct: number
-  validationError?: string | null
-}): ActionPreviewUi {
+export function mapBorrowRepayPreviewToActionUi(
+  preview: TransactionPreview,
+  options: {
+    symbol: string
+    amountUsd: number
+    marketLabel: string
+    remainingDebtUsd: number
+    yearlyInterestSavedUsd: number
+  },
+): ActionPreviewUi {
+  const beforeDebt = fixedToNumber(preview.before.totalBorrowedUsd6, 6)
+  const afterDebt = fixedToNumber(preview.after.totalBorrowedUsd6, 6)
+  const healthBefore = hfToNumber(preview.before.healthFactorWad)
+  const healthAfter = hfToNumber(preview.after.healthFactorWad)
+
   return {
-    allowed: options.allowed,
+    allowed: preview.allowed,
+    amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
+    amountUsdLabel: formatActionApproxUsd(options.amountUsd),
+    rateLabel: "Repay amount",
+    rateValue: formatActionUsd(options.amountUsd),
+    marketLabel: "Market",
+    marketValue: options.marketLabel,
+    balanceLabel: "Remaining debt",
+    balanceValue: formatActionUsd(options.remainingDebtUsd),
+    maxAmount: beforeDebt,
+    metrics: [
+      {
+        id: "remaining-debt",
+        label: "Remaining debt",
+        value: formatActionUsdBeforeAfter(beforeDebt, afterDebt),
+        before: formatActionUsd(beforeDebt),
+        after: formatActionUsd(afterDebt),
+      },
+      {
+        id: "health-factor",
+        label: "Health factor after",
+        value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
+        before: formatActionHealthFactor(healthBefore),
+        after: formatActionHealthFactor(healthAfter),
+        tone: hfTone(healthAfter),
+      },
+      {
+        id: "interest-saved",
+        label: "Interest saved (est. yearly)",
+        value: formatActionUsd(options.yearlyInterestSavedUsd),
+        tone: options.yearlyInterestSavedUsd > 0 ? "positive" : "default",
+      },
+    ],
+    networkFeeLabel: formatActionNetworkFee(0.04),
+    risk: riskFromPreview(preview, healthAfter),
+    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    validationErrors: preview.validationErrors,
+    warnings: preview.warnings,
+  }
+}
+
+export function mapBorrowSupplyPreviewToActionUi(
+  preview: TransactionPreview,
+  options: {
+    symbol: string
+    amountUsd: number
+    marketLabel: string
+    collateralFactorPct: number
+    collateralRiskPct: number
+    borrowableAssetsLabel: string
+    borrowableAssetSymbols: string[]
+  },
+): ActionPreviewUi {
+  const borrowPowerBefore = borrowingPowerUsd(preview, "before")
+  const borrowPowerAfter = borrowingPowerUsd(preview, "after")
+
+  return {
+    allowed: preview.allowed,
     amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: "Collateral factor",
@@ -121,21 +218,178 @@ export function mapBorrowSupplyPreviewToActionUi(options: {
     marketLabel: "Market",
     marketValue: options.marketLabel,
     balanceLabel: "Borrow power",
-    balanceValue: formatActionUsd(options.borrowPowerUsd),
+    balanceValue: formatActionUsd(borrowPowerAfter),
     maxAmount: null,
     metrics: [
       {
+        id: "collateral-factor",
+        label: "Collateral factor",
+        value: formatActionPercent(options.collateralFactorPct),
+      },
+      {
+        id: "collateral-risk",
+        label: "Collateral risk",
+        value: formatActionPercent(options.collateralRiskPct),
+        tone: options.collateralRiskPct > 15 ? "warning" : "default",
+      },
+      {
+        id: "borrowable-assets",
+        label: "Borrowable assets",
+        value: options.borrowableAssetsLabel,
+        tokenSymbols: options.borrowableAssetSymbols,
+      },
+      {
         id: "borrow-power",
         label: "Borrowing power",
-        value: formatActionUsd(options.borrowPowerUsd),
-        tone: "positive",
+        value: formatActionUsdBeforeAfter(borrowPowerBefore, borrowPowerAfter),
+        before: formatActionUsd(borrowPowerBefore),
+        after: formatActionUsd(borrowPowerAfter),
       },
     ],
     networkFeeLabel: formatActionNetworkFee(0.04),
     risk: null,
-    blockedReason: options.allowed ? null : (options.validationError ?? "Action unavailable"),
-    validationErrors: options.validationError ? [options.validationError] : [],
-    warnings: [],
+    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    validationErrors: preview.validationErrors,
+    warnings: preview.warnings,
+  }
+}
+
+export function mapBorrowRemovePreviewToActionUi(
+  preview: TransactionPreview,
+  options: {
+    percent: number
+    removeUsd: number
+    marketLabel: string
+    positionApyPct: number
+  },
+): ActionPreviewUi {
+  const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
+  const afterCollateral = fixedToNumber(preview.after.collateralValueUsd6, 6)
+  const annualBefore = (beforeCollateral * options.positionApyPct) / 100
+  const annualAfter = (afterCollateral * options.positionApyPct) / 100
+
+  return {
+    allowed: preview.allowed,
+    amountLabel: `${options.percent}%`,
+    amountUsdLabel: formatActionApproxUsd(options.removeUsd),
+    rateLabel: "Position APY",
+    rateValue: formatActionPercent(options.positionApyPct),
+    marketLabel: "Market",
+    marketValue: options.marketLabel,
+    balanceLabel: "Removing",
+    balanceValue: formatActionUsd(options.removeUsd),
+    maxAmount: 100,
+    metrics: [
+      {
+        id: "position-apy",
+        label: "Position APY",
+        value: formatActionPercent(options.positionApyPct),
+      },
+      {
+        id: "annual-earnings",
+        label: "Annual earnings",
+        value: formatActionUsdBeforeAfter(annualBefore, annualAfter),
+        before: formatActionUsd(annualBefore),
+        after: formatActionUsd(annualAfter),
+      },
+      {
+        id: "borrowing-power",
+        label: "Borrowing power",
+        value: formatActionUsdBeforeAfter(borrowingPowerUsd(preview, "before"), borrowingPowerUsd(preview, "after")),
+        before: formatActionUsd(borrowingPowerUsd(preview, "before")),
+        after: formatActionUsd(borrowingPowerUsd(preview, "after")),
+      },
+      {
+        id: "net-balance",
+        label: "Net balance",
+        value: formatActionUsdBeforeAfter(netBalanceUsd(preview, "before"), netBalanceUsd(preview, "after")),
+        before: formatActionUsd(netBalanceUsd(preview, "before")),
+        after: formatActionUsd(netBalanceUsd(preview, "after")),
+      },
+      {
+        id: "net-collateral",
+        label: "Net collateral",
+        value: formatActionUsdBeforeAfter(beforeCollateral, afterCollateral),
+        before: formatActionUsd(beforeCollateral),
+        after: formatActionUsd(afterCollateral),
+      },
+    ],
+    networkFeeLabel: formatActionNetworkFee(0.04),
+    risk: riskFromPreview(preview, hfToNumber(preview.after.healthFactorWad)),
+    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    validationErrors: preview.validationErrors,
+    warnings: preview.warnings,
+  }
+}
+
+export function mapLiquidationPreviewToActionUi(
+  simulation: BorrowSimulationResult,
+  options: {
+    amountUsd: number
+    marketLabel: string
+    debtSymbol: string
+  },
+): ActionPreviewUi {
+  const healthBefore = hfToNumber(simulation.before.metrics.healthFactorWad)
+  const healthAfter = hfToNumber(simulation.after.metrics.healthFactorWad)
+  const beforeCollateral = fixedToNumber(simulation.before.metrics.collateralValueUsd6, 6)
+  const afterCollateral = fixedToNumber(simulation.after.metrics.collateralValueUsd6, 6)
+  const beforeDebt = fixedToNumber(simulation.before.metrics.totalBorrowedUsd6, 6)
+  const afterDebt = fixedToNumber(simulation.after.metrics.totalBorrowedUsd6, 6)
+
+  return {
+    allowed: simulation.allowed,
+    amountLabel: formatActionAmount(options.amountUsd, options.debtSymbol, 2),
+    amountUsdLabel: formatActionApproxUsd(options.amountUsd),
+    rateLabel: "Liquidation",
+    rateValue: formatActionUsd(options.amountUsd),
+    marketLabel: "Market",
+    marketValue: options.marketLabel,
+    balanceLabel: "Estimated repay",
+    balanceValue: formatActionUsd(options.amountUsd),
+    maxAmount: null,
+    metrics: [
+      {
+        id: "collateral",
+        label: "Collateral",
+        value: formatActionUsdBeforeAfter(beforeCollateral, afterCollateral),
+        before: formatActionUsd(beforeCollateral),
+        after: formatActionUsd(afterCollateral),
+      },
+      {
+        id: "debt",
+        label: "Debt",
+        value: formatActionUsdBeforeAfter(beforeDebt, afterDebt),
+        before: formatActionUsd(beforeDebt),
+        after: formatActionUsd(afterDebt),
+      },
+      {
+        id: "health-factor",
+        label: "Health factor",
+        value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
+        before: formatActionHealthFactor(healthBefore),
+        after: formatActionHealthFactor(healthAfter),
+        tone: hfTone(healthAfter),
+      },
+    ],
+    networkFeeLabel: formatActionNetworkFee(0.04),
+    risk:
+      simulation.riskLabel === "danger"
+        ? {
+            level: "danger",
+            title: "Liquidation leaves position at risk",
+            message: simulation.validationErrors[0] ?? simulation.warnings[0] ?? "Health factor is too low.",
+          }
+        : simulation.riskLabel === "warning"
+          ? {
+              level: "warning",
+              title: "Liquidation impact",
+              message: simulation.warnings[0] ?? "Health factor is declining.",
+            }
+          : null,
+    blockedReason: simulation.allowed ? null : (simulation.validationErrors[0] ?? "Liquidation unavailable"),
+    validationErrors: simulation.validationErrors,
+    warnings: simulation.warnings,
   }
 }
 
@@ -145,15 +399,27 @@ export function mapBorrowSuccessToActionUi(options: {
   receiptHash: string | null
   metrics: ActionPreviewUi["metrics"]
   href: string
+  primaryCtaLabel?: string
+  preview?: Pick<ActionPreviewUi, "amountLabel" | "rateLabel" | "rateValue" | "marketValue"> | null
+  verb?: string
 }): ActionSuccessUi {
   return {
     title: options.title,
     description: options.description,
     receiptHash: options.receiptHash,
     metrics: options.metrics,
-    primaryCtaLabel: "View borrow dashboard",
+    primaryCtaLabel: options.primaryCtaLabel ?? "View dashboard",
     primaryCtaHref: options.href,
     secondaryCtaLabel: "Done",
+    receiptContext: options.preview
+      ? {
+          verb: options.verb ?? "Action",
+          amountLabel: options.preview.amountLabel,
+          rateLabel: options.preview.rateLabel,
+          rateValue: options.preview.rateValue,
+          marketValue: options.preview.marketValue,
+        }
+      : undefined,
   }
 }
 
