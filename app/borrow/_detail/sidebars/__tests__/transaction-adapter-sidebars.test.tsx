@@ -8,6 +8,7 @@ import { selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
 const createIntent = vi.fn()
 const previewTransaction = vi.fn()
 const executeTransaction = vi.fn()
+const push = vi.fn()
 const walletId = "demo-wallet"
 const previewState = buildMockBorrowSystemState(walletId)
 const previewPool = selectBorrowCollateralPools(previewState, walletId).find((entry) => entry.id === "uni-v3-bluechip-weth-usdc")!
@@ -49,6 +50,10 @@ vi.mock("next/dynamic", () => ({
   default: () => () => null,
 }))
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+}))
+
 vi.mock("@/app/borrow/_detail/ui", () => ({
   AboutNewsSection: () => null,
 }))
@@ -63,87 +68,8 @@ vi.mock("@/components/ui/dialog", () => ({
   DialogTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
-vi.mock("@/app/components/home/remove-card", () => ({
-  CompactRemoveCard: ({ onSubmit }: { onSubmit: () => void }) => (
-    <button type="button" onClick={onSubmit}>
-      Review removal
-    </button>
-  ),
-}))
-
-vi.mock("@/app/components/home/claim-card", () => ({
-  CompactClaimCard: () => <div>claim-card</div>,
-}))
-
-vi.mock("@/app/components/home/repay-card", () => ({
-  CompactRepayCard: ({
-    onAmountChange,
-    onSubmit,
-  }: {
-    onAmountChange: (value: string) => void
-    onSubmit: () => void
-  }) => (
-    <button
-      type="button"
-      onClick={() => {
-        onAmountChange("150")
-        onSubmit()
-      }}
-    >
-      Review repayment
-    </button>
-  ),
-}))
-
-vi.mock("@/app/borrow/components/borrow-modal", () => ({
-  BorrowModal: ({
-    open,
-    onConfirm,
-  }: {
-    open: boolean
-    onConfirm: (result: { pool: typeof pool; token: { id: string }; amountUsd: number }) => void
-  }) =>
-    open ? (
-      <button type="button" onClick={() => onConfirm({ pool, token: { id: "uni-v3-bluechip:usdc" }, amountUsd: 250 })}>
-        confirm-borrow
-      </button>
-    ) : null,
-}))
-
-vi.mock("@/app/borrow/components/repay-remove-modal", () => ({
-  RepayRemoveModal: ({
-    open,
-    context,
-    onConfirm,
-  }: {
-    open: boolean
-    context: { mode: "repay" | "remove"; pool: typeof pool } | null
-    onConfirm: (result: { mode: "repay" | "remove"; pool: typeof pool; amountUsd: number }) => void
-  }) =>
-    open && context ? (
-      <button type="button" onClick={() => onConfirm({ mode: context.mode, pool, amountUsd: 150 })}>
-        {context.mode === "repay" ? "confirm-repay" : "confirm-remove"}
-      </button>
-    ) : null,
-}))
-
-vi.mock("@/app/borrow/components/supply-collateral-modal", () => ({
-  SupplyCollateralModal: ({
-    open,
-    onConfirm,
-  }: {
-    open: boolean
-    onConfirm: (result: { pool: typeof pool; amountUsd: number }) => void
-  }) =>
-    open ? (
-      <button type="button" onClick={() => onConfirm({ pool, amountUsd: 300 })}>
-        confirm-supply
-      </button>
-    ) : null,
-}))
-
-vi.mock("@/app/lend/components/lend-market-action-dialog", () => ({
-  LendMarketActionDialog: () => null,
+vi.mock("@/app/components/action-page/embedded-action-page", () => ({
+  EmbeddedActionPage: ({ kind }: { kind: string }) => <div data-testid={`embedded-action-${kind}`} />,
 }))
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
@@ -283,35 +209,24 @@ describe("detail sidebars", () => {
     executeTransaction.mockResolvedValue({ preview: { allowed: true }, receipt: {}, result: {}, historyItem: {}, state: {} })
   })
 
-  it("opens asset sidebar modals and closes after mocked confirm", async () => {
+  it("embeds shared action pages for asset sidebar tabs", () => {
     render(<AssetTokenActions detail={assetDetail} />)
 
+    expect(screen.getByTestId("embedded-action-deposit")).toBeInTheDocument()
+
     fireEvent.click(screen.getByText("Borrow"))
-    fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: "250" } })
-    fireEvent.click(screen.getByText("Review borrow"))
-    fireEvent.click(screen.getByText("confirm-borrow"))
+    expect(screen.getByTestId("embedded-action-borrow")).toBeInTheDocument()
 
     fireEvent.click(screen.getByText("Repay"))
-    fireEvent.click(screen.getByText("Review repayment"))
-    fireEvent.click(screen.getByText("confirm-repay"))
-
-    fireEvent.click(screen.getByRole("tab", { name: "Deposit" }))
-    fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: "100" } })
-    fireEvent.click(screen.getByText("Review deposit"))
-
-    await waitFor(() => expect(createIntent).not.toHaveBeenCalled())
+    expect(screen.getByTestId("embedded-action-repay")).toBeInTheDocument()
   })
 
-  it("routes pool sidebar pledge and remove modals through mocked confirm", async () => {
+  it("embeds shared action pages for pool sidebar pledge and remove tabs", () => {
     render(<PoolBorrowActions detail={poolDetail} />)
 
-    fireEvent.click(screen.getByText("Review pledge"))
-    fireEvent.click(screen.getByText("confirm-supply"))
+    expect(screen.getByTestId("embedded-action-supply")).toBeInTheDocument()
 
-    fireEvent.click(screen.getByText("Remove"))
-    fireEvent.click(screen.getByText("Review removal"))
-    fireEvent.click(screen.getByText("confirm-remove"))
-
-    expect(createIntent).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("tab", { name: "Remove" }))
+    expect(screen.getByTestId("embedded-action-remove")).toBeInTheDocument()
   })
 })

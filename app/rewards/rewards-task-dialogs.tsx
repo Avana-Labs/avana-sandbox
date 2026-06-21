@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { RewardTask, UserRewardProgress } from "@/app/lib/rewards-engine"
 import type { RewardTaskActionKind } from "@/app/lib/rewards-engine/types"
 import { Button } from "@/components/ui/button"
@@ -218,15 +218,18 @@ export function RewardsReferralDialog({
       actionKind === "sandbox_referral_activate" ||
       actionKind === "sandbox_referral_fund")
 
+  useEffect(() => {
+    if (!open) return
+
+    setLoadingAction("profile")
+    void onEnsureProfile().finally(() => setLoadingAction(null))
+  }, [onEnsureProfile, open])
+
   return (
     <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
         onOpenChange(nextOpen)
-        if (nextOpen) {
-          setLoadingAction("profile")
-          void onEnsureProfile().finally(() => setLoadingAction(null))
-        }
       }}
     >
       <DialogContent>

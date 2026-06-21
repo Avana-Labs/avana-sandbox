@@ -5,22 +5,35 @@ import type { LendReadAdapter, LendWalletReadSnapshot } from "./contracts"
 
 const NOT_IMPLEMENTED = "Production lend read adapter is not implemented"
 
+type ProductionLendReadAdapterOptions = Partial<{
+  readWalletSnapshot: (walletId: string) => Promise<LendWalletReadSnapshot>
+  readMarkets: () => Promise<LendMarket[]>
+  readLendPage: (walletId: string) => Promise<LendPageData>
+  readPortfolioLend: (walletId: string) => Promise<PortfolioLendTabData>
+}>
+
 export class ProductionLendReadAdapter implements LendReadAdapter {
   readonly mode = "production" as const
 
-  async readWalletSnapshot(_walletId: string): Promise<LendWalletReadSnapshot> {
-    throw new Error(NOT_IMPLEMENTED)
+  constructor(private readonly source: ProductionLendReadAdapterOptions = {}) {}
+
+  async readWalletSnapshot(walletId: string): Promise<LendWalletReadSnapshot> {
+    if (!this.source.readWalletSnapshot) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readWalletSnapshot(walletId)
   }
 
   async readMarkets(): Promise<LendMarket[]> {
-    throw new Error(NOT_IMPLEMENTED)
+    if (!this.source.readMarkets) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readMarkets()
   }
 
-  async readLendPage(_walletId: string): Promise<LendPageData> {
-    throw new Error(NOT_IMPLEMENTED)
+  async readLendPage(walletId: string): Promise<LendPageData> {
+    if (!this.source.readLendPage) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readLendPage(walletId)
   }
 
-  async readPortfolioLend(_walletId: string): Promise<PortfolioLendTabData> {
-    throw new Error(NOT_IMPLEMENTED)
+  async readPortfolioLend(walletId: string): Promise<PortfolioLendTabData> {
+    if (!this.source.readPortfolioLend) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readPortfolioLend(walletId)
   }
 }

@@ -66,6 +66,7 @@ export type RewardTaskRequirement =
       product?: RewardProduct
       minAmountUsd?: number
       distinctProducts?: RewardProduct[]
+      distinctMarketIds?: boolean
       marketId?: string
     }
   | {

@@ -7,6 +7,7 @@ const readPortfolioBorrow = vi.fn()
 const readPortfolioLend = vi.fn()
 const readPortfolioMultiply = vi.fn()
 let transactionHistory: Array<Record<string, unknown>> = []
+let multiplyTransactionHistory: Array<Record<string, unknown>> = []
 
 vi.mock("@/app/portfolio/use-portfolio-page", () => ({
   usePortfolioPage: ({ walletProfileId }: { walletProfileId: string }) => ({
@@ -36,12 +37,14 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
     },
     multiply: {
       readAdapter: { readPortfolioMultiply },
-      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
-      transactionHistory: [],
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, walletBalances: {}, transactions: [] },
+      get transactionHistory() {
+        return multiplyTransactionHistory
+      },
     },
     lend: {
       readAdapter: { readPortfolioLend },
-      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
+      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, walletBalances: {}, transactions: [] },
       transactionHistory: [],
     },
   }),
@@ -70,12 +73,13 @@ vi.mock("@/app/portfolio/dashboard-borrow-tab", () => ({ DashboardBorrowTab: () 
 vi.mock("@/app/portfolio/portfolio-investments", () => ({ PortfolioInvestments: () => null }))
 vi.mock("@/app/portfolio/multiply-collateral-table", () => ({ MultiplyCollateralTable: () => null }))
 vi.mock("@/app/portfolio/recent-activity", () => ({
-  RecentActivity: ({ rows }: { rows: Array<{ txHash?: string; secondaryLabel?: string }> }) => (
+  RecentActivity: ({ rows }: { rows: Array<{ txHash?: string; secondaryLabel?: string; amountUsd?: number }> }) => (
     <div>
       {rows.map((row) => (
         <div key={row.txHash}>
           <span>{row.txHash}</span>
           <span>{row.secondaryLabel}</span>
+          <span>{row.amountUsd}</span>
         </div>
       ))}
     </div>
@@ -98,6 +102,22 @@ describe("DashboardClient activity", () => {
         simulated: true,
         timestamp: Date.UTC(2026, 5, 19),
         hash: "sim_abc123",
+      },
+    ]
+    multiplyTransactionHistory = [
+      {
+        id: "multiply-1",
+        intentId: "intent-multiply-1",
+        walletId: "demo-wallet",
+        marketId: "eth-usdc",
+        kind: "multiply",
+        status: "success",
+        amountUsd: 1250,
+        multiplierBefore: 1,
+        multiplierAfter: 2.5,
+        simulated: true,
+        timestamp: Date.UTC(2026, 5, 19),
+        hash: "0xmultiply",
       },
     ]
 
@@ -137,5 +157,7 @@ describe("DashboardClient activity", () => {
 
     expect(screen.getByText("sim_abc123")).toBeInTheDocument()
     expect(screen.getByText("Simulated transaction")).toBeInTheDocument()
+    expect(screen.getByText("0xmultiply")).toBeInTheDocument()
+    expect(screen.getByText("1250")).toBeInTheDocument()
   })
 })

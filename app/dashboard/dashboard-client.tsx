@@ -2,14 +2,16 @@
 
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
-import { DeleverageModal } from "@/app/multiply/components/deleverage-modal"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
+import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
 import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
 import { PortfolioPositionsTabs } from "@/app/portfolio/portfolio-positions-tabs"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
@@ -32,6 +34,7 @@ function mergeLendTabData(
     positions: liveData.positions.length > 0 ? liveData.positions : staticData.positions,
     strategyBuckets: staticData.strategyBuckets,
     history: liveData.history.length > 0 ? liveData.history : staticData.history,
+    rewardsSummary: liveData.rewardsSummary ?? staticData.rewardsSummary,
   }
 }
 
@@ -86,10 +89,10 @@ export function DashboardClient({
   walletProfileId?: string
 }) {
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
+  const router = useRouter()
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
-  const [deleverageOpen, setDeleverageOpen] = useState(false)
-  const [deleveragePositionId, setDeleveragePositionId] = useState<string | null>(null)
+  const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
   const portfolioMultiply = usePortfolioMultiplyLive(walletId, multiplySession)
@@ -156,7 +159,7 @@ export function DashboardClient({
         product: "multiply" as const,
         kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
         status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
-        amountUsd: 0,
+        amountUsd: item.kind === "multiply" ? item.amountUsd : -item.amountUsd,
         primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
         secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
         txHash: item.hash,
@@ -167,21 +170,22 @@ export function DashboardClient({
     [borrowSession.transactionHistory, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, data?.activity.rows, initialData?.activity.rows],
   )
 
-  const deleverageTarget = useMemo(() => {
-    if (!deleveragePositionId) return null
-    const position = multiplySession.state.positions[deleveragePositionId]
-    if (!position) return null
-    const market = multiplySession.state.markets[position.marketId]
-    if (!market) return null
-    return { position, market }
-  }, [deleveragePositionId, multiplySession.state.markets, multiplySession.state.positions])
-
   const lendTabData = useMemo(() => {
     if (!data) return portfolioLend ?? initialData?.lend ?? { investments: [], positions: [], strategyBuckets: [], history: [] }
     return mergeLendTabData(data.lend, portfolioLend)
   }, [data, initialData, portfolioLend])
 
   const lendSnapshot = useMemo(() => buildLendSnapshotFromTabData(lendTabData), [lendTabData])
+
+  const handleClaimLendRewards = async () => {
+    if (isClaimingLendRewards) return
+    setIsClaimingLendRewards(true)
+    try {
+      await lendSession.claimRewards()
+    } finally {
+      setIsClaimingLendRewards(false)
+    }
+  }
 
   const multiplyTabData = useMemo(() => {
     if (!data) {
@@ -204,6 +208,11 @@ export function DashboardClient({
     return mergeMultiplyTabData(data.multiply, portfolioMultiply)
   }, [data, initialData, portfolioMultiply])
 
+  const multiplyHero = useMemo(() => {
+    const template = data?.heroByTab.looping ?? initialData?.heroByTab.looping ?? {}
+    return buildMultiplyHeroData(template, buildMultiplySnapshotFromTabData(multiplyTabData))
+  }, [data, initialData, multiplyTabData])
+
   if (!data || !resolvedWalletProfileId || !portfolioBorrow) return null
 
   return (
@@ -215,6 +224,7 @@ export function DashboardClient({
         borrowSnapshot={borrowSnapshot}
         multiplySnapshot={multiplySnapshot}
         lendSnapshot={lendSnapshot}
+        multiplyHero={multiplyHero}
       />
 
       {activeTab === "overview" ? (
@@ -227,13 +237,18 @@ export function DashboardClient({
               collateralPositions={collateralPositions}
               debtPositions={debtPositions}
               showSummary={false}
-              walletId={walletId}
-              borrowSession={borrowSession}
             />
           </DashboardSection>
         </div>
       ) : null}
-      {activeTab === "lending" ? <PortfolioInvestments investments={lendTabData.investments} /> : null}
+      {activeTab === "lending" ? (
+        <PortfolioInvestments
+          investments={lendTabData.investments}
+          rewardsSummary={lendTabData.rewardsSummary}
+          onClaimRewards={handleClaimLendRewards}
+          isClaimingRewards={isClaimingLendRewards}
+        />
+      ) : null}
       {activeTab === "looping" ? (
         <div className="mt-12 space-y-5">
           <DashboardSectionTitle title="Credit Limits" />
@@ -243,27 +258,15 @@ export function DashboardClient({
             <MultiplyCollateralTable
               rows={multiplyTabData.lpCollaterals}
               onDeleverage={(positionId) => {
-                setDeleveragePositionId(positionId)
-                setDeleverageOpen(true)
+                const position = multiplySession.state.positions[positionId]
+                if (!position) return
+                router.push(actionPagePath("multiply", "deleverage", { market: position.marketId }))
               }}
             />
           </DashboardSection>
         </div>
       ) : null}
       {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
-
-      {deleverageTarget ? (
-        <DeleverageModal
-          open={deleverageOpen}
-          onOpenChange={(open) => {
-            setDeleverageOpen(open)
-            if (!open) setDeleveragePositionId(null)
-          }}
-          market={deleverageTarget.market}
-          position={deleverageTarget.position}
-          session={multiplySession}
-        />
-      ) : null}
     </>
   )
 }

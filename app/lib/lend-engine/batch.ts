@@ -15,7 +15,9 @@ export function applyLendActions(state: LendSystemState, actions: LendAction[]) 
       const positionId =
         entry.action.type === "withdraw"
           ? entry.action.positionId
-          : `${entry.action.walletId}:${entry.action.marketId}`
+          : entry.action.type === "deposit"
+            ? `${entry.action.walletId}:${entry.action.marketId}`
+            : `${entry.action.walletId}:rewards`
       return applyLendAction(current, entry.action, {
         positionId,
         transactionId: `batch-${index}`,

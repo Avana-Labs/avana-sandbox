@@ -1,10 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 
-const createIntent = vi.fn()
-const previewTransaction = vi.fn()
-const executeTransaction = vi.fn()
+const push = vi.fn()
 
 const poolVisual = { symbol: "WETH", shortLabel: "WETH", bgClassName: "bg-black", textClassName: "text-white" }
 const stableVisual = { symbol: "USDC", shortLabel: "USDC", bgClassName: "bg-blue-500", textClassName: "text-white" }
@@ -44,19 +42,9 @@ const debtRow = {
   dailyInterestUsd: 0.4,
 }
 
-const asset = {
-  id: "uni-v3-bluechip:usdc",
-  name: "USD Coin",
-  symbol: "USDC",
-  subtitle: "Stablecoin",
-  borrowApr: 4.2,
-  visual: {
-    symbol: "USDC",
-    shortLabel: "USDC",
-    bgClass: "bg-blue-500",
-    textClass: "text-white",
-  },
-}
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+}))
 
 vi.mock("@/app/components/display-preferences", () => ({
   useDisplayPreferences: () => ({ showDollarAmounts: true }),
@@ -111,125 +99,31 @@ vi.mock("@/app/dashboard/components/borrow-tab/debts-table", () => ({
   ),
 }))
 
-vi.mock("@/app/borrow/components/borrow-modal", () => ({
-  BorrowModal: ({
-    open,
-    onConfirm,
-  }: {
-    open: boolean
-    onConfirm: (result: { pool: typeof pool; token: typeof asset; amountUsd: number }) => void
-  }) =>
-    open ? (
-      <button type="button" onClick={() => onConfirm({ pool, token: asset, amountUsd: 250 })}>
-        confirm-borrow
-      </button>
-    ) : null,
-}))
-
-vi.mock("@/app/borrow/components/supply-collateral-modal", () => ({
-  SupplyCollateralModal: ({
-    open,
-    onConfirm,
-  }: {
-    open: boolean
-    onConfirm: (result: { pool: typeof pool; amountUsd: number }) => void
-  }) =>
-    open ? (
-      <button type="button" onClick={() => onConfirm({ pool, amountUsd: 400 })}>
-        confirm-supply
-      </button>
-    ) : null,
-}))
-
-vi.mock("@/app/borrow/components/repay-remove-modal", () => ({
-  RepayRemoveModal: ({
-    open,
-    context,
-    onConfirm,
-  }: {
-    open: boolean
-    context: { mode: "repay" | "remove"; pool: typeof pool } | null
-    onConfirm: (result: { mode: "repay" | "remove"; pool: typeof pool; amountUsd: number }) => void
-  }) =>
-    open && context ? (
-      <button type="button" onClick={() => onConfirm({ mode: context.mode, pool, amountUsd: 150 })}>
-        {context.mode === "repay" ? "confirm-repay" : "confirm-remove"}
-      </button>
-    ) : null,
-}))
-
 describe("DashboardBorrowTab", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it("opens portfolio modals and closes after mocked confirm", async () => {
-    render(
-      <DashboardBorrowTab
-        section="supplies"
-        collateralPositions={[supplyRow] as never}
-        walletId="demo-wallet"
-        borrowSession={
-          {
-            state: {
-              accounts: {
-                "demo-wallet": {
-                  debtPositions: [],
-                  collateralPositions: [{ id: "position-1", marketId: pool.id }],
-                },
-              },
-            },
-            getBorrowableAssetsForMarket: () => [asset],
-            createIntent,
-            previewTransaction,
-            executeTransaction,
-            isPending: false,
-          } as never
-        }
-      />,
-    )
+  it("routes portfolio supply actions to shared action pages", () => {
+    render(<DashboardBorrowTab section="supplies" collateralPositions={[supplyRow] as never} />)
 
     fireEvent.click(screen.getByText("open-borrow"))
-    fireEvent.click(screen.getByText("confirm-borrow"))
-    fireEvent.click(screen.getByText("open-supply"))
-    fireEvent.click(screen.getByText("confirm-supply"))
-    fireEvent.click(screen.getByText("open-remove"))
-    fireEvent.click(screen.getByText("confirm-remove"))
+    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc")
 
-    expect(createIntent).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByText("open-supply"))
+    expect(push).toHaveBeenCalledWith("/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc")
+
+    fireEvent.click(screen.getByText("open-remove"))
+    expect(push).toHaveBeenCalledWith("/actions/borrow/remove?market=uni-v3-bluechip-weth-usdc&amount=25")
   })
 
-  it("opens debt modals and closes after mocked confirm", async () => {
-    render(
-      <DashboardBorrowTab
-        section="debts"
-        debtPositions={[debtRow] as never}
-        walletId="demo-wallet"
-        borrowSession={
-          {
-            state: {
-              accounts: {
-                "demo-wallet": {
-                  debtPositions: [{ id: debtRow.id, assetId: asset.id }],
-                  collateralPositions: [],
-                },
-              },
-            },
-            getBorrowableAssetsForMarket: () => [asset],
-            createIntent,
-            previewTransaction,
-            executeTransaction,
-            isPending: false,
-          } as never
-        }
-      />,
-    )
+  it("routes portfolio debt actions to shared action pages", () => {
+    render(<DashboardBorrowTab section="debts" debtPositions={[debtRow] as never} />)
 
     fireEvent.click(screen.getByText("open-repay"))
-    fireEvent.click(screen.getByText("confirm-repay"))
-    fireEvent.click(screen.getByText("open-manage"))
-    fireEvent.click(screen.getByText("confirm-borrow"))
+    expect(push).toHaveBeenCalledWith("/actions/borrow/repay?market=uni-v3-bluechip-weth-usdc")
 
-    expect(createIntent).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByText("open-manage"))
+    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc")
   })
 })

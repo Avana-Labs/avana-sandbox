@@ -4,7 +4,7 @@ import path from "node:path"
 
 const multiplyActionSurfaces = [
   "app/multiply/components/multiply-action-box.tsx",
-  "app/multiply/components/deleverage-modal.tsx",
+  "app/components/action-page/multiply-action-page-client.tsx",
   "app/multiply/_detail/sidebars/MarketSidebar.tsx",
   "app/dashboard/dashboard-client.tsx",
 ]
@@ -28,6 +28,7 @@ describe("multiply architecture final gate", () => {
 
     expect(offenders).toEqual([])
     expect(readFileSync(path.join(process.cwd(), "app/dashboard/dashboard-client.tsx"), "utf8")).toContain("useAvanaSessions")
+    expect(readFileSync(path.join(process.cwd(), "app/dashboard/dashboard-client.tsx"), "utf8")).toContain("actionPagePath")
     expect(readFileSync(path.join(process.cwd(), "app/components/avana-session-providers.tsx"), "utf8")).toContain(
       "AvanaSessionsProvider",
     )

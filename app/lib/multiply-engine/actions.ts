@@ -107,6 +107,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
     ltv: simulation.after.ltv,
     healthFactor: simulation.after.healthFactor,
     liquidationPrice: simulation.after.liquidationPrice,
+    netApy: simulation.economics.netApy,
     lastUpdatedAt: at,
   }
 
