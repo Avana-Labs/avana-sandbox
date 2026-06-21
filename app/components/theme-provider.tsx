@@ -77,17 +77,23 @@ export function ThemeProvider({
   disableTransitionOnChange = true,
   storageKey = THEME_STORAGE_KEY,
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme(storageKey, defaultTheme))
-  const [systemTheme, setSystemTheme] = useState<"light" | "dark">(() => getSystemTheme())
+  // Initialize to deterministic defaults so the server and the client's first
+  // render match; the stored/system theme is applied in the effect below after
+  // mount. Reading localStorage/matchMedia in the initializer would mismatch.
+  const [theme, setThemeState] = useState<Theme>(defaultTheme)
+  const [systemTheme, setSystemTheme] = useState<"light" | "dark">("light")
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
     setThemeState(getStoredTheme(storageKey, defaultTheme))
     setSystemTheme(getSystemTheme())
+    setHydrated(true)
   }, [defaultTheme, storageKey])
 
   useEffect(() => {
+    if (!hydrated) return
     window.localStorage.setItem(storageKey, theme)
-  }, [storageKey, theme])
+  }, [hydrated, storageKey, theme])
 
   useEffect(() => {
     if (typeof window === "undefined") {
