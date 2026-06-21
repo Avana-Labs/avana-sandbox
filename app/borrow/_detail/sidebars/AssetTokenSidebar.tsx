@@ -1,15 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { currentDebtValueUsd6, formatFixed, parseFixed, type BorrowAction } from "@/app/lib/credit-engine"
+import { currentDebtValueUsd6, formatFixed } from "@/app/lib/credit-engine"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { BorrowModal } from "@/app/borrow/components/borrow-modal"
-import { RepayRemoveModal } from "@/app/borrow/components/repay-remove-modal"
-import { SupplyCollateralModal } from "@/app/borrow/components/supply-collateral-modal"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
-import { LendMarketActionDialog } from "@/app/lend/components/lend-market-action-dialog"
 import { CompactRepayCard } from "@/app/components/home/repay-card"
 import { TokenIcon } from "@/app/components/token-icon"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
@@ -48,16 +46,10 @@ export function AssetTokenActions({ detail, className }: Props) {
 }
 
 function TokenRail({ detail, className }: { detail: AssetDetail; className?: string }) {
+  const router = useRouter()
   const [tab, setTab] = React.useState<SidebarTab>("deposit")
   const [amount, setAmount] = React.useState("")
-  const [lendDialogState, setLendDialogState] = React.useState<{ open: boolean; action: "deposit" | "withdraw" }>({
-    open: false,
-    action: "deposit",
-  })
   const marketId = React.useMemo(() => resolveLendMarketId(detail.hero.symbol), [detail.hero.symbol])
-  const [borrowOpen, setBorrowOpen] = React.useState(false)
-  const [repayOpen, setRepayOpen] = React.useState(false)
-  const [supplyOpen, setSupplyOpen] = React.useState(false)
   const [depositPromptOpen, setDepositPromptOpen] = React.useState(false)
   const walletId = React.useMemo(() => getBorrowSessionWalletId(), [])
   const session = useBorrowSessionContext()
@@ -99,21 +91,8 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
   )
   const borrowAprLabel =
     detail.quickStats.find((stat) => stat.id === "borrowApy")?.value ?? `${detail.row.borrowApr.toFixed(2)}%`
-  const tokenOptions = React.useMemo(
-    () => (borrowContext ? session.getBorrowableAssetsForMarket(borrowContext.id).map(toBorrowToken) : []),
-    [borrowContext, session],
-  )
   const canBorrowFromSession = Boolean(
     borrowContext && session.collateralPools.some((pool) => pool.id === borrowContext.id),
-  )
-  const executeAction = React.useCallback(
-    async (action: BorrowAction) => {
-      const intent = session.createIntent(action)
-      const preview = await session.previewTransaction(intent)
-      if (!preview.allowed) return
-      await session.executeTransaction(preview.intent)
-    },
-    [session],
   )
 
   const tokenBalance = lendPosition?.currentSuppliedAmount ?? 0
@@ -135,7 +114,30 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
               : "Review repayment"
 
   const openLend = (action: "deposit" | "withdraw") => {
-    setLendDialogState({ open: true, action })
+    router.push(actionPagePath("lend", action, amount ? { market: marketId, amount } : { market: marketId }))
+  }
+
+  const openBorrow = () => {
+    if (!borrowContext) return
+    router.push(
+      actionPagePath(
+        "borrow",
+        "borrow",
+        amount
+          ? { market: borrowContext.id, asset: borrowTokenId, amount }
+          : { market: borrowContext.id, asset: borrowTokenId },
+      ),
+    )
+  }
+
+  const openRepay = () => {
+    if (!borrowContext) return
+    router.push(actionPagePath("borrow", "repay", amount ? { market: borrowContext.id, amount } : { market: borrowContext.id }))
+  }
+
+  const openSupply = () => {
+    if (!fallbackMarket) return
+    router.push(actionPagePath("borrow", "supply", amount ? { market: fallbackMarket.id, amount } : { market: fallbackMarket.id }))
   }
 
   return (
@@ -186,7 +188,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                 onOpenPoolDialog={() => {}}
                 onAmountChange={setAmount}
                 onSetMax={() => setAmount(String(repayDebtUsd))}
-                onSubmit={() => setRepayOpen(true)}
+                onSubmit={openRepay}
               />
             ) : (
               <>
@@ -274,7 +276,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                         setDepositPromptOpen(true)
                         return
                       }
-                      setBorrowOpen(true)
+                      openBorrow()
                       return
                     }
                     openLend(tab)
@@ -287,62 +289,6 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
           </div>
         </div>
       </div>
-
-      <LendMarketActionDialog
-        open={lendDialogState.open}
-        onOpenChange={(open) => setLendDialogState((prev) => ({ ...prev, open }))}
-        marketId={marketId}
-        initialAction={lendDialogState.action}
-      />
-
-      <BorrowModal
-        open={borrowOpen}
-        context={
-          borrowContext
-            ? {
-                pool: borrowContext,
-                currentDebtUsd: repayDebtUsd,
-                defaultTokenId: borrowTokenId,
-                tokenOptions,
-              }
-            : null
-        }
-        borrowSession={session}
-        walletId={walletId}
-        initialAmount={amount}
-        initialTokenId={borrowTokenId}
-        startStage={amount ? "review" : "entry"}
-        onClose={() => setBorrowOpen(false)}
-        onConfirm={() => setBorrowOpen(false)}
-      />
-
-      <RepayRemoveModal
-        open={repayOpen}
-        context={
-          borrowContext
-            ? {
-                pool: borrowContext,
-                currentDebtUsd: repayDebtUsd,
-                mode: "repay",
-                borrowApr: detail.row.borrowApr,
-                debtPositionId: currentDebtPosition?.id,
-              }
-            : null
-        }
-        borrowSession={session}
-        walletId={walletId}
-        onClose={() => setRepayOpen(false)}
-        onConfirm={() => setRepayOpen(false)}
-      />
-
-      <SupplyCollateralModal
-        open={supplyOpen}
-        context={fallbackMarket ? { pool: fallbackMarket } : null}
-        borrowSession={session}
-        walletId={walletId}
-        onClose={() => setSupplyOpen(false)}
-        onConfirm={() => setSupplyOpen(false)}
-      />
 
       <Dialog open={depositPromptOpen} onOpenChange={setDepositPromptOpen}>
         <DialogContent className="max-w-sm rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3">
@@ -362,7 +308,7 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
                 className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90"
                 onClick={() => {
                   setDepositPromptOpen(false)
-                  setSupplyOpen(true)
+                  openSupply()
                 }}
                 disabled={!fallbackMarket}
               >
