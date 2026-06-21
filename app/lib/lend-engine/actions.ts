@@ -50,6 +50,7 @@ function applyDeposit(
   now: number,
   ids: { positionId: string; transactionId: string },
 ): LendSystemState {
+  if (!Number.isFinite(action.depositAmount) || action.depositAmount <= 0) return state
   const market = state.markets[action.marketId]
   if (!market) return state
   const existing = findWalletPosition(state, action.walletId, action.marketId)
@@ -120,6 +121,7 @@ function applyWithdraw(
   now: number,
   ids: { positionId: string; transactionId: string },
 ): LendSystemState {
+  if (!Number.isFinite(action.withdrawAmount) || action.withdrawAmount <= 0) return state
   const market = state.markets[action.marketId]
   const position = state.positions[action.positionId]
   if (!market || !position) return state
