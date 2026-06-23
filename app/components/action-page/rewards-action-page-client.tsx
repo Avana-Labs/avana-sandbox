@@ -187,6 +187,8 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
           amount={amount}
           onAmountChange={setAmount}
           preview={previewUi}
+          assetSymbol="AVA"
+          amountReadOnly
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}

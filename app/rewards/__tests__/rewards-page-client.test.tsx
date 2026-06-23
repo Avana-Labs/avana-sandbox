@@ -203,14 +203,17 @@ describe("RewardsPageClient", () => {
     renderRewardsPage()
 
     await waitFor(() => {
-      screen.getByRole("button", { name: "Claim 50 AVA" })
+      expect(screen.getByTestId("rewards-claim-all")).toHaveTextContent("Claim 50 AVA")
     })
 
-    await userEvent.click(screen.getByTestId("rewards-claim-all"))
-    expect(claimAllRewards).toHaveBeenCalledTimes(1)
-    expect(readRewardSummary.mock.calls.length).toBeGreaterThan(1)
+    expect(screen.getByTestId("rewards-claim-all")).toHaveAttribute("href", "/actions/rewards/claim")
+    expect(claimAllRewards).not.toHaveBeenCalled()
 
-    await userEvent.click(screen.getAllByRole("button", { name: "Claim 50 AVA" })[0]!)
+    const questClaimButton = screen
+      .getAllByRole("button", { name: "Claim 50 AVA" })
+      .find((button) => button.getAttribute("data-testid") !== "rewards-claim-all")
+    expect(questClaimButton).toBeDefined()
+    await userEvent.click(questClaimButton!)
     expect(claimReward).toHaveBeenCalledWith("first-borrow")
     expect(readProgress.mock.calls.length).toBeGreaterThan(1)
   }, 10_000)

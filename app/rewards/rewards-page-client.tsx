@@ -143,7 +143,6 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
     tasks,
     readAdapter,
     claimReward,
-    claimAllRewards,
     completeEducation,
     favoriteMarket,
     recordSimulation,
@@ -349,17 +348,6 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
     ],
   )
 
-  const handleClaimAll = useCallback(async () => {
-    if (isClaiming) return
-    setIsClaiming(true)
-    try {
-      await claimAllRewards()
-      await reloadSnapshot()
-    } finally {
-      setIsClaiming(false)
-    }
-  }, [claimAllRewards, isClaiming, reloadSnapshot])
-
   return (
     <>
       <RewardsBalanceHero
@@ -370,10 +358,9 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         completedCount={snapshot?.summary.completedTaskCount ?? pageData.completedPools}
         totalCount={snapshot?.summary.totalTaskCount ?? pageData.totalPools}
         progressPercentage={progressPercentage}
-        isClaiming={isClaiming}
-        onClaimAll={() => {
-          void handleClaimAll()
-        }}
+        claimHref={
+          snapshot && snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined
+        }
       />
 
       <RewardsTabs

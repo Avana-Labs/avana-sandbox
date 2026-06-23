@@ -5,21 +5,22 @@ import {
 } from "@/app/lib/action-system/adapters/rewards-preview-mapper"
 
 describe("rewards preview mappers", () => {
-  it("maps rewards claim points and token breakdown", () => {
+  it("maps rewards claim summary without redundant metric rows", () => {
     const ui = mapRewardsClaimPreviewToActionUi({
       allowed: true,
       claimUsd: 120,
       marketLabel: "Avana rewards",
       claimableTaskCount: 3,
       tokenBreakdown: [
-        { symbol: "GHO", amount: 80 },
-        { symbol: "USDC", amount: 40 },
+        { symbol: "AVA", amount: 80 },
+        { symbol: "AVA", amount: 40 },
       ],
     })
 
-    expect(ui.metrics[0]).toMatchObject({ label: "Points to claim", value: "3" })
-    expect(ui.metrics.map((row) => row.label)).toContain("GHO")
-    expect(ui.metrics.map((row) => row.label)).toContain("USDC")
+    expect(ui.amountLabel).toBe("AVA")
+    expect(ui.rateValue).toBe("3 quests")
+    expect(ui.marketValue).toBe("")
+    expect(ui.metrics).toEqual([])
   })
 
   it("maps borrow-side claim per token", () => {

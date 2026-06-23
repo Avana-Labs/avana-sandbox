@@ -38,6 +38,7 @@ type ActionConfigureStageProps = {
   multiplierMax?: number
   canGoBack?: boolean
   hideAmountInput?: boolean
+  amountReadOnly?: boolean
 }
 
 export function ActionConfigureStage({
@@ -64,6 +65,7 @@ export function ActionConfigureStage({
   multiplierMax = 20,
   canGoBack = false,
   hideAmountInput = false,
+  amountReadOnly = false,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -89,6 +91,7 @@ export function ActionConfigureStage({
           approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
           assetLabel={pillLabel}
           assetSymbol={assetSymbol ?? pillLabel}
+          readOnly={amountReadOnly}
           showReceiveWethToggle={showReceiveWethToggle}
           receiveWeth={receiveWeth}
           onReceiveWethChange={onReceiveWethChange}
@@ -107,10 +110,14 @@ export function ActionConfigureStage({
         />
       ) : null}
 
-      {preview ? (
+      {preview && (preview.rateLabel || preview.marketValue) ? (
         <ActionCard>
-          <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
-          <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
+          {preview.rateLabel ? (
+            <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
+          ) : null}
+          {preview.marketValue ? (
+            <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
+          ) : null}
         </ActionCard>
       ) : null}
 
