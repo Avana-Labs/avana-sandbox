@@ -258,6 +258,7 @@ export function mapBorrowRemovePreviewToActionUi(
   preview: TransactionPreview,
   options: {
     percent: number
+    safePercent: number
     removeUsd: number
     marketLabel: string
     positionApyPct: number
@@ -278,7 +279,7 @@ export function mapBorrowRemovePreviewToActionUi(
     marketValue: options.marketLabel,
     balanceLabel: "Removing",
     balanceValue: formatActionUsd(options.removeUsd),
-    maxAmount: 100,
+    maxAmount: options.safePercent,
     metrics: [
       {
         id: "position-apy",

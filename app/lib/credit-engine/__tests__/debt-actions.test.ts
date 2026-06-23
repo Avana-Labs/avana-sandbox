@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { calculateCreditMetrics, formatFixed, parseFixed } from "@/app/lib/credit-engine"
+import { RAY, assetsToShares, calculateCreditMetrics, formatFixed, parseFixed } from "@/app/lib/credit-engine"
 import { applyBorrowAction } from "@/app/lib/credit-engine/actions"
 import {
   EXAMPLE_CURVE_MARKET_ID,
@@ -77,5 +77,25 @@ describe("borrow debt actions", () => {
         amountUsd6: parseFixed("300", 6),
       }),
     ).toThrow("Wallet wallet-1 does not have enough available credit in spoke uni-v3-bluechip")
+  })
+
+  it("initializes first debt in a new spoke from the neutral debt index", () => {
+    const state = makeExampleBorrowSystemState()
+    state.accounts["wallet-1"]!.debtPositions[0] = {
+      ...state.accounts["wallet-1"]!.debtPositions[0]!,
+      debtIndexRay: RAY * 2n,
+    }
+
+    const next = applyBorrowAction(state, {
+      type: "borrow",
+      walletId: "wallet-1",
+      marketId: EXAMPLE_CURVE_MARKET_ID,
+      assetId: EXAMPLE_CURVE_USDT_ASSET_ID,
+      amountUsd6: parseFixed("300", 6),
+    })
+
+    const curveDebt = next.accounts["wallet-1"]!.debtPositions.find((position) => position.assetId === EXAMPLE_CURVE_USDT_ASSET_ID)
+    expect(curveDebt?.debtIndexRay).toBe(RAY)
+    expect(curveDebt?.debtSharesUsd6).toBe(assetsToShares(parseFixed("300", 6), RAY))
   })
 })

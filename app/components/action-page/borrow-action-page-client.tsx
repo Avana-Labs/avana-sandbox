@@ -82,10 +82,10 @@ export function BorrowActionPageClient({
   const [marketId, setMarketId] = useState(resolvedInitialMarket ?? session.collateralPools[0]?.id ?? "")
   const [amount, setAmount] = useState(initialAmount)
   const [percent, setPercent] = useState("25")
-  const [receiveWeth, setReceiveWeth] = useState(false)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
+  const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
 
@@ -309,6 +309,7 @@ export function BorrowActionPageClient({
           setPreviewUi(
             mapBorrowRemovePreviewToActionUi(preview, {
               percent: pct,
+              safePercent: removePreview.safePercent,
               removeUsd: removePreview.removeUsd,
               marketLabel,
               positionApyPct: pool?.pairApr ?? 0,
@@ -343,12 +344,17 @@ export function BorrowActionPageClient({
   useEffect(() => {
     if (!previewUi || previewUi.allowed || stage !== "configure") return
     if (!isHardBlock(previewUi.blockedReason)) return
+    if (previewUi.blockedReason === dismissedBlockedReason) return
     const blocked = mapPreviewToBlockedUi({ product: "borrow", kind, blockedReason: previewUi.blockedReason })
     if (blocked) {
       setBlockedUi(blocked)
       setStage("blocked")
     }
-  }, [kind, previewUi, stage])
+  }, [dismissedBlockedReason, kind, previewUi, stage])
+
+  useEffect(() => {
+    setDismissedBlockedReason(null)
+  }, [amount, assetId, debtPositionId, marketId, percent])
 
   const canGoBackToSelect = useMemo(() => {
     if (kind === "borrow" && !initialAssetId) return true
@@ -471,7 +477,8 @@ export function BorrowActionPageClient({
   const applyPercent = useCallback(
     (pct: number) => {
       if (kind === "remove") {
-        setPercent(String(pct))
+        if (pct === 100 && previewUi?.maxAmount != null) setPercent(String(previewUi.maxAmount))
+        else setPercent(String(pct))
         return
       }
       if (previewUi?.maxAmount != null) {
@@ -558,14 +565,11 @@ export function BorrowActionPageClient({
           secondaryHref={canGoBackToSelect ? undefined : closeHref}
           canGoBack={canGoBackToSelect}
           onMax={() => {
-            if (kind === "remove") setPercent("100")
+            if (kind === "remove") setPercent(String(previewUi?.maxAmount ?? 100))
             else if (previewUi?.maxAmount != null) setAmount(String(previewUi.maxAmount))
           }}
           onPercent={applyPercent}
           showPercentShortcuts={kind === "borrow" || kind === "repay" || kind === "remove"}
-          showReceiveWethToggle={kind === "remove"}
-          receiveWeth={receiveWeth}
-          onReceiveWethChange={setReceiveWeth}
           isPending={isPending}
           outcome={outcome}
         />
@@ -575,7 +579,10 @@ export function BorrowActionPageClient({
         <ActionBlockedDialog
           blocked={blockedUi}
           open={stage === "blocked"}
-          onClose={() => setStage("configure")}
+          onClose={() => {
+            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
+            setStage("configure")
+          }}
         />
       ) : null}
     </ActionPageShell>

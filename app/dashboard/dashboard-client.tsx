@@ -24,22 +24,22 @@ import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
 
-function mergeLendTabData(
+export function mergeLendTabData(
   staticData: PortfolioLendTabData,
   liveData: PortfolioLendTabData | null,
 ): PortfolioLendTabData {
   if (!liveData) return staticData
 
   return {
-    investments: liveData.investments.length > 0 ? liveData.investments : staticData.investments,
-    positions: liveData.positions.length > 0 ? liveData.positions : staticData.positions,
+    investments: liveData.investments,
+    positions: liveData.positions,
     strategyBuckets: staticData.strategyBuckets,
-    history: liveData.history.length > 0 ? liveData.history : staticData.history,
+    history: liveData.history,
     rewardsSummary: liveData.rewardsSummary ?? staticData.rewardsSummary,
   }
 }
 
-function mergeMultiplyTabData(
+export function mergeMultiplyTabData(
   staticData: PortfolioMultiplyTabData,
   liveData: PortfolioMultiplyTabData | null,
 ): PortfolioMultiplyTabData {
@@ -47,11 +47,11 @@ function mergeMultiplyTabData(
 
   return {
     creditLines: liveData.creditLines,
-    lpCollaterals: liveData.lpCollaterals.length > 0 ? liveData.lpCollaterals : staticData.lpCollaterals,
-    positions: liveData.positions.length > 0 ? liveData.positions : staticData.positions,
+    lpCollaterals: liveData.lpCollaterals,
+    positions: liveData.positions,
     openOrders: staticData.openOrders,
     twapOrders: staticData.twapOrders,
-    history: liveData.history.length > 0 ? liveData.history : staticData.history,
+    history: liveData.history,
   }
 }
 

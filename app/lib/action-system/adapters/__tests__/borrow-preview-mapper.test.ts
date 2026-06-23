@@ -68,6 +68,7 @@ describe("borrow preview mappers", () => {
   it("maps remove metrics", () => {
     const ui = mapBorrowRemovePreviewToActionUi(preview, {
       percent: 25,
+      safePercent: 60,
       removeUsd: 2500,
       marketLabel: "WETH · Core",
       positionApyPct: 3.5,
@@ -80,5 +81,6 @@ describe("borrow preview mappers", () => {
       "Net balance",
       "Net collateral",
     ])
+    expect(ui.maxAmount).toBe(60)
   })
 })

@@ -29,6 +29,7 @@ describe("lend preview mappers", () => {
 
   it("maps withdraw-specific metrics", () => {
     const withdrawPreview = lendPreviewFixture({
+      maxWithdrawable: 10,
       after: {
         suppliedAmount: 75,
         suppliedValueUsd: 75,
@@ -49,5 +50,6 @@ describe("lend preview mappers", () => {
     expect(ui.metrics.map((row) => row.label)).toEqual(["Supplied remaining", "APY impact", "Total earned"])
     expect(ui.rateLabel).toBe("Remaining supply")
     expect(ui.amountUsdLabel).toBe("≈ $25.00")
+    expect(ui.maxAmount).toBe(10)
   })
 })

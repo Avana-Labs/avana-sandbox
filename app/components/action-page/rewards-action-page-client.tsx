@@ -33,6 +33,7 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
   const [stage, setStage] = useState<ActionStage>("configure")
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
+  const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
   const [claimSummary, setClaimSummary] = useState({ claimUsd: 0, claimableTaskCount: 0, tokenBreakdown: [] as Array<{ symbol: string; amount: number }> })
@@ -78,14 +79,18 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
   )
 
   useEffect(() => {
-    if (!previewUi.allowed && stage === "configure") {
+    if (!previewUi.allowed && stage === "configure" && previewUi.blockedReason !== dismissedBlockedReason) {
       const blocked = mapPreviewToBlockedUi({ product: "rewards", kind: "claim", blockedReason: previewUi.blockedReason })
       if (blocked) {
         setBlockedUi(blocked)
         setStage("blocked")
       }
     }
-  }, [previewUi.allowed, previewUi.blockedReason, stage])
+  }, [dismissedBlockedReason, previewUi.allowed, previewUi.blockedReason, stage])
+
+  useEffect(() => {
+    setDismissedBlockedReason(null)
+  }, [claimSummary.claimUsd])
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
@@ -192,7 +197,16 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
         />
       ) : null}
 
-      {blockedUi ? <ActionBlockedDialog blocked={blockedUi} open={stage === "blocked"} onClose={() => setStage("configure")} /> : null}
+      {blockedUi ? (
+        <ActionBlockedDialog
+          blocked={blockedUi}
+          open={stage === "blocked"}
+          onClose={() => {
+            setDismissedBlockedReason(previewUi.blockedReason)
+            setStage("configure")
+          }}
+        />
+      ) : null}
     </ActionPageShell>
   )
 }
