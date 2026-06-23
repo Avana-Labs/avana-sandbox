@@ -186,7 +186,7 @@ export function ActionAmountCard({
     </div>
   )
 
-  const usdRow = <div className="mt-2 text-[14px] text-muted-foreground">{approxUsdLabel}</div>
+  const usdRow = <div className="mt-2 text-[14px] text-foreground/60">{approxUsdLabel}</div>
 
   const assetPickerDialog =
     useDialogPicker && switchable && pickerTokens ? (

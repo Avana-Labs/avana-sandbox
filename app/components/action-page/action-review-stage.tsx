@@ -58,9 +58,11 @@ export function ActionReviewStage({
         />
       )}
 
-      {isClaimReview ? null : (
+      {isClaimReview ? null : (preview.rateLabel && preview.rateValue) || preview.marketBreakdown || preview.marketValue ? (
         <ActionCard>
-          <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
+          {preview.rateLabel && preview.rateValue ? (
+            <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
+          ) : null}
           {preview.marketBreakdown ? (
             <>
               <ActionInfoRow
@@ -74,11 +76,11 @@ export function ActionReviewStage({
                 tooltip="market"
               />
             </>
-          ) : (
+          ) : preview.marketValue ? (
             <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
-          )}
+          ) : null}
         </ActionCard>
-      )}
+      ) : null}
 
       {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
 
