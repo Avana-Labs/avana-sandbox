@@ -55,8 +55,11 @@ export function mapBorrowRewardsClaimPreviewToActionUi(options: {
 
   return {
     allowed: options.allowed,
-    amountLabel: "Rewards",
+    amountValue: formatActionUsd(options.claimUsd),
+    amountLabel: formatActionUsd(options.claimUsd),
     amountUsdLabel: formatActionApproxUsd(options.claimUsd),
+    assetLabel: options.marketLabel,
+    assetSymbol: Object.keys(options.tokenTotals)[0] ?? "Rewards",
     rateLabel: "Claim total",
     rateValue: formatActionUsd(options.claimUsd),
     marketLabel: "Market",

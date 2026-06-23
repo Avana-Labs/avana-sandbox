@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import type { HomeBorrowToken, HomeCollateralPool } from "@/app/lib/home-sim"
+import { useState, type ReactNode } from "react"
+import type { HomeCollateralPool } from "@/app/lib/home-sim"
 import { HomeActionContextBar } from "@/app/components/home/home-action-context-bar"
 import { PoolPickerDialog } from "@/app/components/home/pool-picker-dialog"
-import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
+import { SwapStyleFieldStack } from "@/app/components/action-page/swap-style-field"
 import type { PoolDialogMode } from "@/app/components/home/types"
 
 function poolDialogModeForKind(kind: "borrow" | "repay" | "remove" | "claim"): PoolDialogMode {
@@ -17,37 +17,36 @@ export function ActionBorrowContextBar({
   kind,
   pool,
   pools,
-  token,
-  tokens,
   debts,
   onPoolChange,
-  onTokenChange,
+  variant = "card",
+  tokenField,
 }: {
   kind: "borrow" | "repay" | "remove" | "claim"
   pool: HomeCollateralPool | null
   pools: HomeCollateralPool[]
-  token?: HomeBorrowToken | null
-  tokens?: HomeBorrowToken[]
   debts: Record<string, number>
   onPoolChange: (poolId: string) => void
-  onTokenChange?: (tokenId: string) => void
+  variant?: "card" | "inset"
+  tokenField?: ReactNode
 }) {
   const [poolDialogOpen, setPoolDialogOpen] = useState(false)
-  const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
-  const showToken = (kind === "borrow" || kind === "repay") && Boolean(onTokenChange)
   const poolDialogMode = poolDialogModeForKind(kind)
 
   if (!pool) return null
 
+  const poolField = <HomeActionContextBar pool={pool} onOpenPool={() => setPoolDialogOpen(true)} variant={variant} />
+
   return (
     <>
-      <HomeActionContextBar
-        pool={pool}
-        token={token}
-        showToken={showToken}
-        onOpenPool={() => setPoolDialogOpen(true)}
-        onOpenToken={showToken ? () => setTokenDialogOpen(true) : undefined}
-      />
+      {variant === "inset" ? (
+        <SwapStyleFieldStack>
+          {poolField}
+          {tokenField}
+        </SwapStyleFieldStack>
+      ) : (
+        poolField
+      )}
 
       <PoolPickerDialog
         open={poolDialogOpen}
@@ -61,19 +60,6 @@ export function ActionBorrowContextBar({
         pools={pools}
         debts={debts}
       />
-
-      {showToken && onTokenChange ? (
-        <TokenPickerDialog
-          open={tokenDialogOpen}
-          onOpenChange={setTokenDialogOpen}
-          selectedTokenId={token?.id ?? null}
-          tokens={tokens ?? []}
-          onSelect={(tokenId) => {
-            onTokenChange(tokenId)
-            setTokenDialogOpen(false)
-          }}
-        />
-      ) : null}
     </>
   )
 }

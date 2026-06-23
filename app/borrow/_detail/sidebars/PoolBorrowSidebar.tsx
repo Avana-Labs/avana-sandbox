@@ -55,9 +55,9 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
   }, [detail.id])
 
   return (
-    <div className={cn("flex w-full flex-col gap-6", className)}>
-      <div className="space-y-4">
-        <div role="tablist" aria-label="Pool actions" className="flex items-center gap-5 border-b border-border">
+    <div className={cn("flex w-full flex-col", className)}>
+      <div className="space-y-5">
+        <div role="tablist" aria-label="Pool actions" className="flex items-center gap-6 border-b border-border px-1">
           {[
             { id: "pledge", label: "Pledge" },
             { id: "remove", label: "Remove" },
@@ -84,13 +84,14 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
           })}
         </div>
 
-        <div className="pt-1">
+        <div className="pt-2">
           {tab === "pledge" ? (
             embedActions ? (
               <ResponsiveBorrowAction
                 kind="supply"
                 market={pool.id}
                 closeHref={`/borrow/pool/${detail.id}`}
+                sidebar
               />
             ) : (
               <ActionPageLaunchCta
@@ -109,6 +110,7 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
                 market={pool.id}
                 amount="25"
                 closeHref={`/borrow/pool/${detail.id}`}
+                sidebar
               />
             ) : (
               <ActionPageLaunchCta
@@ -123,7 +125,7 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
 
           {tab === "claim" ? (
             embedActions ? (
-              <ResponsiveBorrowAction kind="claim" market={pool.id} closeHref={`/borrow/pool/${detail.id}`} />
+              <ResponsiveBorrowAction kind="claim" market={pool.id} closeHref={`/borrow/pool/${detail.id}`} sidebar />
             ) : (
               <ActionPageLaunchCta product="borrow" kind="claim" market={pool.id} returnTo={`/borrow/pool/${detail.id}`} />
             )

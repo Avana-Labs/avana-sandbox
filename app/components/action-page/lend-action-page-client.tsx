@@ -41,12 +41,14 @@ export function LendActionPageClient({
   kind,
   closeHref = "/lend",
   embedded = false,
+  sidebar = false,
   initialMarketId,
   initialAmount = "",
 }: {
   kind: "deposit" | "withdraw"
   closeHref?: string
   embedded?: boolean
+  sidebar?: boolean
   initialMarketId?: string
   initialAmount?: string
 }) {
@@ -114,10 +116,13 @@ export function LendActionPageClient({
   useEffect(() => {
     if (kind !== "deposit" || !market || stage !== "configure") return
     const walletBalance = getWalletBalanceForLendMarket(session.state, walletId, market)
-    if (walletBalance > 0) return
+    if (walletBalance > 0) {
+      setBlockedUi(null)
+      return
+    }
     setBlockedUi(blockedUiForMissingWalletAsset(market.asset.symbol, "deposit"))
-    setStage("blocked")
-  }, [kind, market, session.state, stage, walletId])
+    if (!embedded) setStage("blocked")
+  }, [embedded, kind, market, session.state, stage, walletId])
 
   const position = useMemo(
     () =>
@@ -215,9 +220,9 @@ export function LendActionPageClient({
     const blocked = mapPreviewToBlockedUi({ product: "lend", kind, blockedReason: previewUi.blockedReason })
     if (blocked) {
       setBlockedUi(blocked)
-      setStage("blocked")
+      if (!embedded) setStage("blocked")
     }
-  }, [dismissedBlockedReason, kind, previewUi, stage])
+  }, [dismissedBlockedReason, embedded, kind, previewUi, stage])
 
   useEffect(() => {
     setDismissedBlockedReason(null)
@@ -346,6 +351,7 @@ export function LendActionPageClient({
   }
 
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
       ? "Choose the market to withdraw from."
@@ -358,6 +364,7 @@ export function LendActionPageClient({
   return (
     <ActionPageShell
       mode={embedded ? "embedded" : "page"}
+      density={sidebar ? "sidebar" : "default"}
       title={descriptor.title}
       subtitle={shellSubtitle}
       hideTitle={hideTitle}
@@ -399,7 +406,19 @@ export function LendActionPageClient({
 
       {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
 
-      {isConfigureVisibleStage(stage) && market ? (
+      {showInlineBlocked && blockedUi ? (
+        <ActionBlockedDialog
+          variant="inline"
+          blocked={blockedUi}
+          open
+          onClose={() => {
+            setBlockedUi(null)
+            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
+          }}
+        />
+      ) : null}
+
+      {isConfigureVisibleStage(stage) && market && !showInlineBlocked ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
@@ -422,8 +441,9 @@ export function LendActionPageClient({
         />
       ) : null}
 
-      {blockedUi ? (
+      {blockedUi && !embedded ? (
         <ActionBlockedDialog
+          variant="modal"
           blocked={blockedUi}
           open={stage === "blocked"}
           onClose={() => {

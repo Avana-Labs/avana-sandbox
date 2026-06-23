@@ -27,6 +27,7 @@ import {
 } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { mapBorrowRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/adapters/rewards-preview-mapper"
 import { ActionBorrowContextBar } from "@/app/components/action-page/action-borrow-context-bar"
+import { ActionBorrowTokenField } from "@/app/components/action-page/action-borrow-token-field"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
@@ -72,6 +73,8 @@ export function BorrowActionPageClient({
   kind,
   closeHref = "/borrow",
   embedded = false,
+  sidebar = false,
+  layout = "default",
   initialAssetId,
   initialMarketId,
   initialAmount = "",
@@ -81,6 +84,8 @@ export function BorrowActionPageClient({
   kind: Extract<ActionKind, "borrow" | "repay" | "supply" | "remove" | "claim">
   closeHref?: string
   embedded?: boolean
+  sidebar?: boolean
+  layout?: "default" | "home"
   initialAssetId?: string
   initialMarketId?: string
   initialAmount?: string
@@ -117,6 +122,7 @@ export function BorrowActionPageClient({
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
   const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
+  const [dismissedLpBlock, setDismissedLpBlock] = useState(false)
   const [claimPositionId, setClaimPositionId] = useState(initialPositionId ?? "")
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
@@ -157,16 +163,6 @@ export function BorrowActionPageClient({
     () => (marketId ? selectHomeRepayTokensForMarket(session.state, walletId, marketId) : []),
     [marketId, session.state, walletId],
   )
-  const contextToken = useMemo(() => {
-    if (kind === "borrow") {
-      return borrowTokens.find((token) => token.id === assetId) ?? borrowTokens[0] ?? null
-    }
-    if (kind === "repay" && debtPosition) {
-      return repayTokens.find((token) => token.id === debtPosition.assetId) ?? repayTokens[0] ?? null
-    }
-    return null
-  }, [assetId, borrowTokens, debtPosition, kind, repayTokens])
-
   const usesCollateralContext = kind === "borrow" || kind === "repay" || kind === "remove" || kind === "claim"
   const showCollateralContextBar =
     usesCollateralContext && (isConfigureVisibleStage(stage) || stage === "review") && activePool != null
@@ -197,23 +193,6 @@ export function BorrowActionPageClient({
       }
     },
     [debtPositions, kind, session.state, walletId],
-  )
-
-  const handleContextTokenChange = useCallback(
-    (tokenId: string) => {
-      setAmount("")
-      if (kind === "borrow") {
-        setAssetId(resolveBorrowAssetId(session.state, tokenId, marketId))
-        return
-      }
-      if (kind === "repay") {
-        const position = debtPositions.find((entry) => entry.assetId === tokenId && entry.marketId === marketId)
-        if (position) {
-          setDebtPositionId(position.id)
-        }
-      }
-    },
-    [debtPositions, kind, marketId, session.state],
   )
 
   const selectItems = useMemo(() => {
@@ -386,14 +365,21 @@ export function BorrowActionPageClient({
   }, [embedded, marketId, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
-    if (kind !== "supply" || !marketId || stage !== "configure") return
+    if (kind !== "supply" || !marketId || stage !== "configure" || dismissedLpBlock) return
     const walletLpUsd = getWalletLpBalanceUsd(walletId, marketId)
-    if (walletLpUsd > 0) return
+    if (walletLpUsd > 0) {
+      setBlockedUi(null)
+      return
+    }
     const market = session.state.markets[marketId]
     const label = market ? formatBorrowMarketLabel({ name: market.display.name }) : "this pool"
     setBlockedUi(blockedUiForMissingWalletLp(label))
-    setStage("blocked")
-  }, [kind, marketId, session.state.markets, stage, walletId])
+    if (!embedded) setStage("blocked")
+  }, [dismissedLpBlock, embedded, kind, marketId, session.state.markets, stage, walletId])
+
+  useEffect(() => {
+    setDismissedLpBlock(false)
+  }, [marketId])
 
   useEffect(() => {
     let cancelled = false
@@ -584,9 +570,9 @@ export function BorrowActionPageClient({
     const blocked = mapPreviewToBlockedUi({ product: "borrow", kind, blockedReason: previewUi.blockedReason })
     if (blocked) {
       setBlockedUi(blocked)
-      setStage("blocked")
+      if (!embedded) setStage("blocked")
     }
-  }, [dismissedBlockedReason, kind, previewUi, stage])
+  }, [dismissedBlockedReason, embedded, kind, previewUi, stage])
 
   useEffect(() => {
     setDismissedBlockedReason(null)
@@ -768,10 +754,38 @@ export function BorrowActionPageClient({
         ? undefined
         : descriptor.subtitle
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const isHomeLayout = embedded && layout === "home"
+  const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
+  const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
+
+  const borrowToken = useMemo(
+    () => borrowTokens.find((token) => token.id === assetId) ?? borrowTokens[0] ?? null,
+    [assetId, borrowTokens],
+  )
+  const repayToken = useMemo(() => {
+    if (!debtPosition) return repayTokens[0] ?? null
+    return repayTokens.find((token) => token.id === debtPosition.assetId) ?? repayTokens[0] ?? null
+  }, [debtPosition, repayTokens])
+
+  const handleContextTokenChange = useCallback(
+    (tokenId: string) => {
+      setAmount("")
+      if (kind === "borrow") {
+        setAssetId(resolveBorrowAssetId(session.state, tokenId, marketId))
+        return
+      }
+      if (kind === "repay") {
+        const position = debtPositions.find((entry) => entry.assetId === tokenId && entry.marketId === marketId)
+        if (position) setDebtPositionId(position.id)
+      }
+    },
+    [debtPositions, kind, marketId, session.state],
+  )
 
   return (
     <ActionPageShell
       mode={embedded ? "embedded" : "page"}
+      density={shellDensity}
       title={descriptor.title}
       subtitle={shellSubtitle}
       hideTitle={hideTitle}
@@ -784,11 +798,26 @@ export function BorrowActionPageClient({
           kind={kind}
           pool={activePool}
           pools={session.collateralPools}
-          token={contextToken}
-          tokens={kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined}
           debts={debts}
           onPoolChange={handlePoolChange}
-          onTokenChange={kind === "borrow" || kind === "repay" ? handleContextTokenChange : undefined}
+          variant={isHomeLayout ? "inset" : "card"}
+          tokenField={
+            isHomeLayout && kind === "borrow" ? (
+              <ActionBorrowTokenField
+                label="Borrow asset"
+                token={borrowToken}
+                tokens={borrowTokens}
+                onTokenChange={handleContextTokenChange}
+              />
+            ) : isHomeLayout && kind === "repay" ? (
+              <ActionBorrowTokenField
+                label="Repay asset"
+                token={repayToken}
+                tokens={repayTokens}
+                onTokenChange={handleContextTokenChange}
+              />
+            ) : undefined
+          }
         />
       ) : null}
 
@@ -870,7 +899,20 @@ export function BorrowActionPageClient({
 
       {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
 
-      {isConfigureVisibleStage(stage) ? (
+      {showInlineBlocked && blockedUi ? (
+        <ActionBlockedDialog
+          variant="inline"
+          blocked={blockedUi}
+          open
+          onClose={() => {
+            if (kind === "supply") setDismissedLpBlock(true)
+            setBlockedUi(null)
+            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
+          }}
+        />
+      ) : null}
+
+      {isConfigureVisibleStage(stage) && !showInlineBlocked ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
@@ -931,11 +973,15 @@ export function BorrowActionPageClient({
           canGoBack={canGoBackToSelect}
           isPending={isPending}
           outcome={outcome}
+          hideAmountInput={kind === "claim"}
+          amountVariant={isHomeLayout ? "inset" : "card"}
+          hideAssetSelector={isHomeLayout && (kind === "borrow" || kind === "repay")}
         />
       ) : null}
 
-      {blockedUi ? (
+      {blockedUi && !embedded ? (
         <ActionBlockedDialog
+          variant="modal"
           blocked={blockedUi}
           open={stage === "blocked"}
           onClose={() => {

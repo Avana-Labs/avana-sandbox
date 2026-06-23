@@ -31,6 +31,8 @@ describe("rewards preview mappers", () => {
       tokenTotals: { WETH: 30, USDC: 25 },
     })
 
+    expect(ui.amountValue).toBe("$55.00")
+    expect(ui.assetLabel).toBe("WETH · Core")
     expect(ui.metrics.map((row) => row.label)).toEqual(["WETH", "USDC"])
   })
 })

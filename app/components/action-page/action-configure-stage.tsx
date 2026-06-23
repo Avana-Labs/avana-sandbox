@@ -41,6 +41,8 @@ type ActionConfigureStageProps = {
   canGoBack?: boolean
   hideAmountInput?: boolean
   amountReadOnly?: boolean
+  amountVariant?: "card" | "inset"
+  hideAssetSelector?: boolean
 }
 
 export function ActionConfigureStage({
@@ -70,6 +72,8 @@ export function ActionConfigureStage({
   canGoBack = false,
   hideAmountInput = false,
   amountReadOnly = false,
+  amountVariant = "card",
+  hideAssetSelector = false,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -97,6 +101,8 @@ export function ActionConfigureStage({
           assetSymbol={assetSymbol ?? pillLabel}
           borrowSymbol={borrowSymbol}
           readOnly={amountReadOnly}
+          variant={amountVariant}
+          hideAssetSelector={hideAssetSelector}
           showReceiveWethToggle={showReceiveWethToggle}
           receiveWeth={receiveWeth}
           onReceiveWethChange={onReceiveWethChange}

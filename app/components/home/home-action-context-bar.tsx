@@ -1,58 +1,48 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
-import type { HomeBorrowToken, HomeCollateralPool } from "@/app/lib/home-sim"
-import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
-import { Button } from "@/components/ui/button"
+import type { HomeCollateralPool } from "@/app/lib/home-sim"
+import { ActionContextSelectorCard } from "@/app/components/action-page/action-context-selector-card"
+import { ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
+import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
 
 export function HomeActionContextBar({
   pool,
-  token,
   onOpenPool,
-  onOpenToken,
-  showToken = true,
+  variant = "card",
 }: {
   pool: HomeCollateralPool
-  token?: HomeBorrowToken | null
   onOpenPool: () => void
-  onOpenToken?: () => void
-  showToken?: boolean
+  variant?: "card" | "inset"
 }) {
-  return (
-    <div className={showToken ? "mb-4 grid gap-2.5 sm:grid-cols-2" : "mb-4"}>
-      <Button
-        type="button"
-        variant="outline"
-        className="grid h-[58px] grid-cols-[2.75rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-3.5 text-left"
-        onClick={onOpenPool}
-      >
-        <span className="flex h-10 w-[3.25rem] items-center justify-center">
-          <PairVisual visuals={pool.visuals} className="shrink-0" />
-        </span>
-        <span className="flex min-w-0 flex-col leading-tight">
-          <span className="text-[11.5px] font-medium tracking-[0.02em] text-brand-readable">Collateral position</span>
-          <span className="truncate pt-0.5 text-[15px] font-medium text-foreground">{pool.name}</span>
-        </span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-brand-readable" />
-      </Button>
+  const [collateralSymbol, borrowSymbol] = pool.visuals.map((visual) => visual.symbol)
 
-      {showToken && onOpenToken ? (
-        <Button
-          type="button"
-          variant="outline"
-          className="grid h-[58px] grid-cols-[2.75rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-3.5 text-left"
-          onClick={onOpenToken}
-        >
-          <span className="flex h-10 w-10 items-center justify-center">
-            {token ? <TokenBubble visual={token.visual} /> : null}
-          </span>
-          <span className="flex min-w-0 flex-col leading-tight">
-            <span className="text-[11.5px] font-medium tracking-[0.02em] text-brand-readable">Borrow asset</span>
-            <span className="truncate pt-0.5 text-[15px] font-medium text-foreground">{token?.symbol ?? "Select asset"}</span>
-          </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-brand-readable" />
-        </Button>
-      ) : null}
+  if (variant === "inset") {
+    return (
+      <SwapStyleField label="Collateral position">
+        <button type="button" onClick={onOpenPool} className="mt-3 flex w-full items-start justify-between gap-3 text-left">
+          <div className="min-w-0 flex-1 truncate text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
+            {pool.name}
+          </div>
+          <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium">
+            <ActionTokenPairIcon collateralSymbol={collateralSymbol ?? "LP"} borrowSymbol={borrowSymbol ?? "LP"} size="md" />
+            <span className="text-muted-foreground" aria-hidden>
+              ▾
+            </span>
+          </div>
+        </button>
+      </SwapStyleField>
+    )
+  }
+
+  return (
+    <div className="mb-3">
+      <ActionContextSelectorCard
+        label="Collateral position"
+        value={pool.name}
+        collateralSymbol={collateralSymbol ?? "LP"}
+        borrowSymbol={borrowSymbol}
+        onClick={onOpenPool}
+      />
     </div>
   )
 }

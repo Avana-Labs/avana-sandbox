@@ -27,6 +27,7 @@ export function ActionReviewStage({
   secondaryHref?: string
 }) {
   const amountDisplay = resolveActionAmountCardProps(preview)
+  const isClaimReview = preview.rateLabel === "Claim total"
 
   return (
     <div className="space-y-4" data-testid="action-review-stage">
@@ -35,40 +36,49 @@ export function ActionReviewStage({
         {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
       </div>
 
-      <ActionAmountCard
-        label="Amount"
-        amount={amountDisplay.amount}
-        onAmountChange={() => undefined}
-        approxUsdLabel={preview.amountUsdLabel}
-        assetLabel={amountDisplay.assetLabel}
-        assetSymbol={amountDisplay.assetSymbol}
-        borrowSymbol={amountDisplay.borrowSymbol}
-        readOnly
-      />
-
-      <ActionCard>
-        <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
-        {preview.marketBreakdown ? (
-          <>
-            <ActionInfoRow
-              label="Collateral"
-              value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy} APY`}
-              tooltip="market"
-            />
-            <ActionInfoRow
-              label="Borrow"
-              value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy} APY`}
-              tooltip="market"
-            />
-          </>
-        ) : (
+      {isClaimReview ? (
+        <ActionCard>
+          <ActionInfoRow label="Claim total" value={preview.rateValue} tooltip="fee" />
           <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
-        )}
-      </ActionCard>
+        </ActionCard>
+      ) : (
+        <ActionAmountCard
+          label="Amount"
+          amount={amountDisplay.amount}
+          onAmountChange={() => undefined}
+          approxUsdLabel={preview.amountUsdLabel}
+          assetLabel={amountDisplay.assetLabel}
+          assetSymbol={amountDisplay.assetSymbol}
+          borrowSymbol={amountDisplay.borrowSymbol}
+          readOnly
+        />
+      )}
+
+      {isClaimReview ? null : (
+        <ActionCard>
+          <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
+          {preview.marketBreakdown ? (
+            <>
+              <ActionInfoRow
+                label="Collateral"
+                value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy} APY`}
+                tooltip="market"
+              />
+              <ActionInfoRow
+                label="Borrow"
+                value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy} APY`}
+                tooltip="market"
+              />
+            </>
+          ) : (
+            <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
+          )}
+        </ActionCard>
+      )}
 
       {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
 
-      {preview.risk?.title && preview.risk.message ? (
+      {!isClaimReview && preview.risk?.title && preview.risk.message ? (
         <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
       ) : null}
 

@@ -251,17 +251,17 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
         }}
         className={
           iconOnly
-            ? "inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#009dbd] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
-            : "flex h-9 w-full items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-left text-[14px] font-normal tracking-[-0.01em] text-[#767676] shadow-none transition-colors hover:bg-[#f3f3f3] lg:h-10 lg:gap-3 lg:px-4 lg:text-[15px] dark:border-border/60 dark:text-muted-foreground dark:hover:bg-[#161c23]"
+            ? "inline-flex h-10 w-10 items-center justify-center text-brand-readable transition hover:text-foreground focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+            : "flex h-9 w-full items-center gap-2.5 rounded-full border border-border bg-surface-inset px-3.5 text-left text-[14px] font-normal tracking-[-0.01em] text-muted-foreground shadow-none transition-colors hover:bg-muted lg:h-10 lg:gap-3 lg:px-4 lg:text-[15px]"
         }
         >
         {iconOnly ? (
           <Search className="h-5 w-5" />
         ) : (
           <>
-            <Search className="h-4 w-4 shrink-0 text-[#01AACF] lg:h-[17px] lg:w-[17px]" />
+            <Search className="h-4 w-4 shrink-0 text-brand-readable lg:h-[17px] lg:w-[17px]" />
             <span className="min-w-0 flex-1 truncate">Search pools, borrow, lend, and more</span>
-            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-[7px] border border-[#01AACF]/20 bg-[#f5f5f5] px-1 text-[10px] font-normal text-[#01AACF] lg:h-[22px] lg:min-w-[22px] lg:text-[11px]">
+            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-[7px] border border-border bg-muted px-1 text-[10px] font-normal text-brand-readable lg:h-[22px] lg:min-w-[22px] lg:text-[11px]">
               /
             </span>
           </>

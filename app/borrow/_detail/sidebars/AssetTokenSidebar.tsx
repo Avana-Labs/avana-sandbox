@@ -67,9 +67,9 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
 
   return (
     <>
-      <div className={cn("flex w-full flex-col gap-6", className)}>
-        <div className="space-y-4">
-          <div role="tablist" aria-label="Asset actions" className="flex items-center gap-5 border-b border-border">
+      <div className={cn("flex w-full flex-col", className)}>
+        <div className="space-y-5">
+          <div role="tablist" aria-label="Asset actions" className="flex items-center gap-6 border-b border-border px-1">
             {[
               { id: "deposit", label: "Deposit" },
               { id: "withdraw", label: "Withdraw" },
@@ -97,10 +97,10 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
             })}
           </div>
 
-          <div className="pt-1">
+          <div className="pt-2">
             {tab === "deposit" ? (
               embedActions ? (
-                <ResponsiveLendAction kind="deposit" market={lendMarketId} closeHref={closeHref} />
+                <ResponsiveLendAction kind="deposit" market={lendMarketId} closeHref={closeHref} sidebar />
               ) : (
                 <ActionPageLaunchCta product="lend" kind="deposit" market={lendMarketId} returnTo={closeHref} />
               )
@@ -108,7 +108,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
 
             {tab === "withdraw" ? (
               embedActions ? (
-                <ResponsiveLendAction kind="withdraw" market={lendMarketId} closeHref={closeHref} />
+                <ResponsiveLendAction kind="withdraw" market={lendMarketId} closeHref={closeHref} sidebar />
               ) : (
                 <ActionPageLaunchCta product="lend" kind="withdraw" market={lendMarketId} returnTo={closeHref} />
               )
@@ -122,6 +122,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
                     market={borrowContext.id}
                     asset={detail.row.id}
                     closeHref={closeHref}
+                    sidebar
                   />
                 ) : (
                   <ActionPageLaunchCta
@@ -156,6 +157,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
                   market={borrowContext.id}
                   asset={detail.row.id}
                   closeHref={closeHref}
+                  sidebar
                 />
               ) : (
                 <ActionPageLaunchCta

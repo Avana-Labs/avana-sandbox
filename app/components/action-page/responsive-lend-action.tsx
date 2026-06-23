@@ -3,22 +3,31 @@
 import { useMediaQuery } from "@/app/lib/use-media-query"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { LendActionPageClient } from "@/app/components/action-page/lend-action-page-client"
+import { DetailSidebarActionCard } from "@/app/components/action-page/detail-sidebar-action-card"
 
 export function ResponsiveLendAction({
   kind,
   market,
   closeHref,
   label,
+  sidebar = false,
 }: {
   kind: "deposit" | "withdraw"
   market: string
   closeHref: string
   label?: string
+  sidebar?: boolean
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)", true)
 
   if (isDesktop) {
-    return <LendActionPageClient kind={kind} embedded closeHref={closeHref} initialMarketId={market} />
+    const action = <LendActionPageClient kind={kind} embedded sidebar={sidebar} closeHref={closeHref} initialMarketId={market} />
+
+    if (sidebar) {
+      return <DetailSidebarActionCard>{action}</DetailSidebarActionCard>
+    }
+
+    return action
   }
 
   return (
