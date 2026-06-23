@@ -38,7 +38,7 @@ import { formatActionUsd, formatActionInputAmount } from "@/app/lib/action-syste
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi, blockedUiForMissingWalletLp } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
-import { formatBorrowMarketContext, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
+import { formatBorrowLpSymbolLabel, formatBorrowMarketContext, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
 import {
   borrowSelectItemsForMarket,
@@ -271,7 +271,7 @@ export function BorrowActionPageClient({
   const assetSymbol = useMemo(() => {
     if (kind === "remove" || kind === "supply") {
       const market = session.state.markets[marketId]
-      return market?.display.visuals.map((visual) => visual.symbol).join(" / ") ?? "LP"
+      return formatBorrowLpSymbolLabel(session.state.markets[marketId])
     }
     const resolvedAssetId = assetId ? resolveBorrowAssetId(session.state, assetId, marketId) : ""
     if (resolvedAssetId) {
@@ -449,7 +449,7 @@ export function BorrowActionPageClient({
           if (cancelled) return
           setPreviewUi(
             mapBorrowSupplyPreviewToActionUi(preview, {
-              symbol: market?.display.visuals.map((visual) => visual.symbol).join(" / ") ?? "LP",
+              symbol: formatBorrowLpSymbolLabel(market),
               amountUsd: safeAmount,
               marketLabel,
               poolLabel: market?.display.name ?? marketLabel,
