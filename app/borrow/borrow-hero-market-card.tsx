@@ -26,14 +26,14 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
   return (
     <section
       className={cn(
-        "min-w-[19rem] max-w-[19rem] shrink-0 rounded-radius-md border border-border/70 bg-background p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] md:min-w-[20rem] md:max-w-[20rem] md:p-4",
+        "min-w-[19rem] max-w-[19rem] shrink-0 rounded-radius-md border-0 bg-card p-3.5 shadow-none md:min-w-[20rem] md:max-w-[20rem] md:p-4",
         className,
       )}
     >
       <div className="mb-3">
         <h3
           className={cn(
-            "font-compact text-[14px] font-medium tracking-tight text-foreground md:text-[15px]",
+            "text-[14px] tracking-tight text-foreground md:text-[15px]",
             hideTitleOnMobile ? "hidden md:block" : "",
           )}
         >
@@ -50,7 +50,7 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
             className="flex items-center gap-3 rounded-xs px-1 py-1 transition-colors hover:bg-surface-inset"
           >
             <div className="min-w-0 flex-1">
-              <TokenPairCell visuals={row.pool.visuals} name={row.title} subtitle={row.subtitle} size="sm" />
+              <TokenPairCell visuals={row.pool.visuals} name={row.title} subtitle={row.subtitle} size="md" />
             </div>
 
             <div className="ml-auto flex min-w-0 shrink-0 flex-col items-end gap-1 text-right">

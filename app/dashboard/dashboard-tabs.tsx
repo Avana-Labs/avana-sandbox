@@ -62,8 +62,8 @@ export function DashboardTabs({
             className={cn(
               "relative h-auto flex-1 shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[16px] font-normal text-muted-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:rounded-full after:bg-transparent sm:flex-none sm:pb-4 sm:text-[15px]",
               activeTab === tab.value
-                ? "font-semibold text-foreground after:bg-foreground"
-                : "hover:text-foreground",
+                ? "text-[16px] text-foreground after:bg-foreground sm:text-[16px]"
+                : "text-[15px] hover:text-foreground sm:text-[15px]",
             )}
           >
             {tab.label}

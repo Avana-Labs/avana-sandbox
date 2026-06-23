@@ -172,7 +172,7 @@ export function MarketDetailClient({ detail }: Props) {
 function TokenAvatar({ visual }: { visual: MultiplyMarketDetail["hero"]["visuals"][number] }) {
   return (
     <span
-      className={cn("inline-flex size-6 items-center justify-center rounded-full border-2 border-background ring-1 ring-border", visual.bgClass, visual.textClass)}
+      className={cn("inline-flex size-10 items-center justify-center rounded-full border-2 border-background ring-1 ring-border", visual.bgClass, visual.textClass)}
     >
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element

@@ -57,7 +57,7 @@ function PromoTabButton({
       onClick={onClick}
       data-state={active ? "active" : "inactive"}
       className={[
-        "h-auto shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[15px] font-normal after:inset-x-0 after:h-[3px] data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:shadow-none sm:pb-4",
+        "h-auto shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[15px] after:inset-x-0 after:h-[3px] data-[state=active]:bg-transparent data-[state=active]:text-[16px] data-[state=active]:shadow-none sm:pb-4",
         active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground/80",
       ].join(" ")}
     >
@@ -81,7 +81,7 @@ function AvanaQuestCard({
   const canAct = isClaimable || (quest.status === "available" || quest.status === "in_progress") && quest.cta !== "Waiting"
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden rounded-[14px] border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <Card className="flex h-full flex-col overflow-hidden rounded-radius-md border-0 bg-card shadow-none">
       <div className="flex h-full flex-col p-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-brand/10">
@@ -93,16 +93,16 @@ function AvanaQuestCard({
         </div>
 
         <div className="mt-3 min-h-0 space-y-2 sm:mt-3.5">
-          <h3 className="line-clamp-3 text-[14px] font-medium leading-5 tracking-[-0.03em] text-foreground md:text-[15px]">
+          <h3 className="line-clamp-3 text-[14px] leading-5 tracking-[-0.03em] text-foreground md:text-[15px]">
             {quest.title}
           </h3>
           <p className={`line-clamp-2 text-[12px] font-normal leading-5 ${accent === "challenge" ? "text-foreground/75" : "text-muted-foreground"}`}>
             {quest.description}
           </p>
           {"progressLabel" in quest && quest.progressLabel ? (
-            <div className="text-[11px] font-medium text-muted-foreground">{quest.progressLabel}</div>
+            <div className="text-[11px] text-muted-foreground">{quest.progressLabel}</div>
           ) : null}
-          <div className="pt-1 font-data text-[14px] font-medium tracking-tight text-foreground md:text-[15px]">{quest.reward}</div>
+          <div className="pt-1 font-data text-[14px] tracking-tight text-foreground md:text-[15px]">{quest.reward}</div>
         </div>
 
         <div className="mt-auto pt-3.5">
@@ -121,7 +121,7 @@ function AvanaQuestCard({
               }
             }}
             disabled={isDisabled}
-            className={`inline-flex h-9 w-full items-center justify-center gap-1 rounded-[11px] px-3.5 text-[12px] font-medium transition-colors ${
+            className={`inline-flex h-9 w-full items-center justify-center gap-1 rounded-radius-sm px-3.5 text-[12px] transition-colors ${
               isClaimable
                 ? "bg-brand text-brand-foreground hover:bg-brand/90"
                 : isDisabled

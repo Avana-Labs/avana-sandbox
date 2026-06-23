@@ -40,7 +40,7 @@ export function PortfolioInvestments({
         ) : null}
       </div>
 
-      <Card className="overflow-hidden rounded-[18px] border-0 bg-white shadow-none dark:bg-slate-950">
+      <Card className="overflow-hidden rounded-radius-md border-0 bg-transparent shadow-none">
         <CardContent className="p-0">
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]">
@@ -53,32 +53,32 @@ export function PortfolioInvestments({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     #
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Asset
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Deposited
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     APY
                   </th>
-                  <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                  <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Interest earned
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">
                 {investments.map((token, index) => (
-                  <tr key={token.id} className="cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-white/5">
+                  <tr key={token.id} className="cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-card/5">
                     <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
                       {index + 1}
                     </td>
                     <td className="py-3 pl-5">
                       <div className="flex items-center gap-2.5">
-                        <TokenIcon symbol={token.symbol} size="md" />
+                        <TokenIcon symbol={token.symbol} size="table" />
                         <div className="flex min-w-0 flex-col">
                           <span className="truncate text-[13px] font-medium text-foreground">{token.name}</span>
                           <span className="text-[11px] text-muted-foreground">{token.symbol}</span>
@@ -114,7 +114,7 @@ export function PortfolioInvestments({
             {investments.map((token) => (
               <div key={token.id} className="flex cursor-pointer items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <TokenIcon symbol={token.symbol} size="md" />
+                  <TokenIcon symbol={token.symbol} size="table" />
                   <div className="flex flex-col">
                     <span className="text-[13px] font-medium text-foreground">{token.name}</span>
                     <span className="font-data text-[11px] tabular-nums text-[#01AACF]">{token.apyPct.toFixed(2)}% APY</span>

@@ -73,12 +73,12 @@ function DeferredBlock({ className }: { className?: string }) {
 
 function TokenAvatar({ visual, className }: { visual: AssetDetail["hero"]["visual"]; className?: string }) {
   return (
-    <span className={cn("inline-flex size-6 items-center justify-center", visual.textClass, className)}>
+    <span className={cn("inline-flex size-10 items-center justify-center", visual.textClass, className)}>
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={visual.iconUrl} alt="" className="size-full object-contain" />
       ) : (
-        <span className="text-[10px] font-medium">{visual.shortLabel}</span>
+        <span className="text-[11px] font-medium">{visual.shortLabel}</span>
       )}
     </span>
   )
@@ -94,7 +94,7 @@ export function AssetDetailClient({ detail }: Props) {
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
   return (
-    <div className="min-h-screen bg-white text-foreground dark:bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <StickyDetailHeader
         heroRef={heroRef}
         sparkline={{ series: detail.heroMetric.series[detail.heroMetric.metricId]["1M"] }}

@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
+import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import type { HomeAssetVisual, HomeSuccessRow, HomeSuccessRowTone } from "@/app/lib/home-sim"
@@ -50,7 +51,7 @@ export function PremiumPanel({ title, description, action, className, contentCla
   return (
     <Card
       className={cn(
-        "overflow-hidden rounded-radius-md border border-border bg-surface-raised shadow-elev-1",
+        "overflow-hidden rounded-radius-md border-0 bg-card shadow-none",
         className,
       )}
     >
@@ -74,7 +75,7 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
   return (
     <span
       className={cn(
-        "inline-flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full font-data text-[10.5px] font-medium",
+        "inline-flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full font-data text-[11px] font-medium",
         showIcon ? "bg-surface-raised ring-1 ring-border" : cn(visual.bgClassName, visual.textClassName),
         className,
       )}
@@ -84,8 +85,8 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
         <Image
           src={meta.iconUrl as string}
           alt={visual.symbol}
-          width={28}
-          height={28}
+          width={TOKEN_ICON_TABLE_PX}
+          height={TOKEN_ICON_TABLE_PX}
           className="h-full w-full object-contain"
           onError={() => setImgFailed(true)}
           unoptimized
@@ -99,9 +100,9 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
 
 export function PairVisual({ visuals, className }: PairVisualProps) {
   return (
-    <div className={cn("relative h-7 w-11 shrink-0", className)} aria-hidden>
+    <div className={cn("relative h-10 w-[3.25rem] shrink-0", className)} aria-hidden>
       <TokenBubble visual={visuals[0]} className="absolute left-0 top-0 ring-2 ring-background" />
-      <TokenBubble visual={visuals[1]} className="absolute left-4 top-0 ring-2 ring-background" />
+      <TokenBubble visual={visuals[1]} className="absolute left-5 top-0 ring-2 ring-background" />
     </div>
   )
 }

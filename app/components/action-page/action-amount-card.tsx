@@ -70,7 +70,7 @@ export function ActionAmountCard({
   }, [menuOpen])
 
   return (
-    <div className="rounded-[20px] border border-border bg-surface-raised" data-testid="action-amount-card">
+    <div className="rounded-radius-md border-0 bg-card" data-testid="action-amount-card">
       <div className="px-4 pb-4 pt-4">
         <div className="text-[13px] text-muted-foreground">{label}</div>
         <div className="mt-3 flex items-start justify-between gap-3">
@@ -103,7 +103,7 @@ export function ActionAmountCard({
                 switchable ? "cursor-pointer hover:bg-muted" : "cursor-default",
               )}
             >
-              <ActionTokenIcon symbol={symbol} className="size-5" />
+              <ActionTokenIcon symbol={symbol} />
               <span>{assetLabel}</span>
               {switchable ? <span className="text-muted-foreground" aria-hidden>▾</span> : null}
             </button>
@@ -128,7 +128,7 @@ export function ActionAmountCard({
                       option.id === selectedAssetId && "bg-muted",
                     )}
                   >
-                    <ActionTokenIcon symbol={option.symbol} className="size-5" />
+                    <ActionTokenIcon symbol={option.symbol} />
                     <span className="min-w-0 flex-1 truncate">{option.label}</span>
                     {option.sublabel ? <span className="shrink-0 text-[12px] text-muted-foreground">{option.sublabel}</span> : null}
                   </button>

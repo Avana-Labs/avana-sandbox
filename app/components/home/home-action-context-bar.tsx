@@ -26,11 +26,8 @@ export function HomeActionContextBar({
         className="grid h-[58px] grid-cols-[2.75rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-3.5 text-left"
         onClick={onOpenPool}
       >
-        <span className="flex h-9 w-[2.75rem] items-center justify-center">
-          <PairVisual
-            visuals={pool.visuals}
-            className="h-9 w-[2.75rem] shrink-0 [&>span]:size-8 [&>span:nth-child(1)]:left-0 [&>span:nth-child(2)]:left-[1.05rem]"
-          />
+        <span className="flex h-10 w-[3.25rem] items-center justify-center">
+          <PairVisual visuals={pool.visuals} className="shrink-0" />
         </span>
         <span className="flex min-w-0 flex-col leading-tight">
           <span className="text-[11.5px] font-medium tracking-[0.02em] text-brand-readable">Collateral position</span>
@@ -46,8 +43,8 @@ export function HomeActionContextBar({
           className="grid h-[58px] grid-cols-[2.75rem_minmax(0,1fr)_1rem] items-center gap-2.5 rounded-radius-md px-3.5 text-left"
           onClick={onOpenToken}
         >
-          <span className="flex h-9 w-[2.75rem] items-center justify-center">
-            {token ? <TokenBubble visual={token.visual} className="size-9 shrink-0" /> : null}
+          <span className="flex h-10 w-10 items-center justify-center">
+            {token ? <TokenBubble visual={token.visual} /> : null}
           </span>
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="text-[11.5px] font-medium tracking-[0.02em] text-brand-readable">Borrow asset</span>

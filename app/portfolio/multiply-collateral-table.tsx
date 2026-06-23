@@ -20,7 +20,7 @@ function formatPct(value: number) {
 function statusClass(status: PortfolioMultiplyCollateral["status"]) {
   return status === "open"
     ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-    : "border-slate-500/20 bg-slate-500/10 text-slate-600 dark:text-slate-300"
+    : "border-slate-500/20 bg-muted0/10 text-slate-600 dark:text-slate-300"
 }
 
 export function MultiplyCollateralTable({
@@ -38,7 +38,7 @@ export function MultiplyCollateralTable({
         <h2 className="text-[14px] font-medium tracking-tight text-foreground">Multiply positions</h2>
       </div>
 
-      <div className="rounded-[18px] bg-white dark:bg-slate-950">
+      <div className="rounded-radius-md bg-transparent dark:bg-transparent">
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1180px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
             <colgroup>
@@ -56,50 +56,50 @@ export function MultiplyCollateralTable({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   #
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Market
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Exposure
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Multiplier
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Debt
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   LTV
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Health
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Liq. price
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Net APY
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Status
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-slate-900/90 dark:text-white/58">
+                <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border dark:divide-white/6">
               {rows.map((row, index) => (
-                <tr key={row.id} className="transition-colors hover:bg-slate-100 dark:hover:bg-white/5">
+                <tr key={row.id} className="transition-colors hover:bg-slate-100 dark:hover:bg-card/5">
                   <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
                     {index + 1}
                   </td>
                   <td className="py-3 pl-4 pr-4">
                     <div className="flex items-center gap-2.5">
-                      <TokenIcon symbol={row.collateralToken} size="lg" />
+                      <TokenIcon symbol={row.collateralToken} size="table" />
                       <span className="min-w-0">
                         <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
                           {row.label}
@@ -166,12 +166,12 @@ export function MultiplyCollateralTable({
           {rows.map((row, index) => (
             <div
               key={row.id}
-              className="rounded-2xl border border-border bg-slate-50/80 p-3 dark:border-white/8 dark:bg-slate-900/70"
+              className="rounded-2xl border border-border bg-muted/80 p-3 dark:border-white/8 dark:bg-slate-900/70"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <span className="font-data text-[13px] tabular-nums text-muted-foreground dark:text-white/42">{index + 1}</span>
-                  <TokenIcon symbol={row.collateralToken} size="lg" />
+                  <TokenIcon symbol={row.collateralToken} size="table" />
                   <div className="min-w-0">
                     <div className="text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.label}</div>
                     <div className="truncate text-[12px] text-muted-foreground dark:text-white/38">

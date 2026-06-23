@@ -49,7 +49,7 @@ function ShortcutTokenButton({
         selected ? "bg-surface-inset" : "hover:bg-surface-inset",
       )}
     >
-      <TokenBubble visual={visual} className="size-8" />
+      <TokenBubble visual={visual} />
       <span className="text-[12px] font-medium text-foreground">{symbol}</span>
     </button>
   )
@@ -162,7 +162,7 @@ export function TokenPickerDialog({
                     isSelected ? "bg-surface-inset" : "hover:bg-surface-inset",
                   )}
                 >
-                  <TokenBubble visual={token.visual} className="size-8" />
+                  <TokenBubble visual={token.visual} />
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-[13px] font-medium text-foreground">{token.name}</span>
                     <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">

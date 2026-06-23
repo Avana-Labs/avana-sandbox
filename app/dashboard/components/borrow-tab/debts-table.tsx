@@ -16,7 +16,7 @@ import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
 import { cn } from "@/lib/utils"
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
+const ROW_HOVER_BG = "transition-colors group-hover:bg-table-header/40 dark:group-hover:bg-[#131820]"
 const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
 const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
 
@@ -89,25 +89,25 @@ export function DebtsPanel({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     #
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Collateral Position
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Borrowed
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Health Factor
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Accrued Interest
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Liq. Threshold
                   </th>
-                  <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58" />
+                  <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
                 </tr>
               </thead>
               <tbody>
@@ -173,7 +173,7 @@ export function DebtsPanel({
           const pairLabel = `${row.pool.visuals[0].symbol} / ${row.pool.visuals[1].symbol} LP`
           const rowKey = row.id ?? `${row.pool.id}-${index}`
           return (
-            <li key={rowKey} className="space-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1">
+            <li key={rowKey} className="space-y-3 rounded-radius-md border-0 bg-card px-4 py-4 shadow-none">
               <div>
                 <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Active debt</div>
                 <div className="mt-1 flex items-baseline gap-2">
@@ -188,8 +188,8 @@ export function DebtsPanel({
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-medium text-muted-foreground">Backed by</span>
                   <div className="flex items-center">
-                    <TokenBubble visual={visuals[0]} size="sm" />
-                    <TokenBubble visual={visuals[1]} size="sm" className="-ml-1.5" />
+                    <TokenBubble visual={visuals[0]} size="table" />
+                    <TokenBubble visual={visuals[1]} size="table" className="-ml-1.5" />
                   </div>
                 </div>
                 <div className="text-right font-data text-[12.5px] font-medium tabular-nums text-foreground">

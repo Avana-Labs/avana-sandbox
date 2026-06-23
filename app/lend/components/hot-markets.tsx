@@ -120,7 +120,7 @@ function ReferenceGraph({
       {point ? (
         <>
           <span
-            className="absolute bottom-0 top-0 z-10 w-px bg-white/48"
+            className="absolute bottom-0 top-0 z-10 w-px bg-card/48"
             style={{ left: `${(point.x / graph.width) * 100}%` }}
           />
           <span
@@ -212,7 +212,7 @@ function FeaturedCard({
 
   const cardClassName = cn(
     "relative block h-[176px] w-[372px] shrink-0 overflow-hidden rounded-2xl border text-left",
-    "border-[#e1e4e8] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+    "border-[#e1e4e8] bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     "dark:border-[#26272a] dark:bg-[#1b1b1c] dark:shadow-none",
   )
 

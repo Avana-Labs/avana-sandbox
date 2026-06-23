@@ -37,13 +37,13 @@ export function ActionSelectStage({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Find an asset"
-          className="h-11 w-full rounded-[14px] border border-border bg-surface-raised px-4 text-[14px] outline-none placeholder:text-muted-foreground"
+          className="h-11 w-full rounded-radius-sm border border-border bg-surface-inset px-4 text-[14px] outline-none placeholder:text-muted-foreground"
         />
       </label>
 
       <div className="mt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Available assets</div>
 
-      <div className="mt-2 divide-y divide-border rounded-[16px] border border-border bg-surface-raised">
+      <div className="mt-2 divide-y divide-border rounded-radius-md border-0 bg-card">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <div className="text-[14px] font-medium">{emptyTitle}</div>

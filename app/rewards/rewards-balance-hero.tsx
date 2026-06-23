@@ -42,7 +42,7 @@ export function RewardsBalanceHero({
   const claimLabel =
     claimableCount > 0 ? `Claim ${formatClaimAmount(claimableAmount)} AVA` : "No rewards ready"
   const claimButtonClass = cn(
-    "inline-flex h-10 w-full items-center justify-center rounded-[11px] px-4 text-[12px] font-medium transition-colors sm:h-9 sm:w-auto",
+    "inline-flex h-10 w-full items-center justify-center rounded-radius-sm px-4 text-[12px] transition-colors sm:h-9 sm:w-auto",
     claimableCount > 0
       ? "bg-brand text-brand-foreground hover:bg-brand/90"
       : "cursor-not-allowed bg-muted/60 text-muted-foreground",
@@ -50,7 +50,7 @@ export function RewardsBalanceHero({
 
   return (
     <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
-      <section className="relative overflow-hidden rounded-radius-md border border-border/70 bg-card px-4 py-4 sm:px-5 md:min-h-[174px]">
+      <section className="relative overflow-hidden rounded-radius-md border-0 bg-card px-4 py-4 sm:px-5 md:min-h-[174px]">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
         <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
           <Image

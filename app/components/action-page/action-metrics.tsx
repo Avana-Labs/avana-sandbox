@@ -19,7 +19,7 @@ export function ActionCard({
   className?: string
 } & ComponentPropsWithoutRef<"div">) {
   return (
-    <div className={cn("rounded-[20px] border border-border bg-surface-raised", className)} {...props}>
+    <div className={cn("rounded-radius-md border-0 bg-card", className)} {...props}>
       {children}
     </div>
   )
@@ -61,7 +61,7 @@ function TokenSymbolRow({ symbols }: { symbols: string[] }) {
   return (
     <div className="flex items-center gap-1.5" data-testid="borrowable-asset-icons">
       {symbols.map((symbol) => (
-        <ActionTokenIcon key={symbol} symbol={symbol} className="size-6" />
+        <ActionTokenIcon key={symbol} symbol={symbol} />
       ))}
     </div>
   )

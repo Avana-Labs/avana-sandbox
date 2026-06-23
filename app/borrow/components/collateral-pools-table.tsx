@@ -20,7 +20,7 @@ import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
+const ROW_HOVER_BG = "transition-colors group-hover:bg-table-header/40 dark:group-hover:bg-[#131820]"
 const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
 const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
 
@@ -107,10 +107,10 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
     <div className="flex min-w-0 items-center gap-4">
       <div className="flex items-center">
         <span className="relative z-[1]">
-          <TokenBubble visual={pool.visuals[0]} size="xl" ring={false} className="bg-transparent" />
+          <TokenBubble visual={pool.visuals[0]} size="table" ring={false} className="bg-transparent" />
         </span>
         <span className="-ml-3">
-          <TokenBubble visual={pool.visuals[1]} size="xl" ring={false} className="bg-transparent" />
+          <TokenBubble visual={pool.visuals[1]} size="table" ring={false} className="bg-transparent" />
         </span>
       </div>
       <div className="min-w-0">
@@ -177,7 +177,7 @@ function CollateralDesktopTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[920px] text-[12px]">
           <thead>
-                <tr className="bg-slate-50 text-left text-muted-foreground dark:bg-[#131820] dark:text-white/52">
+                <tr className="bg-table-header text-left text-muted-foreground">
                   <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     #
                   </th>

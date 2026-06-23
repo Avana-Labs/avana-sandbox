@@ -100,7 +100,7 @@ function ExpandableDesktopSearch({
         className={cn(
           "flex h-10 items-center overflow-hidden border shadow-elev-1 transition-[width,border-radius,background-color,border-color] duration-200",
           isExpanded ? "w-[240px] rounded-[12px] px-3" : "w-10 cursor-pointer justify-center rounded-[12px]",
-          "border-border bg-white text-foreground dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb]",
+          "border-border bg-card text-foreground dark:border-border/60 dark:text-[#e6f8fb]",
         )}
         onClick={() => {
           if (!isExpanded) setOpen(true)
@@ -253,8 +253,8 @@ function SingleSelectDropdown({
         className={cn(
           "inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
           isDark
-            ? "border border-white/8 bg-[#1f1f1f] text-white hover:bg-[#262626] focus-visible:ring-white/10"
-            : "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10",
+            ? "border border-white/8 bg-surface-inset text-white hover:bg-[#262626] focus-visible:ring-white/10"
+            : "border border-border bg-card text-foreground hover:bg-neutral-50 focus-visible:ring-black/10",
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
@@ -276,7 +276,7 @@ function SingleSelectDropdown({
             ref={panelRef}
             className={cn(
               "fixed z-50 overflow-hidden rounded-[14px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-              isDark ? "border-white/8 bg-[#232323] text-white" : "border-border bg-white text-foreground",
+              isDark ? "border-white/8 bg-surface-inset text-white" : "border-border bg-card text-foreground",
             )}
             style={
               panelStyle
@@ -297,7 +297,7 @@ function SingleSelectDropdown({
               }}
               className={cn(
                 "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
-                isDark ? "text-white hover:bg-white/5" : "text-foreground hover:bg-black/[0.04]",
+                isDark ? "text-white hover:bg-card/5" : "text-foreground hover:bg-black/[0.04]",
               )}
             >
               <FilterCheckIcon checked={value === null} dark={isDark} />
@@ -322,8 +322,8 @@ function SingleSelectDropdown({
                       "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors",
                       isDark
                         ? checked
-                          ? "bg-white/6 font-medium text-white"
-                          : "text-white/82 hover:bg-white/5"
+                          ? "bg-card/6 font-medium text-white"
+                          : "text-white/82 hover:bg-card/5"
                         : checked
                           ? "bg-black/[0.05] font-medium text-foreground"
                           : "text-foreground/82 hover:bg-black/[0.04]",
@@ -391,7 +391,7 @@ export function TabsBar({
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto py-2.5 md:hidden">
-        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
+        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
           <SearchIcon className="dark:text-[#01AACF]" />
           <input
             aria-label="Filter assets"
