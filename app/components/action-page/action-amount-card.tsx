@@ -7,6 +7,7 @@ import { ActionMetricHelp } from "@/app/components/action-page/action-metric-hel
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
+import { sanitizeDecimalInput } from "@/app/lib/action-system/amount-input"
 import type { HomeBorrowToken } from "@/app/lib/home-sim"
 
 export type ActionAssetOption = {
@@ -64,7 +65,12 @@ export function ActionAmountCard({
 }: ActionAmountCardProps) {
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
-  const switchable = Boolean(!hideAssetSelector && onAssetSelect && assetOptions && assetOptions.length > 1 && !readOnly)
+  const switchable = Boolean(
+    !hideAssetSelector &&
+      onAssetSelect &&
+      !readOnly &&
+      (useDialogPicker ? pickerTokens!.length > 1 : assetOptions && assetOptions.length > 1),
+  )
   const [menuOpen, setMenuOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -97,7 +103,7 @@ export function ActionAmountCard({
           <input
             inputMode="decimal"
             value={amount}
-            onChange={(event) => onAmountChange(event.target.value)}
+            onChange={(event) => onAmountChange(sanitizeDecimalInput(event.target.value))}
             className="w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none placeholder:text-muted-foreground/60"
             placeholder="0"
           />
