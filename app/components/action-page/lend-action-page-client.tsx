@@ -18,9 +18,11 @@ import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
-import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
+import { mapPreviewToBlockedUi, blockedUiForMissingWalletAsset } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { lendDepositSelectItems, lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
+import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/app/lib/lend-system/market-labels"
+import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
@@ -38,11 +40,17 @@ function isHardBlock(reason: string | null) {
 export function LendActionPageClient({
   kind,
   closeHref = "/lend",
+  embedded = false,
+  sidebar = false,
+  layout = "default",
   initialMarketId,
   initialAmount = "",
 }: {
   kind: "deposit" | "withdraw"
   closeHref?: string
+  embedded?: boolean
+  sidebar?: boolean
+  layout?: "default" | "home"
   initialMarketId?: string
   initialAmount?: string
 }) {
@@ -51,8 +59,8 @@ export function LendActionPageClient({
   const { walletId } = useAvanaSessions()
   const session = useLendSessionContext()
   const depositItems = useMemo(
-    () => (kind === "deposit" ? lendDepositSelectItems(session) : []),
-    [kind, session],
+    () => (kind === "deposit" ? lendDepositSelectItems(session, walletId) : []),
+    [kind, session, walletId],
   )
   const withdrawItems = useMemo(
     () => (kind === "withdraw" ? lendWithdrawSelectItems(session, walletId) : []),
@@ -60,6 +68,7 @@ export function LendActionPageClient({
   )
   const [marketId, setMarketId] = useState(() => initialMarketId ?? (kind === "deposit" ? "gho" : ""))
   const [stage, setStage] = useState<ActionStage>(() => {
+    if (embedded) return "configure"
     if (kind === "withdraw" && !initialMarketId) return "select"
     if (kind === "deposit" && !initialMarketId) return "select"
     return "configure"
@@ -69,6 +78,7 @@ export function LendActionPageClient({
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
   const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
+  const [dismissedWalletBlock, setDismissedWalletBlock] = useState(false)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
 
@@ -79,27 +89,47 @@ export function LendActionPageClient({
 
   const depositAssetOptions = useMemo(() => {
     if (kind !== "deposit") return undefined
-    const options = Object.values(session.state.markets).map((entry) => ({
-      id: entry.marketId,
-      label: entry.asset.symbol,
-      symbol: entry.asset.symbol,
-      sublabel: "Core",
-    }))
+    const options = Object.values(session.state.markets)
+      .filter((entry) => getWalletBalanceForLendMarket(session.state, walletId, entry) > 0)
+      .map((entry) => ({
+        id: entry.marketId,
+        label: entry.asset.symbol,
+        symbol: entry.asset.symbol,
+        sublabel: formatLendMarketDropdownSublabel(entry.asset.symbol),
+      }))
     return options.length > 1 ? options : undefined
-  }, [kind, session.state.markets])
+  }, [kind, session.state, walletId])
 
   useEffect(() => {
-    if (kind !== "withdraw" || initialMarketId || marketId) return
+    if (embedded || kind !== "withdraw" || initialMarketId || marketId) return
     if (withdrawItems.length === 1) {
       router.replace(actionPagePath("lend", "withdraw", { market: withdrawItems[0]!.id }))
       return
     }
     if (withdrawItems.length > 1) setStage("select")
-  }, [initialMarketId, kind, marketId, router, withdrawItems])
+  }, [embedded, initialMarketId, kind, marketId, router, withdrawItems])
 
   useEffect(() => {
-    if (initialMarketId) setMarketId(initialMarketId)
-  }, [initialMarketId])
+    if (embedded) return
+    if (!initialMarketId) return
+    setMarketId(initialMarketId)
+    setStage("configure")
+  }, [embedded, initialMarketId])
+
+  useEffect(() => {
+    if (kind !== "deposit" || !market || stage !== "configure" || dismissedWalletBlock) return
+    const walletBalance = getWalletBalanceForLendMarket(session.state, walletId, market)
+    if (walletBalance > 0) {
+      setBlockedUi(null)
+      return
+    }
+    setBlockedUi(blockedUiForMissingWalletAsset(market.asset.symbol, "deposit"))
+    if (!embedded) setStage("blocked")
+  }, [dismissedWalletBlock, embedded, kind, market, session.state, stage, walletId])
+
+  useEffect(() => {
+    setDismissedWalletBlock(false)
+  }, [marketId])
 
   const position = useMemo(
     () =>
@@ -126,12 +156,12 @@ export function LendActionPageClient({
         rateLabel: "Withdrawal",
         rateValue: "—",
         marketLabel: "Market",
-        marketValue: `${market.asset.symbol} · Core`,
+        marketValue: formatLendMarketValueLabel(market.asset.symbol),
         balanceLabel: "Deposited",
         balanceValue: "0",
         maxAmount: 0,
         metrics: [],
-        networkFeeLabel: "≈ $0.03",
+        networkFeeLabel: formatActionFeeSummary(0, 0.03),
         risk: null,
         blockedReason: "No deposited position found for this market.",
         validationErrors: ["No deposited position found for this market."],
@@ -166,7 +196,7 @@ export function LendActionPageClient({
             mapLendDepositPreviewToActionUi(preview, {
               symbol: market.asset.symbol,
               amount: parsed,
-              marketLabel: `${market.asset.symbol} · Core`,
+              marketLabel: formatLendMarketValueLabel(market.asset.symbol),
               balanceAmount: getWalletBalanceForLendMarket(session.state, walletId, market),
               rewardsApy: market.rewardsApy,
             }),
@@ -177,7 +207,7 @@ export function LendActionPageClient({
           mapLendWithdrawPreviewToActionUi(preview, {
             symbol: market.asset.symbol,
             amount: parsed,
-            marketLabel: `${market.asset.symbol} · Core`,
+            marketLabel: formatLendMarketValueLabel(market.asset.symbol),
             balanceAmount: position?.currentSuppliedAmount ?? 0,
           }),
         )
@@ -197,20 +227,21 @@ export function LendActionPageClient({
     const blocked = mapPreviewToBlockedUi({ product: "lend", kind, blockedReason: previewUi.blockedReason })
     if (blocked) {
       setBlockedUi(blocked)
-      setStage("blocked")
+      if (!embedded) setStage("blocked")
     }
-  }, [dismissedBlockedReason, kind, previewUi, stage])
+  }, [dismissedBlockedReason, embedded, kind, previewUi, stage])
 
   useEffect(() => {
     setDismissedBlockedReason(null)
   }, [amount, marketId])
 
   const canGoBackToSelect = useMemo(() => {
+    if (embedded) return false
     if (initialMarketId) return false
     if (kind === "withdraw") return withdrawItems.length > 1
     if (kind === "deposit") return depositItems.length > 1
     return false
-  }, [depositItems.length, initialMarketId, kind, withdrawItems.length])
+  }, [depositItems.length, embedded, initialMarketId, kind, withdrawItems.length])
   const fallbackBalanceAmount = market
     ? kind === "deposit"
       ? getWalletBalanceForLendMarket(session.state, walletId, market)
@@ -326,7 +357,9 @@ export function LendActionPageClient({
     )
   }
 
-  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const isHomeLayout = embedded && layout === "home"
+  const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
       ? "Choose the market to withdraw from."
@@ -337,12 +370,27 @@ export function LendActionPageClient({
           : descriptor.subtitle
 
   return (
-    <ActionPageShell title={descriptor.title} subtitle={shellSubtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
-      {stage === "select" ? (
+    <ActionPageShell
+      mode={embedded ? "embedded" : "page"}
+      density={isHomeLayout ? "home" : "default"}
+      title={descriptor.title}
+      subtitle={shellSubtitle}
+      hideTitle={hideTitle}
+      hideClose={embedded}
+      closeHref={closeHref}
+      simulated={session.readAdapter.mode === "sandbox"}
+    >
+      {stage === "select" && !embedded ? (
         <ActionSelectStage
           items={kind === "withdraw" ? withdrawItems : depositItems}
-          emptyTitle={kind === "withdraw" ? "No deposits found" : "No markets found"}
-          emptyDescription={kind === "withdraw" ? "Deposit first, then withdraw from here." : "Try another market from the lend page."}
+          sectionLabel={kind === "withdraw" ? "Your positions" : "Supported assets"}
+          searchPlaceholder={kind === "withdraw" ? "Find an asset" : "Search assets"}
+          emptyTitle={kind === "withdraw" ? "No deposits found" : "No assets in your wallet"}
+          emptyDescription={
+            kind === "withdraw"
+              ? "Deposit first, then withdraw from here."
+              : "You need to hold a supported asset in your wallet before you can deposit."
+          }
           onSelect={(id) => {
             router.replace(actionPagePath("lend", kind, { market: id }))
           }}
@@ -366,7 +414,20 @@ export function LendActionPageClient({
 
       {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
 
-      {isConfigureVisibleStage(stage) && market ? (
+      {showInlineBlocked && blockedUi ? (
+        <ActionBlockedDialog
+          variant="inline"
+          blocked={blockedUi}
+          open
+          onClose={() => {
+            setDismissedWalletBlock(true)
+            setBlockedUi(null)
+            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
+          }}
+        />
+      ) : null}
+
+      {isConfigureVisibleStage(stage) && market && !showInlineBlocked ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
@@ -386,14 +447,18 @@ export function LendActionPageClient({
           canGoBack={canGoBackToSelect}
           isPending={isPending}
           outcome={outcome}
+          homeLayout={isHomeLayout}
+          hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
         />
       ) : null}
 
-      {blockedUi ? (
+      {blockedUi && !embedded ? (
         <ActionBlockedDialog
+          variant="modal"
           blocked={blockedUi}
           open={stage === "blocked"}
           onClose={() => {
+            setDismissedWalletBlock(true)
             setDismissedBlockedReason(previewUi?.blockedReason ?? null)
             setStage("configure")
           }}

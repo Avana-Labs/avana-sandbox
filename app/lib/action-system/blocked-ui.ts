@@ -1,6 +1,26 @@
 import type { ActionBlockedUi, ActionKind, ActionProduct } from "./contracts"
 import { actionPagePath } from "./contracts"
 
+export function blockedUiForMissingWalletAsset(symbol: string, verb = "deposit"): ActionBlockedUi {
+  return {
+    title: `You don't have ${symbol} in your wallet`,
+    description: `To ${verb} ${symbol}, you need to hold it in your connected wallet first.`,
+    primaryCtaLabel: null,
+    primaryCtaHref: null,
+    secondaryCtaLabel: "Got it",
+  }
+}
+
+export function blockedUiForMissingWalletLp(marketLabel: string): ActionBlockedUi {
+  return {
+    title: "No LP tokens in your wallet",
+    description: `You don't hold LP tokens for ${marketLabel}. Add liquidity to this pool in your wallet before pledging.`,
+    primaryCtaLabel: null,
+    primaryCtaHref: null,
+    secondaryCtaLabel: "Got it",
+  }
+}
+
 export function mapPreviewToBlockedUi(options: {
   product: ActionProduct
   kind: ActionKind
@@ -12,11 +32,23 @@ export function mapPreviewToBlockedUi(options: {
 
   if (reason.includes("insufficient") && reason.includes("balance")) {
     return {
-      title: "No balance available",
+      title: options.product === "lend" ? "You don't have this asset in your wallet" : "No balance available",
       description: options.blockedReason,
       primaryCtaLabel: options.product === "borrow" && options.kind === "borrow" ? "Deposit" : null,
       primaryCtaHref:
         options.product === "borrow" && options.kind === "borrow" ? actionPagePath("borrow", "supply") : null,
+      secondaryCtaLabel: "Got it",
+    }
+  }
+
+  if (reason.includes("borrowing unavailable") || (reason.includes("borrow") && reason.includes("unavailable"))) {
+    return {
+      title: "Borrowing unavailable",
+      description:
+        options.blockedReason ??
+        "Assets in this market may be unavailable because borrowing is disabled, borrow caps have been reached, or no liquidity is available. Try a different market or check back later.",
+      primaryCtaLabel: null,
+      primaryCtaHref: null,
       secondaryCtaLabel: "Got it",
     }
   }

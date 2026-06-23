@@ -28,7 +28,7 @@ function TokenAvatar({
   return (
     <span
       className={cn(
-        "inline-flex size-6 items-center justify-center rounded-full border-2 border-background ring-1 ring-border",
+        "inline-flex size-10 items-center justify-center rounded-full border-2 border-background ring-1 ring-border",
         visual.bgClass,
         visual.textClass,
         className,
@@ -38,7 +38,7 @@ function TokenAvatar({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={visual.iconUrl} alt="" className="size-full rounded-full" />
       ) : (
-        <span className="text-[10px] font-medium">{visual.shortLabel}</span>
+        <span className="text-[11px] font-medium">{visual.shortLabel}</span>
       )}
     </span>
   )
@@ -116,7 +116,7 @@ export function PoolDetailClient({ detail }: Props) {
           <span className="font-normal text-foreground">{detail.hero.name}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_1fr] lg:gap-x-10">
           <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
             <PoolHeroIdentity detail={detail} className="pb-0" />
           </div>

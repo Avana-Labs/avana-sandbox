@@ -4,14 +4,16 @@ import { memo, useState, type ButtonHTMLAttributes, type ReactNode } from "react
 import Image from "next/image"
 import { EnhancedGraph } from "@/app/components/enhanced-graph"
 import type { BorrowAssetVisual, BorrowSpoke, DexChip } from "@/app/lib/data/borrow-domain"
+import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
 
-type TokenBubbleSize = "xs" | "sm" | "md" | "lg" | "xl"
+type TokenBubbleSize = "xs" | "sm" | "md" | "table" | "lg" | "xl"
 
 const BUBBLE_DIMENSIONS: Record<TokenBubbleSize, { box: string; text: string; px: number }> = {
   xs: { box: "size-4", text: "text-[7px]", px: 16 },
   sm: { box: "size-5", text: "text-[8px]", px: 20 },
   md: { box: "size-7", text: "text-[9px]", px: 28 },
+  table: { box: "size-10", text: "text-[11px]", px: TOKEN_ICON_TABLE_PX },
   lg: { box: "size-9", text: "text-[10px]", px: 36 },
   xl: { box: "size-11", text: "text-[11px]", px: 44 },
 }
@@ -70,7 +72,7 @@ export function TokenPairCell({
   subtitle?: string
   size?: "sm" | "md" | "lg"
 }) {
-  const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "lg" : "md"
+  const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "table" : "sm"
   const offset = size === "lg" ? "-ml-3" : size === "md" ? "-ml-2.5" : "-ml-2"
   const nameCls = size === "lg" ? "text-[15px]" : size === "md" ? "text-[14px]" : "text-[13.5px]"
   const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
@@ -101,7 +103,7 @@ export function TokenSingleCell({
   subtitle?: string
   size?: "sm" | "md" | "lg"
 }) {
-  const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "lg" : "md"
+  const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "table" : "sm"
   const nameCls = size === "lg" ? "text-[15px]" : "text-[14px]"
   const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
   return (

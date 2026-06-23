@@ -3,7 +3,7 @@ const LEND_META_PREFIX = "avana.lend.session.meta.v1"
 
 import { deserializeLendSystemState, serializeLendSystemState } from "./codec"
 import type { LendTransactionHistoryItem, LendTransactionResult } from "./contracts"
-import { buildMockLendSystemState } from "./mock"
+import { buildDemoLendSystemState } from "./mock"
 
 export type LendSessionMetadata = {
   transactionHistory: LendTransactionHistoryItem[]
@@ -55,5 +55,5 @@ export function clearLendSessionState(walletId: string) {
 }
 
 export function buildDefaultLendSessionSeed(walletId: string) {
-  return serializeLendSystemState(buildMockLendSystemState(walletId))
+  return serializeLendSystemState(buildDemoLendSystemState(walletId))
 }

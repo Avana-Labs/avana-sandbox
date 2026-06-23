@@ -17,7 +17,7 @@ import { BrandIcon, BrandLogo } from "./brand-logo"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
 import { LazyMobileMenu } from "./lazy-mobile-menu"
-import { LazySearchCommand, LazySearchCommandIconOnly } from "./lazy-search-command"
+import { LazySearchCommand, LazySearchCommandIconOnly, SearchCommandIconPlaceholder, SearchCommandPlaceholder } from "./lazy-search-command"
 import { useTheme } from "./theme-provider"
 import { personalDesktopHeaderLinks } from "./site-nav"
 
@@ -239,12 +239,12 @@ export function Header() {
   const renderMobileActions = () => (
     <>
       <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">
-        <LazySearchCommandIconOnly />
+        {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
       </span>
       <button
         type="button"
         aria-label="Connect"
-        className="inline-flex h-9 items-center justify-center rounded-full bg-[#007a99] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#00627a]"
+        className="inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
       >
         Connect
       </button>
@@ -298,7 +298,7 @@ export function Header() {
 
               <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5">
                 {desktopLinks.slice(0, 4).map((link) => {
-                  const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+                  const isActive = mounted && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href))
 
                   return (
                     <Link
@@ -321,13 +321,13 @@ export function Header() {
             </div>
 
             <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4 xl:max-w-[410px]">
-              <LazySearchCommand />
+              {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
               <div className="mr-0.5 flex items-center gap-0.5">
                 {desktopLinks.slice(4).map((link) => {
-                  const isActive = pathname.startsWith(link.href)
+                  const isActive = mounted && pathname.startsWith(link.href)
                   const isUtilityLink = link.href === "/dashboard" || link.href === "/rewards"
 
                   return (
@@ -374,7 +374,7 @@ export function Header() {
                 {renderMobileBrand()}
               </Link>
 
-              <LazyMobileMenu actions={renderMobileActions()} brand={renderMobileBrand()} />
+              <LazyMobileMenu brand={renderMobileBrand()} />
             </div>
 
             <div className="flex items-center gap-0.5">

@@ -14,7 +14,7 @@ const diatypeSans = localFont({
   src: [
     {
       path: "../public/fonts/diatype/core/ABCDiatypeVariable-Trial.woff2",
-      weight: "400 700",
+      weight: "400",
       style: "normal",
     },
   ],

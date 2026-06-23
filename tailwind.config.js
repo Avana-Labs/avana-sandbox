@@ -18,6 +18,23 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-diatype-sans)", "sans-serif"],
+        compact: ["var(--font-diatype-sans)", "sans-serif"],
+        data: ["var(--font-diatype-sans)", "sans-serif"],
+        brand: ["var(--font-diatype-sans)", "sans-serif"],
+      },
+      fontWeight: {
+        thin: "400",
+        extralight: "400",
+        light: "400",
+        normal: "400",
+        medium: "500",
+        semibold: "600",
+        bold: "700",
+        extrabold: "700",
+        black: "700",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -40,6 +57,10 @@ module.exports = {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
+        section: {
+          foreground: "hsl(var(--section-foreground))",
+        },
+        "table-header": "hsl(var(--table-header))",
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
@@ -72,6 +93,10 @@ module.exports = {
           DEFAULT: "hsl(var(--accent-emphasis))",
           foreground: "hsl(var(--accent-emphasis-foreground))",
           soft: "hsl(var(--accent-emphasis-soft))",
+        },
+        progress: {
+          DEFAULT: "hsl(var(--progress))",
+          track: "hsl(var(--progress-track))",
         },
       },
       borderRadius: {

@@ -56,6 +56,7 @@ describe("SandboxMultiplyTransactionAdapter", () => {
     const multiplyResult = await adapter.executeTransaction(multiplyIntent)
     expect(multiplyResult.receipt.simulated).toBe(true)
     expect(multiplyResult.receipt.status).toBe("success")
+    expect(multiplyResult.preview.before.netApy).not.toBeCloseTo(multiplyResult.preview.after.netApy, 6)
 
     const deleverageIntent = adapter.createIntent({
       type: "deleverage",

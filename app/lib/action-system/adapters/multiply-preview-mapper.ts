@@ -5,7 +5,7 @@ import {
   formatActionAmount,
   formatActionBeforeAfter,
   formatActionHealthFactor,
-  formatActionNetworkFee,
+  formatActionFeeSummary,
   formatActionRatioPercent,
   formatActionUsd,
 } from "@/app/lib/action-system/formatters"
@@ -42,8 +42,11 @@ export function mapMultiplyPreviewToActionUi(
   preview: MultiplyTransactionPreview,
   options: {
     collateralSymbol: string
+    borrowSymbol: string
     collateralAmount: number
     marketLabel: string
+    collateralApy: number
+    borrowApy: number
     multiplier: number
   },
 ): ActionPreviewUi {
@@ -59,10 +62,20 @@ export function mapMultiplyPreviewToActionUi(
     allowed: preview.allowed,
     amountLabel: `${options.multiplier.toFixed(2)}x · ${formatActionAmount(options.collateralAmount, options.collateralSymbol, 4)}`,
     amountUsdLabel: formatActionApproxUsd(preview.after.collateralValueUsd),
-    rateLabel: "Net APY",
-    rateValue: formatActionRatioPercent(preview.after.netApy),
+    rateLabel: "",
+    rateValue: "",
     marketLabel: "Market",
     marketValue: options.marketLabel,
+    marketBreakdown: {
+      collateral: {
+        symbol: options.collateralSymbol,
+        apy: formatActionRatioPercent(options.collateralApy),
+      },
+      borrow: {
+        symbol: options.borrowSymbol,
+        apy: formatActionRatioPercent(options.borrowApy),
+      },
+    },
     balanceLabel: "Multiplier",
     balanceValue: `${options.multiplier.toFixed(2)}x`,
     maxAmount: options.multiplier,
@@ -104,7 +117,7 @@ export function mapMultiplyPreviewToActionUi(
         value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
       },
     ],
-    networkFeeLabel: formatActionNetworkFee(0.04),
+    networkFeeLabel: formatActionFeeSummary(preview.after.collateralValueUsd, 0.04),
     risk:
       preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < 1.05)
         ? {
@@ -141,8 +154,8 @@ export function mapDeleveragePreviewToActionUi(
     allowed: preview.allowed,
     amountLabel: `${options.targetMultiplier.toFixed(2)}x target`,
     amountUsdLabel: formatActionApproxUsd(preview.after.collateralValueUsd),
-    rateLabel: "Net APY",
-    rateValue: formatActionRatioPercent(preview.after.netApy),
+    rateLabel: "",
+    rateValue: "",
     marketLabel: "Market",
     marketValue: options.marketLabel,
     balanceLabel: "Target multiplier",
@@ -186,7 +199,7 @@ export function mapDeleveragePreviewToActionUi(
         value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
       },
     ],
-    networkFeeLabel: formatActionNetworkFee(0.04),
+    networkFeeLabel: formatActionFeeSummary(preview.after.collateralValueUsd, 0.04),
     risk:
       preview.riskLabel === "danger"
         ? {

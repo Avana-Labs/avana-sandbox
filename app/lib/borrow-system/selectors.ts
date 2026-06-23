@@ -136,7 +136,7 @@ export function selectBorrowCollateralPools(state: BorrowSystemState, walletId: 
         venue: market.display.venue,
         category: `${market.display.venue} ${market.display.feeTier}`,
         collateralUsd,
-        maxLtv: fixedToNumber(market.riskConfig.collateralFactorWad, 18) * 100,
+        maxLtv: Math.round(fixedToNumber(market.riskConfig.collateralFactorWad, 18) * 1000) / 10,
         borrowPowerUsd: fixedToNumber(metricsForPosition(state, walletId, position.marketId).creditLimitUsd6, 6),
         liquidationUsd: fixedToNumber(metricsForPosition(state, walletId, position.marketId).liquidationValueUsd6, 6),
         pairApr: fixedToNumber(market.snapshot.feeApyWad, 18) * 100,

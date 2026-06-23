@@ -1,264 +1,46 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Settings } from "lucide-react"
-import { toast } from "sonner"
-import { getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
-import { selectHomeBorrowTokensForMarket, selectHomeDebtMap, selectHomeRepayTokensForMarket } from "@/app/lib/borrow-system/home-runtime"
-import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
+import { useEffect, useState } from "react"
+import type { HomeMode } from "@/app/lib/home-sim"
+import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
+import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
-import { HOME_DEFAULT_SELECTIONS, type HomeMode } from "@/app/lib/home-sim"
-import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
-import { HomeActionContextBar } from "@/app/components/home/home-action-context-bar"
-import { PoolPickerDialog } from "./home/pool-picker-dialog"
-import { TokenPickerDialog } from "./home/token-picker-dialog"
-import type { PoolDialogMode } from "./home/types"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-const HOME_MODE_ITEMS: Array<{ value: HomeMode; label: string }> = [
-  { value: "borrow", label: "Borrow" },
-  { value: "repay", label: "Repay" },
-  { value: "claim", label: "Claim" },
-  { value: "remove", label: "Remove" },
-]
 
 export function HomePageClient() {
-  const walletId = getBorrowSessionWalletId()
   const { borrow: session } = useAvanaSessions()
-  const defaultBorrowPoolId = HOME_POOL_TO_MARKET_ID[HOME_DEFAULT_SELECTIONS.borrowPoolId] ?? session.collateralPools[0]?.id ?? ""
-  const defaultRepayPoolId = HOME_POOL_TO_MARKET_ID[HOME_DEFAULT_SELECTIONS.repayPoolId] ?? session.collateralPools[0]?.id ?? ""
-  const defaultRemovePoolId = HOME_POOL_TO_MARKET_ID[HOME_DEFAULT_SELECTIONS.removePoolId] ?? session.collateralPools[0]?.id ?? ""
-
+  const [isClientReady, setIsClientReady] = useState(false)
   const [mode, setMode] = useState<HomeMode>("borrow")
-  const [borrowPoolId, setBorrowPoolId] = useState(defaultBorrowPoolId)
-  const [borrowTokenId, setBorrowTokenId] = useState<string | null>(null)
-  const [repayPoolId, setRepayPoolId] = useState(defaultRepayPoolId)
-  const [repayTokenId, setRepayTokenId] = useState<string | null>(null)
-  const [removePoolId, setRemovePoolId] = useState(defaultRemovePoolId)
-  const [poolDialogMode, setPoolDialogMode] = useState<PoolDialogMode | null>(null)
-  const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
-  const [tokenDialogMode, setTokenDialogMode] = useState<"borrow" | "repay">("borrow")
-  const debts = useMemo(() => selectHomeDebtMap(session.state, walletId), [session.state, walletId])
-  const borrowPool = useMemo(
-    () => session.collateralPools.find((pool) => pool.id === borrowPoolId) ?? session.collateralPools[0] ?? null,
-    [borrowPoolId, session.collateralPools],
-  )
-  const borrowTokens = useMemo(
-    () => (borrowPoolId ? selectHomeBorrowTokensForMarket(session.state, walletId, borrowPoolId) : []),
-    [borrowPoolId, session.state, walletId],
-  )
-  const borrowToken = useMemo(
-    () => (borrowTokenId ? borrowTokens.find((token) => token.id === borrowTokenId) ?? null : null),
-    [borrowTokenId, borrowTokens],
-  )
-  const repayPool = useMemo(
-    () => session.collateralPools.find((pool) => pool.id === repayPoolId) ?? session.collateralPools[0] ?? null,
-    [repayPoolId, session.collateralPools],
-  )
-  const repayTokens = useMemo(
-    () => (repayPoolId ? selectHomeRepayTokensForMarket(session.state, walletId, repayPoolId) : []),
-    [repayPoolId, session.state, walletId],
-  )
-  const repayToken = useMemo(
-    () => (repayTokenId ? repayTokens.find((token) => token.id === repayTokenId) ?? null : null),
-    [repayTokenId, repayTokens],
-  )
-  const claimPool = useMemo(
-    () => session.collateralPools.find((pool) => (debts[pool.id] ?? 0) >= 0) ?? session.collateralPools[0] ?? null,
-    [debts, session.collateralPools],
-  )
-  const removePool = useMemo(
-    () => session.collateralPools.find((pool) => pool.id === removePoolId) ?? session.collateralPools[0] ?? null,
-    [removePoolId, session.collateralPools],
-  )
 
   useEffect(() => {
-    if (!session.collateralPools.length) return
-    if (!session.collateralPools.some((pool) => pool.id === borrowPoolId)) {
-      setBorrowPoolId(defaultBorrowPoolId)
-    }
-    if (!session.collateralPools.some((pool) => pool.id === repayPoolId)) {
-      setRepayPoolId(defaultRepayPoolId)
-    }
-    if (!session.collateralPools.some((pool) => pool.id === removePoolId)) {
-      setRemovePoolId(defaultRemovePoolId)
-    }
-  }, [
-    borrowPoolId,
-    defaultBorrowPoolId,
-    defaultRemovePoolId,
-    defaultRepayPoolId,
-    removePoolId,
-    repayPoolId,
-    session.collateralPools,
-  ])
+    setIsClientReady(true)
+  }, [])
 
-  useEffect(() => {
-    if (!borrowTokens.length) {
-      setBorrowTokenId(null)
-      return
-    }
-    if (borrowTokenId && borrowTokens.some((token) => token.id === borrowTokenId)) {
-      return
-    }
-    const preferredToken =
-      borrowTokens.find((token) => token.symbol.toLowerCase() === HOME_DEFAULT_SELECTIONS.borrowTokenId) ?? borrowTokens[0]
-    setBorrowTokenId(preferredToken?.id ?? null)
-  }, [borrowTokenId, borrowTokens])
-
-  useEffect(() => {
-    if (!repayTokens.length) {
-      setRepayTokenId(null)
-      return
-    }
-    if (repayTokenId && repayTokens.some((token) => token.id === repayTokenId)) return
-    setRepayTokenId(repayTokens[0]?.id ?? null)
-  }, [repayTokenId, repayTokens])
-
-  useEffect(() => {
-    if (!repayPool || (debts[repayPool.id] ?? 0) > 0) return
-    const nextPoolWithDebt = session.collateralPools.find((pool) => (debts[pool.id] ?? 0) > 0)
-    if (nextPoolWithDebt) {
-      setRepayPoolId(nextPoolWithDebt.id)
-    }
-  }, [debts, repayPool, session.collateralPools])
-
-  const handlePoolSelect = (poolId: string) => {
-    if (poolDialogMode === "borrow") {
-      setBorrowPoolId(poolId)
-    }
-
-    if (poolDialogMode === "repay") {
-      if ((debts[poolId] ?? 0) <= 0) {
-        const selectedPool = session.collateralPools.find((pool) => pool.id === poolId)
-        toast.warning(`No debt on ${selectedPool?.name ?? "this position"}`)
-        return
-      }
-
-      setRepayPoolId(poolId)
-    }
-
-    if (poolDialogMode === "remove") {
-      setRemovePoolId(poolId)
-    }
-
-    setPoolDialogMode(null)
-  }
-
-  if (!borrowPool || !repayPool || !removePool) {
-    return null
+  if (!isClientReady || session.collateralPools.length === 0) {
+    return (
+      <div className="bg-background">
+        <section className="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-8">
+          <div className="h-[360px] w-full max-w-[480px] animate-pulse rounded-[20px] bg-muted/40" data-testid="home-workspace-loading" />
+        </section>
+      </div>
+    )
   }
 
   return (
     <div className="bg-background">
-      <main className="px-4">
-        <section className="flex items-start justify-center py-4 md:py-6">
-          <div className="w-full max-w-[560px]">
-            <Tabs value={mode} onValueChange={(value) => setMode(value as HomeMode)} className="w-full">
-              <div className="mb-4 flex items-center justify-between">
-                <TabsList className="w-full justify-start">
-                  {HOME_MODE_ITEMS.map((item) => (
-                    <TabsTrigger
-                      key={item.value}
-                      value={item.value}
-                      className="text-[14px] font-normal"
-                    >
-                      {item.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                <button
-                  type="button"
-                  className="ml-2 inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-                  aria-label="Settings"
-                >
-                  <Settings className="h-4 w-4" />
-                </button>
-              </div>
-
-              <TabsContent value="borrow" className="mt-0 space-y-4">
-                <HomeActionContextBar
-                  pool={borrowPool}
-                  token={borrowToken}
-                  onOpenPool={() => setPoolDialogMode("borrow")}
-                  onOpenToken={() => {
-                    setTokenDialogMode("borrow")
-                    setTokenDialogOpen(true)
-                  }}
-                />
-                <ActionPageLaunchCta
-                  product="borrow"
-                  kind="borrow"
-                  market={borrowPoolId}
-                  asset={borrowTokenId ?? undefined}
-                  returnTo="/"
-                  label="Continue to borrow"
-                />
-              </TabsContent>
-
-              <TabsContent value="repay" className="mt-0 space-y-4">
-                <HomeActionContextBar
-                  pool={repayPool}
-                  token={repayToken}
-                  onOpenPool={() => setPoolDialogMode("repay")}
-                  onOpenToken={() => {
-                    setTokenDialogMode("repay")
-                    setTokenDialogOpen(true)
-                  }}
-                />
-                <ActionPageLaunchCta product="borrow" kind="repay" market={repayPoolId} returnTo="/" label="Continue to repay" />
-              </TabsContent>
-
-              <TabsContent value="claim" className="mt-0 space-y-4">
-                {claimPool ? (
-                  <HomeActionContextBar pool={claimPool} showToken={false} onOpenPool={() => setPoolDialogMode("borrow")} />
-                ) : null}
-                <ActionPageLaunchCta product="borrow" kind="claim" returnTo="/" label="Continue to claim" />
-              </TabsContent>
-
-              <TabsContent value="remove" className="mt-0 space-y-4">
-                <HomeActionContextBar pool={removePool} showToken={false} onOpenPool={() => setPoolDialogMode("remove")} />
-                <ActionPageLaunchCta
-                  product="borrow"
-                  kind="remove"
-                  market={removePoolId}
-                  amount="25"
-                  returnTo="/"
-                  label="Continue to remove"
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
-        </section>
-      </main>
-
-      <PoolPickerDialog
-        open={poolDialogMode !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setPoolDialogMode(null)
-          }
-        }}
-        selectedPoolId={poolDialogMode === "repay" ? repayPoolId : poolDialogMode === "remove" ? removePoolId : borrowPoolId}
-        onSelect={handlePoolSelect}
-        mode={poolDialogMode ?? "borrow"}
-        pools={session.collateralPools}
-        debts={debts}
-      />
-      <TokenPickerDialog
-        open={tokenDialogOpen}
-        onOpenChange={setTokenDialogOpen}
-        selectedTokenId={borrowTokenId}
-        tokens={tokenDialogMode === "repay" ? repayTokens : borrowTokens}
-        onSelect={(tokenId) => {
-          if (tokenDialogMode === "repay") {
-            setRepayTokenId(tokenId)
-          } else {
-            setBorrowTokenId(tokenId)
-          }
-          setTokenDialogOpen(false)
-        }}
-      />
+      <HomeWorkspaceCard mode={mode} onModeChange={setMode}>
+        {mode === "borrow" ? (
+          <BorrowActionPageClient kind="borrow" embedded layout="home" closeHref="/" />
+        ) : null}
+        {mode === "repay" ? (
+          <BorrowActionPageClient kind="repay" embedded layout="home" closeHref="/" />
+        ) : null}
+        {mode === "claim" ? (
+          <BorrowActionPageClient kind="claim" embedded layout="home" closeHref="/" />
+        ) : null}
+        {mode === "remove" ? (
+          <BorrowActionPageClient kind="remove" embedded layout="home" closeHref="/" initialAmount="25" />
+        ) : null}
+      </HomeWorkspaceCard>
     </div>
   )
 }

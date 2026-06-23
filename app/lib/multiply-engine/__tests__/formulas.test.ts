@@ -6,7 +6,7 @@ import {
   calculateNetApy,
   calculateSafeMaxMultiplier,
   calculateTheoreticalMaxMultiplier,
-  calculateTotalExposure,
+  simulateCollateralLoop,
 } from "@/app/lib/multiply-engine"
 
 describe("multiply engine formulas", () => {
@@ -26,31 +26,39 @@ describe("multiply engine formulas", () => {
     ).toBeCloseTo(2.2, 5)
   })
 
-  it("calculates exposure, ltv, health factor, liquidation, and net apy", () => {
+  it("iterates collateral loops toward a target multiplier", () => {
     const initialCollateralValueUsd = 3500
     const selectedMultiplier = 2.5
-    const totalExposure = calculateTotalExposure(initialCollateralValueUsd, selectedMultiplier)
-    const debtValueUsd = totalExposure - initialCollateralValueUsd
-    const ltv = calculateMultiplyLtv(debtValueUsd, totalExposure)
-    const healthFactor = calculateMultiplyHealthFactor(totalExposure, debtValueUsd, 0.8)
+    const maxLtv = 0.73
+    const loop = simulateCollateralLoop({
+      initialCollateralUsd: initialCollateralValueUsd,
+      targetMultiplier: selectedMultiplier,
+      maxLtv,
+      swapEfficiency: 0.998,
+    })
+
+    const ltv = calculateMultiplyLtv(loop.debtUsd, loop.collateralUsd)
+    const healthFactor = calculateMultiplyHealthFactor(loop.collateralUsd, loop.debtUsd, 0.8)
     const liquidationPrice = calculateLiquidationPrice({
-      debtValueUsd,
-      collateralAmount: 2.5,
+      debtValueUsd: loop.debtUsd,
+      collateralAmount: loop.collateralUsd / 3500,
       liquidationThreshold: 0.8,
     })
     const netApy = calculateNetApy({
       supplyApy: 0.0382,
       borrowApy: 0.039,
-      finalCollateralValueUsd: totalExposure,
-      debtValueUsd,
+      finalCollateralValueUsd: loop.collateralUsd,
+      debtValueUsd: loop.debtUsd,
       initialCollateralValueUsd,
     })
 
-    expect(totalExposure).toBe(8750)
-    expect(debtValueUsd).toBe(5250)
-    expect(ltv).toBeCloseTo(0.6, 5)
-    expect(healthFactor).toBeCloseTo(1.3333, 3)
-    expect(liquidationPrice).toBeCloseTo(2625, 0)
-    expect(netApy).toBeCloseTo(0.037, 2)
+    expect(loop.loops).toBeGreaterThan(0)
+    expect(loop.achievedMultiplier).toBeCloseTo(selectedMultiplier, 1)
+    expect(loop.collateralUsd).toBeGreaterThan(initialCollateralValueUsd)
+    expect(loop.debtUsd).toBeGreaterThan(0)
+    expect(ltv).toBeLessThanOrEqual(maxLtv + 0.01)
+    expect(healthFactor).toBeGreaterThan(1)
+    expect(liquidationPrice).toBeGreaterThan(0)
+    expect(netApy).toBeGreaterThan(0)
   })
 })

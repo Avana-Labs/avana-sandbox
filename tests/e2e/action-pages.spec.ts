@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { ACTION_LIGHTHOUSE_ROUTES } from "../../app/lib/performance/route-budgets"
+import { ACTION_LIGHTHOUSE_ROUTES } from "./fixtures/route-budgets"
 
 test.describe("action pages smoke", () => {
   for (const route of ACTION_LIGHTHOUSE_ROUTES) {
