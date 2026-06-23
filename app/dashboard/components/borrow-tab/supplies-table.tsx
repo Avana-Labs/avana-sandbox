@@ -16,11 +16,11 @@ import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import {
   HF_ZONES,
   activeHealthFactorZoneIndex,
-  healthFactorBarPositionPct,
   healthFactorBarTone,
   healthFactorStatusLabel,
 } from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
+import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { cn } from "@/lib/utils"
 
 const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
@@ -159,7 +159,6 @@ export function SuppliesPanel({
           const hf = row.healthFactor
           const hfLabel = hf === null || Number.isNaN(hf) ? "—" : !Number.isFinite(hf) ? "∞" : hf.toFixed(1)
           const hfTone = healthFactorBarTone(hf)
-          const fillPct = healthFactorBarPositionPct(hf)
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`
           return (
@@ -196,14 +195,12 @@ export function SuppliesPanel({
                   <span className="text-[12.5px] font-medium text-foreground">Health Factor</span>
                   <span className={cn("font-data text-[22px] font-medium leading-none tabular-nums", hfTone.text)}>{m(hfLabel)}</span>
                 </div>
-                <div className="relative h-1.5 rounded-full bg-surface-raised">
-                  <div className={cn("h-1.5 rounded-full", hfTone.fill)} style={{ width: `${fillPct}%` }} />
-                  <span
-                    className={cn("absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-surface-raised", hfTone.border)}
-                    style={{ left: `calc(${fillPct}% - 6px)` }}
-                    aria-hidden
-                  />
-                </div>
+                <HealthFactorPositionBar
+                  value={hf}
+                  heightClassName="h-1.5"
+                  trackClassName="bg-surface-raised"
+                  className="mt-0"
+                />
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>Safe</span>
                   <span>Caution</span>
@@ -279,8 +276,6 @@ export function SuppliesHealthFactorCard({
   const hfLabel = formatHealthFactor(averageHealthFactor)
   const masked = !showBalance
   const activeZoneIdx = activeHealthFactorZoneIndex(averageHealthFactor)
-  const fillPct = healthFactorBarPositionPct(averageHealthFactor)
-  const barTone = healthFactorBarTone(averageHealthFactor)
 
   return (
     <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
@@ -315,27 +310,7 @@ export function SuppliesHealthFactorCard({
       </div>
 
       <div className="mt-9">
-        <div className="relative pt-1">
-          <div className="flex h-2.5 w-full items-stretch gap-1">
-            {HF_ZONES.map((zone) => (
-              <div
-                key={zone.id}
-                className={cn("rounded-full opacity-35", zone.color)}
-                style={{ width: `${zone.widthPct}%` }}
-              />
-            ))}
-          </div>
-          {averageHealthFactor != null && activeZoneIdx >= 0 ? (
-            <span
-              className={cn(
-                "absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-background",
-                barTone.border,
-              )}
-              style={{ left: `calc(${fillPct}% - 6px)` }}
-              aria-hidden
-            />
-          ) : null}
-        </div>
+        <HealthFactorPositionBar value={averageHealthFactor} heightClassName="h-2.5" />
 
         <div className="mt-4 flex h-4 items-center justify-between text-[11px] font-medium text-muted-foreground">
           {HF_ZONES.map((zone, index) => {

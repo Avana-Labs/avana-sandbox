@@ -12,6 +12,44 @@ import {
 } from "@/app/lib/action-system/health-factor-ui"
 import { formatActionHealthFactor } from "@/app/lib/action-system/formatters"
 
+export function HealthFactorPositionBar({
+  value,
+  className,
+  trackClassName = "bg-muted",
+  heightClassName = "h-2",
+}: {
+  value: number | null
+  className?: string
+  trackClassName?: string
+  heightClassName?: string
+}) {
+  const fillPct = healthFactorBarPositionPct(value)
+  const barTone = healthFactorBarTone(value)
+  const hasValue = value != null && !Number.isNaN(value) && activeHealthFactorZoneIndex(value) >= 0
+
+  return (
+    <div className={cn("relative rounded-full", trackClassName, heightClassName, className)}>
+      {hasValue ? (
+        <>
+          <div
+            className={cn("absolute inset-y-0 left-0 rounded-full transition-all", barTone.fill)}
+            style={{ width: `${fillPct}%` }}
+            aria-hidden
+          />
+          <span
+            className={cn(
+              "absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-background",
+              barTone.border,
+            )}
+            style={{ left: `calc(${fillPct}% - 6px)` }}
+            aria-hidden
+          />
+        </>
+      ) : null}
+    </div>
+  )
+}
+
 export function ActionHealthFactorBar({
   value,
   className,
@@ -22,8 +60,6 @@ export function ActionHealthFactorBar({
   const status = healthFactorStatusLabel(value)
   const activeZoneIdx = activeHealthFactorZoneIndex(value)
   const label = value == null ? "—" : formatActionHealthFactor(value)
-  const fillPct = healthFactorBarPositionPct(value)
-  const barTone = healthFactorBarTone(value)
 
   return (
     <div className={cn("space-y-3", className)} data-testid="action-health-factor-bar">
@@ -55,27 +91,7 @@ export function ActionHealthFactorBar({
 
       <div className="font-data text-[18px] font-semibold leading-none tracking-tight">{label}</div>
 
-      <div className="relative pt-1">
-        <div className="flex h-2 w-full items-stretch gap-1">
-          {HF_ZONES.map((zone) => (
-            <div
-              key={zone.id}
-              className={cn("rounded-full opacity-35", zone.color)}
-              style={{ width: `${zone.widthPct}%` }}
-            />
-          ))}
-        </div>
-        {value != null && activeZoneIdx >= 0 ? (
-          <span
-            className={cn(
-              "absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-background",
-              barTone.border,
-            )}
-            style={{ left: `calc(${fillPct}% - 6px)` }}
-            aria-hidden
-          />
-        ) : null}
-      </div>
+      <HealthFactorPositionBar value={value} className="mt-1" />
 
       <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground">
         {HF_ZONES.map((zone, index) => (
