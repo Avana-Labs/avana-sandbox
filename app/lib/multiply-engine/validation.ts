@@ -2,6 +2,8 @@ import { calculatePriceDropToLiquidationPct } from "./formulas"
 
 export function validateMultiplyAction(params: {
   selectedMultiplier: number
+  achievedMultiplier?: number
+  loopSteps?: number
   theoreticalMaxMultiplier: number
   publicMaxMultiplier: number
   safeMaxMultiplier: number
@@ -32,6 +34,15 @@ export function validateMultiplyAction(params: {
     warnings.push("Multiplier exceeds the public maximum for this market.")
   }
   if (params.initialCollateralValueUsd <= 0) errors.push("Collateral amount must be positive.")
+  if (
+    params.achievedMultiplier != null &&
+    params.selectedMultiplier > 1.05 &&
+    params.achievedMultiplier < params.selectedMultiplier - 0.15
+  ) {
+    warnings.push(
+      `Loop simulation reached ${params.achievedMultiplier.toFixed(1)}x instead of the requested ${params.selectedMultiplier.toFixed(1)}x.`,
+    )
+  }
   if (params.debtValueUsd <= 0 && params.selectedMultiplier > 1) {
     errors.push("Debt must be positive for leveraged positions.")
   }

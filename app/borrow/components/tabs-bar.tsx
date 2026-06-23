@@ -184,9 +184,11 @@ function SingleSelectDropdown({
     if (!open) return
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false)
+      const target = event.target as Node
+      if (rootRef.current?.contains(target) || panelRef.current?.contains(target)) {
+        return
       }
+      setOpen(false)
     }
 
     document.addEventListener("pointerdown", handlePointerDown, true)
@@ -276,7 +278,7 @@ function SingleSelectDropdown({
             ref={panelRef}
             className={cn(
               "fixed z-50 overflow-hidden rounded-[14px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-              isDark ? "border-white/8 bg-surface-inset text-white" : "border-border bg-card text-foreground",
+              isDark ? "border-white/8 bg-surface-inset text-white" : "border-border bg-popover text-foreground",
             )}
             style={
               panelStyle

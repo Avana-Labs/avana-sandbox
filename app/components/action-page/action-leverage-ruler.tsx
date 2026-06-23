@@ -12,12 +12,24 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
+function stepDecimals(step: number) {
+  const fraction = String(step).split(".")[1]
+  return fraction?.length ?? 0
+}
+
+function snapToStep(value: number, min: number, max: number, step: number) {
+  const precision = stepDecimals(step)
+  const steps = Math.round((value - min) / step)
+  const snapped = min + steps * step
+  return Number(clamp(snapped, min, max).toFixed(precision))
+}
+
 export function ActionLeverageRuler({
   value,
   onChange,
   min = 1,
   max = 20,
-  step = 1,
+  step = 0.1,
   label = "Leverage",
 }: {
   value: string
@@ -28,22 +40,27 @@ export function ActionLeverageRuler({
   label?: string
 }) {
   const parsed = Number.parseFloat(value)
-  const currentValue = Number.isFinite(parsed) ? clamp(Math.round(parsed), min, max) : min
+  const currentValue = Number.isFinite(parsed) ? snapToStep(parsed, min, max, step) : min
 
   const ticks = useMemo(() => {
+    const range = max - min
+    const tickStep = range <= 5 ? 1 : range <= 12 ? 2 : 5
     const items: number[] = []
-    for (let current = min; current <= max + 1e-9; current += step) {
-      items.push(Math.round(current))
+    for (let current = min; current <= max + 1e-9; current += tickStep) {
+      items.push(snapToStep(current, min, max, tickStep))
+    }
+    const last = items[items.length - 1]
+    if (last == null || Math.abs(last - max) > 1e-9) {
+      items.push(max)
     }
     return items
-  }, [max, min, step])
+  }, [max, min])
 
   const publishValue = useCallback(
     (next: number) => {
-      const clamped = clamp(Math.round(next), min, max)
-      onChange(String(clamped))
+      onChange(String(snapToStep(next, min, max, step)))
     },
-    [max, min, onChange],
+    [max, min, onChange, step],
   )
 
   return (
@@ -93,7 +110,7 @@ export function ActionLeverageRuler({
           />
           <div className="mt-1 flex items-end justify-between gap-0.5">
             {ticks.map((tick) => {
-              const isActive = tick === currentValue
+              const isActive = Math.abs(tick - currentValue) < step / 2
               const showLabel = tick === min || tick === max || tick % 5 === 0 || isActive
               return (
                 <button

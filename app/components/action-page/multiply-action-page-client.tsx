@@ -6,6 +6,7 @@ import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-ses
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
+import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
@@ -51,13 +52,17 @@ export function MultiplyActionPageClient({
     if (kind !== "multiply") return undefined
     const options = Object.values(session.state.markets).map((entry) => ({
       id: entry.id,
-      label: `${entry.collateralAsset.symbol} · ${entry.borrowAsset.symbol}`,
+      label: formatMultiplyLoopMarketLabel(entry.collateralAsset.symbol, entry.borrowAsset.symbol),
       symbol: entry.collateralAsset.symbol,
+      borrowSymbol: entry.borrowAsset.symbol,
     }))
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
-  const multiplierMax = 20
+  const multiplierMax = useMemo(() => {
+    if (!market) return 20
+    return Math.min(20, Math.max(1, market.risk.publicMaxMultiplier))
+  }, [market])
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
@@ -119,7 +124,7 @@ export function MultiplyActionPageClient({
             mapMultiplyPreviewToActionUi(preview, {
               collateralSymbol: market.collateralAsset.symbol,
               collateralAmount: multiplyCollateralAmount,
-              marketLabel: `${market.collateralAsset.symbol} / ${market.borrowAsset.symbol}`,
+              marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
               multiplier: parsedMultiplier,
             }),
           )
@@ -151,7 +156,7 @@ export function MultiplyActionPageClient({
         if (cancelled) return
         setPreviewUi(
           mapDeleveragePreviewToActionUi(preview, {
-            marketLabel: `${market.collateralAsset.symbol} / ${market.borrowAsset.symbol}`,
+            marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
             targetMultiplier: parsedMultiplier,
           }),
         )
@@ -301,6 +306,7 @@ export function MultiplyActionPageClient({
           onAmountChange={setAmount}
           preview={previewUi}
           assetSymbol={market.collateralAsset.symbol}
+          borrowSymbol={market.borrowAsset.symbol}
           assetOptions={marketOptions}
           selectedAssetId={market.id}
           onAssetSelect={(id) => {

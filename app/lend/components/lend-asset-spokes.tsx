@@ -112,9 +112,11 @@ function MultiSelectDropdown({
     if (!open) return
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false)
+      const target = event.target as Node
+      if (rootRef.current?.contains(target) || panelRef.current?.contains(target)) {
+        return
       }
+      setOpen(false)
     }
 
     document.addEventListener("pointerdown", handlePointerDown, true)
@@ -212,7 +214,7 @@ function MultiSelectDropdown({
             ref={panelRef}
             className={cn(
               "fixed z-30 overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-              "border-border bg-card text-foreground dark:border-white/8 dark:text-white",
+              "border-border bg-popover text-foreground dark:border-white/8 dark:bg-surface-inset dark:text-white",
             )}
             style={
               panelStyle

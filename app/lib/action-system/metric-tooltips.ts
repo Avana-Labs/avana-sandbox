@@ -26,7 +26,7 @@ const METRIC_TOOLTIPS_BY_LABEL: Record<string, string> = {
 
 export const ACTION_INFO_TOOLTIPS: Record<string, string> = {
   rate: "Estimated annual rate for this action, such as borrow APY, supply APY, or net carry.",
-  market: "The collateral pool or lending market this action applies to.",
+  market: "The market this action applies to, including collateral and borrow assets where relevant.",
   fee: "Estimated network (gas) fee required to confirm this transaction.",
   metric: "Projected change after this transaction completes.",
   amount: "Amount you are confirming for this transaction.",

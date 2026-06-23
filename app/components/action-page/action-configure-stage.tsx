@@ -21,6 +21,7 @@ type ActionConfigureStageProps = {
   onAmountChange: (value: string) => void
   preview: ActionPreviewUi | null
   assetSymbol?: string
+  borrowSymbol?: string
   onPrimary?: () => void
   onSecondary?: () => void
   secondaryHref?: string
@@ -36,6 +37,7 @@ type ActionConfigureStageProps = {
   onMultiplierChange?: (value: string) => void
   multiplierMin?: number
   multiplierMax?: number
+  multiplierStep?: number
   canGoBack?: boolean
   hideAmountInput?: boolean
   amountReadOnly?: boolean
@@ -48,6 +50,7 @@ export function ActionConfigureStage({
   onAmountChange,
   preview,
   assetSymbol,
+  borrowSymbol,
   onPrimary,
   onSecondary,
   secondaryHref,
@@ -63,6 +66,7 @@ export function ActionConfigureStage({
   onMultiplierChange,
   multiplierMin = 1,
   multiplierMax = 20,
+  multiplierStep = 0.1,
   canGoBack = false,
   hideAmountInput = false,
   amountReadOnly = false,
@@ -91,6 +95,7 @@ export function ActionConfigureStage({
           approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
           assetLabel={pillLabel}
           assetSymbol={assetSymbol ?? pillLabel}
+          borrowSymbol={borrowSymbol}
           readOnly={amountReadOnly}
           showReceiveWethToggle={showReceiveWethToggle}
           receiveWeth={receiveWeth}
@@ -107,6 +112,7 @@ export function ActionConfigureStage({
           onChange={onMultiplierChange}
           min={multiplierMin}
           max={multiplierMax}
+          step={multiplierStep}
         />
       ) : null}
 

@@ -4,12 +4,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
-import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
+import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 
 export type ActionAssetOption = {
   id: string
   label: string
   symbol: string
+  borrowSymbol?: string
   sublabel?: string
 }
 
@@ -20,6 +21,7 @@ type ActionAmountCardProps = {
   approxUsdLabel: string
   assetLabel: string
   assetSymbol?: string
+  borrowSymbol?: string
   balanceLabel?: string
   balanceValue?: string
   readOnly?: boolean
@@ -39,6 +41,7 @@ export function ActionAmountCard({
   approxUsdLabel,
   assetLabel,
   assetSymbol,
+  borrowSymbol,
   readOnly = false,
   receiveWeth = false,
   onReceiveWethChange,
@@ -103,7 +106,11 @@ export function ActionAmountCard({
                 switchable ? "cursor-pointer hover:bg-muted" : "cursor-default",
               )}
             >
-              <ActionTokenIcon symbol={symbol} />
+              {borrowSymbol ? (
+                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="sm" />
+              ) : (
+                <ActionTokenIcon symbol={symbol} />
+              )}
               <span>{assetLabel}</span>
               {switchable ? <span className="text-muted-foreground" aria-hidden>▾</span> : null}
             </button>
@@ -128,7 +135,11 @@ export function ActionAmountCard({
                       option.id === selectedAssetId && "bg-muted",
                     )}
                   >
-                    <ActionTokenIcon symbol={option.symbol} />
+                    {option.borrowSymbol ? (
+                      <ActionTokenPairIcon collateralSymbol={option.symbol} borrowSymbol={option.borrowSymbol} size="sm" />
+                    ) : (
+                      <ActionTokenIcon symbol={option.symbol} />
+                    )}
                     <span className="min-w-0 flex-1 truncate">{option.label}</span>
                     {option.sublabel ? <span className="shrink-0 text-[12px] text-muted-foreground">{option.sublabel}</span> : null}
                   </button>

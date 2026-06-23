@@ -11,8 +11,8 @@
     color: hsl(var(--foreground));
   }
   :root {
-    /* Light — page nudged whiter than Cursor reference */
-    --background: 0 0% 97%; /* #F7F7F7 page */
+    /* Light — bright neutral canvas */
+    --background: 0 0% 98.8%; /* #FCFCFC page */
     --foreground: 0 0% 17.3%; /* #2C2C2C primary labels */
 
     --card: 0 0% 92.2%; /* #EBEBEB cards */
@@ -30,7 +30,7 @@
     --muted: 0 0% 92.2%;
     --muted-foreground: 0 0% 46.7%; /* #777777 descriptions */
     --section-foreground: 0 0% 13.3%; /* #222222 section headers */
-    --table-header: 0 0% 95.5%; /* header strip on whiter page */
+    --table-header: 0 0% 96.5%; /* header strip on bright page */
 
     --accent: 0 0% 92.2%;
     --accent-foreground: 0 0% 17.3%;
@@ -42,7 +42,7 @@
     --input: 0 0% 87.1%; /* #DEDEDE recessed inputs */
     --ring: 191 99% 41%;
 
-    --surface-1: 0 0% 97%;
+    --surface-1: 0 0% 98.8%;
     --surface-2: 0 0% 92.2%;
     --surface-hover: 0 0% 91.8%;
 
