@@ -2,6 +2,8 @@ import { act, renderHook, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import { parseFixed } from "@/app/lib/credit-engine"
 import { AvanaSessionsProvider, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+import { buildMockLendSystemStateWithSeedPosition } from "@/app/lib/lend-system/mock"
+import { writeLendSessionState } from "@/app/lib/lend-system/storage"
 
 describe("Avana rewards product flows", () => {
   beforeEach(() => {
@@ -9,6 +11,14 @@ describe("Avana rewards product flows", () => {
   })
 
   it("tracks aggregate rewards progress from real lend, borrow, repay, multiply, and deleverage actions", async () => {
+    const walletId = "demo-wallet"
+    const seededLendState = buildMockLendSystemStateWithSeedPosition(walletId)
+    seededLendState.walletBalances[walletId] = {
+      ...(seededLendState.walletBalances[walletId] ?? {}),
+      gho: 10_000,
+    }
+    writeLendSessionState(walletId, seededLendState)
+
     const wrapper = ({ children }: { children: React.ReactNode }) => <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
     const { result } = renderHook(() => useAvanaSessions(), { wrapper })
 

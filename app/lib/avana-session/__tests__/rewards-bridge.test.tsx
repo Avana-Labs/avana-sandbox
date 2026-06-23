@@ -10,6 +10,14 @@ describe("Avana rewards bridge", () => {
   })
 
   it("turns successful lend, borrow, and multiply actions into live rewards progress", async () => {
+    const walletId = "demo-wallet"
+    const seededLendState = buildMockLendSystemStateWithSeedPosition(walletId)
+    seededLendState.walletBalances[walletId] = {
+      ...(seededLendState.walletBalances[walletId] ?? {}),
+      gho: 10_000,
+    }
+    writeLendSessionState(walletId, seededLendState)
+
     const wrapper = ({ children }: { children: React.ReactNode }) => <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
     const { result } = renderHook(() => useAvanaSessions(), { wrapper })
 

@@ -5,12 +5,13 @@ export function isHealthFactorMetric(label: string, id?: string) {
   return /health factor/i.test(label)
 }
 
+/** Aave-style looping: liquidation risk only near HF 1.0. */
 export function healthFactorToneFromAfter(after: string | undefined): ActionMetricTone {
   if (!after || after === "∞" || after === "—") return "positive"
   const value = Number.parseFloat(after.replace(/[^\d.]/g, ""))
   if (!Number.isFinite(value)) return "default"
   if (value < 1.05) return "danger"
-  if (value < 1.5) return "warning"
+  if (value < 1.15) return "warning"
   return "positive"
 }
 
@@ -27,9 +28,9 @@ export function resolveMetricTone(
 }
 
 export const HF_ZONES = [
-  { id: "safe", label: "Safe", min: 3, max: Infinity, widthPct: 30, color: "bg-emerald-500" },
-  { id: "warn", label: "Caution", min: 1.5, max: 3, widthPct: 40, color: "bg-amber-500" },
-  { id: "danger", label: "Liquidation", min: 0, max: 1.5, widthPct: 30, color: "bg-rose-500" },
+  { id: "safe", label: "Safe", min: 1.5, max: Infinity, widthPct: 50, color: "bg-emerald-500" },
+  { id: "warn", label: "Caution", min: 1.15, max: 1.5, widthPct: 30, color: "bg-amber-500" },
+  { id: "danger", label: "Liquidation", min: 0, max: 1.15, widthPct: 20, color: "bg-rose-500" },
 ] as const
 
 export function parseHealthFactorValue(value: string | undefined): number | null {
@@ -41,8 +42,8 @@ export function parseHealthFactorValue(value: string | undefined): number | null
 
 export function healthFactorStatusLabel(value: number | null) {
   if (value == null || Number.isNaN(value)) return { label: "Unknown", tone: "default" as const }
-  if (!Number.isFinite(value) || value >= 3) return { label: "Safe", tone: "positive" as const }
-  if (value >= 1.5) return { label: "Caution", tone: "warning" as const }
+  if (!Number.isFinite(value) || value >= 1.5) return { label: "Safe", tone: "positive" as const }
+  if (value >= 1.15) return { label: "Caution", tone: "warning" as const }
   return { label: "At risk", tone: "danger" as const }
 }
 

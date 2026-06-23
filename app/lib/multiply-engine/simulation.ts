@@ -158,8 +158,9 @@ export function simulateDeleverage(params: {
   market: MultiplyMarketRecord
   position: MultiplyPosition
   targetMultiplier: number
+  repayAmountUsd?: number
 }): DeleverageSimulation {
-  const { market, position, targetMultiplier } = params
+  const { market, position, targetMultiplier, repayAmountUsd } = params
   const collateralPriceUsd = market.collateralAsset.priceUsd
   const currentCollateralValueUsd = position.collateralValueUsd
   const currentDebtValueUsd = position.debtValueUsd
@@ -174,14 +175,25 @@ export function simulateDeleverage(params: {
 
   const equityValueUsd = currentCollateralValueUsd - currentDebtValueUsd
   const denominator = 1 - targetMultiplier * priceImpactPct
-  const collateralToUnwindUsd =
-    denominator <= 0
-      ? currentCollateralValueUsd
-      : Math.min(
-          currentCollateralValueUsd,
-          Math.max(0, (currentCollateralValueUsd - targetMultiplier * equityValueUsd) / denominator),
-        )
-  const effectiveRepayUsd = collateralToUnwindUsd * (1 - priceImpactPct)
+
+  let collateralToUnwindUsd: number
+  let effectiveRepayUsd: number
+
+  if (repayAmountUsd != null && repayAmountUsd > 0) {
+    effectiveRepayUsd = Math.min(repayAmountUsd, currentDebtValueUsd)
+    const repayRatio = currentDebtValueUsd > 0 ? effectiveRepayUsd / currentDebtValueUsd : 0
+    collateralToUnwindUsd = Math.min(currentCollateralValueUsd, currentCollateralValueUsd * repayRatio)
+  } else {
+    collateralToUnwindUsd =
+      denominator <= 0
+        ? currentCollateralValueUsd
+        : Math.min(
+            currentCollateralValueUsd,
+            Math.max(0, (currentCollateralValueUsd - targetMultiplier * equityValueUsd) / denominator),
+          )
+    effectiveRepayUsd = collateralToUnwindUsd * (1 - priceImpactPct)
+  }
+
   const newDebtValueUsd = Math.max(0, currentDebtValueUsd - effectiveRepayUsd)
   const newCollateralValueUsd = currentCollateralValueUsd - collateralToUnwindUsd
   const targetDebtValueUsd = Math.max(0, newDebtValueUsd)

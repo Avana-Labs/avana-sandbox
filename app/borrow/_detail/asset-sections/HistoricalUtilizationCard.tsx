@@ -10,7 +10,7 @@ export function HistoricalUtilizationCard({ detail }: Props) {
   return (
     <section className="min-w-0">
       <div className="mb-3">
-        <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]">
+        <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">
           Historical utilization
         </h2>
         <p className="mt-0.5 text-[11.5px] text-muted-foreground">Borrowed ÷ supplied over the last 12 months.</p>

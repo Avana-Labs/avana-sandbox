@@ -128,7 +128,7 @@ function renderRewardsPage() {
 }
 
 function openPromoTab(label: string) {
-  const tab = screen.getAllByRole("button", { name: label }).find((button) => button.hasAttribute("data-state"))
+  const tab = screen.getAllByRole("tab", { name: label }).find((button) => button.hasAttribute("data-state"))
   if (!tab) {
     throw new Error(`Promo tab not found: ${label}`)
   }
@@ -146,7 +146,7 @@ async function clickQuestAction(name: string | RegExp) {
 
 async function openReferralTab() {
   await waitFor(() => {
-    expect(screen.getAllByRole("button", { name: "Refer a friend" }).some((button) => button.hasAttribute("data-state"))).toBe(true)
+    expect(screen.getAllByRole("tab", { name: "Refer a friend" }).some((tab) => tab.hasAttribute("data-state"))).toBe(true)
   })
   openPromoTab("Refer a friend")
 }
@@ -206,7 +206,7 @@ describe("RewardsPageClient", () => {
       screen.getByRole("button", { name: "Claim 50 AVA" })
     })
 
-    await userEvent.click(screen.getByRole("button", { name: "Claim all ready rewards" }))
+    await userEvent.click(screen.getByTestId("rewards-claim-all"))
     expect(claimAllRewards).toHaveBeenCalledTimes(1)
     expect(readRewardSummary.mock.calls.length).toBeGreaterThan(1)
 
@@ -261,7 +261,7 @@ describe("RewardsPageClient", () => {
     )
     renderRewardsPage()
 
-    await clickQuestAction("Challenge tasks")
+    openPromoTab("Challenge tasks")
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Check in" }).length).toBeGreaterThan(0))
     await clickQuestAction("Check in")
 
@@ -271,7 +271,7 @@ describe("RewardsPageClient", () => {
   it("records sandbox tours and routes users to the tour surface", async () => {
     renderRewardsPage()
 
-    await clickQuestAction("Challenge tasks")
+    openPromoTab("Challenge tasks")
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Start tour" }).length).toBeGreaterThan(0))
     await clickQuestAction("Start tour")
 

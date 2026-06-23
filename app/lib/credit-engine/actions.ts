@@ -1,7 +1,7 @@
 import { accrueBorrowSystemState } from "./accrue"
 import { calculateCreditMetrics, calculateSpokeCreditMetrics } from "./metrics"
 import type { BorrowAction, BorrowSystemState } from "./types"
-import { TOKEN_SCALE, WAD, assetsToShares, mulDiv } from "./units"
+import { RAY, TOKEN_SCALE, WAD, assetsToShares, mulDiv } from "./units"
 import { currentCollateralValueUsd6, currentDebtValueUsd6, debtInterestOwedUsd6 } from "./valuation"
 
 function cloneState(state: BorrowSystemState): BorrowSystemState {
@@ -77,7 +77,7 @@ function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowA
   const existing = account.debtPositions.find(
     (position) => position.assetId === action.assetId && position.spokeId === market.spokeId,
   )
-  const debtIndexRay = existing?.debtIndexRay ?? state.accounts[action.walletId]!.debtPositions[0]?.debtIndexRay ?? state.markets[action.marketId]!.snapshot.supplyIndexRay
+  const debtIndexRay = existing?.debtIndexRay ?? RAY
   const debtSharesUsd6 = assetsToShares(action.amountUsd6, debtIndexRay)
 
   if (existing) {

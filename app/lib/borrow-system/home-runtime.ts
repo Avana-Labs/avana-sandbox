@@ -108,6 +108,20 @@ export function selectHomeBorrowTokensForMarket(
   }))
 }
 
+export function selectHomeRepayTokensForMarket(
+  state: BorrowSystemState,
+  walletId: string,
+  marketId: string,
+): HomeBorrowToken[] {
+  const account = state.accounts[walletId]
+  if (!account) return []
+
+  return account.debtPositions
+    .filter((position) => position.marketId === marketId)
+    .map((position) => tokenFromAssetId(state, position.assetId))
+    .filter((token): token is HomeBorrowToken => Boolean(token))
+}
+
 export function selectHomeDebtMap(state: BorrowSystemState, walletId: string) {
   return Object.fromEntries(
     selectBorrowCollateralPools(state, walletId).map((pool) => {
@@ -375,7 +389,11 @@ export function buildHomeClaimPreview(
   selections: Record<string, boolean>,
   partialAmountUsd: number | null,
 ): ClaimPreview {
-  return calculateClaimPreview(positions, selectRewardClaimableTotals(state, walletId), selections, partialAmountUsd)
+  const engineTotals = selectRewardClaimableTotals(state, walletId)
+  const claimableTotals = Object.fromEntries(
+    positions.map((position) => [position.id, engineTotals[position.id] ?? position.totalUsd]),
+  )
+  return calculateClaimPreview(positions, claimableTotals, selections, partialAmountUsd)
 }
 
 export type SupplyPreview = {

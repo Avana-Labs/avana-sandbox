@@ -2,7 +2,7 @@
 
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
-import { ActionLeverageSelector } from "@/app/components/action-page/action-leverage-selector"
+import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionOutcomeBanner, ActionRiskBanner, ActionWalletToast } from "@/app/components/action-page/action-banners"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import {
@@ -24,9 +24,6 @@ type ActionConfigureStageProps = {
   onPrimary?: () => void
   onSecondary?: () => void
   secondaryHref?: string
-  onMax?: () => void
-  onPercent?: (percent: number) => void
-  showPercentShortcuts?: boolean
   showReceiveWethToggle?: boolean
   receiveWeth?: boolean
   onReceiveWethChange?: (value: boolean) => void
@@ -37,8 +34,10 @@ type ActionConfigureStageProps = {
   onAssetSelect?: (id: string) => void
   multiplier?: string
   onMultiplierChange?: (value: string) => void
-  multiplierOptions?: number[]
+  multiplierMin?: number
+  multiplierMax?: number
   canGoBack?: boolean
+  hideAmountInput?: boolean
 }
 
 export function ActionConfigureStage({
@@ -51,9 +50,6 @@ export function ActionConfigureStage({
   onPrimary,
   onSecondary,
   secondaryHref,
-  onMax,
-  onPercent,
-  showPercentShortcuts = false,
   showReceiveWethToggle = false,
   receiveWeth = false,
   onReceiveWethChange,
@@ -64,8 +60,10 @@ export function ActionConfigureStage({
   onAssetSelect,
   multiplier,
   onMultiplierChange,
-  multiplierOptions,
+  multiplierMin = 1,
+  multiplierMax = 20,
   canGoBack = false,
+  hideAmountInput = false,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -82,33 +80,35 @@ export function ActionConfigureStage({
 
   return (
     <>
-      <ActionAmountCard
-        label={verb}
-        amount={amount}
-        onAmountChange={onAmountChange}
-        approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
-        assetLabel={pillLabel}
-        assetSymbol={assetSymbol ?? pillLabel}
-        balanceLabel={preview?.balanceLabel ?? "Balance"}
-        balanceValue={preview?.balanceValue ?? "0.00"}
-        onMax={onMax}
-        onPercent={onPercent}
-        showPercentShortcuts={showPercentShortcuts}
-        showReceiveWethToggle={showReceiveWethToggle}
-        receiveWeth={receiveWeth}
-        onReceiveWethChange={onReceiveWethChange}
-        assetOptions={assetOptions}
-        selectedAssetId={selectedAssetId}
-        onAssetSelect={onAssetSelect}
-        footer={preview ? <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" /> : null}
-      />
+      {hideAmountInput ? null : (
+        <ActionAmountCard
+          label={verb}
+          amount={amount}
+          onAmountChange={onAmountChange}
+          approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
+          assetLabel={pillLabel}
+          assetSymbol={assetSymbol ?? pillLabel}
+          showReceiveWethToggle={showReceiveWethToggle}
+          receiveWeth={receiveWeth}
+          onReceiveWethChange={onReceiveWethChange}
+          assetOptions={assetOptions}
+          selectedAssetId={selectedAssetId}
+          onAssetSelect={onAssetSelect}
+        />
+      )}
 
-      {multiplierOptions && multiplierOptions.length > 0 && onMultiplierChange ? (
-        <ActionLeverageSelector value={multiplier ?? ""} onChange={onMultiplierChange} options={multiplierOptions} />
+      {onMultiplierChange ? (
+        <ActionLeverageRuler
+          value={multiplier ?? "3"}
+          onChange={onMultiplierChange}
+          min={multiplierMin}
+          max={multiplierMax}
+        />
       ) : null}
 
       {preview ? (
         <ActionCard>
+          <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
           <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
         </ActionCard>
       ) : null}
@@ -117,6 +117,10 @@ export function ActionConfigureStage({
 
       {preview?.risk?.title && preview.risk.message ? (
         <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
+      ) : null}
+
+      {preview?.blockedReason && !preview.allowed ? (
+        <ActionOutcomeBanner tone="error" title="Action unavailable" message={preview.blockedReason} />
       ) : null}
 
       {preview ? (
@@ -134,7 +138,12 @@ export function ActionConfigureStage({
           onPrimary={onPrimary}
           onSecondary={onSecondary}
           secondaryHref={secondaryHref}
-          primaryDisabled={shouldDisablePrimaryCta({ stage: configureStage, isValid, isPending })}
+          primaryDisabled={shouldDisablePrimaryCta({
+            stage: configureStage,
+            isValid,
+            isPending,
+            blockedReason: preview?.blockedReason ?? null,
+          })}
           primaryPending={isPending || stage === "wallet_sign" || stage === "approve_allowance"}
         />
       ) : null}

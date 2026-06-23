@@ -1,5 +1,6 @@
 import { ActionPageClient } from "@/app/components/action-page/action-page-client"
 import type { ActionKind, ActionProduct } from "@/app/lib/action-system/contracts"
+import { resolveActionCloseHref } from "@/app/lib/action-system/contracts"
 
 type PageProps = {
   params: Promise<{ product: ActionProduct; kind: ActionKind }>
@@ -18,20 +19,13 @@ export default async function ActionPage({ params, searchParams }: PageProps) {
     <ActionPageClient
       product={product}
       kind={kind}
-      closeHref={
-        readParam(query.return) ??
-        (product === "borrow"
-          ? "/borrow"
-          : product === "lend"
-            ? "/lend"
-            : product === "multiply"
-              ? "/multiply"
-              : "/rewards")
-      }
+      closeHref={resolveActionCloseHref(product, readParam(query.return))}
       initialAssetId={readParam(query.asset)}
       initialMarketId={readParam(query.market)}
       initialAmount={readParam(query.amount)}
       initialMultiplier={readParam(query.multiplier)}
+      initialPositionId={readParam(query.position)}
+      initialDebtId={readParam(query.debt)}
     />
   )
 }

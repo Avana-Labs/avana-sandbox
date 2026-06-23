@@ -89,6 +89,7 @@ export type MultiplyAction =
       walletId: string
       positionId: string
       targetMultiplier: number
+      repayAmountUsd?: number
       at?: number
     }
 

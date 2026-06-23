@@ -1,7 +1,8 @@
 "use client"
 
-import { Heart, Info } from "lucide-react"
+import { Heart } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import {
   HF_ZONES,
   activeHealthFactorZoneIndex,
@@ -34,7 +35,7 @@ export function ActionHealthFactorBar({
             aria-hidden
           />
           <span>Health factor</span>
-          <Info className="size-3.5 opacity-70" aria-hidden />
+          <ActionMetricHelp text="Health factor estimates how far your position is from liquidation. Above 1.0 is solvent; below 1.0 can be liquidated." />
         </div>
         <span
           className={cn(

@@ -17,6 +17,9 @@ const STATIC_ROUTES: SiteRoute[] = [
   { route: "/support-center", priority: 0.45 },
 ]
 
+/** Synchronous route manifest for tests and build-time consumers. */
+export const SITE_STATIC_ROUTES = STATIC_ROUTES
+
 /** Caches server route metadata to avoid recalculating the route manifest on every request. */
 export const getCachedRouteManifest = unstable_cache(
   async () => STATIC_ROUTES,

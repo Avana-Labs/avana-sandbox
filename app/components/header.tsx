@@ -232,8 +232,8 @@ function PreferencesMenu() {
 export function Header() {
   const pathname = usePathname()
   const desktopLinks = personalDesktopHeaderLinks
-  const [showDivider, setShowDivider] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [showDivider, setShowDivider] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
@@ -256,6 +256,8 @@ export function Header() {
   }, [])
 
   useEffect(() => {
+    if (!mounted) return
+
     const resolveThreshold = () => headerRef.current?.offsetHeight ?? 68
 
     const readScrollOffset = (target?: EventTarget | null) => {
@@ -278,13 +280,13 @@ export function Header() {
       window.removeEventListener("scroll", updateDivider)
       document.removeEventListener("scroll", updateDivider, true)
     }
-  }, [])
+  }, [mounted])
 
   return (
     <header
       ref={headerRef}
       className={`sticky top-0 z-40 bg-background/95 text-foreground backdrop-blur transition-[box-shadow] duration-200 ${
-        showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
+        mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
       }`}
     >
       <div className="hidden lg:block">
@@ -296,8 +298,7 @@ export function Header() {
 
               <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5">
                 {desktopLinks.slice(0, 4).map((link) => {
-                  const isActive =
-                    mounted && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href))
+                  const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
 
                   return (
                     <Link
@@ -326,7 +327,7 @@ export function Header() {
             <div className="flex shrink-0 items-center gap-1.5">
               <div className="mr-0.5 flex items-center gap-0.5">
                 {desktopLinks.slice(4).map((link) => {
-                  const isActive = mounted && pathname.startsWith(link.href)
+                  const isActive = pathname.startsWith(link.href)
                   const isUtilityLink = link.href === "/dashboard" || link.href === "/rewards"
 
                   return (

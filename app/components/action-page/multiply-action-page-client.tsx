@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
+import type { ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
@@ -11,21 +11,20 @@ import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
+import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
-
-function truncateWallet(id: string) {
-  return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
-}
+import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
 export function MultiplyActionPageClient({
   kind,
   closeHref = "/multiply",
   initialMarketId,
   initialAmount = "",
-  initialMultiplier = "2",
+  initialMultiplier = "3",
 }: {
   kind: "multiply" | "deleverage"
   closeHref?: string
@@ -58,18 +57,21 @@ export function MultiplyActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
-  const multiplierOptions = useMemo(() => {
-    const max = market?.risk.publicMaxMultiplier ?? 5
-    const presets = [1.5, 2, 3, 5, 7, 10]
-    const withinRange = presets.filter((preset) => preset <= max + 1e-9)
-    const rounded = Math.round(max * 10) / 10
-    if (!withinRange.includes(rounded) && rounded >= 1.5) withinRange.push(rounded)
-    return withinRange.length > 0 ? withinRange : [Math.max(1.5, rounded)]
-  }, [market])
+  const multiplierMax = 20
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
   const [multiplier, setMultiplier] = useState(initialMultiplier)
+  const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
+  const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
+
+  useEffect(() => {
+    const parsed = parsePositiveActionAmount(multiplier)
+    if (parsed == null) return
+    const clamped = Math.min(multiplierMax, Math.max(1, parsed))
+    const next = String(Number(clamped.toFixed(2)))
+    if (next !== multiplier) setMultiplier(next)
+  }, [market?.id, multiplier, multiplierMax])
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
@@ -77,9 +79,10 @@ export function MultiplyActionPageClient({
 
   useEffect(() => {
     if (!market) return
-    const parsedAmount = Number.parseFloat(amount)
-    const parsedMultiplier = Number.parseFloat(multiplier)
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || !Number.isFinite(parsedMultiplier) || parsedMultiplier <= 0) {
+    let cancelled = false
+    const parsedAmount = kind === "deleverage" ? parsePositiveActionAmount(amount) : parsePositiveActionAmount(amount)
+    const parsedMultiplier = parsePositiveActionAmount(multiplier)
+    if (parsedMultiplier == null) {
       setPreviewUi(null)
       return
     }
@@ -88,38 +91,94 @@ export function MultiplyActionPageClient({
       session.state.positions[`${walletId}:${market.id}`] ??
       Object.values(session.state.positions).find((entry) => entry.walletId === walletId && entry.marketId === market.id)
 
-    const action =
-      kind === "multiply"
-        ? ({
-            type: "multiply" as const,
-            walletId,
-            marketId: market.id,
-            collateralAmount: parsedAmount,
-            selectedMultiplier: parsedMultiplier,
-          } as const)
-        : ({
-            type: "deleverage" as const,
-            walletId,
-            positionId: position?.id ?? "missing",
-            targetMultiplier: parsedMultiplier,
-          } as const)
+    if (kind === "deleverage" && !position) {
+      setPreviewUi(null)
+      return
+    }
 
-    void session.previewTransaction(session.createIntent(action)).then((preview) => {
-      setPreviewUi(
-        kind === "multiply"
-          ? mapMultiplyPreviewToActionUi(preview, {
+    const multiplyCollateralAmount = kind === "multiply" ? parsedAmount : null
+    if (kind === "multiply") {
+      if (multiplyCollateralAmount == null) {
+        setPreviewUi(null)
+        return
+      }
+
+      const action = {
+        type: "multiply" as const,
+        walletId,
+        marketId: market.id,
+        collateralAmount: multiplyCollateralAmount,
+        selectedMultiplier: parsedMultiplier,
+      }
+
+      void session
+        .previewTransaction(session.createIntent(action))
+        .then((preview) => {
+          if (cancelled) return
+          setPreviewUi(
+            mapMultiplyPreviewToActionUi(preview, {
               collateralSymbol: market.collateralAsset.symbol,
-              collateralAmount: parsedAmount,
-              marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
+              collateralAmount: multiplyCollateralAmount,
+              marketLabel: `${market.collateralAsset.symbol} / ${market.borrowAsset.symbol}`,
               multiplier: parsedMultiplier,
-            })
-          : mapDeleveragePreviewToActionUi(preview, {
-              marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
-              targetMultiplier: parsedMultiplier,
             }),
-      )
-    })
+          )
+        })
+        .catch(() => {
+          if (!cancelled) setPreviewUi(null)
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+
+    if (!position) {
+      setPreviewUi(null)
+      return
+    }
+
+    const action = {
+      type: "deleverage" as const,
+      walletId,
+      positionId: position.id,
+      targetMultiplier: parsedMultiplier,
+      repayAmountUsd: parsedAmount ?? undefined,
+    }
+
+    void session
+      .previewTransaction(session.createIntent(action))
+      .then((preview) => {
+        if (cancelled) return
+        setPreviewUi(
+          mapDeleveragePreviewToActionUi(preview, {
+            marketLabel: `${market.collateralAsset.symbol} / ${market.borrowAsset.symbol}`,
+            targetMultiplier: parsedMultiplier,
+          }),
+        )
+      })
+      .catch(() => {
+        if (!cancelled) setPreviewUi(null)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [amount, kind, market, multiplier, session, walletId])
+
+  useEffect(() => {
+    if (kind === "multiply") return
+    if (!previewUi || previewUi.allowed || stage !== "configure") return
+    if (!previewUi.blockedReason) return
+    if (previewUi.blockedReason === dismissedBlockedReason) return
+    const blocked = mapPreviewToBlockedUi({ product: "multiply", kind, blockedReason: previewUi.blockedReason })
+    if (blocked) {
+      setBlockedUi(blocked)
+      setStage("blocked")
+    }
+  }, [dismissedBlockedReason, kind, previewUi, stage])
+
+  useEffect(() => {
+    setDismissedBlockedReason(null)
+  }, [amount, kind, market?.id, multiplier])
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
@@ -147,8 +206,9 @@ export function MultiplyActionPageClient({
     setOutcome(null)
 
     try {
-      const parsedAmount = Number.parseFloat(amount)
-      const parsedMultiplier = Number.parseFloat(multiplier)
+      const parsedAmount = parsePositiveActionAmount(amount)
+      const parsedMultiplier = parsePositiveActionAmount(multiplier)
+      if ((kind === "multiply" && parsedAmount == null) || parsedMultiplier == null) throw new Error("Enter a valid amount")
       const position =
         session.state.positions[`${walletId}:${market.id}`] ??
         Object.values(session.state.positions).find((entry) => entry.walletId === walletId && entry.marketId === market.id)
@@ -160,7 +220,7 @@ export function MultiplyActionPageClient({
               type: "multiply" as const,
               walletId,
               marketId: market.id,
-              collateralAmount: parsedAmount,
+              collateralAmount: parsedAmount!,
               selectedMultiplier: parsedMultiplier,
             }
           : {
@@ -168,6 +228,7 @@ export function MultiplyActionPageClient({
               walletId,
               positionId: position!.id,
               targetMultiplier: parsedMultiplier,
+              repayAmountUsd: parsedAmount ?? undefined,
             }
 
       const intent = session.createIntent(action)
@@ -214,7 +275,7 @@ export function MultiplyActionPageClient({
   const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
 
   return (
-    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
+    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
       {stage === "processing" ? (
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}
@@ -248,12 +309,23 @@ export function MultiplyActionPageClient({
           }}
           multiplier={multiplier}
           onMultiplierChange={setMultiplier}
-          multiplierOptions={multiplierOptions}
+          multiplierMin={1}
+          multiplierMax={multiplierMax}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
-          secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
+        />
+      ) : null}
+
+      {blockedUi ? (
+        <ActionBlockedDialog
+          blocked={blockedUi}
+          open={stage === "blocked"}
+          onClose={() => {
+            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
+            setStage("configure")
+          }}
         />
       ) : null}
     </ActionPageShell>

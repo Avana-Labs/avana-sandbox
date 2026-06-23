@@ -5,7 +5,7 @@ export default function NotFound() {
     <main className="flex min-h-[calc(100vh-5rem)] items-center bg-background px-6 py-16 text-foreground sm:px-8 sm:py-20">
       <section className="mx-auto w-full max-w-[760px]">
         <div className="py-14 text-center sm:py-18">
-          <p className="mt-5 text-[4.5rem] font-semibold leading-none tracking-[-0.06em] text-[hsl(var(--brand))] sm:text-[5.75rem]">
+          <p className="mt-5 text-[4.5rem] font-semibold leading-none tracking-[-0.06em] text-brand-readable sm:text-[5.75rem]">
             404
           </p>
 
@@ -26,10 +26,10 @@ export default function NotFound() {
             </Link>
 
             <nav aria-label="Helpful links" className="flex flex-wrap justify-center gap-x-5 gap-y-3">
-              <Link href="/borrow" className="text-sm font-medium text-foreground transition hover:text-[hsl(var(--brand))]">
+              <Link href="/borrow" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
                 Borrow
               </Link>
-              <Link href="/lend" className="text-sm font-medium text-foreground transition hover:text-[hsl(var(--brand))]">
+              <Link href="/lend" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
                 Lend
               </Link>
             </nav>

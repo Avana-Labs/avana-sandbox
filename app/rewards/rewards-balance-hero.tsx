@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { Info } from "lucide-react"
-import { HeroMarketCard } from "@/app/borrow/borrow-page-client"
+import { HeroMarketCard } from "@/app/borrow/borrow-hero-market-card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
@@ -92,7 +92,7 @@ export function RewardsBalanceHero({
               className="h-8 shrink-0 rounded-[14px] px-3.5 text-[11px] font-medium shadow-none"
               onClick={onClaimAll}
               disabled={claimableCount === 0 || isClaiming}
-              aria-label="Claim all ready rewards"
+              data-testid="rewards-claim-all"
             >
               {isClaiming
                 ? "Claiming..."

@@ -15,6 +15,10 @@ describe("useLendSession", () => {
   it("hydrates persisted lend state and executes a simulated deposit", async () => {
     const walletId = "demo-wallet"
     const seededState = buildMockLendSystemStateWithSeedPosition(walletId)
+    seededState.walletBalances[walletId] = {
+      ...(seededState.walletBalances[walletId] ?? {}),
+      gho: 5_000,
+    }
     const sessionSeed = buildLendSessionSeed(walletId)
 
     writeLendSessionState(walletId, seededState)
