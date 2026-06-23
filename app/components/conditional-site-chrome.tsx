@@ -5,8 +5,6 @@ import type { ReactNode } from "react"
 import { Header } from "@/app/components/header"
 
 export function ConditionalSiteHeader() {
-  const pathname = usePathname()
-  if (pathname.startsWith("/actions/")) return null
   return <Header />
 }
 
@@ -16,7 +14,7 @@ export function ConditionalSiteChrome({ children }: { children: ReactNode }) {
 
   return (
     <div className={isActionRoute ? "min-h-[100dvh] bg-background" : "flex min-h-screen flex-col"}>
-      <ConditionalSiteHeader />
+      {isActionRoute ? null : <ConditionalSiteHeader />}
       <div className={isActionRoute ? "min-h-[100dvh]" : "flex-1"}>{children}</div>
     </div>
   )

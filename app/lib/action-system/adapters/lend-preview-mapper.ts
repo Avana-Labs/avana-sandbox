@@ -20,6 +20,8 @@ function basePreviewFields(
     balanceAmount: number
     rateLabel: string
     rateValue: string
+    amountUsd: number
+    maxAmount?: number
   },
 ): Pick<
   ActionPreviewUi,
@@ -41,14 +43,14 @@ function basePreviewFields(
   return {
     allowed: preview.allowed,
     amountLabel: formatActionAmount(options.amount, options.symbol, 4),
-    amountUsdLabel: formatActionApproxUsd(preview.after.suppliedValueUsd),
+    amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: options.rateLabel,
     rateValue: options.rateValue,
     marketLabel: "Market",
     marketValue: options.marketLabel,
     balanceLabel: options.balanceLabel,
     balanceValue: formatActionAmount(options.balanceAmount, options.symbol, 4),
-    maxAmount: options.balanceAmount,
+    maxAmount: options.maxAmount ?? options.balanceAmount,
     networkFeeLabel: formatActionNetworkFee(0.03),
     blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
@@ -84,6 +86,7 @@ export function mapLendDepositPreviewToActionUi(
       balanceAmount: options.balanceAmount,
       rateLabel: "Deposit APY",
       rateValue: formatActionRatioPercent(afterApy),
+      amountUsd: Math.max(0, afterSupplied - beforeSupplied),
     }),
     metrics: [
       {
@@ -149,6 +152,8 @@ export function mapLendWithdrawPreviewToActionUi(
       balanceAmount: options.balanceAmount,
       rateLabel: "Remaining supply",
       rateValue: formatActionUsd(afterSupplied),
+      amountUsd: Math.max(0, beforeSupplied - afterSupplied),
+      maxAmount: preview.maxWithdrawable ?? options.balanceAmount,
     }),
     metrics: [
       {

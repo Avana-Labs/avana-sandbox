@@ -85,9 +85,9 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
               <div
                 className={cn(
                   "mb-1 flex items-center gap-1.5 text-[11px] font-medium md:justify-end",
-                  metric.tone === "emerald" && "text-[#6ca98b]",
-                  metric.tone === "violet" && "text-[#7d72cc]",
-                  metric.tone === "amber" && "text-[#b1835f]",
+                  metric.tone === "emerald" && "text-hero-metric-emerald",
+                  metric.tone === "violet" && "text-hero-metric-violet",
+                  metric.tone === "amber" && "text-hero-metric-amber",
                 )}
               >
                 <span

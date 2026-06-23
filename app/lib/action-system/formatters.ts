@@ -1,3 +1,8 @@
+export function formatActionInputAmount(value: number, maxDecimals = 6) {
+  if (!Number.isFinite(value)) return "0"
+  return String(Number(value.toFixed(maxDecimals)))
+}
+
 export function formatActionUsd(value: number, options?: { compact?: boolean }) {
   if (!Number.isFinite(value)) return "—"
   if (options?.compact) {

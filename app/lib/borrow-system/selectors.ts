@@ -173,12 +173,12 @@ export function selectInitialBorrowDebts(state: BorrowSystemState, walletId: str
   const account = state.accounts[walletId]
   if (!account) return {} as Record<string, number>
 
-  return Object.fromEntries(
-    account.collateralPositions.map((position) => [
-      position.marketId,
-      fixedToNumber(marketDebtUsd6(state, walletId, position.marketId), 6),
-    ]),
-  )
+  const byMarket: Record<string, number> = {}
+  for (const position of account.debtPositions) {
+    if (!position.marketId) continue
+    byMarket[position.marketId] = (byMarket[position.marketId] ?? 0) + fixedToNumber(currentDebtValueUsd6(position), 6)
+  }
+  return byMarket
 }
 
 export function selectWalletBorrowSnapshot(state: BorrowSystemState, walletId: string) {

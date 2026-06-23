@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic"
 import type { ReactNode } from "react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Info } from "lucide-react"
 import {
   ArrowCircleDown24Filled,
@@ -28,6 +29,7 @@ import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
 import { PortfolioHeroHeader } from "@/app/portfolio/hero/portfolio-hero-header"
 import type { PortfolioHeroAction } from "@/app/portfolio/hero/types"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 
 const HeroChartSection = dynamic(
   () => import("@/app/components/charts/hero-chart-section").then((mod) => mod.HeroChartSection),
@@ -103,12 +105,25 @@ function buildActions({
   actionLabels,
   primaryActionLabel,
   secondaryActionLabel,
+  onNavigate,
 }: {
   actionLabels?: string[]
   primaryActionLabel: string
   secondaryActionLabel: string
+  onNavigate?: (href: string) => void
 }): PortfolioHeroAction[] {
   const labels = actionLabels?.length ? actionLabels : [primaryActionLabel, secondaryActionLabel]
+
+  const resolveHref = (label: string) => {
+    const normalized = label.toLowerCase()
+    if (normalized.includes("borrow")) return actionPagePath("borrow", "borrow")
+    if (normalized.includes("repay")) return actionPagePath("borrow", "repay")
+    if (normalized.includes("deposit")) return actionPagePath("lend", "deposit")
+    if (normalized.includes("withdraw")) return actionPagePath("lend", "withdraw")
+    if (normalized.includes("increase")) return actionPagePath("multiply", "multiply")
+    if (normalized.includes("unwind") || normalized.includes("deleverage")) return actionPagePath("multiply", "deleverage")
+    return null
+  }
 
   const resolveClasses = (label: string) => {
     const normalized = label.toLowerCase()
@@ -139,11 +154,13 @@ function buildActions({
   }
 
   return labels.map((label, index) => {
+    const href = resolveHref(label)
     return {
       id: `${index}-${label.toLowerCase().replace(/\s+/g, "-")}`,
       label,
       icon: resolveIcon(label),
-      onClick: undefined,
+      href: href ?? undefined,
+      onClick: href && onNavigate ? () => onNavigate(href) : undefined,
       className: resolveClasses(label),
     }
   })
@@ -179,6 +196,7 @@ export function DashboardHero({
   borrowSnapshot,
   multiplySnapshot,
 }: DashboardHeroProps) {
+  const router = useRouter()
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const { showDollarAmounts } = useDisplayPreferences()
@@ -228,6 +246,7 @@ export function DashboardHero({
         actionLabels: uiConfig.actionLabels,
         primaryActionLabel: uiConfig.actionLabels?.[0] ?? "Deposit",
         secondaryActionLabel: uiConfig.actionLabels?.[1] ?? "Withdraw",
+        onNavigate: (href) => router.push(href),
       })
     : []
 

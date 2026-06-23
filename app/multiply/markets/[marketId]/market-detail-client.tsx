@@ -91,7 +91,7 @@ export function MarketDetailClient({ detail }: Props) {
             <MarketHero detail={detail} hideIdentity className="mb-6" />
 
             <section aria-label="Multiply market analytics" className="space-y-8 pt-8">
-              <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]">Market data</h2>
+              <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">Market data</h2>
               <QuickStatsGrid detail={detail} />
               <SupplyBorrowCard detail={detail} />
               <EngagementTrendsCard

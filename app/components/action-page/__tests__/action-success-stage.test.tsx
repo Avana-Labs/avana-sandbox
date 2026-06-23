@@ -20,7 +20,8 @@ describe("ActionMetricsBlock", () => {
       />,
     )
 
-    expect(screen.getByTestId("metric-health-factor")).toBeInTheDocument()
+    expect(screen.getByTestId("action-health-factor-bar")).toBeInTheDocument()
+    expect(screen.getByTestId("action-health-factor-card")).toBeInTheDocument()
     expect(screen.getAllByText("1.08").length).toBeGreaterThan(0)
   })
 })

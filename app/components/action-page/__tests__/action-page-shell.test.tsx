@@ -11,23 +11,23 @@ describe("ActionPageShell", () => {
     cleanup()
   })
 
-  it("renders Avana action shell title, subtitle, wallet pill, and close control", () => {
+  it("renders action shell title, subtitle, close control, and body without wallet pill or help menu", async () => {
     render(
       <ActionPageShell
         title="Borrow"
         subtitle="Configure and review your loan."
-        walletLabel="0x4141...6ffE"
         closeHref="/borrow"
       >
         <div>Body</div>
       </ActionPageShell>,
     )
 
-    expect(screen.getByRole("heading", { name: "Borrow" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Borrow" })).toBeInTheDocument()
     expect(screen.getByText("Configure and review your loan.")).toBeInTheDocument()
-    expect(screen.getByText("0x4141...6ffE")).toBeInTheDocument()
     expect(screen.getByLabelText("Close")).toBeInTheDocument()
     expect(screen.getByText("Body")).toBeInTheDocument()
+    expect(screen.queryByText(/demo-w/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText("Open help menu")).not.toBeInTheDocument()
   })
 
   it("does not render a sandbox badge when simulated", () => {

@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest"
-import { repaySelectItemsForWallet } from "@/app/lib/action-system/resolve-borrow-context"
+import { claimSelectItemsForWallet, repaySelectItemsForWallet } from "@/app/lib/action-system/resolve-borrow-context"
 import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
+import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+
+describe("claimSelectItemsForWallet", () => {
+  it("shows positive claimable totals from reward positions", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const session = {
+      state,
+      collateralPools: [],
+      getBorrowableAssetsForMarket: () => [],
+      borrowableAssets: [],
+    }
+
+    const items = claimSelectItemsForWallet(session as never, "demo-wallet")
+    expect(items.length).toBeGreaterThan(0)
+    expect(items.some((item) => item.trailingLabel.includes("$142"))).toBe(true)
+    expect(items.every((item) => !item.trailingLabel.includes("$0.00"))).toBe(true)
+  })
+})
 
 describe("repaySelectItemsForWallet", () => {
   it("maps debt positions to select items", () => {

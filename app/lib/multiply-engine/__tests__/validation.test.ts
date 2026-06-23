@@ -8,6 +8,33 @@ import {
 import { validateDeleverageAction, validateMultiplyAction } from "@/app/lib/multiply-engine/validation"
 
 describe("multiply engine validation", () => {
+  it("warns when multiply exceeds the theoretical maximum", () => {
+    const theoreticalMax = calculateTheoreticalMaxMultiplier(0.5)
+    const result = validateMultiplyAction({
+      selectedMultiplier: 3,
+      theoreticalMaxMultiplier: theoreticalMax,
+      publicMaxMultiplier: 1.8,
+      safeMaxMultiplier: 1.8,
+      recommendedMaxMultiplier: 1.6,
+      minHealthFactor: 1.5,
+      maxLtv: 0.5,
+      healthFactor: 2.1,
+      ltv: 0.4,
+      debtValueUsd: 2500,
+      initialCollateralValueUsd: 3500,
+      priceImpactPct: 0.002,
+      maxAllowedPriceImpact: 0.01,
+      netApy: 0.03,
+      supplyApy: 0.076,
+      borrowApy: 0.039,
+      liquidationPrice: 2100,
+      collateralPriceUsd: 280,
+    })
+
+    expect(result.allowed).toBe(true)
+    expect(result.warnings.join(" ")).toContain("theoretical maximum")
+  })
+
   it("blocks multiply actions above the public maximum", () => {
     const theoreticalMax = calculateTheoreticalMaxMultiplier(0.73)
     const result = validateMultiplyAction({
@@ -31,8 +58,62 @@ describe("multiply engine validation", () => {
       collateralPriceUsd: 3500,
     })
 
-    expect(result.allowed).toBe(false)
-    expect(result.errors.join(" ")).toContain("public maximum")
+    expect(result.allowed).toBe(true)
+    expect(result.warnings.join(" ")).toContain("public maximum")
+  })
+
+  it("warns when multiply health factor is below the liquidation threshold", () => {
+    const theoreticalMax = calculateTheoreticalMaxMultiplier(0.5)
+    const result = validateMultiplyAction({
+      selectedMultiplier: 3,
+      theoreticalMaxMultiplier: theoreticalMax,
+      publicMaxMultiplier: 20,
+      safeMaxMultiplier: 1.8,
+      recommendedMaxMultiplier: 1.6,
+      minHealthFactor: 1.5,
+      maxLtv: 0.5,
+      healthFactor: 0.97,
+      ltv: 0.67,
+      debtValueUsd: 2500,
+      initialCollateralValueUsd: 3500,
+      priceImpactPct: 0.002,
+      maxAllowedPriceImpact: 0.01,
+      netApy: 0.03,
+      supplyApy: 0.076,
+      borrowApy: 0.039,
+      liquidationPrice: 2100,
+      collateralPriceUsd: 280,
+    })
+
+    expect(result.allowed).toBe(true)
+    expect(result.warnings.join(" ")).toContain("liquidation threshold")
+  })
+
+  it("warns when multiply LTV exceeds the market maximum", () => {
+    const theoreticalMax = calculateTheoreticalMaxMultiplier(0.5)
+    const result = validateMultiplyAction({
+      selectedMultiplier: 3,
+      theoreticalMaxMultiplier: theoreticalMax,
+      publicMaxMultiplier: 20,
+      safeMaxMultiplier: 1.8,
+      recommendedMaxMultiplier: 1.6,
+      minHealthFactor: 1.5,
+      maxLtv: 0.5,
+      healthFactor: 2.1,
+      ltv: 0.67,
+      debtValueUsd: 2500,
+      initialCollateralValueUsd: 3500,
+      priceImpactPct: 0.002,
+      maxAllowedPriceImpact: 0.01,
+      netApy: 0.03,
+      supplyApy: 0.076,
+      borrowApy: 0.039,
+      liquidationPrice: 2100,
+      collateralPriceUsd: 280,
+    })
+
+    expect(result.allowed).toBe(true)
+    expect(result.warnings.join(" ")).toContain("LTV exceeds the market maximum")
   })
 
   it("warns when multiply exceeds the recommended maximum", () => {

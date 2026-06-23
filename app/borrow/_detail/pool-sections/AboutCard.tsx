@@ -16,8 +16,8 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         <h2
           className={
             compact
-              ? "truncate text-[18px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]"
-              : "truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-[hsl(var(--brand))]"
+              ? "truncate text-[18px] font-normal leading-none tracking-[-0.02em] text-brand-readable"
+              : "truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable"
           }
         >
           {title}

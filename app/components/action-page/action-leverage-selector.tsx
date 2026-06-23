@@ -23,7 +23,7 @@ export function ActionLeverageSelector({
   const activeValue = Number.isFinite(parsed) ? parsed : null
 
   return (
-    <ActionCard>
+    <ActionCard className="p-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
         <span className="font-data text-[13px] tabular-nums text-foreground">
@@ -42,7 +42,7 @@ export function ActionLeverageSelector({
               className={[
                 "h-8 rounded-md border px-3 text-[12.5px] font-medium tabular-nums transition-colors",
                 isActive
-                  ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand-soft))] text-[hsl(var(--brand))]"
+                  ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand-soft))] text-brand-readable"
                   : "border-border bg-surface-raised text-muted-foreground hover:text-foreground",
               ].join(" ")}
             >

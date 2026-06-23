@@ -8,7 +8,7 @@ describe("ActionHealthFactorBar", () => {
   it("renders zone bar and status label", () => {
     render(<ActionHealthFactorBar value={1.2} />)
     expect(screen.getByTestId("action-health-factor-bar")).toBeInTheDocument()
-    expect(screen.getByText("At risk")).toBeInTheDocument()
+    expect(screen.getAllByText("Caution").length).toBeGreaterThan(0)
   })
 })
 

@@ -10,7 +10,12 @@ import {
   simulateRepay,
   simulateWithdraw,
 } from "@/app/lib/credit-engine"
-import { EXAMPLE_UNI_MARKET_ID, EXAMPLE_UNI_USDC_ASSET_ID, EXAMPLE_WALLET_1_DEBT_ID, makeExampleBorrowSystemState } from "./fixtures"
+import {
+  EXAMPLE_UNI_MARKET_ID,
+  EXAMPLE_UNI_USDC_ASSET_ID,
+  EXAMPLE_WALLET_1_DEBT_ID,
+  makeExampleBorrowSystemState,
+} from "./fixtures"
 import { makeStressBorrowActions, makeStressBorrowSystemState } from "./stress-fixtures"
 
 describe("borrow engine multi-user simulation", () => {
@@ -128,6 +133,29 @@ describe("borrow engine multi-user simulation", () => {
     expect(preview.allowed).toBe(false)
     expect(preview.validationErrors.length).toBeGreaterThan(0)
     expect(preview.after.state).toBe(state)
+  })
+
+  it("uses target-spoke metrics when simulating a borrow", () => {
+    const state = makeExampleBorrowSystemState()
+    const uniPosition = state.accounts["wallet-1"]!.collateralPositions.find(
+      (position) => position.marketId === EXAMPLE_UNI_MARKET_ID,
+    )!
+    uniPosition.collateralShares = parseFixed("4", 18)
+    uniPosition.principalTokenAmount = parseFixed("4", 18)
+
+    expect(calculateCreditMetrics(state, "wallet-1").availableCreditUsd6).toBeGreaterThan(0n)
+
+    const preview = simulateBorrow(state, {
+      type: "borrow",
+      walletId: "wallet-1",
+      marketId: EXAMPLE_UNI_MARKET_ID,
+      assetId: EXAMPLE_UNI_USDC_ASSET_ID,
+      amountUsd6: parseFixed("300", 6),
+    })
+
+    expect(preview.allowed).toBe(false)
+    expect(preview.before.metrics.availableBorrowCapacityUsd6).toBe(0n)
+    expect(preview.validationErrors[0]).toContain("not have enough available credit in spoke uni-v3-bluechip")
   })
 
   it("simulates repay with lower debt, improved health, and full repayment support", () => {

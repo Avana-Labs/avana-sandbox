@@ -4,6 +4,15 @@ type LendContextSession = {
   state: LendSystemState
 }
 
+export function lendDepositSelectItems(session: LendContextSession) {
+  return Object.values(session.state.markets).map((market) => ({
+    id: market.marketId,
+    name: market.asset.name,
+    symbol: market.asset.symbol,
+    trailingLabel: `${market.supplyApy.toFixed(2)}% APY`,
+  }))
+}
+
 export function lendWithdrawSelectItems(session: LendContextSession, walletId: string) {
   return Object.values(session.state.positions)
     .filter((position) => position.walletId === walletId && position.status === "active")

@@ -16,6 +16,8 @@ export function ActionPageClient({
   initialMarketId,
   initialAmount,
   initialMultiplier,
+  initialPositionId,
+  initialDebtId,
 }: {
   product: ActionProduct
   kind: ActionKind
@@ -24,6 +26,8 @@ export function ActionPageClient({
   initialMarketId?: string
   initialAmount?: string
   initialMultiplier?: string
+  initialPositionId?: string
+  initialDebtId?: string
 }) {
   if (!isValidAction(product, kind)) {
     const fallbackHref =
@@ -39,6 +43,8 @@ export function ActionPageClient({
         initialAssetId={initialAssetId}
         initialMarketId={initialMarketId}
         initialAmount={initialAmount}
+        initialPositionId={initialPositionId}
+        initialDebtId={initialDebtId}
       />
     )
   }

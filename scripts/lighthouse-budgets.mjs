@@ -4,14 +4,18 @@ import os from "node:os"
 import path from "node:path"
 import process from "node:process"
 import { URL } from "node:url"
+import {
+  CHROME_FLAGS,
+  LIGHTHOUSE_CATEGORY_BUDGETS,
+  LIGHTHOUSE_ROUTES,
+} from "./lighthouse-config.mjs"
 
 const baseUrl = process.env.LH_BASE_URL ?? "http://127.0.0.1:3001"
-const routes = ["/", "/borrow", "/borrow/asset/usdc", "/lend", "/multiply", "/portfolio", "/rewards"]
 const budgets = {
-  performance: Number(process.env.LH_PERFORMANCE_MIN ?? 80),
-  accessibility: Number(process.env.LH_ACCESSIBILITY_MIN ?? 100),
-  "best-practices": Number(process.env.LH_BEST_PRACTICES_MIN ?? 95),
-  seo: Number(process.env.LH_SEO_MIN ?? 100),
+  performance: Number(process.env.LH_PERFORMANCE_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS.performance),
+  accessibility: Number(process.env.LH_ACCESSIBILITY_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS.accessibility),
+  "best-practices": Number(process.env.LH_BEST_PRACTICES_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS["best-practices"]),
+  seo: Number(process.env.LH_SEO_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS.seo),
 }
 
 function runLighthouse(route, outputPath) {
@@ -21,7 +25,7 @@ function runLighthouse(route, outputPath) {
     url,
     "--output=json",
     `--output-path=${outputPath}`,
-    "--chrome-flags=--headless --no-sandbox",
+    `--chrome-flags=${CHROME_FLAGS}`,
     "--quiet",
   ]
 
@@ -46,7 +50,7 @@ function score(report, category) {
 const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "avana-lighthouse-"))
 const failures = []
 
-for (const route of routes) {
+for (const route of LIGHTHOUSE_ROUTES) {
   const outputPath = path.join(outputDir, `${route.replaceAll("/", "_") || "home"}.json`)
   await runLighthouse(route, outputPath)
   const report = JSON.parse(await fs.readFile(outputPath, "utf8"))

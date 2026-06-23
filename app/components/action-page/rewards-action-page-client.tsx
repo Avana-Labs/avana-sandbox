@@ -20,10 +20,6 @@ import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 
-function truncateWallet(id: string) {
-  return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
-}
-
 export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?: string }) {
   const descriptor = getActionDescriptor("rewards", "claim")
   const router = useRouter()
@@ -33,6 +29,7 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
   const [stage, setStage] = useState<ActionStage>("configure")
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
+  const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
   const [claimSummary, setClaimSummary] = useState({ claimUsd: 0, claimableTaskCount: 0, tokenBreakdown: [] as Array<{ symbol: string; amount: number }> })
@@ -78,14 +75,21 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
   )
 
   useEffect(() => {
-    if (!previewUi.allowed && stage === "configure") {
+    if (!previewUi.allowed && stage === "configure" && previewUi.blockedReason && previewUi.blockedReason !== dismissedBlockedReason) {
+      const lower = previewUi.blockedReason.toLowerCase()
+      const isHardBlock = lower.includes("insufficient") || lower.includes("unavailable") || lower.includes("disabled")
+      if (!isHardBlock) return
       const blocked = mapPreviewToBlockedUi({ product: "rewards", kind: "claim", blockedReason: previewUi.blockedReason })
       if (blocked) {
         setBlockedUi(blocked)
         setStage("blocked")
       }
     }
-  }, [previewUi.allowed, previewUi.blockedReason, stage])
+  }, [dismissedBlockedReason, previewUi.allowed, previewUi.blockedReason, stage])
+
+  useEffect(() => {
+    setDismissedBlockedReason(null)
+  }, [claimSummary.claimUsd])
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
@@ -158,7 +162,7 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
   const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
 
   return (
-    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={rewards.readAdapter.mode === "sandbox"}>
+    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={rewards.readAdapter.mode === "sandbox"}>
       {stage === "processing" ? (
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}
@@ -186,13 +190,21 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}
-          onMax={() => setAmount(String(claimSummary.claimUsd))}
           isPending={isPending}
           outcome={outcome}
         />
       ) : null}
 
-      {blockedUi ? <ActionBlockedDialog blocked={blockedUi} open={stage === "blocked"} onClose={() => setStage("configure")} /> : null}
+      {blockedUi ? (
+        <ActionBlockedDialog
+          blocked={blockedUi}
+          open={stage === "blocked"}
+          onClose={() => {
+            setDismissedBlockedReason(previewUi.blockedReason)
+            setStage("configure")
+          }}
+        />
+      ) : null}
     </ActionPageShell>
   )
 }
