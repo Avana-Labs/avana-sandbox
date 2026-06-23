@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { LendAction, LendSystemState } from "@/app/lib/lend-engine"
+import { accrueLendSystemState } from "@/app/lib/lend-engine/simulation"
 import { deserializeLendSystemState } from "./codec"
 import type {
   LendReadAdapter,
@@ -125,6 +126,18 @@ export function useLendSession({
       window.removeEventListener(LEND_SESSION_SYNC_EVENT, handleSameTabSync)
     }
   }, [sessionSeed, shouldPersistState, walletId])
+
+  useEffect(() => {
+    if (!shouldPersistState || typeof window === "undefined" || process.env.NODE_ENV === "test") return undefined
+
+    const tick = () => {
+      setState((current) => accrueLendSystemState(current, Date.now()))
+    }
+
+    tick()
+    const intervalId = window.setInterval(tick, 30_000)
+    return () => window.clearInterval(intervalId)
+  }, [shouldPersistState])
 
   const transactionAdapter = useMemo(
     () => {

@@ -11,6 +11,38 @@ function buildMockWalletBalances(walletId: string) {
   }
 }
 
+function seedPosition(
+  state: LendSystemState,
+  walletId: string,
+  marketId: string,
+  principalAmount: number,
+  openedDaysAgo = 14,
+) {
+  const market = state.markets[marketId]
+  if (!market) return
+
+  const positionId = `${walletId}:${market.marketId}`
+  const interestEarned = principalAmount * market.supplyApy * (openedDaysAgo / 365)
+  const currentSuppliedAmount = principalAmount + interestEarned
+
+  state.positions[positionId] = {
+    positionId,
+    walletId,
+    marketId: market.marketId,
+    asset: market.asset.symbol,
+    principalAmount,
+    scaledBalance: principalAmount,
+    liquidityIndexAtLastAction: market.liquidityIndex,
+    currentSuppliedAmount,
+    interestEarned,
+    rewardsEarnedUsd: interestEarned * market.assetPriceUsd * (market.rewardsApy / market.supplyApy) * 0.25,
+    suppliedValueUsd: currentSuppliedAmount * market.assetPriceUsd,
+    openedAt: state.now - openedDaysAgo * 86_400_000,
+    updatedAt: state.now - 3_600_000,
+    status: "active",
+  }
+}
+
 export function buildMockLendSystemState(walletId = "demo-wallet", now = Date.UTC(2026, 5, 19)): LendSystemState {
   return {
     now,
@@ -30,29 +62,15 @@ export function buildMockLendMarket(marketId: string): LendMarket {
 
 export function buildMockLendSystemStateWithSeedPosition(walletId = "demo-wallet"): LendSystemState {
   const state = buildMockLendSystemState(walletId)
-  const market = state.markets.eth
-  if (!market) return state
+  seedPosition(state, walletId, "eth", 10, 14)
+  return state
+}
 
-  const principalAmount = 10
-  const positionId = `${walletId}:${market.marketId}`
-
-  state.positions[positionId] = {
-    positionId,
-    walletId,
-    marketId: market.marketId,
-    asset: market.asset.symbol,
-    principalAmount,
-    scaledBalance: principalAmount,
-    liquidityIndexAtLastAction: market.liquidityIndex,
-    currentSuppliedAmount: principalAmount,
-    interestEarned: 0,
-    rewardsEarnedUsd: 0,
-    suppliedValueUsd: principalAmount * market.assetPriceUsd,
-    openedAt: state.now - 86_400_000,
-    updatedAt: state.now - 3_600_000,
-    status: "active",
-  }
-
+export function buildDemoLendSystemState(walletId = "demo-wallet"): LendSystemState {
+  const state = buildMockLendSystemState(walletId)
+  seedPosition(state, walletId, "eth", 1.28, 21)
+  seedPosition(state, walletId, "usdc", 4200, 18)
+  seedPosition(state, walletId, "gho", 2500, 30)
   return state
 }
 
