@@ -65,11 +65,11 @@ export function RelatedPoolsRow({ detail }: Props) {
                 </div>
                 <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
                   <div>
-                  <div className="text-[10px] text-muted-foreground">Supply APY</div>
+                  <div className="text-[12px] text-muted-foreground">Supply APY</div>
                   <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.aprLabel}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-muted-foreground">Available</div>
+                  <div className="text-[12px] text-muted-foreground">Available</div>
                   <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.availableLabel}</div>
                 </div>
               </div>

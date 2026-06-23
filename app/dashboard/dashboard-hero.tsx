@@ -177,7 +177,7 @@ function InfoTip({ text }: { text: string }) {
 function StatCard({ label, value, helpText }: { label: string; value: string; helpText: string }) {
   return (
     <div className="bg-background p-3.5 dark:bg-card">
-      <div className="mb-0.5 flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+      <div className="mb-0.5 flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
         {label} <InfoTip text={helpText} />
       </div>
       <div className="font-data text-[17px] font-medium tabular-nums text-[#01AACF] dark:text-[#7DDCFF]">{value}</div>
