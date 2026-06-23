@@ -15,30 +15,44 @@ function normalizeBorrowAssetKey(value: string) {
 export function resolveBorrowAssetId(state: BorrowSystemState, rawAssetId: string, marketId?: string) {
   const trimmed = rawAssetId.trim()
   if (!trimmed) return trimmed
-  if (state.assets[trimmed]) return trimmed
 
   const normalized = normalizeBorrowAssetKey(trimmed)
-  const direct = Object.values(state.assets).find((asset) => normalizeBorrowAssetKey(asset.id) === normalized)
-  if (direct) return direct.id
+
+  const matchesNormalized = (assetId: string) => {
+    const asset = state.assets[assetId]
+    if (!asset) return false
+    return (
+      normalizeBorrowAssetKey(asset.id) === normalized ||
+      normalizeBorrowAssetKey(asset.baseAssetId) === normalized ||
+      normalizeBorrowAssetKey(asset.symbol) === normalized ||
+      asset.id.toLowerCase().endsWith(`:${normalized}`)
+    )
+  }
 
   if (marketId) {
     const market = state.markets[marketId]
     if (market) {
-      const scoped = `${market.spokeId}:${normalized}`
-      if (state.assets[scoped]) return scoped
+      const asset = state.assets[trimmed]
+      if (asset && asset.spokeId === market.spokeId && market.relations.supportedBorrowAssetIds.includes(trimmed)) {
+        return trimmed
+      }
 
-      const supported = market.relations.supportedBorrowAssetIds.find((assetId) => {
-        const asset = state.assets[assetId]
-        if (!asset) return false
-        return (
-          normalizeBorrowAssetKey(asset.id) === normalized ||
-          normalizeBorrowAssetKey(asset.baseAssetId) === normalized ||
-          normalizeBorrowAssetKey(asset.symbol) === normalized
-        )
-      })
+      const scoped = `${market.spokeId}:${normalized}`
+      if (state.assets[scoped] && market.relations.supportedBorrowAssetIds.includes(scoped)) {
+        return scoped
+      }
+
+      const supported = market.relations.supportedBorrowAssetIds.find((assetId) => matchesNormalized(assetId))
       if (supported) return supported
     }
+
+    return ""
   }
+
+  if (state.assets[trimmed]) return trimmed
+
+  const direct = Object.values(state.assets).find((asset) => normalizeBorrowAssetKey(asset.id) === normalized)
+  if (direct) return direct.id
 
   const fallback = Object.values(state.assets).find((asset) => {
     return (
@@ -48,7 +62,7 @@ export function resolveBorrowAssetId(state: BorrowSystemState, rawAssetId: strin
     )
   })
 
-  return fallback?.id ?? trimmed
+  return fallback?.id ?? (state.assets[trimmed] ? trimmed : "")
 }
 
 type BorrowContextSession = {

@@ -10,6 +10,20 @@ describe("resolveBorrowAssetId", () => {
     expect(resolveBorrowAssetId(state, "usdc", marketId)).toBe("uni-v3-bluechip:usdc")
     expect(resolveBorrowAssetId(state, "uni-v3-bluechip:usdc", marketId)).toBe("uni-v3-bluechip:usdc")
   })
+
+  it("keeps short asset params scoped to the selected market spoke", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const bluechipMarket = "uni-v3-bluechip-weth-usdc"
+    const stableMarket = "uni-v3-stable-usdc-usdt"
+
+    expect(resolveBorrowAssetId(state, "usdc", bluechipMarket)).toBe("uni-v3-bluechip:usdc")
+    expect(resolveBorrowAssetId(state, "usdc", stableMarket)).toBe("uni-v3-stable:usdc")
+  })
+
+  it("returns empty when the asset is not borrowable in the selected market", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    expect(resolveBorrowAssetId(state, "wbtc", "uni-v3-stable-usdc-usdt")).toBe("")
+  })
 })
 
 describe("claimSelectItemsForWallet", () => {
