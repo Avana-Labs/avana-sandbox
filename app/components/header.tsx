@@ -296,8 +296,7 @@ export function Header() {
 
               <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5">
                 {desktopLinks.slice(0, 4).map((link) => {
-                  const isActive =
-                    mounted && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href))
+                  const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
 
                   return (
                     <Link
@@ -326,7 +325,7 @@ export function Header() {
             <div className="flex shrink-0 items-center gap-1.5">
               <div className="mr-0.5 flex items-center gap-0.5">
                 {desktopLinks.slice(4).map((link) => {
-                  const isActive = mounted && pathname.startsWith(link.href)
+                  const isActive = pathname.startsWith(link.href)
                   const isUtilityLink = link.href === "/dashboard" || link.href === "/rewards"
 
                   return (

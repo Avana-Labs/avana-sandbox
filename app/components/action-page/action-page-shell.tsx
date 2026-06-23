@@ -3,7 +3,6 @@
 import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
-import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import type { ActionPageMode } from "@/app/lib/action-system/contracts"
 
@@ -32,13 +31,8 @@ export function ActionPageShell({
   className,
 }: ActionPageShellProps) {
   const router = useRouter()
-  const [mounted, setMounted] = useState(false)
   const showChrome = true
   const showTitleBlock = showChrome && !hideTitle
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const handleClose = () => {
     if (onClose) {
@@ -61,7 +55,7 @@ export function ActionPageShell({
       data-testid="action-page-shell"
       data-mode={mode}
     >
-      {showChrome && mounted ? (
+      {showChrome ? (
         <div className="flex items-center justify-end px-4 pb-1 pt-3 sm:px-6">
           <button
             type="button"
@@ -72,19 +66,17 @@ export function ActionPageShell({
             <X className="size-4" />
           </button>
         </div>
-      ) : showChrome ? (
-        <div className="h-12 shrink-0" aria-hidden />
       ) : null}
 
       <div className={cn("mx-auto flex w-full max-w-[560px] flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6")}>
-        {showTitleBlock && mounted ? (
+        {showTitleBlock ? (
           <div className="pb-5">
             <h1 className="text-[1.375rem] font-medium tracking-[-0.03em] sm:text-[1.5rem]">{title}</h1>
             {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
           </div>
         ) : null}
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3">{mounted ? children : null}</div>
+        <div className="flex min-h-0 flex-1 flex-col gap-3">{children}</div>
 
         {footer ? <div className="mt-4">{footer}</div> : null}
       </div>

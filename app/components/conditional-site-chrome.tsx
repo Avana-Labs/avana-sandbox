@@ -5,8 +5,6 @@ import type { ReactNode } from "react"
 import { Header } from "@/app/components/header"
 
 export function ConditionalSiteHeader() {
-  const pathname = usePathname()
-  if (pathname.startsWith("/actions/")) return null
   return <Header />
 }
 
