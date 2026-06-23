@@ -12,6 +12,14 @@ export function ActionCard({ children, className }: { children: ReactNode; class
   return <div className={cn("overflow-hidden rounded-[20px] border border-border bg-surface-raised", className)}>{children}</div>
 }
 
+const METRIC_TOOLTIPS: Record<string, string> = {
+  rate: "Estimated annual rate for this action.",
+  market: "The market or pool this action applies to.",
+  fee: "Estimated network fee for this transaction.",
+  metric: "Projected change after this transaction completes.",
+  amount: "Amount you are confirming for this transaction.",
+}
+
 export function ActionInfoRow({
   label,
   value,
@@ -23,11 +31,16 @@ export function ActionInfoRow({
   tooltip?: string
   className?: string
 }) {
+  const tip = tooltip ? METRIC_TOOLTIPS[tooltip] ?? tooltip : undefined
   return (
     <div className={cn("flex items-center justify-between gap-4 px-4 py-3 text-[14px]", className)}>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <span>{label}</span>
-        {tooltip ? <span className="text-[11px] opacity-70" aria-hidden>ⓘ</span> : null}
+        {tip ? (
+          <span className="cursor-help text-[11px] opacity-70" title={tip} aria-label={tip}>
+            ⓘ
+          </span>
+        ) : null}
       </div>
       <div className="font-medium text-foreground">{value}</div>
     </div>
@@ -108,18 +121,23 @@ export function ActionMetricRow({
   id,
   tokenSymbols,
 }: ActionMetricRow) {
-  const showHealthBar = isHealthFactorMetric(label, id) && after != null
-
   return (
     <div data-testid={`metric-${label.toLowerCase().replace(/\s+/g, "-")}`}>
       <div className="flex items-center justify-between gap-4 px-4 py-3 text-[14px]">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <span>{label}</span>
-          {tooltip ? <span className="text-[11px] opacity-70" aria-hidden>ⓘ</span> : null}
+          {tooltip ? (
+          <span
+            className="cursor-help text-[11px] opacity-70"
+            title={METRIC_TOOLTIPS.metric}
+            aria-label={METRIC_TOOLTIPS.metric}
+          >
+            ⓘ
+          </span>
+        ) : null}
         </div>
         <MetricValue label={label} value={value} before={before} after={after} tone={tone} id={id} tokenSymbols={tokenSymbols} />
       </div>
-      {showHealthBar ? <ActionHealthFactorBar value={parseHealthFactorValue(after)} className="border-t border-border px-4 py-3" /> : null}
     </div>
   )
 }
