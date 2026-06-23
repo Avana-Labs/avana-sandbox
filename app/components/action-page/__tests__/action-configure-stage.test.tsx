@@ -1,6 +1,6 @@
-import { render, screen, within } from "@testing-library/react"
+import { cleanup, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
 
@@ -24,6 +24,10 @@ const preview: ActionPreviewUi = {
 }
 
 describe("ActionConfigureStage", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it("renders amount card, metrics, and footer", () => {
     render(
       <ActionConfigureStage
@@ -75,6 +79,30 @@ describe("ActionConfigureStage", () => {
     )
 
     expect(screen.getByTestId("action-wallet-toast")).toHaveTextContent("100 USDC")
+  })
+
+  it("shows health factor bar in home layout configure stage", () => {
+    render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Multiply"
+        amount=""
+        onAmountChange={() => undefined}
+        preview={preview}
+        homeLayout
+        hideAmountInput
+        amountPlacement="stacked"
+        multiplier="3"
+        onMultiplierChange={() => undefined}
+      />,
+    )
+
+    const card = screen.getByTestId("action-health-factor-card")
+    expect(within(card).getByTestId("action-health-factor-bar")).toBeInTheDocument()
+    expect(within(card).getByText("Health factor")).toBeInTheDocument()
+    expect(within(card).getByText("1.80")).toBeInTheDocument()
+    expect(within(card).getByText("Caution")).toBeInTheDocument()
+    expect(within(card).getByText("Liquidation")).toBeInTheDocument()
   })
 
   it("renders leverage ruler when multiplier controls are provided", async () => {

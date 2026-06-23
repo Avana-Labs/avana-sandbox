@@ -8,6 +8,8 @@ import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionOutcomeBanner, ActionRiskBanner, ActionWalletToast } from "@/app/components/action-page/action-banners"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
+import { ActionHealthFactorBar } from "@/app/components/action-page/action-health-factor-bar"
+import { isHealthFactorMetric, parseHealthFactorValue } from "@/app/lib/action-system/health-factor-ui"
 import {
   isConfigureVisibleStage,
   primaryCtaLabel,
@@ -174,6 +176,10 @@ export function ActionConfigureStage({
   const showInlineAmount = !hideAmountInput && !showStackedAmount
   const showHomeDetails = !homeLayout
   const showStandaloneLeverage = Boolean(onMultiplierChange) && !(homeLayout && showStackedAmount)
+  const healthFactorRow = preview?.metrics.find((row) => isHealthFactorMetric(row.label, row.id))
+  const healthFactorValue = parseHealthFactorValue(healthFactorRow?.after ?? healthFactorRow?.value)
+  const showConfigureHealthFactor =
+    homeLayout && isConfigureVisibleStage(configureStage) && healthFactorRow != null
 
   return (
     <>
@@ -207,6 +213,12 @@ export function ActionConfigureStage({
           max={multiplierMax}
           step={multiplierStep}
         />
+      ) : null}
+
+      {showConfigureHealthFactor ? (
+        <ActionCard className="p-4" data-testid="action-health-factor-card">
+          <ActionHealthFactorBar value={healthFactorValue} />
+        </ActionCard>
       ) : null}
 
       {preview && showHomeDetails && (preview.rateLabel || preview.marketValue || preview.marketBreakdown) ? (
