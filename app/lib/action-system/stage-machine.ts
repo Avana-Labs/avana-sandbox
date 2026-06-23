@@ -73,14 +73,18 @@ export function primaryCtaLabel(options: {
   verb: string
   blockedReason: string | null
   isValid: boolean
+  amountEntered?: boolean
 }) {
   if (options.stage === "success") return "View dashboard"
   if (options.stage === "processing") return "Processing…"
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return options.verb
   if (options.stage === "error") return options.verb
   if (options.stage === "review") return options.verb
-  if (options.blockedReason) return "Unavailable"
-  if (!options.isValid) return "Enter an amount"
+  if (options.blockedReason) return "Adjust amount"
+  if (!options.isValid) {
+    if (options.amountEntered) return "Loading preview…"
+    return "Enter an amount"
+  }
   if (options.stage === "configure") return "Review"
   return options.verb
 }

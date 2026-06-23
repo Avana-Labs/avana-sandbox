@@ -25,6 +25,7 @@ const HOME_MODE_ITEMS: Array<{ value: HomeMode; label: string }> = [
 export function HomePageClient() {
   const walletId = getBorrowSessionWalletId()
   const { borrow: session } = useAvanaSessions()
+  const [isClientReady, setIsClientReady] = useState(false)
   const defaultBorrowPoolId = HOME_POOL_TO_MARKET_ID[HOME_DEFAULT_SELECTIONS.borrowPoolId] ?? session.collateralPools[0]?.id ?? ""
   const defaultRepayPoolId = HOME_POOL_TO_MARKET_ID[HOME_DEFAULT_SELECTIONS.repayPoolId] ?? session.collateralPools[0]?.id ?? ""
   const defaultRemovePoolId = HOME_POOL_TO_MARKET_ID[HOME_DEFAULT_SELECTIONS.removePoolId] ?? session.collateralPools[0]?.id ?? ""
@@ -71,6 +72,10 @@ export function HomePageClient() {
     () => session.collateralPools.find((pool) => pool.id === removePoolId) ?? session.collateralPools[0] ?? null,
     [removePoolId, session.collateralPools],
   )
+
+  useEffect(() => {
+    setIsClientReady(true)
+  }, [])
 
   useEffect(() => {
     if (!session.collateralPools.length) return
@@ -145,8 +150,16 @@ export function HomePageClient() {
     setPoolDialogMode(null)
   }
 
-  if (!borrowPool || !repayPool || !removePool) {
-    return null
+  if (!isClientReady || !borrowPool || !repayPool || !removePool) {
+    return (
+      <div className="bg-background">
+        <main className="px-4">
+          <section className="flex items-start justify-center py-4 md:py-6">
+            <div className="h-[360px] w-full max-w-[560px] animate-pulse rounded-radius-md border border-border bg-surface-raised" />
+          </section>
+        </main>
+      </div>
+    )
   }
 
   return (

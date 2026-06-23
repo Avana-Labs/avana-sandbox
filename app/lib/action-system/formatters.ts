@@ -24,7 +24,8 @@ export function formatActionApproxUsd(value: number) {
 
 export function formatActionPercent(value: number, digits = 2) {
   if (!Number.isFinite(value)) return "—"
-  return `${value.toFixed(digits)}%`
+  const factor = 10 ** digits
+  return `${Math.round(value * factor) / factor}%`
 }
 
 export function formatActionRatioPercent(value: number, digits = 2) {

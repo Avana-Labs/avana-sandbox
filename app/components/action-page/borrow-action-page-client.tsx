@@ -289,8 +289,12 @@ export function BorrowActionPageClient({
         return undefined
       }
       const market = session.state.markets[marketId]
-      const collateralFactorPct = market ? Number.parseFloat(formatFixed(market.riskConfig.collateralFactorWad, 18)) * 100 : 0
-      const liquidationPct = market ? Number.parseFloat(formatFixed(market.riskConfig.liquidationThresholdWad, 18)) * 100 : 0
+      const collateralFactorPct = market
+        ? Math.round(Number.parseFloat(formatFixed(market.riskConfig.collateralFactorWad, 18)) * 1000) / 10
+        : 0
+      const liquidationPct = market
+        ? Math.round(Number.parseFloat(formatFixed(market.riskConfig.liquidationThresholdWad, 18)) * 1000) / 10
+        : 0
       const borrowableAssets = session.getBorrowableAssetsForMarket(marketId)
       void session
         .previewTransaction(

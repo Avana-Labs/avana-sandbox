@@ -72,6 +72,7 @@ export function ActionConfigureStage({
     verb,
     blockedReason: preview?.blockedReason ?? null,
     isValid,
+    amountEntered: Boolean(amount.trim()),
   })
   const secondaryLabel = secondaryCtaLabel(stage, { canGoBack })
   const walletStage = stage === "approve_allowance" || stage === "wallet_sign" ? stage : null
