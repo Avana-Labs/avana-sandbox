@@ -25,8 +25,6 @@ import {
   MULTIPLY_ACTION_MIN_LEVERAGE,
 } from "@/app/lib/multiply-system/leverage-limits"
 
-const MULTIPLY_PREVIEW_COLLATERAL_PLACEHOLDER = 1
-
 export function MultiplyActionPageClient({
   kind,
   closeHref = "/multiply",
@@ -114,13 +112,16 @@ export function MultiplyActionPageClient({
 
     const multiplyCollateralAmount = kind === "multiply" ? parsedAmount : null
     if (kind === "multiply") {
-      const previewCollateralAmount = multiplyCollateralAmount ?? MULTIPLY_PREVIEW_COLLATERAL_PLACEHOLDER
+      if (multiplyCollateralAmount == null) {
+        setPreviewUi(null)
+        return
+      }
 
       const action = {
         type: "multiply" as const,
         walletId,
         marketId: market.id,
-        collateralAmount: previewCollateralAmount,
+        collateralAmount: multiplyCollateralAmount,
         selectedMultiplier: parsedMultiplier,
       }
 
@@ -133,7 +134,7 @@ export function MultiplyActionPageClient({
             mapMultiplyPreviewToActionUi(preview, {
               collateralSymbol: market.collateralAsset.symbol,
               borrowSymbol: market.borrowAsset.symbol,
-              collateralAmount: previewCollateralAmount,
+              collateralAmount: multiplyCollateralAmount,
               marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
               collateralApy: market.collateralAsset.apy,
               borrowApy: market.borrowAsset.borrowApy,
