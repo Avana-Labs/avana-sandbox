@@ -12,6 +12,7 @@ import { ActionConfigureStage } from "@/app/components/action-page/action-config
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
+import { buildMultiplierOptions, clampMultiplierToOptions } from "@/app/components/action-page/multiplier-options"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
@@ -58,18 +59,23 @@ export function MultiplyActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
-  const multiplierOptions = useMemo(() => {
-    const max = market?.risk.publicMaxMultiplier ?? 5
-    const presets = [1.5, 2, 3, 5, 7, 10]
-    const withinRange = presets.filter((preset) => preset <= max + 1e-9)
-    const rounded = Math.round(max * 10) / 10
-    if (!withinRange.includes(rounded) && rounded >= 1.5) withinRange.push(rounded)
-    return withinRange.length > 0 ? withinRange : [Math.max(1.5, rounded)]
-  }, [market])
+  const multiplierOptions = useMemo(
+    () => buildMultiplierOptions(market?.risk.publicMaxMultiplier ?? 5),
+    [market?.risk.publicMaxMultiplier],
+  )
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
   const [multiplier, setMultiplier] = useState(initialMultiplier)
+
+  useEffect(() => {
+    if (multiplierOptions.length === 0) return
+    const parsed = Number.parseFloat(multiplier)
+    if (!Number.isFinite(parsed)) return
+    const clamped = clampMultiplierToOptions(parsed, multiplierOptions)
+    const next = String(clamped)
+    if (next !== multiplier) setMultiplier(next)
+  }, [market?.id, multiplier, multiplierOptions])
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
