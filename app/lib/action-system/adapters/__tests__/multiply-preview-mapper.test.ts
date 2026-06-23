@@ -23,7 +23,7 @@ describe("multiply preview mappers", () => {
       collateral: { symbol: "WETH", apy: "3.82%" },
       borrow: { symbol: "USDC", apy: "4.80%" },
     })
-
+    expect(ui.rateLabel).toBe("")
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Exposure",
       "Estimated debt",
