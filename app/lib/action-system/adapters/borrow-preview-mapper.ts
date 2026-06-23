@@ -343,7 +343,7 @@ export function mapBorrowRemovePreviewToActionUi(
         tone: hfTone(healthAfter),
       },
     ],
-    networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
+    networkFeeLabel: formatActionFeeSummary(options.removeUsd, 0.04),
     risk: riskFromPreview(preview, hfToNumber(preview.after.healthFactorWad)),
     blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
     validationErrors: preview.validationErrors,

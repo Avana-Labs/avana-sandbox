@@ -49,9 +49,9 @@ test("borrow keeps the workspace shell below the hero", async ({ page }) => {
   await expect(page.locator(".borrow-workspace-shell")).toBeVisible()
 })
 
-test("home borrow CTA is present in the initial HTML", async ({ page }) => {
+test("home borrow workspace shell is present in the initial HTML", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" })
 
   const html = await page.content()
-  expect(html).toContain("Continue to borrow")
+  expect(html).toContain('data-testid="home-workspace-loading"')
 })

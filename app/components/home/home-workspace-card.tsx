@@ -22,10 +22,10 @@ export function HomeWorkspaceCard({
   children: ReactNode
 }) {
   return (
-    <section className="flex min-h-[calc(100dvh-5.5rem)] items-center justify-center px-4 py-8 md:py-12">
+    <section className="flex min-h-[calc(100dvh-5.5rem)] items-center justify-center px-4 py-6 md:py-10">
       <div className="w-full max-w-[480px]" data-testid="home-workspace-card">
         <div className="overflow-hidden rounded-[24px] border border-border bg-card shadow-elev-1">
-          <div className="flex items-center justify-between gap-3 px-3 pb-1 pt-3 sm:px-4 sm:pt-4">
+          <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
             <div className="flex min-w-0 flex-wrap items-center gap-0.5" role="tablist" aria-label="Borrow actions">
               {HOME_MODE_ITEMS.map((item) => {
                 const active = item.value === mode
@@ -57,7 +57,9 @@ export function HomeWorkspaceCard({
             </button>
           </div>
 
-          <div className="px-2 pb-2 pt-1 sm:px-3 sm:pb-3">{children}</div>
+          <div className="px-2 pb-3 pt-0 sm:px-3">
+            <div className="flex flex-col gap-3">{children}</div>
+          </div>
         </div>
       </div>
     </section>

@@ -78,7 +78,7 @@ export function ActionPageShell({
       <div
         className={cn(
           "mx-auto flex w-full flex-1 flex-col",
-          density === "home" ? "max-w-none gap-1 px-0 pb-0" : "max-w-[560px] gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
+          density === "home" ? "max-w-none gap-3 px-0 pb-0" : "max-w-[560px] gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
           mode === "embedded" && density === "sidebar" && "gap-4 py-5",
         )}
       >
@@ -93,7 +93,7 @@ export function ActionPageShell({
           className={cn(
             "flex min-h-0 flex-1 flex-col",
             mode === "embedded" && density === "sidebar" ? "gap-4" : "gap-3",
-            mode === "embedded" && density === "home" && "gap-1",
+            mode === "embedded" && density === "home" && "gap-3",
           )}
         >
           {children}

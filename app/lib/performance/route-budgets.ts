@@ -84,7 +84,7 @@ export type RouteHeroSelector = {
 }
 
 export const ROUTE_HERO_SELECTORS: RouteHeroSelector[] = [
-  { route: "/", heroText: "Continue to borrow" },
+  { route: "/", heroText: "Borrow", heroRole: "tab" },
   { route: "/borrow", heroText: "Total TVL" },
   { route: "/borrow/markets/uni-v3-bluechip-weth-usdc", heroText: "Market data" },
   { route: "/borrow/assets/uni-v3-bluechip%3Ausdc", heroText: "Asset data" },

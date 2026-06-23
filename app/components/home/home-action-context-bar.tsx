@@ -18,12 +18,12 @@ export function HomeActionContextBar({
 
   if (variant === "inset") {
     return (
-      <SwapStyleField label="Collateral position">
-        <button type="button" onClick={onOpenPool} className="mt-3 flex w-full items-start justify-between gap-3 text-left">
+      <SwapStyleField label="Collateral" tone="raised">
+        <button type="button" onClick={onOpenPool} className="mt-3 flex w-full items-center justify-between gap-3 text-left">
           <div className="min-w-0 flex-1 truncate text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
             {pool.name}
           </div>
-          <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium">
+          <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-2 text-[14px] font-medium">
             <ActionTokenPairIcon collateralSymbol={collateralSymbol ?? "LP"} borrowSymbol={borrowSymbol ?? "LP"} size="md" />
             <span className="text-muted-foreground" aria-hidden>
               ▾
@@ -37,7 +37,7 @@ export function HomeActionContextBar({
   return (
     <div className="mb-3">
       <ActionContextSelectorCard
-        label="Collateral position"
+        label="Collateral"
         value={pool.name}
         collateralSymbol={collateralSymbol ?? "LP"}
         borrowSymbol={borrowSymbol}

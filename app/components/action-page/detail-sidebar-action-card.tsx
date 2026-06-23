@@ -3,13 +3,7 @@ import { cn } from "@/lib/utils"
 
 export function DetailSidebarActionCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-[20px] border border-border bg-card shadow-elev-1",
-        className,
-      )}
-      data-testid="detail-sidebar-action-card"
-    >
+    <div className={cn("flex flex-col gap-3", className)} data-testid="detail-sidebar-action-card">
       {children}
     </div>
   )

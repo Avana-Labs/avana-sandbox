@@ -19,7 +19,10 @@ export function HomePageClient() {
     return (
       <div className="bg-background">
         <section className="flex min-h-[calc(100dvh-5.5rem)] items-center justify-center px-4 py-8">
-          <div className="h-[420px] w-full max-w-[480px] animate-pulse rounded-[24px] border border-border bg-card" />
+          <div
+            className="h-[420px] w-full max-w-[480px] animate-pulse rounded-[24px] border border-border bg-card"
+            data-testid="home-workspace-loading"
+          />
         </section>
       </div>
     )

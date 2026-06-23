@@ -5,6 +5,9 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
+import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
+import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
+import type { HomeBorrowToken } from "@/app/lib/home-sim"
 
 export type ActionAssetOption = {
   id: string
@@ -34,6 +37,8 @@ type ActionAmountCardProps = {
   onAssetSelect?: (id: string) => void
   variant?: "card" | "inset"
   hideAssetSelector?: boolean
+  assetPickerVariant?: "menu" | "dialog"
+  pickerTokens?: HomeBorrowToken[]
 }
 
 export function ActionAmountCard({
@@ -54,10 +59,14 @@ export function ActionAmountCard({
   onAssetSelect,
   variant = "card",
   hideAssetSelector = false,
+  assetPickerVariant = "menu",
+  pickerTokens,
 }: ActionAmountCardProps) {
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
+  const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(!hideAssetSelector && onAssetSelect && assetOptions && assetOptions.length > 1 && !readOnly)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -76,101 +85,153 @@ export function ActionAmountCard({
     }
   }, [menuOpen])
 
-  return (
-    <div
-      className={cn(
-        variant === "inset" ? "rounded-[20px] border border-border/70 bg-surface-inset" : "rounded-radius-md border-0 bg-card",
+  const amountRow = (
+    <div className="mt-3 flex items-center justify-between gap-3">
+      {readOnly ? (
+        <div className="min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
+          {amount || "0"}
+        </div>
+      ) : (
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">{label} amount</span>
+          <input
+            inputMode="decimal"
+            value={amount}
+            onChange={(event) => onAmountChange(event.target.value)}
+            className="w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none placeholder:text-muted-foreground/60"
+            placeholder="0"
+          />
+        </label>
       )}
-      data-testid="action-amount-card"
-    >
-      <div className="px-4 pb-4 pt-4">
-        <div className="text-[13px] text-muted-foreground">{label}</div>
-        <div className="mt-3 flex items-start justify-between gap-3">
-          {readOnly ? (
-            <div className="min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
-              {amount || "0"}
-            </div>
-          ) : (
-            <label className="min-w-0 flex-1">
-              <span className="sr-only">{label} amount</span>
-              <input
-                inputMode="decimal"
-                value={amount}
-                onChange={(event) => onAmountChange(event.target.value)}
-                className="w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none"
-                placeholder="0"
-              />
-            </label>
-          )}
-          <div className="relative shrink-0" ref={menuRef}>
-            {hideAssetSelector ? (
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium text-muted-foreground">
-                {borrowSymbol ? (
-                  <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
-                ) : (
-                  <ActionTokenIcon symbol={symbol} />
-                )}
-                <span>{assetLabel}</span>
-              </div>
+      {!hideAssetSelector ? (
+        <div className="relative shrink-0" ref={menuRef}>
+          <button
+            type="button"
+            onClick={
+              switchable
+                ? () => {
+                    if (useDialogPicker) setDialogOpen(true)
+                    else setMenuOpen((open) => !open)
+                  }
+                : undefined
+            }
+            aria-haspopup={switchable && !useDialogPicker ? "listbox" : undefined}
+            aria-expanded={switchable && !useDialogPicker ? menuOpen : undefined}
+            aria-label={switchable ? `Change asset, current ${assetLabel}` : undefined}
+            disabled={readOnly && !switchable}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium",
+              switchable ? "cursor-pointer hover:bg-muted" : "cursor-default",
+            )}
+          >
+            {borrowSymbol ? (
+              <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
             ) : (
-              <>
+              <ActionTokenIcon symbol={symbol} />
+            )}
+            <span>{assetLabel}</span>
+            {switchable ? <span className="text-muted-foreground" aria-hidden>▾</span> : null}
+          </button>
+          {switchable && !useDialogPicker && menuOpen ? (
+            <div
+              role="listbox"
+              aria-label="Select asset"
+              className="absolute right-0 z-50 mt-2 max-h-64 w-72 overflow-auto rounded-2xl border border-border bg-surface-raised p-1 shadow-lg"
+            >
+              {assetOptions!.map((option) => (
                 <button
+                  key={option.id}
                   type="button"
-                  onClick={switchable ? () => setMenuOpen((open) => !open) : undefined}
-                  aria-haspopup={switchable ? "listbox" : undefined}
-                  aria-expanded={switchable ? menuOpen : undefined}
-                  aria-label={switchable ? `Change asset, current ${assetLabel}` : undefined}
-                  disabled={readOnly && !switchable}
+                  role="option"
+                  aria-selected={option.id === selectedAssetId}
+                  onClick={() => {
+                    onAssetSelect!(option.id)
+                    setMenuOpen(false)
+                  }}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium",
-                    switchable ? "cursor-pointer hover:bg-muted" : "cursor-default",
+                    "flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-[14px] hover:bg-muted",
+                    option.id === selectedAssetId && "bg-muted",
                   )}
                 >
-                  {borrowSymbol ? (
-                    <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
+                  {option.borrowSymbol ? (
+                    <ActionTokenPairIcon collateralSymbol={option.symbol} borrowSymbol={option.borrowSymbol} size="md" />
                   ) : (
-                    <ActionTokenIcon symbol={symbol} />
+                    <ActionTokenIcon symbol={option.symbol} />
                   )}
-                  <span>{assetLabel}</span>
-                  {switchable ? <span className="text-muted-foreground" aria-hidden>▾</span> : null}
+                  <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                  {option.sublabel ? <span className="shrink-0 text-[12px] text-muted-foreground">{option.sublabel}</span> : null}
                 </button>
-                {switchable && menuOpen ? (
-                  <div
-                    role="listbox"
-                    aria-label="Select asset"
-                    className="absolute right-0 z-50 mt-2 max-h-64 w-72 overflow-auto rounded-2xl border border-border bg-surface-raised p-1 shadow-lg"
-                  >
-                    {assetOptions!.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        role="option"
-                        aria-selected={option.id === selectedAssetId}
-                        onClick={() => {
-                          onAssetSelect!(option.id)
-                          setMenuOpen(false)
-                        }}
-                        className={cn(
-                          "flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-[14px] hover:bg-muted",
-                          option.id === selectedAssetId && "bg-muted",
-                        )}
-                      >
-                        {option.borrowSymbol ? (
-                          <ActionTokenPairIcon collateralSymbol={option.symbol} borrowSymbol={option.borrowSymbol} size="md" />
-                        ) : (
-                          <ActionTokenIcon symbol={option.symbol} />
-                        )}
-                        <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                        {option.sublabel ? <span className="shrink-0 text-[12px] text-muted-foreground">{option.sublabel}</span> : null}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : null}
         </div>
-        <div className="mt-3 text-[13px] text-muted-foreground">{approxUsdLabel}</div>
+      ) : null}
+    </div>
+  )
+
+  const usdRow = <div className="mt-2 text-[13px] text-muted-foreground">{approxUsdLabel}</div>
+
+  const assetPickerDialog =
+    useDialogPicker && switchable && pickerTokens ? (
+      <TokenPickerDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        selectedTokenId={selectedAssetId ?? null}
+        tokens={pickerTokens}
+        onSelect={(tokenId) => {
+          onAssetSelect!(tokenId)
+          setDialogOpen(false)
+        }}
+      />
+    ) : null
+
+  if (variant === "inset") {
+    return (
+      <>
+        <SwapStyleField label={label} tone="inset" className={cn(showReceiveWethToggle || footer ? "rounded-b-none" : undefined)} data-testid="action-amount-card">
+          {amountRow}
+          {usdRow}
+        {showReceiveWethToggle ? (
+          <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <span>Receive WETH</span>
+              <ActionMetricHelp
+                topic="Receive WETH"
+                text="Receive borrowed ETH as WETH instead of native ETH when repaying or withdrawing."
+              />
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Receive WETH"
+              aria-checked={receiveWeth}
+              onClick={() => onReceiveWethChange?.(!receiveWeth)}
+              className={cn(
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                receiveWeth ? "bg-foreground" : "bg-muted",
+              )}
+            >
+              <span className={cn("inline-block size-5 rounded-full bg-background transition-transform", receiveWeth ? "translate-x-5" : "translate-x-0.5")} />
+            </button>
+          </div>
+        ) : null}
+        {footer ? <div className="mt-3 border-t border-border/60 pt-3">{footer}</div> : null}
+        </SwapStyleField>
+        {assetPickerDialog}
+      </>
+    )
+  }
+
+  return (
+    <>
+      <div
+        className="rounded-radius-md border border-border bg-card"
+        data-testid="action-amount-card"
+      >
+      <div className="px-4 pb-4 pt-4">
+        <div className="text-[13px] text-muted-foreground">{label}</div>
+        {amountRow}
+        {usdRow}
       </div>
 
       {showReceiveWethToggle ? (
@@ -199,7 +260,9 @@ export function ActionAmountCard({
       ) : null}
 
       {footer ? <div className="border-t border-border">{footer}</div> : null}
-    </div>
+      </div>
+      {assetPickerDialog}
+    </>
   )
 }
 

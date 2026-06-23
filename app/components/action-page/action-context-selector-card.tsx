@@ -22,7 +22,7 @@ export function ActionContextSelectorCard({
       className="w-full text-left"
       data-testid="action-context-selector-card"
     >
-      <div className="rounded-radius-md border-0 bg-card">
+      <div className="rounded-radius-md border border-border bg-card">
         <div className="px-4 pb-4 pt-4">
           <div className="text-[13px] text-muted-foreground">{label}</div>
           <div className="mt-3 flex items-start justify-between gap-3">

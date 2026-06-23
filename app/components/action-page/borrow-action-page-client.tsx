@@ -27,7 +27,6 @@ import {
 } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { mapBorrowRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/adapters/rewards-preview-mapper"
 import { ActionBorrowContextBar } from "@/app/components/action-page/action-borrow-context-bar"
-import { ActionBorrowTokenField } from "@/app/components/action-page/action-borrow-token-field"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
@@ -757,30 +756,10 @@ export function BorrowActionPageClient({
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
-
-  const borrowToken = useMemo(
-    () => borrowTokens.find((token) => token.id === assetId) ?? borrowTokens[0] ?? null,
-    [assetId, borrowTokens],
-  )
-  const repayToken = useMemo(() => {
-    if (!debtPosition) return repayTokens[0] ?? null
-    return repayTokens.find((token) => token.id === debtPosition.assetId) ?? repayTokens[0] ?? null
-  }, [debtPosition, repayTokens])
-
-  const handleContextTokenChange = useCallback(
-    (tokenId: string) => {
-      setAmount("")
-      if (kind === "borrow") {
-        setAssetId(resolveBorrowAssetId(session.state, tokenId, marketId))
-        return
-      }
-      if (kind === "repay") {
-        const position = debtPositions.find((entry) => entry.assetId === tokenId && entry.marketId === marketId)
-        if (position) setDebtPositionId(position.id)
-      }
-    },
-    [debtPositions, kind, marketId, session.state],
-  )
+  const useDialogAssetPicker = embedded && (kind === "borrow" || kind === "repay")
+  const pickerTokens = kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined
+  const pickerSelectedTokenId =
+    kind === "repay" ? (debtPosition?.assetId ?? assetId) : kind === "claim" ? claimPositionId : kind === "supply" ? marketId : assetId
 
   return (
     <ActionPageShell
@@ -800,24 +779,7 @@ export function BorrowActionPageClient({
           pools={session.collateralPools}
           debts={debts}
           onPoolChange={handlePoolChange}
-          variant={isHomeLayout ? "inset" : "card"}
-          tokenField={
-            isHomeLayout && kind === "borrow" ? (
-              <ActionBorrowTokenField
-                label="Borrow asset"
-                token={borrowToken}
-                tokens={borrowTokens}
-                onTokenChange={handleContextTokenChange}
-              />
-            ) : isHomeLayout && kind === "repay" ? (
-              <ActionBorrowTokenField
-                label="Repay asset"
-                token={repayToken}
-                tokens={repayTokens}
-                onTokenChange={handleContextTokenChange}
-              />
-            ) : undefined
-          }
+          variant="card"
         />
       ) : null}
 
@@ -938,14 +900,14 @@ export function BorrowActionPageClient({
                     ? supplyAssetOptions
                     : undefined
           }
-          selectedAssetId={
-            kind === "repay" ? debtPositionId : kind === "claim" ? claimPositionId : kind === "supply" ? marketId : assetId
-          }
+          selectedAssetId={pickerSelectedTokenId}
           onAssetSelect={(id) => {
             if (kind === "repay") {
-              const position = debtPositions.find((entry) => entry.id === id)
+              const position =
+                debtPositions.find((entry) => entry.id === id) ??
+                debtPositions.find((entry) => entry.assetId === id && entry.marketId === marketId)
               if (!position) return
-              setDebtPositionId(id)
+              setDebtPositionId(position.id)
               if (position.marketId) setMarketId(position.marketId)
               setAmount("")
               return
@@ -974,8 +936,10 @@ export function BorrowActionPageClient({
           isPending={isPending}
           outcome={outcome}
           hideAmountInput={kind === "claim"}
-          amountVariant={isHomeLayout ? "inset" : "card"}
-          hideAssetSelector={isHomeLayout && (kind === "borrow" || kind === "repay")}
+          amountVariant="card"
+          homeLayout={isHomeLayout}
+          assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
+          pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
         />
       ) : null}
 
