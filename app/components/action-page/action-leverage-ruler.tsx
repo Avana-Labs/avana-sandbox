@@ -122,19 +122,6 @@ export function ActionLeverageRuler({
         </div>
       </div>
 
-      <label className="sr-only" htmlFor="leverage-range">
-        Leverage multiplier
-      </label>
-      <input
-        id="leverage-range"
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={activeValue}
-        onChange={(event) => setValue(Number.parseFloat(event.target.value))}
-        className="mt-4 w-full accent-[hsl(var(--brand))]"
-      />
       </div>
     </ActionCard>
   )

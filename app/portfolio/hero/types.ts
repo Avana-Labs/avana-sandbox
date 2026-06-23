@@ -8,6 +8,7 @@ export type PortfolioHeroAction = {
   id: PortfolioHeroActionId
   label: string
   icon: PortfolioHeroIcon
+  href?: string
   onClick?: () => void
   className?: string
 }

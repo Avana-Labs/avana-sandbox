@@ -20,6 +20,7 @@ export function PortfolioHeroActions({ actions }: PortfolioHeroActionsProps) {
             key={action.id}
             label={action.label}
             icon={action.icon}
+            href={action.href}
             onClick={action.onClick}
             className={action.className}
           />

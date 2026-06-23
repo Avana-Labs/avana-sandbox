@@ -34,7 +34,7 @@ type BrandIconProps = {
 
 export function BrandIcon({ className }: BrandIconProps) {
   return (
-    <span className="inline-flex items-center overflow-hidden">
+    <span className="inline-flex items-center overflow-hidden" suppressHydrationWarning>
       <Image
         src="/avana-icon.svg"
         alt="Avana logo"

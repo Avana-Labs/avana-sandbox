@@ -159,6 +159,7 @@ function buildActions({
       id: `${index}-${label.toLowerCase().replace(/\s+/g, "-")}`,
       label,
       icon: resolveIcon(label),
+      href: href ?? undefined,
       onClick: href && onNavigate ? () => onNavigate(href) : undefined,
       className: resolveClasses(label),
     }

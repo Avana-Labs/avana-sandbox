@@ -233,7 +233,6 @@ export function Header() {
   const pathname = usePathname()
   const desktopLinks = personalDesktopHeaderLinks
   const [showDivider, setShowDivider] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
@@ -250,10 +249,6 @@ export function Header() {
       </button>
     </>
   )
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     const resolveThreshold = () => headerRef.current?.offsetHeight ?? 68
