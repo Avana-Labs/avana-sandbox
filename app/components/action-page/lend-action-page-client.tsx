@@ -40,11 +40,13 @@ function isHardBlock(reason: string | null) {
 export function LendActionPageClient({
   kind,
   closeHref = "/lend",
+  embedded = false,
   initialMarketId,
   initialAmount = "",
 }: {
   kind: "deposit" | "withdraw"
   closeHref?: string
+  embedded?: boolean
   initialMarketId?: string
   initialAmount?: string
 }) {
@@ -62,6 +64,7 @@ export function LendActionPageClient({
   )
   const [marketId, setMarketId] = useState(() => initialMarketId ?? (kind === "deposit" ? "gho" : ""))
   const [stage, setStage] = useState<ActionStage>(() => {
+    if (embedded) return "configure"
     if (kind === "withdraw" && !initialMarketId) return "select"
     if (kind === "deposit" && !initialMarketId) return "select"
     return "configure"
@@ -93,19 +96,20 @@ export function LendActionPageClient({
   }, [kind, session.state, walletId])
 
   useEffect(() => {
-    if (kind !== "withdraw" || initialMarketId || marketId) return
+    if (embedded || kind !== "withdraw" || initialMarketId || marketId) return
     if (withdrawItems.length === 1) {
       router.replace(actionPagePath("lend", "withdraw", { market: withdrawItems[0]!.id }))
       return
     }
     if (withdrawItems.length > 1) setStage("select")
-  }, [initialMarketId, kind, marketId, router, withdrawItems])
+  }, [embedded, initialMarketId, kind, marketId, router, withdrawItems])
 
   useEffect(() => {
+    if (embedded) return
     if (!initialMarketId) return
     setMarketId(initialMarketId)
     setStage("configure")
-  }, [initialMarketId])
+  }, [embedded, initialMarketId])
 
   useEffect(() => {
     if (kind !== "deposit" || !market || stage !== "configure") return
@@ -220,11 +224,12 @@ export function LendActionPageClient({
   }, [amount, marketId])
 
   const canGoBackToSelect = useMemo(() => {
+    if (embedded) return false
     if (initialMarketId) return false
     if (kind === "withdraw") return withdrawItems.length > 1
     if (kind === "deposit") return depositItems.length > 1
     return false
-  }, [depositItems.length, initialMarketId, kind, withdrawItems.length])
+  }, [depositItems.length, embedded, initialMarketId, kind, withdrawItems.length])
   const fallbackBalanceAmount = market
     ? kind === "deposit"
       ? getWalletBalanceForLendMarket(session.state, walletId, market)
@@ -340,7 +345,7 @@ export function LendActionPageClient({
     )
   }
 
-  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
       ? "Choose the market to withdraw from."
@@ -351,8 +356,16 @@ export function LendActionPageClient({
           : descriptor.subtitle
 
   return (
-    <ActionPageShell title={descriptor.title} subtitle={shellSubtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
-      {stage === "select" ? (
+    <ActionPageShell
+      mode={embedded ? "embedded" : "page"}
+      title={descriptor.title}
+      subtitle={shellSubtitle}
+      hideTitle={hideTitle}
+      hideClose={embedded}
+      closeHref={closeHref}
+      simulated={session.readAdapter.mode === "sandbox"}
+    >
+      {stage === "select" && !embedded ? (
         <ActionSelectStage
           items={kind === "withdraw" ? withdrawItems : depositItems}
           sectionLabel={kind === "withdraw" ? "Your positions" : "Supported assets"}

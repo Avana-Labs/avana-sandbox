@@ -59,9 +59,10 @@ describe("borrow architecture final gate", () => {
     expect(homeSource).toContain("BorrowActionPageClient")
     expect(homeSource).toContain('embedded')
     expect(homeSource).not.toContain("EmbeddedActionPage")
-    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8")).toContain("ActionPageLaunchCta")
+    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8")).toContain("ResponsiveBorrowAction")
+    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8")).toContain("ResponsiveLendAction")
     expect(readFileSync(path.join(process.cwd(), "app/portfolio/dashboard-borrow-tab.tsx"), "utf8")).toContain("actionPagePath")
-    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")).toContain("ActionPageLaunchCta")
+    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")).toContain("ResponsiveBorrowAction")
   })
 
   it("keeps claim on adapter-backed preview runtime with canonical BorrowAction support", () => {
