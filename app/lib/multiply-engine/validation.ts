@@ -1,7 +1,10 @@
 import { calculatePriceDropToLiquidationPct } from "./formulas"
+import { MULTIPLY_ACTION_MAX_LEVERAGE } from "@/app/lib/multiply-system/leverage-limits"
 
 export function validateMultiplyAction(params: {
   selectedMultiplier: number
+  achievedMultiplier?: number
+  loopSteps?: number
   theoreticalMaxMultiplier: number
   publicMaxMultiplier: number
   safeMaxMultiplier: number
@@ -24,7 +27,7 @@ export function validateMultiplyAction(params: {
   const warnings: string[] = []
 
   if (params.selectedMultiplier < 1) errors.push("Multiplier must be at least 1x.")
-  if (params.selectedMultiplier > 20) errors.push("Multiplier cannot exceed 20x.")
+  if (params.selectedMultiplier > MULTIPLY_ACTION_MAX_LEVERAGE) errors.push(`Multiplier cannot exceed ${MULTIPLY_ACTION_MAX_LEVERAGE}x.`)
   if (params.selectedMultiplier > params.theoreticalMaxMultiplier) {
     warnings.push("Multiplier exceeds the theoretical maximum for this market.")
   }
@@ -32,6 +35,15 @@ export function validateMultiplyAction(params: {
     warnings.push("Multiplier exceeds the public maximum for this market.")
   }
   if (params.initialCollateralValueUsd <= 0) errors.push("Collateral amount must be positive.")
+  if (
+    params.achievedMultiplier != null &&
+    params.selectedMultiplier > 1.05 &&
+    params.achievedMultiplier < params.selectedMultiplier - 0.15
+  ) {
+    warnings.push(
+      `Loop simulation reached ${params.achievedMultiplier.toFixed(1)}x instead of the requested ${params.selectedMultiplier.toFixed(1)}x.`,
+    )
+  }
   if (params.debtValueUsd <= 0 && params.selectedMultiplier > 1) {
     errors.push("Debt must be positive for leveraged positions.")
   }

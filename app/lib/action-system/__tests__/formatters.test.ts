@@ -3,6 +3,7 @@ import {
   formatActionApproxUsd,
   formatActionBeforeAfter,
   formatActionHealthFactor,
+  formatActionFeeSummary,
   formatActionNetworkFee,
   formatActionUsd,
   formatActionUsdBeforeAfter,
@@ -29,6 +30,12 @@ describe("action formatters", () => {
 
   it("formats network fee for Avana action pages", () => {
     expect(formatActionNetworkFee(0.04)).toBe("~ $0.04")
+  })
+
+  it("combines Avana bps and network fee for action summaries", () => {
+    expect(formatActionFeeSummary(1000, 0.04)).toBe("~ $1.00 · ~ $0.04 network")
+    expect(formatActionFeeSummary(100, 0.04)).toBe("~ $0.10 · ~ $0.04 network")
+    expect(formatActionFeeSummary(0, 0.04)).toBe("10 bps · ~ $0.04 network")
   })
 
   it("formats approx usd under amount input", () => {

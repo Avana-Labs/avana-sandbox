@@ -5,6 +5,8 @@ import {
   type MultiplyAction,
   type MultiplySystemState,
 } from "@/app/lib/multiply-engine"
+import { calculateNetApy } from "@/app/lib/multiply-engine/formulas"
+import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine/types"
 import type {
   MultiplySandboxActionResult,
   MultiplyTransactionAdapter,
@@ -22,6 +24,25 @@ type SandboxAdapterOptions = {
 
 function defaultId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function netApyForPositionState(
+  market: MultiplyMarketRecord,
+  collateralValueUsd: number,
+  debtValueUsd: number,
+  fallbackSupplyApy = true,
+): number {
+  if (collateralValueUsd <= 0 && debtValueUsd <= 0) {
+    return fallbackSupplyApy ? market.economics.supplyApy : 0
+  }
+  const equityUsd = Math.max(1, collateralValueUsd - debtValueUsd)
+  return calculateNetApy({
+    supplyApy: market.economics.supplyApy,
+    borrowApy: market.economics.borrowApy,
+    finalCollateralValueUsd: collateralValueUsd,
+    debtValueUsd,
+    initialCollateralValueUsd: equityUsd,
+  })
 }
 
 function multiplyRiskLabel(simulation: ReturnType<typeof simulateMultiply>): "danger" | "safe" | "warning" {
@@ -66,7 +87,11 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
         multiplier: simulation.before.multiplier,
         ltv: simulation.before.ltv,
         healthFactor: simulation.before.healthFactor,
-        netApy: simulation.economics.netApy,
+        netApy: netApyForPositionState(
+          market,
+          simulation.before.collateralValueUsd,
+          simulation.before.debtValueUsd,
+        ),
       },
       after: {
         collateralValueUsd: simulation.after.collateralValueUsd,
@@ -107,7 +132,12 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
       multiplier: simulation.before.multiplier,
       ltv: simulation.before.ltv,
       healthFactor: simulation.before.healthFactor,
-      netApy: position.netApy,
+      netApy: netApyForPositionState(
+        market,
+        simulation.before.collateralValueUsd,
+        simulation.before.debtValueUsd,
+        false,
+      ),
     },
     after: {
       collateralValueUsd: simulation.after.collateralValueUsd,
@@ -153,15 +183,10 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
   }
 
   async previewTransaction(intent: MultiplyTransactionIntent): Promise<MultiplyTransactionPreview> {
-    const cached = this.previewCache.get(intent.id)
-    if (cached) return cached
-
     const action = intent.payload
     if (!action) throw new Error("Multiply transaction intent is missing its action payload")
 
-    const preview = toPreview(this.readStateImpl(), action, intent)
-    this.previewCache.set(intent.id, preview)
-    return preview
+    return toPreview(this.readStateImpl(), action, intent)
   }
 
   async executeTransaction(intent: MultiplyTransactionIntent): Promise<MultiplySandboxActionResult> {

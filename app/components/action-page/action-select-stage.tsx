@@ -2,23 +2,30 @@
 
 import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
-import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
+import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 
 export type ActionSelectItem = {
   id: string
   name: string
   symbol: string
+  sublabel?: string
   trailingLabel: string
+  trailingSublabel?: string
+  pairSymbols?: [string, string]
 }
 
 export function ActionSelectStage({
   items,
   onSelect,
+  sectionLabel = "Available assets",
+  searchPlaceholder = "Find an asset",
   emptyTitle = "No assets found",
   emptyDescription = "Try adjusting your search",
 }: {
   items: ActionSelectItem[]
   onSelect: (id: string) => void
+  sectionLabel?: string
+  searchPlaceholder?: string
   emptyTitle?: string
   emptyDescription?: string
 }) {
@@ -26,24 +33,29 @@ export function ActionSelectStage({
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
     if (!needle) return items
-    return items.filter((item) => item.name.toLowerCase().includes(needle) || item.symbol.toLowerCase().includes(needle))
+    return items.filter(
+      (item) =>
+        item.name.toLowerCase().includes(needle) ||
+        item.symbol.toLowerCase().includes(needle) ||
+        item.sublabel?.toLowerCase().includes(needle),
+    )
   }, [items, query])
 
   return (
     <div data-testid="action-select-stage">
       <label className="block">
-        <span className="sr-only">Find an asset</span>
+        <span className="sr-only">{searchPlaceholder}</span>
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Find an asset"
-          className="h-11 w-full rounded-[14px] border border-border bg-surface-raised px-4 text-[14px] outline-none placeholder:text-muted-foreground"
+          placeholder={searchPlaceholder}
+          className="h-11 w-full rounded-radius-sm border border-border bg-surface-inset px-4 text-[14px] outline-none placeholder:text-muted-foreground"
         />
       </label>
 
-      <div className="mt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Available assets</div>
+      <div className="mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{sectionLabel}</div>
 
-      <div className="mt-2 divide-y divide-border rounded-[16px] border border-border bg-surface-raised">
+      <div className="mt-2 divide-y divide-border/80 overflow-hidden rounded-radius-md border border-border/80 bg-card">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <div className="text-[14px] font-medium">{emptyTitle}</div>
@@ -55,16 +67,28 @@ export function ActionSelectStage({
               key={item.id}
               type="button"
               onClick={() => onSelect(item.id)}
-              className={cn("flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left transition-colors hover:bg-muted/40")}
+              className={cn(
+                "flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left transition-colors",
+                "hover:bg-surface-hover",
+              )}
             >
               <div className="flex min-w-0 items-center gap-3">
-                <ActionTokenIcon symbol={item.symbol} />
+                {item.pairSymbols ? (
+                  <ActionTokenPairIcon collateralSymbol={item.pairSymbols[0]} borrowSymbol={item.pairSymbols[1]} size="md" />
+                ) : (
+                  <ActionTokenIcon symbol={item.symbol} />
+                )}
                 <div className="min-w-0">
                   <div className="truncate text-[14px] font-medium">{item.name}</div>
-                  <div className="truncate text-[12px] text-muted-foreground">{item.symbol}</div>
+                  <div className="truncate text-[13px] text-muted-foreground">{item.sublabel ?? item.symbol}</div>
                 </div>
               </div>
-              <div className="shrink-0 text-[12px] text-muted-foreground">{item.trailingLabel}</div>
+              <div className="shrink-0 text-right">
+                <div className="text-[14px] font-medium text-foreground">{item.trailingLabel}</div>
+                {item.trailingSublabel ? (
+                  <div className="mt-0.5 text-[13px] text-muted-foreground">{item.trailingSublabel}</div>
+                ) : null}
+              </div>
             </button>
           ))
         )}

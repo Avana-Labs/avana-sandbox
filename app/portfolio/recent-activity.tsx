@@ -137,7 +137,7 @@ function SearchPill({
   onChange: (nextValue: string) => void
 }) {
   return (
-    <label className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-full border border-border bg-white px-4 text-[13px] shadow-elev-1 dark:border-border/60 dark:bg-[#131820]">
+    <label className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-full border border-border bg-card px-4 text-[13px] shadow-none">
       <Search className="h-4 w-4 shrink-0 text-[#01AACF]" />
       <input
         type="search"
@@ -259,7 +259,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[18px] bg-white dark:bg-slate-950 md:overflow-visible">
+      <div className="overflow-x-auto rounded-radius-md bg-transparent md:overflow-visible">
         <div className="min-w-[920px] md:min-w-0">
           <table className="w-full table-fixed border-separate border-spacing-0 text-[14px]">
             <colgroup>
@@ -273,19 +273,19 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Time</th>
-                <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Type</th>
-                <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Product</th>
-                <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">For</th>
-                <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Amount</th>
-                <th className="bg-slate-50 px-5 py-3.5 dark:bg-slate-900/90">Status</th>
-                <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 text-right dark:bg-slate-900/90">Txn</th>
+                <th className="rounded-l-2xl bg-table-header px-5 py-3.5">Time</th>
+                <th className="bg-table-header px-5 py-3.5">Type</th>
+                <th className="bg-table-header px-5 py-3.5">Product</th>
+                <th className="bg-table-header px-5 py-3.5">For</th>
+                <th className="bg-table-header px-5 py-3.5">Amount</th>
+                <th className="bg-table-header px-5 py-3.5">Status</th>
+                <th className="rounded-r-2xl bg-table-header px-5 py-3.5 text-right">Txn</th>
               </tr>
             </thead>
             <tbody>
               {visibleItems.length ? (
                 visibleItems.map((row) => (
-                  <tr key={row.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-900/70">
+                  <tr key={row.id} className="transition-colors hover:bg-muted/80 dark:hover:bg-slate-900/70">
                     <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">{formatRelativeTime(row.at)}</td>
                     <td className="px-5 py-4 align-middle">
                       <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium", KIND_TONE[row.kind])}>{KIND_LABEL[row.kind]}</span>

@@ -20,9 +20,7 @@ import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
   if (!events || events.length === 0) return null
@@ -107,10 +105,10 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
     <div className="flex min-w-0 items-center gap-4">
       <div className="flex items-center">
         <span className="relative z-[1]">
-          <TokenBubble visual={pool.visuals[0]} size="xl" ring={false} className="bg-transparent" />
+          <TokenBubble visual={pool.visuals[0]} size="table" ring={false} className="bg-transparent" />
         </span>
         <span className="-ml-3">
-          <TokenBubble visual={pool.visuals[1]} size="xl" ring={false} className="bg-transparent" />
+          <TokenBubble visual={pool.visuals[1]} size="table" ring={false} className="bg-transparent" />
         </span>
       </div>
       <div className="min-w-0">
@@ -177,7 +175,7 @@ function CollateralDesktopTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[920px] text-[12px]">
           <thead>
-                <tr className="bg-slate-50 text-left text-muted-foreground dark:bg-[#131820] dark:text-white/52">
+                <tr className="bg-table-header text-left text-muted-foreground">
                   <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     #
                   </th>
@@ -256,22 +254,22 @@ function CollateralDesktopTable({
                   onClick={() => onViewMarket(pool)}
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
-                <td className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                <td className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                   {index + 1}
                 </td>
-                <td className={`py-2.5 px-4 ${ROW_HOVER_BG}`}>
+                <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                   <CollateralAssetCell pool={pool} />
                 </td>
-                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
+                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%</span>
                 </td>
-                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
+                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{pool.ltv}%</span>
                 </td>
-                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${ROW_HOVER_BG}`}>
+                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
                 </td>
-                <td className={`py-2.5 px-6 ${ROW_HOVER_RIGHT}`}>
+                <td className={`py-2.5 px-6 ${TABLE_ROW_HOVER_RIGHT}`}>
                   <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                     <span className="tabular-nums">{formatPairAmount(pool.availableUsd, pool)}</span>
                   </div>

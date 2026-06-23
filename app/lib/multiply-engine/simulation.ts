@@ -8,7 +8,8 @@ import {
   calculatePriceImpact,
   calculateSafeMaxMultiplier,
   calculateTheoreticalMaxMultiplier,
-  calculateTotalExposure,
+  simulateCollateralLoop,
+  simulateDeleverageToTarget,
 } from "./formulas"
 import type { DeleverageSimulation, MultiplyMarketRecord, MultiplyPosition, MultiplySimulation } from "./types"
 import { validateDeleverageAction, validateMultiplyAction } from "./validation"
@@ -51,11 +52,16 @@ export function simulateMultiply(params: {
     liquidationThreshold: market.risk.liquidationThreshold,
   })
 
-  const newTotalExposureUsd = calculateTotalExposure(initialCollateralValueUsd, selectedMultiplier)
-  const newBorrowedExposureUsd = newTotalExposureUsd - initialCollateralValueUsd
-  const effectiveAddedExposureUsd = newBorrowedExposureUsd * (1 - priceImpactPct)
-  const newCollateralValueUsd = initialCollateralValueUsd + effectiveAddedExposureUsd
-  const newDebtValueUsd = newBorrowedExposureUsd
+  const swapEfficiency = Math.max(0, 1 - priceImpactPct)
+  const loop = simulateCollateralLoop({
+    initialCollateralUsd: initialCollateralValueUsd,
+    targetMultiplier: selectedMultiplier,
+    maxLtv: market.risk.maxLtv,
+    swapEfficiency,
+  })
+
+  const newCollateralValueUsd = loop.collateralUsd
+  const newDebtValueUsd = loop.debtUsd
   const existingCollateralValueUsd = existingPosition?.collateralValueUsd ?? 0
   const existingDebtValueUsd = existingPosition?.debtValueUsd ?? 0
   const finalCollateralValueUsd = existingCollateralValueUsd + newCollateralValueUsd
@@ -63,7 +69,7 @@ export function simulateMultiply(params: {
   const finalCollateralAmount =
     (existingPosition?.collateralAmount ?? 0) + newCollateralValueUsd / collateralPriceUsd
   const equityValueUsd = finalCollateralValueUsd - debtValueUsd
-  const effectiveMultiplier = equityValueUsd > 0 ? finalCollateralValueUsd / equityValueUsd : selectedMultiplier
+  const effectiveMultiplier = equityValueUsd > 0 ? finalCollateralValueUsd / equityValueUsd : loop.achievedMultiplier
   const ltv = calculateMultiplyLtv(debtValueUsd, finalCollateralValueUsd)
   const healthFactor = calculateMultiplyHealthFactor(
     finalCollateralValueUsd,
@@ -101,6 +107,8 @@ export function simulateMultiply(params: {
 
   const validation = validateMultiplyAction({
     selectedMultiplier,
+    achievedMultiplier: loop.achievedMultiplier,
+    loopSteps: loop.loops,
     theoreticalMaxMultiplier,
     publicMaxMultiplier: market.risk.publicMaxMultiplier,
     safeMaxMultiplier,
@@ -173,29 +181,19 @@ export function simulateDeleverage(params: {
     collateralValueUsd: currentCollateralValueUsd,
   })
 
-  const equityValueUsd = currentCollateralValueUsd - currentDebtValueUsd
-  const denominator = 1 - targetMultiplier * priceImpactPct
+  const swapEfficiency = Math.max(0, 1 - priceImpactPct)
+  const unwind = simulateDeleverageToTarget({
+    collateralUsd: currentCollateralValueUsd,
+    debtUsd: currentDebtValueUsd,
+    targetMultiplier,
+    swapEfficiency,
+    repayAmountUsd,
+  })
 
-  let collateralToUnwindUsd: number
-  let effectiveRepayUsd: number
-
-  if (repayAmountUsd != null && repayAmountUsd > 0) {
-    effectiveRepayUsd = Math.min(repayAmountUsd, currentDebtValueUsd)
-    const repayRatio = currentDebtValueUsd > 0 ? effectiveRepayUsd / currentDebtValueUsd : 0
-    collateralToUnwindUsd = Math.min(currentCollateralValueUsd, currentCollateralValueUsd * repayRatio)
-  } else {
-    collateralToUnwindUsd =
-      denominator <= 0
-        ? currentCollateralValueUsd
-        : Math.min(
-            currentCollateralValueUsd,
-            Math.max(0, (currentCollateralValueUsd - targetMultiplier * equityValueUsd) / denominator),
-          )
-    effectiveRepayUsd = collateralToUnwindUsd * (1 - priceImpactPct)
-  }
-
-  const newDebtValueUsd = Math.max(0, currentDebtValueUsd - effectiveRepayUsd)
-  const newCollateralValueUsd = currentCollateralValueUsd - collateralToUnwindUsd
+  const collateralToUnwindUsd = unwind.collateralUnwoundUsd
+  const effectiveRepayUsd = unwind.debtRepaidUsd
+  const newDebtValueUsd = unwind.debtUsd
+  const newCollateralValueUsd = unwind.collateralUsd
   const targetDebtValueUsd = Math.max(0, newDebtValueUsd)
   const debtToRepayUsd = currentDebtValueUsd - newDebtValueUsd
   const newCollateralAmount = newCollateralValueUsd / collateralPriceUsd

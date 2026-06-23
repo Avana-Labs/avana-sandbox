@@ -119,8 +119,13 @@ vi.mock("@/app/dashboard/dashboard-tabs", () => ({
   ),
 }))
 
-vi.mock("@/app/portfolio/credit-lines-card", () => ({
-  CreditLinesCard: ({ creditLines }: { creditLines: { approvedUsd: number } }) => <div>approved:{creditLines.approvedUsd}</div>,
+vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
+  DashboardOverviewSection: ({ title }: { title: string }) => <div>{title}</div>,
+  DashboardPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
+  DashboardLendPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
+}))
+vi.mock("@/app/portfolio/portfolio-lending-opportunities", () => ({
+  PortfolioLendingOpportunities: () => <div>Lending Opportunities</div>,
 }))
 
 vi.mock("@/app/portfolio/dashboard-borrow-tab", () => ({
@@ -213,7 +218,8 @@ describe("DashboardClient", () => {
     await waitFor(() => expect(screen.getByText("Borrow tab")).toBeInTheDocument())
 
     fireEvent.click(screen.getByText("Borrow tab"))
-    await waitFor(() => expect(screen.getByText("approved:999")).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText("Credit Overview")).toBeInTheDocument())
+    expect(screen.getByText("Credit Performance")).toBeInTheDocument()
     expect(screen.getByText("collateral:pool-a")).toBeInTheDocument()
     expect(screen.getByText("debt:debt-a")).toBeInTheDocument()
   })

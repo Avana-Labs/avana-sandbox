@@ -58,7 +58,7 @@ export function RelatedMarketsRow({ detail }: Props) {
 
               <div className="relative z-10 flex h-full flex-col">
                 <div className="flex items-start gap-3">
-                  <TokenPairCell visuals={rel.visuals} name={rel.name} size="sm" />
+                  <TokenPairCell visuals={rel.visuals} name={rel.name} size="md" />
                 </div>
                 <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
                   <div>

@@ -9,6 +9,7 @@ import {
   type BorrowAction,
   type BorrowSystemState,
 } from "@/app/lib/credit-engine"
+import { resolveBorrowAssetId } from "@/app/lib/action-system/resolve-borrow-context"
 import type { SandboxActionResult, TransactionActionType, TransactionAdapter, TransactionHistoryItem, TransactionIntent, TransactionPreview } from "./contracts"
 
 type SandboxAdapterOptions = {
@@ -58,6 +59,19 @@ function executedAmountFromPreview(action: BorrowAction, preview: TransactionPre
   return toIntentAmount(action)
 }
 
+function normalizeBorrowAction(state: BorrowSystemState, action: BorrowAction): BorrowAction {
+  if (action.type !== "borrow") return action
+
+  const marketId = action.marketId
+  const resolvedAssetId = resolveBorrowAssetId(state, action.assetId, marketId)
+  if (!resolvedAssetId || resolvedAssetId === action.assetId) return action
+
+  return {
+    ...action,
+    assetId: resolvedAssetId,
+  }
+}
+
 function toPreview(state: BorrowSystemState, action: BorrowAction, intent: TransactionIntent): TransactionPreview {
   const simulation =
     action.type === "supplyCollateral"
@@ -101,18 +115,19 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
   }
 
   createIntent(action: BorrowAction): TransactionIntent {
+    const normalized = normalizeBorrowAction(this.readStateImpl(), action)
     return {
       id: this.generateId("intent"),
-      actionType: normalizeActionType(action),
-      walletId: action.walletId,
-      marketId: "marketId" in action ? action.marketId : undefined,
-      assetId: "assetId" in action ? action.assetId : undefined,
-      positionId: "positionId" in action ? action.positionId : undefined,
-      debtPositionId: "debtPositionId" in action ? action.debtPositionId : undefined,
-      amountUsd6: toIntentAmount(action),
+      actionType: normalizeActionType(normalized),
+      walletId: normalized.walletId,
+      marketId: "marketId" in normalized ? normalized.marketId : undefined,
+      assetId: "assetId" in normalized ? normalized.assetId : undefined,
+      positionId: "positionId" in normalized ? normalized.positionId : undefined,
+      debtPositionId: "debtPositionId" in normalized ? normalized.debtPositionId : undefined,
+      amountUsd6: toIntentAmount(normalized),
       requestedAt: this.now(),
       simulated: true,
-      payload: action,
+      payload: normalized,
     }
   }
 

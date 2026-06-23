@@ -2,11 +2,77 @@ import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import { formatFixed } from "@/app/lib/credit-engine"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { buildHomeBorrowPreview, selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
+import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
+import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
 import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 
+function normalizeBorrowAssetKey(value: string) {
+  return value.trim().toLowerCase()
+}
+
+/** Map short route params (`usdc`) to scoped engine asset ids (`uni-v3-bluechip:usdc`). */
+export function resolveBorrowAssetId(state: BorrowSystemState, rawAssetId: string, marketId?: string) {
+  const trimmed = rawAssetId.trim()
+  if (!trimmed) return trimmed
+
+  const normalized = normalizeBorrowAssetKey(trimmed)
+
+  const matchesNormalized = (assetId: string) => {
+    const asset = state.assets[assetId]
+    if (!asset) return false
+    return (
+      normalizeBorrowAssetKey(asset.id) === normalized ||
+      normalizeBorrowAssetKey(asset.baseAssetId) === normalized ||
+      normalizeBorrowAssetKey(asset.symbol) === normalized ||
+      asset.id.toLowerCase().endsWith(`:${normalized}`)
+    )
+  }
+
+  if (marketId) {
+    const market = state.markets[marketId]
+    if (market) {
+      const asset = state.assets[trimmed]
+      if (asset && asset.spokeId === market.spokeId && market.relations.supportedBorrowAssetIds.includes(trimmed)) {
+        return trimmed
+      }
+
+      const scoped = `${market.spokeId}:${normalized}`
+      if (state.assets[scoped] && market.relations.supportedBorrowAssetIds.includes(scoped)) {
+        return scoped
+      }
+
+      const supported = market.relations.supportedBorrowAssetIds.find((assetId) => matchesNormalized(assetId))
+      if (supported) return supported
+    }
+
+    return ""
+  }
+
+  if (state.assets[trimmed]) return trimmed
+
+  const direct = Object.values(state.assets).find((asset) => normalizeBorrowAssetKey(asset.id) === normalized)
+  if (direct) return direct.id
+
+  const fallback = Object.values(state.assets).find((asset) => {
+    return (
+      normalizeBorrowAssetKey(asset.baseAssetId) === normalized ||
+      normalizeBorrowAssetKey(asset.symbol) === normalized ||
+      asset.id.toLowerCase().endsWith(`:${normalized}`)
+    )
+  })
+
+  return fallback?.id ?? (state.assets[trimmed] ? trimmed : "")
+}
+
 type BorrowContextSession = {
   state: BorrowSystemState
+  marketSummaries: Array<{
+    id: string
+    name: string
+    venue: string
+    feeTier: string
+  }>
   collateralPools: Array<{ id: string }>
   getBorrowableAssetsForMarket: (marketId?: string) => Array<{
     id: string
@@ -22,25 +88,52 @@ type BorrowContextSession = {
   }>
 }
 
+function assetAvailableUsd(state: BorrowSystemState, assetId: string) {
+  const asset = state.assets[assetId]
+  if (!asset) return null
+  return Number.parseFloat(formatFixed(asset.snapshot.availableLiquidityUsd6, 6))
+}
+
 export function resolveBorrowMarketForAsset(session: BorrowContextSession, assetId: string, preferredMarketId?: string) {
-  const asset = session.state.assets[assetId]
+  const resolvedAssetId = resolveBorrowAssetId(session.state, assetId, preferredMarketId)
+  const asset = session.state.assets[resolvedAssetId]
   if (!asset) return preferredMarketId ?? session.collateralPools[0]?.id ?? ""
 
   if (preferredMarketId) {
     const preferred = session.state.markets[preferredMarketId]
-    if (preferred?.relations.supportedBorrowAssetIds.includes(assetId)) {
+    if (preferred?.relations.supportedBorrowAssetIds.includes(resolvedAssetId)) {
       return preferredMarketId
     }
   }
 
   const collateralMatch = session.collateralPools.find((pool) => {
     const market = session.state.markets[pool.id]
-    return market?.relations.supportedBorrowAssetIds.includes(assetId)
+    return market?.relations.supportedBorrowAssetIds.includes(resolvedAssetId)
   })
   if (collateralMatch) return collateralMatch.id
 
-  const market = Object.values(session.state.markets).find((entry) => entry.relations.supportedBorrowAssetIds.includes(assetId))
+  const market = Object.values(session.state.markets).find((entry) => entry.relations.supportedBorrowAssetIds.includes(resolvedAssetId))
   return market?.id ?? preferredMarketId ?? session.collateralPools[0]?.id ?? ""
+}
+
+export function supplySelectItemsForWallet(session: BorrowContextSession, walletId: string) {
+  return session.marketSummaries
+    .map((pool) => {
+      const market = session.state.markets[pool.id]
+      const walletLpUsd = getWalletLpBalanceUsd(walletId, pool.id)
+      const visuals = market?.display.visuals ?? []
+      return {
+        id: pool.id,
+        name: pool.name,
+        symbol: visuals[0]?.symbol ?? pool.name.split("/")[0]?.trim() ?? "LP",
+        pairSymbols: visuals.length >= 2 ? ([visuals[0]!.symbol, visuals[1]!.symbol] as [string, string]) : undefined,
+        sublabel: formatBorrowMarketContext({ venue: pool.venue, feeTier: pool.feeTier }),
+        trailingLabel: formatActionUsd(walletLpUsd),
+        walletLpUsd,
+      }
+    })
+    .filter((item) => item.walletLpUsd > 0)
+    .map(({ walletLpUsd: _walletLpUsd, ...item }) => item)
 }
 
 export function borrowSelectItemsForMarket(
@@ -50,10 +143,15 @@ export function borrowSelectItemsForMarket(
 ) {
   const assets = marketId ? session.getBorrowableAssetsForMarket(marketId) : session.borrowableAssets
   return assets.map((asset) => {
-    const availableUsd =
+    const spokePowerUsd =
       marketId != null
         ? buildHomeBorrowPreview(session.state, walletId, marketId, asset.id, 0).remainingBorrowPowerUsd
         : null
+    const liquidityUsd = assetAvailableUsd(session.state, asset.id)
+    const availableUsd =
+      spokePowerUsd != null && liquidityUsd != null
+        ? Math.min(spokePowerUsd, liquidityUsd)
+        : spokePowerUsd
     return {
       id: asset.id,
       name: asset.name,
@@ -68,7 +166,8 @@ export function claimSelectItemsForWallet(session: BorrowContextSession, walletI
   if (!account) return []
 
   const claimableById = selectRewardClaimableTotals(session.state, walletId)
-  const rewardById = Object.fromEntries(account.rewardPositions.map((position) => [position.id, position]))
+  const rewardPositions = account.rewardPositions ?? []
+  const rewardById = Object.fromEntries(rewardPositions.map((position) => [position.id, position]))
 
   return HOME_CLAIM_POSITIONS.map((position) => {
     const reward = rewardById[position.id]

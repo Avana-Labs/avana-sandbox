@@ -7,6 +7,9 @@ import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
+import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
+import { ResponsiveLendAction } from "@/app/components/action-page/responsive-lend-action"
+import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { HomeAssetVisual, HomeCollateralPool } from "@/app/lib/home-sim"
@@ -21,7 +24,7 @@ type SidebarTab = "deposit" | "withdraw" | "borrow" | "repay"
 export function AssetTokenSidebar({ detail, className }: Props) {
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
-      <TokenRail detail={detail} className="mt-6" />
+      <TokenRail detail={detail} className="mt-6" embedActions />
       <AboutNewsSection
         className="pt-4"
         about={detail.about}
@@ -39,7 +42,7 @@ export function AssetTokenActions({ detail, className }: Props) {
   return <TokenRail detail={detail} className={className} />
 }
 
-function TokenRail({ detail, className }: { detail: AssetDetail; className?: string }) {
+function TokenRail({ detail, className, embedActions = false }: { detail: AssetDetail; className?: string; embedActions?: boolean }) {
   const router = useRouter()
   const [tab, setTab] = React.useState<SidebarTab>("deposit")
   const [depositPromptOpen, setDepositPromptOpen] = React.useState(false)
@@ -65,54 +68,55 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
 
   return (
     <>
-      <div className={cn("flex w-full flex-col gap-6", className)}>
-        <div className="space-y-4">
-          <div role="tablist" aria-label="Asset actions" className="flex items-center gap-5 border-b border-border">
-            {[
-              { id: "deposit", label: "Deposit" },
-              { id: "withdraw", label: "Withdraw" },
-              { id: "borrow", label: "Borrow" },
-              { id: "repay", label: "Repay" },
-            ].map((actionTab) => {
-              const active = actionTab.id === tab
-              return (
-                <button
-                  key={actionTab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setTab(actionTab.id as SidebarTab)}
-                  className={cn(
-                    "pb-4 text-[13px] font-medium transition-colors border-b-[1.5px] -mb-px",
-                    active
-                      ? "text-foreground border-accent-primary"
-                      : "text-muted-foreground border-transparent hover:text-foreground",
-                  )}
-                >
-                  {actionTab.label}
-                </button>
-              )
-            })}
-          </div>
+      <div className={cn("flex w-full flex-col", className)}>
+        <ActionWorkspaceTabs
+          items={[
+            { id: "deposit", label: "Deposit" },
+            { id: "withdraw", label: "Withdraw" },
+            { id: "borrow", label: "Borrow" },
+            { id: "repay", label: "Repay" },
+          ]}
+          value={tab}
+          onChange={(value) => setTab(value as SidebarTab)}
+          ariaLabel="Asset actions"
+        />
 
-          <div className="pt-1">
+        <div className="mt-3">
             {tab === "deposit" ? (
-              <ActionPageLaunchCta product="lend" kind="deposit" market={lendMarketId} returnTo={closeHref} />
+              embedActions ? (
+                <ResponsiveLendAction kind="deposit" market={lendMarketId} closeHref={closeHref} sidebar />
+              ) : (
+                <ActionPageLaunchCta product="lend" kind="deposit" market={lendMarketId} returnTo={closeHref} />
+              )
             ) : null}
 
             {tab === "withdraw" ? (
-              <ActionPageLaunchCta product="lend" kind="withdraw" market={lendMarketId} returnTo={closeHref} />
+              embedActions ? (
+                <ResponsiveLendAction kind="withdraw" market={lendMarketId} closeHref={closeHref} sidebar />
+              ) : (
+                <ActionPageLaunchCta product="lend" kind="withdraw" market={lendMarketId} returnTo={closeHref} />
+              )
             ) : null}
 
             {tab === "borrow" ? (
               canBorrowFromSession && borrowContext ? (
-                <ActionPageLaunchCta
-                  product="borrow"
-                  kind="borrow"
-                  market={borrowContext.id}
-                  asset={detail.row.id}
-                  returnTo={closeHref}
-                />
+                embedActions ? (
+                  <ResponsiveBorrowAction
+                    kind="borrow"
+                    market={borrowContext.id}
+                    asset={detail.row.id}
+                    closeHref={closeHref}
+                    sidebar
+                  />
+                ) : (
+                  <ActionPageLaunchCta
+                    product="borrow"
+                    kind="borrow"
+                    market={borrowContext.id}
+                    asset={detail.row.id}
+                    returnTo={closeHref}
+                  />
+                )
               ) : (
                 <div className="rounded-radius-md border border-border bg-surface-raised px-5 py-4">
                   <p className="text-[15px] leading-6 text-muted-foreground">
@@ -131,9 +135,24 @@ function TokenRail({ detail, className }: { detail: AssetDetail; className?: str
             ) : null}
 
             {tab === "repay" && borrowContext ? (
-              <ActionPageLaunchCta product="borrow" kind="repay" market={borrowContext.id} returnTo={closeHref} />
+              embedActions ? (
+                <ResponsiveBorrowAction
+                  kind="repay"
+                  market={borrowContext.id}
+                  asset={detail.row.id}
+                  closeHref={closeHref}
+                  sidebar
+                />
+              ) : (
+                <ActionPageLaunchCta
+                  product="borrow"
+                  kind="repay"
+                  market={borrowContext.id}
+                  asset={detail.row.id}
+                  returnTo={closeHref}
+                />
+              )
             ) : null}
-          </div>
         </div>
       </div>
 

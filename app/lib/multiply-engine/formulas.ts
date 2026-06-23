@@ -91,6 +91,110 @@ export function calculateLoopSteps(maxLtv: number, targetMultiplier: number): nu
   return Math.max(1, Math.ceil(Math.log(targetMultiplier) / Math.log(stepFactor)))
 }
 
+export type CollateralLoopResult = {
+  collateralUsd: number
+  debtUsd: number
+  loops: number
+  achievedMultiplier: number
+}
+
+/** Iterative supply → borrow → swap-to-collateral loop (Aave-style multiply). */
+export function simulateCollateralLoop(params: {
+  initialCollateralUsd: number
+  targetMultiplier: number
+  maxLtv: number
+  swapEfficiency: number
+  maxLoops?: number
+}): CollateralLoopResult {
+  const maxLoops = params.maxLoops ?? 24
+  const equity = params.initialCollateralUsd
+  let collateral = params.initialCollateralUsd
+  let debt = 0
+  let loops = 0
+
+  if (equity <= 0 || params.targetMultiplier <= 1) {
+    return { collateralUsd: collateral, debtUsd: debt, loops, achievedMultiplier: 1 }
+  }
+
+  const epsilon = 0.02
+
+  while (loops < maxLoops) {
+    const equityNow = collateral - debt
+    if (equityNow <= epsilon) break
+
+    const currentMultiplier = collateral / equityNow
+    if (currentMultiplier >= params.targetMultiplier - epsilon) break
+
+    const borrowPower = collateral * params.maxLtv - debt
+    if (borrowPower <= epsilon) break
+
+    const target = params.targetMultiplier
+    const swapEfficiency = params.swapEfficiency
+    const denominator = swapEfficiency - target * (swapEfficiency - 1)
+    const idealBorrowUsd =
+      denominator > epsilon ? (target * equityNow - collateral) / denominator : borrowPower
+    const borrowUsd = Math.min(borrowPower, Math.max(0, idealBorrowUsd))
+
+    if (borrowUsd <= epsilon) break
+
+    debt += borrowUsd
+    collateral += borrowUsd * swapEfficiency
+    loops += 1
+
+    if (borrowUsd < borrowPower - epsilon) break
+  }
+
+  const equityFinal = collateral - debt
+  const achievedMultiplier = equityFinal > 0 ? collateral / equityFinal : 1
+
+  return { collateralUsd: collateral, debtUsd: debt, loops, achievedMultiplier }
+}
+
+export function simulateDeleverageToTarget(params: {
+  collateralUsd: number
+  debtUsd: number
+  targetMultiplier: number
+  swapEfficiency: number
+  repayAmountUsd?: number
+}): { collateralUsd: number; debtUsd: number; debtRepaidUsd: number; collateralUnwoundUsd: number } {
+  const { collateralUsd: startCollateral, debtUsd: startDebt, targetMultiplier, swapEfficiency } = params
+  let collateral = startCollateral
+  let debt = startDebt
+
+  if (params.repayAmountUsd != null && params.repayAmountUsd > 0) {
+    const repayUsd = Math.min(params.repayAmountUsd, debt)
+    const collateralSold = repayUsd / Math.max(swapEfficiency, 0.0001)
+    return {
+      collateralUsd: Math.max(0, collateral - collateralSold),
+      debtUsd: Math.max(0, debt - repayUsd),
+      debtRepaidUsd: repayUsd,
+      collateralUnwoundUsd: collateralSold,
+    }
+  }
+
+  const equity = collateral - debt
+  if (equity <= 0 || targetMultiplier <= 1) {
+    return {
+      collateralUsd: collateral,
+      debtUsd: 0,
+      debtRepaidUsd: debt,
+      collateralUnwoundUsd: collateral - equity,
+    }
+  }
+
+  const targetCollateral = equity * targetMultiplier
+  const targetDebt = equity * Math.max(0, targetMultiplier - 1)
+  const collateralUnwoundUsd = Math.max(0, collateral - targetCollateral)
+  const debtRepaidUsd = Math.max(0, debt - targetDebt)
+
+  return {
+    collateralUsd: targetCollateral,
+    debtUsd: targetDebt,
+    debtRepaidUsd,
+    collateralUnwoundUsd,
+  }
+}
+
 export function isCorrelatedPair(collateralSymbol: string, borrowSymbol: string): boolean {
   const ethFamily = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH"])
   const btcFamily = new Set(["WBTC", "CBBTC", "BTC"])

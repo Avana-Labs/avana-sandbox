@@ -19,7 +19,7 @@ export function ActionCard({
   className?: string
 } & ComponentPropsWithoutRef<"div">) {
   return (
-    <div className={cn("rounded-[20px] border border-border bg-surface-raised", className)} {...props}>
+    <div className={cn("rounded-radius-md border border-border/80 bg-card text-card-foreground shadow-none", className)} {...props}>
       {children}
     </div>
   )
@@ -38,12 +38,12 @@ export function ActionInfoRow({
 }) {
   const tip = tooltip ? ACTION_INFO_TOOLTIPS[tooltip] ?? tooltip : undefined
   return (
-    <div className={cn("flex items-center justify-between gap-4 px-4 py-3 text-[14px]", className)}>
-      <div className="flex items-center gap-1.5 text-muted-foreground">
+    <div className={cn("flex items-center justify-between gap-4 px-4 py-3.5 text-[15px]", className)}>
+      <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
         <span>{label}</span>
-        {tip ? <ActionMetricHelp text={tip} /> : null}
+        {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
       </div>
-      <div className="font-medium text-foreground">{value}</div>
+      <div className="font-medium tabular-nums text-foreground">{value}</div>
     </div>
   )
 }
@@ -61,7 +61,7 @@ function TokenSymbolRow({ symbols }: { symbols: string[] }) {
   return (
     <div className="flex items-center gap-1.5" data-testid="borrowable-asset-icons">
       {symbols.map((symbol) => (
-        <ActionTokenIcon key={symbol} symbol={symbol} className="size-6" />
+        <ActionTokenIcon key={symbol} symbol={symbol} />
       ))}
     </div>
   )
@@ -125,10 +125,10 @@ export function ActionMetricRow({
   const tip = resolveMetricTooltip(id, label, tooltip)
   return (
     <div data-testid={`metric-${label.toLowerCase().replace(/\s+/g, "-")}`}>
-      <div className="flex items-center justify-between gap-4 px-4 py-3 text-[14px]">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
+      <div className="flex items-center justify-between gap-4 px-4 py-3.5 text-[15px]">
+        <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
           <span>{label}</span>
-          <ActionMetricHelp text={tip} />
+          {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
         </div>
         <MetricValue label={label} value={value} before={before} after={after} tone={tone} id={id} tokenSymbols={tokenSymbols} />
       </div>
@@ -148,17 +148,12 @@ export function ActionMetricsBlock({ rows }: { rows: ActionMetricRow[] }) {
       {hfRow ? (
         <ActionCard className="p-4" data-testid="action-health-factor-card">
           <ActionHealthFactorBar value={hfValue} />
-          {hfRow.before && hfRow.after ? (
-            <div className="mt-3 text-[12px] tabular-nums text-muted-foreground">
-              {hfRow.before} → {hfRow.after}
-            </div>
-          ) : null}
         </ActionCard>
       ) : null}
 
       {detailRows.length > 0 ? (
         <ActionCard className="overflow-hidden">
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/80">
             {detailRows.map((row) => (
               <ActionMetricRow
                 key={row.id ?? row.label}

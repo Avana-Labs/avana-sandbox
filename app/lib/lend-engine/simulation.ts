@@ -13,7 +13,7 @@ import {
   calculateWithdrawSplit,
   resolveLiquidityIndex,
 } from "./formulas"
-import type { LendDepositSimulation, LendMarket, LendPosition, LendWithdrawSimulation } from "./types"
+import type { LendDepositSimulation, LendMarket, LendPosition, LendSystemState, LendWithdrawSimulation } from "./types"
 import { validateDepositAction, validateWithdrawAction } from "./validation"
 
 const PRICE_STALE_MS = 86_400_000
@@ -242,5 +242,32 @@ export function simulateWithdraw(params: {
     marketBefore,
     marketAfter,
     validation,
+  }
+}
+
+export function accrueLendSystemState(state: LendSystemState, now = Date.now()): LendSystemState {
+  const markets = { ...state.markets }
+  const positions = { ...state.positions }
+
+  for (const marketId of Object.keys(markets)) {
+    const accrued = accrueMarket(markets[marketId]!, now)
+    markets[marketId] = {
+      ...accrued,
+      priceUpdatedAt: now,
+    }
+  }
+
+  for (const [positionId, position] of Object.entries(positions)) {
+    if (position.status !== "active") continue
+    const market = markets[position.marketId]
+    if (!market) continue
+    positions[positionId] = accruePosition(position, market)
+  }
+
+  return {
+    ...state,
+    now,
+    markets,
+    positions,
   }
 }

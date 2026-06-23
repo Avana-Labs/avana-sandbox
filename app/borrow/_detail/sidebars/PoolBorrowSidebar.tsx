@@ -3,7 +3,9 @@
 import * as React from "react"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
+import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
+import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { getPoolById, type HomeAssetVisual, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { cn } from "@/lib/utils"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -18,7 +20,7 @@ type SidebarTab = "pledge" | "remove" | "claim"
 export function PoolBorrowSidebar({ detail, className }: Props) {
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
-      <PoolActionRail detail={detail} className="mt-6" />
+      <PoolActionRail detail={detail} className="mt-6" embedActions />
       <AboutNewsSection
         className="pt-4"
         about={detail.about}
@@ -40,7 +42,7 @@ export function PoolBorrowActions({ detail, className }: Props) {
   )
 }
 
-function PoolActionRail({ detail, className }: Props) {
+function PoolActionRail({ detail, className, embedActions = false }: Props & { embedActions?: boolean }) {
   const [tab, setTab] = React.useState<SidebarTab>("pledge")
   const session = useBorrowSessionContext()
 
@@ -54,59 +56,64 @@ function PoolActionRail({ detail, className }: Props) {
   }, [detail.id])
 
   return (
-    <div className={cn("flex w-full flex-col gap-6", className)}>
-      <div className="space-y-4">
-        <div role="tablist" aria-label="Pool actions" className="flex items-center gap-5 border-b border-border">
-          {[
-            { id: "pledge", label: "Pledge" },
-            { id: "remove", label: "Remove" },
-            { id: "claim", label: "Claim" },
-          ].map((actionTab) => {
-            const active = actionTab.id === tab
-            return (
-              <button
-                key={actionTab.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(actionTab.id as SidebarTab)}
-                className={cn(
-                  "border-b-[1.5px] -mb-px pb-4 text-[13px] font-medium transition-colors",
-                  active
-                    ? "border-accent-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {actionTab.label}
-              </button>
-            )
-          })}
-        </div>
+    <div className={cn("flex w-full flex-col", className)}>
+      <ActionWorkspaceTabs
+        items={[
+          { id: "pledge", label: "Pledge" },
+          { id: "remove", label: "Remove" },
+          { id: "claim", label: "Claim" },
+        ]}
+        value={tab}
+        onChange={(value) => setTab(value as SidebarTab)}
+        ariaLabel="Pool actions"
+      />
 
-        <div className="pt-1">
+      <div className="mt-3">
           {tab === "pledge" ? (
-            <ActionPageLaunchCta
-              product="borrow"
-              kind="supply"
-              market={pool.id}
-              returnTo={`/borrow/pool/${detail.id}`}
-            />
+            embedActions ? (
+              <ResponsiveBorrowAction
+                kind="supply"
+                market={pool.id}
+                closeHref={`/borrow/pool/${detail.id}`}
+                sidebar
+              />
+            ) : (
+              <ActionPageLaunchCta
+                product="borrow"
+                kind="supply"
+                market={pool.id}
+                returnTo={`/borrow/pool/${detail.id}`}
+              />
+            )
           ) : null}
 
           {tab === "remove" ? (
-            <ActionPageLaunchCta
-              product="borrow"
-              kind="remove"
-              market={pool.id}
-              amount="25"
-              returnTo={`/borrow/pool/${detail.id}`}
-            />
+            embedActions ? (
+              <ResponsiveBorrowAction
+                kind="remove"
+                market={pool.id}
+                amount="25"
+                closeHref={`/borrow/pool/${detail.id}`}
+                sidebar
+              />
+            ) : (
+              <ActionPageLaunchCta
+                product="borrow"
+                kind="remove"
+                market={pool.id}
+                amount="25"
+                returnTo={`/borrow/pool/${detail.id}`}
+              />
+            )
           ) : null}
 
           {tab === "claim" ? (
-            <ActionPageLaunchCta product="borrow" kind="claim" market={pool.id} returnTo={`/borrow/pool/${detail.id}`} />
+            embedActions ? (
+              <ResponsiveBorrowAction kind="claim" market={pool.id} closeHref={`/borrow/pool/${detail.id}`} sidebar />
+            ) : (
+              <ActionPageLaunchCta product="borrow" kind="claim" market={pool.id} returnTo={`/borrow/pool/${detail.id}`} />
+            )
           ) : null}
-        </div>
       </div>
     </div>
   )

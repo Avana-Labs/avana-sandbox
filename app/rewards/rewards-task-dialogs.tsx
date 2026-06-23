@@ -13,6 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+const rewardsPrimaryButtonClass =
+  "bg-brand text-brand-foreground shadow-none hover:bg-brand/90 disabled:bg-muted/60 disabled:text-muted-foreground"
+
 const FAVORITE_MARKET_OPTIONS = [
   { id: "gho", label: "GHO Lend market" },
   { id: "uni-v3-bluechip-weth-usdc", label: "WETH / USDC borrow pool" },
@@ -44,6 +47,7 @@ export function RewardsEducationDialog({
         </div>
         <DialogFooter>
           <Button
+            className={rewardsPrimaryButtonClass}
             disabled={loading}
             onClick={() => {
               setLoading(true)
@@ -242,7 +246,7 @@ export function RewardsReferralDialog({
           {actionKind === "copy_referral" ? (
             <div className="space-y-2 rounded-[12px] border border-border bg-surface-inset p-3">
               <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Invite link</div>
-              <div className="break-all font-mono text-[12px] text-foreground">{referralLink || "Generating link..."}</div>
+              <div className="break-all font-data text-[12px] text-foreground">{referralLink || "Generating link..."}</div>
               <div className="text-[11px] text-muted-foreground">Code: {referralCode || "—"}</div>
             </div>
           ) : null}
@@ -295,6 +299,7 @@ export function RewardsReferralDialog({
 
           {isClaimable ? (
             <Button
+              className={rewardsPrimaryButtonClass}
               disabled={loadingAction != null}
               onClick={() => {
                 setLoadingAction("claim")

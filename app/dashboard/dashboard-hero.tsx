@@ -34,7 +34,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 const HeroChartSection = dynamic(
   () => import("@/app/components/charts/hero-chart-section").then((mod) => mod.HeroChartSection),
   {
-    loading: () => <div className="h-[196px] rounded-radius-md border border-border bg-surface-raised/60" />,
+    loading: () => <div className="h-[196px] rounded-radius-md bg-card/60" />,
   },
 )
 
@@ -128,18 +128,18 @@ function buildActions({
   const resolveClasses = (label: string) => {
     const normalized = label.toLowerCase()
     if (normalized.includes("borrow")) {
-      return "!border-border/70 !bg-background !text-[#0B9BC9] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-[#7DDCFF] dark:hover:!bg-[#142331]"
+      return "!border-border/70 !bg-background !text-[#0B9BC9] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
     }
     if (normalized.includes("repay")) {
-      return "!border-border/70 !bg-background !text-black hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-white dark:hover:!bg-[#142331]"
+      return "!border-border/70 !bg-background !text-black hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-white dark:hover:!bg-surface-hover"
     }
     if (normalized.includes("deposit") || normalized.includes("supply")) {
-      return "!border-border/70 !bg-background !text-[#16A34A] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-[#74d79c] dark:hover:!bg-[#142331]"
+      return "!border-border/70 !bg-background !text-[#16A34A] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-[#74d79c] dark:hover:!bg-surface-hover"
     }
     if (normalized.includes("withdraw") || normalized.includes("unwind")) {
-      return "!border-border/70 !bg-background !text-[#E11D48] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-[#f38aa3] dark:hover:!bg-[#142331]"
+      return "!border-border/70 !bg-background !text-[#E11D48] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-[#f38aa3] dark:hover:!bg-surface-hover"
     }
-    return "!border-border/70 !bg-background !text-[#01AACF] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-[#0f141b] dark:!text-[#7DDCFF] dark:hover:!bg-[#142331]"
+    return "!border-border/70 !bg-background !text-[#01AACF] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
   }
 
   const resolveIcon = (label: string) => {
@@ -176,8 +176,8 @@ function InfoTip({ text }: { text: string }) {
 
 function StatCard({ label, value, helpText }: { label: string; value: string; helpText: string }) {
   return (
-    <div className="bg-background p-3.5 dark:bg-[#0f141b]">
-      <div className="mb-0.5 flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+    <div className="bg-background p-3.5 dark:bg-card">
+      <div className="mb-0.5 flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
         {label} <InfoTip text={helpText} />
       </div>
       <div className="font-data text-[17px] font-medium tabular-nums text-[#01AACF] dark:text-[#7DDCFF]">{value}</div>
@@ -311,7 +311,7 @@ export function DashboardHero({
               uiConfig.statTwoLabel &&
               statTwoValue &&
               uiConfig.statTwoHelpText ? (
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-white/10">
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-card/10">
                   <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} />
                   <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} />
                 </div>

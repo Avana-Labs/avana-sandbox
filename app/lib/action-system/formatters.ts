@@ -24,7 +24,8 @@ export function formatActionApproxUsd(value: number) {
 
 export function formatActionPercent(value: number, digits = 2) {
   if (!Number.isFinite(value)) return "—"
-  return `${value.toFixed(digits)}%`
+  const factor = 10 ** digits
+  return `${Math.round(value * factor) / factor}%`
 }
 
 export function formatActionRatioPercent(value: number, digits = 2) {
@@ -53,6 +54,14 @@ export function formatActionPercentBeforeAfter(beforePct: number, afterPct: numb
 export function formatActionNetworkFee(value: number) {
   if (!Number.isFinite(value) || value <= 0) return "~ $0.00"
   return `~ ${formatActionUsd(value)}`
+}
+
+/** Avana protocol fee (bps) plus estimated network gas for action summaries. */
+export function formatActionFeeSummary(amountUsd: number, networkFeeUsd: number, bps = 10) {
+  const avanaUsd = amountUsd > 0 ? amountUsd * (bps / 10_000) : 0
+  const avanaPart = amountUsd > 0 ? `~ ${formatActionUsd(avanaUsd)}` : "10 bps"
+  const networkPart = formatActionNetworkFee(networkFeeUsd)
+  return `${avanaPart} · ${networkPart} network`
 }
 
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {

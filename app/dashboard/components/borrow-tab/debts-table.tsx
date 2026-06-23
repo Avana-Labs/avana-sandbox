@@ -1,6 +1,6 @@
 "use client"
 
-import { Info } from "lucide-react"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import {
   BORROW_SUPPLY_META,
   HOME_BORROW_TOKENS,
@@ -16,9 +16,7 @@ import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
 import { cn } from "@/lib/utils"
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type DebtsTableProps = {
   rows: DebtRowContext[]
@@ -89,25 +87,25 @@ export function DebtsPanel({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     #
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Collateral Position
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Borrowed
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Health Factor
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Accrued Interest
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Liq. Threshold
                   </th>
-                  <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58" />
+                  <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
                 </tr>
               </thead>
               <tbody>
@@ -122,32 +120,32 @@ export function DebtsPanel({
                   const rowKey = row.id ?? `${row.pool.id}-${index}`
                   return (
                     <tr key={rowKey} className="group transition-colors">
-                      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                         {index + 1}
                       </td>
-                      <td className={`py-3 pl-5 ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_BG}`}>
                         <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
                       </td>
-                      <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatCompactUsd(row.borrowedUsd))}</div>
                         <div className="text-[11px] text-muted-foreground">
                           {showBalance ? `${tokenCount} ${usdc.symbol}` : MASK}
                         </div>
                       </td>
-                      <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                       </td>
-                      <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.accruedInterestUsd))}</div>
                         <div className={cn("font-data text-[11px] font-medium tabular-nums", aprToneClass(row.borrowApr))}>
                           {row.borrowApr.toFixed(1)}% APR
                         </div>
                       </td>
-                      <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.liquidationThresholdUsd))}</div>
                         <div className="text-[11px] text-muted-foreground">collateral value</div>
                       </td>
-                      <td className={`py-3 pl-4 pr-5 text-left ${ROW_HOVER_RIGHT}`}>
+                      <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
                         <div className="flex justify-start gap-1.5">
                           <PillButton variant="ghost" onClick={() => onManage(row)}>
                             Manage
@@ -173,7 +171,7 @@ export function DebtsPanel({
           const pairLabel = `${row.pool.visuals[0].symbol} / ${row.pool.visuals[1].symbol} LP`
           const rowKey = row.id ?? `${row.pool.id}-${index}`
           return (
-            <li key={rowKey} className="space-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1">
+            <li key={rowKey} className="space-y-3 rounded-radius-md border-0 bg-card px-4 py-4 shadow-none">
               <div>
                 <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Active debt</div>
                 <div className="mt-1 flex items-baseline gap-2">
@@ -188,8 +186,8 @@ export function DebtsPanel({
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-medium text-muted-foreground">Backed by</span>
                   <div className="flex items-center">
-                    <TokenBubble visual={visuals[0]} size="sm" />
-                    <TokenBubble visual={visuals[1]} size="sm" className="-ml-1.5" />
+                    <TokenBubble visual={visuals[0]} size="table" />
+                    <TokenBubble visual={visuals[1]} size="table" className="-ml-1.5" />
                   </div>
                 </div>
                 <div className="text-right font-data text-[12.5px] font-medium tabular-nums text-foreground">
@@ -260,14 +258,15 @@ export function CurrentLtvCard({
 }) {
   const ltv = collateralUsd > 0 ? Math.min(1, borrowedUsd / collateralUsd) : 0
   const ltvPct = ltv * 100
-  const liquidationPct = LIQUIDATION_LTV * 100
   const masked = !showBalance
   const liquidationValueUsd = collateralUsd * LIQUIDATION_LTV
   const remainingBorrowingPowerUsd = Math.max(0, liquidationValueUsd - borrowedUsd)
+  const liqUtilizationPct = liquidationValueUsd > 0 ? Math.min(100, (borrowedUsd / liquidationValueUsd) * 100) : 0
+  const barFillPct = liquidationValueUsd > 0 ? liqUtilizationPct : 0
   const borrowingPowerLabel = masked ? "••" : formatCompactUsd(remainingBorrowingPowerUsd)
   const usedLabel = masked ? "••" : formatCompactUsd(borrowedUsd)
   const maxLabel = masked ? "••" : formatCompactUsd(liquidationValueUsd)
-  const usedTicks = Math.max(1, Math.round((ltvPct / 100) * TICK_COUNT))
+  const usedTicks = Math.max(1, Math.round((barFillPct / 100) * TICK_COUNT))
   const tone = "bg-emerald-500"
   const statusLabel = remainingBorrowingPowerUsd > 0 ? "GOOD" : "RISK"
 
@@ -275,9 +274,12 @@ export function CurrentLtvCard({
     <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="text-[13px] font-semibold text-foreground">Borrowing Power</span>
-          <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
           <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">{borrowingPowerLabel}</span>
+          <span className="text-[13px] font-semibold text-foreground">Borrowing Power</span>
+          <ActionMetricHelp
+            topic="Borrowing Power"
+            text="Remaining room to borrow before your position approaches liquidation, based on current collateral and outstanding debt."
+          />
         </div>
         <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-600">
           {statusLabel}
@@ -287,10 +289,10 @@ export function CurrentLtvCard({
       <div className="relative mt-9">
         <div
           className="pointer-events-none absolute bottom-full z-10 -translate-x-1/2 pb-1 text-center"
-          style={{ left: `${ltvPct}%` }}
+          style={{ left: `${barFillPct}%` }}
         >
           <div className="rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-bold text-background">
-            {masked ? "••" : `${ltvPct.toFixed(2)}%`}
+            {masked ? "••" : `${liqUtilizationPct.toFixed(1)}%`}
           </div>
           <div className="-mt-px text-[10px] leading-none text-foreground">▼</div>
         </div>
@@ -321,7 +323,7 @@ export function CurrentLtvCard({
           <span>
             Liq. max <span className="font-semibold text-foreground">{maxLabel}</span>
           </span>
-          <span className="text-rose-500">{liquidationPct.toFixed(0)}% liq</span>
+          <span className="text-rose-500">{masked ? "••" : `${liqUtilizationPct.toFixed(0)}% of liq. max`}</span>
         </span>
       </div>
     </div>

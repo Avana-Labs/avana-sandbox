@@ -108,7 +108,7 @@ export function MarketsTable({
                   <tr key={m.symbol} className="transition-colors hover:bg-surface-inset/60">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">
-                        <TokenIcon symbol={m.symbol} size="md" />
+                        <TokenIcon symbol={m.symbol} size="table" />
                         <div className="flex min-w-0 flex-col leading-tight">
                           <span className="text-[13px] font-medium text-foreground">{m.symbol}</span>
                           <span className="truncate text-[11.5px] text-muted-foreground">{m.name}</span>
@@ -165,7 +165,7 @@ export function MarketsTable({
               <div key={m.symbol} className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <TokenIcon symbol={m.symbol} size="md" />
+                    <TokenIcon symbol={m.symbol} size="table" />
                     <div className="flex min-w-0 flex-col">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{m.symbol}</span>

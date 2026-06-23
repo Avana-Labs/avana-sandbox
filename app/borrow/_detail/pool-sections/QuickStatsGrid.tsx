@@ -1,11 +1,13 @@
 "use client"
 
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { cn } from "@/lib/utils"
 
 type QuickStatLike = {
   id: string
   label: string
   value: string
+  tooltip?: string
 }
 
 type Props = {
@@ -13,42 +15,66 @@ type Props = {
   className?: string
 }
 
-export function QuickStatsGrid({ detail, className }: Props) {
-  const stats = detail.quickStats.slice(0, 8)
+const RISK_STAT_IDS = new Set([
+  "collateralsAtRisk",
+  "eligibleForLiquidations",
+  "riskPremium",
+  "maxLtv",
+  "collateralFactor",
+])
+
+function splitQuickStats(stats: QuickStatLike[]) {
+  const market: QuickStatLike[] = []
+  const risk: QuickStatLike[] = []
+
+  for (const stat of stats) {
+    if (RISK_STAT_IDS.has(stat.id)) {
+      risk.push(stat)
+    } else {
+      market.push(stat)
+    }
+  }
+
+  return { market, risk }
+}
+
+function StatsGrid({ stats }: { stats: QuickStatLike[] }) {
+  if (stats.length === 0) return null
 
   return (
-    <section
-      aria-label="Stats"
-      className={cn("grid grid-cols-2 overflow-hidden md:grid-cols-4", className)}
-    >
-      {stats.map((stat, index) => {
-        const isDesktopFirstCol = index % 4 === 0
-        const isDesktopSecondRowLeftHalf = index >= 4 && index < 6
-        const isDesktopSecondRowRightHalf = index >= 6
-        const isMobileFirstCol = index % 2 === 0
-        const isMobileSecondRow = index >= 2
-
-        return (
-          <div
-            key={stat.id}
-            className={cn(
-              "min-h-[114px] border-border px-4 py-5 md:px-3 md:py-5",
-              !isMobileFirstCol && "border-l",
-              isMobileSecondRow && "border-t md:border-t-0",
-              !isDesktopFirstCol && "md:border-l",
-              isDesktopSecondRowLeftHalf && "md:border-t",
-              isDesktopSecondRowRightHalf && "md:border-t",
-            )}
-          >
-            <div className="text-[12px] font-normal leading-[1.1] tracking-[-0.02em] text-text-extra-high md:text-[13px]">
-              {stat.label}
-            </div>
-            <div className="mt-3 text-[17px] font-normal leading-none tracking-[-0.03em] text-text-extra-high md:text-[18px]">
-              {stat.value}
-            </div>
+    <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 md:gap-x-10 md:gap-y-9">
+      {stats.map((stat) => (
+        <article key={stat.id} className="min-w-0">
+          <div className="font-data text-[26px] font-semibold leading-none tracking-[-0.04em] text-foreground md:text-[28px]">
+            {stat.value}
           </div>
-        )
-      })}
-    </section>
+          <div className="mt-2 flex items-center gap-1">
+            <span className="text-[13px] font-normal leading-snug text-muted-foreground">{stat.label}</span>
+            {stat.tooltip ? <ActionMetricHelp text={stat.tooltip} topic={stat.label} /> : null}
+          </div>
+        </article>
+      ))}
+    </div>
+  )
+}
+
+export function QuickStatsGrid({ detail, className }: Props) {
+  const { market, risk } = splitQuickStats(detail.quickStats)
+
+  return (
+    <div className={cn("space-y-10", className)}>
+      {market.length > 0 ? (
+        <section aria-label="Market overview">
+          <h3 className="mb-5 text-[15px] font-medium tracking-[-0.02em] text-foreground">Market overview</h3>
+          <StatsGrid stats={market} />
+        </section>
+      ) : null}
+      {risk.length > 0 ? (
+        <section aria-label="Risk exposure">
+          <h3 className="mb-5 text-[15px] font-medium tracking-[-0.02em] text-foreground">Risk exposure</h3>
+          <StatsGrid stats={risk} />
+        </section>
+      ) : null}
+    </div>
   )
 }

@@ -43,7 +43,7 @@ function PositionRow({
     <div className="relative flex items-center justify-between gap-3 rounded-radius-sm border border-border bg-surface-inset px-3 py-2 pl-3.5 transition-colors hover:bg-surface-raised/60">
       <span className={`absolute inset-y-1.5 left-0 w-[2px] rounded-xs ${sideTint}`} aria-hidden />
       <div className="flex items-center gap-2.5">
-        <TokenIcon symbol={symbol} size="md" />
+        <TokenIcon symbol={symbol} size="table" />
         <span className="font-medium text-[13px] text-foreground">{label}</span>
         <span className={`rounded-xs border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] ${sidePillClass}`}>
           {isLong ? "Long" : "Short"} {leverage}x
@@ -153,7 +153,7 @@ export function PortfolioPositionsTabs({ allowedTabs = [...TABS], initialTab = "
               {data.lpCollaterals.map((collateral) => (
                 <div key={collateral.id} className="flex items-center justify-between px-3.5 py-2.5">
                   <div className="flex items-center gap-2.5">
-                    <TokenIcon symbol={collateral.collateralToken} size="md" ring />
+                    <TokenIcon symbol={collateral.collateralToken} size="table" ring />
                     <div>
                       <p className="font-medium text-[13px] text-foreground">
                         {collateral.label} ({collateral.protocol})
@@ -211,17 +211,17 @@ export function PortfolioPositionsTabs({ allowedTabs = [...TABS], initialTab = "
                 </colgroup>
                 <thead>
                   <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                    <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 dark:bg-slate-900/90">Time</th>
-                    <th className="bg-slate-50 px-4 py-3.5 dark:bg-slate-900/90">Type</th>
-                    <th className="bg-slate-50 px-4 py-3.5 dark:bg-slate-900/90">Amount</th>
-                    <th className="bg-slate-50 px-4 py-3.5 dark:bg-slate-900/90">Position</th>
-                    <th className="bg-slate-50 px-4 py-3.5 dark:bg-slate-900/90">Status</th>
-                    <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 text-right dark:bg-slate-900/90">Txn</th>
+                    <th className="rounded-l-2xl bg-table-header px-4 py-3.5">Time</th>
+                    <th className="bg-table-header px-4 py-3.5">Type</th>
+                    <th className="bg-table-header px-4 py-3.5">Amount</th>
+                    <th className="bg-table-header px-4 py-3.5">Position</th>
+                    <th className="bg-table-header px-4 py-3.5">Status</th>
+                    <th className="rounded-r-2xl bg-table-header px-4 py-3.5 text-right">Txn</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.history.map((row) => (
-                    <tr key={row.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-900/70">
+                    <tr key={row.id} className="transition-colors hover:bg-muted/80 dark:hover:bg-slate-900/70">
                       <td className="px-4 py-4 font-data text-[13px] tabular-nums text-foreground">{formatRelativeTime(row.at)}</td>
                       <td className="px-4 py-4 text-[13px] font-medium text-foreground">{formatKindLabel(row.kind)}</td>
                       <td className="px-4 py-4 font-data text-[13px] tabular-nums text-foreground">{formatSignedUsd(row.amountUsd)}</td>

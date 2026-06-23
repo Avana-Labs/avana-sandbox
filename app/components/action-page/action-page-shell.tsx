@@ -8,10 +8,12 @@ import type { ActionPageMode } from "@/app/lib/action-system/contracts"
 
 type ActionPageShellProps = {
   mode?: ActionPageMode
+  density?: "default" | "sidebar" | "home"
   title: string
   subtitle?: string
   simulated?: boolean
   hideTitle?: boolean
+  hideClose?: boolean
   onClose?: () => void
   closeHref?: string
   children: ReactNode
@@ -21,9 +23,11 @@ type ActionPageShellProps = {
 
 export function ActionPageShell({
   mode = "page",
+  density = "default",
   title,
   subtitle,
   hideTitle = false,
+  hideClose = false,
   onClose,
   closeHref,
   children,
@@ -50,12 +54,15 @@ export function ActionPageShell({
         "flex min-h-0 w-full flex-col bg-background text-foreground",
         mode === "page" && "min-h-[100dvh]",
         mode === "overlay" && "fixed inset-0 z-50 min-h-[100dvh]",
+        mode === "embedded" && density === "sidebar" && "rounded-none border-0 bg-transparent shadow-none",
+        mode === "embedded" && density === "home" && "rounded-none border-0 bg-transparent shadow-none",
+        mode === "embedded" && density === "default" && "rounded-radius-md",
         className,
       )}
       data-testid="action-page-shell"
       data-mode={mode}
     >
-      {showChrome ? (
+      {showChrome && !hideClose ? (
         <div className="flex items-center justify-end px-4 pb-1 pt-3 sm:px-6">
           <button
             type="button"
@@ -68,15 +75,29 @@ export function ActionPageShell({
         </div>
       ) : null}
 
-      <div className={cn("mx-auto flex w-full max-w-[560px] flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6")}>
+      <div
+        className={cn(
+          "mx-auto flex w-full flex-1 flex-col",
+          density === "home" ? "max-w-none gap-2 px-0 pb-0" : "max-w-[560px] gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
+          mode === "embedded" && density === "sidebar" && "gap-4 py-5",
+        )}
+      >
         {showTitleBlock ? (
           <div className="pb-5">
-            <h1 className="text-[1.375rem] font-medium tracking-[-0.03em] sm:text-[1.5rem]">{title}</h1>
-            {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
+            <h1 className="text-[1.5rem] font-semibold tracking-[-0.03em] text-foreground sm:text-[1.625rem]">{title}</h1>
+            {subtitle ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{subtitle}</p> : null}
           </div>
         ) : null}
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3">{children}</div>
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col",
+            mode === "embedded" && density === "sidebar" ? "gap-4" : "gap-4",
+            mode === "embedded" && density === "home" && "gap-2",
+          )}
+        >
+          {children}
+        </div>
 
         {footer ? <div className="mt-4">{footer}</div> : null}
       </div>

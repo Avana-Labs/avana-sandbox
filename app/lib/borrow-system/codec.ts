@@ -1,4 +1,23 @@
-import type { BorrowSystemState } from "@/app/lib/credit-engine"
+import type { BorrowAccountState, BorrowSystemState } from "@/app/lib/credit-engine"
+
+function normalizeBorrowAccount(account: BorrowAccountState): BorrowAccountState {
+  return {
+    ...account,
+    collateralPositions: account.collateralPositions ?? [],
+    debtPositions: account.debtPositions ?? [],
+    rewardPositions: account.rewardPositions ?? [],
+  }
+}
+
+/** Repair persisted sandbox sessions that predate rewardPositions on accounts. */
+export function normalizeBorrowSystemState(state: BorrowSystemState): BorrowSystemState {
+  return {
+    ...state,
+    accounts: Object.fromEntries(
+      Object.entries(state.accounts).map(([walletId, account]) => [walletId, normalizeBorrowAccount(account)]),
+    ),
+  }
+}
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
 
@@ -41,5 +60,5 @@ export function serializeBorrowSystemState(state: BorrowSystemState) {
 }
 
 export function deserializeBorrowSystemState(serialized: string): BorrowSystemState {
-  return deserializeBorrowValue<BorrowSystemState>(serialized)
+  return normalizeBorrowSystemState(deserializeBorrowValue<BorrowSystemState>(serialized))
 }

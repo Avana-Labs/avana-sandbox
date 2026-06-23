@@ -366,7 +366,8 @@ export function buildHomeRemovePreview(
 export function selectRewardClaimableTotals(state: BorrowSystemState, walletId: string): Record<string, number> {
   const account = state.accounts[walletId]
   if (!account) return {}
-  return Object.fromEntries(account.rewardPositions.map((position) => [position.id, fixedToNumber(position.claimableUsd6, 6)]))
+  const rewardPositions = account.rewardPositions ?? []
+  return Object.fromEntries(rewardPositions.map((position) => [position.id, fixedToNumber(position.claimableUsd6, 6)]))
 }
 
 export function buildClaimBorrowAction(walletId: string, preview: ClaimPreview): BorrowAction | null {

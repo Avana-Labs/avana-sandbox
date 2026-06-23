@@ -68,7 +68,14 @@ vi.mock("@/app/dashboard/dashboard-tabs", () => ({
   ),
 }))
 
-vi.mock("@/app/portfolio/credit-lines-card", () => ({ CreditLinesCard: () => null }))
+vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
+  DashboardOverviewSection: () => null,
+  DashboardPerformanceSection: () => null,
+  DashboardLendPerformanceSection: () => null,
+}))
+vi.mock("@/app/portfolio/portfolio-lending-opportunities", () => ({
+  PortfolioLendingOpportunities: () => null,
+}))
 vi.mock("@/app/portfolio/dashboard-borrow-tab", () => ({ DashboardBorrowTab: () => null }))
 vi.mock("@/app/portfolio/portfolio-investments", () => ({ PortfolioInvestments: () => null }))
 vi.mock("@/app/portfolio/multiply-collateral-table", () => ({ MultiplyCollateralTable: () => null }))

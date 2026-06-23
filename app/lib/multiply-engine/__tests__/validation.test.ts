@@ -4,6 +4,7 @@ import {
   calculateMaxLeverageApy,
   calculatePriceImpact,
   calculateTheoreticalMaxMultiplier,
+  simulateCollateralLoop,
 } from "@/app/lib/multiply-engine"
 import { validateDeleverageAction, validateMultiplyAction } from "@/app/lib/multiply-engine/validation"
 
@@ -164,6 +165,19 @@ describe("multiply engine formulas extensions", () => {
   it("calculates loop steps from max LTV and target multiplier", () => {
     expect(calculateLoopSteps(0.73, 4)).toBeGreaterThan(1)
     expect(calculateLoopSteps(1, 3)).toBe(0)
+  })
+
+  it("simulates iterative collateral loops", () => {
+    const loop = simulateCollateralLoop({
+      initialCollateralUsd: 10_000,
+      targetMultiplier: 3,
+      maxLtv: 0.8,
+      swapEfficiency: 0.995,
+    })
+
+    expect(loop.loops).toBeGreaterThan(1)
+    expect(loop.achievedMultiplier).toBeCloseTo(3, 1)
+    expect(loop.collateralUsd / (loop.collateralUsd - loop.debtUsd)).toBeCloseTo(loop.achievedMultiplier, 2)
   })
 
   it("calculates price impact from multiplier and liquidity", () => {

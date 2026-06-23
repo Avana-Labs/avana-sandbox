@@ -1,5 +1,6 @@
 import type { MultiplyMarketRecord, MultiplyRiskTier } from "@/app/lib/multiply-engine/types"
 import { calculateSafeMaxMultiplier, calculateTheoreticalMaxMultiplier } from "@/app/lib/multiply-engine/formulas"
+import { MULTIPLY_CATALOG_LEVERAGE_SCALE } from "@/app/lib/multiply-system/leverage-limits"
 import { MULTIPLY_COLLATERAL_FACTORS } from "@/app/lib/multiply-sim"
 
 type CatalogSeed = {
@@ -67,9 +68,11 @@ const CATALOG_SEEDS: CatalogSeed[] = [
 ]
 
 function toMarketRecord(seed: CatalogSeed): MultiplyMarketRecord {
+  const publicMaxMultiplier = seed.publicMaxMultiplier * MULTIPLY_CATALOG_LEVERAGE_SCALE
+  const hardMaxMultiplier = seed.hardMaxMultiplier * MULTIPLY_CATALOG_LEVERAGE_SCALE
   const theoreticalMaxMultiplier = calculateTheoreticalMaxMultiplier(seed.maxLtv)
   const safeMaxMultiplier = calculateSafeMaxMultiplier({
-    publicMaxMultiplier: seed.publicMaxMultiplier,
+    publicMaxMultiplier,
     theoreticalMaxMultiplier,
     minHealthFactor: seed.minHealthFactor,
     liquidationThreshold: seed.liquidationThreshold,
@@ -95,8 +98,8 @@ function toMarketRecord(seed: CatalogSeed): MultiplyMarketRecord {
       maxLtv: seed.maxLtv,
       collateralFactor: MULTIPLY_COLLATERAL_FACTORS[collateralKey] ?? seed.maxLtv,
       liquidationThreshold: seed.liquidationThreshold,
-      hardMaxMultiplier: seed.hardMaxMultiplier,
-      publicMaxMultiplier: seed.publicMaxMultiplier,
+      hardMaxMultiplier,
+      publicMaxMultiplier,
       recommendedMaxMultiplier: safeMaxMultiplier,
       minHealthFactor: seed.minHealthFactor,
       riskTier: seed.riskTier,

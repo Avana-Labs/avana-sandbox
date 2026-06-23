@@ -90,7 +90,7 @@ describe("primaryCtaLabel", () => {
         blockedReason: "Insufficient balance",
         isValid: false,
       }),
-    ).toBe("Unavailable")
+    ).toBe("Adjust amount")
 
     expect(
       primaryCtaLabel({
@@ -99,7 +99,19 @@ describe("primaryCtaLabel", () => {
         blockedReason: "Insufficient wallet balance.",
         isValid: true,
       }),
-    ).toBe("Unavailable")
+    ).toBe("Adjust amount")
+  })
+
+  it("shows validation label for invalid entered amounts", () => {
+    expect(
+      primaryCtaLabel({
+        stage: "configure",
+        verb: "Borrow",
+        blockedReason: null,
+        isValid: false,
+        amountEntered: true,
+      }),
+    ).toBe("Enter a valid amount")
   })
 })
 

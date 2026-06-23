@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils"
 
 /** Shared class for Radix TabsTrigger — underline-tab grammar. */
 export const pillTabTriggerClassName = cn(
-  "relative inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap px-3 text-[12px] font-medium",
+  "relative inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap px-3 text-[12px]",
   "text-muted-foreground transition-colors hover:text-foreground",
-  "data-[state=active]:text-foreground",
+  "data-[state=active]:text-[13px] data-[state=active]:text-foreground",
   "after:pointer-events-none after:absolute after:inset-x-3 after:-bottom-px after:h-[2px] after:bg-transparent after:transition-colors after:content-['']",
   "data-[state=active]:after:bg-foreground",
   "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:rounded-xs",

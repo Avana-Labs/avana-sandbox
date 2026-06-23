@@ -7,142 +7,140 @@
     scrollbar-gutter: stable;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
   :root {
-    /* Page chrome: pure white in light mode */
-    --background: 0 0% 100%;
-    --foreground: 150 15% 10%;        /* #161C18 deep green-black text */
+    /* Light — bright neutral canvas */
+    --background: 0 0% 98.8%; /* #FCFCFC page */
+    --foreground: 0 0% 17.3%; /* #2C2C2C primary labels */
 
-    --card: 0 0% 100%;                /* pure white elevated cards pop */
-    --card-foreground: 150 15% 10%;
+    --card: 0 0% 94%; /* clearer step above #FCFCFC page */
+    --card-foreground: 0 0% 17.3%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 150 15% 10%;
+    --popover: 0 0% 98%; /* #FAFAFA dropdowns */
+    --popover-foreground: 0 0% 17.3%;
 
-    --primary: 150 15% 12%;
-    --primary-foreground: 150 20% 98%;
+    --primary: 0 0% 17.3%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 150 15% 95%;
-    --secondary-foreground: 150 15% 12%;
+    --secondary: 0 0% 92.2%;
+    --secondary-foreground: 0 0% 17.3%;
 
-    --muted: 150 15% 95%;             /* #F0F4F1 muted surface */
-    --muted-foreground: 150 8% 42%;   /* #616B64 secondary text */
+    --muted: 0 0% 92.2%;
+    --muted-foreground: 0 0% 46.7%; /* #777777 descriptions */
+    --section-foreground: 0 0% 13.3%; /* #222222 section headers */
+    --table-header: 0 0% 96.5%; /* header strip on bright page */
 
-    --accent: 150 15% 95%;
-    --accent-foreground: 150 15% 12%;
+    --accent: 0 0% 92.2%;
+    --accent-foreground: 0 0% 17.3%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 150 20% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 150 12% 90%;            /* #E0E7E2 hairlines */
-    --input: 150 12% 90%;
-    --ring: 145 65% 45%;
+    --border: 0 0% 86%; /* visible dividers on light canvas */
+    --input: 0 0% 87.1%; /* #DEDEDE recessed inputs */
+    --ring: 191 99% 41%;
 
-    /* Elevated surfaces: cool green-greys (tabs, row hovers) */
-    --surface-1: 150 14% 96%;
-    --surface-2: 150 12% 94%;
-    --surface-hover: 150 16% 92%;
+    --surface-1: 0 0% 98.8%;
+    --surface-2: 0 0% 92.2%;
+    --surface-hover: 0 0% 91.8%;
 
-    /* Avana brand cyan */
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 191 100% 95%;
     --brand-soft-foreground: 192 100% 26%;
 
-    --radius: 0.5rem;
-
-    /* Radius scale — structural, not bubbly */
+    --radius: 0.75rem;
     --radius-xs: 4px;
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 10px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
 
-    /* Elevation — thin, layered, border-assisted */
-    --elev-1: 0 1px 0 rgba(16, 24, 40, 0.02), 0 1px 2px rgba(16, 24, 40, 0.04);
-    --elev-2: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 4px -1px rgba(16, 24, 40, 0.05);
-    --elev-3: 0 2px 6px rgba(16, 24, 40, 0.04), 0 12px 28px -8px rgba(16, 24, 40, 0.1);
+    --elev-1: none;
+    --elev-2: none;
+    --elev-3: 0 8px 24px rgba(0, 0, 0, 0.08);
 
-    /* Neutral enterprise accent — replaces pink brand on homepage */
-    --accent-primary: 222 20% 11%;
+    --accent-primary: 0 0% 13.3%;
     --accent-primary-foreground: 0 0% 100%;
-    --accent-primary-hover: 222 20% 18%;
+    --accent-primary-hover: 0 0% 20%;
 
     --accent-emphasis: 214 84% 44%;
     --accent-emphasis-foreground: 0 0% 100%;
     --accent-emphasis-soft: 214 90% 96%;
 
-    /* Layered surfaces */
-    --surface-raised: 0 0% 100%;
-    --surface-inset: 220 14% 96%;
+    --surface-raised: 0 0% 98%; /* #FAFAFA */
+    --surface-inset: 0 0% 91.8%; /* #EAEAEA steppers */
 
-    /* Global scrollbar */
-    --scrollbar-track: 150 14% 94%;
+    --progress: 221 83% 53%;
+    --progress-track: 0 0% 91.8%;
+
+    --scrollbar-track: 0 0% 92.2%;
     --scrollbar-thumb: 191 99% 41%;
     --scrollbar-thumb-hover: 191 100% 33%;
     --scrollbar-thumb-active: 191 100% 28%;
   }
 
   .dark {
-    /* Neutral slate dark mode; keep Avana cyan as the brand accent */
-    --background: 220 20% 6%;         /* deep canvas */
-    --foreground: 220 15% 96%;        /* near white */
+    /* Dark — sampled Cursor reference */
+    --background: 220 7% 8.4%; /* #141517 page */
+    --foreground: 0 0% 78%; /* #C7C7C7 primary labels */
 
-    --card: 220 16% 9%;               /* elevated card */
-    --card-foreground: 220 15% 96%;
+    --card: 0 0% 14.5%; /* #252525 — visible step above page */
+    --card-foreground: 0 0% 82%;
 
-    --popover: 220 14% 11%;           /* popover a touch lighter */
-    --popover-foreground: 220 15% 96%;
+    --popover: 0 0% 11%; /* #1C1C1C dropdowns */
+    --popover-foreground: 0 0% 82%;
 
-    --primary: 145 65% 55%;           /* existing primary accent */
-    --primary-foreground: 220 10% 8%;
+    --primary: 0 0% 82%;
+    --primary-foreground: 0 0% 11%;
 
-    --secondary: 220 10% 14%;
-    --secondary-foreground: 220 15% 96%;
+    --secondary: 0 0% 14.5%;
+    --secondary-foreground: 0 0% 82%;
 
-    --muted: 220 10% 14%;             /* inner panels */
-    --muted-foreground: 220 8% 64%;   /* subtle text */
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 58%; /* brighter secondary copy */
+    --section-foreground: 0 0% 68%;
+    --table-header: 214 18% 13%;
 
-    --accent: 220 10% 14%;
-    --accent-foreground: 220 15% 96%;
+    --accent: 0 0% 14.5%;
+    --accent-foreground: 0 0% 82%;
 
     --destructive: 0 62% 50%;
-    --destructive-foreground: 220 15% 96%;
+    --destructive-foreground: 0 0% 82%;
 
-    --border: 220 10% 16%;            /* hairline */
-    --input: 220 10% 16%;
-    --ring: 145 65% 55%;
+    --border: 0 0% 22%; /* #383838 — visible dividers */
+    --input: 0 0% 13.7%; /* #232323 recessed inputs */
+    --ring: 191 99% 41%;
 
-    /* Elevated sub-surfaces for nested cards & hover states */
-    --surface-1: 220 10% 12%;
-    --surface-2: 220 10% 16%;
-    --surface-hover: 220 10% 18%;
+    --surface-1: 220 7% 8.4%;
+    --surface-2: 0 0% 14.5%;
+    --surface-hover: 0 0% 18%;
 
-    /* Avana brand cyan */
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 191 55% 18%;
     --brand-soft-foreground: 191 92% 70%;
 
-    /* Elevation — border-assisted in dark */
-    --elev-1: 0 0 0 1px hsl(var(--border)), 0 1px 0 rgba(255, 255, 255, 0.02) inset;
-    --elev-2: 0 0 0 1px hsl(var(--border)), 0 1px 0 rgba(255, 255, 255, 0.03) inset,
-      0 6px 16px -6px rgba(0, 0, 0, 0.6);
-    --elev-3: 0 0 0 1px hsl(var(--border)), 0 12px 32px -10px rgba(0, 0, 0, 0.7);
+    --elev-1: none;
+    --elev-2: none;
+    --elev-3: 0 8px 24px rgba(0, 0, 0, 0.45);
 
-    /* Enterprise accent — inverted in dark */
-    --accent-primary: 0 0% 96%;
-    --accent-primary-foreground: 222 20% 11%;
-    --accent-primary-hover: 0 0% 88%;
+    --accent-primary: 0 0% 82%;
+    --accent-primary-foreground: 0 0% 11%;
+    --accent-primary-hover: 0 0% 72%;
 
     --accent-emphasis: 214 90% 62%;
-    --accent-emphasis-foreground: 222 20% 11%;
+    --accent-emphasis-foreground: 0 0% 11%;
     --accent-emphasis-soft: 214 40% 18%;
 
-    --surface-raised: 220 14% 10%;
-    --surface-inset: 220 12% 13%;
+    --surface-raised: 0 0% 14.5%; /* match card step */
+    --surface-inset: 0 0% 10.5%; /* recessed inputs */
 
-    /* Global scrollbar */
-    --scrollbar-track: 220 12% 12%;
+    --progress: 221 83% 53%;
+    --progress-track: 0 0% 11%;
+
+    --scrollbar-track: 220 7% 8.4%;
     --scrollbar-thumb: 191 99% 41%;
     --scrollbar-thumb-hover: 191 100% 48%;
     --scrollbar-thumb-active: 191 100% 54%;
@@ -155,9 +153,50 @@
     font-synthesis: none;
   }
   body {
-    @apply bg-background text-foreground;
-    /* Diatype (Next.js sets --font-diatype-sans on <html>); no Tailwind font-* on layout */
-    font-family: var(--font-diatype-sans), system-ui, sans-serif;
+    @apply text-foreground;
+    background-color: hsl(var(--background)) !important;
+    font-family: var(--font-diatype-sans), sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6, strong, b, th, button, label) {
+    font-weight: 400;
+  }
+
+  h1 {
+    font-size: 20px;
+    line-height: 1.25;
+    color: hsl(var(--foreground));
+  }
+
+  h2 {
+    font-size: 16px;
+    line-height: 1.3;
+    color: hsl(var(--foreground));
+  }
+
+  h3 {
+    font-size: 14px;
+    line-height: 1.35;
+    color: hsl(var(--foreground));
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: 12px;
+    line-height: 1.35;
+    color: hsl(var(--section-foreground));
+  }
+
+  small,
+  .text-ui-section {
+    font-size: 12px;
+    line-height: 1.35;
+    color: hsl(var(--section-foreground));
   }
 
   html {
@@ -215,15 +254,34 @@
 /* Diatype font utilities implemented in plain CSS, not Tailwind config. */
 .font-sans,
 .font-compact {
-  font-family: var(--font-diatype-sans), system-ui, sans-serif;
+  font-family: var(--font-diatype-sans), sans-serif;
 }
 
 .font-data {
-  font-family: var(--font-diatype-sans), system-ui, sans-serif;
+  font-family: var(--font-diatype-sans), sans-serif;
 }
 
 .font-brand {
-  font-family: var(--font-diatype-sans), system-ui, sans-serif;
+  font-family: var(--font-diatype-sans), sans-serif;
+}
+
+/* Cursor-like text hierarchy — size and color only */
+.text-ui-section {
+  font-size: 12px;
+  line-height: 1.25rem;
+  color: hsl(var(--section-foreground));
+}
+
+.text-ui-label {
+  font-size: 14px;
+  line-height: 1.25rem;
+  color: hsl(var(--foreground));
+}
+
+.text-ui-description {
+  font-size: 13px;
+  line-height: 1.25rem;
+  color: hsl(var(--muted-foreground));
 }
 
 .text-brand-readable {
@@ -281,21 +339,25 @@
 }
 
 .lend-filter-input {
-  color: #161c18 !important;
-  caret-color: #01aacf;
+  color: hsl(var(--foreground)) !important;
+  caret-color: hsl(var(--brand));
 }
 
 .lend-filter-input::placeholder {
-  color: #7a877f !important;
+  color: hsl(var(--muted-foreground)) !important;
   opacity: 1 !important;
 }
 
-.dark .lend-filter-input {
-  color: rgba(255, 255, 255, 0.88) !important;
-}
+/* Premium surfaces — tone separation like Cursor, no card borders/shadows */
+@layer components {
+  .shadow-elev-1 {
+    box-shadow: none !important;
+  }
 
-.dark .lend-filter-input::placeholder {
-  color: rgba(255, 255, 255, 0.38) !important;
+  .bg-card.border,
+  .bg-surface-raised.border {
+    border-color: hsl(var(--border) / 0.85) !important;
+  }
 }
 
 .asset-swap {
@@ -454,12 +516,7 @@
   }
 }
 
-/* Premium depth: soft lift in light mode, inset edge in dark */
+/* Premium depth: flat cards — tone steps only, no borders/shadows */
 .surface-elevated {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-}
-.dark .surface-elevated {
-  box-shadow:
-    0 0 0 1px hsl(var(--border)),
-    0 1px 0 0 hsl(150 6% 22% / 0.3) inset;
+  box-shadow: none;
 }
