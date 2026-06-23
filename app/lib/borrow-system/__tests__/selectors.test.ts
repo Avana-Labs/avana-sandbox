@@ -26,7 +26,7 @@ describe("borrow system selectors", () => {
     expect(assets.map((asset) => asset.id)).toContain("uni-v3-bluechip:usdc")
     expect(pools).toHaveLength(3)
     expect(debts["uni-v3-bluechip-weth-usdc"]).toBe(1200)
-    expect(debts["uni-v3-bluechip-wbtc-weth"]).toBe(1200)
+    expect(debts["uni-v3-bluechip-wbtc-weth"]).toBeUndefined()
     expect(snapshot.totalBorrowedUsd).toBe(2000)
     expect(snapshot.availableCreditUsd).toBeGreaterThan(0)
   })
