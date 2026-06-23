@@ -5,6 +5,7 @@ import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
+import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { getPoolById, type HomeAssetVisual, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { cn } from "@/lib/utils"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -56,35 +57,18 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
 
   return (
     <div className={cn("flex w-full flex-col", className)}>
-      <div className="space-y-5">
-        <div role="tablist" aria-label="Pool actions" className="flex items-center gap-6 border-b border-border px-1">
-          {[
-            { id: "pledge", label: "Pledge" },
-            { id: "remove", label: "Remove" },
-            { id: "claim", label: "Claim" },
-          ].map((actionTab) => {
-            const active = actionTab.id === tab
-            return (
-              <button
-                key={actionTab.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(actionTab.id as SidebarTab)}
-                className={cn(
-                  "border-b-[1.5px] -mb-px pb-4 text-[13px] font-medium transition-colors",
-                  active
-                    ? "border-accent-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {actionTab.label}
-              </button>
-            )
-          })}
-        </div>
+      <ActionWorkspaceTabs
+        items={[
+          { id: "pledge", label: "Pledge" },
+          { id: "remove", label: "Remove" },
+          { id: "claim", label: "Claim" },
+        ]}
+        value={tab}
+        onChange={(value) => setTab(value as SidebarTab)}
+        ariaLabel="Pool actions"
+      />
 
-        <div className="pt-2">
+      <div className="mt-3">
           {tab === "pledge" ? (
             embedActions ? (
               <ResponsiveBorrowAction
@@ -130,7 +114,6 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
               <ActionPageLaunchCta product="borrow" kind="claim" market={pool.id} returnTo={`/borrow/pool/${detail.id}`} />
             )
           ) : null}
-        </div>
       </div>
     </div>
   )

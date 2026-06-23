@@ -27,6 +27,7 @@ import {
 } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { mapBorrowRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/adapters/rewards-preview-mapper"
 import { ActionBorrowContextBar } from "@/app/components/action-page/action-borrow-context-bar"
+import { ActionSupplyContextBar } from "@/app/components/action-page/action-supply-context-bar"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
@@ -762,7 +763,7 @@ export function BorrowActionPageClient({
         : descriptor.subtitle
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
-  const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
+  const shellDensity = isHomeLayout ? "home" : "default"
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const useDialogAssetPicker = kind === "borrow" || kind === "repay"
   const pickerTokens = kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined
@@ -776,7 +777,15 @@ export function BorrowActionPageClient({
           : kind === "supply"
             ? marketId
             : assetId
-  const useWorkspaceFields = embedded && (isHomeLayout || sidebar) && showCollateralContextBar
+  const useSupplyWorkspace =
+    embedded &&
+    isHomeLayout &&
+    kind === "supply" &&
+    activePool != null &&
+    isConfigureVisibleStage(stage) &&
+    !showInlineBlocked
+  const useWorkspaceFields =
+    embedded && isHomeLayout && (showCollateralContextBar || (kind === "supply" && activePool != null))
   const stackedAmountField =
     useWorkspaceFields && isConfigureVisibleStage(stage) && !showInlineBlocked && kind !== "claim" ? (
       <ActionConfigureAmountSection
@@ -806,6 +815,7 @@ export function BorrowActionPageClient({
           setAmount("")
         }}
         amountVariant="inset"
+        hideAssetSelector={kind === "supply"}
         assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
         pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
       />
@@ -822,7 +832,19 @@ export function BorrowActionPageClient({
       closeHref={closeHref}
       simulated={session.readAdapter.mode === "sandbox"}
     >
-      {showCollateralContextBar ? (
+      {useSupplyWorkspace && activePool ? (
+        <ActionSupplyContextBar
+          pool={activePool}
+          pools={session.collateralPools}
+          debts={debts}
+          onPoolChange={(poolId) => {
+            setMarketId(poolId)
+            setAmount("")
+          }}
+          amountField={stackedAmountField}
+          switchable={!initialMarketId && Boolean(supplyAssetOptions)}
+        />
+      ) : showCollateralContextBar ? (
         <ActionBorrowContextBar
           kind={kind}
           pool={activePool}

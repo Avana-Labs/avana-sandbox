@@ -21,7 +21,16 @@ export function ResponsiveLendAction({
   const isDesktop = useMediaQuery("(min-width: 768px)", true)
 
   if (isDesktop) {
-    const action = <LendActionPageClient kind={kind} embedded sidebar={sidebar} closeHref={closeHref} initialMarketId={market} />
+    const action = (
+      <LendActionPageClient
+        kind={kind}
+        embedded
+        sidebar={sidebar}
+        layout={sidebar ? "home" : "default"}
+        closeHref={closeHref}
+        initialMarketId={market}
+      />
+    )
 
     if (sidebar) {
       return <DetailSidebarActionCard>{action}</DetailSidebarActionCard>

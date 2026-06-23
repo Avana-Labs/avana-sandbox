@@ -42,6 +42,7 @@ export function LendActionPageClient({
   closeHref = "/lend",
   embedded = false,
   sidebar = false,
+  layout = "default",
   initialMarketId,
   initialAmount = "",
 }: {
@@ -49,6 +50,7 @@ export function LendActionPageClient({
   closeHref?: string
   embedded?: boolean
   sidebar?: boolean
+  layout?: "default" | "home"
   initialMarketId?: string
   initialAmount?: string
 }) {
@@ -356,6 +358,7 @@ export function LendActionPageClient({
   }
 
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const isHomeLayout = embedded && layout === "home"
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
@@ -369,7 +372,7 @@ export function LendActionPageClient({
   return (
     <ActionPageShell
       mode={embedded ? "embedded" : "page"}
-      density={sidebar ? "sidebar" : "default"}
+      density={isHomeLayout ? "home" : "default"}
       title={descriptor.title}
       subtitle={shellSubtitle}
       hideTitle={hideTitle}
@@ -444,6 +447,8 @@ export function LendActionPageClient({
           canGoBack={canGoBackToSelect}
           isPending={isPending}
           outcome={outcome}
+          homeLayout={isHomeLayout}
+          hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
         />
       ) : null}
 

@@ -64,6 +64,7 @@ export function ActionAmountCard({
   pickerTokens,
 }: ActionAmountCardProps) {
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
+  const showAssetLabel = !(variant === "inset" && borrowSymbol)
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(
     !hideAssetSelector &&
@@ -135,7 +136,7 @@ export function ActionAmountCard({
             ) : (
               <ActionTokenIcon symbol={symbol} />
             )}
-            <span>{assetLabel}</span>
+            {showAssetLabel ? <span>{assetLabel}</span> : null}
             {switchable ? <span className="text-muted-foreground" aria-hidden>▾</span> : null}
           </button>
           {switchable && !useDialogPicker && menuOpen ? (

@@ -9,6 +9,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
 import { ResponsiveLendAction } from "@/app/components/action-page/responsive-lend-action"
+import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { HomeAssetVisual, HomeCollateralPool } from "@/app/lib/home-sim"
@@ -68,36 +69,19 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
   return (
     <>
       <div className={cn("flex w-full flex-col", className)}>
-        <div className="space-y-5">
-          <div role="tablist" aria-label="Asset actions" className="flex items-center gap-6 border-b border-border px-1">
-            {[
-              { id: "deposit", label: "Deposit" },
-              { id: "withdraw", label: "Withdraw" },
-              { id: "borrow", label: "Borrow" },
-              { id: "repay", label: "Repay" },
-            ].map((actionTab) => {
-              const active = actionTab.id === tab
-              return (
-                <button
-                  key={actionTab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setTab(actionTab.id as SidebarTab)}
-                  className={cn(
-                    "pb-4 text-[13px] font-medium transition-colors border-b-[1.5px] -mb-px",
-                    active
-                      ? "text-foreground border-accent-primary"
-                      : "text-muted-foreground border-transparent hover:text-foreground",
-                  )}
-                >
-                  {actionTab.label}
-                </button>
-              )
-            })}
-          </div>
+        <ActionWorkspaceTabs
+          items={[
+            { id: "deposit", label: "Deposit" },
+            { id: "withdraw", label: "Withdraw" },
+            { id: "borrow", label: "Borrow" },
+            { id: "repay", label: "Repay" },
+          ]}
+          value={tab}
+          onChange={(value) => setTab(value as SidebarTab)}
+          ariaLabel="Asset actions"
+        />
 
-          <div className="pt-2">
+        <div className="mt-3">
             {tab === "deposit" ? (
               embedActions ? (
                 <ResponsiveLendAction kind="deposit" market={lendMarketId} closeHref={closeHref} sidebar />
@@ -169,7 +153,6 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
                 />
               )
             ) : null}
-          </div>
         </div>
       </div>
 
