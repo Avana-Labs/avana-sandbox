@@ -47,14 +47,21 @@ describe("borrow preview mappers", () => {
 
   it("maps supply metrics including borrowable assets", () => {
     const ui = mapBorrowSupplyPreviewToActionUi(preview, {
-      symbol: "WETH",
+      symbol: "WETH / USDC",
       amountUsd: 2000,
-      marketLabel: "WETH · Core",
+      marketLabel: "WETH / USDC",
+      poolLabel: "WETH / USDC",
+      collateralSymbol: "WETH",
+      borrowSymbol: "USDC",
       collateralFactorPct: 80,
       collateralRiskPct: 5,
       borrowableAssetsLabel: "USDC, GHO",
       borrowableAssetSymbols: ["USDC", "GHO"],
     })
+
+    expect(ui.amountValue).toBe("2000")
+    expect(ui.assetLabel).toBe("WETH / USDC")
+    expect(ui.borrowSymbol).toBe("USDC")
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Collateral factor",

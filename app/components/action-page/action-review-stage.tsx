@@ -1,6 +1,7 @@
 "use client"
 
 import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
+import { resolveActionAmountCardProps } from "@/app/lib/action-system/action-amount-display"
 import { ActionRiskBanner } from "@/app/components/action-page/action-banners"
 import { ActionAmountCard } from "@/app/components/action-page/action-amount-card"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
@@ -25,8 +26,7 @@ export function ActionReviewStage({
   onSecondary?: () => void
   secondaryHref?: string
 }) {
-  const amountOnly = preview.amountLabel.split(" ").slice(0, -1).join(" ") || preview.amountLabel
-  const assetSymbol = preview.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
+  const amountDisplay = resolveActionAmountCardProps(preview)
 
   return (
     <div className="space-y-4" data-testid="action-review-stage">
@@ -37,11 +37,12 @@ export function ActionReviewStage({
 
       <ActionAmountCard
         label="Amount"
-        amount={amountOnly}
+        amount={amountDisplay.amount}
         onAmountChange={() => undefined}
         approxUsdLabel={preview.amountUsdLabel}
-        assetLabel={assetSymbol}
-        assetSymbol={assetSymbol}
+        assetLabel={amountDisplay.assetLabel}
+        assetSymbol={amountDisplay.assetSymbol}
+        borrowSymbol={amountDisplay.borrowSymbol}
         readOnly
       />
 
@@ -78,7 +79,7 @@ export function ActionReviewStage({
       ) : null}
 
       <ActionCard>
-        <ActionInfoRow label="Network Fee" value={preview.networkFeeLabel} tooltip="fee" />
+        <ActionInfoRow label="Avana Fee" value={preview.networkFeeLabel} tooltip="fee" />
       </ActionCard>
 
       <ActionFooter

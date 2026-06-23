@@ -6,8 +6,9 @@ import {
   formatActionApproxUsd,
   formatActionAmount,
   formatActionBeforeAfter,
+  formatActionFeeSummary,
   formatActionHealthFactor,
-  formatActionNetworkFee,
+  formatActionInputAmount,
   formatActionPercent,
   formatActionRatioPercent,
   formatActionPercentBeforeAfter,
@@ -129,7 +130,7 @@ export function mapBorrowTransactionPreviewToActionUi(
         tone: hfTone(healthAfter),
       },
     ],
-    networkFeeLabel: formatActionNetworkFee(0.04),
+    networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, healthAfter),
     blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
@@ -186,7 +187,7 @@ export function mapBorrowRepayPreviewToActionUi(
         tone: options.yearlyInterestSavedUsd > 0 ? "positive" : "default",
       },
     ],
-    networkFeeLabel: formatActionNetworkFee(0.04),
+    networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, healthAfter),
     blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
@@ -200,6 +201,9 @@ export function mapBorrowSupplyPreviewToActionUi(
     symbol: string
     amountUsd: number
     marketLabel: string
+    poolLabel: string
+    collateralSymbol: string
+    borrowSymbol: string
     collateralFactorPct: number
     collateralRiskPct: number
     borrowableAssetsLabel: string
@@ -213,7 +217,11 @@ export function mapBorrowSupplyPreviewToActionUi(
 
   return {
     allowed: preview.allowed,
-    amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
+    amountLabel: formatActionUsd(options.amountUsd),
+    amountValue: formatActionInputAmount(options.amountUsd, 2),
+    assetLabel: options.poolLabel,
+    assetSymbol: options.collateralSymbol,
+    borrowSymbol: options.borrowSymbol,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: "Collateral factor",
     rateValue: formatActionPercent(options.collateralFactorPct),
@@ -256,7 +264,7 @@ export function mapBorrowSupplyPreviewToActionUi(
         tone: hfTone(healthAfter),
       },
     ],
-    networkFeeLabel: formatActionNetworkFee(0.04),
+    networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: null,
     blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
@@ -335,7 +343,7 @@ export function mapBorrowRemovePreviewToActionUi(
         tone: hfTone(healthAfter),
       },
     ],
-    networkFeeLabel: formatActionNetworkFee(0.04),
+    networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, hfToNumber(preview.after.healthFactorWad)),
     blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
@@ -393,7 +401,7 @@ export function mapLiquidationPreviewToActionUi(
         tone: hfTone(healthAfter),
       },
     ],
-    networkFeeLabel: formatActionNetworkFee(0.04),
+    networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk:
       simulation.riskLabel === "danger"
         ? {

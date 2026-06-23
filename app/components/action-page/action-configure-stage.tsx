@@ -152,7 +152,7 @@ export function ActionConfigureStage({
 
       {preview ? (
         <ActionCard>
-          <ActionInfoRow label="Network Fee" value={preview.networkFeeLabel} tooltip="fee" />
+          <ActionInfoRow label="Avana Fee" value={preview.networkFeeLabel} tooltip="fee" />
         </ActionCard>
       ) : null}
 

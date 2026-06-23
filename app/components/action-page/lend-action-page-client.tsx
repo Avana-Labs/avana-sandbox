@@ -18,9 +18,11 @@ import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
-import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
+import { mapPreviewToBlockedUi, blockedUiForMissingWalletAsset } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { lendDepositSelectItems, lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
+import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/app/lib/lend-system/market-labels"
+import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
@@ -51,8 +53,8 @@ export function LendActionPageClient({
   const { walletId } = useAvanaSessions()
   const session = useLendSessionContext()
   const depositItems = useMemo(
-    () => (kind === "deposit" ? lendDepositSelectItems(session) : []),
-    [kind, session],
+    () => (kind === "deposit" ? lendDepositSelectItems(session, walletId) : []),
+    [kind, session, walletId],
   )
   const withdrawItems = useMemo(
     () => (kind === "withdraw" ? lendWithdrawSelectItems(session, walletId) : []),
@@ -79,14 +81,16 @@ export function LendActionPageClient({
 
   const depositAssetOptions = useMemo(() => {
     if (kind !== "deposit") return undefined
-    const options = Object.values(session.state.markets).map((entry) => ({
-      id: entry.marketId,
-      label: entry.asset.symbol,
-      symbol: entry.asset.symbol,
-      sublabel: "Core",
-    }))
+    const options = Object.values(session.state.markets)
+      .filter((entry) => getWalletBalanceForLendMarket(session.state, walletId, entry) > 0)
+      .map((entry) => ({
+        id: entry.marketId,
+        label: entry.asset.symbol,
+        symbol: entry.asset.symbol,
+        sublabel: formatLendMarketDropdownSublabel(entry.asset.symbol),
+      }))
     return options.length > 1 ? options : undefined
-  }, [kind, session.state.markets])
+  }, [kind, session.state, walletId])
 
   useEffect(() => {
     if (kind !== "withdraw" || initialMarketId || marketId) return
@@ -102,6 +106,14 @@ export function LendActionPageClient({
     setMarketId(initialMarketId)
     setStage("configure")
   }, [initialMarketId])
+
+  useEffect(() => {
+    if (kind !== "deposit" || !market || stage !== "configure") return
+    const walletBalance = getWalletBalanceForLendMarket(session.state, walletId, market)
+    if (walletBalance > 0) return
+    setBlockedUi(blockedUiForMissingWalletAsset(market.asset.symbol, "deposit"))
+    setStage("blocked")
+  }, [kind, market, session.state, stage, walletId])
 
   const position = useMemo(
     () =>
@@ -128,12 +140,12 @@ export function LendActionPageClient({
         rateLabel: "Withdrawal",
         rateValue: "—",
         marketLabel: "Market",
-        marketValue: `${market.asset.symbol} · Core`,
+        marketValue: formatLendMarketValueLabel(market.asset.symbol),
         balanceLabel: "Deposited",
         balanceValue: "0",
         maxAmount: 0,
         metrics: [],
-        networkFeeLabel: "≈ $0.03",
+        networkFeeLabel: formatActionFeeSummary(0, 0.03),
         risk: null,
         blockedReason: "No deposited position found for this market.",
         validationErrors: ["No deposited position found for this market."],
@@ -168,7 +180,7 @@ export function LendActionPageClient({
             mapLendDepositPreviewToActionUi(preview, {
               symbol: market.asset.symbol,
               amount: parsed,
-              marketLabel: `${market.asset.symbol} · Core`,
+              marketLabel: formatLendMarketValueLabel(market.asset.symbol),
               balanceAmount: getWalletBalanceForLendMarket(session.state, walletId, market),
               rewardsApy: market.rewardsApy,
             }),
@@ -179,7 +191,7 @@ export function LendActionPageClient({
           mapLendWithdrawPreviewToActionUi(preview, {
             symbol: market.asset.symbol,
             amount: parsed,
-            marketLabel: `${market.asset.symbol} · Core`,
+            marketLabel: formatLendMarketValueLabel(market.asset.symbol),
             balanceAmount: position?.currentSuppliedAmount ?? 0,
           }),
         )
@@ -343,8 +355,14 @@ export function LendActionPageClient({
       {stage === "select" ? (
         <ActionSelectStage
           items={kind === "withdraw" ? withdrawItems : depositItems}
-          emptyTitle={kind === "withdraw" ? "No deposits found" : "No markets found"}
-          emptyDescription={kind === "withdraw" ? "Deposit first, then withdraw from here." : "Try another market from the lend page."}
+          sectionLabel={kind === "withdraw" ? "Your positions" : "Supported assets"}
+          searchPlaceholder={kind === "withdraw" ? "Find an asset" : "Search assets"}
+          emptyTitle={kind === "withdraw" ? "No deposits found" : "No assets in your wallet"}
+          emptyDescription={
+            kind === "withdraw"
+              ? "Deposit first, then withdraw from here."
+              : "You need to hold a supported asset in your wallet before you can deposit."
+          }
           onSelect={(id) => {
             router.replace(actionPagePath("lend", kind, { market: id }))
           }}

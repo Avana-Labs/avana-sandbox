@@ -23,9 +23,7 @@ import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/c
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { cn } from "@/lib/utils"
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-table-header/40 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type SuppliesTableProps = {
   rows: SupplyRowContext[]
@@ -112,28 +110,28 @@ export function SuppliesPanel({
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 return (
                   <tr key={row.pool.id} className="group transition-colors">
-                    <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                    <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                       {index + 1}
                     </td>
-                    <td className={`py-3 pl-5 ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_BG}`}>
                       <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
                     </td>
-                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
                       {m(formatCompactUsd(row.pool.collateralUsd))}
                     </td>
-                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
                       {m(formatCompactUsd(row.remainingBorrowPowerUsd))}
                     </td>
-                    <td className={`py-3 text-right ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 text-right ${TABLE_ROW_HOVER_BG}`}>
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                     </td>
-                    <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                       <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
                       <div className="font-data text-[11px] font-medium tabular-nums text-emerald-600">
                         {row.pairApr.toFixed(1)}% APR
                       </div>
                     </td>
-                    <td className={`py-3 pl-4 pr-6 text-left ${ROW_HOVER_RIGHT}`}>
+                    <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
                       <div className="flex justify-start gap-1.5">
                         <PillButton variant="ghost" onClick={() => onRemove(row)}>
                           Remove

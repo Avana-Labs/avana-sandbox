@@ -42,6 +42,10 @@ export type ActionRiskLevel = "safe" | "warning" | "danger"
 export type ActionPreviewUi = {
   allowed: boolean
   amountLabel: string
+  amountValue?: string
+  assetLabel?: string
+  assetSymbol?: string
+  borrowSymbol?: string
   amountUsdLabel: string
   rateLabel: string
   rateValue: string

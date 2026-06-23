@@ -56,6 +56,14 @@ export function formatActionNetworkFee(value: number) {
   return `~ ${formatActionUsd(value)}`
 }
 
+/** Avana protocol fee (bps) plus estimated network gas for action summaries. */
+export function formatActionFeeSummary(amountUsd: number, networkFeeUsd: number, bps = 10) {
+  const avanaUsd = amountUsd > 0 ? amountUsd * (bps / 10_000) : 0
+  const avanaPart = amountUsd > 0 ? `~ ${formatActionUsd(avanaUsd)}` : "10 bps"
+  const networkPart = formatActionNetworkFee(networkFeeUsd)
+  return `${avanaPart} · ${networkPart} network`
+}
+
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {
   if (!Number.isFinite(assetAmount)) return `0 ${symbol}`
   const rounded = assetAmount >= 100 ? assetAmount.toFixed(2) : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")

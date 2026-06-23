@@ -5,7 +5,7 @@ import {
   formatActionAmount,
   formatActionBeforeAfter,
   formatActionHealthFactor,
-  formatActionNetworkFee,
+  formatActionFeeSummary,
   formatActionRatioPercent,
   formatActionUsd,
 } from "@/app/lib/action-system/formatters"
@@ -117,7 +117,7 @@ export function mapMultiplyPreviewToActionUi(
         value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
       },
     ],
-    networkFeeLabel: formatActionNetworkFee(0.04),
+    networkFeeLabel: formatActionFeeSummary(preview.after.collateralValueUsd, 0.04),
     risk:
       preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < 1.05)
         ? {
@@ -199,7 +199,7 @@ export function mapDeleveragePreviewToActionUi(
         value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
       },
     ],
-    networkFeeLabel: formatActionNetworkFee(0.04),
+    networkFeeLabel: formatActionFeeSummary(preview.after.collateralValueUsd, 0.04),
     risk:
       preview.riskLabel === "danger"
         ? {

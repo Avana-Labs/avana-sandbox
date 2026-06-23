@@ -29,9 +29,7 @@ const SORT_PRESETS = [
   { label: "Collateral A-Z", value: "protocol:asc" },
 ] as const
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-table-header/40 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
 
@@ -577,10 +575,10 @@ export function ExploreLoopsMarketsTable({
             <tbody key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`} className="divide-y divide-border dark:divide-white/6">
               {visibleRows.length ? visibleRows.map((row, index) => (
                 <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="group asset-swap transition-colors" style={{ animationDelay: `${index * 40}ms` }}>
-                  <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                  <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                     {page * pageSize + index + 1}
                   </td>
-                  <td className={`py-3 pl-6 pr-4 ${ROW_HOVER_BG}`}>
+                  <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
                     <CellLink href={row.href} className="flex items-center gap-2.5">
                       {hasImageSrc(row.protocolLogo) ? (
                         <>
@@ -604,7 +602,7 @@ export function ExploreLoopsMarketsTable({
                       </span>
                     </CellLink>
                   </td>
-                  <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
+                  <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <CellLink href={row.href} className="flex min-w-0 items-center gap-2.5">
                       {getAssetLogo(row.asset) ? (
                         <>
@@ -628,7 +626,7 @@ export function ExploreLoopsMarketsTable({
                       </span>
                     </CellLink>
                   </td>
-                  <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
+                  <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <CellLink
                       href={row.href}
                       className={cn(
@@ -639,7 +637,7 @@ export function ExploreLoopsMarketsTable({
                       {row.apy || "—"}
                     </CellLink>
                   </td>
-                  <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
+                  <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <CellLink href={row.href} className="text-foreground">
                       {row.rewardRows?.[1] ? (
                         <span className="block">
@@ -658,7 +656,7 @@ export function ExploreLoopsMarketsTable({
                       )}
                     </CellLink>
                   </td>
-                  <td className={`py-3 px-4 pr-6 ${ROW_HOVER_RIGHT}`}>
+                  <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
                     {row.waitlistHref ? (
                       <div className="inline-flex items-center">
                         <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
@@ -673,7 +671,7 @@ export function ExploreLoopsMarketsTable({
                       </CellLink>
                     )}
                   </td>
-                  <td className={`py-3 px-4 pr-4 ${ROW_HOVER_RIGHT}`}>
+                  <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
                     <Button
                       type="button"
                       size="sm"

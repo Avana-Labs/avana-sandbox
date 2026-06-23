@@ -84,6 +84,6 @@ describe("lendWithdrawSelectItems", () => {
 
     const items = lendWithdrawSelectItems(session as never, "wallet-1")
     expect(items[0]?.symbol).toBe("GHO")
-    expect(items[0]?.trailingLabel).toContain("supplied")
+    expect(items[0]?.trailingSublabel).toContain("supplied")
   })
 })

@@ -2,6 +2,8 @@ import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import { formatFixed } from "@/app/lib/credit-engine"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { buildHomeBorrowPreview, selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
+import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
+import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
 import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 
@@ -51,6 +53,12 @@ export function resolveBorrowAssetId(state: BorrowSystemState, rawAssetId: strin
 
 type BorrowContextSession = {
   state: BorrowSystemState
+  marketSummaries: Array<{
+    id: string
+    name: string
+    venue: string
+    feeTier: string
+  }>
   collateralPools: Array<{ id: string }>
   getBorrowableAssetsForMarket: (marketId?: string) => Array<{
     id: string
@@ -92,6 +100,26 @@ export function resolveBorrowMarketForAsset(session: BorrowContextSession, asset
 
   const market = Object.values(session.state.markets).find((entry) => entry.relations.supportedBorrowAssetIds.includes(resolvedAssetId))
   return market?.id ?? preferredMarketId ?? session.collateralPools[0]?.id ?? ""
+}
+
+export function supplySelectItemsForWallet(session: BorrowContextSession, walletId: string) {
+  return session.marketSummaries
+    .map((pool) => {
+      const market = session.state.markets[pool.id]
+      const walletLpUsd = getWalletLpBalanceUsd(walletId, pool.id)
+      const visuals = market?.display.visuals ?? []
+      return {
+        id: pool.id,
+        name: pool.name,
+        symbol: visuals[0]?.symbol ?? pool.name.split("/")[0]?.trim() ?? "LP",
+        pairSymbols: visuals.length >= 2 ? ([visuals[0]!.symbol, visuals[1]!.symbol] as [string, string]) : undefined,
+        sublabel: formatBorrowMarketContext({ venue: pool.venue, feeTier: pool.feeTier }),
+        trailingLabel: formatActionUsd(walletLpUsd),
+        walletLpUsd,
+      }
+    })
+    .filter((item) => item.walletLpUsd > 0)
+    .map(({ walletLpUsd: _walletLpUsd, ...item }) => item)
 }
 
 export function borrowSelectItemsForMarket(

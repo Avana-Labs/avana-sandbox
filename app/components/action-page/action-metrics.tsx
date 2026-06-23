@@ -128,7 +128,7 @@ export function ActionMetricRow({
       <div className="flex items-center justify-between gap-4 px-4 py-3 text-[14px]">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <span>{label}</span>
-          <ActionMetricHelp text={tip} topic={label} />
+          {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
         </div>
         <MetricValue label={label} value={value} before={before} after={after} tone={tone} id={id} tokenSymbols={tokenSymbols} />
       </div>
@@ -148,11 +148,6 @@ export function ActionMetricsBlock({ rows }: { rows: ActionMetricRow[] }) {
       {hfRow ? (
         <ActionCard className="p-4" data-testid="action-health-factor-card">
           <ActionHealthFactorBar value={hfValue} />
-          {hfRow.before && hfRow.after ? (
-            <div className="mt-3 text-[12px] tabular-nums text-muted-foreground">
-              {hfRow.before} → {hfRow.after}
-            </div>
-          ) : null}
         </ActionCard>
       ) : null}
 

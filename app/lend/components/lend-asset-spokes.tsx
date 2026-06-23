@@ -7,6 +7,7 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/mock/shared/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
   marketId?: string
@@ -28,9 +29,6 @@ const ALL_HUBS_LABEL = "All Hubs"
 const ALL_MARKETS_LABEL = "All Markets"
 const HUB_OPTIONS = ["Stable", "Volatile"]
 const MARKET_OPTIONS = DEFAULT_ASSET_GROUPS.map((group) => group.title)
-const ROW_HOVER_BG = "transition-colors group-hover:bg-table-header/40 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
 
 function getHubBucket(row: AssetRow) {
   return STABLE_SYMBOLS.has(row.symbol) ? "Stable" : "Volatile"
@@ -330,10 +328,10 @@ function AssetRowView({
       className="asset-swap group transition-colors"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
         {index + 1}
       </td>
-      <td className={`py-3 pl-6 pr-4 ${ROW_HOVER_BG}`}>
+      <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} />
           <div className="min-w-0">
@@ -347,27 +345,27 @@ function AssetRowView({
         </div>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.supplyApyLabel ?? row.apy}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.rewardsApyLabel ?? "0.00%"}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.reserveFactorLabel ?? "—"}</span>
       </td>
 
-      <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <StatusBadge status={row.status} />
       </td>
 
-      <td className={`py-3 px-4 pr-4 ${ROW_HOVER_RIGHT}`}>
+      <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
         {onDeposit ? (
           <Button type="button" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]" onClick={() => onDeposit(marketId)}>
             Deposit

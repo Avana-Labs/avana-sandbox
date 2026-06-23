@@ -16,9 +16,7 @@ import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
 import { cn } from "@/lib/utils"
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-table-header/40 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type DebtsTableProps = {
   rows: DebtRowContext[]
@@ -122,32 +120,32 @@ export function DebtsPanel({
                   const rowKey = row.id ?? `${row.pool.id}-${index}`
                   return (
                     <tr key={rowKey} className="group transition-colors">
-                      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                         {index + 1}
                       </td>
-                      <td className={`py-3 pl-5 ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_BG}`}>
                         <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
                       </td>
-                      <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatCompactUsd(row.borrowedUsd))}</div>
                         <div className="text-[11px] text-muted-foreground">
                           {showBalance ? `${tokenCount} ${usdc.symbol}` : MASK}
                         </div>
                       </td>
-                      <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                       </td>
-                      <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.accruedInterestUsd))}</div>
                         <div className={cn("font-data text-[11px] font-medium tabular-nums", aprToneClass(row.borrowApr))}>
                           {row.borrowApr.toFixed(1)}% APR
                         </div>
                       </td>
-                      <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.liquidationThresholdUsd))}</div>
                         <div className="text-[11px] text-muted-foreground">collateral value</div>
                       </td>
-                      <td className={`py-3 pl-4 pr-5 text-left ${ROW_HOVER_RIGHT}`}>
+                      <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
                         <div className="flex justify-start gap-1.5">
                           <PillButton variant="ghost" onClick={() => onManage(row)}>
                             Manage
