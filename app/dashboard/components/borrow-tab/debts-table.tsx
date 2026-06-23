@@ -1,6 +1,6 @@
 "use client"
 
-import { Info } from "lucide-react"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import {
   BORROW_SUPPLY_META,
   HOME_BORROW_TOKENS,
@@ -274,9 +274,12 @@ export function CurrentLtvCard({
     <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="text-[13px] font-semibold text-foreground">Borrowing Power</span>
-          <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
           <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">{borrowingPowerLabel}</span>
+          <span className="text-[13px] font-semibold text-foreground">Borrowing Power</span>
+          <ActionMetricHelp
+            topic="Borrowing Power"
+            text="Remaining room to borrow before your position approaches liquidation, based on current collateral and outstanding debt."
+          />
         </div>
         <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-600">
           {statusLabel}

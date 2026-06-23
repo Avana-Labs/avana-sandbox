@@ -3,7 +3,7 @@ import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import type { MultiplySystemState } from "@/app/lib/multiply-engine"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
-import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
+import type { PortfolioLendTabData, PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 
 export type DashboardOverviewMetrics = {
   netValueUsd: number
@@ -151,5 +151,24 @@ export function buildMultiplyDashboardMetrics(
       interestEarnedUsd,
       interestOwedUsd,
     },
+  }
+}
+
+export function buildLendDashboardMetrics(data: PortfolioLendTabData) {
+  const investments = data.investments ?? []
+  const totalSuppliedUsd = investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
+  const netApyPct =
+    totalSuppliedUsd > 0
+      ? investments.reduce((sum, item) => sum + item.apyPct * item.suppliedUsd, 0) / totalSuppliedUsd
+      : 0
+  const interestEarnedUsd =
+    data.rewardsSummary?.totalEarnedUsd ?? investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  const claimableRewardsUsd = data.rewardsSummary?.claimableUsd ?? 0
+
+  return {
+    totalSuppliedUsd,
+    netApyPct,
+    interestEarnedUsd,
+    claimableRewardsUsd,
   }
 }

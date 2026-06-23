@@ -34,10 +34,6 @@ export function MultiplyCollateralTable({
 
   return (
     <section>
-      <div className="mb-3 flex items-baseline justify-between gap-2">
-        <h2 className="text-[14px] font-medium tracking-tight text-foreground">Multiply positions</h2>
-      </div>
-
       <div className="rounded-radius-md bg-transparent dark:bg-transparent">
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1180px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">

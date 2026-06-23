@@ -9,22 +9,25 @@ import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provide
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
 import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import { getWalletLendAssets } from "@/app/lib/data/mock/wallet/portfolio/lend-wallet-assets"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import {
   buildBorrowDashboardMetrics,
   buildBorrowDashboardMetricsFromSnapshot,
+  buildLendDashboardMetrics,
   buildMultiplyDashboardMetrics,
   type DashboardTabMetrics,
 } from "@/app/portfolio/dashboard-tab-metrics"
 import {
+  DashboardLendPerformanceSection,
   DashboardOverviewSection,
   DashboardPerformanceSection,
 } from "@/app/portfolio/dashboard-metric-section"
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
 import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
 import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
-import { PortfolioPositionsTabs } from "@/app/portfolio/portfolio-positions-tabs"
+import { PortfolioLendingOpportunities } from "@/app/portfolio/portfolio-lending-opportunities"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { buildLendSnapshotFromTabData } from "@/app/portfolio/lend-hero-state"
@@ -235,6 +238,29 @@ export function DashboardClient({
     return buildMultiplyDashboardMetrics(multiplySession.state, walletId ?? "", multiplyTabData)
   }, [multiplySession.state, multiplyTabData, walletId])
 
+  const lendDashboardMetrics = useMemo(() => buildLendDashboardMetrics(lendTabData), [lendTabData])
+
+  const lendWalletBalancesBySymbol = useMemo(() => {
+    const balances: Record<string, number> = {}
+    const sessionBalances = walletId ? lendSession.state.walletBalances?.[walletId] : undefined
+
+    if (sessionBalances) {
+      for (const [marketId, amount] of Object.entries(sessionBalances)) {
+        const market = lendSession.state.markets[marketId]
+        if (market) balances[market.asset.symbol.toUpperCase()] = amount
+      }
+    }
+
+    if (resolvedWalletProfileId) {
+      for (const asset of getWalletLendAssets(resolvedWalletProfileId)) {
+        const key = asset.symbol.toUpperCase()
+        if (balances[key] == null) balances[key] = asset.balance
+      }
+    }
+
+    return balances
+  }, [lendSession.state, resolvedWalletProfileId, walletId])
+
   const multiplyHero = useMemo(() => {
     const template = pageData?.heroByTab.looping ?? {}
     return buildMultiplyHeroData(template, buildMultiplySnapshotFromTabData(multiplyTabData))
@@ -279,18 +305,25 @@ export function DashboardClient({
         </div>
       ) : null}
       {activeTab === "lending" ? (
-        <PortfolioInvestments
-          investments={lendTabData.investments}
-          rewardsSummary={lendTabData.rewardsSummary}
-          onClaimRewards={handleClaimLendRewards}
-          isClaimingRewards={isClaimingLendRewards}
-        />
+        <div className="mt-12 space-y-10">
+          <DashboardSection title="Lending Positions">
+            <PortfolioInvestments
+              investments={lendTabData.investments}
+              rewardsSummary={lendTabData.rewardsSummary}
+              walletBalancesBySymbol={lendWalletBalancesBySymbol}
+              onClaimRewards={handleClaimLendRewards}
+              isClaimingRewards={isClaimingLendRewards}
+              showHeading={false}
+            />
+          </DashboardSection>
+          <DashboardLendPerformanceSection title="Lending Performance" metrics={lendDashboardMetrics} />
+          <PortfolioLendingOpportunities buckets={lendTabData.strategyBuckets} />
+        </div>
       ) : null}
       {activeTab === "looping" ? (
         <div className="mt-12 space-y-10">
           <DashboardOverviewSection title="Looping Overview" metrics={multiplyDashboardMetrics.overview} />
-          <DashboardSection title="Looping Positions" className="space-y-8">
-            <PortfolioPositionsTabs data={multiplyTabData} initialTab="LP Collaterals" />
+          <DashboardSection title="Looping Positions">
             <MultiplyCollateralTable
               rows={multiplyTabData.lpCollaterals}
               onDeleverage={(positionId) => {

@@ -18,6 +18,7 @@ import {
   type SpokeBorrowableRecord,
 } from "@/app/lib/borrow-system/registry"
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
+import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
 import { buildCuratedPriceFamily } from "./token-price-series"
 import {
   computeAssetAllocation,
@@ -231,7 +232,9 @@ function buildQuickStats(asset: SpokeBorrowableRecord, supplied: number, borrowe
     { id: "utilization", label: "Utilization", value: formatPct(utilization * 100, 2), delta: deltaFromPct(-0.6) },
     { id: "supplyApy", label: "Supply APY", value: `${(asset.borrowApr * 0.85).toFixed(2)}%`, delta: deltaFromPct(0.1) },
     { id: "supplyApy90d", label: "Supply APY (90D Avg)", value: `${(asset.borrowApr * 0.83).toFixed(2)}%` },
+    { id: "supplyApy90d", label: "Supply APY (90D Avg)", value: `${(asset.borrowApr * 0.83).toFixed(2)}%` },
     { id: "borrowApy", label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%`, delta: deltaFromPct(0.08) },
+    ...buildLiquidationRiskQuickStats(asset.id, borrowed),
   ]
   if (!fixture?.quickStats) return defaults
   return defaults.map((stat) => ({ ...stat, ...(fixture.quickStats?.[stat.id] ?? {}) }))

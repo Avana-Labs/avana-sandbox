@@ -1,5 +1,6 @@
 "use client"
 
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import type { DashboardOverviewMetrics, DashboardPerformanceMetrics } from "./dashboard-tab-metrics"
 
@@ -26,12 +27,14 @@ function MetricGrid({ metrics }: { metrics: MetricItem[] }) {
   return (
     <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-x-8">
       {metrics.map((metric) => (
-        <article key={metric.label} className="min-w-0 space-y-2">
-          <div className="text-[12px] font-medium tracking-tight text-muted-foreground">{metric.label}</div>
+        <article key={metric.label} className="min-w-0 space-y-1.5">
           <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
             {metric.value}
           </div>
-          <p className="max-w-[240px] text-[12px] leading-relaxed text-muted-foreground">{metric.description}</p>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[12px] font-medium tracking-tight text-muted-foreground">{metric.label}</span>
+            <ActionMetricHelp text={metric.description} topic={metric.label} />
+          </div>
         </article>
       ))}
     </div>
@@ -113,6 +116,54 @@ export function DashboardPerformanceSection({
             label: "Interest Owed",
             value: m(formatUsd(metrics.interestOwedUsd)),
             description: "Total interest accrued on outstanding loans",
+          },
+        ]}
+      />
+    </section>
+  )
+}
+
+export type DashboardLendPerformanceMetrics = {
+  totalSuppliedUsd: number
+  netApyPct: number
+  interestEarnedUsd: number
+  claimableRewardsUsd: number
+}
+
+export function DashboardLendPerformanceSection({
+  title,
+  metrics,
+}: {
+  title: string
+  metrics: DashboardLendPerformanceMetrics
+}) {
+  const { showDollarAmounts } = useDisplayPreferences()
+  const m = (value: string) => (showDollarAmounts ? value : MASK)
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      <MetricGrid
+        metrics={[
+          {
+            label: "Total Supplied",
+            value: m(formatUsd(metrics.totalSuppliedUsd)),
+            description: "Total assets currently supplied and earning yield",
+          },
+          {
+            label: "Net APY",
+            value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
+            description: "Weighted average APY across all supplied positions",
+          },
+          {
+            label: "Interest Earned",
+            value: m(formatUsd(metrics.interestEarnedUsd)),
+            description: "Total yield accrued across your lending positions",
+          },
+          {
+            label: "Claimable Rewards",
+            value: m(formatUsd(metrics.claimableRewardsUsd)),
+            description: "Rewards available to claim from your lending activity",
           },
         ]}
       />

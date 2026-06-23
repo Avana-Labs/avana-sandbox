@@ -1,6 +1,6 @@
 "use client"
 
-import { Info } from "lucide-react"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import {
   BORROW_SUPPLY_META,
   HOME_COLLATERAL_POOLS,
@@ -279,11 +279,14 @@ export function SuppliesHealthFactorCard({
     <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
-          <span className="text-[13px] font-semibold text-foreground">Health factor</span>
-          <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
           <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
             {masked ? "••" : hfLabel}
           </span>
+          <span className="text-[13px] font-semibold text-foreground">Credit Health</span>
+          <ActionMetricHelp
+            topic="Credit Health"
+            text="Wallet-wide health factor from total liquidation value divided by total borrowed. Above 1.5 is generally healthy."
+          />
         </div>
         <span
           className={cn(
