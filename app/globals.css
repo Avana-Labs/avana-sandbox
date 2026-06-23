@@ -15,7 +15,7 @@
     --background: 0 0% 98.8%; /* #FCFCFC page */
     --foreground: 0 0% 17.3%; /* #2C2C2C primary labels */
 
-    --card: 0 0% 92.2%; /* #EBEBEB cards */
+    --card: 0 0% 94%; /* clearer step above #FCFCFC page */
     --card-foreground: 0 0% 17.3%;
 
     --popover: 0 0% 98%; /* #FAFAFA dropdowns */
@@ -38,7 +38,7 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 91.8%; /* #EAEAEA dividers */
+    --border: 0 0% 86%; /* visible dividers on light canvas */
     --input: 0 0% 87.1%; /* #DEDEDE recessed inputs */
     --ring: 191 99% 41%;
 
@@ -86,36 +86,36 @@
     --background: 220 7% 8.4%; /* #141517 page */
     --foreground: 0 0% 78%; /* #C7C7C7 primary labels */
 
-    --card: 0 0% 11%; /* #1C1C1C cards */
-    --card-foreground: 0 0% 78%;
+    --card: 0 0% 14.5%; /* #252525 — visible step above page */
+    --card-foreground: 0 0% 82%;
 
-    --popover: 0 0% 8.2%; /* #151515 dropdowns */
-    --popover-foreground: 0 0% 78%;
+    --popover: 0 0% 11%; /* #1C1C1C dropdowns */
+    --popover-foreground: 0 0% 82%;
 
-    --primary: 0 0% 78%;
+    --primary: 0 0% 82%;
     --primary-foreground: 0 0% 11%;
 
-    --secondary: 0 0% 11%;
-    --secondary-foreground: 0 0% 78%;
+    --secondary: 0 0% 14.5%;
+    --secondary-foreground: 0 0% 82%;
 
-    --muted: 0 0% 11%;
-    --muted-foreground: 0 0% 50.6%; /* #818181 descriptions */
-    --section-foreground: 0 0% 60%; /* #999999 section headers */
-    --table-header: 214 22% 10%; /* #131820 header strip on page */
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 58%; /* brighter secondary copy */
+    --section-foreground: 0 0% 68%;
+    --table-header: 214 18% 13%;
 
-    --accent: 0 0% 11%;
-    --accent-foreground: 0 0% 78%;
+    --accent: 0 0% 14.5%;
+    --accent-foreground: 0 0% 82%;
 
     --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 78%;
+    --destructive-foreground: 0 0% 82%;
 
-    --border: 0 0% 11%; /* #1C1C1C dividers */
+    --border: 0 0% 22%; /* #383838 — visible dividers */
     --input: 0 0% 13.7%; /* #232323 recessed inputs */
     --ring: 191 99% 41%;
 
     --surface-1: 220 7% 8.4%;
-    --surface-2: 0 0% 11%;
-    --surface-hover: 0 0% 13.7%;
+    --surface-2: 0 0% 14.5%;
+    --surface-hover: 0 0% 18%;
 
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
@@ -126,7 +126,7 @@
     --elev-2: none;
     --elev-3: 0 8px 24px rgba(0, 0, 0, 0.45);
 
-    --accent-primary: 0 0% 78%;
+    --accent-primary: 0 0% 82%;
     --accent-primary-foreground: 0 0% 11%;
     --accent-primary-hover: 0 0% 72%;
 
@@ -134,8 +134,8 @@
     --accent-emphasis-foreground: 0 0% 11%;
     --accent-emphasis-soft: 214 40% 18%;
 
-    --surface-raised: 0 0% 8.2%; /* #151515 */
-    --surface-inset: 0 0% 11%; /* #1C1C1E steppers */
+    --surface-raised: 0 0% 14.5%; /* match card step */
+    --surface-inset: 0 0% 10.5%; /* recessed inputs */
 
     --progress: 221 83% 53%;
     --progress-track: 0 0% 11%;
@@ -279,8 +279,8 @@
 }
 
 .text-ui-description {
-  font-size: 12px;
-  line-height: 1.125rem;
+  font-size: 13px;
+  line-height: 1.25rem;
   color: hsl(var(--muted-foreground));
 }
 
@@ -356,7 +356,7 @@
 
   .bg-card.border,
   .bg-surface-raised.border {
-    border-color: transparent !important;
+    border-color: hsl(var(--border) / 0.85) !important;
   }
 }
 
