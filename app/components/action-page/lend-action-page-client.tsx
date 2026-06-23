@@ -361,8 +361,6 @@ export function LendActionPageClient({
           onAmountChange={setAmount}
           preview={previewUi}
           assetSymbol={market.asset.symbol}
-          balanceLabel={fallbackBalanceLabel}
-          balanceValue={fallbackBalanceValue}
           assetOptions={depositAssetOptions}
           selectedAssetId={market.marketId}
           onAssetSelect={(id) => {
@@ -373,15 +371,6 @@ export function LendActionPageClient({
           onSecondary={handleBack}
           secondaryHref={canGoBackToSelect ? undefined : closeHref}
           canGoBack={canGoBackToSelect}
-          onMax={() => {
-            if (kind === "deposit") {
-              setAmount(String(getWalletBalanceForLendMarket(session.state, walletId, market)))
-            } else if (position) {
-              setAmount(String(previewUi?.maxAmount ?? position.currentSuppliedAmount))
-            }
-          }}
-          onPercent={applyPercent}
-          showPercentShortcuts
           isPending={isPending}
           outcome={outcome}
         />

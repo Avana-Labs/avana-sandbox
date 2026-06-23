@@ -15,7 +15,7 @@ const preview: ActionPreviewUi = {
   balanceLabel: "Available to Borrow",
   balanceValue: "$5,000.00",
   maxAmount: 5000,
-  metrics: [{ id: "hf", label: "Health factor", value: "2.40 → 1.80" }],
+  metrics: [{ id: "hf", label: "Health factor", value: "2.40 → 1.80", after: "1.80" }],
   networkFeeLabel: "≈ $0.04",
   risk: null,
   blockedReason: null,
@@ -42,12 +42,10 @@ describe("ActionConfigureStage", () => {
     expect(screen.getByText("Health factor")).toBeInTheDocument()
     expect(screen.getByTestId("action-footer")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Max" })).not.toBeInTheDocument()
   })
 
-  it("shows percent shortcuts and receive WETH toggle when enabled", async () => {
-    const user = userEvent.setup()
-    const onPercent = vi.fn()
-
+  it("shows receive WETH toggle when enabled", () => {
     render(
       <ActionConfigureStage
         stage="configure"
@@ -56,16 +54,12 @@ describe("ActionConfigureStage", () => {
         onAmountChange={() => undefined}
         preview={preview}
         assetSymbol="WETH"
-        showPercentShortcuts
-        onPercent={onPercent}
         showReceiveWethToggle
         receiveWeth={false}
         onReceiveWethChange={() => undefined}
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "50%" }))
-    expect(onPercent).toHaveBeenCalledWith(50)
     expect(screen.getByRole("switch", { name: /receive weth/i })).toBeInTheDocument()
   })
 
@@ -83,39 +77,25 @@ describe("ActionConfigureStage", () => {
     expect(screen.getByTestId("action-wallet-toast")).toHaveTextContent("100 USDC")
   })
 
-  it("can show an idle balance before preview data is available", () => {
+  it("renders leverage ruler when multiplier controls are provided", async () => {
+    const onMultiplierChange = vi.fn()
+
     render(
       <ActionConfigureStage
         stage="configure"
-        verb="Deposit"
-        amount=""
-        onAmountChange={() => undefined}
-        preview={null}
-        assetSymbol="USDC"
-        balanceLabel="Balance"
-        balanceValue="8,200 USDC"
-      />,
-    )
-
-    expect(screen.getByText("Balance: 8,200 USDC")).toBeInTheDocument()
-  })
-
-  it("can hide the amount card for target-only actions", () => {
-    const { container } = render(
-      <ActionConfigureStage
-        stage="configure"
-        verb="Deleverage"
-        amount=""
+        verb="Multiply"
+        amount="1"
         onAmountChange={() => undefined}
         preview={preview}
-        multiplier="1.5"
-        onMultiplierChange={() => undefined}
-        multiplierOptions={[1.5, 2]}
-        hideAmountInput
+        multiplier="2"
+        onMultiplierChange={onMultiplierChange}
+        multiplierMin={1}
+        multiplierMax={5}
       />,
     )
 
-    expect(within(container).queryByTestId("action-amount-card")).not.toBeInTheDocument()
-    expect(within(container).getByRole("button", { name: "Review" })).toBeInTheDocument()
+    expect(await screen.findByTestId("action-leverage-ruler")).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole("button", { name: "Max" }))
+    expect(onMultiplierChange).toHaveBeenCalledWith("5")
   })
 })
