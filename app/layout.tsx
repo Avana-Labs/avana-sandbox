@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import localFont from "next/font/local"
 import type React from "react"
 import { Suspense } from "react"
+import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { AvanaSessionProviders } from "./components/avana-session-providers"
@@ -121,6 +122,7 @@ export default function RootLayout({
             </AvanaSessionProviders>
           </DisplayPreferencesProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   )
