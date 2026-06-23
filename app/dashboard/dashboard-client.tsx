@@ -11,7 +11,16 @@ import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@
 import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
-import { CreditLinesCard } from "@/app/portfolio/credit-lines-card"
+import {
+  buildBorrowDashboardMetrics,
+  buildBorrowDashboardMetricsFromSnapshot,
+  buildMultiplyDashboardMetrics,
+  type DashboardTabMetrics,
+} from "@/app/portfolio/dashboard-tab-metrics"
+import {
+  DashboardOverviewSection,
+  DashboardPerformanceSection,
+} from "@/app/portfolio/dashboard-metric-section"
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
 import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
 import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
@@ -72,14 +81,6 @@ function DashboardSection({
       ) : null}
       {children}
     </section>
-  )
-}
-
-function DashboardSectionTitle({ title }: { title: string }) {
-  return (
-    <h2 className="mb-3 mt-1 text-[19px] font-medium tracking-[-0.03em] text-foreground no-underline md:text-[20px]">
-      {title}
-    </h2>
   )
 }
 
@@ -223,6 +224,17 @@ export function DashboardClient({
     return mergeMultiplyTabData(pageData.multiply, portfolioMultiply)
   }, [pageData, portfolioMultiply])
 
+  const borrowDashboardMetrics = useMemo<DashboardTabMetrics>(() => {
+    if (walletId && borrowSession.state.accounts[walletId]) {
+      return buildBorrowDashboardMetrics(borrowSession.state, walletId)
+    }
+    return buildBorrowDashboardMetricsFromSnapshot(borrowSnapshot, collateralPositions, debtPositions)
+  }, [borrowSession.state, borrowSnapshot, collateralPositions, debtPositions, walletId])
+
+  const multiplyDashboardMetrics = useMemo<DashboardTabMetrics>(() => {
+    return buildMultiplyDashboardMetrics(multiplySession.state, walletId ?? "", multiplyTabData)
+  }, [multiplySession.state, multiplyTabData, walletId])
+
   const multiplyHero = useMemo(() => {
     const template = pageData?.heroByTab.looping ?? {}
     return buildMultiplyHeroData(template, buildMultiplySnapshotFromTabData(multiplyTabData))
@@ -253,10 +265,9 @@ export function DashboardClient({
       />
 
       {activeTab === "overview" ? (
-        <div className="mt-12 space-y-5">
-          <DashboardSectionTitle title="Credit Limits" />
-          <CreditLinesCard creditLines={borrowSnapshot} />
-          <DashboardSection className="pt-8">
+        <div className="mt-12 space-y-10">
+          <DashboardOverviewSection title="Credit Overview" metrics={borrowDashboardMetrics.overview} />
+          <DashboardSection title="Credit Positions">
             <DashboardBorrowTab
               section="all"
               collateralPositions={collateralPositions}
@@ -264,6 +275,7 @@ export function DashboardClient({
               showSummary={false}
             />
           </DashboardSection>
+          <DashboardPerformanceSection title="Credit Performance" metrics={borrowDashboardMetrics.performance} />
         </div>
       ) : null}
       {activeTab === "lending" ? (
@@ -275,10 +287,9 @@ export function DashboardClient({
         />
       ) : null}
       {activeTab === "looping" ? (
-        <div className="mt-12 space-y-5">
-          <DashboardSectionTitle title="Credit Limits" />
-          <CreditLinesCard creditLines={multiplySnapshot} />
-          <DashboardSection className="space-y-8 pt-8">
+        <div className="mt-12 space-y-10">
+          <DashboardOverviewSection title="Looping Overview" metrics={multiplyDashboardMetrics.overview} />
+          <DashboardSection title="Looping Positions" className="space-y-8">
             <PortfolioPositionsTabs data={multiplyTabData} initialTab="LP Collaterals" />
             <MultiplyCollateralTable
               rows={multiplyTabData.lpCollaterals}
@@ -289,6 +300,7 @@ export function DashboardClient({
               }}
             />
           </DashboardSection>
+          <DashboardPerformanceSection title="Looping Performance" metrics={multiplyDashboardMetrics.performance} />
         </div>
       ) : null}
       {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
