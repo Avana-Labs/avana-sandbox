@@ -14,7 +14,7 @@ import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { useAvanaSessions, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
-import { getActionDescriptor } from "@/app/lib/action-system/contracts"
+import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
 import {
   mapBorrowSuccessToActionUi,
   mapBorrowRemovePreviewToActionUi,
@@ -34,7 +34,14 @@ import { formatActionUsd, formatActionInputAmount } from "@/app/lib/action-syste
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
-import { borrowSelectItemsForMarket, claimSelectItemsForWallet, repaySelectItemsForWallet, resolveBorrowMarketForAsset, resolveClaimMarketId } from "@/app/lib/action-system/resolve-borrow-context"
+import { formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
+import {
+  borrowSelectItemsForMarket,
+  claimSelectItemsForWallet,
+  repaySelectItemsForWallet,
+  resolveBorrowMarketForAsset,
+  resolveClaimMarketId,
+} from "@/app/lib/action-system/resolve-borrow-context"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parseActionPercentBps, parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
@@ -60,12 +67,16 @@ export function BorrowActionPageClient({
   initialAssetId,
   initialMarketId,
   initialAmount = "",
+  initialPositionId,
+  initialDebtId,
 }: {
   kind: Extract<ActionKind, "borrow" | "repay" | "supply" | "remove" | "claim">
   closeHref?: string
   initialAssetId?: string
   initialMarketId?: string
   initialAmount?: string
+  initialPositionId?: string
+  initialDebtId?: string
 }) {
   const descriptor = getActionDescriptor("borrow", kind)
   const router = useRouter()
@@ -77,7 +88,8 @@ export function BorrowActionPageClient({
   )
   const [stage, setStage] = useState<ActionStage>(() => {
     if (kind === "borrow" && !initialAssetId) return "select"
-    if (kind === "claim" && !initialMarketId) return "select"
+    if (kind === "claim" && !initialMarketId && !initialPositionId) return "select"
+    if (kind === "repay" && !initialMarketId && !initialDebtId) return "select"
     return "configure"
   })
   const [assetId, setAssetId] = useState(initialAssetId ?? "")
@@ -88,12 +100,12 @@ export function BorrowActionPageClient({
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
   const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
-  const [claimPositionId, setClaimPositionId] = useState("")
+  const [claimPositionId, setClaimPositionId] = useState(initialPositionId ?? "")
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
 
   const debtPositions = useMemo(() => session.state.accounts[walletId]?.debtPositions ?? [], [session.state.accounts, walletId])
-  const [debtPositionId, setDebtPositionId] = useState("")
+  const [debtPositionId, setDebtPositionId] = useState(initialDebtId ?? "")
 
   const debtPosition = useMemo(() => {
     if (debtPositionId) {
@@ -133,7 +145,7 @@ export function BorrowActionPageClient({
 
   const marketLabel = useMemo(() => {
     const market = session.marketSummaries.find((entry) => entry.id === marketId)
-    return market ? `${market.venue} · ${market.name}` : "Main · Core"
+    return market ? formatBorrowMarketLabel(market) : "Collateral pool"
   }, [marketId, session.marketSummaries])
 
   const repayAssetOptions = useMemo(() => {
@@ -176,14 +188,22 @@ export function BorrowActionPageClient({
   }, [assetId, debtPosition, kind, marketId, previewUi?.amountLabel, session.state.assets, session.state.markets])
 
   useEffect(() => {
-    if (kind !== "repay" || initialMarketId || debtPositionId) return
+    if (initialPositionId) setClaimPositionId(initialPositionId)
+  }, [initialPositionId])
+
+  useEffect(() => {
+    if (initialDebtId) setDebtPositionId(initialDebtId)
+  }, [initialDebtId])
+
+  useEffect(() => {
+    if (kind !== "repay" || initialMarketId || initialDebtId || debtPositionId) return
     if (debtPositions.length === 1) {
       setDebtPositionId(debtPositions[0]!.id)
       if (debtPositions[0]!.marketId) setMarketId(debtPositions[0]!.marketId)
       return
     }
     if (debtPositions.length > 1) setStage("select")
-  }, [debtPositionId, debtPositions, initialMarketId, kind])
+  }, [debtPositionId, debtPositions, initialDebtId, initialMarketId, kind])
 
   useEffect(() => {
     if (initialAssetId) {
@@ -393,8 +413,8 @@ export function BorrowActionPageClient({
 
   const canGoBackToSelect = useMemo(() => {
     if (kind === "borrow" && !initialAssetId) return true
-    if (kind === "repay" && debtPositions.length > 1 && !initialMarketId) return true
-    if (kind === "claim" && claimSelectItemsForWallet(session, walletId).length > 1 && !initialMarketId) return true
+    if (kind === "repay" && debtPositions.length > 1 && !initialMarketId && !initialDebtId) return true
+    if (kind === "claim" && claimSelectItemsForWallet(session, walletId).length > 1 && !initialMarketId && !initialPositionId) return true
     return false
   }, [debtPositions.length, initialAssetId, initialMarketId, kind, session, walletId])
 
@@ -429,11 +449,11 @@ export function BorrowActionPageClient({
       return
     }
     if (stage === "configure" && canGoBackToSelect) {
-      setStage("select")
+      router.replace(actionPagePath("borrow", kind))
       return
     }
     router.push(closeHref)
-  }, [canGoBackToSelect, closeHref, router, stage])
+  }, [canGoBackToSelect, closeHref, kind, router, stage])
 
   const handlePrimary = useCallback(async () => {
     if (stage === "success") {
@@ -572,34 +592,44 @@ export function BorrowActionPageClient({
       {stage === "select" ? (
         <ActionSelectStage
           items={selectItems}
-          emptyTitle={kind === "repay" ? "No debt found" : kind === "claim" ? "No rewards found" : "No assets found"}
+          emptyTitle={kind === "repay" ? "No debt found" : kind === "claim" ? "Nothing to claim" : "No assets found"}
           emptyDescription={
             kind === "repay"
               ? "Borrow first, then repay from here."
               : kind === "claim"
-                ? "Supply collateral to earn fees before claiming."
+                ? "You have no claimable rewards right now. Supply collateral and earn fees before claiming."
                 : "Try adjusting your search"
           }
           onSelect={(id) => {
             if (kind === "repay") {
               const position = debtPositions.find((entry) => entry.id === id)
               if (!position) return
-              setDebtPositionId(id)
-              if (position.marketId) setMarketId(position.marketId)
-              setStage("configure")
+              router.replace(
+                actionPagePath("borrow", "repay", {
+                  debt: id,
+                  ...(position.marketId ? { market: position.marketId } : {}),
+                }),
+              )
               return
             }
             if (kind === "claim") {
               const claimItem = HOME_CLAIM_POSITIONS.find((entry) => entry.id === id)
               if (!claimItem) return
-              setClaimPositionId(id)
-              setMarketId(resolveClaimMarketId(claimItem.poolId))
-              setStage("configure")
+              router.replace(
+                actionPagePath("borrow", "claim", {
+                  position: id,
+                  market: resolveClaimMarketId(claimItem.poolId),
+                }),
+              )
               return
             }
-            setAssetId(id)
-            setMarketId(resolveBorrowMarketForAsset(session, id, selectMarketId))
-            setStage("configure")
+            const resolvedMarket = resolveBorrowMarketForAsset(session, id, selectMarketId)
+            router.replace(
+              actionPagePath("borrow", "borrow", {
+                asset: id,
+                ...(resolvedMarket ? { market: resolvedMarket } : {}),
+              }),
+            )
           }}
         />
       ) : null}

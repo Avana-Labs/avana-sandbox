@@ -9,7 +9,8 @@ const MobileMenu = dynamic(() => import("./mobile-menu").then((mod) => mod.Mobil
     <button
       type="button"
       aria-label="Toggle menu"
-      className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#007a99]"
+      aria-expanded={false}
+      className="inline-flex h-10 w-10 items-center justify-center text-[#007a99] md:hidden"
     >
       <span className="sr-only">Toggle menu</span>
     </button>

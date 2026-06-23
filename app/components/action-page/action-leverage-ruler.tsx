@@ -1,7 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useMemo } from "react"
 import { ActionCard } from "@/app/components/action-page/action-metrics"
+import { cn } from "@/lib/utils"
 
 function formatMultiplier(value: number) {
   return Number.isInteger(value) ? `${value}x` : `${value.toFixed(1)}x`
@@ -11,16 +12,12 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-function snap(value: number, step: number) {
-  return Math.round(value / step) * step
-}
-
 export function ActionLeverageRuler({
   value,
   onChange,
   min = 1,
   max = 20,
-  step = 0.1,
+  step = 1,
   label = "Leverage",
 }: {
   value: string
@@ -30,98 +27,98 @@ export function ActionLeverageRuler({
   step?: number
   label?: string
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null)
   const parsed = Number.parseFloat(value)
-  const activeValue = Number.isFinite(parsed) ? clamp(snap(parsed, step), min, max) : min
+  const currentValue = Number.isFinite(parsed) ? clamp(Math.round(parsed), min, max) : min
 
   const ticks = useMemo(() => {
     const items: number[] = []
-    for (let current = min; current <= max + 1e-9; current = snap(current + (Number.isInteger(min) && Number.isInteger(max) ? 1 : step), step)) {
-      items.push(Number(current.toFixed(2)))
-      if (items.length > 400) break
+    for (let current = min; current <= max + 1e-9; current += step) {
+      items.push(Math.round(current))
     }
     return items
   }, [max, min, step])
 
-  const setValue = useCallback(
+  const publishValue = useCallback(
     (next: number) => {
-      onChange(String(clamp(snap(next, step), min, max)))
+      const clamped = clamp(Math.round(next), min, max)
+      onChange(String(clamped))
     },
-    [max, min, onChange, step],
+    [max, min, onChange],
   )
-
-  useEffect(() => {
-    if (!scrollRef.current) return
-    const index = ticks.findIndex((tick) => Math.abs(tick - activeValue) < step / 2)
-    if (index < 0) return
-    const tickWidth = 28
-    const centerOffset = scrollRef.current.clientWidth / 2 - tickWidth / 2
-    scrollRef.current.scrollLeft = index * tickWidth - centerOffset
-  }, [activeValue, step, ticks])
 
   return (
     <ActionCard className="p-4">
       <div data-testid="action-leverage-ruler">
-      <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
+        <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          className="rounded-full border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          onClick={() => setValue(min)}
-        >
-          Min
-        </button>
-        <div className="font-data text-[clamp(2rem,8vw,2.75rem)] font-semibold leading-none tracking-[-0.05em] text-foreground">
-          {formatMultiplier(activeValue)}
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            className="rounded-full border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={() => publishValue(min)}
+          >
+            Min
+          </button>
+          <div
+            className="font-data text-[clamp(2rem,8vw,2.75rem)] font-semibold leading-none tracking-[-0.05em] text-foreground"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {formatMultiplier(currentValue)}
+          </div>
+          <button
+            type="button"
+            className="rounded-full border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={() => publishValue(max)}
+          >
+            Max
+          </button>
         </div>
-        <button
-          type="button"
-          className="rounded-full border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          onClick={() => setValue(max)}
-        >
-          Max
-        </button>
-      </div>
 
-      <div className="relative mt-5">
-        <div className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-px -translate-x-1/2 bg-foreground" aria-hidden />
-        <div
-          ref={scrollRef}
-          className="overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          onScroll={(event) => {
-            const target = event.currentTarget
-            const tickWidth = 28
-            const center = target.scrollLeft + target.clientWidth / 2
-            const index = Math.round(center / tickWidth)
-            const tick = ticks[index]
-            if (tick != null) setValue(tick)
-          }}
-        >
-          <div className="flex min-w-max items-end px-[50%]">
+        <div className="relative mt-5">
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-0 h-px -translate-y-1/2 bg-border" aria-hidden />
+          <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-10 w-px -translate-x-1/2 bg-foreground" aria-hidden />
+          <input
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={currentValue}
+            aria-label={`${label} multiplier`}
+            aria-valuemin={min}
+            aria-valuemax={max}
+            aria-valuenow={currentValue}
+            aria-valuetext={formatMultiplier(currentValue)}
+            onChange={(event) => publishValue(Number(event.target.value))}
+            className="relative z-20 h-10 w-full cursor-grab appearance-none bg-transparent active:cursor-grabbing [&::-webkit-slider-runnable-track]:h-10 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-3 [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-border [&::-webkit-slider-thumb]:bg-background [&::-moz-range-track]:h-10 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:cursor-grab [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-border [&::-moz-range-thumb]:bg-background"
+          />
+          <div className="mt-1 flex items-end justify-between gap-0.5">
             {ticks.map((tick) => {
-              const isMajor = Math.abs(tick - Math.round(tick)) < 1e-9
-              const isActive = Math.abs(tick - activeValue) < step / 2
+              const isActive = tick === currentValue
+              const showLabel = tick === min || tick === max || tick % 5 === 0 || isActive
               return (
                 <button
                   key={tick}
                   type="button"
                   aria-label={`Set leverage to ${formatMultiplier(tick)}`}
                   aria-pressed={isActive}
-                  onClick={() => setValue(tick)}
-                  className="flex w-7 shrink-0 flex-col items-center gap-1"
+                  onClick={() => publishValue(tick)}
+                  className="flex min-w-0 flex-1 flex-col items-center gap-1"
                 >
-                  <span className={isMajor ? "text-[11px] tabular-nums text-muted-foreground" : "text-[10px] text-transparent"}>
-                    {Math.round(tick)}
+                  <span
+                    className={cn(
+                      "text-[10px] tabular-nums leading-none",
+                      showLabel ? (isActive ? "font-semibold text-foreground" : "text-muted-foreground") : "text-transparent select-none",
+                    )}
+                  >
+                    {tick}
                   </span>
-                  <span className={isMajor ? "h-4 w-px bg-border" : "h-2.5 w-px bg-border/70"} />
+                  <span className={isActive ? "h-4 w-px bg-foreground" : tick % 1 === 0 ? "h-3 w-px bg-border" : "h-2 w-px bg-border/70"} />
                 </button>
               )
             })}
           </div>
         </div>
-      </div>
-
       </div>
     </ActionCard>
   )

@@ -99,7 +99,7 @@ export function ActionConfigureStage({
 
       {onMultiplierChange ? (
         <ActionLeverageRuler
-          value={multiplier ?? "1"}
+          value={multiplier ?? "3"}
           onChange={onMultiplierChange}
           min={multiplierMin}
           max={multiplierMax}
@@ -117,6 +117,10 @@ export function ActionConfigureStage({
 
       {preview?.risk?.title && preview.risk.message ? (
         <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
+      ) : null}
+
+      {preview?.blockedReason && !preview.allowed ? (
+        <ActionOutcomeBanner tone="error" title="Action unavailable" message={preview.blockedReason} />
       ) : null}
 
       {preview ? (

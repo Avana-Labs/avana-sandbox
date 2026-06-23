@@ -232,6 +232,7 @@ function PreferencesMenu() {
 export function Header() {
   const pathname = usePathname()
   const desktopLinks = personalDesktopHeaderLinks
+  const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
   const renderMobileBrand = () => <BrandIcon />
@@ -251,6 +252,12 @@ export function Header() {
   )
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+
     const resolveThreshold = () => headerRef.current?.offsetHeight ?? 68
 
     const readScrollOffset = (target?: EventTarget | null) => {
@@ -273,13 +280,13 @@ export function Header() {
       window.removeEventListener("scroll", updateDivider)
       document.removeEventListener("scroll", updateDivider, true)
     }
-  }, [])
+  }, [mounted])
 
   return (
     <header
       ref={headerRef}
       className={`sticky top-0 z-40 bg-background/95 text-foreground backdrop-blur transition-[box-shadow] duration-200 ${
-        showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
+        mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
       }`}
     >
       <div className="hidden lg:block">

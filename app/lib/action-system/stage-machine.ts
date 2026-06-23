@@ -79,7 +79,8 @@ export function primaryCtaLabel(options: {
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return options.verb
   if (options.stage === "error") return options.verb
   if (options.stage === "review") return options.verb
-  if (!options.isValid || options.blockedReason) return "Enter an amount"
+  if (options.blockedReason) return "Unavailable"
+  if (!options.isValid) return "Enter an amount"
   if (options.stage === "configure") return "Review"
   return options.verb
 }

@@ -1,23 +1,28 @@
 "use client"
 
-import type { ReactNode } from "react"
+import type { ComponentPropsWithoutRef, ReactNode } from "react"
 import { Heart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ActionHealthFactorBar } from "@/app/components/action-page/action-health-factor-bar"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import type { ActionMetricRow, ActionMetricTone } from "@/app/lib/action-system/contracts"
+import { ACTION_INFO_TOOLTIPS, resolveMetricTooltip } from "@/app/lib/action-system/metric-tooltips"
 import { isHealthFactorMetric, parseHealthFactorValue, resolveMetricTone } from "@/app/lib/action-system/health-factor-ui"
 
-export function ActionCard({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("overflow-hidden rounded-[20px] border border-border bg-surface-raised", className)}>{children}</div>
-}
-
-const METRIC_TOOLTIPS: Record<string, string> = {
-  rate: "Estimated annual rate for this action.",
-  market: "The market or pool this action applies to.",
-  fee: "Estimated network fee for this transaction.",
-  metric: "Projected change after this transaction completes.",
-  amount: "Amount you are confirming for this transaction.",
+export function ActionCard({
+  children,
+  className,
+  ...props
+}: {
+  children: ReactNode
+  className?: string
+} & ComponentPropsWithoutRef<"div">) {
+  return (
+    <div className={cn("rounded-[20px] border border-border bg-surface-raised", className)} {...props}>
+      {children}
+    </div>
+  )
 }
 
 export function ActionInfoRow({
@@ -31,16 +36,12 @@ export function ActionInfoRow({
   tooltip?: string
   className?: string
 }) {
-  const tip = tooltip ? METRIC_TOOLTIPS[tooltip] ?? tooltip : undefined
+  const tip = tooltip ? ACTION_INFO_TOOLTIPS[tooltip] ?? tooltip : undefined
   return (
     <div className={cn("flex items-center justify-between gap-4 px-4 py-3 text-[14px]", className)}>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <span>{label}</span>
-        {tip ? (
-          <span className="cursor-help text-[11px] opacity-70" title={tip} aria-label={tip}>
-            ⓘ
-          </span>
-        ) : null}
+        {tip ? <ActionMetricHelp text={tip} /> : null}
       </div>
       <div className="font-medium text-foreground">{value}</div>
     </div>
@@ -121,20 +122,13 @@ export function ActionMetricRow({
   id,
   tokenSymbols,
 }: ActionMetricRow) {
+  const tip = resolveMetricTooltip(id, label, tooltip)
   return (
     <div data-testid={`metric-${label.toLowerCase().replace(/\s+/g, "-")}`}>
       <div className="flex items-center justify-between gap-4 px-4 py-3 text-[14px]">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <span>{label}</span>
-          {tooltip ? (
-          <span
-            className="cursor-help text-[11px] opacity-70"
-            title={METRIC_TOOLTIPS.metric}
-            aria-label={METRIC_TOOLTIPS.metric}
-          >
-            ⓘ
-          </span>
-        ) : null}
+          <ActionMetricHelp text={tip} />
         </div>
         <MetricValue label={label} value={value} before={before} after={after} tone={tone} id={id} tokenSymbols={tokenSymbols} />
       </div>
@@ -144,23 +138,43 @@ export function ActionMetricRow({
 
 export function ActionMetricsBlock({ rows }: { rows: ActionMetricRow[] }) {
   if (rows.length === 0) return null
+
+  const hfRow = rows.find((row) => isHealthFactorMetric(row.label, row.id))
+  const hfValue = parseHealthFactorValue(hfRow?.after ?? hfRow?.value)
+  const detailRows = rows.filter((row) => !isHealthFactorMetric(row.label, row.id))
+
   return (
-    <ActionCard data-testid="action-metrics-block">
-      <div className="divide-y divide-border">
-        {rows.map((row) => (
-          <ActionMetricRow
-            key={row.id ?? row.label}
-            id={row.id}
-            label={row.label}
-            value={row.value}
-            before={row.before}
-            after={row.after}
-            tone={row.tone}
-            tokenSymbols={row.tokenSymbols}
-            tooltip="metric"
-          />
-        ))}
-      </div>
-    </ActionCard>
+    <div className="space-y-3" data-testid="action-metrics-block">
+      {hfRow ? (
+        <ActionCard className="p-4" data-testid="action-health-factor-card">
+          <ActionHealthFactorBar value={hfValue} />
+          {hfRow.before && hfRow.after ? (
+            <div className="mt-3 text-[12px] tabular-nums text-muted-foreground">
+              {hfRow.before} → {hfRow.after}
+            </div>
+          ) : null}
+        </ActionCard>
+      ) : null}
+
+      {detailRows.length > 0 ? (
+        <ActionCard className="overflow-hidden">
+          <div className="divide-y divide-border">
+            {detailRows.map((row) => (
+              <ActionMetricRow
+                key={row.id ?? row.label}
+                id={row.id}
+                label={row.label}
+                value={row.value}
+                before={row.before}
+                after={row.after}
+                tone={row.tone}
+                tokenSymbols={row.tokenSymbols}
+                tooltip={row.tooltip}
+              />
+            ))}
+          </div>
+        </ActionCard>
+      ) : null}
+    </div>
   )
 }

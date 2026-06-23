@@ -197,3 +197,24 @@ export function actionPagePath(product: ActionProduct, kind: ActionKind, params?
   const search = params ? `?${new URLSearchParams(params).toString()}` : ""
   return `/actions/${product}/${kind}${search}`
 }
+
+const ACTION_CLOSE_HREF: Record<ActionProduct, string> = {
+  borrow: "/borrow",
+  lend: "/lend",
+  multiply: "/multiply",
+  rewards: "/rewards",
+}
+
+function normalizeReturnHref(returnHref: string) {
+  if (returnHref.startsWith("/multiply/market/") && !returnHref.startsWith("/multiply/markets/")) {
+    return returnHref.replace("/multiply/market/", "/multiply/markets/")
+  }
+  return returnHref
+}
+
+export function resolveActionCloseHref(product: ActionProduct, returnHref?: string) {
+  const fallback = ACTION_CLOSE_HREF[product] ?? "/"
+  if (!returnHref) return fallback
+  if (!returnHref.startsWith("/") || returnHref.startsWith("//")) return fallback
+  return normalizeReturnHref(returnHref)
+}

@@ -6,7 +6,7 @@ import { useLendSessionContext, useAvanaSessions } from "@/app/lib/avana-session
 import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { getLendMarketById } from "@/app/lib/lend-system/catalog"
 import type { ActionBlockedUi, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
-import { getActionDescriptor } from "@/app/lib/action-system/contracts"
+import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
 import { mapLendDepositPreviewToActionUi, mapLendWithdrawPreviewToActionUi } from "@/app/lib/action-system/adapters/lend-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
@@ -91,12 +91,11 @@ export function LendActionPageClient({
   useEffect(() => {
     if (kind !== "withdraw" || initialMarketId || marketId) return
     if (withdrawItems.length === 1) {
-      setMarketId(withdrawItems[0]!.id)
-      setStage("configure")
+      router.replace(actionPagePath("lend", "withdraw", { market: withdrawItems[0]!.id }))
       return
     }
     if (withdrawItems.length > 1) setStage("select")
-  }, [initialMarketId, kind, marketId, withdrawItems])
+  }, [initialMarketId, kind, marketId, router, withdrawItems])
 
   useEffect(() => {
     if (initialMarketId) setMarketId(initialMarketId)
@@ -227,11 +226,11 @@ export function LendActionPageClient({
       return
     }
     if (stage === "configure" && canGoBackToSelect) {
-      setStage("select")
+      router.replace(actionPagePath("lend", kind))
       return
     }
     router.push(closeHref)
-  }, [canGoBackToSelect, closeHref, router, stage])
+  }, [canGoBackToSelect, closeHref, kind, router, stage])
 
   const handlePrimary = useCallback(async () => {
     if (stage === "success") {
@@ -345,8 +344,7 @@ export function LendActionPageClient({
           emptyTitle={kind === "withdraw" ? "No deposits found" : "No markets found"}
           emptyDescription={kind === "withdraw" ? "Deposit first, then withdraw from here." : "Try another market from the lend page."}
           onSelect={(id) => {
-            setMarketId(id)
-            setStage("configure")
+            router.replace(actionPagePath("lend", kind, { market: id }))
           }}
         />
       ) : null}

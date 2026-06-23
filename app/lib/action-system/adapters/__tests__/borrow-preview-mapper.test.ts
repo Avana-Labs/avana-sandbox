@@ -61,6 +61,7 @@ describe("borrow preview mappers", () => {
       "Collateral risk",
       "Borrowable assets",
       "Borrowing power",
+      "Health factor",
     ])
     expect(ui.metrics.find((row) => row.id === "borrowable-assets")?.tokenSymbols).toEqual(["USDC", "GHO"])
   })
@@ -80,6 +81,7 @@ describe("borrow preview mappers", () => {
       "Borrowing power",
       "Net balance",
       "Net collateral",
+      "Health factor",
     ])
     expect(ui.maxAmount).toBe(60)
   })

@@ -26,7 +26,7 @@ export function validateMultiplyAction(params: {
   if (params.selectedMultiplier < 1) errors.push("Multiplier must be at least 1x.")
   if (params.selectedMultiplier > 20) errors.push("Multiplier cannot exceed 20x.")
   if (params.selectedMultiplier > params.theoreticalMaxMultiplier) {
-    errors.push("Multiplier exceeds the theoretical maximum for this market.")
+    warnings.push("Multiplier exceeds the theoretical maximum for this market.")
   }
   if (params.selectedMultiplier > params.publicMaxMultiplier) {
     warnings.push("Multiplier exceeds the public maximum for this market.")
@@ -35,9 +35,11 @@ export function validateMultiplyAction(params: {
   if (params.debtValueUsd <= 0 && params.selectedMultiplier > 1) {
     errors.push("Debt must be positive for leveraged positions.")
   }
-  if (params.ltv > params.maxLtv) errors.push("LTV exceeds the market maximum.")
+  if (params.ltv > params.maxLtv) {
+    warnings.push("LTV exceeds the market maximum.")
+  }
   if (params.healthFactor !== "infinity" && params.healthFactor < 1.0) {
-    errors.push("Health factor is below the liquidation threshold.")
+    warnings.push("Health factor is below the liquidation threshold.")
   }
   if (params.priceImpactPct > params.maxAllowedPriceImpact) {
     errors.push("Estimated price impact is too high.")

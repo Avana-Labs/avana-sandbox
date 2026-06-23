@@ -1,7 +1,7 @@
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import { formatFixed } from "@/app/lib/credit-engine"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
-import { buildHomeBorrowPreview } from "@/app/lib/borrow-system/home-runtime"
+import { buildHomeBorrowPreview, selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
 import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 
@@ -67,16 +67,26 @@ export function claimSelectItemsForWallet(session: BorrowContextSession, walletI
   const account = session.state.accounts[walletId]
   if (!account) return []
 
-  const claimableById = Object.fromEntries(
-    account.rewardPositions.map((position) => [position.id, Number.parseFloat(formatFixed(position.claimableUsd6, 6))]),
-  )
+  const claimableById = selectRewardClaimableTotals(session.state, walletId)
+  const rewardById = Object.fromEntries(account.rewardPositions.map((position) => [position.id, position]))
 
-  return HOME_CLAIM_POSITIONS.map((position) => ({
-    id: position.id,
-    name: position.name,
-    symbol: position.name.split("/")[0]?.trim() ?? "Rewards",
-    trailingLabel: `${formatActionUsd(claimableById[position.id] ?? position.totalUsd)} claimable`,
-  }))
+  return HOME_CLAIM_POSITIONS.map((position) => {
+    const reward = rewardById[position.id]
+    const engineClaimable = claimableById[position.id]
+    const claimableUsd = reward
+      ? Number.parseFloat(formatFixed(reward.claimableUsd6, 6))
+      : engineClaimable != null && engineClaimable > 0
+        ? engineClaimable
+        : position.totalUsd
+
+    return {
+      id: position.id,
+      name: position.name,
+      symbol: position.name.split("/")[0]?.trim() ?? "Rewards",
+      trailingLabel: `${formatActionUsd(Math.max(0, claimableUsd))} claimable`,
+      claimableUsd: Math.max(0, claimableUsd),
+    }
+  }).filter((item) => item.claimableUsd > 0)
 }
 
 export function resolveClaimMarketId(marketOrPoolId: string) {

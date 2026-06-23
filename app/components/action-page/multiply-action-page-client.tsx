@@ -24,7 +24,7 @@ export function MultiplyActionPageClient({
   closeHref = "/multiply",
   initialMarketId,
   initialAmount = "",
-  initialMultiplier = "2",
+  initialMultiplier = "3",
 }: {
   kind: "multiply" | "deleverage"
   closeHref?: string
@@ -82,10 +82,6 @@ export function MultiplyActionPageClient({
     let cancelled = false
     const parsedAmount = kind === "deleverage" ? parsePositiveActionAmount(amount) : parsePositiveActionAmount(amount)
     const parsedMultiplier = parsePositiveActionAmount(multiplier)
-    if (kind === "multiply" && parsedAmount == null) {
-      setPreviewUi(null)
-      return
-    }
     if (parsedMultiplier == null) {
       setPreviewUi(null)
       return
@@ -100,39 +96,64 @@ export function MultiplyActionPageClient({
       return
     }
 
-    const action =
-      kind === "multiply"
-        ? ({
-            type: "multiply" as const,
-            walletId,
-            marketId: market.id,
-            collateralAmount: parsedAmount,
-            selectedMultiplier: parsedMultiplier,
-          } as const)
-        : ({
-            type: "deleverage" as const,
-            walletId,
-            positionId: position?.id ?? "missing",
-            targetMultiplier: parsedMultiplier,
-            repayAmountUsd: parsedAmount ?? undefined,
-          } as const)
+    const multiplyCollateralAmount = kind === "multiply" ? parsedAmount : null
+    if (kind === "multiply") {
+      if (multiplyCollateralAmount == null) {
+        setPreviewUi(null)
+        return
+      }
+
+      const action = {
+        type: "multiply" as const,
+        walletId,
+        marketId: market.id,
+        collateralAmount: multiplyCollateralAmount,
+        selectedMultiplier: parsedMultiplier,
+      }
+
+      void session
+        .previewTransaction(session.createIntent(action))
+        .then((preview) => {
+          if (cancelled) return
+          setPreviewUi(
+            mapMultiplyPreviewToActionUi(preview, {
+              collateralSymbol: market.collateralAsset.symbol,
+              collateralAmount: multiplyCollateralAmount,
+              marketLabel: `${market.collateralAsset.symbol} / ${market.borrowAsset.symbol}`,
+              multiplier: parsedMultiplier,
+            }),
+          )
+        })
+        .catch(() => {
+          if (!cancelled) setPreviewUi(null)
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+
+    if (!position) {
+      setPreviewUi(null)
+      return
+    }
+
+    const action = {
+      type: "deleverage" as const,
+      walletId,
+      positionId: position.id,
+      targetMultiplier: parsedMultiplier,
+      repayAmountUsd: parsedAmount ?? undefined,
+    }
 
     void session
       .previewTransaction(session.createIntent(action))
       .then((preview) => {
         if (cancelled) return
         setPreviewUi(
-          kind === "multiply"
-            ? mapMultiplyPreviewToActionUi(preview, {
-                collateralSymbol: market.collateralAsset.symbol,
-                collateralAmount: parsedAmount,
-                marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
-                multiplier: parsedMultiplier,
-              })
-            : mapDeleveragePreviewToActionUi(preview, {
-                marketLabel: `${market.collateralAsset.symbol} · ${market.borrowAsset.symbol}`,
-                targetMultiplier: parsedMultiplier,
-              }),
+          mapDeleveragePreviewToActionUi(preview, {
+            marketLabel: `${market.collateralAsset.symbol} / ${market.borrowAsset.symbol}`,
+            targetMultiplier: parsedMultiplier,
+          }),
         )
       })
       .catch(() => {
@@ -144,6 +165,7 @@ export function MultiplyActionPageClient({
   }, [amount, kind, market, multiplier, session, walletId])
 
   useEffect(() => {
+    if (kind === "multiply") return
     if (!previewUi || previewUi.allowed || stage !== "configure") return
     if (!previewUi.blockedReason) return
     if (previewUi.blockedReason === dismissedBlockedReason) return
@@ -291,7 +313,6 @@ export function MultiplyActionPageClient({
           multiplierMax={multiplierMax}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
-          secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
         />

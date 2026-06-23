@@ -94,7 +94,7 @@ export function MarketSidebar({ detail, className }: Props) {
                 type="button"
                 variant="secondary"
                 className="h-9 flex-1 rounded-radius-sm"
-                onClick={() => router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: `/multiply/market/${marketId}` }))}
+                onClick={() => router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: `/multiply/markets/${marketId}` }))}
               >
                 Deleverage
               </Button>
@@ -108,7 +108,7 @@ export function MarketSidebar({ detail, className }: Props) {
           product="multiply"
           kind="multiply"
           market={marketId}
-          returnTo={`/multiply/market/${marketId}`}
+          returnTo={`/multiply/markets/${marketId}`}
         />
       ) : (
         <Card className="relative overflow-hidden border-border bg-surface-raised shadow-elev-1">
