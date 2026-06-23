@@ -76,6 +76,7 @@ export function LendActionPageClient({
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
   const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
+  const [dismissedWalletBlock, setDismissedWalletBlock] = useState(false)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
 
@@ -114,7 +115,7 @@ export function LendActionPageClient({
   }, [embedded, initialMarketId])
 
   useEffect(() => {
-    if (kind !== "deposit" || !market || stage !== "configure") return
+    if (kind !== "deposit" || !market || stage !== "configure" || dismissedWalletBlock) return
     const walletBalance = getWalletBalanceForLendMarket(session.state, walletId, market)
     if (walletBalance > 0) {
       setBlockedUi(null)
@@ -122,7 +123,11 @@ export function LendActionPageClient({
     }
     setBlockedUi(blockedUiForMissingWalletAsset(market.asset.symbol, "deposit"))
     if (!embedded) setStage("blocked")
-  }, [embedded, kind, market, session.state, stage, walletId])
+  }, [dismissedWalletBlock, embedded, kind, market, session.state, stage, walletId])
+
+  useEffect(() => {
+    setDismissedWalletBlock(false)
+  }, [marketId])
 
   const position = useMemo(
     () =>
@@ -412,6 +417,7 @@ export function LendActionPageClient({
           blocked={blockedUi}
           open
           onClose={() => {
+            setDismissedWalletBlock(true)
             setBlockedUi(null)
             setDismissedBlockedReason(previewUi?.blockedReason ?? null)
           }}
@@ -447,6 +453,7 @@ export function LendActionPageClient({
           blocked={blockedUi}
           open={stage === "blocked"}
           onClose={() => {
+            setDismissedWalletBlock(true)
             setDismissedBlockedReason(previewUi?.blockedReason ?? null)
             setStage("configure")
           }}
