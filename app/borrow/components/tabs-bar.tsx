@@ -176,7 +176,12 @@ function SingleSelectDropdown({
   const rootRef = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
   const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
+  const [mounted, setMounted] = useState(false)
+  const isDark = mounted && resolvedTheme === "dark"
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const triggerLabel = options.find((option) => option.value === value)?.label ?? allLabel
 
