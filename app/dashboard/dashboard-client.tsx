@@ -36,6 +36,7 @@ import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-liv
 import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
+import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 
 export function mergeLendTabData(
   staticData: PortfolioLendTabData,
@@ -98,6 +99,7 @@ export function DashboardClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabFromUrl = parseDashboardTab(searchParams.get("tab"))
+  const hasMounted = useHasMounted()
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const pageData = data ?? initialData
   const [activeTab, setActiveTab] = useState<DashboardTab>(() => tabFromUrl ?? "overview")
@@ -105,35 +107,53 @@ export function DashboardClient({
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
   const sessionBorrowTab = useMemo(() => {
-    if (!walletId || !borrowSession.state.accounts[walletId]) return null
+    if (!hasMounted || !walletId || !borrowSession.state.accounts[walletId]) return null
     return buildPortfolioBorrowData(borrowSession.state, walletId)
-  }, [borrowSession.state, walletId])
-  const liveBorrowTab = sessionBorrowTab ?? portfolioBorrow
+  }, [borrowSession.state, hasMounted, walletId])
+  const liveBorrowTab = hasMounted ? (sessionBorrowTab ?? portfolioBorrow) : null
   const portfolioMultiply = usePortfolioMultiplyLive(walletId, multiplySession)
   const portfolioLend = usePortfolioLendLive(walletId, lendSession)
   const multiplySnapshot = useMemo<BorrowSnapshot>(
     () => ({
-      approvedUsd: portfolioMultiply?.creditLines.approvedUsd ?? pageData?.multiply.creditLines.approvedUsd ?? 0,
+      approvedUsd:
+        (hasMounted ? portfolioMultiply?.creditLines.approvedUsd : null) ??
+        pageData?.multiply.creditLines.approvedUsd ??
+        0,
       liquidationThresholdUsd:
-        portfolioMultiply?.creditLines.liquidationThresholdUsd ??
+        (hasMounted ? portfolioMultiply?.creditLines.liquidationThresholdUsd : null) ??
         pageData?.multiply.creditLines.liquidationThresholdUsd ??
         0,
       totalBorrowedUsd:
-        portfolioMultiply?.creditLines.totalBorrowedUsd ?? pageData?.multiply.creditLines.totalBorrowedUsd ?? 0,
+        (hasMounted ? portfolioMultiply?.creditLines.totalBorrowedUsd : null) ??
+        pageData?.multiply.creditLines.totalBorrowedUsd ??
+        0,
       totalCollateralUsd:
-        portfolioMultiply?.creditLines.totalCollateralUsd ??
+        (hasMounted ? portfolioMultiply?.creditLines.totalCollateralUsd : null) ??
         pageData?.multiply.creditLines.totalCollateralUsd ??
         0,
       averageHealthFactor:
-        portfolioMultiply?.creditLines.averageHealthFactor ??
+        (hasMounted ? portfolioMultiply?.creditLines.averageHealthFactor : null) ??
         pageData?.multiply.creditLines.averageHealthFactor ??
         null,
       currentLtvPct:
-        portfolioMultiply?.creditLines.currentLtvPct ?? pageData?.multiply.creditLines.currentLtvPct ?? 0,
+        (hasMounted ? portfolioMultiply?.creditLines.currentLtvPct : null) ??
+        pageData?.multiply.creditLines.currentLtvPct ??
+        0,
     }),
-    [pageData, portfolioMultiply],
+    [hasMounted, pageData, portfolioMultiply],
   )
   const borrowSnapshot = useMemo<BorrowSnapshot>(() => {
+    if (!hasMounted) {
+      return {
+        approvedUsd: pageData?.borrow.creditLines.approvedUsd ?? 0,
+        liquidationThresholdUsd: pageData?.borrow.creditLines.liquidationThresholdUsd ?? 0,
+        totalBorrowedUsd: pageData?.borrow.creditLines.totalBorrowedUsd ?? 0,
+        totalCollateralUsd: pageData?.borrow.creditLines.totalCollateralUsd ?? 0,
+        averageHealthFactor: pageData?.borrow.creditLines.averageHealthFactor ?? null,
+        currentLtvPct: pageData?.borrow.creditLines.currentLtvPct ?? 0,
+      }
+    }
+
     const sessionSnapshot =
       walletId && borrowSession.state.accounts[walletId]
         ? selectBorrowSnapshot(borrowSession.state, walletId)
@@ -164,7 +184,7 @@ export function DashboardClient({
         0,
       spokeBreakdown: sessionSnapshot?.spokeBreakdown,
     }
-  }, [borrowSession.state, liveBorrowTab, pageData, walletId])
+  }, [borrowSession.state, hasMounted, liveBorrowTab, pageData, walletId])
 
   const collateralPositions =
     liveBorrowTab?.collateralPositions ?? pageData?.borrow.collateralPositions ?? []
@@ -190,9 +210,9 @@ export function DashboardClient({
   )
 
   const lendTabData = useMemo(() => {
-    if (!pageData) return portfolioLend ?? { investments: [], positions: [], strategyBuckets: [], history: [] }
-    return mergeLendTabData(pageData.lend, portfolioLend)
-  }, [pageData, portfolioLend])
+    if (!pageData) return hasMounted ? (portfolioLend ?? { investments: [], positions: [], strategyBuckets: [], history: [] }) : { investments: [], positions: [], strategyBuckets: [], history: [] }
+    return mergeLendTabData(pageData.lend, hasMounted ? portfolioLend : null)
+  }, [hasMounted, pageData, portfolioLend])
 
   const lendSnapshot = useMemo(() => buildLendSnapshotFromTabData(lendTabData), [lendTabData])
 
@@ -208,35 +228,54 @@ export function DashboardClient({
 
   const multiplyTabData = useMemo(() => {
     if (!pageData) {
-      return portfolioMultiply ?? {
-        creditLines: {
-          approvedUsd: 0,
-          liquidationThresholdUsd: 0,
-          averageHealthFactor: null,
-          currentLtvPct: 0,
-          totalBorrowedUsd: 0,
-          totalCollateralUsd: 0,
-        },
-        lpCollaterals: [],
-        positions: [],
-        openOrders: [],
-        twapOrders: [],
-        history: [],
-      }
+      return hasMounted
+        ? (portfolioMultiply ?? {
+            creditLines: {
+              approvedUsd: 0,
+              liquidationThresholdUsd: 0,
+              averageHealthFactor: null,
+              currentLtvPct: 0,
+              totalBorrowedUsd: 0,
+              totalCollateralUsd: 0,
+            },
+            lpCollaterals: [],
+            positions: [],
+            openOrders: [],
+            twapOrders: [],
+            history: [],
+          })
+        : {
+            creditLines: {
+              approvedUsd: 0,
+              liquidationThresholdUsd: 0,
+              averageHealthFactor: null,
+              currentLtvPct: 0,
+              totalBorrowedUsd: 0,
+              totalCollateralUsd: 0,
+            },
+            lpCollaterals: [],
+            positions: [],
+            openOrders: [],
+            twapOrders: [],
+            history: [],
+          }
     }
-    return mergeMultiplyTabData(pageData.multiply, portfolioMultiply)
-  }, [pageData, portfolioMultiply])
+    return mergeMultiplyTabData(pageData.multiply, hasMounted ? portfolioMultiply : null)
+  }, [hasMounted, pageData, portfolioMultiply])
 
   const borrowDashboardMetrics = useMemo<DashboardTabMetrics>(() => {
-    if (walletId && borrowSession.state.accounts[walletId]) {
+    if (hasMounted && walletId && borrowSession.state.accounts[walletId]) {
       return buildBorrowDashboardMetrics(borrowSession.state, walletId)
     }
     return buildBorrowDashboardMetricsFromSnapshot(borrowSnapshot, collateralPositions, debtPositions)
-  }, [borrowSession.state, borrowSnapshot, collateralPositions, debtPositions, walletId])
+  }, [borrowSession.state, borrowSnapshot, collateralPositions, debtPositions, hasMounted, walletId])
 
   const multiplyDashboardMetrics = useMemo<DashboardTabMetrics>(() => {
+    if (!hasMounted) {
+      return buildMultiplyDashboardMetrics(multiplySession.state, walletId ?? "", pageData?.multiply ?? multiplyTabData)
+    }
     return buildMultiplyDashboardMetrics(multiplySession.state, walletId ?? "", multiplyTabData)
-  }, [multiplySession.state, multiplyTabData, walletId])
+  }, [hasMounted, multiplySession.state, multiplyTabData, pageData?.multiply, walletId])
 
   const lendDashboardMetrics = useMemo(() => buildLendDashboardMetrics(lendTabData), [lendTabData])
 
