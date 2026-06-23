@@ -35,6 +35,7 @@ import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { borrowSelectItemsForMarket, repaySelectItemsForWallet, resolveBorrowMarketForAsset } from "@/app/lib/action-system/resolve-borrow-context"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { parseActionPercentBps, parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
 function resolveClaimPositions(marketId: string) {
   const scoped = HOME_CLAIM_POSITIONS.filter((position) => position.poolId === marketId)
@@ -167,13 +168,13 @@ export function BorrowActionPageClient({
   }, [debtPosition?.marketId])
 
   useEffect(() => {
-    const parsedAmount = Number.parseFloat(amount)
-    const safeAmount = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0
+    let cancelled = false
+    const safeAmount = parsePositiveActionAmount(amount) ?? 0
 
     if (kind === "borrow") {
       if (!assetId || safeAmount <= 0) {
         setPreviewUi(null)
-        return
+        return undefined
       }
       const homePreview = buildHomeBorrowPreview(session.state, walletId, marketId, assetId, safeAmount)
       void session
@@ -187,6 +188,7 @@ export function BorrowActionPageClient({
           }),
         )
         .then((preview) => {
+          if (cancelled) return
           const token = session.getBorrowableAssetsForMarket(marketId).find((entry) => entry.id === assetId)
           setPreviewUi(
             mapBorrowTransactionPreviewToActionUi(preview, {
@@ -199,14 +201,18 @@ export function BorrowActionPageClient({
             }),
           )
         })
-        .catch(() => setPreviewUi(null))
-      return
+        .catch(() => {
+          if (!cancelled) setPreviewUi(null)
+        })
+      return () => {
+        cancelled = true
+      }
     }
 
     if (kind === "supply") {
       if (safeAmount <= 0) {
         setPreviewUi(null)
-        return
+        return undefined
       }
       const market = session.state.markets[marketId]
       const collateralFactorPct = market ? Number.parseFloat(formatFixed(market.riskConfig.collateralFactorWad, 18)) * 100 : 0
@@ -222,6 +228,7 @@ export function BorrowActionPageClient({
           }),
         )
         .then((preview) => {
+          if (cancelled) return
           setPreviewUi(
             mapBorrowSupplyPreviewToActionUi(preview, {
               symbol: market?.display.visuals[0]?.symbol ?? "LP",
@@ -234,14 +241,18 @@ export function BorrowActionPageClient({
             }),
           )
         })
-        .catch(() => setPreviewUi(null))
-      return
+        .catch(() => {
+          if (!cancelled) setPreviewUi(null)
+        })
+      return () => {
+        cancelled = true
+      }
     }
 
     if (kind === "repay") {
       if (safeAmount <= 0 || !debtPosition) {
         setPreviewUi(null)
-        return
+        return undefined
       }
       const repayPreview = buildHomeRepayPreview(session.state, walletId, debtPosition.id, safeAmount)
       void session
@@ -254,6 +265,7 @@ export function BorrowActionPageClient({
           }),
         )
         .then((preview) => {
+          if (cancelled) return
           const token = session.state.assets[debtPosition.assetId]
           setPreviewUi(
             mapBorrowRepayPreviewToActionUi(preview, {
@@ -265,18 +277,23 @@ export function BorrowActionPageClient({
             }),
           )
         })
-        .catch(() => setPreviewUi(null))
-      return
+        .catch(() => {
+          if (!cancelled) setPreviewUi(null)
+        })
+      return () => {
+        cancelled = true
+      }
     }
 
     if (kind === "remove") {
-      const pct = Number.parseFloat(percent) || 0
-      const removePreview = buildHomeRemovePreview(session.state, walletId, marketId, pct)
+      const percentBps = parseActionPercentBps(percent)
       const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === marketId)
-      if (pct <= 0 || !position) {
+      if (percentBps == null || !position) {
         setPreviewUi(null)
-        return
+        return undefined
       }
+      const pct = percentBps / 100
+      const removePreview = buildHomeRemovePreview(session.state, walletId, marketId, pct)
       const pool = session.collateralPools.find((entry) => entry.id === marketId)
       void session
         .previewTransaction(
@@ -284,10 +301,11 @@ export function BorrowActionPageClient({
             type: "removeCollateral",
             walletId,
             positionId: position.id,
-            percentBps: pct * 100,
+            percentBps,
           }),
         )
         .then((preview) => {
+          if (cancelled) return
           setPreviewUi(
             mapBorrowRemovePreviewToActionUi(preview, {
               percent: pct,
@@ -297,8 +315,12 @@ export function BorrowActionPageClient({
             }),
           )
         })
-        .catch(() => setPreviewUi(null))
-      return
+        .catch(() => {
+          if (!cancelled) setPreviewUi(null)
+        })
+      return () => {
+        cancelled = true
+      }
     }
 
     if (kind === "claim") {
@@ -315,6 +337,7 @@ export function BorrowActionPageClient({
         }),
       )
     }
+    return undefined
   }, [amount, assetId, debtPosition, kind, marketId, marketLabel, percent, session, walletId])
 
   useEffect(() => {
@@ -363,8 +386,7 @@ export function BorrowActionPageClient({
     setIsPending(true)
 
     try {
-      const parsedAmount = Number.parseFloat(amount)
-      const safeAmount = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0
+      const safeAmount = parsePositiveActionAmount(amount) ?? 0
       let intent
 
       if (kind === "borrow") {
@@ -404,7 +426,7 @@ export function BorrowActionPageClient({
           type: "removeCollateral",
           walletId,
           positionId: position.id,
-          percentBps: (Number.parseFloat(percent) || 0) * 100,
+          percentBps: parseActionPercentBps(percent) ?? 0,
         })
       }
 

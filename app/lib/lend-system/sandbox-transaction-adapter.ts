@@ -1,4 +1,5 @@
 import { applyLendAction, simulateDeposit, simulateWithdraw, type LendAction, type LendSystemState } from "@/app/lib/lend-engine"
+import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { buildLendWalletSnapshot } from "./read-model"
 import type {
   LendSandboxActionResult,
@@ -23,6 +24,17 @@ function findWalletPosition(state: LendSystemState, walletId: string, marketId: 
   return Object.values(state.positions).find(
     (position) => position.walletId === walletId && position.marketId === marketId && position.status === "active",
   )
+}
+
+function actionWithStateWalletBalance(state: LendSystemState, action: LendAction): LendAction {
+  if (action.type !== "deposit") return action
+  const market = state.markets[action.marketId]
+  if (!market) return action
+
+  return {
+    ...action,
+    walletBalance: getWalletBalanceForLendMarket(state, action.walletId, market),
+  }
 }
 
 function toPreview(state: LendSystemState, action: LendAction, intent: LendTransactionIntent): LendTransactionPreview {
@@ -166,19 +178,22 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
     if (cached) return cached
     const action = intent.payload
     if (!action) throw new Error("Missing lend action payload")
-    const preview = toPreview(this.readStateImpl(), action, intent)
+    const state = this.readStateImpl()
+    const preview = toPreview(state, actionWithStateWalletBalance(state, action), intent)
     this.previewCache.set(intent.id, preview)
     return preview
   }
 
   async executeTransaction(intent: LendTransactionIntent): Promise<LendSandboxActionResult> {
-    const preview = await this.previewTransaction(intent)
-    const action = intent.payload
+    const state = this.readStateImpl()
+    const action = intent.payload ? actionWithStateWalletBalance(state, intent.payload) : null
+    const preview = action ? toPreview(state, action, intent) : await this.previewTransaction(intent)
+    this.previewCache.set(intent.id, preview)
+
     if (!action || !preview.allowed) {
       throw new Error(preview.validationErrors[0] ?? "Lend transaction is not allowed")
     }
 
-    const state = this.readStateImpl()
     const positionId =
       action.type === "withdraw"
         ? action.positionId

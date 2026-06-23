@@ -20,6 +20,7 @@ function basePreviewFields(
     balanceAmount: number
     rateLabel: string
     rateValue: string
+    amountUsd: number
   },
 ): Pick<
   ActionPreviewUi,
@@ -41,7 +42,7 @@ function basePreviewFields(
   return {
     allowed: preview.allowed,
     amountLabel: formatActionAmount(options.amount, options.symbol, 4),
-    amountUsdLabel: formatActionApproxUsd(preview.after.suppliedValueUsd),
+    amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: options.rateLabel,
     rateValue: options.rateValue,
     marketLabel: "Market",
@@ -84,6 +85,7 @@ export function mapLendDepositPreviewToActionUi(
       balanceAmount: options.balanceAmount,
       rateLabel: "Deposit APY",
       rateValue: formatActionRatioPercent(afterApy),
+      amountUsd: Math.max(0, afterSupplied - beforeSupplied),
     }),
     metrics: [
       {
@@ -149,6 +151,7 @@ export function mapLendWithdrawPreviewToActionUi(
       balanceAmount: options.balanceAmount,
       rateLabel: "Remaining supply",
       rateValue: formatActionUsd(afterSupplied),
+      amountUsd: Math.max(0, beforeSupplied - afterSupplied),
     }),
     metrics: [
       {

@@ -22,6 +22,7 @@ import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
 function truncateWallet(id: string) {
   return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
@@ -102,8 +103,9 @@ export function LendActionPageClient({
 
   useEffect(() => {
     if (!market) return
-    const parsed = Number.parseFloat(amount)
-    if (!Number.isFinite(parsed) || parsed <= 0) {
+    let cancelled = false
+    const parsed = parsePositiveActionAmount(amount)
+    if (parsed == null) {
       setPreviewUi(null)
       return
     }
@@ -150,6 +152,7 @@ export function LendActionPageClient({
     void session
       .previewTransaction(session.createIntent(action))
       .then((preview) => {
+        if (cancelled) return
         if (kind === "deposit") {
           setPreviewUi(
             mapLendDepositPreviewToActionUi(preview, {
@@ -171,7 +174,12 @@ export function LendActionPageClient({
           }),
         )
       })
-      .catch(() => setPreviewUi(null))
+      .catch(() => {
+        if (!cancelled) setPreviewUi(null)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [amount, kind, market, position, session, walletId])
 
   useEffect(() => {
@@ -216,7 +224,8 @@ export function LendActionPageClient({
     setOutcome(null)
 
     try {
-      const parsed = Number.parseFloat(amount)
+      const parsed = parsePositiveActionAmount(amount)
+      if (parsed == null) throw new Error("Enter a valid amount")
       const action =
         kind === "deposit"
           ? {

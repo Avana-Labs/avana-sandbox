@@ -16,6 +16,7 @@ import { buildMultiplierOptions, clampMultiplierToOptions } from "@/app/componen
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
 function truncateWallet(id: string) {
   return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
@@ -70,8 +71,8 @@ export function MultiplyActionPageClient({
 
   useEffect(() => {
     if (multiplierOptions.length === 0) return
-    const parsed = Number.parseFloat(multiplier)
-    if (!Number.isFinite(parsed)) return
+    const parsed = parsePositiveActionAmount(multiplier)
+    if (parsed == null) return
     const clamped = clampMultiplierToOptions(parsed, multiplierOptions)
     const next = String(clamped)
     if (next !== multiplier) setMultiplier(next)
@@ -83,9 +84,10 @@ export function MultiplyActionPageClient({
 
   useEffect(() => {
     if (!market) return
-    const parsedAmount = Number.parseFloat(amount)
-    const parsedMultiplier = Number.parseFloat(multiplier)
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || !Number.isFinite(parsedMultiplier) || parsedMultiplier <= 0) {
+    let cancelled = false
+    const parsedAmount = parsePositiveActionAmount(amount)
+    const parsedMultiplier = parsePositiveActionAmount(multiplier)
+    if (parsedAmount == null || parsedMultiplier == null) {
       setPreviewUi(null)
       return
     }
@@ -118,6 +120,7 @@ export function MultiplyActionPageClient({
     void session
       .previewTransaction(session.createIntent(action))
       .then((preview) => {
+        if (cancelled) return
         setPreviewUi(
           kind === "multiply"
             ? mapMultiplyPreviewToActionUi(preview, {
@@ -133,8 +136,11 @@ export function MultiplyActionPageClient({
         )
       })
       .catch(() => {
-        setPreviewUi(null)
+        if (!cancelled) setPreviewUi(null)
       })
+    return () => {
+      cancelled = true
+    }
   }, [amount, kind, market, multiplier, session, walletId])
 
   const handleBack = useCallback(() => {
@@ -163,8 +169,9 @@ export function MultiplyActionPageClient({
     setOutcome(null)
 
     try {
-      const parsedAmount = Number.parseFloat(amount)
-      const parsedMultiplier = Number.parseFloat(multiplier)
+      const parsedAmount = parsePositiveActionAmount(amount)
+      const parsedMultiplier = parsePositiveActionAmount(multiplier)
+      if (parsedAmount == null || parsedMultiplier == null) throw new Error("Enter a valid amount")
       const position =
         session.state.positions[`${walletId}:${market.id}`] ??
         Object.values(session.state.positions).find((entry) => entry.walletId === walletId && entry.marketId === market.id)
