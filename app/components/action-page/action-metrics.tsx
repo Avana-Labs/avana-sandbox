@@ -41,7 +41,7 @@ export function ActionInfoRow({
     <div className={cn("flex items-center justify-between gap-4 px-4 py-3 text-[14px]", className)}>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <span>{label}</span>
-        {tip ? <ActionMetricHelp text={tip} /> : null}
+        {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
       </div>
       <div className="font-medium text-foreground">{value}</div>
     </div>
@@ -128,7 +128,7 @@ export function ActionMetricRow({
       <div className="flex items-center justify-between gap-4 px-4 py-3 text-[14px]">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <span>{label}</span>
-          <ActionMetricHelp text={tip} />
+          <ActionMetricHelp text={tip} topic={label} />
         </div>
         <MetricValue label={label} value={value} before={before} after={after} tone={tone} id={id} tokenSymbols={tokenSymbols} />
       </div>

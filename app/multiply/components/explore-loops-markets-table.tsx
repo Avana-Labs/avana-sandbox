@@ -633,7 +633,7 @@ export function ExploreLoopsMarketsTable({
                       href={row.href}
                       className={cn(
                         "font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums",
-                        row.apy ? (row.apy.startsWith("-") ? "text-rose-600" : "text-emerald-600") : "text-muted-foreground",
+                        row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400") : "text-muted-foreground",
                       )}
                     >
                       {row.apy || "—"}

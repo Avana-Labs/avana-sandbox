@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { ActionCard } from "@/app/components/action-page/action-metrics"
+import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 
 function formatMultiplier(value: number) {
@@ -22,6 +23,11 @@ function snapToStep(value: number, min: number, max: number, step: number) {
   const steps = Math.round((value - min) / step)
   const snapped = min + steps * step
   return Number(clamp(snapped, min, max).toFixed(precision))
+}
+
+function tickPositionPct(tick: number, min: number, max: number) {
+  if (max <= min) return 0
+  return ((tick - min) / (max - min)) * 100
 }
 
 export function ActionLeverageRuler({
@@ -92,26 +98,23 @@ export function ActionLeverageRuler({
           </button>
         </div>
 
-        <div className="relative mt-5">
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-0 h-px -translate-y-1/2 bg-border" aria-hidden />
-          <input
-            type="range"
+        <div className="relative mt-5 px-2">
+          <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-px -translate-y-1/2 bg-border" aria-hidden />
+          <Slider
             min={min}
             max={max}
             step={step}
-            value={currentValue}
+            value={[currentValue]}
+            onValueChange={(values) => publishValue(values[0] ?? min)}
             aria-label={`${label} multiplier`}
-            aria-valuemin={min}
-            aria-valuemax={max}
-            aria-valuenow={currentValue}
-            aria-valuetext={formatMultiplier(currentValue)}
-            onChange={(event) => publishValue(Number(event.target.value))}
-            className="relative z-20 h-10 w-full cursor-grab appearance-none bg-transparent active:cursor-grabbing [&::-webkit-slider-runnable-track]:h-10 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-3 [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-border [&::-webkit-slider-thumb]:bg-background [&::-moz-range-track]:h-10 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:cursor-grab [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-border [&::-moz-range-thumb]:bg-background"
+            className="relative z-20"
           />
-          <div className="mt-1 flex items-end justify-between gap-0.5">
+          <div className="relative mt-1 h-8">
             {ticks.map((tick) => {
               const isActive = Math.abs(tick - currentValue) < step / 2
               const showLabel = tick === min || tick === max || tick % 5 === 0 || isActive
+              const pct = tickPositionPct(tick, min, max)
+
               return (
                 <button
                   key={tick}
@@ -119,7 +122,8 @@ export function ActionLeverageRuler({
                   aria-label={`Set leverage to ${formatMultiplier(tick)}`}
                   aria-pressed={isActive}
                   onClick={() => publishValue(tick)}
-                  className="flex min-w-0 flex-1 flex-col items-center gap-1"
+                  className="absolute top-0 flex -translate-x-1/2 flex-col items-center gap-1"
+                  style={{ left: `${pct}%` }}
                 >
                   <span
                     className={cn(

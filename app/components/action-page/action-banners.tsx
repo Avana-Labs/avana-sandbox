@@ -20,13 +20,20 @@ export function ActionRiskBanner({
       data-testid="action-risk-banner"
       className={cn(
         "flex gap-3 rounded-[18px] border px-4 py-3",
-        level === "danger" && "border-rose-500/30 bg-rose-500/10 text-rose-100",
-        level === "warning" && "border-amber-500/30 bg-amber-500/10 text-amber-100",
-        level === "safe" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-100",
+        level === "danger" && "border-rose-500/30 bg-rose-500/10 text-rose-900 dark:text-rose-100",
+        level === "warning" && "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-100",
+        level === "safe" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100",
         className,
       )}
     >
-      <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+      <AlertTriangle
+        className={cn(
+          "mt-0.5 size-4 shrink-0",
+          level === "danger" && "text-rose-600 dark:text-rose-300",
+          level === "warning" && "text-amber-600 dark:text-amber-300",
+          level === "safe" && "text-emerald-600 dark:text-emerald-300",
+        )}
+      />
       <div>
         <div className="text-[14px] font-medium">{title}</div>
         <div className="mt-1 text-[13px] opacity-90">{message}</div>

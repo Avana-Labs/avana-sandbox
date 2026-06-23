@@ -75,7 +75,10 @@ export function ActionHealthFactorBar({
             aria-hidden
           />
           <span>Health factor</span>
-          <ActionMetricHelp text="Health factor estimates how far your position is from liquidation. Above 1.0 is solvent; below 1.0 can be liquidated." />
+          <ActionMetricHelp
+            topic="health factor"
+            text="Health factor estimates how far your position is from liquidation. Above 1.0 is solvent; below 1.0 can be liquidated."
+          />
         </div>
         <span
           className={cn(
