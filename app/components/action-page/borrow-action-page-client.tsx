@@ -362,6 +362,30 @@ export function BorrowActionPageClient({
     return false
   }, [debtPositions.length, initialAssetId, initialMarketId, kind])
 
+  const fallbackMaxAmount = useMemo(() => {
+    if (kind === "borrow" && assetId) {
+      return buildHomeBorrowPreview(session.state, walletId, marketId, assetId, 0).remainingBorrowPowerUsd
+    }
+    if (kind === "repay" && debtPosition) {
+      return buildHomeRepayPreview(session.state, walletId, debtPosition.id, 0).remainingDebtUsd
+    }
+    if (kind === "remove") return previewUi?.maxAmount ?? 100
+    return null
+  }, [assetId, debtPosition, kind, marketId, previewUi?.maxAmount, session.state, walletId])
+
+  const fallbackBalanceLabel =
+    kind === "borrow"
+      ? "Available to Borrow"
+      : kind === "repay"
+        ? "Remaining debt"
+        : kind === "remove"
+          ? "Removing"
+          : undefined
+  const fallbackBalanceValue =
+    fallbackMaxAmount != null && (kind === "borrow" || kind === "repay")
+      ? formatActionUsd(fallbackMaxAmount)
+      : undefined
+
   const handleBack = useCallback(() => {
     if (stage === "review") {
       setStage("configure")
@@ -477,15 +501,16 @@ export function BorrowActionPageClient({
   const applyPercent = useCallback(
     (pct: number) => {
       if (kind === "remove") {
-        if (pct === 100 && previewUi?.maxAmount != null) setPercent(String(previewUi.maxAmount))
+        if (pct === 100 && fallbackMaxAmount != null) setPercent(String(fallbackMaxAmount))
         else setPercent(String(pct))
         return
       }
-      if (previewUi?.maxAmount != null) {
-        setAmount(String((previewUi.maxAmount * pct) / 100))
+      const maxAmount = previewUi?.maxAmount ?? fallbackMaxAmount
+      if (maxAmount != null) {
+        setAmount(String((maxAmount * pct) / 100))
       }
     },
-    [kind, previewUi?.maxAmount],
+    [fallbackMaxAmount, kind, previewUi?.maxAmount],
   )
 
   const shellSubtitle =
@@ -553,6 +578,8 @@ export function BorrowActionPageClient({
           onAmountChange={kind === "remove" ? setPercent : setAmount}
           preview={previewUi}
           assetSymbol={assetSymbol}
+          balanceLabel={fallbackBalanceLabel}
+          balanceValue={fallbackBalanceValue}
           assetOptions={borrowAssetOptions}
           selectedAssetId={assetId}
           onAssetSelect={(id) => {
@@ -565,8 +592,9 @@ export function BorrowActionPageClient({
           secondaryHref={canGoBackToSelect ? undefined : closeHref}
           canGoBack={canGoBackToSelect}
           onMax={() => {
-            if (kind === "remove") setPercent(String(previewUi?.maxAmount ?? 100))
-            else if (previewUi?.maxAmount != null) setAmount(String(previewUi.maxAmount))
+            const maxAmount = previewUi?.maxAmount ?? fallbackMaxAmount
+            if (kind === "remove") setPercent(String(maxAmount ?? 100))
+            else if (maxAmount != null) setAmount(String(maxAmount))
           }}
           onPercent={applyPercent}
           showPercentShortcuts={kind === "borrow" || kind === "repay" || kind === "remove"}

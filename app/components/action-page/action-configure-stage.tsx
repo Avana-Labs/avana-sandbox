@@ -21,6 +21,8 @@ type ActionConfigureStageProps = {
   onAmountChange: (value: string) => void
   preview: ActionPreviewUi | null
   assetSymbol?: string
+  balanceLabel?: string
+  balanceValue?: string
   onPrimary?: () => void
   onSecondary?: () => void
   secondaryHref?: string
@@ -39,6 +41,7 @@ type ActionConfigureStageProps = {
   onMultiplierChange?: (value: string) => void
   multiplierOptions?: number[]
   canGoBack?: boolean
+  hideAmountInput?: boolean
 }
 
 export function ActionConfigureStage({
@@ -48,6 +51,8 @@ export function ActionConfigureStage({
   onAmountChange,
   preview,
   assetSymbol,
+  balanceLabel,
+  balanceValue,
   onPrimary,
   onSecondary,
   secondaryHref,
@@ -66,6 +71,7 @@ export function ActionConfigureStage({
   onMultiplierChange,
   multiplierOptions,
   canGoBack = false,
+  hideAmountInput = false,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -82,26 +88,28 @@ export function ActionConfigureStage({
 
   return (
     <>
-      <ActionAmountCard
-        label={verb}
-        amount={amount}
-        onAmountChange={onAmountChange}
-        approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
-        assetLabel={pillLabel}
-        assetSymbol={assetSymbol ?? pillLabel}
-        balanceLabel={preview?.balanceLabel ?? "Balance"}
-        balanceValue={preview?.balanceValue ?? "0.00"}
-        onMax={onMax}
-        onPercent={onPercent}
-        showPercentShortcuts={showPercentShortcuts}
-        showReceiveWethToggle={showReceiveWethToggle}
-        receiveWeth={receiveWeth}
-        onReceiveWethChange={onReceiveWethChange}
-        assetOptions={assetOptions}
-        selectedAssetId={selectedAssetId}
-        onAssetSelect={onAssetSelect}
-        footer={preview ? <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" /> : null}
-      />
+      {hideAmountInput ? null : (
+        <ActionAmountCard
+          label={verb}
+          amount={amount}
+          onAmountChange={onAmountChange}
+          approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
+          assetLabel={pillLabel}
+          assetSymbol={assetSymbol ?? pillLabel}
+          balanceLabel={preview?.balanceLabel ?? balanceLabel ?? "Balance"}
+          balanceValue={preview?.balanceValue ?? balanceValue ?? "0.00"}
+          onMax={onMax}
+          onPercent={onPercent}
+          showPercentShortcuts={showPercentShortcuts}
+          showReceiveWethToggle={showReceiveWethToggle}
+          receiveWeth={receiveWeth}
+          onReceiveWethChange={onReceiveWethChange}
+          assetOptions={assetOptions}
+          selectedAssetId={selectedAssetId}
+          onAssetSelect={onAssetSelect}
+          footer={preview ? <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" /> : null}
+        />
+      )}
 
       {multiplierOptions && multiplierOptions.length > 0 && onMultiplierChange ? (
         <ActionLeverageSelector value={multiplier ?? ""} onChange={onMultiplierChange} options={multiplierOptions} />

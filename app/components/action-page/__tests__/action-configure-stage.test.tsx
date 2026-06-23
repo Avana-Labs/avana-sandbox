@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
@@ -81,5 +81,41 @@ describe("ActionConfigureStage", () => {
     )
 
     expect(screen.getByTestId("action-wallet-toast")).toHaveTextContent("100 USDC")
+  })
+
+  it("can show an idle balance before preview data is available", () => {
+    render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Deposit"
+        amount=""
+        onAmountChange={() => undefined}
+        preview={null}
+        assetSymbol="USDC"
+        balanceLabel="Balance"
+        balanceValue="8,200 USDC"
+      />,
+    )
+
+    expect(screen.getByText("Balance: 8,200 USDC")).toBeInTheDocument()
+  })
+
+  it("can hide the amount card for target-only actions", () => {
+    const { container } = render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Deleverage"
+        amount=""
+        onAmountChange={() => undefined}
+        preview={preview}
+        multiplier="1.5"
+        onMultiplierChange={() => undefined}
+        multiplierOptions={[1.5, 2]}
+        hideAmountInput
+      />,
+    )
+
+    expect(within(container).queryByTestId("action-amount-card")).not.toBeInTheDocument()
+    expect(within(container).getByRole("button", { name: "Review" })).toBeInTheDocument()
   })
 })

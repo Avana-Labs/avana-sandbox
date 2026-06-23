@@ -28,6 +28,11 @@ function truncateWallet(id: string) {
   return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
 }
 
+function formatTokenAmount(value: number, symbol: string) {
+  if (!Number.isFinite(value)) return `0.00 ${symbol}`
+  return `${value.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${symbol}`
+}
+
 function isHardBlock(reason: string | null) {
   if (!reason) return false
   const lower = reason.toLowerCase()
@@ -198,6 +203,13 @@ export function LendActionPageClient({
   }, [amount, marketId])
 
   const canGoBackToSelect = kind === "withdraw" && withdrawItems.length > 1 && !initialMarketId
+  const fallbackBalanceAmount = market
+    ? kind === "deposit"
+      ? getWalletBalanceForLendMarket(session.state, walletId, market)
+      : (previewUi?.maxAmount ?? position?.currentSuppliedAmount ?? 0)
+    : 0
+  const fallbackBalanceLabel = kind === "deposit" ? "Balance" : "Deposited"
+  const fallbackBalanceValue = market ? formatTokenAmount(fallbackBalanceAmount, market.asset.symbol) : undefined
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
@@ -353,6 +365,8 @@ export function LendActionPageClient({
           onAmountChange={setAmount}
           preview={previewUi}
           assetSymbol={market.asset.symbol}
+          balanceLabel={fallbackBalanceLabel}
+          balanceValue={fallbackBalanceValue}
           assetOptions={depositAssetOptions}
           selectedAssetId={market.marketId}
           onAssetSelect={(id) => {

@@ -85,7 +85,7 @@ export function MultiplyActionPageClient({
   useEffect(() => {
     if (!market) return
     let cancelled = false
-    const parsedAmount = parsePositiveActionAmount(amount)
+    const parsedAmount = kind === "deleverage" ? 0 : parsePositiveActionAmount(amount)
     const parsedMultiplier = parsePositiveActionAmount(multiplier)
     if (parsedAmount == null || parsedMultiplier == null) {
       setPreviewUi(null)
@@ -171,7 +171,7 @@ export function MultiplyActionPageClient({
     try {
       const parsedAmount = parsePositiveActionAmount(amount)
       const parsedMultiplier = parsePositiveActionAmount(multiplier)
-      if (parsedAmount == null || parsedMultiplier == null) throw new Error("Enter a valid amount")
+      if ((kind === "multiply" && parsedAmount == null) || parsedMultiplier == null) throw new Error("Enter a valid amount")
       const position =
         session.state.positions[`${walletId}:${market.id}`] ??
         Object.values(session.state.positions).find((entry) => entry.walletId === walletId && entry.marketId === market.id)
@@ -183,7 +183,7 @@ export function MultiplyActionPageClient({
               type: "multiply" as const,
               walletId,
               marketId: market.id,
-              collateralAmount: parsedAmount,
+              collateralAmount: parsedAmount!,
               selectedMultiplier: parsedMultiplier,
             }
           : {
@@ -272,6 +272,7 @@ export function MultiplyActionPageClient({
           multiplier={multiplier}
           onMultiplierChange={setMultiplier}
           multiplierOptions={multiplierOptions}
+          hideAmountInput={kind === "deleverage"}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}

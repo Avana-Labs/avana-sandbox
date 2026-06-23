@@ -23,7 +23,7 @@ export function ActionLeverageSelector({
   const activeValue = Number.isFinite(parsed) ? parsed : null
 
   return (
-    <ActionCard>
+    <ActionCard className="p-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
         <span className="font-data text-[13px] tabular-nums text-foreground">
