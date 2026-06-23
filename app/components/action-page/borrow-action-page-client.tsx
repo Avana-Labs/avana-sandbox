@@ -9,6 +9,9 @@ import {
   buildHomeRemovePreview,
   buildClaimBorrowAction,
   buildHomeClaimPreview,
+  selectHomeBorrowTokensForMarket,
+  selectHomeDebtMap,
+  selectHomeRepayTokensForMarket,
 } from "@/app/lib/borrow-system/action-preview-runtime"
 import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
@@ -23,6 +26,7 @@ import {
   mapBorrowTransactionPreviewToActionUi,
 } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { mapBorrowRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/adapters/rewards-preview-mapper"
+import { ActionBorrowContextBar } from "@/app/components/action-page/action-borrow-context-bar"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
@@ -67,6 +71,7 @@ function isHardBlock(reason: string | null) {
 export function BorrowActionPageClient({
   kind,
   closeHref = "/borrow",
+  embedded = false,
   initialAssetId,
   initialMarketId,
   initialAmount = "",
@@ -75,6 +80,7 @@ export function BorrowActionPageClient({
 }: {
   kind: Extract<ActionKind, "borrow" | "repay" | "supply" | "remove" | "claim">
   closeHref?: string
+  embedded?: boolean
   initialAssetId?: string
   initialMarketId?: string
   initialAmount?: string
@@ -96,6 +102,7 @@ export function BorrowActionPageClient({
     [initialAssetId, resolvedInitialMarket, session.state],
   )
   const [stage, setStage] = useState<ActionStage>(() => {
+    if (embedded) return "configure"
     if (kind === "borrow" && !resolvedInitialAsset) return "select"
     if (kind === "supply" && !initialMarketId) return "select"
     if (kind === "claim" && !initialMarketId && !initialPositionId) return "select"
@@ -137,6 +144,78 @@ export function BorrowActionPageClient({
   }, [debtPositionId, debtPositions, initialMarketId, kind, session.state.markets])
 
   const selectMarketId = marketId || session.collateralPools[0]?.id || ""
+  const debts = useMemo(() => selectHomeDebtMap(session.state, walletId), [session.state, walletId])
+  const activePool = useMemo(
+    () => session.collateralPools.find((pool) => pool.id === marketId) ?? session.collateralPools[0] ?? null,
+    [marketId, session.collateralPools],
+  )
+  const borrowTokens = useMemo(
+    () => (marketId ? selectHomeBorrowTokensForMarket(session.state, walletId, marketId) : []),
+    [marketId, session.state, walletId],
+  )
+  const repayTokens = useMemo(
+    () => (marketId ? selectHomeRepayTokensForMarket(session.state, walletId, marketId) : []),
+    [marketId, session.state, walletId],
+  )
+  const contextToken = useMemo(() => {
+    if (kind === "borrow") {
+      return borrowTokens.find((token) => token.id === assetId) ?? borrowTokens[0] ?? null
+    }
+    if (kind === "repay" && debtPosition) {
+      return repayTokens.find((token) => token.id === debtPosition.assetId) ?? repayTokens[0] ?? null
+    }
+    return null
+  }, [assetId, borrowTokens, debtPosition, kind, repayTokens])
+
+  const usesCollateralContext = kind === "borrow" || kind === "repay" || kind === "remove" || kind === "claim"
+  const showCollateralContextBar =
+    usesCollateralContext && (isConfigureVisibleStage(stage) || stage === "review") && activePool != null
+
+  const handlePoolChange = useCallback(
+    (poolId: string) => {
+      setMarketId(poolId)
+      setAmount("")
+      setPercent("25")
+      if (kind === "borrow") {
+        const tokens = selectHomeBorrowTokensForMarket(session.state, walletId, poolId)
+        setAssetId(tokens[0]?.id ?? "")
+        return
+      }
+      if (kind === "repay") {
+        const position =
+          debtPositions.find((entry) => entry.marketId === poolId) ??
+          debtPositions.find((entry) => {
+            const spokeId = session.state.markets[poolId]?.spokeId
+            return spokeId ? entry.spokeId === spokeId : false
+          }) ??
+          null
+        if (position) setDebtPositionId(position.id)
+        return
+      }
+      if (kind === "claim") {
+        setClaimPositionId("")
+      }
+    },
+    [debtPositions, kind, session.state, walletId],
+  )
+
+  const handleContextTokenChange = useCallback(
+    (tokenId: string) => {
+      setAmount("")
+      if (kind === "borrow") {
+        setAssetId(resolveBorrowAssetId(session.state, tokenId, marketId))
+        return
+      }
+      if (kind === "repay") {
+        const position = debtPositions.find((entry) => entry.assetId === tokenId && entry.marketId === marketId)
+        if (position) {
+          setDebtPositionId(position.id)
+        }
+      }
+    },
+    [debtPositions, kind, marketId, session.state],
+  )
+
   const selectItems = useMemo(() => {
     if (kind === "repay") return repaySelectItemsForWallet(session, walletId)
     if (kind === "claim") return claimSelectItemsForWallet(session, walletId)
@@ -234,37 +313,45 @@ export function BorrowActionPageClient({
   }, [initialDebtId])
 
   useEffect(() => {
-    if (kind !== "repay" || initialMarketId || initialDebtId || debtPositionId) return
+    if (embedded || kind !== "repay" || initialMarketId || initialDebtId || debtPositionId) return
     if (debtPositions.length === 1) {
       setDebtPositionId(debtPositions[0]!.id)
       if (debtPositions[0]!.marketId) setMarketId(debtPositions[0]!.marketId)
       return
     }
     if (debtPositions.length > 1) setStage("select")
-  }, [debtPositionId, debtPositions, initialDebtId, initialMarketId, kind])
+  }, [debtPositionId, debtPositions, embedded, initialDebtId, initialMarketId, kind])
 
   useEffect(() => {
-    if (kind !== "borrow" || !assetId) return
+    if (embedded || kind !== "borrow" || !assetId) return
     const resolvedMarket = resolveBorrowMarketForAsset(session, assetId, marketId)
     if (resolvedMarket && resolvedMarket !== marketId) {
       setMarketId(resolvedMarket)
     }
-  }, [assetId, kind, marketId, session])
+  }, [assetId, embedded, kind, marketId, session])
 
   useEffect(() => {
+    if (embedded) return
     if (!initialAssetId) return
     const resolved = resolveBorrowAssetId(session.state, initialAssetId, resolvedInitialMarket)
     setAssetId(resolved)
     setStage("configure")
-  }, [initialAssetId, resolvedInitialMarket, session.state])
+  }, [embedded, initialAssetId, resolvedInitialMarket, session.state])
 
   useEffect(() => {
+    if (kind !== "borrow" || !marketId || borrowTokens.length === 0) return
+    if (assetId && borrowTokens.some((token) => token.id === assetId)) return
+    setAssetId(borrowTokens[0]!.id)
+  }, [assetId, borrowTokens, kind, marketId])
+
+  useEffect(() => {
+    if (embedded) return
     if (!initialMarketId) return
     setMarketId(initialMarketId)
     if (kind === "supply" || kind === "remove" || kind === "repay" || resolvedInitialAsset) {
       setStage("configure")
     }
-  }, [initialMarketId, kind, resolvedInitialAsset])
+  }, [embedded, initialMarketId, kind, resolvedInitialAsset])
 
   useEffect(() => {
     if (initialAssetId && resolvedInitialMarket) {
@@ -277,12 +364,18 @@ export function BorrowActionPageClient({
   }, [debtPosition?.marketId])
 
   useEffect(() => {
-    if (kind !== "supply" || initialMarketId || marketId) return
+    if (embedded || kind !== "supply" || initialMarketId || marketId) return
     const items = supplySelectItemsForWallet(session, walletId)
     if (items.length === 1) {
-      router.replace(actionPagePath("borrow", "supply", { market: items[0]!.id }))
+      setMarketId(items[0]!.id)
     }
-  }, [initialMarketId, kind, marketId, router, session, walletId])
+  }, [embedded, initialMarketId, kind, marketId, session, walletId])
+
+  useEffect(() => {
+    if (!embedded || usesCollateralContext === false || session.collateralPools.length === 0) return
+    if (marketId && session.collateralPools.some((pool) => pool.id === marketId)) return
+    setMarketId(session.collateralPools[0]!.id)
+  }, [embedded, marketId, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
     if (kind !== "supply" || !marketId || stage !== "configure") return
@@ -492,12 +585,13 @@ export function BorrowActionPageClient({
   }, [amount, assetId, claimPositionId, debtPositionId, marketId, percent])
 
   const canGoBackToSelect = useMemo(() => {
+    if (embedded) return false
     if (kind === "borrow" && !resolvedInitialAsset) return true
     if (kind === "supply" && !initialMarketId && supplySelectItemsForWallet(session, walletId).length > 1) return true
     if (kind === "repay" && debtPositions.length > 1 && !initialMarketId && !initialDebtId) return true
     if (kind === "claim" && claimSelectItemsForWallet(session, walletId).length > 1 && !initialMarketId && !initialPositionId) return true
     return false
-  }, [debtPositions.length, initialMarketId, initialPositionId, initialDebtId, kind, resolvedInitialAsset, session, walletId])
+  }, [debtPositions.length, embedded, initialMarketId, initialPositionId, initialDebtId, kind, resolvedInitialAsset, session, walletId])
 
   const fallbackMaxAmount = useMemo(() => {
     if (kind === "borrow" && assetId) {
@@ -665,17 +759,32 @@ export function BorrowActionPageClient({
       : stage === "success" || stage === "processing" || stage === "review"
         ? undefined
         : descriptor.subtitle
-  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
 
   return (
     <ActionPageShell
+      mode={embedded ? "embedded" : "page"}
       title={descriptor.title}
       subtitle={shellSubtitle}
       hideTitle={hideTitle}
+      hideClose={embedded}
       closeHref={closeHref}
       simulated={session.readAdapter.mode === "sandbox"}
     >
-      {stage === "select" ? (
+      {showCollateralContextBar ? (
+        <ActionBorrowContextBar
+          kind={kind}
+          pool={activePool}
+          pools={session.collateralPools}
+          token={contextToken}
+          tokens={kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined}
+          debts={debts}
+          onPoolChange={handlePoolChange}
+          onTokenChange={kind === "borrow" || kind === "repay" ? handleContextTokenChange : undefined}
+        />
+      ) : null}
+
+      {stage === "select" && !embedded ? (
         <ActionSelectStage
           items={selectItems}
           sectionLabel={kind === "supply" ? "Supported pools" : "Available assets"}

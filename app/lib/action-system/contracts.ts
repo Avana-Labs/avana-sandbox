@@ -11,7 +11,7 @@ export type ActionKind =
   | MultiplyActionKind
   | RewardsActionKind
 
-export type ActionPageMode = "page" | "overlay"
+export type ActionPageMode = "page" | "overlay" | "embedded"
 
 export type ActionStage =
   | "select"

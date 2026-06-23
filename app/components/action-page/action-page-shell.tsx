@@ -12,6 +12,7 @@ type ActionPageShellProps = {
   subtitle?: string
   simulated?: boolean
   hideTitle?: boolean
+  hideClose?: boolean
   onClose?: () => void
   closeHref?: string
   children: ReactNode
@@ -24,6 +25,7 @@ export function ActionPageShell({
   title,
   subtitle,
   hideTitle = false,
+  hideClose = false,
   onClose,
   closeHref,
   children,
@@ -50,12 +52,13 @@ export function ActionPageShell({
         "flex min-h-0 w-full flex-col bg-background text-foreground",
         mode === "page" && "min-h-[100dvh]",
         mode === "overlay" && "fixed inset-0 z-50 min-h-[100dvh]",
+        mode === "embedded" && "rounded-radius-md",
         className,
       )}
       data-testid="action-page-shell"
       data-mode={mode}
     >
-      {showChrome ? (
+      {showChrome && !hideClose ? (
         <div className="flex items-center justify-end px-4 pb-1 pt-3 sm:px-6">
           <button
             type="button"
