@@ -183,15 +183,10 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
   }
 
   async previewTransaction(intent: MultiplyTransactionIntent): Promise<MultiplyTransactionPreview> {
-    const cached = this.previewCache.get(intent.id)
-    if (cached) return cached
-
     const action = intent.payload
     if (!action) throw new Error("Multiply transaction intent is missing its action payload")
 
-    const preview = toPreview(this.readStateImpl(), action, intent)
-    this.previewCache.set(intent.id, preview)
-    return preview
+    return toPreview(this.readStateImpl(), action, intent)
   }
 
   async executeTransaction(intent: MultiplyTransactionIntent): Promise<MultiplySandboxActionResult> {

@@ -118,6 +118,7 @@ export function MultiplyActionPageClient({
         selectedMultiplier: parsedMultiplier,
       }
 
+      setPreviewUi(null)
       void session
         .previewTransaction(session.createIntent(action))
         .then((preview) => {
