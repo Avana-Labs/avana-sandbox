@@ -98,7 +98,9 @@ export function LendActionPageClient({
   }, [initialMarketId, kind, marketId, router, withdrawItems])
 
   useEffect(() => {
-    if (initialMarketId) setMarketId(initialMarketId)
+    if (!initialMarketId) return
+    setMarketId(initialMarketId)
+    setStage("configure")
   }, [initialMarketId])
 
   const position = useMemo(

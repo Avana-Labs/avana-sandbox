@@ -6,6 +6,8 @@ import { ActionMetricHelp } from "@/app/components/action-page/action-metric-hel
 import {
   HF_ZONES,
   activeHealthFactorZoneIndex,
+  healthFactorBarPositionPct,
+  healthFactorBarTone,
   healthFactorStatusLabel,
 } from "@/app/lib/action-system/health-factor-ui"
 import { formatActionHealthFactor } from "@/app/lib/action-system/formatters"
@@ -20,6 +22,8 @@ export function ActionHealthFactorBar({
   const status = healthFactorStatusLabel(value)
   const activeZoneIdx = activeHealthFactorZoneIndex(value)
   const label = value == null ? "—" : formatActionHealthFactor(value)
+  const fillPct = healthFactorBarPositionPct(value)
+  const barTone = healthFactorBarTone(value)
 
   return (
     <div className={cn("space-y-3", className)} data-testid="action-health-factor-bar">
@@ -51,14 +55,26 @@ export function ActionHealthFactorBar({
 
       <div className="font-data text-[18px] font-semibold leading-none tracking-tight">{label}</div>
 
-      <div className="flex h-2 w-full items-stretch gap-1">
-        {HF_ZONES.map((zone, index) => (
-          <div
-            key={zone.id}
-            className={cn("rounded-full transition-colors", index === activeZoneIdx ? zone.color : "bg-muted")}
-            style={{ width: `${zone.widthPct}%` }}
+      <div className="relative pt-1">
+        <div className="flex h-2 w-full items-stretch gap-1">
+          {HF_ZONES.map((zone) => (
+            <div
+              key={zone.id}
+              className={cn("rounded-full opacity-35", zone.color)}
+              style={{ width: `${zone.widthPct}%` }}
+            />
+          ))}
+        </div>
+        {value != null && activeZoneIdx >= 0 ? (
+          <span
+            className={cn(
+              "absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-background",
+              barTone.border,
+            )}
+            style={{ left: `calc(${fillPct}% - 6px)` }}
+            aria-hidden
           />
-        ))}
+        ) : null}
       </div>
 
       <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground">

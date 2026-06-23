@@ -7,13 +7,19 @@ import {
   formatCompactUsd,
   formatHealthFactor,
   formatUsdExact,
-  getHealthStatus,
   getSpokeById,
   healthFactorToneClass,
   homePoolSpoke,
   homeVisualToBorrowVisual,
 } from "@/app/lib/data/borrow-domain"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
+import {
+  HF_ZONES,
+  activeHealthFactorZoneIndex,
+  healthFactorBarPositionPct,
+  healthFactorBarTone,
+  healthFactorStatusLabel,
+} from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
 import { cn } from "@/lib/utils"
 
@@ -33,11 +39,6 @@ type SuppliesTableProps = {
 }
 
 const MASK = "••••"
-const HF_ZONES = [
-  { id: "safe", label: "Safe", min: 3, max: Infinity, widthPct: 30, color: "bg-emerald-500" },
-  { id: "warn", label: "Caution", min: 1.5, max: 3, widthPct: 40, color: "bg-amber-500" },
-  { id: "danger", label: "Liquidation", min: 0, max: 1.5, widthPct: 30, color: "bg-rose-500" },
-] as const
 
 export function SuppliesPanel({
   rows,
@@ -157,8 +158,8 @@ export function SuppliesPanel({
           const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
           const hf = row.healthFactor
           const hfLabel = hf === null || Number.isNaN(hf) ? "—" : !Number.isFinite(hf) ? "∞" : hf.toFixed(1)
-          const hfTone = hfBarTone(hf)
-          const fillPct = hfBarFill(hf)
+          const hfTone = healthFactorBarTone(hf)
+          const fillPct = healthFactorBarPositionPct(hf)
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`
           return (
@@ -266,24 +267,6 @@ function SupplyStatCell({ value, label, valueTone }: { value: string; label: str
   )
 }
 
-function hfBarTone(hf: number | null): { text: string; fill: string; border: string } {
-  if (hf === null || Number.isNaN(hf)) {
-    return { text: "text-muted-foreground", fill: "bg-slate-300", border: "border-slate-300" }
-  }
-  if (!Number.isFinite(hf) || hf >= 3) {
-    return { text: "text-emerald-600", fill: "bg-emerald-500", border: "border-emerald-500" }
-  }
-  if (hf >= 1.5) {
-    return { text: "text-amber-600", fill: "bg-amber-500", border: "border-amber-500" }
-  }
-  return { text: "text-rose-600", fill: "bg-rose-500", border: "border-rose-500" }
-}
-
-function hfBarFill(hf: number | null): number {
-  if (hf === null || Number.isNaN(hf)) return 0
-  if (!Number.isFinite(hf)) return 96
-  return Math.min(96, Math.max(6, hf * 17))
-}
 
 export function SuppliesHealthFactorCard({
   averageHealthFactor,
@@ -292,16 +275,10 @@ export function SuppliesHealthFactorCard({
   averageHealthFactor: number | null
   showBalance: boolean
 }) {
-  const safeHf = averageHealthFactor ?? Number.POSITIVE_INFINITY
-  const status = getHealthStatus(safeHf)
+  const status = healthFactorStatusLabel(averageHealthFactor)
   const hfLabel = formatHealthFactor(averageHealthFactor)
   const masked = !showBalance
-
-  const activeZoneIdx = (() => {
-    if (averageHealthFactor === null) return -1
-    if (!Number.isFinite(averageHealthFactor)) return HF_ZONES.length - 1
-    return HF_ZONES.findIndex((zone) => averageHealthFactor >= zone.min && averageHealthFactor < zone.max)
-  })()
+  const activeZoneIdx = activeHealthFactorZoneIndex(averageHealthFactor)
 
   return (
     <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
@@ -316,10 +293,21 @@ export function SuppliesHealthFactorCard({
         <span
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
-            status.textClass,
+            status.tone === "positive" && "text-emerald-600",
+            status.tone === "warning" && "text-amber-600",
+            status.tone === "danger" && "text-rose-600",
+            status.tone === "default" && "text-muted-foreground",
           )}
         >
-          <span className={cn("inline-block size-1.5 rounded-full", status.dotClass)} />
+          <span
+            className={cn(
+              "inline-block size-1.5 rounded-full",
+              status.tone === "positive" && "bg-emerald-500",
+              status.tone === "warning" && "bg-amber-500",
+              status.tone === "danger" && "bg-rose-500",
+              status.tone === "default" && "bg-muted-foreground",
+            )}
+          />
           {masked ? "••" : status.label}
         </span>
       </div>

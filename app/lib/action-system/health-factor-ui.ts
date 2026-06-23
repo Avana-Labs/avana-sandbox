@@ -49,6 +49,28 @@ export function healthFactorStatusLabel(value: number | null) {
 
 export function activeHealthFactorZoneIndex(value: number | null) {
   if (value == null || Number.isNaN(value)) return -1
-  if (!Number.isFinite(value)) return HF_ZONES.length - 1
+  if (!Number.isFinite(value) || value >= HF_ZONES[0].min) return 0
   return HF_ZONES.findIndex((zone) => value >= zone.min && value < zone.max)
+}
+
+/** Left = safer, right = closer to liquidation. */
+export function healthFactorBarPositionPct(value: number | null): number {
+  if (value == null || Number.isNaN(value)) return 50
+  if (!Number.isFinite(value) || value >= 10) return 8
+  const clamped = Math.max(1, Math.min(value, 10))
+  return Math.min(92, Math.max(8, 92 - ((clamped - 1) / 9) * 84))
+}
+
+export function healthFactorBarTone(value: number | null): { text: string; fill: string; border: string } {
+  const status = healthFactorStatusLabel(value)
+  if (status.tone === "positive") {
+    return { text: "text-emerald-600", fill: "bg-emerald-500", border: "border-emerald-500" }
+  }
+  if (status.tone === "warning") {
+    return { text: "text-amber-600", fill: "bg-amber-500", border: "border-amber-500" }
+  }
+  if (status.tone === "danger") {
+    return { text: "text-rose-600", fill: "bg-rose-500", border: "border-rose-500" }
+  }
+  return { text: "text-muted-foreground", fill: "bg-slate-300", border: "border-slate-300" }
 }

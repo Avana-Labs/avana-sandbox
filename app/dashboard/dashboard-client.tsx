@@ -94,6 +94,7 @@ export function DashboardClient({
   const searchParams = useSearchParams()
   const tabFromUrl = parseDashboardTab(searchParams.get("tab"))
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
+  const pageData = data ?? initialData
   const [activeTab, setActiveTab] = useState<DashboardTab>(() => tabFromUrl ?? "overview")
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
@@ -102,57 +103,48 @@ export function DashboardClient({
   const portfolioLend = usePortfolioLendLive(walletId, lendSession)
   const multiplySnapshot = useMemo<BorrowSnapshot>(
     () => ({
-      approvedUsd: portfolioMultiply?.creditLines.approvedUsd ?? data?.multiply.creditLines.approvedUsd ?? initialData?.multiply.creditLines.approvedUsd ?? 0,
+      approvedUsd: portfolioMultiply?.creditLines.approvedUsd ?? pageData?.multiply.creditLines.approvedUsd ?? 0,
       liquidationThresholdUsd:
         portfolioMultiply?.creditLines.liquidationThresholdUsd ??
-        data?.multiply.creditLines.liquidationThresholdUsd ??
-        initialData?.multiply.creditLines.liquidationThresholdUsd ??
+        pageData?.multiply.creditLines.liquidationThresholdUsd ??
         0,
       totalBorrowedUsd:
-        portfolioMultiply?.creditLines.totalBorrowedUsd ?? data?.multiply.creditLines.totalBorrowedUsd ?? initialData?.multiply.creditLines.totalBorrowedUsd ?? 0,
+        portfolioMultiply?.creditLines.totalBorrowedUsd ?? pageData?.multiply.creditLines.totalBorrowedUsd ?? 0,
       totalCollateralUsd:
         portfolioMultiply?.creditLines.totalCollateralUsd ??
-        data?.multiply.creditLines.totalCollateralUsd ??
-        initialData?.multiply.creditLines.totalCollateralUsd ??
+        pageData?.multiply.creditLines.totalCollateralUsd ??
         0,
       averageHealthFactor:
         portfolioMultiply?.creditLines.averageHealthFactor ??
-        data?.multiply.creditLines.averageHealthFactor ??
-        initialData?.multiply.creditLines.averageHealthFactor ??
+        pageData?.multiply.creditLines.averageHealthFactor ??
         null,
       currentLtvPct:
-        portfolioMultiply?.creditLines.currentLtvPct ?? data?.multiply.creditLines.currentLtvPct ?? initialData?.multiply.creditLines.currentLtvPct ?? 0,
+        portfolioMultiply?.creditLines.currentLtvPct ?? pageData?.multiply.creditLines.currentLtvPct ?? 0,
     }),
-    [data, initialData, portfolioMultiply],
+    [pageData, portfolioMultiply],
   )
   const borrowSnapshot = useMemo<BorrowSnapshot>(
     () => ({
-      approvedUsd: portfolioBorrow?.creditLines.approvedUsd ?? data?.borrow.creditLines.approvedUsd ?? initialData?.borrow.creditLines.approvedUsd ?? 0,
+      approvedUsd: portfolioBorrow?.creditLines.approvedUsd ?? pageData?.borrow.creditLines.approvedUsd ?? 0,
       liquidationThresholdUsd:
         portfolioBorrow?.creditLines.liquidationThresholdUsd ??
-        data?.borrow.creditLines.liquidationThresholdUsd ??
-        initialData?.borrow.creditLines.liquidationThresholdUsd ??
+        pageData?.borrow.creditLines.liquidationThresholdUsd ??
         0,
       totalBorrowedUsd:
-        portfolioBorrow?.creditLines.totalBorrowedUsd ?? data?.borrow.creditLines.totalBorrowedUsd ?? initialData?.borrow.creditLines.totalBorrowedUsd ?? 0,
+        portfolioBorrow?.creditLines.totalBorrowedUsd ?? pageData?.borrow.creditLines.totalBorrowedUsd ?? 0,
       totalCollateralUsd:
-        portfolioBorrow?.creditLines.totalCollateralUsd ??
-        data?.borrow.creditLines.totalCollateralUsd ??
-        initialData?.borrow.creditLines.totalCollateralUsd ??
-        0,
+        portfolioBorrow?.creditLines.totalCollateralUsd ?? pageData?.borrow.creditLines.totalCollateralUsd ?? 0,
       averageHealthFactor:
-        portfolioBorrow?.creditLines.averageHealthFactor ??
-        data?.borrow.creditLines.averageHealthFactor ??
-        initialData?.borrow.creditLines.averageHealthFactor ??
-        null,
+        portfolioBorrow?.creditLines.averageHealthFactor ?? pageData?.borrow.creditLines.averageHealthFactor ?? null,
       currentLtvPct:
-        portfolioBorrow?.creditLines.currentLtvPct ?? data?.borrow.creditLines.currentLtvPct ?? initialData?.borrow.creditLines.currentLtvPct ?? 0,
+        portfolioBorrow?.creditLines.currentLtvPct ?? pageData?.borrow.creditLines.currentLtvPct ?? 0,
     }),
-    [data, initialData, portfolioBorrow],
+    [pageData, portfolioBorrow],
   )
 
-  const collateralPositions = portfolioBorrow?.collateralPositions ?? data?.borrow.collateralPositions ?? initialData?.borrow.collateralPositions ?? []
-  const debtPositions = portfolioBorrow?.debtPositions ?? data?.borrow.debtPositions ?? initialData?.borrow.debtPositions ?? []
+  const collateralPositions =
+    portfolioBorrow?.collateralPositions ?? pageData?.borrow.collateralPositions ?? []
+  const debtPositions = portfolioBorrow?.debtPositions ?? pageData?.borrow.debtPositions ?? []
   const activityRows = useMemo(
     () => [
       ...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory),
@@ -168,15 +160,15 @@ export function DashboardClient({
         txHash: item.hash,
       })),
       ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory),
-      ...(data?.activity.rows ?? initialData?.activity.rows ?? []),
+      ...(pageData?.activity.rows ?? []),
     ],
-    [borrowSession.transactionHistory, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, data?.activity.rows, initialData?.activity.rows],
+    [borrowSession.transactionHistory, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows],
   )
 
   const lendTabData = useMemo(() => {
-    if (!data) return portfolioLend ?? initialData?.lend ?? { investments: [], positions: [], strategyBuckets: [], history: [] }
-    return mergeLendTabData(data.lend, portfolioLend)
-  }, [data, initialData, portfolioLend])
+    if (!pageData) return portfolioLend ?? { investments: [], positions: [], strategyBuckets: [], history: [] }
+    return mergeLendTabData(pageData.lend, portfolioLend)
+  }, [pageData, portfolioLend])
 
   const lendSnapshot = useMemo(() => buildLendSnapshotFromTabData(lendTabData), [lendTabData])
 
@@ -191,8 +183,8 @@ export function DashboardClient({
   }
 
   const multiplyTabData = useMemo(() => {
-    if (!data) {
-      return portfolioMultiply ?? initialData?.multiply ?? {
+    if (!pageData) {
+      return portfolioMultiply ?? {
         creditLines: {
           approvedUsd: 0,
           liquidationThresholdUsd: 0,
@@ -208,13 +200,13 @@ export function DashboardClient({
         history: [],
       }
     }
-    return mergeMultiplyTabData(data.multiply, portfolioMultiply)
-  }, [data, initialData, portfolioMultiply])
+    return mergeMultiplyTabData(pageData.multiply, portfolioMultiply)
+  }, [pageData, portfolioMultiply])
 
   const multiplyHero = useMemo(() => {
-    const template = data?.heroByTab.looping ?? initialData?.heroByTab.looping ?? {}
+    const template = pageData?.heroByTab.looping ?? {}
     return buildMultiplyHeroData(template, buildMultiplySnapshotFromTabData(multiplyTabData))
-  }, [data, initialData, multiplyTabData])
+  }, [pageData, multiplyTabData])
 
   useEffect(() => {
     const tab = parseDashboardTab(searchParams.get("tab"))
@@ -226,14 +218,14 @@ export function DashboardClient({
     router.replace(`/dashboard?tab=${tab}`, { scroll: false })
   }
 
-  if (!data || !resolvedWalletProfileId) return null
+  if (!pageData) return null
 
   return (
     <>
       <DashboardTabs
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        pageData={data}
+        pageData={pageData}
         borrowSnapshot={borrowSnapshot}
         multiplySnapshot={multiplySnapshot}
         lendSnapshot={lendSnapshot}

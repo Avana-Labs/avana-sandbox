@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { healthFactorToneFromAfter, isHealthFactorMetric, resolveMetricTone, parseHealthFactorValue, activeHealthFactorZoneIndex, healthFactorStatusLabel } from "@/app/lib/action-system/health-factor-ui"
+import {
+  activeHealthFactorZoneIndex,
+  healthFactorBarPositionPct,
+  healthFactorToneFromAfter,
+  healthFactorStatusLabel,
+  isHealthFactorMetric,
+  parseHealthFactorValue,
+  resolveMetricTone,
+} from "@/app/lib/action-system/health-factor-ui"
 
 describe("health factor ui helpers", () => {
   it("detects health factor metric rows", () => {
@@ -20,8 +28,14 @@ describe("health factor ui helpers", () => {
     expect(parseHealthFactorValue("4.39")).toBe(4.39)
     expect(parseHealthFactorValue("∞")).toBe(Number.POSITIVE_INFINITY)
     expect(activeHealthFactorZoneIndex(4.39)).toBe(0)
+    expect(activeHealthFactorZoneIndex(Number.POSITIVE_INFINITY)).toBe(0)
     expect(healthFactorStatusLabel(1.2).label).toBe("Caution")
     expect(healthFactorStatusLabel(1.05).label).toBe("At risk")
+  })
+
+  it("positions safer health factors toward the left of the bar", () => {
+    expect(healthFactorBarPositionPct(9.6)).toBeLessThan(healthFactorBarPositionPct(1.2))
+    expect(healthFactorBarPositionPct(Number.POSITIVE_INFINITY)).toBe(8)
   })
 
   it("prefers health factor tone over generic default", () => {

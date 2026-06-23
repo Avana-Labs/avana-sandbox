@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest"
-import { claimSelectItemsForWallet, repaySelectItemsForWallet } from "@/app/lib/action-system/resolve-borrow-context"
+import { claimSelectItemsForWallet, repaySelectItemsForWallet, resolveBorrowAssetId } from "@/app/lib/action-system/resolve-borrow-context"
 import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+
+describe("resolveBorrowAssetId", () => {
+  it("maps short asset params to scoped engine ids", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const marketId = "uni-v3-bluechip-weth-usdc"
+    expect(resolveBorrowAssetId(state, "usdc", marketId)).toBe("uni-v3-bluechip:usdc")
+    expect(resolveBorrowAssetId(state, "uni-v3-bluechip:usdc", marketId)).toBe("uni-v3-bluechip:usdc")
+  })
+})
 
 describe("claimSelectItemsForWallet", () => {
   it("shows positive claimable totals from reward positions", () => {

@@ -77,7 +77,6 @@ export function ActionLeverageRuler({
 
         <div className="relative mt-5">
           <div className="pointer-events-none absolute inset-x-0 top-1/2 z-0 h-px -translate-y-1/2 bg-border" aria-hidden />
-          <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-10 w-px -translate-x-1/2 bg-foreground" aria-hidden />
           <input
             type="range"
             min={min}

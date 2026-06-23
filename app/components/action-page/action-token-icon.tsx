@@ -5,6 +5,13 @@ import { cn } from "@/lib/utils"
 
 export function ActionTokenIcon({ symbol, className }: { symbol: string; className?: string }) {
   const icon = getTokenIconMeta(symbol)
+  const fallbackLabel = symbol.includes("/")
+    ? symbol
+        .split("/")
+        .map((part) => part.trim().slice(0, 1))
+        .join("")
+        .slice(0, 2)
+    : symbol.slice(0, 3)
 
   if (icon.iconUrl) {
     return (
@@ -14,7 +21,7 @@ export function ActionTokenIcon({ symbol, className }: { symbol: string; classNa
 
   return (
     <span className={cn("inline-flex size-6 items-center justify-center rounded-full text-[10px] font-semibold", icon.bgClass, icon.textClass, className)}>
-      {symbol.slice(0, 3)}
+      {fallbackLabel}
     </span>
   )
 }

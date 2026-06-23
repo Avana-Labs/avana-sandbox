@@ -23,6 +23,13 @@ function spokeHealthFactor(state: BorrowSystemState, walletId: string, marketId:
   return healthFactorWad != null ? fixedToNumber(healthFactorWad, 18) : Number.POSITIVE_INFINITY
 }
 
+function spokeAvailableCreditUsd(state: BorrowSystemState, walletId: string, marketId: string) {
+  const spokeId = state.markets[marketId]?.spokeId
+  if (!spokeId) return 0
+  const metrics = calculateSpokeCreditMetrics(state, walletId, spokeId)
+  return fixedToNumber(metrics.availableCreditUsd6, 6)
+}
+
 export function selectPortfolioSupplyRows(state: BorrowSystemState, walletId: string): SupplyRowContext[] {
   const pools = selectBorrowCollateralPools(state, walletId)
   const debts = selectInitialBorrowDebts(state, walletId)
@@ -30,7 +37,7 @@ export function selectPortfolioSupplyRows(state: BorrowSystemState, walletId: st
   return pools.map((pool) => ({
     pool,
     borrowedUsd: debts[pool.id] ?? 0,
-    remainingBorrowPowerUsd: Math.max(0, pool.borrowPowerUsd - (debts[pool.id] ?? 0)),
+    remainingBorrowPowerUsd: spokeAvailableCreditUsd(state, walletId, pool.id),
     liquidationThresholdUsd: pool.liquidationUsd,
     healthFactor: spokeHealthFactor(state, walletId, pool.id),
     pairApr: pool.pairApr,
