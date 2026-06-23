@@ -24,10 +24,23 @@ describe("lend preview mappers", () => {
       "Rewards earned",
       "Total earned",
     ])
+    expect(ui.amountUsdLabel).toBe("≈ $50.00")
   })
 
   it("maps withdraw-specific metrics", () => {
-    const ui = mapLendWithdrawPreviewToActionUi(preview, {
+    const withdrawPreview = lendPreviewFixture({
+      maxWithdrawable: 10,
+      after: {
+        suppliedAmount: 75,
+        suppliedValueUsd: 75,
+        principalAmount: 70,
+        interestEarned: 5,
+        rewardsEarnedUsd: 2,
+        totalEarnedUsd: 7,
+        currentApy: 4.2,
+      },
+    })
+    const ui = mapLendWithdrawPreviewToActionUi(withdrawPreview, {
       symbol: "GHO",
       amount: 25,
       marketLabel: "GHO · Core",
@@ -36,5 +49,7 @@ describe("lend preview mappers", () => {
 
     expect(ui.metrics.map((row) => row.label)).toEqual(["Supplied remaining", "APY impact", "Total earned"])
     expect(ui.rateLabel).toBe("Remaining supply")
+    expect(ui.amountUsdLabel).toBe("≈ $25.00")
+    expect(ui.maxAmount).toBe(10)
   })
 })

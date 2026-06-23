@@ -13,29 +13,17 @@ import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 const diatypeSans = localFont({
   src: [
     {
-      path: "../public/fonts/diatype/core/ABCDiatype-Regular-Trial.woff2",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/diatype/core/ABCDiatype-Medium-Trial.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
       path: "../public/fonts/diatype/core/ABCDiatypeVariable-Trial.woff2",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/diatype/core/ABCDiatype-Bold-Trial.woff2",
-      weight: "700",
+      weight: "400 700",
       style: "normal",
     },
   ],
   variable: "--font-diatype-sans",
   display: "swap",
+  preload: true,
 })
+
+const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"system";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://avana.cc"),
@@ -111,9 +99,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Intentional blocking script: applies stored theme before first paint to prevent FOUC. */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/theme-bootstrap.js" />
+        {/* Inline to avoid a render-blocking theme-bootstrap network request. */}
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider

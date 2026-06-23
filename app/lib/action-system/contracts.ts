@@ -114,16 +114,16 @@ export const ACTION_DESCRIPTORS: Record<ActionProduct, Partial<Record<ActionKind
     supply: {
       product: "borrow",
       kind: "supply",
-      title: "Deposit",
-      subtitle: "Configure and review your deposit.",
-      primaryVerb: "Deposit",
+      title: "Supply collateral",
+      subtitle: "Configure and review your collateral deposit.",
+      primaryVerb: "Supply",
     },
     remove: {
       product: "borrow",
       kind: "remove",
-      title: "Withdraw",
-      subtitle: "Configure and review your withdrawal.",
-      primaryVerb: "Withdraw",
+      title: "Remove collateral",
+      subtitle: "Configure and review your collateral removal.",
+      primaryVerb: "Remove",
     },
     claim: {
       product: "borrow",
@@ -196,4 +196,25 @@ export function isValidAction(product: string, kind: string): product is ActionP
 export function actionPagePath(product: ActionProduct, kind: ActionKind, params?: Record<string, string>) {
   const search = params ? `?${new URLSearchParams(params).toString()}` : ""
   return `/actions/${product}/${kind}${search}`
+}
+
+const ACTION_CLOSE_HREF: Record<ActionProduct, string> = {
+  borrow: "/borrow",
+  lend: "/lend",
+  multiply: "/multiply",
+  rewards: "/rewards",
+}
+
+function normalizeReturnHref(returnHref: string) {
+  if (returnHref.startsWith("/multiply/market/") && !returnHref.startsWith("/multiply/markets/")) {
+    return returnHref.replace("/multiply/market/", "/multiply/markets/")
+  }
+  return returnHref
+}
+
+export function resolveActionCloseHref(product: ActionProduct, returnHref?: string) {
+  const fallback = ACTION_CLOSE_HREF[product] ?? "/"
+  if (!returnHref) return fallback
+  if (!returnHref.startsWith("/") || returnHref.startsWith("//")) return fallback
+  return normalizeReturnHref(returnHref)
 }

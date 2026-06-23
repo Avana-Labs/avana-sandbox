@@ -50,7 +50,7 @@ export const mockRewardsPageSource: RewardsPageSource = {
         subtitle: `${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`,
         value: formatCompactUsd(pool.tvlUsd),
         delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
-        deltaClassName: "text-emerald-500",
+        deltaClassName: "text-apy-positive",
       }))
 
     return {

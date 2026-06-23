@@ -49,6 +49,11 @@ export function mapMultiplyPreviewToActionUi(
 ): ActionPreviewUi {
   const healthAfter = hfNumber(preview.after.healthFactor)
   const liqPrice = preview.simulationSummary?.liquidationPrice
+  const liquidationError = preview.validationErrors.find((entry) => entry.toLowerCase().includes("health factor"))
+  const riskMessage =
+    preview.warnings.find((entry) => entry.toLowerCase().includes("liquidation")) ??
+    preview.warnings[0] ??
+    "This leverage reduces your safety buffer."
 
   return {
     allowed: preview.allowed,
@@ -101,13 +106,21 @@ export function mapMultiplyPreviewToActionUi(
     ],
     networkFeeLabel: formatActionNetworkFee(0.04),
     risk:
-      preview.riskLabel === "danger"
+      preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < 1.05)
         ? {
             level: "danger",
-            title: "This multiply puts your position at risk",
-            message: preview.validationErrors[0] ?? "Health factor is too low for this leverage.",
+            title: "Risk of liquidation",
+            message:
+              liquidationError ??
+              "Health factor is too low for this leverage.",
           }
-        : null,
+        : preview.warnings.length > 0
+          ? {
+              level: "warning",
+              title: "Review leverage carefully",
+              message: riskMessage,
+            }
+          : null,
     blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,

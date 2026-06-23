@@ -22,13 +22,21 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /app-audit\.spec\.ts/,
+      testIgnore: /app-audit\.spec\.ts|route-performance\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 560, height: 960 },
         launchOptions: {
           args: ["--hide-scrollbars"],
         },
+      },
+    },
+    {
+      name: "performance",
+      testMatch: /route-performance\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
       },
     },
     {

@@ -33,10 +33,10 @@ export function HomeActionContextBar({
           />
         </span>
         <span className="flex min-w-0 flex-col leading-tight">
-          <span className="text-[11.5px] font-medium tracking-[0.02em] text-[hsl(var(--brand))]">Collateral position</span>
+          <span className="text-[11.5px] font-medium tracking-[0.02em] text-brand-readable">Collateral position</span>
           <span className="truncate pt-0.5 text-[15px] font-medium text-foreground">{pool.name}</span>
         </span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
+        <ChevronDown className="h-4 w-4 shrink-0 text-brand-readable" />
       </Button>
 
       {showToken && onOpenToken ? (
@@ -50,10 +50,10 @@ export function HomeActionContextBar({
             {token ? <TokenBubble visual={token.visual} className="size-9 shrink-0" /> : null}
           </span>
           <span className="flex min-w-0 flex-col leading-tight">
-            <span className="text-[11.5px] font-medium tracking-[0.02em] text-[hsl(var(--brand))]">Borrow asset</span>
+            <span className="text-[11.5px] font-medium tracking-[0.02em] text-brand-readable">Borrow asset</span>
             <span className="truncate pt-0.5 text-[15px] font-medium text-foreground">{token?.symbol ?? "Select asset"}</span>
           </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--brand))]" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-brand-readable" />
         </Button>
       ) : null}
     </div>

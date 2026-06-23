@@ -85,9 +85,9 @@ function AvanaQuestCard({
       <div className="flex h-full flex-col p-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className={`flex h-9 w-9 items-center justify-center rounded-[11px] ${accent === "challenge" ? "bg-[#EAFF72]/90" : "bg-[#9CDD4C]/14"}`}>
-            <Icon className={`h-4 w-4 ${accent === "challenge" ? "text-[#7D8D24]" : "text-[#4E9D73]"}`} strokeWidth={1.9} />
+            <Icon className={`h-4 w-4 ${accent === "challenge" ? "text-[#5A6618]" : "text-[#2D6B4A]"}`} strokeWidth={1.9} />
           </div>
-          <span className="rounded-full border border-border bg-surface-inset px-2.5 py-0.5 text-[10px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="rounded-full border border-border bg-surface-inset px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-foreground/70">
             {quest.category}
           </span>
         </div>
@@ -96,7 +96,7 @@ function AvanaQuestCard({
           <h3 className="line-clamp-2 text-[14px] font-medium leading-5 tracking-[-0.03em] text-foreground md:text-[15px]">
             {quest.title}
           </h3>
-          <p className={`line-clamp-2 text-[12px] font-normal leading-5 ${accent === "challenge" ? "text-[#4E9D73]/90" : "text-muted-foreground"}`}>
+          <p className={`line-clamp-2 text-[12px] font-normal leading-5 ${accent === "challenge" ? "text-foreground/75" : "text-muted-foreground"}`}>
             {quest.description}
           </p>
           {"progressLabel" in quest && quest.progressLabel ? (
@@ -152,7 +152,7 @@ function RewardsPromoPanel({
   return (
     <section className="space-y-6">
       <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex h-auto w-full justify-between gap-2 border-0 bg-transparent p-0 sm:inline-flex sm:w-max sm:min-w-max sm:justify-start sm:gap-9">
+        <div className="flex h-auto w-full justify-between gap-2 border-0 bg-transparent p-0 sm:inline-flex sm:w-max sm:min-w-max sm:justify-start sm:gap-9" role="tablist" aria-label="Rewards quest categories">
           {promoTabs.map((tab) => (
             <PromoTabButton
               key={tab.id}

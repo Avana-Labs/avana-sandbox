@@ -1,4 +1,3 @@
-import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 type BrandLogoProps = {
@@ -11,18 +10,17 @@ const SITE_NAME = "Avana"
 export function BrandLogo({ mobileOnly = false }: BrandLogoProps) {
   return (
     <span className="inline-flex items-center overflow-hidden">
-      <Image
+      {/* Plain img avoids next/image SSR markup drift in the site header. */}
+      <img
         src={HEADER_WORDMARK_PATH}
         alt={`${SITE_NAME} logo`}
         width={252}
         height={56}
-        sizes={mobileOnly ? "172px" : "(max-width: 767px) 172px, 168px"}
         className={
           mobileOnly
             ? "h-[56px] w-auto scale-[1.08] origin-left"
             : "h-[56px] w-auto scale-[1.08] origin-left md:h-[52px]"
         }
-        priority
       />
     </span>
   )
@@ -35,14 +33,13 @@ type BrandIconProps = {
 export function BrandIcon({ className }: BrandIconProps) {
   return (
     <span className="inline-flex items-center overflow-hidden">
-      <Image
+      {/* Plain img avoids next/image SSR markup drift in the mobile header. */}
+      <img
         src="/avana-icon.svg"
         alt="Avana logo"
         width={32}
         height={32}
-        sizes="32px"
-        className={cn("object-cover", className)}
-        priority
+        className={cn("size-8 object-cover", className)}
       />
     </span>
   )

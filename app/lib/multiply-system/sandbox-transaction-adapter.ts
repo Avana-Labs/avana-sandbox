@@ -24,6 +24,22 @@ function defaultId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
 }
 
+function multiplyRiskLabel(simulation: ReturnType<typeof simulateMultiply>): "danger" | "safe" | "warning" {
+  if (!simulation.validation.allowed) return "danger"
+  const healthFactor = simulation.after.healthFactor
+  if (healthFactor !== "infinity" && healthFactor < 1.05) return "danger"
+  if (simulation.validation.warnings.length > 0) return "warning"
+  return "safe"
+}
+
+function deleverageRiskLabel(simulation: ReturnType<typeof simulateDeleverage>): "danger" | "safe" | "warning" {
+  if (!simulation.validation.allowed) return "danger"
+  const healthFactor = simulation.after.healthFactor
+  if (healthFactor !== "infinity" && healthFactor < 1.05) return "danger"
+  if (simulation.validation.warnings.length > 0) return "warning"
+  return "safe"
+}
+
 function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: MultiplyTransactionIntent): MultiplyTransactionPreview {
   if (action.type === "multiply") {
     const market = state.markets[action.marketId]
@@ -43,7 +59,7 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
       allowed: simulation.validation.allowed,
       warnings: simulation.validation.warnings,
       validationErrors: simulation.validation.errors,
-      riskLabel: simulation.validation.allowed ? (simulation.validation.warnings.length ? "warning" : "safe") : "danger",
+      riskLabel: multiplyRiskLabel(simulation),
       before: {
         collateralValueUsd: simulation.before.collateralValueUsd,
         debtValueUsd: simulation.before.debtValueUsd,
@@ -72,14 +88,19 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
   if (!position) throw new Error(`Unknown position ${action.positionId}`)
   const market = state.markets[position.marketId]
   if (!market) throw new Error(`Unknown market ${position.marketId}`)
-  const simulation = simulateDeleverage({ market, position, targetMultiplier: action.targetMultiplier })
+  const simulation = simulateDeleverage({
+    market,
+    position,
+    targetMultiplier: action.targetMultiplier,
+    repayAmountUsd: action.type === "deleverage" ? action.repayAmountUsd : undefined,
+  })
 
   return {
     intent,
     allowed: simulation.validation.allowed,
     warnings: simulation.validation.warnings,
     validationErrors: simulation.validation.errors,
-    riskLabel: simulation.validation.allowed ? (simulation.validation.warnings.length ? "warning" : "safe") : "danger",
+    riskLabel: deleverageRiskLabel(simulation),
     before: {
       collateralValueUsd: simulation.before.collateralValueUsd,
       debtValueUsd: simulation.before.debtValueUsd,

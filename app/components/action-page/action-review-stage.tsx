@@ -2,6 +2,7 @@
 
 import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
 import { ActionRiskBanner } from "@/app/components/action-page/action-banners"
+import { ActionAmountCard } from "@/app/components/action-page/action-amount-card"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
 
@@ -24,6 +25,9 @@ export function ActionReviewStage({
   onSecondary?: () => void
   secondaryHref?: string
 }) {
+  const amountOnly = preview.amountLabel.split(" ").slice(0, -1).join(" ") || preview.amountLabel
+  const assetSymbol = preview.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
+
   return (
     <div className="space-y-4" data-testid="action-review-stage">
       <div className="pb-1">
@@ -31,8 +35,17 @@ export function ActionReviewStage({
         {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
       </div>
 
+      <ActionAmountCard
+        label="Amount"
+        amount={amountOnly}
+        onAmountChange={() => undefined}
+        approxUsdLabel={preview.amountUsdLabel}
+        assetLabel={assetSymbol}
+        assetSymbol={assetSymbol}
+        readOnly
+      />
+
       <ActionCard>
-        <ActionInfoRow label="Amount" value={preview.amountLabel} tooltip="amount" />
         <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
         <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
       </ActionCard>

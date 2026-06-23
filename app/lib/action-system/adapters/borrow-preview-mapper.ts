@@ -208,6 +208,8 @@ export function mapBorrowSupplyPreviewToActionUi(
 ): ActionPreviewUi {
   const borrowPowerBefore = borrowingPowerUsd(preview, "before")
   const borrowPowerAfter = borrowingPowerUsd(preview, "after")
+  const healthBefore = hfToNumber(preview.before.healthFactorWad)
+  const healthAfter = hfToNumber(preview.after.healthFactorWad)
 
   return {
     allowed: preview.allowed,
@@ -245,6 +247,14 @@ export function mapBorrowSupplyPreviewToActionUi(
         before: formatActionUsd(borrowPowerBefore),
         after: formatActionUsd(borrowPowerAfter),
       },
+      {
+        id: "hf",
+        label: "Health factor",
+        value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
+        before: formatActionHealthFactor(healthBefore),
+        after: formatActionHealthFactor(healthAfter),
+        tone: hfTone(healthAfter),
+      },
     ],
     networkFeeLabel: formatActionNetworkFee(0.04),
     risk: null,
@@ -258,6 +268,7 @@ export function mapBorrowRemovePreviewToActionUi(
   preview: TransactionPreview,
   options: {
     percent: number
+    safePercent: number
     removeUsd: number
     marketLabel: string
     positionApyPct: number
@@ -267,6 +278,8 @@ export function mapBorrowRemovePreviewToActionUi(
   const afterCollateral = fixedToNumber(preview.after.collateralValueUsd6, 6)
   const annualBefore = (beforeCollateral * options.positionApyPct) / 100
   const annualAfter = (afterCollateral * options.positionApyPct) / 100
+  const healthBefore = hfToNumber(preview.before.healthFactorWad)
+  const healthAfter = hfToNumber(preview.after.healthFactorWad)
 
   return {
     allowed: preview.allowed,
@@ -278,7 +291,7 @@ export function mapBorrowRemovePreviewToActionUi(
     marketValue: options.marketLabel,
     balanceLabel: "Removing",
     balanceValue: formatActionUsd(options.removeUsd),
-    maxAmount: 100,
+    maxAmount: options.safePercent,
     metrics: [
       {
         id: "position-apy",
@@ -312,6 +325,14 @@ export function mapBorrowRemovePreviewToActionUi(
         value: formatActionUsdBeforeAfter(beforeCollateral, afterCollateral),
         before: formatActionUsd(beforeCollateral),
         after: formatActionUsd(afterCollateral),
+      },
+      {
+        id: "hf",
+        label: "Health factor",
+        value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
+        before: formatActionHealthFactor(healthBefore),
+        after: formatActionHealthFactor(healthAfter),
+        tone: hfTone(healthAfter),
       },
     ],
     networkFeeLabel: formatActionNetworkFee(0.04),

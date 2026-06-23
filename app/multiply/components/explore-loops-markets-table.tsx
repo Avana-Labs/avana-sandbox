@@ -762,7 +762,7 @@ function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSn
             ) : null}
           </div>
         </div>
-        <span className="inline-flex h-8 items-center rounded-full bg-[hsl(var(--brand-soft))] px-3 text-[13px] font-medium text-[hsl(var(--brand))] dark:bg-[hsl(var(--brand-soft))]/20">
+        <span className="inline-flex h-8 items-center rounded-full bg-[hsl(var(--brand-soft))] px-3 text-[13px] font-medium text-brand-readable dark:bg-[hsl(var(--brand-soft))]/20">
           {snapshot.maxLeverageLabel}
         </span>
       </div>

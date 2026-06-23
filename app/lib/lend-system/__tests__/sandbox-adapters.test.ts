@@ -61,8 +61,8 @@ describe("SandboxLendTransactionAdapter", () => {
       type: "deposit",
       walletId: "wallet-1",
       marketId: "eth",
-      depositAmount: 100,
-      walletBalance: 1000,
+      depositAmount: 1,
+      walletBalance: state.walletBalances["wallet-1"]?.eth,
     })
     const depositResult = await adapter.executeTransaction(depositIntent)
 
@@ -75,7 +75,7 @@ describe("SandboxLendTransactionAdapter", () => {
       walletId: "wallet-1",
       marketId: "eth",
       positionId,
-      withdrawAmount: 50,
+      withdrawAmount: 0.5,
     })
     const withdrawResult = await adapter.executeTransaction(withdrawIntent)
 
@@ -152,5 +152,41 @@ describe("SandboxLendTransactionAdapter", () => {
     expect(state.walletBalances["wallet-1"]!.eth).toBeCloseTo(0.28, 6)
     expect(preview.allowed).toBe(false)
     expect(preview.validationErrors[0]).toContain("Insufficient wallet balance")
+  })
+
+  it("revalidates deposits against the current wallet balance at execution time", async () => {
+    let state = buildMockLendSystemState("wallet-1")
+    state.walletBalances["wallet-1"] = { ...(state.walletBalances["wallet-1"] ?? {}), eth: 1 }
+
+    const adapter = new SandboxLendTransactionAdapter({
+      readState: () => state,
+      writeState: (next) => {
+        state = next
+      },
+      now: () => state.now,
+      generateId: (prefix) => `${prefix}-stale-balance`,
+    })
+
+    const intent = adapter.createIntent({
+      type: "deposit",
+      walletId: "wallet-1",
+      marketId: "eth",
+      depositAmount: 1,
+      walletBalance: 1,
+    })
+
+    await expect(adapter.previewTransaction(intent)).resolves.toMatchObject({ allowed: true })
+
+    state = {
+      ...state,
+      walletBalances: {
+        ...state.walletBalances,
+        "wallet-1": { ...(state.walletBalances["wallet-1"] ?? {}), eth: 0 },
+      },
+    }
+
+    await expect(adapter.executeTransaction(intent)).rejects.toThrow("Insufficient wallet balance")
+    expect(Object.keys(state.positions)).toHaveLength(0)
+    expect(state.transactions).toHaveLength(0)
   })
 })

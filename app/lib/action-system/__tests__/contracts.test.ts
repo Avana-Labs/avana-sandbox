@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { actionPagePath, getActionDescriptor } from "@/app/lib/action-system/contracts"
+import { actionPagePath, getActionDescriptor, resolveActionCloseHref } from "@/app/lib/action-system/contracts"
 
 describe("action-system contracts", () => {
   it("defines descriptors for all 10 product actions", () => {
@@ -23,6 +23,9 @@ describe("action-system contracts", () => {
   it("builds stable action page paths", () => {
     expect(actionPagePath("borrow", "borrow", { asset: "usdc" })).toBe("/actions/borrow/borrow?asset=usdc")
     expect(actionPagePath("lend", "deposit")).toBe("/actions/lend/deposit")
+    expect(resolveActionCloseHref("multiply")).toBe("/multiply")
+    expect(resolveActionCloseHref("borrow", "//evil.example")).toBe("/borrow")
+    expect(resolveActionCloseHref("multiply", "/multiply/market/aave-gho")).toBe("/multiply/markets/aave-gho")
   })
 
   it("uses Avana action configure subtitles", () => {

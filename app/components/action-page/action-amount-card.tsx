@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 
 export type ActionAssetOption = {
@@ -19,11 +20,9 @@ type ActionAmountCardProps = {
   approxUsdLabel: string
   assetLabel: string
   assetSymbol?: string
-  balanceLabel: string
-  balanceValue: string
-  onMax?: () => void
-  onPercent?: (percent: number) => void
-  showPercentShortcuts?: boolean
+  balanceLabel?: string
+  balanceValue?: string
+  readOnly?: boolean
   receiveWeth?: boolean
   onReceiveWethChange?: (value: boolean) => void
   showReceiveWethToggle?: boolean
@@ -33,8 +32,6 @@ type ActionAmountCardProps = {
   onAssetSelect?: (id: string) => void
 }
 
-const PERCENT_PRESETS = [25, 50, 75, 100] as const
-
 export function ActionAmountCard({
   label,
   amount,
@@ -42,11 +39,7 @@ export function ActionAmountCard({
   approxUsdLabel,
   assetLabel,
   assetSymbol,
-  balanceLabel,
-  balanceValue,
-  onMax,
-  onPercent,
-  showPercentShortcuts = false,
+  readOnly = false,
   receiveWeth = false,
   onReceiveWethChange,
   showReceiveWethToggle = false,
@@ -56,7 +49,7 @@ export function ActionAmountCard({
   onAssetSelect,
 }: ActionAmountCardProps) {
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
-  const switchable = Boolean(onAssetSelect && assetOptions && assetOptions.length > 1)
+  const switchable = Boolean(onAssetSelect && assetOptions && assetOptions.length > 1 && !readOnly)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -77,20 +70,26 @@ export function ActionAmountCard({
   }, [menuOpen])
 
   return (
-    <div className="overflow-hidden rounded-[20px] border border-border bg-surface-raised" data-testid="action-amount-card">
-      <div className="px-4 pb-3 pt-4">
+    <div className="rounded-[20px] border border-border bg-surface-raised" data-testid="action-amount-card">
+      <div className="px-4 pb-4 pt-4">
         <div className="text-[13px] text-muted-foreground">{label}</div>
         <div className="mt-3 flex items-start justify-between gap-3">
-          <label className="min-w-0 flex-1">
-            <span className="sr-only">{label} amount</span>
-            <input
-              inputMode="decimal"
-              value={amount}
-              onChange={(event) => onAmountChange(event.target.value)}
-              className="w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none"
-              placeholder="0"
-            />
-          </label>
+          {readOnly ? (
+            <div className="min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
+              {amount || "0"}
+            </div>
+          ) : (
+            <label className="min-w-0 flex-1">
+              <span className="sr-only">{label} amount</span>
+              <input
+                inputMode="decimal"
+                value={amount}
+                onChange={(event) => onAmountChange(event.target.value)}
+                className="w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none"
+                placeholder="0"
+              />
+            </label>
+          )}
           <div className="relative shrink-0" ref={menuRef}>
             <button
               type="button"
@@ -98,6 +97,7 @@ export function ActionAmountCard({
               aria-haspopup={switchable ? "listbox" : undefined}
               aria-expanded={switchable ? menuOpen : undefined}
               aria-label={switchable ? `Change asset, current ${assetLabel}` : undefined}
+              disabled={readOnly && !switchable}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium",
                 switchable ? "cursor-pointer hover:bg-muted" : "cursor-default",
@@ -111,7 +111,7 @@ export function ActionAmountCard({
               <div
                 role="listbox"
                 aria-label="Select asset"
-                className="absolute right-0 z-30 mt-2 max-h-64 w-60 overflow-auto rounded-2xl border border-border bg-surface-raised p-1 shadow-lg"
+                className="absolute right-0 z-50 mt-2 max-h-64 w-72 overflow-auto rounded-2xl border border-border bg-surface-raised p-1 shadow-lg"
               >
                 {assetOptions!.map((option) => (
                   <button
@@ -137,41 +137,14 @@ export function ActionAmountCard({
             ) : null}
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-3 text-[13px] text-muted-foreground">
-          <span>{approxUsdLabel}</span>
-          <div className="flex items-center gap-2">
-            <span>
-              {balanceLabel}: {balanceValue}
-            </span>
-            {showPercentShortcuts && onPercent ? (
-              <div className="flex items-center gap-1">
-                {PERCENT_PRESETS.map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    className="rounded-full px-1.5 py-0.5 text-[12px] font-medium text-foreground hover:bg-muted"
-                    onClick={() => onPercent(preset)}
-                  >
-                    {preset === 100 ? "Max" : `${preset}%`}
-                  </button>
-                ))}
-              </div>
-            ) : onMax ? (
-              <button type="button" className="font-medium text-foreground hover:underline" onClick={onMax}>
-                Max
-              </button>
-            ) : null}
-          </div>
-        </div>
+        <div className="mt-3 text-[13px] text-muted-foreground">{approxUsdLabel}</div>
       </div>
 
       {showReceiveWethToggle ? (
         <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[14px]">
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <span>Receive WETH</span>
-            <span className="text-[11px] opacity-70" aria-hidden>
-              ⓘ
-            </span>
+            <ActionMetricHelp text="Receive borrowed ETH as WETH instead of native ETH when repaying or withdrawing." />
           </div>
           <button
             type="button"
