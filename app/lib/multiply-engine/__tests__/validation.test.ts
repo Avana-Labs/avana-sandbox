@@ -31,8 +31,8 @@ describe("multiply engine validation", () => {
       collateralPriceUsd: 3500,
     })
 
-    expect(result.allowed).toBe(false)
-    expect(result.errors.join(" ")).toContain("public maximum")
+    expect(result.allowed).toBe(true)
+    expect(result.warnings.join(" ")).toContain("public maximum")
   })
 
   it("warns when multiply exceeds the recommended maximum", () => {

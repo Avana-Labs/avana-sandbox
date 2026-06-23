@@ -72,7 +72,12 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
   if (!position) throw new Error(`Unknown position ${action.positionId}`)
   const market = state.markets[position.marketId]
   if (!market) throw new Error(`Unknown market ${position.marketId}`)
-  const simulation = simulateDeleverage({ market, position, targetMultiplier: action.targetMultiplier })
+  const simulation = simulateDeleverage({
+    market,
+    position,
+    targetMultiplier: action.targetMultiplier,
+    repayAmountUsd: action.type === "deleverage" ? action.repayAmountUsd : undefined,
+  })
 
   return {
     intent,
