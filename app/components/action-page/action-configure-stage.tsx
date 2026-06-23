@@ -3,6 +3,7 @@
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
 import { cn } from "@/lib/utils"
+import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionOutcomeBanner, ActionRiskBanner, ActionWalletToast } from "@/app/components/action-page/action-banners"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
@@ -155,7 +156,7 @@ export function ActionConfigureStage({
     verb,
     blockedReason: preview?.blockedReason ?? null,
     isValid,
-    amountEntered: Boolean(amount.trim()),
+    amountEntered: parsePositiveActionAmount(amount) != null,
   })
   const secondaryLabel = secondaryCtaLabel(stage, { canGoBack })
   const walletStage = stage === "approve_allowance" || stage === "wallet_sign" ? stage : null

@@ -82,7 +82,7 @@ export function primaryCtaLabel(options: {
   if (options.stage === "review") return options.verb
   if (options.blockedReason) return "Adjust amount"
   if (!options.isValid) {
-    if (options.amountEntered) return "Loading preview…"
+    if (options.amountEntered) return "Enter a valid amount"
     return "Enter an amount"
   }
   if (options.stage === "configure") return "Review"

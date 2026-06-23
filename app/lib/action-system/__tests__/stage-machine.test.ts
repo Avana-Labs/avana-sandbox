@@ -102,7 +102,7 @@ describe("primaryCtaLabel", () => {
     ).toBe("Adjust amount")
   })
 
-  it("shows loading label while preview is pending", () => {
+  it("shows validation label for invalid entered amounts", () => {
     expect(
       primaryCtaLabel({
         stage: "configure",
@@ -111,7 +111,7 @@ describe("primaryCtaLabel", () => {
         isValid: false,
         amountEntered: true,
       }),
-    ).toBe("Loading preview…")
+    ).toBe("Enter a valid amount")
   })
 })
 
