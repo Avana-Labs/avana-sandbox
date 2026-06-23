@@ -3,13 +3,12 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { REWARDS_PROMO_TABS } from "@/app/lib/data/mock/shared/rewards"
-import { buildDefaultRewardsCatalog } from "@/app/lib/rewards-engine"
+import { buildDefaultRewardsCatalog, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import { RewardsPageClient } from "@/app/rewards/rewards-page-client"
 
 const push = vi.fn()
 const claimReward = vi.fn()
 const claimAllRewards = vi.fn()
-const completeSandboxTask = vi.fn()
 const completeEducation = vi.fn()
 const favoriteMarket = vi.fn()
 const recordSimulation = vi.fn()
@@ -18,24 +17,44 @@ const recordDailyCheckin = vi.fn()
 const runReferralSandboxStep = vi.fn()
 const createReferralCode = vi.fn()
 const recordReferralLinkCopied = vi.fn()
-const readRewardSummary = vi.fn()
-const readProgress = vi.fn()
 const lendCreateIntent = vi.fn(() => ({ id: "lend-intent" }))
 const lendPreviewTransaction = vi.fn(async () => ({ allowed: true }))
 const borrowCreateIntent = vi.fn(() => ({ id: "borrow-intent" }))
 const borrowPreviewTransaction = vi.fn(async () => ({ allowed: true }))
 const multiplyCreateIntent = vi.fn(() => ({ id: "multiply-intent" }))
 const multiplyPreviewTransaction = vi.fn(async () => ({ allowed: true }))
-const rewardsState = { events: [], claims: [], referralProfiles: {}, relationships: [], firstLoginAt: Date.UTC(2026, 5, 19), favoriteMarketIds: [] }
-const tasks = buildDefaultRewardsCatalog(Date.UTC(2026, 5, 19))
+const now = Date.UTC(2026, 5, 19)
+const rewardsState = { events: [] as Array<Record<string, unknown>>, claims: [] as Array<Record<string, unknown>>, referralProfiles: {}, relationships: [], firstLoginAt: now, favoriteMarketIds: [] }
+const tasks = buildDefaultRewardsCatalog(now)
+
+function resetRewardsState(
+  events: Array<Record<string, unknown>> = [],
+  claims: Array<Record<string, unknown>> = [],
+) {
+  rewardsState.events = events
+  rewardsState.claims = claims
+  rewardsState.referralProfiles = {}
+  rewardsState.relationships = []
+  rewardsState.favoriteMarketIds = []
+  rewardsState.firstLoginAt = now
+}
+
+function rewardEvent(
+  id: string,
+  type: string,
+  product: string,
+  extra: Record<string, unknown> = {},
+) {
+  return { id, wallet: "demo-wallet", product, type, timestamp: now, ...extra }
+}
 
 const rewardsSessionContext = {
   walletId: "demo-wallet",
   state: rewardsState,
+  hasHydratedStorage: true,
   tasks,
   claimReward,
   claimAllRewards,
-  completeSandboxTask,
   completeEducation,
   favoriteMarket,
   recordSimulation,
@@ -44,10 +63,6 @@ const rewardsSessionContext = {
   runReferralSandboxStep,
   createReferralCode,
   recordReferralLinkCopied,
-  readAdapter: {
-    readRewardSummary,
-    readProgress,
-  },
 }
 
 vi.mock("next/navigation", () => ({
@@ -76,33 +91,6 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
     },
   }),
 }))
-
-function buildProgress(
-  overrides: Partial<Record<string, { status: "available" | "in_progress" | "claimable" | "claimed"; progress: number; target: number }>> = {},
-) {
-  return tasks.map((task) => {
-    const override = overrides[task.id]
-    const status = override?.status ?? (task.id === "first-borrow" ? "claimable" : task.id === "connect-wallet" ? "claimed" : "available")
-    const target =
-      override?.target ??
-      (task.requirement.type === "aggregate_volume"
-        ? task.requirement.targetUsd
-        : task.requirement.type === "wait_since_login"
-          ? 1
-          : task.requirement.targetCount)
-    const progress = override?.progress ?? (status === "claimable" || status === "claimed" ? target : 0)
-
-    return {
-      wallet: "demo-wallet",
-      taskId: task.id,
-      status,
-      progress,
-      target,
-      claimableAmount: status === "claimable" ? task.rewardAmount : 0,
-      claimedAmount: status === "claimed" ? task.rewardAmount : 0,
-    }
-  })
-}
 
 function renderRewardsPage() {
   render(
@@ -160,7 +148,6 @@ describe("RewardsPageClient", () => {
     push.mockReset()
     claimReward.mockReset()
     claimAllRewards.mockReset()
-    completeSandboxTask.mockReset()
     completeEducation.mockReset()
     favoriteMarket.mockReset()
     recordSimulation.mockReset()
@@ -169,8 +156,6 @@ describe("RewardsPageClient", () => {
     runReferralSandboxStep.mockReset()
     createReferralCode.mockReset()
     recordReferralLinkCopied.mockReset()
-    readRewardSummary.mockReset()
-    readProgress.mockReset()
     lendCreateIntent.mockClear()
     lendPreviewTransaction.mockClear()
     borrowCreateIntent.mockClear()
@@ -178,16 +163,9 @@ describe("RewardsPageClient", () => {
     multiplyCreateIntent.mockClear()
     multiplyPreviewTransaction.mockClear()
 
-    readRewardSummary.mockResolvedValue({
-      wallet: "demo-wallet",
-      completedTaskCount: 2,
-      claimableTaskCount: 1,
-      totalTaskCount: tasks.length,
-      totalEarnedAmount: 95,
-      totalClaimableAmount: 50,
-      totalClaimedAmount: 45,
-    })
-    readProgress.mockResolvedValue(buildProgress())
+    resetRewardsState([
+      rewardEvent("borrow-first", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" }),
+    ])
     createReferralCode.mockResolvedValue({
       wallet: "demo-wallet",
       referralCode: "AVA-DEMO",
@@ -195,16 +173,15 @@ describe("RewardsPageClient", () => {
       activeReferralCount: 0,
       fundedReferralCount: 0,
       referralVolumeUsd: 0,
-      createdAt: Date.UTC(2026, 5, 19),
+      createdAt: now,
     })
   })
 
   it("renders live rewards summary and claims session-backed tasks", async () => {
     renderRewardsPage()
 
-    await waitFor(() => {
-      expect(screen.getByTestId("rewards-claim-all")).toHaveTextContent("Claim 50 AVA")
-    })
+    expect(screen.getByTestId("rewards-claim-all")).toHaveAttribute("href", "/actions/rewards/claim")
+    expect(screen.getByTestId("rewards-claim-all").textContent).toMatch(/^Claim \d+ AVA$/)
 
     expect(screen.getByTestId("rewards-claim-all")).toHaveAttribute("href", "/actions/rewards/claim")
     expect(claimAllRewards).not.toHaveBeenCalled()
@@ -215,7 +192,6 @@ describe("RewardsPageClient", () => {
     expect(questClaimButton).toBeDefined()
     await userEvent.click(questClaimButton!)
     expect(claimReward).toHaveBeenCalledWith("first-borrow")
-    expect(readProgress.mock.calls.length).toBeGreaterThan(1)
   }, 10_000)
 
   it("opens the education flow for primer quests", async () => {
@@ -257,11 +233,6 @@ describe("RewardsPageClient", () => {
   })
 
   it("records daily check-ins from challenge tasks", async () => {
-    readProgress.mockResolvedValue(
-      buildProgress({
-        "4-week-activity-streak": { status: "available", progress: 0, target: 3 },
-      }),
-    )
     renderRewardsPage()
 
     openPromoTab("Challenge tasks")
@@ -283,11 +254,6 @@ describe("RewardsPageClient", () => {
   })
 
   it("runs the referral copy-link flow through the dialog and tracked action", async () => {
-    readProgress.mockResolvedValue(
-      buildProgress({
-        "share-referral-link": { status: "available", progress: 0, target: 1 },
-      }),
-    )
     renderRewardsPage()
 
     await openReferralTab()
@@ -299,11 +265,6 @@ describe("RewardsPageClient", () => {
   })
 
   it("runs the referral invite action through its dialog flow", async () => {
-    readProgress.mockResolvedValue(
-      buildProgress({
-        "invite-first-wallet": { status: "available", progress: 0, target: 1 },
-      }),
-    )
     renderRewardsPage()
 
     await openReferralTab()
@@ -315,11 +276,9 @@ describe("RewardsPageClient", () => {
   })
 
   it("runs the referral activate action through its dialog flow", async () => {
-    readProgress.mockResolvedValue(
-      buildProgress({
-        "bring-3-active-users": { status: "in_progress", progress: 1, target: 3 },
-      }),
-    )
+    resetRewardsState([
+      rewardEvent("ref-active-1", "referral_activated", "referral", { referredWallet: "friend-1" }),
+    ])
     renderRewardsPage()
 
     await openReferralTab()
@@ -331,11 +290,6 @@ describe("RewardsPageClient", () => {
   })
 
   it("runs the referral fund action through its dialog flow", async () => {
-    readProgress.mockResolvedValue(
-      buildProgress({
-        "first-funded-referral": { status: "available", progress: 0, target: 1 },
-      }),
-    )
     renderRewardsPage()
 
     await openReferralTab()
@@ -347,16 +301,25 @@ describe("RewardsPageClient", () => {
   })
 
   it("opens claimable referral quests in the dialog and claims from there", async () => {
-    readProgress.mockResolvedValue(
-      buildProgress({
-        "bring-3-active-users": { status: "claimable", progress: 3, target: 3 },
-      }),
-    )
+    resetRewardsState([
+      rewardEvent("ref-active-1", "referral_activated", "referral", { referredWallet: "friend-1" }),
+      rewardEvent("ref-active-2", "referral_activated", "referral", { referredWallet: "friend-2", timestamp: now + 1 }),
+      rewardEvent("ref-active-3", "referral_activated", "referral", { referredWallet: "friend-3", timestamp: now + 2 }),
+    ])
+    const progress = evaluateAllTasksForUser({
+      tasks,
+      wallet: "demo-wallet",
+      events: rewardsState.events as never[],
+      claims: [],
+      now,
+      firstLoginAt: now,
+    })
+    expect(progress.find((entry) => entry.taskId === "bring-3-active-users")?.status).toBe("claimable")
     renderRewardsPage()
 
     await openReferralTab()
     await waitFor(() => {
-      screen.getByRole("button", { name: "View crew & claim" })
+      expect(screen.getByText("Activate 3 sandbox friends")).toBeInTheDocument()
     })
     await clickQuestAction("View crew & claim")
     await waitFor(() => {

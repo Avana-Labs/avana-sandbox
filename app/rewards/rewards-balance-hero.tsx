@@ -9,11 +9,8 @@ import { useDisplayPreferences } from "@/app/components/display-preferences"
 import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
 import { cn } from "@/lib/utils"
 
-function formatTokenAmount(value: number) {
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: value >= 1000 ? 0 : 2,
-    maximumFractionDigits: value >= 1000 ? 0 : 2,
-  })
+function formatBalanceAmount(value: number) {
+  return value.toLocaleString("en-US", { maximumFractionDigits: 0 })
 }
 
 function formatClaimAmount(value: number) {
@@ -47,7 +44,7 @@ export function RewardsBalanceHero({
   const claimButtonClass = cn(
     "inline-flex h-10 w-full items-center justify-center rounded-[11px] px-4 text-[12px] font-medium transition-colors sm:h-9 sm:w-auto",
     claimableCount > 0
-      ? "bg-[#9CDD4C] text-[#163300] hover:bg-[#8fd341]"
+      ? "bg-brand text-brand-foreground hover:bg-brand/90"
       : "cursor-not-allowed bg-muted/60 text-muted-foreground",
   )
 
@@ -71,14 +68,14 @@ export function RewardsBalanceHero({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
-                  {showDollarAmounts ? formatTokenAmount(balanceTotal) : "••••••••"}
-                  <span className="ml-1.5 align-middle text-[0.78em]">AVA</span>
+                  {showDollarAmounts ? formatBalanceAmount(balanceTotal) : "••••••••"}
+                  <span className="ml-2 align-middle text-[0.78em]">AVA</span>
                 </span>
 
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20" aria-hidden>
                   <Image
                     src="/avana-icon.svg"
-                    alt="Avana token"
+                    alt=""
                     width={38}
                     height={38}
                     className="h-[38px] w-[38px] scale-[1.68] object-contain brightness-0 invert"

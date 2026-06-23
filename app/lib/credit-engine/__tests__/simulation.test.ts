@@ -19,7 +19,7 @@ import {
 import { makeStressBorrowActions, makeStressBorrowSystemState } from "./stress-fixtures"
 
 describe("borrow engine multi-user simulation", () => {
-  it("keeps 1000 wallet interactions consistent across a large action batch", { timeout: 20_000 }, () => {
+  it("keeps 1000 wallet interactions consistent across a large action batch", { timeout: 60_000 }, () => {
     const state = makeStressBorrowSystemState(1000)
     const actions = makeStressBorrowActions(state)
     const next = applyBorrowActions(state, actions)

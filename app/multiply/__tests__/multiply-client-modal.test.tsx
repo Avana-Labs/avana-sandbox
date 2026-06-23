@@ -9,15 +9,12 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }))
 
-vi.mock("next/dynamic", () => ({
-  default: () =>
-    function DynamicExploreTable(props: { rows: Array<{ href: string }>; onOpenMultiply: (href: string) => void }) {
-      return (
-        <button type="button" onClick={() => props.onOpenMultiply(props.rows[0]!.href)}>
-          open-multiply-action
-        </button>
-      )
-    },
+vi.mock("@/app/multiply/components/explore-loops-markets-table", () => ({
+  ExploreLoopsMarketsTable: (props: { onOpenMultiply: (href: string) => void }) => (
+    <button type="button" onClick={() => props.onOpenMultiply("/multiply/markets/aave-gho")}>
+      open-multiply-action
+    </button>
+  ),
 }))
 
 vi.mock("@/app/multiply/components/multiply-hero", () => ({

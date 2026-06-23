@@ -84,8 +84,8 @@ function AvanaQuestCard({
     <Card className="flex h-full flex-col overflow-hidden rounded-[14px] border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="flex h-full flex-col p-3.5">
         <div className="flex items-start justify-between gap-3">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-[11px] ${accent === "challenge" ? "bg-[#EAFF72]/90" : "bg-[#9CDD4C]/14"}`}>
-            <Icon className={`h-4 w-4 ${accent === "challenge" ? "text-[#5A6618]" : "text-[#2D6B4A]"}`} strokeWidth={1.9} />
+          <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-brand/10">
+            <Icon className="h-4 w-4 text-brand" strokeWidth={1.9} />
           </div>
           <span className="rounded-full border border-border bg-surface-inset px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-foreground/70">
             {quest.category}
@@ -123,10 +123,10 @@ function AvanaQuestCard({
             disabled={isDisabled}
             className={`inline-flex h-9 w-full items-center justify-center gap-1 rounded-[11px] px-3.5 text-[12px] font-medium transition-colors ${
               isClaimable
-                ? "bg-[#9CDD4C] text-[#163300] hover:bg-[#8fd341]"
+                ? "bg-brand text-brand-foreground hover:bg-brand/90"
                 : isDisabled
                   ? "bg-muted/60 text-muted-foreground"
-                  : "bg-muted text-foreground hover:bg-muted/80"
+                  : "border border-brand/20 bg-brand/5 text-foreground hover:bg-brand/10"
             }`}
           >
             {quest.cta}

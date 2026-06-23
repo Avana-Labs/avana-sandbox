@@ -8,6 +8,10 @@ import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provide
 import { useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { RewardTask, UserRewardProgress } from "@/app/lib/rewards-engine"
 import {
+  calculateRewardSummary,
+  evaluateAllTasksForUser,
+} from "@/app/lib/rewards-engine"
+import {
   canRunTaskAction,
   findTaskById,
   getSandboxTour,
@@ -15,6 +19,7 @@ import {
   getTaskDeepLink,
   isReferralTaskAction,
 } from "@/app/lib/rewards-engine/task-actions"
+import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { RewardsBalanceHero } from "./rewards-balance-hero"
 import { RewardsTabs } from "./rewards-tabs"
 import { RewardsEducationDialog, RewardsFavoriteDialog, RewardsReferralDialog, RewardsSimulateDialog } from "./rewards-task-dialogs"
@@ -108,6 +113,36 @@ function buildProgressLabel(task: RewardTask, progress: UserRewardProgress, firs
   return `${Math.min(Math.round(progress.progress), progress.target)}/${progress.target} complete`
 }
 
+function buildRewardsSnapshot(
+  walletId: string,
+  tasks: RewardTask[],
+  state: {
+    events: Parameters<typeof evaluateAllTasksForUser>[0]["events"]
+    claims: Parameters<typeof evaluateAllTasksForUser>[0]["claims"]
+    firstLoginAt: number
+  },
+  now: number,
+): RewardsSnapshot {
+  const progress = evaluateAllTasksForUser({
+    tasks,
+    wallet: walletId,
+    events: state.events,
+    claims: state.claims,
+    now,
+    firstLoginAt: state.firstLoginAt,
+  })
+  const summary = calculateRewardSummary({
+    tasks,
+    wallet: walletId,
+    events: state.events,
+    claims: state.claims,
+    now,
+    firstLoginAt: state.firstLoginAt,
+  })
+
+  return { summary, progress }
+}
+
 function mapTaskToQuest(
   task: RewardTask,
   progress: UserRewardProgress,
@@ -140,8 +175,8 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
   const {
     walletId,
     state,
+    hasHydratedStorage,
     tasks,
-    readAdapter,
     claimReward,
     completeEducation,
     favoriteMarket,
@@ -153,8 +188,7 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
     recordReferralLinkCopied,
   } = useRewardsSessionContext()
 
-  const [snapshot, setSnapshot] = useState<RewardsSnapshot | null>(null)
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(0)
   const [isClaiming, setIsClaiming] = useState(false)
   const [educationOpen, setEducationOpen] = useState(false)
   const [favoriteOpen, setFavoriteOpen] = useState(false)
@@ -164,18 +198,19 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
   const [referralLink, setReferralLink] = useState("")
   const [referralCode, setReferralCode] = useState("")
 
-  const reloadSnapshot = useCallback(async () => {
-    const [summary, progress] = await Promise.all([
-      readAdapter.readRewardSummary(walletId),
-      readAdapter.readProgress(walletId),
-    ])
-    setSnapshot({ summary, progress })
+  const snapshot = useMemo(() => {
+    if (!hasHydratedStorage) return null
+    return buildRewardsSnapshot(walletId, tasks, state, now > 0 ? now : Date.now())
+  }, [hasHydratedStorage, now, state.claims, state.events, state.firstLoginAt, tasks, walletId])
+
+  const reloadSnapshot = useCallback(() => {
     setNow(Date.now())
-  }, [readAdapter, walletId])
+  }, [])
 
   useEffect(() => {
-    void reloadSnapshot()
-  }, [reloadSnapshot, state.events.length, state.claims.length, state.firstLoginAt])
+    if (!hasHydratedStorage) return
+    reloadSnapshot()
+  }, [hasHydratedStorage, reloadSnapshot, state.events.length, state.claims.length, state.firstLoginAt])
 
   const hasPendingWaitTask = useMemo(
     () =>
@@ -196,7 +231,15 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
   }, [hasPendingWaitTask, reloadSnapshot])
 
   const questsByTab = useMemo(() => {
-    const progressByTaskId = new Map(snapshot?.progress.map((item) => [item.taskId, item]))
+    if (!snapshot) {
+      return {
+        "new-users": [],
+        "challenge-tasks": [],
+        "refer-a-friend": [],
+      }
+    }
+
+    const progressByTaskId = new Map(snapshot.progress.map((item) => [item.taskId, item]))
     return tasks.reduce<Record<RewardsPromoTabId, RewardCardViewModel[]>>(
       (accumulator, task) => {
         const progress = progressByTaskId.get(task.id)
@@ -212,11 +255,7 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         "refer-a-friend": [],
       },
     )
-  }, [tasks, snapshot?.progress, state.firstLoginAt, now])
-
-  const progressPercentage = snapshot
-    ? Math.round((snapshot.summary.completedTaskCount / Math.max(1, snapshot.summary.totalTaskCount)) * 100)
-    : pageData.progressPercentage
+  }, [tasks, snapshot, state.firstLoginAt, now])
 
   const runReferralActivations = useCallback(
     async () => {
@@ -268,7 +307,7 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         await avana.multiply.previewTransaction(intent)
       }
       await recordSimulation(product)
-      await reloadSnapshot()
+      reloadSnapshot()
     },
     [avana.borrow, avana.lend, avana.multiply, recordSimulation, reloadSnapshot, walletId],
   )
@@ -291,7 +330,7 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         setIsClaiming(true)
         try {
           await claimReward(taskId)
-          await reloadSnapshot()
+          reloadSnapshot()
         } finally {
           setIsClaiming(false)
         }
@@ -319,13 +358,13 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
           await recordSandboxTour(taskId)
           const tour = getSandboxTour(taskId)
           if (tour?.href) router.push(tour.href)
-          await reloadSnapshot()
+          reloadSnapshot()
           return
         }
         case "product_action":
           if (taskId === "4-week-activity-streak") {
             await recordDailyCheckin()
-            await reloadSnapshot()
+            reloadSnapshot()
             return
           }
           if (getTaskDeepLink(taskId)) {
@@ -348,19 +387,25 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
     ],
   )
 
+  if (!hasHydratedStorage || !snapshot) {
+    return <RewardsPageSkeleton />
+  }
+
+  const progressPercentage = Math.round(
+    (snapshot.summary.completedTaskCount / Math.max(1, snapshot.summary.totalTaskCount)) * 100,
+  )
+
   return (
     <>
       <RewardsBalanceHero
         rewardPools={pageData.rewardPools}
-        balanceTotal={snapshot?.summary.totalClaimedAmount ?? pageData.balanceTotal}
-        claimableAmount={snapshot?.summary.totalClaimableAmount ?? 0}
-        claimableCount={snapshot?.summary.claimableTaskCount ?? 0}
-        completedCount={snapshot?.summary.completedTaskCount ?? pageData.completedPools}
-        totalCount={snapshot?.summary.totalTaskCount ?? pageData.totalPools}
+        balanceTotal={snapshot.summary.totalClaimedAmount}
+        claimableAmount={snapshot.summary.totalClaimableAmount}
+        claimableCount={snapshot.summary.claimableTaskCount}
+        completedCount={snapshot.summary.completedTaskCount}
+        totalCount={snapshot.summary.totalTaskCount}
         progressPercentage={progressPercentage}
-        claimHref={
-          snapshot && snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined
-        }
+        claimHref={snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined}
       />
 
       <RewardsTabs
@@ -374,7 +419,7 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         onOpenChange={setEducationOpen}
         onComplete={async () => {
           await completeEducation()
-          await reloadSnapshot()
+          reloadSnapshot()
         }}
       />
 
@@ -383,7 +428,7 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
         onOpenChange={setFavoriteOpen}
         onFavorite={async (marketId) => {
           await favoriteMarket(marketId)
-          await reloadSnapshot()
+          reloadSnapshot()
         }}
       />
 
@@ -413,26 +458,26 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
           if (typeof navigator !== "undefined" && navigator.clipboard) {
             await navigator.clipboard.writeText(profile.referralLink)
           }
-          await reloadSnapshot()
+          reloadSnapshot()
         }}
         onSendInvite={async () => {
           await runReferralSandboxStep("invite")
-          await reloadSnapshot()
+          reloadSnapshot()
         }}
         onActivateNext={async () => {
           await runReferralActivations()
-          await reloadSnapshot()
+          reloadSnapshot()
         }}
         onMarkFunded={async () => {
           await runReferralSandboxStep("fund")
-          await reloadSnapshot()
+          reloadSnapshot()
         }}
         onClaim={async () => {
           if (!referralTaskId || isClaiming) return
           setIsClaiming(true)
           try {
             await claimReward(referralTaskId)
-            await reloadSnapshot()
+            reloadSnapshot()
           } finally {
             setIsClaiming(false)
           }

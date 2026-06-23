@@ -16,8 +16,9 @@ export function useRewardsSession({
   walletId: string
   sessionSeed: string
 }) {
-  const seededState = useMemo(() => readRewardsSessionState(walletId, sessionSeed), [walletId, sessionSeed])
+  const seededState = useMemo(() => JSON.parse(sessionSeed) as RewardsSessionState, [sessionSeed])
   const [state, setState] = useState(seededState)
+  const [hasHydratedStorage, setHasHydratedStorage] = useState(false)
   const stateRef = useRef(state)
   stateRef.current = state
   const isPersistingRef = useRef(false)
@@ -26,6 +27,7 @@ export function useRewardsSession({
   useEffect(() => {
     const nextState = readRewardsSessionState(walletId, sessionSeed)
     setState(nextState)
+    setHasHydratedStorage(true)
   }, [walletId, sessionSeed])
 
   useEffect(() => {
@@ -130,6 +132,7 @@ export function useRewardsSession({
   return {
     walletId,
     state,
+    hasHydratedStorage,
     tasks,
     readAdapter,
     recordActivityEvent,
