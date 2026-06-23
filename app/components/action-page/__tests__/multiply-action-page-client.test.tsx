@@ -23,4 +23,16 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.queryByTestId("action-risk-banner")).not.toBeInTheDocument()
     expect(screen.getByText("≈ $0.00")).toBeInTheDocument()
   })
+
+  it("clamps the leverage multiplier to the selected market public maximum", async () => {
+    render(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="10" />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText("5.4x")).toBeInTheDocument()
+    })
+  })
 })

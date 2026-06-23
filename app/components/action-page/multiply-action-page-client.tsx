@@ -21,9 +21,10 @@ import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/act
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import {
-  MULTIPLY_ACTION_MAX_LEVERAGE,
   MULTIPLY_ACTION_MIN_LEVERAGE,
+  resolveMultiplyMarketMaxLeverage,
 } from "@/app/lib/multiply-system/leverage-limits"
+import { clampMultiplierToOptions, buildMultiplierOptions } from "@/app/components/action-page/multiplier-options"
 
 export function MultiplyActionPageClient({
   kind,
@@ -70,7 +71,7 @@ export function MultiplyActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
-  const multiplierMax = MULTIPLY_ACTION_MAX_LEVERAGE
+  const multiplierMax = resolveMultiplyMarketMaxLeverage(market?.risk.publicMaxMultiplier)
   const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
 
   const [stage, setStage] = useState<ActionStage>("configure")
@@ -80,12 +81,17 @@ export function MultiplyActionPageClient({
   const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!market) return
     const parsed = parsePositiveActionAmount(multiplier)
     if (parsed == null) return
-    const clamped = Math.min(multiplierMax, Math.max(multiplierMin, parsed))
+    const options = buildMultiplierOptions(market.risk.publicMaxMultiplier)
+    const clamped = clampMultiplierToOptions(
+      Math.min(multiplierMax, Math.max(multiplierMin, parsed)),
+      options,
+    )
     const next = String(Number(clamped.toFixed(2)))
     if (next !== multiplier) setMultiplier(next)
-  }, [market?.id, multiplier, multiplierMax])
+  }, [market, multiplier, multiplierMax, multiplierMin])
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
