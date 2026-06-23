@@ -1,8 +1,8 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useEffect, useMemo, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -97,12 +97,14 @@ export function DashboardClient({
 }) {
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const tabFromUrl = parseDashboardTab(searchParams.get("tab"))
   const hasMounted = useHasMounted()
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const pageData = data ?? initialData
-  const [activeTab, setActiveTab] = useState<DashboardTab>(() => tabFromUrl ?? "overview")
+  const readTabFromLocation = useCallback((): DashboardTab => {
+    if (typeof window === "undefined") return "overview"
+    return parseDashboardTab(new URLSearchParams(window.location.search).get("tab")) ?? "overview"
+  }, [])
+  const [activeTab, setActiveTab] = useState<DashboardTab>("overview")
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
@@ -306,12 +308,19 @@ export function DashboardClient({
   }, [pageData, multiplyTabData])
 
   useEffect(() => {
-    const tab = parseDashboardTab(searchParams.get("tab"))
-    if (tab) setActiveTab(tab)
-  }, [searchParams])
+    setActiveTab(readTabFromLocation())
+    const onPopState = () => setActiveTab(readTabFromLocation())
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [readTabFromLocation])
 
   const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab)
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href)
+      url.searchParams.set("tab", tab)
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}`)
+    }
     router.replace(`/dashboard?tab=${tab}`, { scroll: false })
   }
 
