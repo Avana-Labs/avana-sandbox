@@ -10,17 +10,56 @@ export function ActionBlockedDialog({
   open,
   onClose,
   onPrimary,
+  variant = "modal",
 }: {
   blocked: ActionBlockedUi
   open: boolean
   onClose: () => void
   onPrimary?: () => void
+  variant?: "modal" | "inline"
 }) {
   if (!open) return null
 
+  if (variant === "inline") {
+    return (
+      <div
+        className="rounded-radius-md border border-border bg-card p-5"
+        data-testid="action-blocked-dialog"
+        data-variant="inline"
+      >
+        <div className="space-y-2">
+          <h2 className="text-[17px] font-medium tracking-[-0.02em]">{blocked.title}</h2>
+          <p className="text-[14px] leading-6 text-muted-foreground">{blocked.description}</p>
+        </div>
+
+        <div className="mt-5 space-y-2.5">
+          {blocked.primaryCtaLabel && blocked.primaryCtaHref ? (
+            <Link
+              href={blocked.primaryCtaHref}
+              onClick={onPrimary}
+              className="flex h-11 w-full items-center justify-center rounded-full bg-foreground text-[15px] font-medium text-background transition-opacity hover:opacity-90"
+            >
+              {blocked.primaryCtaLabel}
+            </Link>
+          ) : null}
+          <button
+            type="button"
+            onClick={onClose}
+            className={cn(
+              "flex h-11 w-full items-center justify-center rounded-full border border-border bg-surface-raised text-[15px] font-medium text-foreground transition-colors hover:bg-muted",
+              !blocked.primaryCtaLabel && "bg-foreground text-background hover:opacity-90",
+            )}
+          >
+            {blocked.secondaryCtaLabel}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm" data-testid="action-blocked-dialog">
-      <div className="relative w-full max-w-[420px] rounded-[24px] border border-border bg-surface-raised p-6 shadow-elev-3">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm" data-testid="action-blocked-dialog" data-variant="modal">
+      <div className="relative w-full max-w-[420px] rounded-radius-lg border-0 bg-card p-6 shadow-elev-2">
         <button
           type="button"
           aria-label="Close"

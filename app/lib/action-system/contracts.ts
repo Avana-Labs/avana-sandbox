@@ -11,7 +11,7 @@ export type ActionKind =
   | MultiplyActionKind
   | RewardsActionKind
 
-export type ActionPageMode = "page" | "overlay"
+export type ActionPageMode = "page" | "overlay" | "embedded"
 
 export type ActionStage =
   | "select"
@@ -42,11 +42,19 @@ export type ActionRiskLevel = "safe" | "warning" | "danger"
 export type ActionPreviewUi = {
   allowed: boolean
   amountLabel: string
+  amountValue?: string
+  assetLabel?: string
+  assetSymbol?: string
+  borrowSymbol?: string
   amountUsdLabel: string
   rateLabel: string
   rateValue: string
   marketLabel: string
   marketValue: string
+  marketBreakdown?: {
+    collateral: { symbol: string; apy: string }
+    borrow: { symbol: string; apy: string }
+  }
   balanceLabel: string
   balanceValue: string
   maxAmount: number | null

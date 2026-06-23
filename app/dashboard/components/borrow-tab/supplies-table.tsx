@@ -1,25 +1,29 @@
 "use client"
 
-import { Info } from "lucide-react"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import {
   BORROW_SUPPLY_META,
   HOME_COLLATERAL_POOLS,
   formatCompactUsd,
   formatHealthFactor,
   formatUsdExact,
-  getHealthStatus,
   getSpokeById,
   healthFactorToneClass,
   homePoolSpoke,
   homeVisualToBorrowVisual,
 } from "@/app/lib/data/borrow-domain"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
+import {
+  HF_ZONES,
+  activeHealthFactorZoneIndex,
+  healthFactorBarTone,
+  healthFactorStatusLabel,
+} from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
+import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { cn } from "@/lib/utils"
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type SuppliesTableProps = {
   rows: SupplyRowContext[]
@@ -33,11 +37,6 @@ type SuppliesTableProps = {
 }
 
 const MASK = "••••"
-const HF_ZONES = [
-  { id: "safe", label: "Safe", min: 3, max: Infinity, widthPct: 30, color: "bg-emerald-500" },
-  { id: "warn", label: "Caution", min: 1.5, max: 3, widthPct: 40, color: "bg-amber-500" },
-  { id: "danger", label: "Liquidation", min: 0, max: 1.5, widthPct: 30, color: "bg-rose-500" },
-] as const
 
 export function SuppliesPanel({
   rows,
@@ -83,25 +82,25 @@ export function SuppliesPanel({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     #
                   </th>
-                  <th className="bg-slate-50 px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     LP Position
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Collateral
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Max Borrow
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Health Factor
                   </th>
-                  <th className="bg-slate-50 px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Fees Earned
                   </th>
-                  <th className="rounded-r-2xl bg-slate-50 px-5 py-3.5 pr-6 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58" />
+                  <th className="rounded-r-2xl bg-table-header px-5 py-3.5 pr-6 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
                 </tr>
               </thead>
               <tbody>
@@ -111,28 +110,28 @@ export function SuppliesPanel({
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 return (
                   <tr key={row.pool.id} className="group transition-colors">
-                    <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                    <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                       {index + 1}
                     </td>
-                    <td className={`py-3 pl-5 ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_BG}`}>
                       <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
                     </td>
-                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
                       {m(formatCompactUsd(row.pool.collateralUsd))}
                     </td>
-                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
                       {m(formatCompactUsd(row.remainingBorrowPowerUsd))}
                     </td>
-                    <td className={`py-3 text-right ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 text-right ${TABLE_ROW_HOVER_BG}`}>
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                     </td>
-                    <td className={`py-3 pl-4 text-left ${ROW_HOVER_BG}`}>
+                    <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                       <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
                       <div className="font-data text-[11px] font-medium tabular-nums text-emerald-600">
                         {row.pairApr.toFixed(1)}% APR
                       </div>
                     </td>
-                    <td className={`py-3 pl-4 pr-6 text-left ${ROW_HOVER_RIGHT}`}>
+                    <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
                       <div className="flex justify-start gap-1.5">
                         <PillButton variant="ghost" onClick={() => onRemove(row)}>
                           Remove
@@ -157,17 +156,16 @@ export function SuppliesPanel({
           const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
           const hf = row.healthFactor
           const hfLabel = hf === null || Number.isNaN(hf) ? "—" : !Number.isFinite(hf) ? "∞" : hf.toFixed(1)
-          const hfTone = hfBarTone(hf)
-          const fillPct = hfBarFill(hf)
+          const hfTone = healthFactorBarTone(hf)
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`
           return (
-            <li key={row.pool.id} className="space-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1">
+            <li key={row.pool.id} className="space-y-3 rounded-radius-md border-0 bg-card px-4 py-4 shadow-none">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="flex items-center">
-                    <TokenBubble visual={visuals[0]} size="md" />
-                    <TokenBubble visual={visuals[1]} size="md" className="-ml-2" />
+                    <TokenBubble visual={visuals[0]} size="table" />
+                    <TokenBubble visual={visuals[1]} size="table" className="-ml-2" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[14px] font-medium text-foreground">{row.pool.name}</div>
@@ -195,14 +193,12 @@ export function SuppliesPanel({
                   <span className="text-[12.5px] font-medium text-foreground">Health Factor</span>
                   <span className={cn("font-data text-[22px] font-medium leading-none tabular-nums", hfTone.text)}>{m(hfLabel)}</span>
                 </div>
-                <div className="relative h-1.5 rounded-full bg-surface-raised">
-                  <div className={cn("h-1.5 rounded-full", hfTone.fill)} style={{ width: `${fillPct}%` }} />
-                  <span
-                    className={cn("absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-surface-raised", hfTone.border)}
-                    style={{ left: `calc(${fillPct}% - 6px)` }}
-                    aria-hidden
-                  />
-                </div>
+                <HealthFactorPositionBar
+                  value={hf}
+                  heightClassName="h-1.5"
+                  trackClassName="bg-surface-raised"
+                  className="mt-0"
+                />
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>Safe</span>
                   <span>Caution</span>
@@ -266,24 +262,6 @@ function SupplyStatCell({ value, label, valueTone }: { value: string; label: str
   )
 }
 
-function hfBarTone(hf: number | null): { text: string; fill: string; border: string } {
-  if (hf === null || Number.isNaN(hf)) {
-    return { text: "text-muted-foreground", fill: "bg-slate-300", border: "border-slate-300" }
-  }
-  if (!Number.isFinite(hf) || hf >= 3) {
-    return { text: "text-emerald-600", fill: "bg-emerald-500", border: "border-emerald-500" }
-  }
-  if (hf >= 1.5) {
-    return { text: "text-amber-600", fill: "bg-amber-500", border: "border-amber-500" }
-  }
-  return { text: "text-rose-600", fill: "bg-rose-500", border: "border-rose-500" }
-}
-
-function hfBarFill(hf: number | null): number {
-  if (hf === null || Number.isNaN(hf)) return 0
-  if (!Number.isFinite(hf)) return 96
-  return Math.min(96, Math.max(6, hf * 17))
-}
 
 export function SuppliesHealthFactorCard({
   averageHealthFactor,
@@ -292,51 +270,48 @@ export function SuppliesHealthFactorCard({
   averageHealthFactor: number | null
   showBalance: boolean
 }) {
-  const safeHf = averageHealthFactor ?? Number.POSITIVE_INFINITY
-  const status = getHealthStatus(safeHf)
+  const status = healthFactorStatusLabel(averageHealthFactor)
   const hfLabel = formatHealthFactor(averageHealthFactor)
   const masked = !showBalance
-
-  const activeZoneIdx = (() => {
-    if (averageHealthFactor === null) return -1
-    if (!Number.isFinite(averageHealthFactor)) return HF_ZONES.length - 1
-    return HF_ZONES.findIndex((zone) => averageHealthFactor >= zone.min && averageHealthFactor < zone.max)
-  })()
+  const activeZoneIdx = activeHealthFactorZoneIndex(averageHealthFactor)
 
   return (
     <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
-          <span className="text-[13px] font-semibold text-foreground">Health factor</span>
-          <Info className="h-3.5 w-3.5 self-center text-muted-foreground" aria-hidden />
           <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
             {masked ? "••" : hfLabel}
           </span>
+          <span className="text-[13px] font-semibold text-foreground">Credit Health</span>
+          <ActionMetricHelp
+            topic="Credit Health"
+            text="Wallet-wide health factor from total liquidation value divided by total borrowed. Above 1.5 is generally healthy."
+          />
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
-            status.textClass,
+            "inline-flex items-center gap-1.5 rounded-full bg-table-header px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+            status.tone === "positive" && "text-emerald-600",
+            status.tone === "warning" && "text-amber-600",
+            status.tone === "danger" && "text-rose-600",
+            status.tone === "default" && "text-muted-foreground",
           )}
         >
-          <span className={cn("inline-block size-1.5 rounded-full", status.dotClass)} />
+          <span
+            className={cn(
+              "inline-block size-1.5 rounded-full",
+              status.tone === "positive" && "bg-emerald-500",
+              status.tone === "warning" && "bg-amber-500",
+              status.tone === "danger" && "bg-rose-500",
+              status.tone === "default" && "bg-muted-foreground",
+            )}
+          />
           {masked ? "••" : status.label}
         </span>
       </div>
 
       <div className="mt-9">
-        <div className="flex h-2.5 w-full items-stretch gap-1">
-          {HF_ZONES.map((zone, index) => {
-            const isActive = index === activeZoneIdx
-            return (
-              <div
-                key={zone.id}
-                className={cn("rounded-full transition-colors", isActive ? zone.color : "bg-muted")}
-                style={{ width: `${zone.widthPct}%` }}
-              />
-            )
-          })}
-        </div>
+        <HealthFactorPositionBar value={averageHealthFactor} heightClassName="h-2.5" />
 
         <div className="mt-4 flex h-4 items-center justify-between text-[11px] font-medium text-muted-foreground">
           {HF_ZONES.map((zone, index) => {

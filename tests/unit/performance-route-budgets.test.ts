@@ -9,7 +9,7 @@ import {
   isLighthouseScoreWithinBudget,
   scoreLighthouseCategory,
 } from "@/app/lib/performance/route-budgets"
-import { SITE_STATIC_ROUTES } from "@/app/lib/route-manifest"
+import { SITE_STATIC_ROUTES } from "@/app/lib/site-static-routes"
 
 describe("performance route budgets", () => {
   it("audits every high-priority static route from the manifest", () => {

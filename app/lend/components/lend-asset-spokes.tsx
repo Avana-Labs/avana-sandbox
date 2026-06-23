@@ -7,6 +7,7 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/mock/shared/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
   marketId?: string
@@ -28,9 +29,6 @@ const ALL_HUBS_LABEL = "All Hubs"
 const ALL_MARKETS_LABEL = "All Markets"
 const HUB_OPTIONS = ["Stable", "Volatile"]
 const MARKET_OPTIONS = DEFAULT_ASSET_GROUPS.map((group) => group.title)
-const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
 
 function getHubBucket(row: AssetRow) {
   return STABLE_SYMBOLS.has(row.symbol) ? "Stable" : "Volatile"
@@ -112,9 +110,11 @@ function MultiSelectDropdown({
     if (!open) return
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false)
+      const target = event.target as Node
+      if (rootRef.current?.contains(target) || panelRef.current?.contains(target)) {
+        return
       }
+      setOpen(false)
     }
 
     document.addEventListener("pointerdown", handlePointerDown, true)
@@ -190,7 +190,7 @@ function MultiSelectDropdown({
         onClick={() => setOpen((current) => !current)}
         className={cn(
           "inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
-          "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:bg-[#1f1f1f] dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
+          "border border-border bg-card text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
@@ -212,7 +212,7 @@ function MultiSelectDropdown({
             ref={panelRef}
             className={cn(
               "fixed z-30 overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-              "border-border bg-white text-foreground dark:border-white/8 dark:bg-[#232323] dark:text-white",
+              "border-border bg-popover text-foreground dark:border-white/8 dark:bg-surface-inset dark:text-white",
             )}
             style={
               panelStyle
@@ -233,7 +233,7 @@ function MultiSelectDropdown({
               }}
               className={cn(
                 "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
-                "text-foreground hover:bg-black/[0.04] dark:text-white dark:hover:bg-white/5",
+                "text-foreground hover:bg-black/[0.04] dark:text-white dark:hover:bg-card/5",
               )}
             >
               <FilterCheckIcon checked={isAllSelected} />
@@ -259,8 +259,8 @@ function MultiSelectDropdown({
                     className={cn(
                       "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors",
                       checked
-                        ? "bg-black/[0.05] font-medium text-foreground dark:bg-white/6 dark:text-white"
-                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
+                        ? "bg-black/[0.05] font-medium text-foreground dark:bg-card/6 dark:text-white"
+                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-card/5",
                     )}
                   >
                     <FilterCheckIcon checked={checked} />
@@ -279,12 +279,12 @@ function MultiSelectDropdown({
 function AssetIcon({ row }: { row: AssetRow }) {
   if (row.logoSrc) {
     return (
-      <span className="relative flex size-[44px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent">
+      <span className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent">
         <Image
           alt={row.logoAlt ?? `${row.symbol} logo`}
           src={row.logoSrc}
-          width={44}
-          height={44}
+          width={40}
+          height={40}
           className="h-full w-full object-contain"
           unoptimized
         />
@@ -292,7 +292,7 @@ function AssetIcon({ row }: { row: AssetRow }) {
     )
   }
 
-  return <TokenIcon symbol={row.symbol} size="xl" ring className="bg-white dark:bg-[#111111]" />
+  return <TokenIcon symbol={row.symbol} size="table" ring className="bg-card dark:bg-card" />
 }
 
 function StatusBadge({ status }: { status?: string }) {
@@ -328,10 +328,10 @@ function AssetRowView({
       className="asset-swap group transition-colors"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
         {index + 1}
       </td>
-      <td className={`py-3 pl-6 pr-4 ${ROW_HOVER_BG}`}>
+      <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} />
           <div className="min-w-0">
@@ -345,27 +345,27 @@ function AssetRowView({
         </div>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.supplyApyLabel ?? row.apy}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.rewardsApyLabel ?? "0.00%"}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.reserveFactorLabel ?? "—"}</span>
       </td>
 
-      <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <StatusBadge status={row.status} />
       </td>
 
-      <td className={`py-3 px-4 pr-4 ${ROW_HOVER_RIGHT}`}>
+      <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
         {onDeposit ? (
           <Button type="button" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]" onClick={() => onDeposit(marketId)}>
             Deposit
@@ -442,7 +442,7 @@ function AssetSection({
         </div>
       </div>
 
-      <div className="rounded-[18px] bg-white dark:bg-transparent">
+      <div className="rounded-radius-md bg-transparent">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[12px]">
             <colgroup>
@@ -457,10 +457,10 @@ function AssetSection({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   #
                 </th>
-                <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -475,7 +475,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("supplyApy")}
@@ -490,7 +490,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("rewardsApy")}
@@ -505,7 +505,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("utilization")}
@@ -520,7 +520,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("reserveFactor")}
@@ -535,7 +535,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("status")}
@@ -550,7 +550,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   ACTION
                 </th>
               </tr>
@@ -608,7 +608,7 @@ export function LendAssetSpokes({
   return (
     <section className="mt-16 space-y-8" style={{ overflowAnchor: "none" }}>
       <div className="hidden items-center gap-2 py-2.5 md:flex">
-        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30 md:flex-none md:w-[280px]">
+        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30 md:flex-none md:w-[280px]">
           <SearchIcon />
           <input
             aria-label="Filter assets"
@@ -641,7 +641,7 @@ export function LendAssetSpokes({
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto py-2.5 md:hidden">
-        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
+        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
           <SearchIcon />
           <input
             aria-label="Filter assets"
@@ -691,7 +691,7 @@ export function LendAssetSpokes({
             </div>
           ))
         ) : (
-          <div className="rounded-[20px] border border-border bg-white px-6 py-10 text-[13px] text-muted-foreground shadow-elev-1 dark:border-white/6 dark:bg-[#171717] dark:text-white/60">
+          <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-[13px] text-muted-foreground shadow-none">
             No assets match these filters.
           </div>
         )}

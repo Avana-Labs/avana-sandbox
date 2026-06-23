@@ -39,7 +39,7 @@ function Surface({ children, className }: BlockProps) {
   return (
     <section
       className={cn(
-        "rounded-radius-md border border-border bg-surface-raised shadow-elev-1",
+        "rounded-radius-md border-0 bg-card shadow-none",
         className,
       )}
     >
@@ -395,7 +395,7 @@ export function RewardsPageSkeleton() {
   return (
     <Page>
       <div className="mb-8 grid gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)]">
-        <Surface className="rounded-[28px] px-5 py-4 shadow-none">
+        <Surface className="rounded-radius-lg px-5 py-4 shadow-none">
           <div className="flex min-h-[168px] flex-col justify-between gap-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-3">
@@ -420,7 +420,7 @@ export function RewardsPageSkeleton() {
           <Skeleton className="h-4 w-36 rounded-xs" />
 
           {Array.from({ length: 2 }).map((_, index) => (
-            <Surface key={`rewards-hero-row-${index}`} className="rounded-[24px] p-4">
+            <Surface key={`rewards-hero-row-${index}`} className="rounded-radius-md p-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <Skeleton className="h-11 w-11 rounded-full" />

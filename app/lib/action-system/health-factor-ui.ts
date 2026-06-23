@@ -49,6 +49,46 @@ export function healthFactorStatusLabel(value: number | null) {
 
 export function activeHealthFactorZoneIndex(value: number | null) {
   if (value == null || Number.isNaN(value)) return -1
-  if (!Number.isFinite(value)) return HF_ZONES.length - 1
+  if (!Number.isFinite(value) || value >= HF_ZONES[0].min) return 0
   return HF_ZONES.findIndex((zone) => value >= zone.min && value < zone.max)
+}
+
+/** Left = safer, right = closer to liquidation. Thumb position aligns with HF_ZONES segment widths. */
+export function healthFactorBarPositionPct(value: number | null): number {
+  if (value == null || Number.isNaN(value)) return 50
+
+  const zoneIdx = activeHealthFactorZoneIndex(value)
+  if (zoneIdx < 0) return 50
+
+  const zoneStart = HF_ZONES.slice(0, zoneIdx).reduce((sum, zone) => sum + zone.widthPct, 0)
+  const zone = HF_ZONES[zoneIdx]
+  const innerPadding = zone.widthPct * 0.1
+
+  let ratioInZone = 0.5
+  if (zone.id === "safe") {
+    const clamped = Number.isFinite(value) ? Math.min(value, 10) : 10
+    ratioInZone = 1 - Math.min((clamped - zone.min) / (10 - zone.min), 1)
+  } else if (zone.id === "warn") {
+    ratioInZone = 1 - (value - zone.min) / (zone.max - zone.min)
+  } else {
+    const clamped = Math.max(value, 1)
+    ratioInZone = clamped <= 1 ? 1 : 1 - (clamped - 1) / (zone.max - 1)
+  }
+
+  ratioInZone = Math.max(0, Math.min(1, ratioInZone))
+  return zoneStart + innerPadding + ratioInZone * Math.max(0, zone.widthPct - innerPadding * 2)
+}
+
+export function healthFactorBarTone(value: number | null): { text: string; fill: string; border: string } {
+  const status = healthFactorStatusLabel(value)
+  if (status.tone === "positive") {
+    return { text: "text-emerald-600", fill: "bg-emerald-500", border: "border-emerald-500" }
+  }
+  if (status.tone === "warning") {
+    return { text: "text-amber-600", fill: "bg-amber-500", border: "border-amber-500" }
+  }
+  if (status.tone === "danger") {
+    return { text: "text-rose-600", fill: "bg-rose-500", border: "border-rose-500" }
+  }
+  return { text: "text-muted-foreground", fill: "bg-slate-300", border: "border-slate-300" }
 }

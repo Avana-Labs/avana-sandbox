@@ -13,7 +13,7 @@ export function ChartRangeSelector({ activeRange, onRangeChange, className }: Ch
     <div
       className={
         className ??
-        "flex w-full items-center justify-between gap-0.5 rounded-full border border-[#e5e5e5] bg-white p-0.5 sm:inline-flex sm:w-auto sm:justify-start dark:border-slate-800 dark:bg-slate-950"
+        "flex w-full items-center justify-between gap-0.5 rounded-full border border-border bg-card p-0.5 sm:inline-flex sm:w-auto sm:justify-start"
       }
     >
       {CHART_RANGE_OPTIONS.map((range) => (

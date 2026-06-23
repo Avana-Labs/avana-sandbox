@@ -1,5 +1,9 @@
 import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
-import { formatActionApproxUsd, formatActionNetworkFee, formatActionUsd } from "@/app/lib/action-system/formatters"
+import { formatActionApproxUsd, formatActionFeeSummary, formatActionUsd } from "@/app/lib/action-system/formatters"
+
+function formatTokenRewardAmount(value: number) {
+  return value.toLocaleString("en-US", { maximumFractionDigits: 0 })
+}
 
 export function mapRewardsClaimPreviewToActionUi(options: {
   allowed: boolean
@@ -9,45 +13,21 @@ export function mapRewardsClaimPreviewToActionUi(options: {
   tokenBreakdown: Array<{ symbol: string; amount: number }>
   blockedReason?: string | null
 }): ActionPreviewUi {
-  const tokenRows = options.tokenBreakdown
-    .filter((entry) => entry.amount > 0)
-    .sort((left, right) => right.amount - left.amount)
-    .map((entry) => ({
-      id: `token-${entry.symbol.toLowerCase()}`,
-      label: entry.symbol,
-      value: formatActionUsd(entry.amount),
-      tone: "positive" as const,
-    }))
+  const questLabel = options.claimableTaskCount === 1 ? "quest" : "quests"
 
   return {
     allowed: options.allowed,
-    amountLabel: "Rewards",
+    amountLabel: "AVA",
     amountUsdLabel: formatActionApproxUsd(options.claimUsd),
-    rateLabel: "Claimable tasks",
-    rateValue: String(options.claimableTaskCount),
+    rateLabel: "Ready to claim",
+    rateValue: `${options.claimableTaskCount} ${questLabel}`,
     marketLabel: "Program",
-    marketValue: options.marketLabel,
+    marketValue: "",
     balanceLabel: "Claimable",
-    balanceValue: formatActionUsd(options.claimUsd),
+    balanceValue: `${formatTokenRewardAmount(options.claimUsd)} AVA`,
     maxAmount: options.claimUsd,
-    metrics: [
-      {
-        id: "points-claimed",
-        label: "Points to claim",
-        value: String(options.claimableTaskCount),
-      },
-      ...(tokenRows.length > 0
-        ? tokenRows
-        : [
-            {
-              id: "tokens-claimed",
-              label: "Tokens to claim",
-              value: formatActionUsd(options.claimUsd),
-              tone: "positive" as const,
-            },
-          ]),
-    ],
-    networkFeeLabel: formatActionNetworkFee(0.02),
+    metrics: [],
+    networkFeeLabel: formatActionFeeSummary(options.claimUsd, 0.02),
     risk: null,
     blockedReason: options.allowed ? null : (options.blockedReason ?? "Nothing to claim"),
     validationErrors: options.blockedReason ? [options.blockedReason] : [],
@@ -75,8 +55,11 @@ export function mapBorrowRewardsClaimPreviewToActionUi(options: {
 
   return {
     allowed: options.allowed,
-    amountLabel: "Rewards",
+    amountValue: formatActionUsd(options.claimUsd),
+    amountLabel: formatActionUsd(options.claimUsd),
     amountUsdLabel: formatActionApproxUsd(options.claimUsd),
+    assetLabel: options.marketLabel,
+    assetSymbol: Object.keys(options.tokenTotals)[0] ?? "Rewards",
     rateLabel: "Claim total",
     rateValue: formatActionUsd(options.claimUsd),
     marketLabel: "Market",
@@ -95,7 +78,7 @@ export function mapBorrowRewardsClaimPreviewToActionUi(options: {
               tone: "positive" as const,
             },
           ],
-    networkFeeLabel: formatActionNetworkFee(0.02),
+    networkFeeLabel: formatActionFeeSummary(options.claimUsd, 0.02),
     risk: null,
     blockedReason: options.allowed ? null : (options.blockedReason ?? "Nothing to claim"),
     validationErrors: options.blockedReason ? [options.blockedReason] : [],

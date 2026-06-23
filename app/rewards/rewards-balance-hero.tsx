@@ -1,17 +1,21 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { Info } from "lucide-react"
 import { HeroMarketCard } from "@/app/borrow/borrow-hero-market-card"
-import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
+import { cn } from "@/lib/utils"
 
-function formatTokenAmount(value: number) {
+function formatBalanceAmount(value: number) {
+  return value.toLocaleString("en-US", { maximumFractionDigits: 0 })
+}
+
+function formatClaimAmount(value: number) {
   return value.toLocaleString("en-US", {
-    minimumFractionDigits: value >= 1000 ? 0 : 2,
-    maximumFractionDigits: value >= 1000 ? 0 : 2,
+    maximumFractionDigits: 0,
   })
 }
 
@@ -23,8 +27,7 @@ export function RewardsBalanceHero({
   completedCount,
   totalCount,
   progressPercentage,
-  onClaimAll,
-  isClaiming = false,
+  claimHref,
 }: {
   rewardPools: RewardsHeroPoolRow[]
   balanceTotal: number
@@ -33,14 +36,21 @@ export function RewardsBalanceHero({
   completedCount: number
   totalCount: number
   progressPercentage: number
-  onClaimAll: () => void
-  isClaiming?: boolean
+  claimHref?: string
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
+  const claimLabel =
+    claimableCount > 0 ? `Claim ${formatClaimAmount(claimableAmount)} AVA` : "No rewards ready"
+  const claimButtonClass = cn(
+    "inline-flex h-10 w-full items-center justify-center rounded-radius-sm px-4 text-[12px] transition-colors sm:h-9 sm:w-auto",
+    claimableCount > 0
+      ? "bg-brand text-brand-foreground hover:bg-brand/90"
+      : "cursor-not-allowed bg-muted/60 text-muted-foreground",
+  )
 
   return (
-    <div className="mb-8 grid gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
-      <section className="relative overflow-hidden rounded-radius-md border border-border/70 bg-card px-5 py-4 md:h-[174px]">
+    <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
+      <section className="relative overflow-hidden rounded-radius-md border-0 bg-card px-4 py-4 sm:px-5 md:min-h-[174px]">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
         <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
           <Image
@@ -48,24 +58,24 @@ export function RewardsBalanceHero({
             alt=""
             width={760}
             height={760}
-            className="h-64 w-64 object-contain opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] md:h-[20rem] md:w-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
+            className="h-48 w-48 object-contain opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] sm:h-64 sm:w-64 md:h-[20rem] md:w-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
             aria-hidden
           />
         </div>
 
-        <div className="relative flex min-h-[120px] flex-col gap-3 md:h-full md:min-h-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
+        <div className="relative flex flex-col gap-4 md:min-h-[142px] md:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
-                  {showDollarAmounts ? formatTokenAmount(balanceTotal) : "••••••••"}
-                  <span className="ml-1.5 align-middle text-[0.78em]">AVA</span>
+                <span className="text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
+                  {showDollarAmounts ? formatBalanceAmount(balanceTotal) : "••••••••"}
+                  <span className="ml-2 align-middle text-[0.78em]">AVA</span>
                 </span>
 
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#01AACF] ring-1 ring-[#01AACF]/20" aria-hidden>
                   <Image
                     src="/avana-icon.svg"
-                    alt="Avana token"
+                    alt=""
                     width={38}
                     height={38}
                     className="h-[38px] w-[38px] scale-[1.68] object-contain brightness-0 invert"
@@ -81,28 +91,24 @@ export function RewardsBalanceHero({
                 </span>
                 {claimableAmount > 0 ? (
                   <span className="text-foreground/80">
-                    +{formatTokenAmount(claimableAmount)} AVA ready to claim
+                    +{formatClaimAmount(claimableAmount)} AVA ready to claim
                   </span>
                 ) : null}
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              className="h-8 shrink-0 rounded-[14px] px-3.5 text-[11px] font-medium shadow-none"
-              onClick={onClaimAll}
-              disabled={claimableCount === 0 || isClaiming}
-              data-testid="rewards-claim-all"
-            >
-              {isClaiming
-                ? "Claiming..."
-                : claimableCount > 0
-                  ? `Claim ${formatTokenAmount(claimableAmount)} AVA`
-                  : "No rewards ready"}
-            </Button>
+            {claimableCount > 0 && claimHref ? (
+              <Link href={claimHref} className={claimButtonClass} data-testid="rewards-claim-all">
+                {claimLabel}
+              </Link>
+            ) : (
+              <button type="button" disabled className={claimButtonClass} data-testid="rewards-claim-all">
+                {claimLabel}
+              </button>
+            )}
           </div>
 
-          <div className="relative mt-auto space-y-1.5">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] font-normal uppercase tracking-[0.14em] text-muted-foreground">
                 Your progress

@@ -111,7 +111,7 @@ export function CompactBorrowCard({
                 onClick={onOpenTokenDialog}
                 className="inline-flex min-h-10 items-center gap-1.5 rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover md:min-h-7 md:px-2"
               >
-                <TokenBubble visual={token.visual} className="size-4" />
+                <TokenBubble visual={token.visual} />
                 {token.symbol}
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </button>

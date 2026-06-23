@@ -70,6 +70,24 @@ describe("sandbox transaction adapter", () => {
     expect(result.state.accounts["wallet-1"]!.debtPositions[0]!.principalBorrowedUsd6).toBeGreaterThan(parseFixed("4200", 6))
   })
 
+  it("normalizes short borrow asset ids to the selected market spoke", async () => {
+    const harness = createHarness()
+    const intent = harness.adapter.createIntent({
+      type: "borrow",
+      walletId: "wallet-1",
+      marketId: EXAMPLE_UNI_MARKET_ID,
+      assetId: "usdc",
+      amountUsd6: parseFixed("100", 6),
+    })
+
+    expect(intent.assetId).toBe(EXAMPLE_UNI_USDC_ASSET_ID)
+    const preview = await harness.adapter.previewTransaction(intent)
+    expect(preview.allowed).toBe(true)
+    expect(preview.validationErrors).not.toContain(
+      `Asset usdc does not belong to spoke uni-v3-bluechip`,
+    )
+  })
+
   it("repay satisfies the sandbox action contract", async () => {
     const harness = createHarness()
     const action: BorrowAction = {

@@ -29,9 +29,7 @@ const SORT_PRESETS = [
   { label: "Collateral A-Z", value: "protocol:asc" },
 ] as const
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-slate-50 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
 
@@ -92,7 +90,7 @@ function ExpandableDesktopSearch({
         className={cn(
           "flex h-10 items-center overflow-hidden border shadow-elev-1 transition-[width,border-radius,background-color,border-color] duration-200",
           isExpanded ? "w-[240px] rounded-[12px] px-3" : "w-10 cursor-pointer justify-center rounded-[12px]",
-          "border-border bg-white text-foreground dark:border-border/60 dark:bg-[#131820] dark:text-[#e6f8fb]",
+          "border-border bg-card text-foreground dark:border-border/60 dark:text-[#e6f8fb]",
         )}
         onClick={() => {
           if (!isExpanded) setOpen(true)
@@ -167,9 +165,11 @@ function SingleSelectDropdown({
     if (!open) return
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false)
+      const target = event.target as Node
+      if (rootRef.current?.contains(target) || panelRef.current?.contains(target)) {
+        return
       }
+      setOpen(false)
     }
 
     document.addEventListener("pointerdown", handlePointerDown, true)
@@ -235,7 +235,7 @@ function SingleSelectDropdown({
         onClick={() => setOpen((current) => !current)}
         className={cn(
           "inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
-          "border border-border bg-white text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:bg-[#1f1f1f] dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
+          "border border-border bg-card text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
@@ -257,7 +257,7 @@ function SingleSelectDropdown({
             ref={panelRef}
             className={cn(
               "fixed z-30 overflow-hidden rounded-[14px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-              "border-border bg-white text-foreground dark:border-white/8 dark:bg-[#232323] dark:text-white",
+              "border-border bg-popover text-foreground dark:border-white/8 dark:bg-surface-inset dark:text-white",
             )}
             style={
               panelStyle
@@ -278,7 +278,7 @@ function SingleSelectDropdown({
               }}
               className={cn(
                 "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
-                "text-foreground hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
+                "text-foreground hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-card/5",
               )}
             >
               <FilterCheckIcon checked={value === null} />
@@ -302,8 +302,8 @@ function SingleSelectDropdown({
                     className={cn(
                       "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors md:h-10 md:px-4 md:text-[14px]",
                       checked
-                        ? "bg-black/[0.05] font-medium text-foreground dark:bg-white/6 dark:text-white"
-                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-white/5",
+                        ? "bg-black/[0.05] font-medium text-foreground dark:bg-card/6 dark:text-white"
+                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-card/5",
                     )}
                   >
                     <FilterCheckIcon checked={checked} />
@@ -485,7 +485,7 @@ export function ExploreLoopsMarketsTable({
         </div>
       </div>
 
-      <div className="rounded-[18px] bg-white dark:bg-transparent">
+      <div className="rounded-radius-md bg-transparent">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
             <colgroup>
@@ -499,10 +499,10 @@ export function ExploreLoopsMarketsTable({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   #
                 </th>
-                <th className="bg-slate-50 px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:bg-[#131820] dark:text-white/58">
+                <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   <button
                     type="button"
                     onClick={() => toggleSort("protocol")}
@@ -515,7 +515,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -528,7 +528,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("apy")}
@@ -541,7 +541,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("rewards")}
@@ -554,7 +554,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-slate-50 px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="bg-table-header px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
                     onClick={() => toggleSort("points")}
@@ -567,7 +567,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-slate-50 px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70 dark:bg-[#131820] dark:text-white/70">
+                <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   ACTION
                 </th>
               </tr>
@@ -575,10 +575,10 @@ export function ExploreLoopsMarketsTable({
             <tbody key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`} className="divide-y divide-border dark:divide-white/6">
               {visibleRows.length ? visibleRows.map((row, index) => (
                 <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="group asset-swap transition-colors" style={{ animationDelay: `${index * 40}ms` }}>
-                  <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${ROW_HOVER_LEFT}`}>
+                  <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                     {page * pageSize + index + 1}
                   </td>
-                  <td className={`py-3 pl-6 pr-4 ${ROW_HOVER_BG}`}>
+                  <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
                     <CellLink href={row.href} className="flex items-center gap-2.5">
                       {hasImageSrc(row.protocolLogo) ? (
                         <>
@@ -602,7 +602,7 @@ export function ExploreLoopsMarketsTable({
                       </span>
                     </CellLink>
                   </td>
-                  <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
+                  <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <CellLink href={row.href} className="flex min-w-0 items-center gap-2.5">
                       {getAssetLogo(row.asset) ? (
                         <>
@@ -626,18 +626,18 @@ export function ExploreLoopsMarketsTable({
                       </span>
                     </CellLink>
                   </td>
-                  <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
+                  <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <CellLink
                       href={row.href}
                       className={cn(
                         "font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums",
-                        row.apy ? (row.apy.startsWith("-") ? "text-rose-600" : "text-emerald-600") : "text-muted-foreground",
+                        row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400") : "text-muted-foreground",
                       )}
                     >
                       {row.apy || "—"}
                     </CellLink>
                   </td>
-                  <td className={`py-3 px-4 ${ROW_HOVER_BG}`}>
+                  <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <CellLink href={row.href} className="text-foreground">
                       {row.rewardRows?.[1] ? (
                         <span className="block">
@@ -656,7 +656,7 @@ export function ExploreLoopsMarketsTable({
                       )}
                     </CellLink>
                   </td>
-                  <td className={`py-3 px-4 pr-6 ${ROW_HOVER_RIGHT}`}>
+                  <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
                     {row.waitlistHref ? (
                       <div className="inline-flex items-center">
                         <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
@@ -671,7 +671,7 @@ export function ExploreLoopsMarketsTable({
                       </CellLink>
                     )}
                   </td>
-                  <td className={`py-3 px-4 pr-4 ${ROW_HOVER_RIGHT}`}>
+                  <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
                     <Button
                       type="button"
                       size="sm"

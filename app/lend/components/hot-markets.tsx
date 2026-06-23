@@ -86,19 +86,19 @@ function HoverTooltip({
 
   return (
     <div
-      className="pointer-events-none absolute top-[16px] z-30 w-[226px] -translate-x-1/2 rounded-[14px] border border-white/10 bg-[#232325]/96 px-3.5 py-3 text-white shadow-[0_14px_32px_rgba(0,0,0,0.3)] backdrop-blur-md"
+      className="pointer-events-none absolute top-[10px] z-30 w-[168px] -translate-x-1/2 rounded-[10px] border border-border bg-card/95 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm dark:border-white/15 dark:bg-[#1b1b1c]/95"
       style={{ left }}
     >
-      <div className="flex items-center justify-between text-[11px] font-medium">
+      <div className="flex items-center justify-between gap-2 text-[10px] font-medium text-muted-foreground">
         <span>6/3/2026</span>
-        <span className="text-white/60">{TIME_LABELS[timeIndex]}</span>
+        <span>{TIME_LABELS[timeIndex]}</span>
       </div>
-      <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3 text-[11px]">
-        <span className="flex items-center gap-2 text-[#73dca9]">
-          <span className="size-2.5 rounded-full bg-[#73dca9]" />
+      <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-[10px] dark:border-white/10">
+        <span className="flex items-center gap-1.5 text-emerald-600 dark:text-[#73dca9]">
+          <span className="size-2 rounded-full bg-emerald-500 dark:bg-[#73dca9]" />
           Borrow APY
         </span>
-        <span className="font-medium">{value.toFixed(2)}%</span>
+        <span className="font-medium text-foreground">{value.toFixed(2)}%</span>
       </div>
     </div>
   )
@@ -120,7 +120,7 @@ function ReferenceGraph({
       {point ? (
         <>
           <span
-            className="absolute bottom-0 top-0 z-10 w-px bg-white/48"
+            className="absolute bottom-0 top-0 z-10 w-px bg-card/48"
             style={{ left: `${(point.x / graph.width) * 100}%` }}
           />
           <span
@@ -212,7 +212,7 @@ function FeaturedCard({
 
   const cardClassName = cn(
     "relative block h-[176px] w-[372px] shrink-0 overflow-hidden rounded-2xl border text-left",
-    "border-[#e1e4e8] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+    "border-[#e1e4e8] bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     "dark:border-[#26272a] dark:bg-[#1b1b1c] dark:shadow-none",
   )
 
@@ -233,7 +233,7 @@ function FeaturedCard({
         const bounds = event.currentTarget.getBoundingClientRect()
         const ratio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width))
         const pointIndex = Math.round(ratio * (points.length - 1))
-        const tooltipLeft = Math.max(113, Math.min(bounds.width - 113, event.clientX - bounds.left))
+        const tooltipLeft = Math.max(84, Math.min(bounds.width - 84, event.clientX - bounds.left))
         onHover({ cardKey, pointIndex, tooltipLeft })
       }}
       className={cardClassName}

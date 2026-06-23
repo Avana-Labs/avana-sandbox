@@ -14,9 +14,9 @@ function cloneState(state: BorrowSystemState): BorrowSystemState {
         id,
         {
           ...account,
-          collateralPositions: account.collateralPositions.map((position) => ({ ...position })),
-          debtPositions: account.debtPositions.map((position) => ({ ...position })),
-          rewardPositions: account.rewardPositions.map((position) => ({ ...position })),
+          collateralPositions: (account.collateralPositions ?? []).map((position) => ({ ...position })),
+          debtPositions: (account.debtPositions ?? []).map((position) => ({ ...position })),
+          rewardPositions: (account.rewardPositions ?? []).map((position) => ({ ...position })),
         },
       ]),
     ),
@@ -376,8 +376,9 @@ function applyClaimAction(state: BorrowSystemState, action: Extract<BorrowAction
   if (action.amountUsd6 <= 0n) throw new Error("Claim amount must be positive")
   if (action.rewardPositionIds.length === 0) throw new Error("Select at least one reward position to claim")
 
+  const rewardPositions = account.rewardPositions ?? []
   const selectedPositions = action.rewardPositionIds.map((positionId) => {
-    const position = account.rewardPositions.find((entry) => entry.id === positionId)
+    const position = rewardPositions.find((entry) => entry.id === positionId)
     if (!position) throw new Error(`Unknown reward position ${positionId}`)
     return position
   })
@@ -390,7 +391,7 @@ function applyClaimAction(state: BorrowSystemState, action: Extract<BorrowAction
 
   for (const positionId of action.rewardPositionIds) {
     if (remainingUsd6 === 0n) break
-    const position = account.rewardPositions.find((entry) => entry.id === positionId)
+    const position = rewardPositions.find((entry) => entry.id === positionId)
     if (!position || position.claimableUsd6 === 0n) continue
 
     const claimFromPosition = remainingUsd6 > position.claimableUsd6 ? position.claimableUsd6 : remainingUsd6

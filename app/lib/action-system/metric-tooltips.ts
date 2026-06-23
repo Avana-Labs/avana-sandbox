@@ -6,6 +6,14 @@ const METRIC_TOOLTIPS_BY_ID: Record<string, string> = {
   hf: "Health factor estimates how far your position is from liquidation. Above 1.0 is solvent; below 1.0 can be liquidated.",
   "net-apy": "Estimated net yield after supply APY minus borrow cost for the looped position.",
   "liq-price": "Estimated collateral price at which your position could be liquidated.",
+  "collateral-factor": "Share of this collateral's value that counts toward your borrowing power.",
+  "collateral-risk": "Additional liquidation buffer above the collateral factor for this market.",
+  "borrowable-assets": "Assets you can borrow against this collateral pool.",
+  "borrow-power": "Additional borrowing capacity unlocked after pledging this collateral.",
+  "supplied-value": "Total value you have supplied to this market.",
+  "position-apy": "Blended supply APY for your position after this transaction.",
+  "rewards-earned": "Rewards accrued on your supplied balance.",
+  "interest-earned": "Interest earned on your supplied balance.",
 }
 
 const METRIC_TOOLTIPS_BY_LABEL: Record<string, string> = {
@@ -18,17 +26,25 @@ const METRIC_TOOLTIPS_BY_LABEL: Record<string, string> = {
   "Liquidation price": METRIC_TOOLTIPS_BY_ID["liq-price"]!,
   "Borrow APY": "Annualized cost to borrow this asset from the pool.",
   "Supply APY": "Annualized yield earned for supplying this asset to the pool.",
-  "Borrow power": "Maximum additional value you can borrow before reaching the market LTV limit.",
+  "Borrow power": METRIC_TOOLTIPS_BY_ID["borrow-power"]!,
   "Remaining debt": "Outstanding debt for this position that still needs to be repaid.",
   "Available to borrow": "Maximum additional borrow capacity based on your collateral and market limits.",
-  "Network Fee": "Estimated gas cost to submit this transaction on-chain.",
+  "Collateral factor": METRIC_TOOLTIPS_BY_ID["collateral-factor"]!,
+  "Collateral risk": METRIC_TOOLTIPS_BY_ID["collateral-risk"]!,
+  "Borrowable assets": METRIC_TOOLTIPS_BY_ID["borrowable-assets"]!,
+  "Borrowing power": METRIC_TOOLTIPS_BY_ID["borrow-power"]!,
+  "Supplied value": METRIC_TOOLTIPS_BY_ID["supplied-value"]!,
+  "Position APY": METRIC_TOOLTIPS_BY_ID["position-apy"]!,
+  "Rewards earned": METRIC_TOOLTIPS_BY_ID["rewards-earned"]!,
+  "Interest earned": METRIC_TOOLTIPS_BY_ID["interest-earned"]!,
+  "Avana Fee":
+    "Avana charges 10 basis points on the transaction amount. The network fee is the estimated gas cost to confirm on-chain.",
 }
 
 export const ACTION_INFO_TOOLTIPS: Record<string, string> = {
   rate: "Estimated annual rate for this action, such as borrow APY, supply APY, or net carry.",
-  market: "The collateral pool or lending market this action applies to.",
-  fee: "Estimated network (gas) fee required to confirm this transaction.",
-  metric: "Projected change after this transaction completes.",
+  market: "The market this action applies to, including collateral and borrow assets where relevant.",
+  fee: "Avana charges 10 basis points on the transaction amount. The network fee is the estimated gas cost to confirm on-chain.",
   amount: "Amount you are confirming for this transaction.",
   apy: "Annualized yield or cost rate for the selected market.",
 }
@@ -37,5 +53,5 @@ export function resolveMetricTooltip(id?: string, label?: string, explicit?: str
   if (explicit) return explicit
   if (id && METRIC_TOOLTIPS_BY_ID[id]) return METRIC_TOOLTIPS_BY_ID[id]
   if (label && METRIC_TOOLTIPS_BY_LABEL[label]) return METRIC_TOOLTIPS_BY_LABEL[label]
-  return ACTION_INFO_TOOLTIPS.metric
+  return undefined
 }

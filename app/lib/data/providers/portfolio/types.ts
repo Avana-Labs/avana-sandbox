@@ -90,6 +90,7 @@ export type PortfolioSupplyPosition = {
   principalAmount?: number
   interestEarned?: number
   availableToWithdraw?: number
+  walletBalance?: number
   status?: "active" | "closed"
 }
 

@@ -73,12 +73,12 @@ function DeferredBlock({ className }: { className?: string }) {
 
 function TokenAvatar({ visual, className }: { visual: AssetDetail["hero"]["visual"]; className?: string }) {
   return (
-    <span className={cn("inline-flex size-6 items-center justify-center", visual.textClass, className)}>
+    <span className={cn("inline-flex size-10 items-center justify-center", visual.textClass, className)}>
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={visual.iconUrl} alt="" className="size-full object-contain" />
       ) : (
-        <span className="text-[10px] font-medium">{visual.shortLabel}</span>
+        <span className="text-[11px] font-medium">{visual.shortLabel}</span>
       )}
     </span>
   )
@@ -94,7 +94,7 @@ export function AssetDetailClient({ detail }: Props) {
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
   return (
-    <div className="min-h-screen bg-white text-foreground dark:bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <StickyDetailHeader
         heroRef={heroRef}
         sparkline={{ series: detail.heroMetric.series[detail.heroMetric.metricId]["1M"] }}
@@ -141,7 +141,7 @@ export function AssetDetailClient({ detail }: Props) {
           <span className="font-normal text-foreground">{detail.hero.name}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_1fr] lg:gap-x-10">
           <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
             <AssetHeroIdentity detail={detail} className="pb-0" />
           </div>
@@ -242,7 +242,7 @@ export function AssetDetailClient({ detail }: Props) {
       <MobileDepositDock
         open={mobileOpen}
         onToggle={() => setMobileOpen((v) => !v)}
-        label={`Deposit ${detail.hero.symbol}`}
+        label={`Manage ${detail.hero.symbol}`}
       >
         <AssetTokenActions detail={detail} />
       </MobileDepositDock>
@@ -268,7 +268,7 @@ function MobileDepositDock({
           <div className="fixed inset-0 z-40 bg-black/40 transition-opacity" onClick={onToggle} />
           <div
             role="dialog"
-            aria-label="Deposit"
+            aria-label={label}
             className="fixed inset-x-0 bottom-0 z-50 rounded-t-radius-md border-t border-border bg-surface-raised p-4 shadow-elev-3 transition-transform duration-200"
           >
             <button

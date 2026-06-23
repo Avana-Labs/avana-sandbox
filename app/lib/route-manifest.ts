@@ -1,28 +1,16 @@
 import { revalidateTag, unstable_cache } from "next/cache"
+import { SITE_STATIC_ROUTES, type SiteRoute } from "@/app/lib/site-static-routes"
 
-export type SiteRoute = {
-  route: string
-  priority: number
-}
+export type { SiteRoute }
 
 const ROUTE_MANIFEST_TAG = "site-route-manifest"
 
-const STATIC_ROUTES: SiteRoute[] = [
-  { route: "", priority: 1.0 },
-  { route: "/borrow", priority: 0.9 },
-  { route: "/lend", priority: 0.85 },
-  { route: "/multiply", priority: 0.85 },
-  { route: "/rewards", priority: 0.72 },
-  { route: "/dashboard", priority: 0.65 },
-  { route: "/support-center", priority: 0.45 },
-]
-
 /** Synchronous route manifest for tests and build-time consumers. */
-export const SITE_STATIC_ROUTES = STATIC_ROUTES
+export { SITE_STATIC_ROUTES }
 
 /** Caches server route metadata to avoid recalculating the route manifest on every request. */
 export const getCachedRouteManifest = unstable_cache(
-  async () => STATIC_ROUTES,
+  async () => SITE_STATIC_ROUTES,
   ["site-route-manifest"],
   {
     revalidate: 3600,

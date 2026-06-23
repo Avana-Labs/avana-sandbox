@@ -167,6 +167,7 @@ export function buildPortfolioLendData(
   const investments = positions.map((position) => {
     const market = state.markets[position.marketId]!
     const maxWithdrawable = calculateMaxWithdrawable(position.currentSuppliedAmount, market.availableLiquidity)
+    const walletBalance = state.walletBalances[walletId]?.[position.marketId] ?? 0
     return {
       id: position.positionId,
       marketId: position.marketId,
@@ -182,6 +183,7 @@ export function buildPortfolioLendData(
       principalAmount: position.principalAmount,
       interestEarned: position.interestEarned,
       availableToWithdraw: maxWithdrawable,
+      walletBalance,
       status: position.status,
     }
   })
