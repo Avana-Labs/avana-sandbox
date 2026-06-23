@@ -29,6 +29,7 @@ export function dashboardTabLabel(tab: DashboardTabKey): string {
 }
 
 export function parseDashboardTab(value: string | null | undefined): DashboardTabKey | null {
+  if (value === "multiply") return "looping"
   if (value === "lending" || value === "overview" || value === "looping" || value === "activity") {
     return value
   }

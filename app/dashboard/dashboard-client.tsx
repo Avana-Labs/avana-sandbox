@@ -94,7 +94,7 @@ export function DashboardClient({
   const searchParams = useSearchParams()
   const tabFromUrl = parseDashboardTab(searchParams.get("tab"))
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
-  const [activeTab, setActiveTab] = useState<DashboardTab>(tabFromUrl ?? "lending")
+  const [activeTab, setActiveTab] = useState<DashboardTab>(() => tabFromUrl ?? "overview")
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
