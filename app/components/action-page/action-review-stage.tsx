@@ -16,6 +16,7 @@ export function ActionReviewStage({
   secondaryLabel = "Back",
   onSecondary,
   secondaryHref,
+  hideHeader = false,
 }: {
   title: string
   subtitle?: string
@@ -25,16 +26,19 @@ export function ActionReviewStage({
   secondaryLabel?: string
   onSecondary?: () => void
   secondaryHref?: string
+  hideHeader?: boolean
 }) {
   const amountDisplay = resolveActionAmountCardProps(preview)
   const isClaimReview = preview.rateLabel === "Claim total"
 
   return (
     <div className="space-y-4" data-testid="action-review-stage">
-      <div className="pb-1">
-        <h2 className="text-[1.25rem] font-medium tracking-[-0.03em]">{title}</h2>
-        {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
-      </div>
+      {!hideHeader ? (
+        <div className="pb-1">
+          <h2 className="text-[1.25rem] font-medium tracking-[-0.03em]">{title}</h2>
+          {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
+        </div>
+      ) : null}
 
       {isClaimReview ? (
         <ActionCard>
