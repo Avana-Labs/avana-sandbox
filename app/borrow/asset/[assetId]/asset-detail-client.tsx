@@ -242,7 +242,7 @@ export function AssetDetailClient({ detail }: Props) {
       <MobileDepositDock
         open={mobileOpen}
         onToggle={() => setMobileOpen((v) => !v)}
-        label={`Deposit ${detail.hero.symbol}`}
+        label={`Manage ${detail.hero.symbol}`}
       >
         <AssetTokenActions detail={detail} />
       </MobileDepositDock>
@@ -268,7 +268,7 @@ function MobileDepositDock({
           <div className="fixed inset-0 z-40 bg-black/40 transition-opacity" onClick={onToggle} />
           <div
             role="dialog"
-            aria-label="Deposit"
+            aria-label={label}
             className="fixed inset-x-0 bottom-0 z-50 rounded-t-radius-md border-t border-border bg-surface-raised p-4 shadow-elev-3 transition-transform duration-200"
           >
             <button

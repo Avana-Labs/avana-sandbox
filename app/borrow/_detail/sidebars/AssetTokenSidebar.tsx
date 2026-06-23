@@ -151,9 +151,20 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
 
             {tab === "repay" && borrowContext ? (
               embedActions ? (
-                <ResponsiveBorrowAction kind="repay" market={borrowContext.id} closeHref={closeHref} />
+                <ResponsiveBorrowAction
+                  kind="repay"
+                  market={borrowContext.id}
+                  asset={detail.row.id}
+                  closeHref={closeHref}
+                />
               ) : (
-                <ActionPageLaunchCta product="borrow" kind="repay" market={borrowContext.id} returnTo={closeHref} />
+                <ActionPageLaunchCta
+                  product="borrow"
+                  kind="repay"
+                  market={borrowContext.id}
+                  asset={detail.row.id}
+                  returnTo={closeHref}
+                />
               )
             ) : null}
           </div>

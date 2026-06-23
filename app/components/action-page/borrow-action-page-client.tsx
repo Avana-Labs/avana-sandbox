@@ -313,6 +313,14 @@ export function BorrowActionPageClient({
   }, [initialDebtId])
 
   useEffect(() => {
+    if (kind !== "repay" || !initialMarketId || !resolvedInitialAsset || debtPositionId) return
+    const position = debtPositions.find(
+      (entry) => entry.marketId === initialMarketId && entry.assetId === resolvedInitialAsset,
+    )
+    if (position) setDebtPositionId(position.id)
+  }, [debtPositionId, debtPositions, initialMarketId, kind, resolvedInitialAsset])
+
+  useEffect(() => {
     if (embedded || kind !== "repay" || initialMarketId || initialDebtId || debtPositionId) return
     if (debtPositions.length === 1) {
       setDebtPositionId(debtPositions[0]!.id)
