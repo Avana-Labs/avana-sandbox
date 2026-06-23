@@ -76,10 +76,7 @@ export function claimSelectItemsForWallet(session: BorrowContextSession, walletI
     name: position.name,
     symbol: position.name.split("/")[0]?.trim() ?? "Rewards",
     trailingLabel: `${formatActionUsd(claimableById[position.id] ?? position.totalUsd)} claimable`,
-  })).filter((item) => {
-    const claimable = claimableById[item.id] ?? 0
-    return claimable > 0
-  })
+  }))
 }
 
 export function resolveClaimMarketId(marketOrPoolId: string) {
