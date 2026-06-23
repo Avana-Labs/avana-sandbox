@@ -75,7 +75,10 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
   )
 
   useEffect(() => {
-    if (!previewUi.allowed && stage === "configure" && previewUi.blockedReason !== dismissedBlockedReason) {
+    if (!previewUi.allowed && stage === "configure" && previewUi.blockedReason && previewUi.blockedReason !== dismissedBlockedReason) {
+      const lower = previewUi.blockedReason.toLowerCase()
+      const isHardBlock = lower.includes("insufficient") || lower.includes("unavailable") || lower.includes("disabled")
+      if (!isHardBlock) return
       const blocked = mapPreviewToBlockedUi({ product: "rewards", kind: "claim", blockedReason: previewUi.blockedReason })
       if (blocked) {
         setBlockedUi(blocked)
@@ -187,7 +190,6 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}
-          onMax={() => setAmount(String(claimSummary.claimUsd))}
           isPending={isPending}
           outcome={outcome}
         />

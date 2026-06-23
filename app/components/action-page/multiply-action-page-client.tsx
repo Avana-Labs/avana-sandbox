@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
+import type { ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
@@ -11,9 +11,10 @@ import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
+import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { buildMultiplierOptions, clampMultiplierToOptions } from "@/app/components/action-page/multiplier-options"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
@@ -56,23 +57,21 @@ export function MultiplyActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
-  const multiplierOptions = useMemo(
-    () => buildMultiplierOptions(market?.risk.publicMaxMultiplier ?? 5),
-    [market?.risk.publicMaxMultiplier],
-  )
+  const multiplierMax = 20
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
   const [multiplier, setMultiplier] = useState(initialMultiplier)
+  const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
+  const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
 
   useEffect(() => {
-    if (multiplierOptions.length === 0) return
     const parsed = parsePositiveActionAmount(multiplier)
     if (parsed == null) return
-    const clamped = clampMultiplierToOptions(parsed, multiplierOptions)
-    const next = String(clamped)
+    const clamped = Math.min(multiplierMax, Math.max(1, parsed))
+    const next = String(Number(clamped.toFixed(2)))
     if (next !== multiplier) setMultiplier(next)
-  }, [market?.id, multiplier, multiplierOptions])
+  }, [market?.id, multiplier, multiplierMax])
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
@@ -81,9 +80,13 @@ export function MultiplyActionPageClient({
   useEffect(() => {
     if (!market) return
     let cancelled = false
-    const parsedAmount = kind === "deleverage" ? 0 : parsePositiveActionAmount(amount)
+    const parsedAmount = kind === "deleverage" ? parsePositiveActionAmount(amount) : parsePositiveActionAmount(amount)
     const parsedMultiplier = parsePositiveActionAmount(multiplier)
-    if (parsedAmount == null || parsedMultiplier == null) {
+    if (kind === "multiply" && parsedAmount == null) {
+      setPreviewUi(null)
+      return
+    }
+    if (parsedMultiplier == null) {
       setPreviewUi(null)
       return
     }
@@ -111,6 +114,7 @@ export function MultiplyActionPageClient({
             walletId,
             positionId: position?.id ?? "missing",
             targetMultiplier: parsedMultiplier,
+            repayAmountUsd: parsedAmount ?? undefined,
           } as const)
 
     void session
@@ -138,6 +142,21 @@ export function MultiplyActionPageClient({
       cancelled = true
     }
   }, [amount, kind, market, multiplier, session, walletId])
+
+  useEffect(() => {
+    if (!previewUi || previewUi.allowed || stage !== "configure") return
+    if (!previewUi.blockedReason) return
+    if (previewUi.blockedReason === dismissedBlockedReason) return
+    const blocked = mapPreviewToBlockedUi({ product: "multiply", kind, blockedReason: previewUi.blockedReason })
+    if (blocked) {
+      setBlockedUi(blocked)
+      setStage("blocked")
+    }
+  }, [dismissedBlockedReason, kind, previewUi, stage])
+
+  useEffect(() => {
+    setDismissedBlockedReason(null)
+  }, [amount, kind, market?.id, multiplier])
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
@@ -187,6 +206,7 @@ export function MultiplyActionPageClient({
               walletId,
               positionId: position!.id,
               targetMultiplier: parsedMultiplier,
+              repayAmountUsd: parsedAmount ?? undefined,
             }
 
       const intent = session.createIntent(action)
@@ -267,13 +287,24 @@ export function MultiplyActionPageClient({
           }}
           multiplier={multiplier}
           onMultiplierChange={setMultiplier}
-          multiplierOptions={multiplierOptions}
-          hideAmountInput={kind === "deleverage"}
+          multiplierMin={1}
+          multiplierMax={multiplierMax}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
+        />
+      ) : null}
+
+      {blockedUi ? (
+        <ActionBlockedDialog
+          blocked={blockedUi}
+          open={stage === "blocked"}
+          onClose={() => {
+            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
+            setStage("configure")
+          }}
         />
       ) : null}
     </ActionPageShell>

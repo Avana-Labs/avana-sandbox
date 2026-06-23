@@ -82,7 +82,7 @@ describe("primaryCtaLabel", () => {
     ).toBe("Borrow")
   })
 
-  it("shows blocked reason and validation hints", () => {
+  it("never uses blocked reason as the footer CTA label", () => {
     expect(
       primaryCtaLabel({
         stage: "configure",
@@ -90,14 +90,14 @@ describe("primaryCtaLabel", () => {
         blockedReason: "Insufficient balance",
         isValid: false,
       }),
-    ).toBe("Insufficient balance")
+    ).toBe("Enter an amount")
 
     expect(
       primaryCtaLabel({
         stage: "configure",
-        verb: "Borrow",
-        blockedReason: null,
-        isValid: false,
+        verb: "Deposit",
+        blockedReason: "Insufficient wallet balance.",
+        isValid: true,
       }),
     ).toBe("Enter an amount")
   })

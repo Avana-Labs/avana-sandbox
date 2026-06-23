@@ -79,23 +79,28 @@ export function primaryCtaLabel(options: {
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return options.verb
   if (options.stage === "error") return options.verb
   if (options.stage === "review") return options.verb
-  if (options.blockedReason) return options.blockedReason
-  if (!options.isValid) return "Enter an amount"
+  if (!options.isValid || options.blockedReason) return "Enter an amount"
   if (options.stage === "configure") return "Review"
   return options.verb
 }
 
-export function shouldShowWalletToast(stage: ActionStage) {
-  return stage === "wallet_sign" || stage === "approve_allowance"
-}
-
-export function shouldDisablePrimaryCta(options: { stage: ActionStage; isValid: boolean; isPending: boolean }) {
+export function shouldDisablePrimaryCta(options: {
+  stage: ActionStage
+  isValid: boolean
+  isPending: boolean
+  blockedReason?: string | null
+}) {
   if (options.isPending) return true
   if (options.stage === "processing") return true
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return true
+  if (options.blockedReason) return true
   if (options.stage === "configure" && !options.isValid) return true
   if (options.stage === "review" && !options.isValid) return true
   return false
+}
+
+export function shouldShowWalletToast(stage: ActionStage) {
+  return stage === "wallet_sign" || stage === "approve_allowance"
 }
 
 export function walletToastMessage(stage: ActionStage, amountLabel: string) {
