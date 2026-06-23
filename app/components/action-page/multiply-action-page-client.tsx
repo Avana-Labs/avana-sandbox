@@ -9,7 +9,8 @@ import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/
 import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
-import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
+import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
+import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
@@ -27,12 +28,18 @@ import {
 export function MultiplyActionPageClient({
   kind,
   closeHref = "/multiply",
+  embedded = false,
+  sidebar = false,
+  layout = "default",
   initialMarketId,
   initialAmount = "",
   initialMultiplier = "3",
 }: {
   kind: "multiply" | "deleverage"
   closeHref?: string
+  embedded?: boolean
+  sidebar?: boolean
+  layout?: "default" | "home"
   initialMarketId?: string
   initialAmount?: string
   initialMultiplier?: string
@@ -183,7 +190,7 @@ export function MultiplyActionPageClient({
     const blocked = mapPreviewToBlockedUi({ product: "multiply", kind, blockedReason: previewUi.blockedReason })
     if (blocked) {
       setBlockedUi(blocked)
-      setStage("blocked")
+      if (!embedded) setStage("blocked")
     }
   }, [dismissedBlockedReason, kind, previewUi, stage])
 
@@ -283,10 +290,55 @@ export function MultiplyActionPageClient({
 
   if (!market) return null
 
-  const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const isHomeLayout = embedded && layout === "home"
+  const shellDensity = isHomeLayout ? "home" : "default"
+  const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
+  const marketLabel = formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol)
+  const useWorkspaceFields =
+    embedded && isHomeLayout && market != null && isConfigureVisibleStage(stage) && !showInlineBlocked
+  const stackedAmountField = useWorkspaceFields ? (
+    <ActionConfigureAmountSection
+      verb={descriptor.primaryVerb}
+      amount={amount}
+      onAmountChange={setAmount}
+      preview={previewUi}
+      assetSymbol={market.collateralAsset.symbol}
+      borrowSymbol={market.borrowAsset.symbol}
+      assetLabel={marketLabel}
+      assetOptions={!initialMarketId ? marketOptions : undefined}
+      selectedAssetId={market.id}
+      onAssetSelect={(id) => {
+        setSelectedMarketId(id)
+        setAmount("")
+      }}
+      amountVariant="raised"
+      amountFooter={
+        <ActionLeverageRuler
+          variant="embedded"
+          value={multiplier}
+          onChange={setMultiplier}
+          min={multiplierMin}
+          max={multiplierMax}
+          step={0.1}
+        />
+      }
+    />
+  ) : null
 
   return (
-    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
+    <ActionPageShell
+      mode={embedded ? "embedded" : "page"}
+      density={shellDensity}
+      title={descriptor.title}
+      subtitle={descriptor.subtitle}
+      hideTitle={hideTitle}
+      hideClose={embedded}
+      closeHref={closeHref}
+      simulated={session.readAdapter.mode === "sandbox"}
+    >
+      {useWorkspaceFields ? stackedAmountField : null}
+
       {stage === "processing" ? (
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}
@@ -295,6 +347,7 @@ export function MultiplyActionPageClient({
         <ActionReviewStage
           title={reviewStageTitle(descriptor.primaryVerb)}
           subtitle="Confirm the details below before signing."
+          hideHeader={embedded}
           preview={previewUi}
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}
@@ -304,7 +357,19 @@ export function MultiplyActionPageClient({
 
       {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
 
-      {isConfigureVisibleStage(stage) ? (
+      {showInlineBlocked && blockedUi ? (
+        <ActionBlockedDialog
+          variant="inline"
+          blocked={blockedUi}
+          open
+          onClose={() => {
+            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
+            setBlockedUi(null)
+          }}
+        />
+      ) : null}
+
+      {isConfigureVisibleStage(stage) && !showInlineBlocked ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
@@ -325,12 +390,17 @@ export function MultiplyActionPageClient({
           multiplierMax={multiplierMax}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
+          secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
+          hideAmountInput={useWorkspaceFields}
+          amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
+          homeLayout={isHomeLayout}
+          hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
         />
       ) : null}
 
-      {blockedUi ? (
+      {blockedUi && !embedded ? (
         <ActionBlockedDialog
           blocked={blockedUi}
           open={stage === "blocked"}

@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
 import { cn } from "@/lib/utils"
@@ -43,7 +44,9 @@ type ActionConfigureStageProps = {
   canGoBack?: boolean
   hideAmountInput?: boolean
   amountReadOnly?: boolean
-  amountVariant?: "card" | "inset"
+  amountVariant?: "card" | "inset" | "raised"
+  amountFooter?: ReactNode
+  assetLabel?: string
   hideAssetSelector?: boolean
   homeLayout?: boolean
   amountPlacement?: "inline" | "stacked"
@@ -69,6 +72,8 @@ export function ActionConfigureAmountSection({
   hideAssetSelector = false,
   assetPickerVariant = "menu",
   pickerTokens,
+  amountFooter,
+  assetLabel,
 }: Pick<
   ActionConfigureStageProps,
   | "verb"
@@ -88,8 +93,10 @@ export function ActionConfigureAmountSection({
   | "hideAssetSelector"
   | "assetPickerVariant"
   | "pickerTokens"
+  | "amountFooter"
+  | "assetLabel"
 >) {
-  const pillLabel = assetSymbol ?? preview?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
+  const pillLabel = assetLabel ?? assetSymbol ?? preview?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
 
   return (
     <ActionAmountCard
@@ -98,6 +105,7 @@ export function ActionConfigureAmountSection({
       onAmountChange={onAmountChange}
       approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
       assetLabel={pillLabel}
+      footer={amountFooter}
       assetSymbol={assetSymbol ?? pillLabel}
       borrowSymbol={borrowSymbol}
       readOnly={amountReadOnly}
@@ -148,6 +156,8 @@ export function ActionConfigureStage({
   amountPlacement = "inline",
   assetPickerVariant = "menu",
   pickerTokens,
+  amountFooter,
+  assetLabel,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -163,6 +173,7 @@ export function ActionConfigureStage({
   const showStackedAmount = amountPlacement === "stacked"
   const showInlineAmount = !hideAmountInput && !showStackedAmount
   const showHomeDetails = !homeLayout
+  const showStandaloneLeverage = Boolean(onMultiplierChange) && !(homeLayout && showStackedAmount)
 
   return (
     <>
@@ -188,10 +199,10 @@ export function ActionConfigureStage({
     />
       ) : null}
 
-      {onMultiplierChange ? (
+      {showStandaloneLeverage ? (
         <ActionLeverageRuler
           value={multiplier ?? "3"}
-          onChange={onMultiplierChange}
+          onChange={onMultiplierChange!}
           min={multiplierMin}
           max={multiplierMax}
           step={multiplierStep}

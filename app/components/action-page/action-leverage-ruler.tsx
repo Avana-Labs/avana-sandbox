@@ -31,6 +31,7 @@ export function ActionLeverageRuler({
   max = 10,
   step = 0.1,
   label = "Leverage",
+  variant = "card",
 }: {
   value: string
   onChange: (value: string) => void
@@ -38,6 +39,7 @@ export function ActionLeverageRuler({
   max?: number
   step?: number
   label?: string
+  variant?: "card" | "embedded"
 }) {
   const parsed = Number.parseFloat(value)
   const currentValue = Number.isFinite(parsed) ? snapToStep(parsed, min, max, step) : min
@@ -49,12 +51,11 @@ export function ActionLeverageRuler({
     [max, min, onChange, step],
   )
 
-  return (
-    <ActionCard className="p-4">
-      <div data-testid="action-leverage-ruler">
-        <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
+  const ruler = (
+    <div data-testid="action-leverage-ruler">
+      <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
 
-        <div className="mt-4 flex items-center justify-between gap-3">
+      <div className={variant === "embedded" ? "mt-3 flex items-center justify-between gap-3" : "mt-4 flex items-center justify-between gap-3"}>
           <button
             type="button"
             className="rounded-full border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -78,19 +79,22 @@ export function ActionLeverageRuler({
           </button>
         </div>
 
-        <div className="relative mt-5 px-2">
-          <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-px -translate-y-1/2 bg-border" aria-hidden />
-          <Slider
-            min={min}
-            max={max}
-            step={step}
-            value={[currentValue]}
-            onValueChange={(values) => publishValue(values[0] ?? min)}
-            aria-label={`${label} multiplier`}
-            className="relative z-20"
-          />
-        </div>
+      <div className={variant === "embedded" ? "relative mt-4 px-2" : "relative mt-5 px-2"}>
+        <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-px -translate-y-1/2 bg-border" aria-hidden />
+        <Slider
+          min={min}
+          max={max}
+          step={step}
+          value={[currentValue]}
+          onValueChange={(values) => publishValue(values[0] ?? min)}
+          aria-label={`${label} multiplier`}
+          className="relative z-20"
+        />
       </div>
-    </ActionCard>
+    </div>
   )
+
+  if (variant === "embedded") return ruler
+
+  return <ActionCard className="p-4">{ruler}</ActionCard>
 }

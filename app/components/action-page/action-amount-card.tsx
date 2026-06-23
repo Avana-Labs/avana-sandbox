@@ -36,7 +36,7 @@ type ActionAmountCardProps = {
   assetOptions?: ActionAssetOption[]
   selectedAssetId?: string
   onAssetSelect?: (id: string) => void
-  variant?: "card" | "inset"
+  variant?: "card" | "inset" | "raised"
   hideAssetSelector?: boolean
   assetPickerVariant?: "menu" | "dialog"
   pickerTokens?: HomeBorrowToken[]
@@ -64,7 +64,7 @@ export function ActionAmountCard({
   pickerTokens,
 }: ActionAmountCardProps) {
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
-  const showAssetLabel = !(variant === "inset" && borrowSymbol)
+  const showAssetLabel = !(borrowSymbol && variant !== "card")
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(
     !hideAssetSelector &&
@@ -192,10 +192,15 @@ export function ActionAmountCard({
       />
     ) : null
 
-  if (variant === "inset") {
+  if (variant === "inset" || variant === "raised") {
     return (
       <>
-        <SwapStyleField label={label} tone="inset" className={cn(showReceiveWethToggle || footer ? "rounded-b-none" : undefined)} data-testid="action-amount-card">
+        <SwapStyleField
+          label={label}
+          tone={variant === "raised" ? "raised" : "inset"}
+          className={cn(showReceiveWethToggle || footer ? "rounded-b-none" : undefined)}
+          data-testid="action-amount-card"
+        >
           {amountRow}
           {usdRow}
         {showReceiveWethToggle ? (
