@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Settings } from "lucide-react"
 import { toast } from "sonner"
 import { getBorrowSessionWalletId } from "@/app/lib/borrow-system/demo-session"
-import { selectHomeBorrowTokensForMarket, selectHomeDebtMap } from "@/app/lib/borrow-system/home-runtime"
+import { selectHomeBorrowTokensForMarket, selectHomeDebtMap, selectHomeRepayTokensForMarket } from "@/app/lib/borrow-system/home-runtime"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { HOME_DEFAULT_SELECTIONS, type HomeMode } from "@/app/lib/home-sim"
@@ -33,9 +33,11 @@ export function HomePageClient() {
   const [borrowPoolId, setBorrowPoolId] = useState(defaultBorrowPoolId)
   const [borrowTokenId, setBorrowTokenId] = useState<string | null>(null)
   const [repayPoolId, setRepayPoolId] = useState(defaultRepayPoolId)
+  const [repayTokenId, setRepayTokenId] = useState<string | null>(null)
   const [removePoolId, setRemovePoolId] = useState(defaultRemovePoolId)
   const [poolDialogMode, setPoolDialogMode] = useState<PoolDialogMode | null>(null)
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
+  const [tokenDialogMode, setTokenDialogMode] = useState<"borrow" | "repay">("borrow")
   const debts = useMemo(() => selectHomeDebtMap(session.state, walletId), [session.state, walletId])
   const borrowPool = useMemo(
     () => session.collateralPools.find((pool) => pool.id === borrowPoolId) ?? session.collateralPools[0] ?? null,
@@ -52,6 +54,18 @@ export function HomePageClient() {
   const repayPool = useMemo(
     () => session.collateralPools.find((pool) => pool.id === repayPoolId) ?? session.collateralPools[0] ?? null,
     [repayPoolId, session.collateralPools],
+  )
+  const repayTokens = useMemo(
+    () => (repayPoolId ? selectHomeRepayTokensForMarket(session.state, walletId, repayPoolId) : []),
+    [repayPoolId, session.state, walletId],
+  )
+  const repayToken = useMemo(
+    () => (repayTokenId ? repayTokens.find((token) => token.id === repayTokenId) ?? null : null),
+    [repayTokenId, repayTokens],
+  )
+  const claimPool = useMemo(
+    () => session.collateralPools.find((pool) => (debts[pool.id] ?? 0) >= 0) ?? session.collateralPools[0] ?? null,
+    [debts, session.collateralPools],
   )
   const removePool = useMemo(
     () => session.collateralPools.find((pool) => pool.id === removePoolId) ?? session.collateralPools[0] ?? null,
@@ -91,6 +105,15 @@ export function HomePageClient() {
       borrowTokens.find((token) => token.symbol.toLowerCase() === HOME_DEFAULT_SELECTIONS.borrowTokenId) ?? borrowTokens[0]
     setBorrowTokenId(preferredToken?.id ?? null)
   }, [borrowTokenId, borrowTokens])
+
+  useEffect(() => {
+    if (!repayTokens.length) {
+      setRepayTokenId(null)
+      return
+    }
+    if (repayTokenId && repayTokens.some((token) => token.id === repayTokenId)) return
+    setRepayTokenId(repayTokens[0]?.id ?? null)
+  }, [repayTokenId, repayTokens])
 
   useEffect(() => {
     if (!repayPool || (debts[repayPool.id] ?? 0) > 0) return
@@ -158,7 +181,10 @@ export function HomePageClient() {
                   pool={borrowPool}
                   token={borrowToken}
                   onOpenPool={() => setPoolDialogMode("borrow")}
-                  onOpenToken={() => setTokenDialogOpen(true)}
+                  onOpenToken={() => {
+                    setTokenDialogMode("borrow")
+                    setTokenDialogOpen(true)
+                  }}
                 />
                 <ActionPageLaunchCta
                   product="borrow"
@@ -171,11 +197,22 @@ export function HomePageClient() {
               </TabsContent>
 
               <TabsContent value="repay" className="mt-0 space-y-4">
-                <HomeActionContextBar pool={repayPool} showToken={false} onOpenPool={() => setPoolDialogMode("repay")} />
+                <HomeActionContextBar
+                  pool={repayPool}
+                  token={repayToken}
+                  onOpenPool={() => setPoolDialogMode("repay")}
+                  onOpenToken={() => {
+                    setTokenDialogMode("repay")
+                    setTokenDialogOpen(true)
+                  }}
+                />
                 <ActionPageLaunchCta product="borrow" kind="repay" market={repayPoolId} returnTo="/" label="Continue to repay" />
               </TabsContent>
 
-              <TabsContent value="claim" className="mt-0">
+              <TabsContent value="claim" className="mt-0 space-y-4">
+                {claimPool ? (
+                  <HomeActionContextBar pool={claimPool} showToken={false} onOpenPool={() => setPoolDialogMode("borrow")} />
+                ) : null}
                 <ActionPageLaunchCta product="borrow" kind="claim" returnTo="/" label="Continue to claim" />
               </TabsContent>
 
@@ -187,7 +224,7 @@ export function HomePageClient() {
                   market={removePoolId}
                   amount="25"
                   returnTo="/"
-                  label="Continue to withdraw"
+                  label="Continue to remove"
                 />
               </TabsContent>
             </Tabs>
@@ -212,9 +249,13 @@ export function HomePageClient() {
         open={tokenDialogOpen}
         onOpenChange={setTokenDialogOpen}
         selectedTokenId={borrowTokenId}
-        tokens={borrowTokens}
+        tokens={tokenDialogMode === "repay" ? repayTokens : borrowTokens}
         onSelect={(tokenId) => {
-          setBorrowTokenId(tokenId)
+          if (tokenDialogMode === "repay") {
+            setRepayTokenId(tokenId)
+          } else {
+            setBorrowTokenId(tokenId)
+          }
           setTokenDialogOpen(false)
         }}
       />
