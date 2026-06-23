@@ -120,7 +120,7 @@ export function ActionAmountCard({
             aria-label={switchable ? `Change asset, current ${assetLabel}` : undefined}
             disabled={readOnly && !switchable}
             className={cn(
-              "inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium",
+              "inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[14px] font-medium dark:bg-card",
               switchable ? "cursor-pointer hover:bg-muted" : "cursor-default",
             )}
           >
@@ -225,7 +225,7 @@ export function ActionAmountCard({
   return (
     <>
       <div
-        className="rounded-radius-md border border-border bg-card"
+        className="rounded-[20px] border border-border bg-background dark:bg-[hsl(220,7%,10%)]"
         data-testid="action-amount-card"
       >
       <div className="px-4 pb-4 pt-4">

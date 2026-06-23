@@ -28,7 +28,7 @@ import {
 import { mapBorrowRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/adapters/rewards-preview-mapper"
 import { ActionBorrowContextBar } from "@/app/components/action-page/action-borrow-context-bar"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
-import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
+import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
@@ -760,6 +760,38 @@ export function BorrowActionPageClient({
   const pickerTokens = kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined
   const pickerSelectedTokenId =
     kind === "repay" ? (debtPosition?.assetId ?? assetId) : kind === "claim" ? claimPositionId : kind === "supply" ? marketId : assetId
+  const useWorkspaceFields = embedded && (isHomeLayout || sidebar) && showCollateralContextBar
+  const stackedAmountField =
+    useWorkspaceFields && isConfigureVisibleStage(stage) && !showInlineBlocked && kind !== "claim" ? (
+      <ActionConfigureAmountSection
+        verb={descriptor.primaryVerb}
+        amount={kind === "remove" ? percent : amount}
+        onAmountChange={kind === "remove" ? setPercent : setAmount}
+        preview={previewUi}
+        assetSymbol={assetSymbol}
+        borrowSymbol={undefined}
+        assetOptions={kind === "borrow" ? borrowAssetOptions : kind === "repay" ? repayAssetOptions : undefined}
+        selectedAssetId={pickerSelectedTokenId}
+        onAssetSelect={(id) => {
+          if (kind === "repay") {
+            const position =
+              debtPositions.find((entry) => entry.id === id) ??
+              debtPositions.find((entry) => entry.assetId === id && entry.marketId === marketId)
+            if (!position) return
+            setDebtPositionId(position.id)
+            if (position.marketId) setMarketId(position.marketId)
+            setAmount("")
+            return
+          }
+          setAssetId(resolveBorrowAssetId(session.state, id, selectMarketId))
+          setMarketId(resolveBorrowMarketForAsset(session, id, selectMarketId))
+          setAmount("")
+        }}
+        amountVariant="inset"
+        assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
+        pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
+      />
+    ) : null
 
   return (
     <ActionPageShell
@@ -779,7 +811,9 @@ export function BorrowActionPageClient({
           pools={session.collateralPools}
           debts={debts}
           onPoolChange={handlePoolChange}
-          variant="card"
+          variant={useWorkspaceFields ? "inset" : "card"}
+          workspace={useWorkspaceFields}
+          amountField={stackedAmountField}
         />
       ) : null}
 
@@ -935,8 +969,9 @@ export function BorrowActionPageClient({
           canGoBack={canGoBackToSelect}
           isPending={isPending}
           outcome={outcome}
-          hideAmountInput={kind === "claim"}
+          hideAmountInput={kind === "claim" || Boolean(useWorkspaceFields)}
           amountVariant="card"
+          amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           homeLayout={isHomeLayout}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}

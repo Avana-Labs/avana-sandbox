@@ -18,9 +18,9 @@ export function SwapStyleField({
   return (
     <div
       className={cn(
-        "rounded-[20px] px-4 py-4",
-        tone === "raised" && "border border-border bg-card",
-        tone === "inset" && "bg-surface-inset",
+        "px-4 py-4",
+        tone === "raised" && "rounded-[20px] border border-border bg-background dark:bg-[hsl(220,7%,10%)]",
+        tone === "inset" && "rounded-[20px] bg-[hsl(0,0%,98%)] dark:bg-surface-inset",
         className,
       )}
       data-testid="swap-style-field"
@@ -34,5 +34,9 @@ export function SwapStyleField({
 }
 
 export function SwapStyleFieldStack({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("flex flex-col gap-0.5", className)} data-testid="swap-style-field-stack">{children}</div>
+  return (
+    <div className={cn("flex flex-col gap-1", className)} data-testid="swap-style-field-stack">
+      {children}
+    </div>
+  )
 }

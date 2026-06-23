@@ -251,7 +251,15 @@ export function ActionConfigureStage({
               blockedReason: preview?.blockedReason ?? null,
             })}
             className={cn(
-              "mt-2 flex h-14 w-full items-center justify-center rounded-[20px] bg-brand/15 text-[17px] font-semibold text-brand-readable transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
+              "mt-1 flex h-14 w-full items-center justify-center rounded-[20px] text-[17px] font-semibold transition-opacity disabled:cursor-not-allowed",
+              shouldDisablePrimaryCta({
+                stage: configureStage,
+                isValid,
+                isPending,
+                blockedReason: preview?.blockedReason ?? null,
+              })
+                ? "bg-brand/15 text-brand-readable"
+                : "bg-brand text-brand-foreground hover:opacity-90",
               (isPending || stage === "wallet_sign" || stage === "approve_allowance") && "opacity-70",
             )}
             data-testid="action-footer-primary"

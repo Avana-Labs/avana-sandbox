@@ -4,7 +4,7 @@ import {
   LIGHTHOUSE_ROUTES,
   ROUTE_HERO_SELECTORS,
   getNavigationTimingBudget,
-} from "../../app/lib/performance/route-budgets"
+} from "./fixtures/route-budgets"
 
 const PRIMARY_ROUTES = ROUTE_HERO_SELECTORS.filter((entry) => LIGHTHOUSE_ROUTES.includes(entry.route))
 

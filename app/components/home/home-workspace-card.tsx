@@ -22,45 +22,41 @@ export function HomeWorkspaceCard({
   children: ReactNode
 }) {
   return (
-    <section className="flex min-h-[calc(100dvh-5.5rem)] items-center justify-center px-4 py-6 md:py-10">
+    <section className="flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-8 md:pb-16 md:pt-14">
       <div className="w-full max-w-[480px]" data-testid="home-workspace-card">
-        <div className="overflow-hidden rounded-[24px] border border-border bg-card shadow-elev-1">
-          <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
-            <div className="flex min-w-0 flex-wrap items-center gap-0.5" role="tablist" aria-label="Borrow actions">
-              {HOME_MODE_ITEMS.map((item) => {
-                const active = item.value === mode
-                return (
-                  <button
-                    key={item.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => onModeChange(item.value)}
-                    className={cn(
-                      "rounded-full px-3 py-1.5 text-[15px] font-medium transition-colors",
-                      active
-                        ? "bg-surface-inset text-foreground"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                )
-              })}
-            </div>
-            <button
-              type="button"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-              aria-label="Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </button>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-1" role="tablist" aria-label="Borrow actions">
+            {HOME_MODE_ITEMS.map((item) => {
+              const active = item.value === mode
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => onModeChange(item.value)}
+                  className={cn(
+                    "rounded-full px-3 py-1.5 text-[16px] font-medium leading-none transition-colors",
+                    active
+                      ? "bg-[hsl(0,0%,96%)] text-foreground dark:bg-surface-inset"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {item.label}
+                </button>
+              )
+            })}
           </div>
-
-          <div className="px-2 pb-3 pt-0 sm:px-3">
-            <div className="flex flex-col gap-3">{children}</div>
-          </div>
+          <button
+            type="button"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-[hsl(0,0%,96%)] hover:text-foreground dark:hover:bg-surface-inset"
+            aria-label="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
         </div>
+
+        <div className="mt-3 flex flex-col gap-2">{children}</div>
       </div>
     </section>
   )

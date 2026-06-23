@@ -9,10 +9,12 @@ export function HomeActionContextBar({
   pool,
   onOpenPool,
   variant = "card",
+  workspace = false,
 }: {
   pool: HomeCollateralPool
   onOpenPool: () => void
   variant?: "card" | "inset"
+  workspace?: boolean
 }) {
   const [collateralSymbol, borrowSymbol] = pool.visuals.map((visual) => visual.symbol)
 
@@ -35,13 +37,14 @@ export function HomeActionContextBar({
   }
 
   return (
-    <div className="mb-3">
+    <div className={workspace ? undefined : "mb-3"}>
       <ActionContextSelectorCard
         label="Collateral"
         value={pool.name}
         collateralSymbol={collateralSymbol ?? "LP"}
         borrowSymbol={borrowSymbol}
         onClick={onOpenPool}
+        workspace={workspace}
       />
     </div>
   )

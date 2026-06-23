@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import type { HomeCollateralPool } from "@/app/lib/home-sim"
 import { HomeActionContextBar } from "@/app/components/home/home-action-context-bar"
 import { PoolPickerDialog } from "@/app/components/home/pool-picker-dialog"
@@ -20,6 +20,8 @@ export function ActionBorrowContextBar({
   debts,
   onPoolChange,
   variant = "card",
+  workspace = false,
+  amountField,
 }: {
   kind: "borrow" | "repay" | "remove" | "claim"
   pool: HomeCollateralPool | null
@@ -27,17 +29,33 @@ export function ActionBorrowContextBar({
   debts: Record<string, number>
   onPoolChange: (poolId: string) => void
   variant?: "card" | "inset"
+  workspace?: boolean
+  amountField?: React.ReactNode
 }) {
   const [poolDialogOpen, setPoolDialogOpen] = useState(false)
   const poolDialogMode = poolDialogModeForKind(kind)
 
   if (!pool) return null
 
-  const poolField = <HomeActionContextBar pool={pool} onOpenPool={() => setPoolDialogOpen(true)} variant={variant} />
+  const poolField = (
+    <HomeActionContextBar
+      pool={pool}
+      onOpenPool={() => setPoolDialogOpen(true)}
+      variant={variant}
+      workspace={workspace}
+    />
+  )
 
   return (
     <>
-      {variant === "inset" ? <SwapStyleFieldStack>{poolField}</SwapStyleFieldStack> : poolField}
+      {variant === "inset" ? (
+        <SwapStyleFieldStack>
+          {poolField}
+          {amountField}
+        </SwapStyleFieldStack>
+      ) : (
+        poolField
+      )}
 
       <PoolPickerDialog
         open={poolDialogOpen}
