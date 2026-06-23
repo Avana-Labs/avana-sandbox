@@ -260,14 +260,15 @@ export function CurrentLtvCard({
 }) {
   const ltv = collateralUsd > 0 ? Math.min(1, borrowedUsd / collateralUsd) : 0
   const ltvPct = ltv * 100
-  const liquidationPct = LIQUIDATION_LTV * 100
   const masked = !showBalance
   const liquidationValueUsd = collateralUsd * LIQUIDATION_LTV
   const remainingBorrowingPowerUsd = Math.max(0, liquidationValueUsd - borrowedUsd)
+  const liqUtilizationPct = liquidationValueUsd > 0 ? Math.min(100, (borrowedUsd / liquidationValueUsd) * 100) : 0
+  const barFillPct = liquidationValueUsd > 0 ? liqUtilizationPct : 0
   const borrowingPowerLabel = masked ? "••" : formatCompactUsd(remainingBorrowingPowerUsd)
   const usedLabel = masked ? "••" : formatCompactUsd(borrowedUsd)
   const maxLabel = masked ? "••" : formatCompactUsd(liquidationValueUsd)
-  const usedTicks = Math.max(1, Math.round((ltvPct / 100) * TICK_COUNT))
+  const usedTicks = Math.max(1, Math.round((barFillPct / 100) * TICK_COUNT))
   const tone = "bg-emerald-500"
   const statusLabel = remainingBorrowingPowerUsd > 0 ? "GOOD" : "RISK"
 
@@ -287,10 +288,10 @@ export function CurrentLtvCard({
       <div className="relative mt-9">
         <div
           className="pointer-events-none absolute bottom-full z-10 -translate-x-1/2 pb-1 text-center"
-          style={{ left: `${ltvPct}%` }}
+          style={{ left: `${barFillPct}%` }}
         >
           <div className="rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-bold text-background">
-            {masked ? "••" : `${ltvPct.toFixed(2)}%`}
+            {masked ? "••" : `${liqUtilizationPct.toFixed(1)}%`}
           </div>
           <div className="-mt-px text-[10px] leading-none text-foreground">▼</div>
         </div>
@@ -321,7 +322,7 @@ export function CurrentLtvCard({
           <span>
             Liq. max <span className="font-semibold text-foreground">{maxLabel}</span>
           </span>
-          <span className="text-rose-500">{liquidationPct.toFixed(0)}% liq</span>
+          <span className="text-rose-500">{masked ? "••" : `${liqUtilizationPct.toFixed(0)}% of liq. max`}</span>
         </span>
       </div>
     </div>

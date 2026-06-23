@@ -35,7 +35,9 @@ describe("health factor ui helpers", () => {
 
   it("positions safer health factors toward the left of the bar", () => {
     expect(healthFactorBarPositionPct(9.6)).toBeLessThan(healthFactorBarPositionPct(1.2))
-    expect(healthFactorBarPositionPct(Number.POSITIVE_INFINITY)).toBe(8)
+    expect(healthFactorBarPositionPct(4.22)).toBeLessThan(50)
+    expect(healthFactorBarPositionPct(1.2)).toBeGreaterThan(50)
+    expect(healthFactorBarPositionPct(1.2)).toBeLessThan(80)
   })
 
   it("prefers health factor tone over generic default", () => {

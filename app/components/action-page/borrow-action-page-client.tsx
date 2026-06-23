@@ -216,7 +216,14 @@ export function BorrowActionPageClient({
   }, [debtPositionId, debtPositions, initialDebtId, initialMarketId, kind])
 
   useEffect(() => {
-    if (!initialAssetId) return
+    if (kind !== "borrow" || !assetId) return
+    const resolvedMarket = resolveBorrowMarketForAsset(session, assetId, marketId)
+    if (resolvedMarket && resolvedMarket !== marketId) {
+      setMarketId(resolvedMarket)
+    }
+  }, [assetId, kind, marketId, session])
+
+  useEffect(() => {
     const resolved = resolveBorrowAssetId(session.state, initialAssetId, resolvedInitialMarket)
     setAssetId(resolved)
     setStage("configure")

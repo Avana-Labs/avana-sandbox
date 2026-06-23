@@ -279,6 +279,8 @@ export function SuppliesHealthFactorCard({
   const hfLabel = formatHealthFactor(averageHealthFactor)
   const masked = !showBalance
   const activeZoneIdx = activeHealthFactorZoneIndex(averageHealthFactor)
+  const fillPct = healthFactorBarPositionPct(averageHealthFactor)
+  const barTone = healthFactorBarTone(averageHealthFactor)
 
   return (
     <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
@@ -313,17 +315,26 @@ export function SuppliesHealthFactorCard({
       </div>
 
       <div className="mt-9">
-        <div className="flex h-2.5 w-full items-stretch gap-1">
-          {HF_ZONES.map((zone, index) => {
-            const isActive = index === activeZoneIdx
-            return (
+        <div className="relative pt-1">
+          <div className="flex h-2.5 w-full items-stretch gap-1">
+            {HF_ZONES.map((zone) => (
               <div
                 key={zone.id}
-                className={cn("rounded-full transition-colors", isActive ? zone.color : "bg-muted")}
+                className={cn("rounded-full opacity-35", zone.color)}
                 style={{ width: `${zone.widthPct}%` }}
               />
-            )
-          })}
+            ))}
+          </div>
+          {averageHealthFactor != null && activeZoneIdx >= 0 ? (
+            <span
+              className={cn(
+                "absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-background",
+                barTone.border,
+              )}
+              style={{ left: `calc(${fillPct}% - 6px)` }}
+              aria-hidden
+            />
+          ) : null}
         </div>
 
         <div className="mt-4 flex h-4 items-center justify-between text-[11px] font-medium text-muted-foreground">

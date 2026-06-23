@@ -3,6 +3,7 @@
 import type { PortfolioPageData, PortfolioTabKey } from "@/app/lib/data/providers/portfolio"
 import { DashboardHero } from "./dashboard-hero"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
+import { buildBorrowHeroData } from "@/app/portfolio/borrow-hero-state"
 import { buildLendHeroData, type LendSnapshot } from "@/app/portfolio/lend-hero-state"
 import { cn } from "@/lib/utils"
 
@@ -40,7 +41,9 @@ export function DashboardTabs({
   multiplyHero,
 }: DashboardTabsProps) {
   const activeHero =
-    activeTab === "lending" && lendSnapshot
+    activeTab === "overview"
+      ? buildBorrowHeroData(pageData.heroByTab.overview, borrowSnapshot)
+      : activeTab === "lending" && lendSnapshot
       ? buildLendHeroData(pageData.heroByTab.lending, lendSnapshot)
       : activeTab === "looping" && multiplyHero
         ? multiplyHero

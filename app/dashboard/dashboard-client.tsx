@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
-import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
+import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
+import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
@@ -99,6 +100,11 @@ export function DashboardClient({
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
+  const sessionBorrowTab = useMemo(() => {
+    if (!walletId || !borrowSession.state.accounts[walletId]) return null
+    return buildPortfolioBorrowData(borrowSession.state, walletId)
+  }, [borrowSession.state, walletId])
+  const liveBorrowTab = sessionBorrowTab ?? portfolioBorrow
   const portfolioMultiply = usePortfolioMultiplyLive(walletId, multiplySession)
   const portfolioLend = usePortfolioLendLive(walletId, lendSession)
   const multiplySnapshot = useMemo<BorrowSnapshot>(
@@ -123,28 +129,42 @@ export function DashboardClient({
     }),
     [pageData, portfolioMultiply],
   )
-  const borrowSnapshot = useMemo<BorrowSnapshot>(
-    () => ({
-      approvedUsd: portfolioBorrow?.creditLines.approvedUsd ?? pageData?.borrow.creditLines.approvedUsd ?? 0,
+  const borrowSnapshot = useMemo<BorrowSnapshot>(() => {
+    const sessionSnapshot =
+      walletId && borrowSession.state.accounts[walletId]
+        ? selectBorrowSnapshot(borrowSession.state, walletId)
+        : null
+    return {
+      approvedUsd: sessionSnapshot?.approvedUsd ?? liveBorrowTab?.creditLines.approvedUsd ?? pageData?.borrow.creditLines.approvedUsd ?? 0,
       liquidationThresholdUsd:
-        portfolioBorrow?.creditLines.liquidationThresholdUsd ??
+        sessionSnapshot?.liquidationThresholdUsd ??
+        liveBorrowTab?.creditLines.liquidationThresholdUsd ??
         pageData?.borrow.creditLines.liquidationThresholdUsd ??
         0,
       totalBorrowedUsd:
-        portfolioBorrow?.creditLines.totalBorrowedUsd ?? pageData?.borrow.creditLines.totalBorrowedUsd ?? 0,
+        sessionSnapshot?.totalBorrowedUsd ?? liveBorrowTab?.creditLines.totalBorrowedUsd ?? pageData?.borrow.creditLines.totalBorrowedUsd ?? 0,
       totalCollateralUsd:
-        portfolioBorrow?.creditLines.totalCollateralUsd ?? pageData?.borrow.creditLines.totalCollateralUsd ?? 0,
+        sessionSnapshot?.totalCollateralUsd ??
+        liveBorrowTab?.creditLines.totalCollateralUsd ??
+        pageData?.borrow.creditLines.totalCollateralUsd ??
+        0,
       averageHealthFactor:
-        portfolioBorrow?.creditLines.averageHealthFactor ?? pageData?.borrow.creditLines.averageHealthFactor ?? null,
+        sessionSnapshot?.averageHealthFactor ??
+        liveBorrowTab?.creditLines.averageHealthFactor ??
+        pageData?.borrow.creditLines.averageHealthFactor ??
+        null,
       currentLtvPct:
-        portfolioBorrow?.creditLines.currentLtvPct ?? pageData?.borrow.creditLines.currentLtvPct ?? 0,
-    }),
-    [pageData, portfolioBorrow],
-  )
+        sessionSnapshot?.currentLtvPct ??
+        liveBorrowTab?.creditLines.currentLtvPct ??
+        pageData?.borrow.creditLines.currentLtvPct ??
+        0,
+      spokeBreakdown: sessionSnapshot?.spokeBreakdown,
+    }
+  }, [borrowSession.state, liveBorrowTab, pageData, walletId])
 
   const collateralPositions =
-    portfolioBorrow?.collateralPositions ?? pageData?.borrow.collateralPositions ?? []
-  const debtPositions = portfolioBorrow?.debtPositions ?? pageData?.borrow.debtPositions ?? []
+    liveBorrowTab?.collateralPositions ?? pageData?.borrow.collateralPositions ?? []
+  const debtPositions = liveBorrowTab?.debtPositions ?? pageData?.borrow.debtPositions ?? []
   const activityRows = useMemo(
     () => [
       ...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory),
