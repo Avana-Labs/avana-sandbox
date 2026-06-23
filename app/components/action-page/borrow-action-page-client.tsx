@@ -112,7 +112,7 @@ export function BorrowActionPageClient({
   const [assetId, setAssetId] = useState(resolvedInitialAsset)
   const [marketId, setMarketId] = useState(resolvedInitialMarket ?? session.collateralPools[0]?.id ?? "")
   const [amount, setAmount] = useState(initialAmount)
-  const [percent, setPercent] = useState("25")
+  const [percent, setPercent] = useState(() => (kind === "remove" && initialAmount ? initialAmount : "25"))
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)

@@ -7,32 +7,9 @@ import { selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
 const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)
 
-vi.mock("sonner", () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-    warning: vi.fn(),
-  },
-}))
-
-vi.mock("@/app/components/home-workspace-primitives", () => ({
-  PairVisual: () => <div />,
-  TokenBubble: () => <div />,
-}))
-
-vi.mock("@/app/components/home/pool-picker-dialog", () => ({
-  PoolPickerDialog: () => null,
-}))
-
-vi.mock("@/app/components/home/token-picker-dialog", () => ({
-  TokenPickerDialog: () => null,
-}))
-
-vi.mock("@/app/components/action-page/action-page-launch-cta", () => ({
-  ActionPageLaunchCta: ({ kind, label }: { kind: string; label?: string }) => (
-    <a data-testid={`action-launch-${kind}`} href={`/actions/borrow/${kind}`}>
-      {label ?? kind}
-    </a>
+vi.mock("@/app/components/action-page/borrow-action-page-client", () => ({
+  BorrowActionPageClient: ({ kind, embedded }: { kind: string; embedded?: boolean }) => (
+    <div data-testid={`embedded-borrow-action-${kind}`} data-embedded={embedded ? "true" : "false"} />
   ),
 }))
 
@@ -93,22 +70,22 @@ describe("HomePageClient", () => {
     state = buildMockBorrowSystemState(walletId)
   })
 
-  it("routes home tabs to action page launch CTAs", () => {
+  it("embeds borrow actions directly in each home tab", () => {
     render(<HomePageClient />)
 
-    expect(screen.getByTestId("action-launch-borrow")).toHaveAttribute("href", "/actions/borrow/borrow")
+    expect(screen.getByTestId("embedded-borrow-action-borrow")).toHaveAttribute("data-embedded", "true")
   })
 
-  it("switches tabs to repay, claim, and remove launch CTAs", () => {
+  it("switches tabs to embedded repay, claim, and remove actions", () => {
     render(<HomePageClient />)
 
     fireEvent.click(screen.getAllByRole("button", { name: "Repay" })[0]!)
-    expect(screen.getByTestId("action-launch-repay")).toBeInTheDocument()
+    expect(screen.getByTestId("embedded-borrow-action-repay")).toBeInTheDocument()
 
     fireEvent.click(screen.getAllByRole("button", { name: "Claim" })[0]!)
-    expect(screen.getByTestId("action-launch-claim")).toBeInTheDocument()
+    expect(screen.getByTestId("embedded-borrow-action-claim")).toBeInTheDocument()
 
     fireEvent.click(screen.getAllByRole("button", { name: "Remove" })[0]!)
-    expect(screen.getByTestId("action-launch-remove")).toBeInTheDocument()
+    expect(screen.getByTestId("embedded-borrow-action-remove")).toBeInTheDocument()
   })
 })

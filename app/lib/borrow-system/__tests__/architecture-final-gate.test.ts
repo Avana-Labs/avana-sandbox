@@ -56,7 +56,8 @@ describe("borrow architecture final gate", () => {
 
   it("routes borrow surfaces through action page launch CTAs", () => {
     const homeSource = readFileSync(path.join(process.cwd(), "app/components/home-page-client.tsx"), "utf8")
-    expect(homeSource).toContain("ActionPageLaunchCta")
+    expect(homeSource).toContain("BorrowActionPageClient")
+    expect(homeSource).toContain('embedded')
     expect(homeSource).not.toContain("EmbeddedActionPage")
     expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8")).toContain("ActionPageLaunchCta")
     expect(readFileSync(path.join(process.cwd(), "app/portfolio/dashboard-borrow-tab.tsx"), "utf8")).toContain("actionPagePath")
