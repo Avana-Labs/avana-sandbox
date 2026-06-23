@@ -64,7 +64,7 @@ export function ActionHealthFactorBar({
   return (
     <div className={cn("space-y-3", className)} data-testid="action-health-factor-bar">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
           <Heart
             className={cn(
               "size-3.5",
@@ -82,7 +82,7 @@ export function ActionHealthFactorBar({
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            "inline-flex items-center gap-1.5 rounded-full bg-surface-inset px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
             status.tone === "positive" && "text-emerald-600 dark:text-emerald-400",
             status.tone === "warning" && "text-amber-600 dark:text-amber-400",
             status.tone === "danger" && "text-rose-600 dark:text-rose-400",
@@ -92,14 +92,14 @@ export function ActionHealthFactorBar({
         </span>
       </div>
 
-      <div className="font-data text-[18px] font-semibold leading-none tracking-tight">{label}</div>
+      <div className="font-data text-[20px] font-semibold leading-none tracking-tight text-foreground">{label}</div>
 
       <HealthFactorPositionBar value={value} className="mt-1" />
 
-      <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground">
+      <div className="flex items-center justify-between text-[12px] font-medium text-muted-foreground">
         {HF_ZONES.map((zone, index) => (
-          <span key={zone.id} className={cn("inline-flex items-center gap-1", index === activeZoneIdx && "text-foreground")}>
-            <span className={cn("size-1.5 rounded-full", index === activeZoneIdx ? zone.color : "bg-muted-foreground/40")} />
+          <span key={zone.id} className={cn("inline-flex items-center gap-1.5", index === activeZoneIdx && "text-foreground")}>
+            <span className={cn("size-2 rounded-full", index === activeZoneIdx ? zone.color : "bg-muted-foreground/50")} />
             {zone.label}
           </span>
         ))}

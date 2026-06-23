@@ -19,7 +19,7 @@ export function ActionCard({
   className?: string
 } & ComponentPropsWithoutRef<"div">) {
   return (
-    <div className={cn("rounded-radius-md border-0 bg-card", className)} {...props}>
+    <div className={cn("rounded-radius-md border border-border/80 bg-card text-card-foreground shadow-none", className)} {...props}>
       {children}
     </div>
   )
@@ -38,12 +38,12 @@ export function ActionInfoRow({
 }) {
   const tip = tooltip ? ACTION_INFO_TOOLTIPS[tooltip] ?? tooltip : undefined
   return (
-    <div className={cn("flex items-center justify-between gap-4 px-4 py-3 text-[14px]", className)}>
-      <div className="flex items-center gap-1.5 text-muted-foreground">
+    <div className={cn("flex items-center justify-between gap-4 px-4 py-3.5 text-[15px]", className)}>
+      <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
         <span>{label}</span>
         {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
       </div>
-      <div className="font-medium text-foreground">{value}</div>
+      <div className="font-medium tabular-nums text-foreground">{value}</div>
     </div>
   )
 }
@@ -125,8 +125,8 @@ export function ActionMetricRow({
   const tip = resolveMetricTooltip(id, label, tooltip)
   return (
     <div data-testid={`metric-${label.toLowerCase().replace(/\s+/g, "-")}`}>
-      <div className="flex items-center justify-between gap-4 px-4 py-3 text-[14px]">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
+      <div className="flex items-center justify-between gap-4 px-4 py-3.5 text-[15px]">
+        <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
           <span>{label}</span>
           {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
         </div>
@@ -153,7 +153,7 @@ export function ActionMetricsBlock({ rows }: { rows: ActionMetricRow[] }) {
 
       {detailRows.length > 0 ? (
         <ActionCard className="overflow-hidden">
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/80">
             {detailRows.map((row) => (
               <ActionMetricRow
                 key={row.id ?? row.label}

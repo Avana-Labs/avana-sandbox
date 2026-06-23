@@ -53,12 +53,12 @@ export function ActionLeverageRuler({
 
   const ruler = (
     <div data-testid="action-leverage-ruler">
-      <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
+      <div className="text-[14px] font-medium text-muted-foreground">{label}</div>
 
       <div className={variant === "embedded" ? "mt-3 flex items-center justify-between gap-3" : "mt-4 flex items-center justify-between gap-3"}>
           <button
             type="button"
-            className="rounded-full border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="rounded-full border border-border bg-card px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-border hover:bg-surface-hover hover:text-foreground"
             onClick={() => publishValue(min)}
           >
             Min
@@ -72,7 +72,7 @@ export function ActionLeverageRuler({
           </div>
           <button
             type="button"
-            className="rounded-full border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="rounded-full border border-border bg-card px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-border hover:bg-surface-hover hover:text-foreground"
             onClick={() => publishValue(max)}
           >
             Max

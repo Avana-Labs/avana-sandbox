@@ -53,9 +53,9 @@ export function ActionSelectStage({
         />
       </label>
 
-      <div className="mt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{sectionLabel}</div>
+      <div className="mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{sectionLabel}</div>
 
-      <div className="mt-2 divide-y divide-border rounded-radius-md border-0 bg-card">
+      <div className="mt-2 divide-y divide-border/80 overflow-hidden rounded-radius-md border border-border/80 bg-card">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <div className="text-[14px] font-medium">{emptyTitle}</div>
@@ -69,7 +69,7 @@ export function ActionSelectStage({
               onClick={() => onSelect(item.id)}
               className={cn(
                 "flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left transition-colors",
-                "hover:bg-table-header/70 dark:hover:bg-table-header/90",
+                "hover:bg-surface-hover",
               )}
             >
               <div className="flex min-w-0 items-center gap-3">
@@ -80,13 +80,13 @@ export function ActionSelectStage({
                 )}
                 <div className="min-w-0">
                   <div className="truncate text-[14px] font-medium">{item.name}</div>
-                  <div className="truncate text-[12px] text-muted-foreground">{item.sublabel ?? item.symbol}</div>
+                  <div className="truncate text-[13px] text-muted-foreground">{item.sublabel ?? item.symbol}</div>
                 </div>
               </div>
               <div className="shrink-0 text-right">
-                <div className="text-[13px] font-medium text-foreground">{item.trailingLabel}</div>
+                <div className="text-[14px] font-medium text-foreground">{item.trailingLabel}</div>
                 {item.trailingSublabel ? (
-                  <div className="mt-0.5 text-[12px] text-muted-foreground">{item.trailingSublabel}</div>
+                  <div className="mt-0.5 text-[13px] text-muted-foreground">{item.trailingSublabel}</div>
                 ) : null}
               </div>
             </button>

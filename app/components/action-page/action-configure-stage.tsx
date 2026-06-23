@@ -282,7 +282,7 @@ export function ActionConfigureStage({
                 isPending,
                 blockedReason: preview?.blockedReason ?? null,
               })
-                ? "bg-brand/15 text-brand-readable"
+                ? "border border-brand/25 bg-brand/20 text-brand-readable"
                 : "bg-brand text-brand-foreground hover:opacity-90",
               (isPending || stage === "wallet_sign" || stage === "approve_allowance") && "opacity-70",
             )}

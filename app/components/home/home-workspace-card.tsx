@@ -33,7 +33,7 @@ export function HomeWorkspaceCard({
           />
           <button
             type="button"
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-[hsl(0,0%,96%)] hover:text-foreground dark:hover:bg-surface-inset"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
             aria-label="Settings"
           >
             <Settings className="h-4 w-4" />

@@ -78,21 +78,21 @@ export function ActionPageShell({
       <div
         className={cn(
           "mx-auto flex w-full flex-1 flex-col",
-          density === "home" ? "max-w-none gap-2 px-0 pb-0" : "max-w-[560px] gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
+          density === "home" ? "max-w-none gap-2 px-0 pb-0" : "max-w-[560px] gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
           mode === "embedded" && density === "sidebar" && "gap-4 py-5",
         )}
       >
         {showTitleBlock ? (
           <div className="pb-5">
-            <h1 className="text-[1.375rem] font-medium tracking-[-0.03em] sm:text-[1.5rem]">{title}</h1>
-            {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
+            <h1 className="text-[1.5rem] font-semibold tracking-[-0.03em] text-foreground sm:text-[1.625rem]">{title}</h1>
+            {subtitle ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{subtitle}</p> : null}
           </div>
         ) : null}
 
         <div
           className={cn(
             "flex min-h-0 flex-1 flex-col",
-            mode === "embedded" && density === "sidebar" ? "gap-4" : "gap-3",
+            mode === "embedded" && density === "sidebar" ? "gap-4" : "gap-4",
             mode === "embedded" && density === "home" && "gap-2",
           )}
         >

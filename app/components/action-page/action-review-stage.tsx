@@ -35,8 +35,8 @@ export function ActionReviewStage({
     <div className="space-y-4" data-testid="action-review-stage">
       {!hideHeader ? (
         <div className="pb-1">
-          <h2 className="text-[1.25rem] font-medium tracking-[-0.03em]">{title}</h2>
-          {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
+          <h2 className="text-[1.375rem] font-semibold tracking-[-0.03em] text-foreground">{title}</h2>
+          {subtitle ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{subtitle}</p> : null}
         </div>
       ) : null}
 
