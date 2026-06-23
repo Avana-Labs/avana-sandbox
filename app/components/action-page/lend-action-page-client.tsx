@@ -24,10 +24,6 @@ import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-co
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
-function truncateWallet(id: string) {
-  return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
-}
-
 function formatTokenAmount(value: number, symbol: string) {
   if (!Number.isFinite(value)) return `0.00 ${symbol}`
   return `${value.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${symbol}`
@@ -327,7 +323,7 @@ export function LendActionPageClient({
         : descriptor.subtitle
 
   return (
-    <ActionPageShell title={descriptor.title} subtitle={shellSubtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
+    <ActionPageShell title={descriptor.title} subtitle={shellSubtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
       {stage === "select" && kind === "withdraw" ? (
         <ActionSelectStage
           items={withdrawItems}

@@ -18,10 +18,6 @@ import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/act
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
-function truncateWallet(id: string) {
-  return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
-}
-
 export function MultiplyActionPageClient({
   kind,
   closeHref = "/multiply",
@@ -237,7 +233,7 @@ export function MultiplyActionPageClient({
   const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
 
   return (
-    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
+    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
       {stage === "processing" ? (
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}

@@ -42,11 +42,6 @@ function resolveClaimPositions(marketId: string) {
   return scoped.length > 0 ? scoped : HOME_CLAIM_POSITIONS
 }
 
-function truncateWallet(id: string) {
-  if (id.length <= 10) return id
-  return `${id.slice(0, 6)}...${id.slice(-4)}`
-}
-
 function isHardBlock(reason: string | null) {
   if (!reason) return false
   const lower = reason.toLowerCase()
@@ -528,7 +523,6 @@ export function BorrowActionPageClient({
       title={descriptor.title}
       subtitle={shellSubtitle}
       hideTitle={hideTitle}
-      walletLabel={truncateWallet(walletId)}
       closeHref={closeHref}
       simulated={session.readAdapter.mode === "sandbox"}
     >

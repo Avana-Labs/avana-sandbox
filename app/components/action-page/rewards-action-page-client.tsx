@@ -20,10 +20,6 @@ import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 
-function truncateWallet(id: string) {
-  return id.length <= 10 ? id : `${id.slice(0, 6)}...${id.slice(-4)}`
-}
-
 export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?: string }) {
   const descriptor = getActionDescriptor("rewards", "claim")
   const router = useRouter()
@@ -163,7 +159,7 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
   const hideTitle = stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
 
   return (
-    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} walletLabel={truncateWallet(walletId)} closeHref={closeHref} simulated={rewards.readAdapter.mode === "sandbox"}>
+    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={rewards.readAdapter.mode === "sandbox"}>
       {stage === "processing" ? (
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}

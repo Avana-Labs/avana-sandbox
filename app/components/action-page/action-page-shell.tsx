@@ -1,6 +1,6 @@
 "use client"
 
-import { HelpCircle, X } from "lucide-react"
+import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
@@ -11,7 +11,6 @@ type ActionPageShellProps = {
   mode?: ActionPageMode
   title: string
   subtitle?: string
-  walletLabel?: string
   simulated?: boolean
   hideTitle?: boolean
   onClose?: () => void
@@ -25,7 +24,6 @@ export function ActionPageShell({
   mode = "page",
   title,
   subtitle,
-  walletLabel,
   hideTitle = false,
   onClose,
   closeHref,
@@ -64,7 +62,7 @@ export function ActionPageShell({
       data-mode={mode}
     >
       {showChrome && mounted ? (
-        <header className="flex items-center justify-between px-4 pb-2 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-6">
+        <div className="flex items-center justify-end px-4 pb-1 pt-3 sm:px-6">
           <button
             type="button"
             aria-label="Close"
@@ -73,23 +71,14 @@ export function ActionPageShell({
           >
             <X className="size-4" />
           </button>
-
-          {walletLabel ? (
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[12px] font-medium">
-              <span className="size-5 rounded-full bg-gradient-to-br from-pink-400 via-violet-400 to-indigo-500" aria-hidden />
-              <span className="font-data tabular-nums">{walletLabel}</span>
-            </div>
-          ) : (
-            <div className="size-9" aria-hidden />
-          )}
-        </header>
+        </div>
       ) : showChrome ? (
-        <div className="h-[52px] shrink-0" aria-hidden />
+        <div className="h-12 shrink-0" aria-hidden />
       ) : null}
 
-      <div className={cn("mx-auto flex w-full max-w-[560px] flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6 pt-1")}>
+      <div className={cn("mx-auto flex w-full max-w-[560px] flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6")}>
         {showTitleBlock && mounted ? (
-          <div className="pb-5 pt-1">
+          <div className="pb-5">
             <h1 className="text-[1.375rem] font-medium tracking-[-0.03em] sm:text-[1.5rem]">{title}</h1>
             {subtitle ? <p className="mt-1.5 text-[14px] text-muted-foreground">{subtitle}</p> : null}
           </div>
@@ -99,14 +88,6 @@ export function ActionPageShell({
 
         {footer ? <div className="mt-4">{footer}</div> : null}
       </div>
-
-      {showChrome ? (
-        <div className="pointer-events-none fixed bottom-4 right-4 hidden sm:block">
-          <span className="inline-flex size-8 items-center justify-center rounded-full border border-border bg-background/80 text-muted-foreground backdrop-blur">
-            <HelpCircle className="size-4" />
-          </span>
-        </div>
-      ) : null}
     </div>
   )
 }
