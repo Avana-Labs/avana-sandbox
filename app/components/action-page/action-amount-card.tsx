@@ -107,7 +107,7 @@ export function ActionAmountCard({
               )}
             >
               {borrowSymbol ? (
-                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="sm" />
+                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
               ) : (
                 <ActionTokenIcon symbol={symbol} />
               )}
@@ -136,7 +136,7 @@ export function ActionAmountCard({
                     )}
                   >
                     {option.borrowSymbol ? (
-                      <ActionTokenPairIcon collateralSymbol={option.symbol} borrowSymbol={option.borrowSymbol} size="sm" />
+                      <ActionTokenPairIcon collateralSymbol={option.symbol} borrowSymbol={option.borrowSymbol} size="md" />
                     ) : (
                       <ActionTokenIcon symbol={option.symbol} />
                     )}

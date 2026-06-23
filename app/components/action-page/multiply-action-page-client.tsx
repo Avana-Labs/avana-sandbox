@@ -19,6 +19,10 @@ import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
+import {
+  MULTIPLY_ACTION_MAX_LEVERAGE,
+  MULTIPLY_ACTION_MIN_LEVERAGE,
+} from "@/app/lib/multiply-system/leverage-limits"
 
 export function MultiplyActionPageClient({
   kind,
@@ -59,10 +63,8 @@ export function MultiplyActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
-  const multiplierMax = useMemo(() => {
-    if (!market) return 20
-    return Math.min(20, Math.max(1, market.risk.publicMaxMultiplier))
-  }, [market])
+  const multiplierMax = MULTIPLY_ACTION_MAX_LEVERAGE
+  const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
@@ -73,7 +75,7 @@ export function MultiplyActionPageClient({
   useEffect(() => {
     const parsed = parsePositiveActionAmount(multiplier)
     if (parsed == null) return
-    const clamped = Math.min(multiplierMax, Math.max(1, parsed))
+    const clamped = Math.min(multiplierMax, Math.max(multiplierMin, parsed))
     const next = String(Number(clamped.toFixed(2)))
     if (next !== multiplier) setMultiplier(next)
   }, [market?.id, multiplier, multiplierMax])
@@ -123,8 +125,11 @@ export function MultiplyActionPageClient({
           setPreviewUi(
             mapMultiplyPreviewToActionUi(preview, {
               collateralSymbol: market.collateralAsset.symbol,
+              borrowSymbol: market.borrowAsset.symbol,
               collateralAmount: multiplyCollateralAmount,
               marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+              collateralApy: market.collateralAsset.apy,
+              borrowApy: market.borrowAsset.borrowApy,
               multiplier: parsedMultiplier,
             }),
           )
@@ -315,7 +320,7 @@ export function MultiplyActionPageClient({
           }}
           multiplier={multiplier}
           onMultiplierChange={setMultiplier}
-          multiplierMin={1}
+          multiplierMin={multiplierMin}
           multiplierMax={multiplierMax}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}

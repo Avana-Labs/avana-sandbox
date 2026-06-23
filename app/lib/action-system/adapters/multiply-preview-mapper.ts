@@ -42,8 +42,11 @@ export function mapMultiplyPreviewToActionUi(
   preview: MultiplyTransactionPreview,
   options: {
     collateralSymbol: string
+    borrowSymbol: string
     collateralAmount: number
     marketLabel: string
+    collateralApy: number
+    borrowApy: number
     multiplier: number
   },
 ): ActionPreviewUi {
@@ -63,6 +66,16 @@ export function mapMultiplyPreviewToActionUi(
     rateValue: formatActionRatioPercent(preview.after.netApy),
     marketLabel: "Market",
     marketValue: options.marketLabel,
+    marketBreakdown: {
+      collateral: {
+        symbol: options.collateralSymbol,
+        apy: formatActionRatioPercent(options.collateralApy),
+      },
+      borrow: {
+        symbol: options.borrowSymbol,
+        apy: formatActionRatioPercent(options.borrowApy),
+      },
+    },
     balanceLabel: "Multiplier",
     balanceValue: `${options.multiplier.toFixed(2)}x`,
     maxAmount: options.multiplier,

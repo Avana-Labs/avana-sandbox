@@ -47,7 +47,22 @@ export function ActionReviewStage({
 
       <ActionCard>
         <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
-        <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
+        {preview.marketBreakdown ? (
+          <>
+            <ActionInfoRow
+              label="Collateral"
+              value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy} APY`}
+              tooltip="market"
+            />
+            <ActionInfoRow
+              label="Borrow"
+              value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy} APY`}
+              tooltip="market"
+            />
+          </>
+        ) : (
+          <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
+        )}
       </ActionCard>
 
       {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}

@@ -116,12 +116,25 @@ export function ActionConfigureStage({
         />
       ) : null}
 
-      {preview && (preview.rateLabel || preview.marketValue) ? (
+      {preview && (preview.rateLabel || preview.marketValue || preview.marketBreakdown) ? (
         <ActionCard>
           {preview.rateLabel ? (
             <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
           ) : null}
-          {preview.marketValue ? (
+          {preview.marketBreakdown ? (
+            <>
+              <ActionInfoRow
+                label="Collateral"
+                value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy} APY`}
+                tooltip="market"
+              />
+              <ActionInfoRow
+                label="Borrow"
+                value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy} APY`}
+                tooltip="market"
+              />
+            </>
+          ) : preview.marketValue ? (
             <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
           ) : null}
         </ActionCard>

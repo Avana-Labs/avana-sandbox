@@ -47,6 +47,10 @@ export type ActionPreviewUi = {
   rateValue: string
   marketLabel: string
   marketValue: string
+  marketBreakdown?: {
+    collateral: { symbol: string; apy: string }
+    borrow: { symbol: string; apy: string }
+  }
   balanceLabel: string
   balanceValue: string
   maxAmount: number | null

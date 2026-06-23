@@ -1,4 +1,5 @@
 import { calculatePriceDropToLiquidationPct } from "./formulas"
+import { MULTIPLY_ACTION_MAX_LEVERAGE } from "@/app/lib/multiply-system/leverage-limits"
 
 export function validateMultiplyAction(params: {
   selectedMultiplier: number
@@ -26,7 +27,7 @@ export function validateMultiplyAction(params: {
   const warnings: string[] = []
 
   if (params.selectedMultiplier < 1) errors.push("Multiplier must be at least 1x.")
-  if (params.selectedMultiplier > 20) errors.push("Multiplier cannot exceed 20x.")
+  if (params.selectedMultiplier > MULTIPLY_ACTION_MAX_LEVERAGE) errors.push(`Multiplier cannot exceed ${MULTIPLY_ACTION_MAX_LEVERAGE}x.`)
   if (params.selectedMultiplier > params.theoreticalMaxMultiplier) {
     warnings.push("Multiplier exceeds the theoretical maximum for this market.")
   }

@@ -11,9 +11,17 @@ describe("multiply preview mappers", () => {
   it("maps multiply metrics including net APY and liquidation price", () => {
     const ui = mapMultiplyPreviewToActionUi(preview, {
       collateralSymbol: "WETH",
+      borrowSymbol: "USDC",
       collateralAmount: 2,
       marketLabel: "WETH · USDC",
+      collateralApy: 0.0382,
+      borrowApy: 0.048,
       multiplier: 2.5,
+    })
+
+    expect(ui.marketBreakdown).toEqual({
+      collateral: { symbol: "WETH", apy: "3.82%" },
+      borrow: { symbol: "USDC", apy: "4.80%" },
     })
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
@@ -25,6 +33,8 @@ describe("multiply preview mappers", () => {
       "Liquidation price",
     ])
     expect(ui.metrics.find((row) => row.id === "liq-price")?.value).not.toBe("—")
+    const netApyRow = ui.metrics.find((row) => row.id === "net-apy")
+    expect(netApyRow?.before).not.toBe(netApyRow?.after)
   })
 
   it("maps deleverage unwind metrics", () => {

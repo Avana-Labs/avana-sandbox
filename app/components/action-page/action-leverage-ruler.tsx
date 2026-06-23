@@ -1,9 +1,8 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback } from "react"
 import { ActionCard } from "@/app/components/action-page/action-metrics"
 import { Slider } from "@/components/ui/slider"
-import { cn } from "@/lib/utils"
 
 function formatMultiplier(value: number) {
   return Number.isInteger(value) ? `${value}x` : `${value.toFixed(1)}x`
@@ -25,16 +24,11 @@ function snapToStep(value: number, min: number, max: number, step: number) {
   return Number(clamp(snapped, min, max).toFixed(precision))
 }
 
-function tickPositionPct(tick: number, min: number, max: number) {
-  if (max <= min) return 0
-  return ((tick - min) / (max - min)) * 100
-}
-
 export function ActionLeverageRuler({
   value,
   onChange,
   min = 1,
-  max = 20,
+  max = 10,
   step = 0.1,
   label = "Leverage",
 }: {
@@ -47,20 +41,6 @@ export function ActionLeverageRuler({
 }) {
   const parsed = Number.parseFloat(value)
   const currentValue = Number.isFinite(parsed) ? snapToStep(parsed, min, max, step) : min
-
-  const ticks = useMemo(() => {
-    const range = max - min
-    const tickStep = range <= 5 ? 1 : range <= 12 ? 2 : 5
-    const items: number[] = []
-    for (let current = min; current <= max + 1e-9; current += tickStep) {
-      items.push(snapToStep(current, min, max, tickStep))
-    }
-    const last = items[items.length - 1]
-    if (last == null || Math.abs(last - max) > 1e-9) {
-      items.push(max)
-    }
-    return items
-  }, [max, min])
 
   const publishValue = useCallback(
     (next: number) => {
@@ -109,35 +89,6 @@ export function ActionLeverageRuler({
             aria-label={`${label} multiplier`}
             className="relative z-20"
           />
-          <div className="relative mt-1 h-8">
-            {ticks.map((tick) => {
-              const isActive = Math.abs(tick - currentValue) < step / 2
-              const showLabel = tick === min || tick === max || tick % 5 === 0 || isActive
-              const pct = tickPositionPct(tick, min, max)
-
-              return (
-                <button
-                  key={tick}
-                  type="button"
-                  aria-label={`Set leverage to ${formatMultiplier(tick)}`}
-                  aria-pressed={isActive}
-                  onClick={() => publishValue(tick)}
-                  className="absolute top-0 flex -translate-x-1/2 flex-col items-center gap-1"
-                  style={{ left: `${pct}%` }}
-                >
-                  <span
-                    className={cn(
-                      "text-[10px] tabular-nums leading-none",
-                      showLabel ? (isActive ? "font-semibold text-foreground" : "text-muted-foreground") : "text-transparent select-none",
-                    )}
-                  >
-                    {tick}
-                  </span>
-                  <span className={isActive ? "h-4 w-px bg-foreground" : tick % 1 === 0 ? "h-3 w-px bg-border" : "h-2 w-px bg-border/70"} />
-                </button>
-              )
-            })}
-          </div>
         </div>
       </div>
     </ActionCard>
