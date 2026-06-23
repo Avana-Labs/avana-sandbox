@@ -20,7 +20,7 @@ import { ActionReviewStage } from "@/app/components/action-page/action-review-st
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
-import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
+import { lendDepositSelectItems, lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
@@ -50,12 +50,20 @@ export function LendActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useLendSessionContext()
+  const depositItems = useMemo(
+    () => (kind === "deposit" ? lendDepositSelectItems(session) : []),
+    [kind, session],
+  )
   const withdrawItems = useMemo(
     () => (kind === "withdraw" ? lendWithdrawSelectItems(session, walletId) : []),
     [kind, session, walletId],
   )
   const [marketId, setMarketId] = useState(() => initialMarketId ?? (kind === "deposit" ? "gho" : ""))
-  const [stage, setStage] = useState<ActionStage>(() => (kind === "withdraw" && !initialMarketId ? "select" : "configure"))
+  const [stage, setStage] = useState<ActionStage>(() => {
+    if (kind === "withdraw" && !initialMarketId) return "select"
+    if (kind === "deposit" && !initialMarketId) return "select"
+    return "configure"
+  })
   const [amount, setAmount] = useState(initialAmount)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
@@ -198,7 +206,12 @@ export function LendActionPageClient({
     setDismissedBlockedReason(null)
   }, [amount, marketId])
 
-  const canGoBackToSelect = kind === "withdraw" && withdrawItems.length > 1 && !initialMarketId
+  const canGoBackToSelect = useMemo(() => {
+    if (initialMarketId) return false
+    if (kind === "withdraw") return withdrawItems.length > 1
+    if (kind === "deposit") return depositItems.length > 1
+    return false
+  }, [depositItems.length, initialMarketId, kind, withdrawItems.length])
   const fallbackBalanceAmount = market
     ? kind === "deposit"
       ? getWalletBalanceForLendMarket(session.state, walletId, market)
@@ -318,17 +331,19 @@ export function LendActionPageClient({
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
       ? "Choose the market to withdraw from."
-      : stage === "success" || stage === "processing" || stage === "review"
-        ? undefined
-        : descriptor.subtitle
+      : stage === "select" && kind === "deposit"
+        ? "Choose the asset to deposit."
+        : stage === "success" || stage === "processing" || stage === "review"
+          ? undefined
+          : descriptor.subtitle
 
   return (
     <ActionPageShell title={descriptor.title} subtitle={shellSubtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={session.readAdapter.mode === "sandbox"}>
-      {stage === "select" && kind === "withdraw" ? (
+      {stage === "select" ? (
         <ActionSelectStage
-          items={withdrawItems}
-          emptyTitle="No deposits found"
-          emptyDescription="Deposit first, then withdraw from here."
+          items={kind === "withdraw" ? withdrawItems : depositItems}
+          emptyTitle={kind === "withdraw" ? "No deposits found" : "No markets found"}
+          emptyDescription={kind === "withdraw" ? "Deposit first, then withdraw from here." : "Try another market from the lend page."}
           onSelect={(id) => {
             setMarketId(id)
             setStage("configure")
