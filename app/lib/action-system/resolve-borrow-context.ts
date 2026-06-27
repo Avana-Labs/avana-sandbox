@@ -1,5 +1,5 @@
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
-import { formatFixed } from "@/app/lib/credit-engine"
+import { currentDebtValueUsd6, formatFixed } from "@/app/lib/credit-engine"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { buildHomeBorrowPreview, selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
 import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
@@ -198,7 +198,7 @@ export function repaySelectItemsForWallet(session: BorrowContextSession, walletI
 
   return account.debtPositions.map((position) => {
     const asset = session.state.assets[position.assetId]
-    const debtUsd = Number.parseFloat(formatFixed(position.debtSharesUsd6, 6))
+    const debtUsd = Number.parseFloat(formatFixed(currentDebtValueUsd6(position), 6))
 
     return {
       id: position.id,
