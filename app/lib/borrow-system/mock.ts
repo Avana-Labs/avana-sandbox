@@ -296,6 +296,15 @@ function rewardPositionsFromHomeClaims(walletId: string, markets: Record<string,
   }).filter((position): position is UserRewardPosition => Boolean(position))
 }
 
+function walletLpBalancesFromHomePools() {
+  return Object.fromEntries(
+    HOME_COLLATERAL_POOLS.map((pool) => {
+      const marketId = HOME_POOL_TO_MARKET_ID[pool.id]
+      return marketId ? [marketId, usd6(pool.collateralUsd * 2)] : null
+    }).filter((entry): entry is [string, bigint] => Boolean(entry)),
+  )
+}
+
 export function buildMockBorrowCatalog() {
   const spokeBorrowables = listSpokeBorrowables()
   const borrowAssetIdsBySpoke = new Map(
@@ -337,6 +346,7 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
       [walletId]: {
         walletId,
         walletBalanceUsd6: usd6(12_500),
+        walletLpBalancesUsd6: walletLpBalancesFromHomePools(),
         interestSettledUsd6: 0n,
         lastUpdatedAt: Date.UTC(2026, 5, 18, 12),
         collateralPositions,

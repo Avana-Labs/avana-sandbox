@@ -380,7 +380,7 @@ export function BorrowActionPageClient({
 
   useEffect(() => {
     if (kind !== "supply" || !marketId || stage !== "configure" || dismissedLpBlock) return
-    const walletLpUsd = getWalletLpBalanceUsd(walletId, marketId)
+    const walletLpUsd = getWalletLpBalanceUsd(session.state, walletId, marketId)
     if (walletLpUsd > 0) {
       setBlockedUi(null)
       return

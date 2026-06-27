@@ -120,7 +120,7 @@ export function supplySelectItemsForWallet(session: BorrowContextSession, wallet
   return session.marketSummaries
     .map((pool) => {
       const market = session.state.markets[pool.id]
-      const walletLpUsd = getWalletLpBalanceUsd(walletId, pool.id)
+      const walletLpUsd = getWalletLpBalanceUsd(session.state, walletId, pool.id)
       const visuals = market?.display.visuals ?? []
       return {
         id: pool.id,
