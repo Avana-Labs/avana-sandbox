@@ -35,11 +35,11 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { formatActionUsd, formatActionInputAmount } from "@/app/lib/action-system/formatters"
+import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi, blockedUiForMissingWalletLp } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
-import { formatBorrowLpSymbolLabel, formatBorrowMarketContext, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
+import { formatBorrowLpSymbolLabel, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
 import {
   borrowSelectItemsForMarket,
@@ -73,7 +73,7 @@ export function BorrowActionPageClient({
   kind,
   closeHref = "/borrow",
   embedded = false,
-  sidebar = false,
+  sidebar: _sidebar = false,
   layout = "default",
   initialAssetId,
   initialMarketId,
@@ -277,7 +277,6 @@ export function BorrowActionPageClient({
 
   const assetSymbol = useMemo(() => {
     if (kind === "remove" || kind === "supply") {
-      const market = session.state.markets[marketId]
       return formatBorrowLpSymbolLabel(session.state.markets[marketId])
     }
     const resolvedAssetId = resolvedBorrowAssetId || (assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : "")
@@ -602,31 +601,6 @@ export function BorrowActionPageClient({
     return false
   }, [debtPositions.length, embedded, initialMarketId, initialPositionId, initialDebtId, kind, resolvedInitialAsset, session, walletId])
 
-  const fallbackMaxAmount = useMemo(() => {
-    if (kind === "borrow" && resolvedBorrowAssetId) {
-      return buildHomeBorrowPreview(session.state, walletId, activeMarketId, resolvedBorrowAssetId, 0).remainingBorrowPowerUsd
-    }
-    if (kind === "repay" && debtPosition) {
-      return buildHomeRepayPreview(session.state, walletId, debtPosition.id, 0).remainingDebtUsd
-    }
-    if (kind === "remove") return previewUi?.maxAmount ?? 100
-    if (kind === "supply") return getWalletLpBalanceUsd(walletId, marketId)
-    return null
-  }, [activeMarketId, debtPosition, kind, marketId, previewUi?.maxAmount, resolvedBorrowAssetId, session.state, walletId])
-
-  const fallbackBalanceLabel =
-    kind === "borrow"
-      ? "Available to Borrow"
-      : kind === "repay"
-        ? "Remaining debt"
-        : kind === "remove"
-          ? "Removing"
-          : undefined
-  const fallbackBalanceValue =
-    fallbackMaxAmount != null && (kind === "borrow" || kind === "repay")
-      ? formatActionUsd(fallbackMaxAmount)
-      : undefined
-
   useEffect(() => {
     if (previewUi == null || successUi != null) return
     if (stage !== "processing" && stage !== "configure") return
@@ -797,21 +771,6 @@ export function BorrowActionPageClient({
       setIsPending(false)
     }
   }, [activeMarketId, amount, closeHref, debtPosition, descriptor.primaryVerb, kind, marketId, percent, previewUi, resolvedBorrowAssetId, router, session, stage, successUi, walletId])
-
-  const applyPercent = useCallback(
-    (pct: number) => {
-      if (kind === "remove") {
-        if (pct === 100 && fallbackMaxAmount != null) setPercent(String(fallbackMaxAmount))
-        else setPercent(String(pct))
-        return
-      }
-      const maxAmount = previewUi?.maxAmount ?? fallbackMaxAmount
-      if (maxAmount != null) {
-        setAmount(formatActionInputAmount((maxAmount * pct) / 100))
-      }
-    },
-    [fallbackMaxAmount, kind, previewUi?.maxAmount],
-  )
 
   const shellSubtitle =
     stage === "select"

@@ -158,8 +158,8 @@ export function simulateDeleverageToTarget(params: {
   repayAmountUsd?: number
 }): { collateralUsd: number; debtUsd: number; debtRepaidUsd: number; collateralUnwoundUsd: number } {
   const { collateralUsd: startCollateral, debtUsd: startDebt, targetMultiplier, swapEfficiency } = params
-  let collateral = startCollateral
-  let debt = startDebt
+  const collateral = startCollateral
+  const debt = startDebt
 
   if (params.repayAmountUsd != null && params.repayAmountUsd > 0) {
     const repayUsd = Math.min(params.repayAmountUsd, debt)

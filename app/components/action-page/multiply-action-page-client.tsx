@@ -36,7 +36,7 @@ export function MultiplyActionPageClient({
   kind,
   closeHref = "/multiply",
   embedded = false,
-  sidebar = false,
+  sidebar: _sidebar = false,
   layout = "default",
   initialMarketId,
   initialAmount = "",

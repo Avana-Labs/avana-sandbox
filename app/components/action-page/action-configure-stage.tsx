@@ -198,11 +198,13 @@ export function ActionConfigureStage({
           selectedAssetId={selectedAssetId}
           onAssetSelect={onAssetSelect}
           amountReadOnly={amountReadOnly}
-      amountVariant={amountVariant}
-      hideAssetSelector={hideAssetSelector}
-      assetPickerVariant={assetPickerVariant}
-      pickerTokens={pickerTokens}
-    />
+          amountVariant={amountVariant}
+          hideAssetSelector={hideAssetSelector}
+          assetPickerVariant={assetPickerVariant}
+          pickerTokens={pickerTokens}
+          amountFooter={amountFooter}
+          assetLabel={assetLabel}
+        />
       ) : null}
 
       {showStandaloneLeverage ? (
