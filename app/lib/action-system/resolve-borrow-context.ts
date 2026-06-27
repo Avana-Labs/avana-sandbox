@@ -166,24 +166,17 @@ export function claimSelectItemsForWallet(session: BorrowContextSession, walletI
   if (!account) return []
 
   const claimableById = selectRewardClaimableTotals(session.state, walletId)
-  const rewardPositions = account.rewardPositions ?? []
-  const rewardById = Object.fromEntries(rewardPositions.map((position) => [position.id, position]))
 
   return HOME_CLAIM_POSITIONS.map((position) => {
-    const reward = rewardById[position.id]
     const engineClaimable = claimableById[position.id]
-    const claimableUsd = reward
-      ? Number.parseFloat(formatFixed(reward.claimableUsd6, 6))
-      : engineClaimable != null && engineClaimable > 0
-        ? engineClaimable
-        : position.totalUsd
+    const claimableUsd = engineClaimable != null && engineClaimable > 0 ? engineClaimable : 0
 
     return {
       id: position.id,
       name: position.name,
       symbol: position.name.split("/")[0]?.trim() ?? "Rewards",
-      trailingLabel: `${formatActionUsd(Math.max(0, claimableUsd))} claimable`,
-      claimableUsd: Math.max(0, claimableUsd),
+      trailingLabel: `${formatActionUsd(claimableUsd)} claimable`,
+      claimableUsd,
     }
   }).filter((item) => item.claimableUsd > 0)
 }

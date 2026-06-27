@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { claimSelectItemsForWallet, repaySelectItemsForWallet, resolveBorrowAssetId } from "@/app/lib/action-system/resolve-borrow-context"
 import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+import { RAY, parseFixed } from "@/app/lib/credit-engine"
 
 describe("resolveBorrowAssetId", () => {
   it("maps short asset params to scoped engine ids", () => {
@@ -41,40 +42,41 @@ describe("claimSelectItemsForWallet", () => {
     expect(items.some((item) => item.trailingLabel.includes("$142"))).toBe(true)
     expect(items.every((item) => !item.trailingLabel.includes("$0.00"))).toBe(true)
   })
+
+  it("hides claim rows when the wallet has no reward positions", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    state.accounts["demo-wallet"]!.rewardPositions = []
+
+    const session = {
+      state,
+      collateralPools: [],
+      getBorrowableAssetsForMarket: () => [],
+      borrowableAssets: [],
+    }
+
+    expect(claimSelectItemsForWallet(session as never, "demo-wallet")).toHaveLength(0)
+  })
 })
 
 describe("repaySelectItemsForWallet", () => {
   it("maps debt positions to select items", () => {
+    const state = buildMockBorrowSystemState("wallet-1")
+    const debt = state.accounts["wallet-1"]!.debtPositions[0]!
+    debt.principalBorrowedUsd6 = parseFixed("1000", 6)
+    debt.debtSharesUsd6 = parseFixed("1000", 6)
+    debt.debtIndexRay = RAY + parseFixed("0.25", 27)
+
     const session = {
-      state: {
-        accounts: {
-          "wallet-1": {
-            debtPositions: [
-              {
-                id: "debt-1",
-                assetId: "usdc",
-                marketId: "market-1",
-                debtSharesUsd6: 3_000_000_000n,
-              },
-            ],
-          },
-        },
-        assets: {
-          usdc: { id: "usdc", name: "USD Coin", symbol: "USDC" },
-        },
-        markets: {
-          "market-1": { display: { name: "WETH / USDC" } },
-        },
-      },
+      state,
       collateralPools: [],
       getBorrowableAssetsForMarket: () => [],
       borrowableAssets: [],
     }
 
     const items = repaySelectItemsForWallet(session as never, "wallet-1")
-    expect(items).toHaveLength(1)
-    expect(items[0]?.symbol).toBe("USDC")
-    expect(items[0]?.trailingLabel).toContain("owed")
+    expect(items.length).toBeGreaterThan(0)
+    expect(items.some((item) => item.symbol === "USDC")).toBe(true)
+    expect(items.every((item) => item.trailingLabel.includes("owed"))).toBe(true)
   })
 })
 
