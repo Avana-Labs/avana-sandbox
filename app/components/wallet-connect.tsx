@@ -14,6 +14,7 @@ import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { useDisplayPreferences } from "./display-preferences"
+import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { Switch } from "@/components/ui/switch"
 
 function AppsGridIcon({ className }: { className?: string }) {
@@ -84,7 +85,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
 
   const topLinks: MenuLinkItem[] = [
     {
-      href: "https://avana-ashen.vercel.app/faq",
+      href: AVANA_EXTERNAL_LINKS.faq,
       label: "Support center",
       icon: LifeBuoy,
       newTab: true,
@@ -93,25 +94,25 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
 
   const docsLinks: MenuLinkItem[] = [
     {
-      href: "https://avana-ashen.vercel.app/lightpaper",
+      href: AVANA_EXTERNAL_LINKS.lightpaper,
       label: "Lightpaper",
       icon: FileText,
       newTab: true,
     },
     {
-      href: "https://avana-ashen.vercel.app/developers",
+      href: AVANA_EXTERNAL_LINKS.developers,
       label: "Developer docs",
       icon: Code2,
       newTab: true,
     },
     {
-      href: "https://avana-ashen.vercel.app/privacy",
+      href: AVANA_EXTERNAL_LINKS.privacy,
       label: "Privacy",
       icon: Shield,
       newTab: true,
     },
     {
-      href: "https://avana-ashen.vercel.app/terms",
+      href: AVANA_EXTERNAL_LINKS.terms,
       label: "Terms",
       icon: FileText,
       newTab: true,
@@ -125,7 +126,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
       icon: Mail,
     },
     {
-      href: "https://avana-ashen.vercel.app/",
+      href: AVANA_EXTERNAL_LINKS.home,
       label: "About Avana",
       icon: FileText,
       newTab: true,

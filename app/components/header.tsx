@@ -19,6 +19,7 @@ import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./dis
 import { LazyMobileMenu } from "./lazy-mobile-menu"
 import { LazySearchCommand, LazySearchCommandIconOnly, SearchCommandIconPlaceholder, SearchCommandPlaceholder } from "./lazy-search-command"
 import { useTheme } from "./theme-provider"
+import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { personalDesktopHeaderLinks } from "./site-nav"
 
 type PreferencesView = "root" | "language" | "currency"
@@ -156,7 +157,7 @@ function PreferencesMenu() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="px-2 py-2.5 text-[14px] font-normal text-foreground">
-              <a href="https://avana-ashen.vercel.app/privacy" target="_blank" rel="noreferrer" className="flex items-center">
+              <a href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer" className="flex items-center">
                 <Shield className="mr-2 h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
                 Security & privacy
               </a>
