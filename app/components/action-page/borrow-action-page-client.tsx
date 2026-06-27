@@ -746,11 +746,12 @@ export function BorrowActionPageClient({
       })
 
       if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? "Transaction failed")
+      const executedAmountUsd = Number.parseFloat(formatFixed(result.historyItem.executedAmountUsd6, 6))
 
       setSuccessUi(
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
-          description: `${formatActionUsd(safeAmount || previewUi.maxAmount || 0)} processed.`,
+          description: `${formatActionUsd(executedAmountUsd)} processed.`,
           receiptHash: result.receipt.hash ?? null,
           metrics: previewUi.metrics,
           href: dashboardHrefForProduct("borrow"),
