@@ -327,9 +327,13 @@ export function BorrowActionPageClient({
     if (embedded) return
     if (!initialAssetId) return
     const resolved = resolveBorrowAssetId(session.state, initialAssetId, resolvedInitialMarket)
-    setAssetId(resolved)
-    setStage("configure")
-  }, [embedded, initialAssetId, resolvedInitialMarket, session.state])
+    if (resolved && resolved !== assetId) {
+      setAssetId(resolved)
+    }
+    if (stage === "select") {
+      setStage("configure")
+    }
+  }, [assetId, embedded, initialAssetId, resolvedInitialMarket, session.state, stage])
 
   useEffect(() => {
     if (kind !== "borrow" || !activeMarketId || borrowTokens.length === 0) return
@@ -343,11 +347,13 @@ export function BorrowActionPageClient({
   useEffect(() => {
     if (embedded) return
     if (!initialMarketId) return
-    setMarketId(initialMarketId)
-    if (kind === "supply" || kind === "remove" || kind === "repay" || resolvedInitialAsset) {
+    if (marketId !== initialMarketId) {
+      setMarketId(initialMarketId)
+    }
+    if ((kind === "supply" || kind === "remove" || kind === "repay" || resolvedInitialAsset) && stage === "select") {
       setStage("configure")
     }
-  }, [embedded, initialMarketId, kind, resolvedInitialAsset])
+  }, [embedded, initialMarketId, kind, marketId, resolvedInitialAsset, stage])
 
   useEffect(() => {
     if (initialAssetId && resolvedInitialMarket) {
@@ -620,6 +626,64 @@ export function BorrowActionPageClient({
     fallbackMaxAmount != null && (kind === "borrow" || kind === "repay")
       ? formatActionUsd(fallbackMaxAmount)
       : undefined
+
+  useEffect(() => {
+    if (previewUi == null || successUi != null) return
+    if (stage !== "processing" && stage !== "configure") return
+
+    const minTimestamp = Date.now() - 15_000
+
+    const matchingHistory = session.transactionHistory.find((item) => {
+      if (item.status !== "success" || item.timestamp < minTimestamp) return false
+      switch (kind) {
+        case "borrow":
+          if (item.kind !== "borrow") return false
+          return item.marketId === activeMarketId && item.assetId === resolvedBorrowAssetId
+        case "repay":
+          if (item.kind !== "repay") return false
+          return debtPosition ? item.assetId === debtPosition.assetId : true
+        case "supply":
+          if (item.kind !== "deposit") return false
+          return item.marketId === marketId
+        case "remove":
+          if (item.kind !== "withdraw") return false
+          return item.marketId === marketId
+        case "claim":
+          if (item.kind !== "claim") return false
+          return item.marketId === marketId
+        default:
+          return false
+      }
+    })
+
+    if (!matchingHistory) return
+
+    const executedAmount = Number.parseFloat(formatFixed(matchingHistory.executedAmountUsd6, 6))
+    setSuccessUi(
+      mapBorrowSuccessToActionUi({
+        title: `${descriptor.primaryVerb} successful`,
+        description: `${formatActionUsd(executedAmount)} processed.`,
+        receiptHash: matchingHistory.hash ?? null,
+        metrics: previewUi.metrics,
+        href: dashboardHrefForProduct("borrow"),
+        primaryCtaLabel: successDashboardCtaLabel("borrow"),
+        preview: previewUi,
+        verb: descriptor.primaryVerb,
+      }),
+    )
+    setStage("success")
+  }, [
+    activeMarketId,
+    debtPosition,
+    descriptor.primaryVerb,
+    kind,
+    marketId,
+    previewUi,
+    resolvedBorrowAssetId,
+    session.transactionHistory,
+    stage,
+    successUi,
+  ])
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
