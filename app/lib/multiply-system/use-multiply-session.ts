@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { MultiplyAction, MultiplySystemState } from "@/app/lib/multiply-engine"
-import { deserializeMultiplySystemState } from "./codec"
+import { deserializeMultiplySystemState, serializeMultiplySystemState } from "./codec"
 import type { MultiplySandboxActionResult, MultiplyTransactionHistoryItem, MultiplyTransactionIntent, MultiplyTransactionResult } from "./contracts"
 import { buildSyntheticReceipts } from "./read-model"
 import { SandboxMultiplyReadAdapter } from "./sandbox-read-adapter"
@@ -33,6 +33,7 @@ export function useMultiplySession({
 }) {
   const seededState = useMemo(() => deserializeMultiplySystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<MultiplySystemState>(seededState)
+  const [hasHydratedStorage, setHasHydratedStorage] = useState(false)
   const [transactionHistory, setTransactionHistory] = useState<MultiplyTransactionHistoryItem[]>(
     () => readMultiplySessionMetadata(walletId).transactionHistory,
   )
@@ -42,36 +43,50 @@ export function useMultiplySession({
   const stateRef = useRef(state)
   stateRef.current = state
   const isPersistingRef = useRef(false)
+  const lastPersistedStateRef = useRef<string | null>(null)
+  const lastPersistedMetadataRef = useRef<string | null>(null)
 
   useEffect(() => {
     const nextState = readMultiplySessionState(walletId, sessionSeed)
     const metadata = readMultiplySessionMetadata(walletId)
+    lastPersistedStateRef.current = serializeMultiplySystemState(nextState)
+    lastPersistedMetadataRef.current = JSON.stringify({
+      transactionHistory: metadata.transactionHistory,
+      receipts: metadata.receipts,
+    })
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory)
     setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(metadata.transactionHistory))
+    setHasHydratedStorage(true)
   }, [walletId, sessionSeed])
 
   useEffect(() => {
-    // Skip while state is still the SSR seed (pre-hydration); persisting it here
-    // would clobber richer data already in storage before the restore effect runs.
-    if (state === seededState) return
+    if (!hasHydratedStorage) return
+    const serializedState = serializeMultiplySystemState(state)
+    if (serializedState === lastPersistedStateRef.current) return
     isPersistingRef.current = true
+    lastPersistedStateRef.current = serializedState
     writeMultiplySessionState(walletId, state)
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [walletId, state, seededState])
+  }, [hasHydratedStorage, walletId, state])
 
   useEffect(() => {
-    isPersistingRef.current = true
-    writeMultiplySessionMetadata(walletId, {
+    if (!hasHydratedStorage) return
+    const metadata = {
       transactionHistory,
       receipts: transactionReceipts,
-    })
+    }
+    const serializedMetadata = JSON.stringify(metadata)
+    if (serializedMetadata === lastPersistedMetadataRef.current) return
+    isPersistingRef.current = true
+    lastPersistedMetadataRef.current = serializedMetadata
+    writeMultiplySessionMetadata(walletId, metadata)
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [walletId, transactionHistory, transactionReceipts])
+  }, [hasHydratedStorage, walletId, transactionHistory, transactionReceipts])
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined
@@ -79,6 +94,19 @@ export function useMultiplySession({
     const reloadFromStorage = () => {
       const nextState = readMultiplySessionState(walletId, sessionSeed)
       const metadata = readMultiplySessionMetadata(walletId)
+      const serializedState = serializeMultiplySystemState(nextState)
+      const serializedMetadata = JSON.stringify({
+        transactionHistory: metadata.transactionHistory,
+        receipts: metadata.receipts,
+      })
+      if (
+        serializedState === lastPersistedStateRef.current &&
+        serializedMetadata === lastPersistedMetadataRef.current
+      ) {
+        return
+      }
+      lastPersistedStateRef.current = serializedState
+      lastPersistedMetadataRef.current = serializedMetadata
       setState(nextState)
       setTransactionHistory(metadata.transactionHistory)
       setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(metadata.transactionHistory))

@@ -26,6 +26,12 @@ import {
 } from "@/app/lib/multiply-system/leverage-limits"
 import { clampMultiplierToOptions, buildMultiplierOptions } from "@/app/components/action-page/multiplier-options"
 
+function getDefaultDeleverageMultiplier(currentMultiplier: number) {
+  if (!Number.isFinite(currentMultiplier)) return String(MULTIPLY_ACTION_MIN_LEVERAGE)
+  const lowered = Math.max(MULTIPLY_ACTION_MIN_LEVERAGE, currentMultiplier - 0.5)
+  return String(Number(lowered.toFixed(2)))
+}
+
 export function MultiplyActionPageClient({
   kind,
   closeHref = "/multiply",
@@ -34,7 +40,7 @@ export function MultiplyActionPageClient({
   layout = "default",
   initialMarketId,
   initialAmount = "",
-  initialMultiplier = "3",
+  initialMultiplier,
 }: {
   kind: "multiply" | "deleverage"
   closeHref?: string
@@ -49,7 +55,13 @@ export function MultiplyActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useMultiplySessionContext()
-  const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(initialMarketId)
+  const walletPositions = useMemo(
+    () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
+    [session.state.positions, walletId],
+  )
+  const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(
+    () => initialMarketId ?? (kind === "deleverage" ? walletPositions[0]?.marketId : undefined),
+  )
   const market = useMemo(() => {
     const markets = Object.values(session.state.markets)
     return (
@@ -73,12 +85,33 @@ export function MultiplyActionPageClient({
 
   const multiplierMax = resolveMultiplyMarketMaxLeverage(market?.risk.publicMaxMultiplier)
   const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
+  const position = useMemo(() => {
+    if (!market) return null
+    return (
+      session.state.positions[`${walletId}:${market.id}`] ??
+      walletPositions.find((entry) => entry.marketId === market.id) ??
+      null
+    )
+  }, [market, session.state.positions, walletId, walletPositions])
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
-  const [multiplier, setMultiplier] = useState(initialMultiplier)
+  const [multiplier, setMultiplier] = useState(() => initialMultiplier ?? (kind === "deleverage" ? "" : "3"))
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
   const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (kind !== "deleverage" || initialMarketId || selectedMarketId || walletPositions.length === 0) return
+    setSelectedMarketId(walletPositions[0]!.marketId)
+  }, [initialMarketId, kind, selectedMarketId, walletPositions])
+
+  useEffect(() => {
+    if (kind !== "deleverage" || !position) return
+    const parsed = parsePositiveActionAmount(multiplier)
+    if (initialMultiplier && parsed != null) return
+    const next = getDefaultDeleverageMultiplier(position.multiplier)
+    if (multiplier !== next) setMultiplier(next)
+  }, [initialMultiplier, kind, multiplier, position])
 
   useEffect(() => {
     if (!market) return
@@ -106,10 +139,6 @@ export function MultiplyActionPageClient({
       setPreviewUi(null)
       return
     }
-
-    const position =
-      session.state.positions[`${walletId}:${market.id}`] ??
-      Object.values(session.state.positions).find((entry) => entry.walletId === walletId && entry.marketId === market.id)
 
     if (kind === "deleverage" && !position) {
       setPreviewUi(null)
@@ -186,7 +215,7 @@ export function MultiplyActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [amount, kind, market, multiplier, session, walletId])
+  }, [amount, kind, market, multiplier, position, session, walletId])
 
   useEffect(() => {
     if (kind === "multiply") return
