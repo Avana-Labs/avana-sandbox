@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatFixed, parseFixed, currentDebtValueUsd6 } from "@/app/lib/credit-engine"
 import {
@@ -47,6 +47,7 @@ import {
   repaySelectItemsForWallet,
   resolveBorrowAssetId,
   resolveBorrowMarketForAsset,
+  resolveBorrowTokenSelection,
   resolveClaimMarketId,
   supplySelectItemsForWallet,
 } from "@/app/lib/action-system/resolve-borrow-context"
@@ -126,6 +127,8 @@ export function BorrowActionPageClient({
   const [claimPositionId, setClaimPositionId] = useState(initialPositionId ?? "")
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
+  const lastInitialAssetIdRef = useRef(initialAssetId)
+  const lastInitialMarketIdRef = useRef(initialMarketId)
 
   const debtPositions = useMemo(() => session.state.accounts[walletId]?.debtPositions ?? [], [session.state.accounts, walletId])
   const [debtPositionId, setDebtPositionId] = useState(initialDebtId ?? "")
@@ -323,8 +326,9 @@ export function BorrowActionPageClient({
   }, [assetId, embedded, kind, marketId, session])
 
   useEffect(() => {
-    if (embedded) return
-    if (!initialAssetId) return
+    if (embedded || !initialAssetId) return
+    if (lastInitialAssetIdRef.current === initialAssetId) return
+    lastInitialAssetIdRef.current = initialAssetId
     const resolved = resolveBorrowAssetId(session.state, initialAssetId, resolvedInitialMarket)
     if (resolved && resolved !== assetId) {
       setAssetId(resolved)
@@ -344,8 +348,9 @@ export function BorrowActionPageClient({
   }, [activeMarketId, assetId, borrowTokens, kind, resolvedBorrowAssetId])
 
   useEffect(() => {
-    if (embedded) return
-    if (!initialMarketId) return
+    if (embedded || !initialMarketId) return
+    if (lastInitialMarketIdRef.current === initialMarketId) return
+    lastInitialMarketIdRef.current = initialMarketId
     if (marketId !== initialMarketId) {
       setMarketId(initialMarketId)
     }
@@ -832,10 +837,10 @@ export function BorrowActionPageClient({
             setAmount("")
             return
           }
-          const resolvedId = resolveBorrowAssetId(session.state, id, selectMarketId)
-          if (!resolvedId) return
-          setAssetId(resolvedId)
-          setMarketId(resolveBorrowMarketForAsset(session, resolvedId, selectMarketId))
+          const selection = resolveBorrowTokenSelection(session, id, selectMarketId)
+          if (!selection) return
+          setAssetId(selection.assetId)
+          setMarketId(selection.marketId)
           setAmount("")
         }}
         amountVariant="inset"
@@ -931,11 +936,11 @@ export function BorrowActionPageClient({
               router.replace(actionPagePath("borrow", "supply", { market: id }))
               return
             }
-            const resolvedMarket = resolveBorrowMarketForAsset(session, id, selectMarketId)
+            const selection = resolveBorrowTokenSelection(session, id, selectMarketId)
             router.replace(
               actionPagePath("borrow", "borrow", {
-                asset: id,
-                ...(resolvedMarket ? { market: resolvedMarket } : {}),
+                asset: selection?.assetId ?? id,
+                ...(selection?.marketId ? { market: selection.marketId } : {}),
               }),
             )
           }}
@@ -1024,10 +1029,10 @@ export function BorrowActionPageClient({
               setAmount("")
               return
             }
-            const resolvedId = resolveBorrowAssetId(session.state, id, selectMarketId)
-            if (!resolvedId) return
-            setAssetId(resolvedId)
-            setMarketId(resolveBorrowMarketForAsset(session, resolvedId, selectMarketId))
+            const selection = resolveBorrowTokenSelection(session, id, selectMarketId)
+            if (!selection) return
+            setAssetId(selection.assetId)
+            setMarketId(selection.marketId)
             setAmount("")
           }}
           onPrimary={() => void handlePrimary()}

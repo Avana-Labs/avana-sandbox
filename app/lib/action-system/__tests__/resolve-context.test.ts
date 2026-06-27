@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { claimSelectItemsForWallet, repaySelectItemsForWallet, resolveBorrowAssetId } from "@/app/lib/action-system/resolve-borrow-context"
+import {
+  claimSelectItemsForWallet,
+  repaySelectItemsForWallet,
+  resolveBorrowAssetId,
+  resolveBorrowMarketForAsset,
+  resolveBorrowTokenSelection,
+} from "@/app/lib/action-system/resolve-borrow-context"
 import { lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { RAY, parseFixed } from "@/app/lib/credit-engine"
@@ -24,6 +30,26 @@ describe("resolveBorrowAssetId", () => {
   it("returns empty when the asset is not borrowable in the selected market", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
     expect(resolveBorrowAssetId(state, "wbtc", "uni-v3-stable-usdc-usdt")).toBe("")
+  })
+
+  it("routes unsupported short asset params to a supported borrow market", () => {
+    const session = {
+      state: buildMockBorrowSystemState("demo-wallet"),
+      marketSummaries: [
+        { id: "uni-v3-bluechip-weth-usdc", name: "WETH / USDC", venue: "Uni v3 Bluechip", feeTier: "0.05%" },
+        { id: "uni-v3-bluechip-wbtc-weth", name: "WBTC / WETH", venue: "Uni v3 Bluechip", feeTier: "0.05%" },
+        { id: "uni-v3-stable-usdc-usdt", name: "USDC / USDT", venue: "Uni v3 Stable", feeTier: "0.01%" },
+      ],
+      collateralPools: [{ id: "uni-v3-bluechip-weth-usdc" }, { id: "uni-v3-bluechip-wbtc-weth" }, { id: "uni-v3-stable-usdc-usdt" }],
+      getBorrowableAssetsForMarket: () => [],
+      borrowableAssets: [],
+    }
+
+    expect(resolveBorrowMarketForAsset(session as never, "gho", "uni-v3-bluechip-weth-usdc")).toBe("uni-v3-stable-usdc-usdt")
+    expect(resolveBorrowTokenSelection(session as never, "gho", "uni-v3-bluechip-weth-usdc")).toEqual({
+      assetId: "uni-v3-stable:gho",
+      marketId: "uni-v3-stable-usdc-usdt",
+    })
   })
 })
 

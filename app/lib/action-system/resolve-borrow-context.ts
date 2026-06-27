@@ -94,26 +94,50 @@ function assetAvailableUsd(state: BorrowSystemState, assetId: string) {
   return Number.parseFloat(formatFixed(asset.snapshot.availableLiquidityUsd6, 6))
 }
 
-export function resolveBorrowMarketForAsset(session: BorrowContextSession, assetId: string, preferredMarketId?: string) {
-  const resolvedAssetId = resolveBorrowAssetId(session.state, assetId, preferredMarketId)
-  const asset = session.state.assets[resolvedAssetId]
-  if (!asset) return preferredMarketId ?? session.collateralPools[0]?.id ?? ""
+function borrowMarketCandidates(session: BorrowContextSession, preferredMarketId?: string) {
+  return [
+    preferredMarketId,
+    ...session.collateralPools.map((pool) => pool.id),
+    ...session.marketSummaries.map((market) => market.id),
+  ].filter((marketId, index, entries): marketId is string => Boolean(marketId) && entries.indexOf(marketId) === index)
+}
 
-  if (preferredMarketId) {
-    const preferred = session.state.markets[preferredMarketId]
-    if (preferred?.relations.supportedBorrowAssetIds.includes(resolvedAssetId)) {
-      return preferredMarketId
+function resolveBorrowSelectionInMarket(session: BorrowContextSession, tokenId: string, marketId: string) {
+  const assetId = resolveBorrowAssetId(session.state, tokenId, marketId)
+  if (!assetId) return null
+
+  const market = session.state.markets[marketId]
+  if (!market?.relations.supportedBorrowAssetIds.includes(assetId)) return null
+
+  return {
+    assetId,
+    marketId,
+  }
+}
+
+export function resolveBorrowMarketForAsset(session: BorrowContextSession, assetId: string, preferredMarketId?: string) {
+  for (const marketId of borrowMarketCandidates(session, preferredMarketId)) {
+    if (resolveBorrowSelectionInMarket(session, assetId, marketId)) {
+      return marketId
     }
   }
 
-  const collateralMatch = session.collateralPools.find((pool) => {
-    const market = session.state.markets[pool.id]
-    return market?.relations.supportedBorrowAssetIds.includes(resolvedAssetId)
-  })
-  if (collateralMatch) return collateralMatch.id
+  const resolvedAssetId = resolveBorrowAssetId(session.state, assetId)
+  if (resolvedAssetId) {
+    const market = Object.values(session.state.markets).find((entry) => entry.relations.supportedBorrowAssetIds.includes(resolvedAssetId))
+    if (market) return market.id
+  }
 
-  const market = Object.values(session.state.markets).find((entry) => entry.relations.supportedBorrowAssetIds.includes(resolvedAssetId))
-  return market?.id ?? preferredMarketId ?? session.collateralPools[0]?.id ?? ""
+  return preferredMarketId ?? session.collateralPools[0]?.id ?? ""
+}
+
+export function resolveBorrowTokenSelection(session: BorrowContextSession, tokenId: string, preferredMarketId?: string) {
+  for (const marketId of borrowMarketCandidates(session, preferredMarketId)) {
+    const selection = resolveBorrowSelectionInMarket(session, tokenId, marketId)
+    if (selection) return selection
+  }
+
+  return null
 }
 
 export function supplySelectItemsForWallet(session: BorrowContextSession, walletId: string) {
