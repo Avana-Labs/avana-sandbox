@@ -200,7 +200,7 @@ function applyRepayAction(state: BorrowSystemState, action: Extract<BorrowAction
   asset.snapshot.totalBorrowedUsd6 = asset.snapshot.totalBorrowedUsd6 > repayAmountUsd6 ? asset.snapshot.totalBorrowedUsd6 - repayAmountUsd6 : 0n
   asset.snapshot.totalDebtSharesUsd6 = asset.snapshot.totalDebtSharesUsd6 > sharesToBurn ? asset.snapshot.totalDebtSharesUsd6 - sharesToBurn : 0n
 
-  if (position.debtSharesUsd6 === 0n || position.principalBorrowedUsd6 === 0n) {
+  if (position.debtSharesUsd6 === 0n) {
     account.debtPositions.splice(debtIndex, 1)
   }
 
@@ -351,7 +351,7 @@ function applyLiquidationAction(state: BorrowSystemState, action: Extract<Borrow
   if (scopedCollateralPosition.collateralShares === 0n) {
     account.collateralPositions.splice(positionIndex, 1)
   }
-  if (debtPosition.debtSharesUsd6 === 0n || debtPosition.principalBorrowedUsd6 === 0n) {
+  if (debtPosition.debtSharesUsd6 === 0n) {
     account.debtPositions.splice(debtIndex, 1)
   }
 

@@ -49,4 +49,24 @@ describe("borrow liquidation actions", () => {
     expect(afterMetrics.totalBorrowedUsd6).toBe(parseFixed("16000", 6))
     assertBorrowSystemInvariants(next)
   })
+
+  it("preserves residual debt shares when principal is already zero during liquidation", () => {
+    const state = makeExampleBorrowSystemState()
+    const debt = state.accounts["wallet-1"]!.debtPositions[0]!
+    debt.principalBorrowedUsd6 = 0n
+    debt.debtSharesUsd6 = parseFixed("20000", 6)
+
+    const next = applyBorrowAction(state, {
+      type: "liquidate",
+      walletId: "wallet-1",
+      positionId: "wallet-1:weth-usdc",
+      debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
+      repayAmountUsd6: parseFixed("1000", 6),
+    })
+
+    const remaining = next.accounts["wallet-1"]!.debtPositions.find((position) => position.id === EXAMPLE_WALLET_1_DEBT_ID)
+    expect(remaining).toBeDefined()
+    expect(remaining?.principalBorrowedUsd6).toBe(0n)
+    expect(remaining?.debtSharesUsd6).toBe(parseFixed("19000", 6))
+  })
 })
