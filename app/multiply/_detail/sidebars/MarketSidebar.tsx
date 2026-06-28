@@ -6,6 +6,7 @@ import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-la
 import { ResponsiveMultiplyAction } from "@/app/components/action-page/responsive-multiply-action"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
+import { getDefaultDeleverageMultiplier } from "@/app/lib/multiply-system/leverage-limits"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { cn } from "@/lib/utils"
@@ -98,7 +99,7 @@ function MarketActionRail({
               market={marketId}
               closeHref={closeHref}
               sidebar
-              initialMultiplier={position?.multiplier.toFixed(2) ?? "3"}
+              initialMultiplier={position ? getDefaultDeleverageMultiplier(position.multiplier) : "3"}
             />
           ) : (
             <ActionPageLaunchCta product="multiply" kind="deleverage" market={marketId} returnTo={closeHref} />

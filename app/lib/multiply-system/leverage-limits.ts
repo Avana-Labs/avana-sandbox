@@ -12,3 +12,9 @@ export function resolveMultiplyMarketMaxLeverage(publicMaxMultiplier: number | u
 
   return Math.min(MULTIPLY_ACTION_MAX_LEVERAGE, publicMaxMultiplier)
 }
+
+export function getDefaultDeleverageMultiplier(currentMultiplier: number) {
+  if (!Number.isFinite(currentMultiplier)) return String(MULTIPLY_ACTION_MIN_LEVERAGE)
+  const lowered = Math.max(MULTIPLY_ACTION_MIN_LEVERAGE, currentMultiplier - 0.5)
+  return String(Number(lowered.toFixed(2)))
+}

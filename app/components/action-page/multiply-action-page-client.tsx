@@ -23,15 +23,10 @@ import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-syst
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import {
   MULTIPLY_ACTION_MIN_LEVERAGE,
+  getDefaultDeleverageMultiplier,
   resolveMultiplyMarketMaxLeverage,
 } from "@/app/lib/multiply-system/leverage-limits"
 import { clampMultiplierToOptions, buildMultiplierOptions } from "@/app/components/action-page/multiplier-options"
-
-function getDefaultDeleverageMultiplier(currentMultiplier: number) {
-  if (!Number.isFinite(currentMultiplier)) return String(MULTIPLY_ACTION_MIN_LEVERAGE)
-  const lowered = Math.max(MULTIPLY_ACTION_MIN_LEVERAGE, currentMultiplier - 0.5)
-  return String(Number(lowered.toFixed(2)))
-}
 
 export function MultiplyActionPageClient({
   kind,

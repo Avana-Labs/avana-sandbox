@@ -23,7 +23,7 @@ export function ResponsiveMultiplyAction({
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)", true)
 
-  if (isDesktop) {
+  if (isDesktop || sidebar) {
     const action = (
       <MultiplyActionPageClient
         kind={kind}
