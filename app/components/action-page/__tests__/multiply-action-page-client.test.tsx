@@ -81,4 +81,17 @@ describe("MultiplyActionPageClient", () => {
       { timeout: 8000 },
     )
   })
+
+  it("shows an unavailable state for an invalid multiply market", async () => {
+    render(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="multiply" initialMarketId="not-a-market" />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId("action-not-found")).toBeInTheDocument()
+    })
+    expect(screen.getByRole("link", { name: "Go back" })).toHaveAttribute("href", "/multiply")
+  })
 })

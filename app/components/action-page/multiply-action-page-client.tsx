@@ -9,6 +9,7 @@ import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/
 import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
+import { ActionNotFound } from "@/app/components/action-page/action-not-found"
 import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
@@ -64,12 +65,10 @@ export function MultiplyActionPageClient({
   )
   const market = useMemo(() => {
     const markets = Object.values(session.state.markets)
-    return (
-      markets.find((entry) => entry.id === selectedMarketId) ??
-      markets.find((entry) => entry.id === initialMarketId) ??
-      markets[0] ??
-      null
-    )
+    const selected = selectedMarketId ? markets.find((entry) => entry.id === selectedMarketId) ?? null : null
+    if (selected) return selected
+    if (selectedMarketId || initialMarketId) return null
+    return markets[0] ?? null
   }, [initialMarketId, selectedMarketId, session.state.markets])
 
   const marketOptions = useMemo(() => {
@@ -323,7 +322,15 @@ export function MultiplyActionPageClient({
     }
   }, [amount, closeHref, descriptor.primaryVerb, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId])
 
-  if (!market) return null
+  if (!market) {
+    return (
+      <ActionNotFound
+        closeHref={closeHref}
+        title="Market unavailable"
+        message="We couldn't find that multiply market. Pick one from the multiply page to continue."
+      />
+    )
+  }
 
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
