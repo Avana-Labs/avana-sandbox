@@ -82,7 +82,7 @@ export function DashboardBorrowTab({
 
   const handleSupplyRemove = useCallback(
     (context: SupplyRowContext) => {
-      router.push(actionPagePath("borrow", "remove", { market: context.pool.id, amount: "25", ...returnParams }))
+      router.push(actionPagePath("borrow", "remove", { market: context.pool.id, ...returnParams }))
     },
     [returnParams, router],
   )

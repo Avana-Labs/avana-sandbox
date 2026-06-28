@@ -119,7 +119,7 @@ describe("DashboardBorrowTab", () => {
 
     fireEvent.click(screen.getByText("open-remove"))
     expect(push).toHaveBeenCalledWith(
-      "/actions/borrow/remove?market=uni-v3-bluechip-weth-usdc&amount=25&return=%2Fdashboard%3Ftab%3Doverview",
+      "/actions/borrow/remove?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard%3Ftab%3Doverview",
     )
   })
 
