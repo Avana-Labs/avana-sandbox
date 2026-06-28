@@ -128,7 +128,7 @@ export function BorrowActionPageClient({
     resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
   )
   const [amount, setAmount] = useState(initialAmount)
-  const [percent, setPercent] = useState(() => (kind === "remove" && initialAmount ? initialAmount : "25"))
+  const [percent, setPercent] = useState(() => (kind === "remove" ? initialAmount : "25"))
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
@@ -189,7 +189,7 @@ export function BorrowActionPageClient({
     (poolId: string) => {
       setMarketId(poolId)
       setAmount("")
-      setPercent("25")
+      setPercent(kind === "remove" ? initialAmount : "25")
       if (kind === "borrow") {
         const tokens = selectHomeBorrowTokensForMarket(session.state, walletId, poolId)
         const nextAssetId = tokens[0]?.id ?? ""
@@ -211,7 +211,7 @@ export function BorrowActionPageClient({
         setClaimPositionId("")
       }
     },
-    [debtPositions, kind, session.state, walletId],
+    [debtPositions, initialAmount, kind, session.state, walletId],
   )
 
   const selectItems = useMemo(() => {

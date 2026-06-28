@@ -3,6 +3,7 @@
 import { Heart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import {
   HF_ZONES,
   activeHealthFactorZoneIndex,
@@ -32,13 +33,13 @@ export function HealthFactorPositionBar({
       {hasValue ? (
         <>
           <div
-            className={cn("absolute inset-y-0 left-0 rounded-full transition-all", barTone.fill)}
+            className={cn("absolute inset-y-0 left-0 rounded-full transition-[width,left] duration-300 ease-out", barTone.fill)}
             style={{ width: `${fillPct}%` }}
             aria-hidden
           />
           <span
             className={cn(
-              "absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-background",
+              "absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-background transition-[left] duration-300 ease-out",
               barTone.border,
             )}
             style={{ left: `calc(${fillPct}% - 6px)` }}
@@ -92,7 +93,9 @@ export function ActionHealthFactorBar({
         </span>
       </div>
 
-      <div className="font-data text-[20px] font-semibold leading-none tracking-tight text-foreground">{label}</div>
+      <div className="font-data text-[20px] font-semibold leading-none tracking-tight text-foreground" aria-live="polite" aria-atomic="true">
+        <AnimatedTextValue text={label} />
+      </div>
 
       <HealthFactorPositionBar value={value} className="mt-1" />
 
