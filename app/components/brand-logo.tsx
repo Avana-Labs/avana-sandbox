@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+/* eslint-disable @next/next/no-img-element */
 
 type BrandLogoProps = {
   mobileOnly?: boolean
