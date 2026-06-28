@@ -146,23 +146,26 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   const handleAssetBorrowMobile = useCallback(
     (asset: BorrowableAsset) => {
       const assetSpokeId = asset.id.includes(":") ? asset.id.split(":")[0] : null
-      const best = supplies
-        .filter((row) => {
-          if (assetSpokeId && marketSpokeById.get(row.pool.id) !== assetSpokeId) return false
-          return Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0
-        })
-        .reduce<SupplyRowContext | null>((acc, row) => {
+      const sameSpokeSupplies = supplies.filter((row) => {
+        if (!assetSpokeId) return false
+        if (marketSpokeById.get(row.pool.id) !== assetSpokeId) return false
+        return Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0
+      })
+      const best = sameSpokeSupplies.reduce<SupplyRowContext | null>((acc, row) => {
           if (!acc) return row
           const rowScore = Number.isFinite(row.healthFactor ?? NaN) ? (row.healthFactor as number) : 99
           const accScore = Number.isFinite(acc.healthFactor ?? NaN) ? (acc.healthFactor as number) : 99
           return rowScore >= accScore ? row : acc
         }, null)
-      const fallback = best ?? supplies[0]
-      if (!fallback) return
+      if (!best) {
+        triggerPageLoading()
+        router.push(borrowAssetDetailPath(asset.id))
+        return
+      }
       triggerPageLoading()
       router.push(
         actionPagePath("borrow", "borrow", {
-          market: fallback.pool.id,
+          market: best.pool.id,
           asset: asset.id,
         }),
       )
