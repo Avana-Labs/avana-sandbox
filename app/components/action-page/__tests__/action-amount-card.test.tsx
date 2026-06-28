@@ -29,6 +29,22 @@ describe("ActionAmountCard", () => {
     expect(container.querySelector('[aria-haspopup="listbox"]')).toBeNull()
   })
 
+  it("keeps the asset chip labeled when switching is disabled in embedded layouts", () => {
+    const { container } = render(
+      <ActionAmountCard
+        {...baseProps}
+        assetLabel="AAVE"
+        assetSymbol="AAVE"
+        borrowSymbol="GHO"
+        variant="raised"
+      />,
+    )
+
+    expect(screen.queryByRole("listbox")).toBeNull()
+    expect(screen.getByText("AAVE")).toBeInTheDocument()
+    expect(container.querySelector('[aria-haspopup="listbox"]')).toBeNull()
+  })
+
   it("opens a switcher and changes asset when options are provided", () => {
     const onAssetSelect = vi.fn()
     render(

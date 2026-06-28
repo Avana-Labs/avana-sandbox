@@ -64,7 +64,6 @@ export function ActionAmountCard({
   pickerTokens,
 }: ActionAmountCardProps) {
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
-  const showAssetLabel = !(borrowSymbol && variant !== "card")
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(
     !hideAssetSelector &&
@@ -72,6 +71,7 @@ export function ActionAmountCard({
       !readOnly &&
       (useDialogPicker ? pickerTokens!.length > 1 : assetOptions && assetOptions.length > 1),
   )
+  const showAssetLabel = !(borrowSymbol && variant !== "card") || !switchable
   const [menuOpen, setMenuOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -119,35 +119,43 @@ export function ActionAmountCard({
         </label>
       )}
       {!hideAssetSelector ? (
-        <div className="relative shrink-0" ref={menuRef}>
-          <button
-            type="button"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={
-              switchable
-                ? () => {
-                    if (useDialogPicker) setDialogOpen(true)
-                    else setMenuOpen((open) => !open)
-                  }
-                : undefined
-            }
-            aria-haspopup={switchable && !useDialogPicker ? "listbox" : undefined}
-            aria-expanded={switchable && !useDialogPicker ? menuOpen : undefined}
-            aria-label={switchable ? `Change asset, current ${assetLabel}` : undefined}
-            disabled={readOnly && !switchable}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground",
-              switchable ? "cursor-pointer hover:bg-surface-hover" : "cursor-default",
-            )}
-          >
-            {borrowSymbol ? (
-              <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
-            ) : (
-              <ActionTokenIcon symbol={symbol} />
-            )}
-            {showAssetLabel ? <span>{assetLabel}</span> : null}
-            {switchable ? <span className="text-muted-foreground" aria-hidden>▾</span> : null}
-          </button>
+        <div className="relative shrink-0" ref={switchable ? menuRef : undefined}>
+          {switchable ? (
+            <button
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                if (useDialogPicker) setDialogOpen(true)
+                else setMenuOpen((open) => !open)
+              }}
+              aria-haspopup={!useDialogPicker ? "listbox" : undefined}
+              aria-expanded={!useDialogPicker ? menuOpen : undefined}
+              aria-label={`Change asset, current ${assetLabel}`}
+              disabled={readOnly}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground cursor-pointer hover:bg-surface-hover"
+            >
+              {borrowSymbol ? (
+                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
+              ) : (
+                <ActionTokenIcon symbol={symbol} />
+              )}
+              {showAssetLabel ? <span>{assetLabel}</span> : null}
+              <span className="text-muted-foreground" aria-hidden>
+                ▾
+              </span>
+            </button>
+          ) : (
+            <div
+              className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground"
+            >
+              {borrowSymbol ? (
+                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
+              ) : (
+                <ActionTokenIcon symbol={symbol} />
+              )}
+              {showAssetLabel ? <span>{assetLabel}</span> : null}
+            </div>
+          )}
           {switchable && !useDialogPicker && menuOpen ? (
             <div
               role="listbox"
