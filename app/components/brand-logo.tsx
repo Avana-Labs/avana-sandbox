@@ -39,7 +39,7 @@ export function BrandIcon({ className }: BrandIconProps) {
         alt="Avana logo"
         width={32}
         height={32}
-        className={cn("size-8 object-cover", className)}
+        className={cn("h-8 w-auto object-cover", className)}
       />
     </span>
   )

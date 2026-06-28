@@ -11,6 +11,7 @@ import { AvanaSessionProviders } from "./components/avana-session-providers"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
+const enableProductionAnalytics = process.env.NODE_ENV === "production"
 
 const diatypeSans = localFont({
   src: [
@@ -123,8 +124,8 @@ export default function RootLayout({
             </AvanaSessionProviders>
           </DisplayPreferencesProvider>
         </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
+        {enableProductionAnalytics ? <Analytics /> : null}
+        {enableProductionAnalytics ? <SpeedInsights /> : null}
       </body>
     </html>
   )
