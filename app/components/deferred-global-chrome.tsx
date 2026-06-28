@@ -3,6 +3,11 @@
 import dynamic from "next/dynamic"
 import { useEffect, useState } from "react"
 
+const DesktopHelpBubble = dynamic(
+  () => import("./desktop-help-bubble").then((mod) => mod.DesktopHelpBubble),
+  { ssr: false },
+)
+
 const ExternalLinkGuard = dynamic(
   () => import("./external-link-guard").then((mod) => mod.ExternalLinkGuard),
   { ssr: false },
@@ -30,6 +35,7 @@ export function DeferredGlobalChrome() {
 
   return (
     <>
+      <DesktopHelpBubble />
       <Toaster />
       <ExternalLinkGuard />
     </>
