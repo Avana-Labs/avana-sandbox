@@ -35,6 +35,7 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
+import { ActionNotFound } from "@/app/components/action-page/action-not-found"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi, blockedUiForMissingWalletLp } from "@/app/lib/action-system/blocked-ui"
@@ -97,11 +98,18 @@ export function BorrowActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useBorrowSessionContext()
+  const hasInvalidInitialMarket = Boolean(
+    initialMarketId && !initialAssetId && !session.collateralPools.some((pool) => pool.id === initialMarketId),
+  )
   const resolvedInitialMarket = useMemo(
-    () =>
-      initialMarketId ??
-      (initialAssetId ? resolveBorrowMarketForAsset(session, initialAssetId, initialMarketId) : undefined),
-    [initialAssetId, initialMarketId, session],
+    () => {
+      if (initialAssetId) {
+        return resolveBorrowMarketForAsset(session, initialAssetId, hasInvalidInitialMarket ? undefined : initialMarketId)
+      }
+      if (initialMarketId && !hasInvalidInitialMarket) return initialMarketId
+      return undefined
+    },
+    [hasInvalidInitialMarket, initialAssetId, initialMarketId, session],
   )
   const resolvedInitialAsset = useMemo(
     () => (initialAssetId ? resolveBorrowAssetId(session.state, initialAssetId, resolvedInitialMarket) : ""),
@@ -116,7 +124,9 @@ export function BorrowActionPageClient({
     return "configure"
   })
   const [assetId, setAssetId] = useState(resolvedInitialAsset)
-  const [marketId, setMarketId] = useState(resolvedInitialMarket ?? session.collateralPools[0]?.id ?? "")
+  const [marketId, setMarketId] = useState(
+    resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
+  )
   const [amount, setAmount] = useState(initialAmount)
   const [percent, setPercent] = useState(() => (kind === "remove" && initialAmount ? initialAmount : "25"))
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
@@ -152,7 +162,7 @@ export function BorrowActionPageClient({
     return debtPositions.length === 1 ? (debtPositions[0] ?? null) : null
   }, [debtPositionId, debtPositions, initialMarketId, kind, session.state.markets])
 
-  const activeMarketId = marketId || session.collateralPools[0]?.id || ""
+  const activeMarketId = hasInvalidInitialMarket ? "" : marketId || session.collateralPools[0]?.id || ""
   const selectMarketId = activeMarketId
   const resolvedBorrowAssetId = useMemo(
     () => (kind === "borrow" && assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : ""),
@@ -849,6 +859,16 @@ export function BorrowActionPageClient({
         pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
       />
     ) : null
+
+  if (hasInvalidInitialMarket) {
+    return (
+      <ActionNotFound
+        closeHref={closeHref}
+        title="Market unavailable"
+        message="We couldn't find that collateral market. Pick one from the borrow page to continue."
+      />
+    )
+  }
 
   return (
     <ActionPageShell

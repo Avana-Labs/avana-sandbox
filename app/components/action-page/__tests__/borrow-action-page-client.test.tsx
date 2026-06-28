@@ -63,4 +63,17 @@ describe("BorrowActionPageClient", () => {
       expect(screen.getByRole("button", { name: "Change asset, current USDT" })).toBeInTheDocument()
     })
   })
+
+  it("shows an unavailable state for an invalid borrow market", async () => {
+    render(
+      <AvanaSessionsProvider>
+        <BorrowActionPageClient kind="borrow" initialMarketId="not-a-market" />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId("action-not-found")).toBeInTheDocument()
+    })
+    expect(screen.getByRole("link", { name: "Go back" })).toHaveAttribute("href", "/borrow")
+  })
 })
