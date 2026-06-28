@@ -8,15 +8,18 @@ function formatApy(value: number) {
   return `${value.toFixed(1)}%`
 }
 
-export function PortfolioLendingOpportunities({ buckets }: { buckets: PortfolioStrategyBucket[] }) {
+export function PortfolioLendingOpportunities({
+  buckets,
+  returnHref,
+}: {
+  buckets: PortfolioStrategyBucket[]
+  returnHref?: string
+}) {
   return (
     <section className="space-y-5">
       <div className="flex items-baseline justify-between gap-4 border-b border-border pb-3">
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">Lending Opportunities</h2>
-        <Link
-          href={actionPagePath("lend", "deposit")}
-          className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
-        >
+        <Link href={actionPagePath("lend", "deposit", returnHref ? { return: returnHref } : undefined)} className="text-[13px] text-muted-foreground transition-colors hover:text-foreground">
           View markets
         </Link>
       </div>
