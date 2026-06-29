@@ -21,6 +21,7 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
   const router = useRouter()
   const lendSession = useLendSessionContext()
   const marketId = resolveLendMarketId(detail.hero.symbol)
+  const returnHref = `/borrow/assets/${detail.row.id}`
 
   const position = React.useMemo(
     () =>
@@ -69,14 +70,14 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() => router.push(actionPagePath("lend", "deposit", { market: marketId }))}
+            onClick={() => router.push(actionPagePath("lend", "deposit", { market: marketId, return: returnHref }))}
             className="h-9 rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
           >
             Deposit
           </button>
           <button
             type="button"
-            onClick={() => router.push(actionPagePath("lend", "withdraw", { market: marketId }))}
+            onClick={() => router.push(actionPagePath("lend", "withdraw", { market: marketId, return: returnHref }))}
             disabled={!position}
             className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset disabled:cursor-not-allowed disabled:opacity-50"
           >

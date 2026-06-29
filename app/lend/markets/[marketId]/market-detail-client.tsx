@@ -11,6 +11,7 @@ export function LendMarketDetailClient({ marketId }: { marketId: string }) {
   const router = useRouter()
   const lendSession = useLendSessionContext()
   const market = lendSession.state.markets[marketId] ?? getLendMarketById(marketId)
+  const returnHref = `/lend/markets/${marketId}`
 
   const position = useMemo(
     () =>
@@ -52,7 +53,7 @@ export function LendMarketDetailClient({ marketId }: { marketId: string }) {
         <button
           type="button"
           className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
-          onClick={() => router.push(actionPagePath("lend", "deposit", { market: marketId }))}
+          onClick={() => router.push(actionPagePath("lend", "deposit", { market: marketId, return: returnHref }))}
         >
           Deposit
         </button>
@@ -60,7 +61,7 @@ export function LendMarketDetailClient({ marketId }: { marketId: string }) {
           <button
             type="button"
             className="rounded-md border border-border px-4 py-2 text-sm"
-            onClick={() => router.push(actionPagePath("lend", "withdraw", { market: marketId }))}
+            onClick={() => router.push(actionPagePath("lend", "withdraw", { market: marketId, return: returnHref }))}
           >
             Withdraw
           </button>
