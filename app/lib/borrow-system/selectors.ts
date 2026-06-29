@@ -42,6 +42,15 @@ function marketDebtUsd6(state: BorrowSystemState, walletId: string, marketId: st
     .reduce((sum, position) => sum + currentDebtValueUsd6(position), 0n)
 }
 
+/** The wallet's own outstanding debt in a borrowable asset, so liquidity stats reflect user activity. */
+function assetDebtUsd6(state: BorrowSystemState, walletId: string, assetId: string) {
+  const account = state.accounts[walletId]
+  if (!account) return 0n
+  return account.debtPositions
+    .filter((position) => position.assetId === assetId)
+    .reduce((sum, position) => sum + currentDebtValueUsd6(position), 0n)
+}
+
 export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: string): BorrowPoolRow[] {
   const account = state.accounts[walletId]
 
@@ -99,8 +108,13 @@ export function selectBorrowableAssets(state: BorrowSystemState, walletId: strin
     .filter((asset) => !supported || supported.has(asset.id))
     .map((asset) => {
       const scopedMetrics = calculateSpokeCreditMetrics(state, walletId, asset.spokeId)
+      // Total liquidity (available + borrowed) is conserved; the wallet's own borrow
+      // shifts liquidity from available → borrowed so the stats track user activity.
+      const userDebtUsd = fixedToNumber(assetDebtUsd6(state, walletId, asset.id), 6)
       const totalLiquidityUsd = fixedToNumber(asset.snapshot.availableLiquidityUsd6 + asset.snapshot.totalBorrowedUsd6, 6)
-      const utilization = totalLiquidityUsd > 0 ? (fixedToNumber(asset.snapshot.totalBorrowedUsd6, 6) / totalLiquidityUsd) * 100 : 0
+      const totalBorrowedUsd = fixedToNumber(asset.snapshot.totalBorrowedUsd6, 6) + userDebtUsd
+      const availableUsd = Math.max(0, fixedToNumber(asset.snapshot.availableLiquidityUsd6, 6) - userDebtUsd)
+      const utilization = totalLiquidityUsd > 0 ? (totalBorrowedUsd / totalLiquidityUsd) * 100 : 0
 
       return {
         id: asset.id,
@@ -108,9 +122,9 @@ export function selectBorrowableAssets(state: BorrowSystemState, walletId: strin
         name: asset.display.name,
         subtitle: asset.display.subtitle,
         borrowApr: fixedToNumber(asset.borrowConfig.baseBorrowAprWad + scopedMetrics.riskPremiumWad, 18) * 100,
-        totalBorrowedUsd: fixedToNumber(asset.snapshot.totalBorrowedUsd6, 6),
+        totalBorrowedUsd,
         utilization,
-        availableUsd: fixedToNumber(asset.snapshot.availableLiquidityUsd6, 6),
+        availableUsd,
         walletBalanceLabel,
         hasWalletBalance: Boolean(account && account.walletBalanceUsd6 > 0n),
         visual: visualToUi(asset.display.visual),
