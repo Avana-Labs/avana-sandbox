@@ -12,7 +12,9 @@ import {
   fetchQuickStats,
   fetchRecentTransactions,
   fetchRisk,
+  fetchTokenPrices,
 } from "@/app/lib/borrow-system/market-hydration-server"
+import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import type { QuickStat } from "./types"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
@@ -69,6 +71,18 @@ function mergeConvexQuickStats(
   })
 }
 
+/** Overlay the real DefiLlama price onto the "price" quick stat for a base symbol. */
+function injectRealPrice(
+  quickStats: QuickStat[],
+  prices: Record<string, number> | null,
+  baseSymbol: string,
+): QuickStat[] {
+  if (!prices) return quickStats
+  const price = prices[priceKey(baseSymbol)]
+  if (price === undefined) return quickStats
+  return quickStats.map((s) => (s.id === "price" ? { ...s, value: formatTokenPrice(price) } : s))
+}
+
 export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | null> {
   const snapshots = await fetchConvexMarketSnapshots()
   const state = buildMockBorrowSystemState(detailWalletId)
@@ -120,7 +134,7 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   )
   if (!detail) return null
 
-  const [borrowPoints, engagement, cashflow, cashflowTrend, transactions, allocation, risk, quickStats] = await Promise.all([
+  const [borrowPoints, engagement, cashflow, cashflowTrend, transactions, allocation, risk, quickStats, prices] = await Promise.all([
     fetchAssetBorrowSeries(slug),
     fetchEngagement("asset", slug),
     fetchCashflowBreakdown("asset", slug),
@@ -129,10 +143,11 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     fetchAllocation(slug),
     fetchRisk("asset", slug),
     fetchQuickStats("asset", slug),
+    fetchTokenPrices(),
   ])
   return {
     ...detail,
-    quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
+    quickStats: injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
     heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? detail.heroFeed,
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
