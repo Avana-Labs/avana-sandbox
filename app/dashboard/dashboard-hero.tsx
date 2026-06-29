@@ -88,6 +88,7 @@ const HERO_UI_CONFIG: Record<DashboardHeroProps["tab"], HeroUiConfig> = {
   },
   looping: {
     actionLabels: ["Increase loop", "Unwind loop"],
+    hideChart: true,
     statOneLabel: "Open positions",
     statOneHelpText: "Open multiply positions in the wallet profile.",
     statTwoLabel: "Net carry",

@@ -101,10 +101,10 @@ export function DashboardClient({
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const pageData = data ?? initialData
   const readTabFromLocation = useCallback((): DashboardTab => {
-    if (typeof window === "undefined") return "overview"
-    return parseDashboardTab(new URLSearchParams(window.location.search).get("tab")) ?? "overview"
+    if (typeof window === "undefined") return "lending"
+    return parseDashboardTab(new URLSearchParams(window.location.search).get("tab")) ?? "lending"
   }, [])
-  const [activeTab, setActiveTab] = useState<DashboardTab>("overview")
+  const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const dashboardReturnHref = dashboardHrefForTab(activeTab)
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
