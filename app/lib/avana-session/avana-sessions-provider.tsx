@@ -1,6 +1,7 @@
 "use client"
 
-import { createContext, useContext, useEffect, useRef, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
+import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import { useRewardsSession } from "@/app/lib/rewards-system"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
@@ -102,6 +103,42 @@ function useRewardsEventBridge({
   }, [lend.transactionHistory, rewards, walletId])
 }
 
+/**
+ * Fold every NEW successful borrow-system action into the shared multi-user
+ * liquidity ledger (Convex). Existing/persisted history is snapshotted as
+ * already-seen on mount so it isn't re-imported on every page load — the ledger
+ * only accumulates genuine session actions, across all users, over time.
+ */
+function useLiquidityLedgerBridge({ borrow }: { borrow: BorrowSession }) {
+  const { recordDelta } = useMarketLiquidity()
+  const seenIdsRef = useRef<Set<string> | null>(null)
+
+  useEffect(() => {
+    if (seenIdsRef.current === null) {
+      seenIdsRef.current = new Set(borrow.transactionHistory.map((item) => item.id))
+      return
+    }
+
+    for (const item of borrow.transactionHistory) {
+      if (item.status !== "success" || seenIdsRef.current.has(item.id)) continue
+      seenIdsRef.current.add(item.id)
+
+      const amountUsd = usd6ToNumber(item.executedAmountUsd6)
+      if (!Number.isFinite(amountUsd) || amountUsd <= 0) continue
+
+      if (item.kind === "borrow" && item.assetId) {
+        recordDelta({ marketSlug: item.assetId, borrowedDeltaUsd: amountUsd })
+      } else if (item.kind === "repay" && item.assetId) {
+        recordDelta({ marketSlug: item.assetId, borrowedDeltaUsd: -amountUsd })
+      } else if (item.kind === "deposit" && item.marketId) {
+        recordDelta({ marketSlug: item.marketId, suppliedDeltaUsd: amountUsd })
+      } else if (item.kind === "withdraw" && item.marketId) {
+        recordDelta({ marketSlug: item.marketId, suppliedDeltaUsd: -amountUsd })
+      }
+    }
+  }, [borrow.transactionHistory, recordDelta])
+}
+
 export type AvanaSessions = {
   walletId: string
   walletAddress: string
@@ -147,21 +184,22 @@ export function AvanaSessionsProvider({
     rewards,
   })
 
-  return (
-    <AvanaSessionsContext.Provider
-      value={{
-        walletId: avana.walletId,
-        walletAddress: avana.walletAddress,
-        sandboxMode: avana.sandboxMode,
-        borrow,
-        multiply,
-        lend,
-        rewards,
-      }}
-    >
-      {children}
-    </AvanaSessionsContext.Provider>
+  useLiquidityLedgerBridge({ borrow })
+
+  const value = useMemo<AvanaSessions>(
+    () => ({
+      walletId: avana.walletId,
+      walletAddress: avana.walletAddress,
+      sandboxMode: avana.sandboxMode,
+      borrow,
+      multiply,
+      lend,
+      rewards,
+    }),
+    [avana.walletId, avana.walletAddress, avana.sandboxMode, borrow, multiply, lend, rewards],
   )
+
+  return <AvanaSessionsContext.Provider value={value}>{children}</AvanaSessionsContext.Provider>
 }
 
 export function useAvanaSessions() {

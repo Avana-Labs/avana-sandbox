@@ -92,7 +92,6 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
               <ResponsiveBorrowAction
                 kind="remove"
                 market={pool.id}
-                amount="25"
                 closeHref={`/borrow/pool/${detail.id}`}
                 sidebar
               />
@@ -101,7 +100,6 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
                 product="borrow"
                 kind="remove"
                 market={pool.id}
-                amount="25"
                 returnTo={`/borrow/pool/${detail.id}`}
               />
             )

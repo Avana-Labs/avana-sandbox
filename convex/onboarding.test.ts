@@ -1,0 +1,75 @@
+// @vitest-environment edge-runtime
+import { convexTest } from "convex-test"
+import { describe, expect, test } from "vitest"
+import schema from "./schema"
+import { api } from "./_generated/api"
+
+// Rooted at the convex directory so convex-test can resolve "sandbox/onboarding".
+const modules = import.meta.glob("./**/*.*s")
+
+const WALLET = "0xAbC0000000000000000000000000000000000001"
+
+describe("sandbox onboarding + economy caps", () => {
+  test("rejects unauthenticated calls", async () => {
+    const t = convexTest(schema, modules)
+    await expect(t.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })).rejects.toThrow(
+      /UNAUTHENTICATED/,
+    )
+  })
+
+  test("rejects a wallet that does not match the authenticated identity", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: "0xdifferent" })).rejects.toThrow(
+      /WALLET_MISMATCH/,
+    )
+  })
+
+  test("claim allocates the basket, marks done, and increments the economy atomically", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    const result = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
+
+    expect(result.status).toBe("done")
+    expect(result.allocatedUsd ?? 0).toBeGreaterThan(0)
+
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).toBe("done")
+    expect(state.economy.userCount).toBe(1)
+
+    const activity = await t.run(async (ctx) =>
+      ctx.db
+        .query("sandboxActivity")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
+        .collect(),
+    )
+    expect(activity).toHaveLength(1)
+    expect(activity[0]?.kind).toBe("onboardingClaim")
+  })
+
+  test("enforces userCap server-side: claims past the cap are waitlisted", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("sandboxEconomy", {
+        userCap: 1,
+        totalGrantedUsdCap: 10_000_000_000,
+        perUserTargetUsd: 1_000_000,
+        minMultiplier: 0.8,
+        maxMultiplier: 1.2,
+        userCount: 1,
+        totalGrantedUsd: 1_000_000,
+        status: "open",
+      })
+    })
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    const result = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
+
+    expect(result.status).toBe("waitlisted")
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).toBe("waitlisted")
+    expect(state.economy.userCount).toBe(1)
+  })
+})

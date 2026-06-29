@@ -15,6 +15,7 @@ import { buildPoolDetail } from "@/app/lib/borrow-detail/pool.mock"
 import type { AssetDetail, PoolDetail } from "@/app/lib/borrow-detail/types"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import type { PortfolioBorrowTabData } from "@/app/lib/data/providers/portfolio"
+import { formatBorrowLpSymbolLabel } from "@/app/lib/borrow-system/market-labels"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import type { TransactionHistoryItem, TransactionMetricsSnapshot, WalletReadSnapshot } from "./contracts"
@@ -87,11 +88,30 @@ function historyKindToActivityKind(kind: TransactionHistoryItem["kind"]) {
   }
 }
 
-export function mapTransactionHistoryToActivityRows(history: TransactionHistoryItem[]) {
+const BORROW_KIND_LABEL: Record<TransactionHistoryItem["kind"], string> = {
+  borrow: "Borrow",
+  repay: "Repay",
+  deposit: "Pledge",
+  withdraw: "Withdraw",
+  claim: "Claim",
+  liquidate: "Liquidation",
+}
+
+type MarketDisplayLookup = Record<string, { display?: { visuals?: Array<{ symbol: string }>; name?: string } }>
+
+export function mapTransactionHistoryToActivityRows(
+  history: TransactionHistoryItem[],
+  markets?: MarketDisplayLookup,
+) {
   return history.map((item) => {
     const amountUsd = Number.parseFloat(formatFixed(item.executedAmountUsd6, 6))
     const signedAmount =
       item.kind === "borrow" || item.kind === "withdraw" || item.kind === "liquidate" ? -Math.abs(amountUsd) : Math.abs(amountUsd)
+
+    // Prefer the market's friendly pair label (e.g. "WETH / USDC") over the raw
+    // market id, falling back to a readable action label when the catalog is absent.
+    const market = item.marketId && markets ? markets[item.marketId] : undefined
+    const primaryLabel = market ? formatBorrowLpSymbolLabel(market) : (BORROW_KIND_LABEL[item.kind] ?? "Borrow")
 
     return {
       id: item.id,
@@ -100,7 +120,7 @@ export function mapTransactionHistoryToActivityRows(history: TransactionHistoryI
       kind: historyKindToActivityKind(item.kind),
       status: item.status === "success" ? ("confirmed" as const) : item.status === "failed" ? ("failed" as const) : ("pending" as const),
       amountUsd: signedAmount,
-      primaryLabel: item.marketId ?? item.assetId ?? "Borrow",
+      primaryLabel,
       secondaryLabel: item.simulated ? "Simulated transaction" : "On-chain transaction",
       txHash: item.hash,
     }

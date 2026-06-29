@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { ActionHealthFactorBar } from "@/app/components/action-page/action-health-factor-bar"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
+import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import type { ActionMetricRow, ActionMetricTone } from "@/app/lib/action-system/contracts"
 import { ACTION_INFO_TOOLTIPS, resolveMetricTooltip } from "@/app/lib/action-system/metric-tooltips"
 import { isHealthFactorMetric, parseHealthFactorValue, resolveMetricTone } from "@/app/lib/action-system/health-factor-ui"
@@ -38,12 +39,18 @@ export function ActionInfoRow({
 }) {
   const tip = tooltip ? ACTION_INFO_TOOLTIPS[tooltip] ?? tooltip : undefined
   return (
-    <div className={cn("flex items-center justify-between gap-4 px-4 py-3.5 text-[15px]", className)}>
+    <div className={cn("flex items-center justify-between gap-4 px-4 py-3.5 text-[15px] max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5", className)}>
       <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
         <span>{label}</span>
         {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
       </div>
-      <div className="font-medium tabular-nums text-foreground">{value}</div>
+      <div className="font-medium tabular-nums text-foreground max-[360px]:w-full">
+        {typeof value === "string" || typeof value === "number" ? (
+          <AnimatedTextValue text={String(value)} animateOnMount />
+        ) : (
+          value
+        )}
+      </div>
     </div>
   )
 }
@@ -98,7 +105,7 @@ function MetricValue({
         <span className="text-muted-foreground/70">→</span>
         <span className={cn("inline-flex items-center gap-1", toneClassName(resolvedTone))}>
           {showHeart ? <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden /> : null}
-          {after}
+          <AnimatedTextValue text={after} animateOnMount />
         </span>
       </div>
     )
@@ -107,7 +114,7 @@ function MetricValue({
   return (
     <div className={cn("inline-flex items-center gap-1 font-medium tabular-nums", toneClassName(resolvedTone))}>
       {showHeart ? <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden /> : null}
-      {value}
+      <AnimatedTextValue text={value} animateOnMount />
     </div>
   )
 }
@@ -125,12 +132,14 @@ export function ActionMetricRow({
   const tip = resolveMetricTooltip(id, label, tooltip)
   return (
     <div data-testid={`metric-${label.toLowerCase().replace(/\s+/g, "-")}`}>
-      <div className="flex items-center justify-between gap-4 px-4 py-3.5 text-[15px]">
+      <div className="flex items-center justify-between gap-4 px-4 py-3.5 text-[15px] max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5">
         <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
           <span>{label}</span>
           {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
         </div>
-        <MetricValue label={label} value={value} before={before} after={after} tone={tone} id={id} tokenSymbols={tokenSymbols} />
+        <div className="max-[360px]:w-full">
+          <MetricValue label={label} value={value} before={before} after={after} tone={tone} id={id} tokenSymbols={tokenSymbols} />
+        </div>
       </div>
     </div>
   )
@@ -147,7 +156,7 @@ export function ActionMetricsBlock({ rows }: { rows: ActionMetricRow[] }) {
     <div className="space-y-3" data-testid="action-metrics-block">
       {hfRow ? (
         <ActionCard className="p-4" data-testid="action-health-factor-card">
-          <ActionHealthFactorBar value={hfValue} />
+          <ActionHealthFactorBar value={hfValue} label={hfRow.label} />
         </ActionCard>
       ) : null}
 

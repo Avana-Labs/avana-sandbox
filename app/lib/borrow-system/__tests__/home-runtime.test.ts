@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import {
   buildHomeBorrowPreview,
+  buildHomeClaimPreview,
   buildHomeRemovePreview,
   buildHomeRepayPreview,
   selectHomeDebtContextForMarket,
   selectHomeDebtMap,
   selectHomeBorrowTokensForMarket,
 } from "@/app/lib/borrow-system/home-runtime"
+import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
 
 describe("home runtime", () => {
   it("only exposes borrowables that belong to the selected market spoke", () => {
@@ -79,5 +81,16 @@ describe("home runtime", () => {
     expect(preview.isValid).toBe(true)
     expect(preview.remainingDebtUsd).toBeLessThan(debt.amountUsd)
     expect(preview.yearlyInterestSavedUsd).toBeCloseTo(300 * (debt.borrowApr / 100), 2)
+  })
+
+  it("does not fabricate claimable rewards when the wallet has no reward positions", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    state.accounts["demo-wallet"]!.rewardPositions = []
+    const selections = Object.fromEntries(HOME_CLAIM_POSITIONS.map((position) => [position.id, true]))
+
+    const preview = buildHomeClaimPreview(state, "demo-wallet", HOME_CLAIM_POSITIONS, selections, null)
+
+    expect(preview.selectedTotalUsd).toBe(0)
+    expect(preview.effectiveClaimUsd).toBe(0)
   })
 })

@@ -48,4 +48,47 @@ describe("useRewardsSession", () => {
       expect(summary.totalClaimedAmount).toBe(50)
     })
   })
+
+  it("does not clobber persisted reward claims when the session remounts", async () => {
+    const walletId = "demo-wallet"
+
+    const firstMount = renderHook(() =>
+      useRewardsSession({
+        walletId,
+        sessionSeed: buildRewardsSessionSeed(),
+      }),
+    )
+
+    await waitFor(async () => {
+      const progress = await firstMount.result.current.readAdapter.readProgress(walletId)
+      expect(progress.find((item) => item.taskId === "connect-wallet")?.status).toBe("claimable")
+    })
+
+    await act(async () => {
+      await firstMount.result.current.claimAllRewards()
+    })
+
+    await waitFor(async () => {
+      const summary = await firstMount.result.current.readAdapter.readRewardSummary(walletId)
+      expect(summary.totalClaimedAmount).toBe(45)
+    })
+
+    firstMount.unmount()
+
+    const secondMount = renderHook(() =>
+      useRewardsSession({
+        walletId,
+        sessionSeed: buildRewardsSessionSeed(),
+      }),
+    )
+
+    await waitFor(async () => {
+      const summary = await secondMount.result.current.readAdapter.readRewardSummary(walletId)
+      expect(summary.totalClaimedAmount).toBe(45)
+      expect(summary.totalClaimableAmount).toBe(30)
+      const claims = await secondMount.result.current.readAdapter.readClaimHistory(walletId)
+      expect(claims).toHaveLength(2)
+      expect(claims.map((claim) => claim.taskId)).toEqual(["connect-wallet", "create-profile"])
+    })
+  })
 })

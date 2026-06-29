@@ -4,6 +4,7 @@ export function getProcessingTitle(verb: string, symbol: string) {
     Deposit: "Depositing",
     Withdraw: "Withdrawing",
     Repay: "Repaying",
+    Remove: "Removing",
     Claim: "Claiming",
     Multiply: "Multiplying",
     Deleverage: "Deleveraging",

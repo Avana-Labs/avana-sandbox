@@ -4,6 +4,7 @@ const LEND_META_PREFIX = "avana.lend.session.meta.v1"
 import { deserializeLendSystemState, serializeLendSystemState } from "./codec"
 import type { LendTransactionHistoryItem, LendTransactionResult } from "./contracts"
 import { buildDemoLendSystemState } from "./mock"
+import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
 
 export type LendSessionMetadata = {
   transactionHistory: LendTransactionHistoryItem[]
@@ -19,39 +20,32 @@ function metaKey(walletId: string) {
 }
 
 export function readLendSessionState(walletId: string, sessionSeed: string) {
-  if (typeof window === "undefined") {
-    return deserializeLendSystemState(sessionSeed)
-  }
-
-  const raw = window.localStorage.getItem(stateKey(walletId))
-  if (!raw) return deserializeLendSystemState(sessionSeed)
-  return deserializeLendSystemState(raw)
+  return safeReadParsed(
+    stateKey(walletId),
+    (raw) => deserializeLendSystemState(raw),
+    () => deserializeLendSystemState(sessionSeed),
+  )
 }
 
 export function writeLendSessionState(walletId: string, state: ReturnType<typeof deserializeLendSystemState>) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(stateKey(walletId), serializeLendSystemState(state))
+  safeSetItem(stateKey(walletId), serializeLendSystemState(state))
 }
 
 export function readLendSessionMetadata(walletId: string): LendSessionMetadata {
-  if (typeof window === "undefined") {
-    return { transactionHistory: [], receipts: [] }
-  }
-
-  const raw = window.localStorage.getItem(metaKey(walletId))
-  if (!raw) return { transactionHistory: [], receipts: [] }
-  return JSON.parse(raw) as LendSessionMetadata
+  return safeReadParsed<LendSessionMetadata>(
+    metaKey(walletId),
+    (raw) => JSON.parse(raw) as LendSessionMetadata,
+    () => ({ transactionHistory: [], receipts: [] }),
+  )
 }
 
 export function writeLendSessionMetadata(walletId: string, metadata: LendSessionMetadata) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(metaKey(walletId), JSON.stringify(metadata))
+  safeSetItem(metaKey(walletId), JSON.stringify(metadata))
 }
 
 export function clearLendSessionState(walletId: string) {
-  if (typeof window === "undefined") return
-  window.localStorage.removeItem(stateKey(walletId))
-  window.localStorage.removeItem(metaKey(walletId))
+  safeRemoveItem(stateKey(walletId))
+  safeRemoveItem(metaKey(walletId))
 }
 
 export function buildDefaultLendSessionSeed(walletId: string) {

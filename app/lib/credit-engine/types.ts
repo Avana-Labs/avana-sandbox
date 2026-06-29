@@ -168,6 +168,7 @@ export type UserRewardPosition = {
 export type BorrowAccountState = {
   walletId: string
   walletBalanceUsd6: bigint
+  walletLpBalancesUsd6: Record<string, bigint>
   interestSettledUsd6: bigint
   lastUpdatedAt: number
   collateralPositions: UserCollateralPosition[]

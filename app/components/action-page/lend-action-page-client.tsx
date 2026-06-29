@@ -26,11 +26,6 @@ import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
-function formatTokenAmount(value: number, symbol: string) {
-  if (!Number.isFinite(value)) return `0.00 ${symbol}`
-  return `${value.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${symbol}`
-}
-
 function isHardBlock(reason: string | null) {
   if (!reason) return false
   const lower = reason.toLowerCase()
@@ -41,7 +36,7 @@ export function LendActionPageClient({
   kind,
   closeHref = "/lend",
   embedded = false,
-  sidebar = false,
+  sidebar: _sidebar = false,
   layout = "default",
   initialMarketId,
   initialAmount = "",
@@ -242,14 +237,6 @@ export function LendActionPageClient({
     if (kind === "deposit") return depositItems.length > 1
     return false
   }, [depositItems.length, embedded, initialMarketId, kind, withdrawItems.length])
-  const fallbackBalanceAmount = market
-    ? kind === "deposit"
-      ? getWalletBalanceForLendMarket(session.state, walletId, market)
-      : (previewUi?.maxAmount ?? position?.currentSuppliedAmount ?? 0)
-    : 0
-  const fallbackBalanceLabel = kind === "deposit" ? "Balance" : "Deposited"
-  const fallbackBalanceValue = market ? formatTokenAmount(fallbackBalanceAmount, market.asset.symbol) : undefined
-
   const handleBack = useCallback(() => {
     if (stage === "review") {
       setStage("configure")
@@ -275,6 +262,7 @@ export function LendActionPageClient({
     }
     if (stage !== "review") return
     if (!market || !previewUi?.allowed) return
+    if (isPending) return // guard against double-submit (rapid double-click)
 
     setIsPending(true)
     setOutcome(null)
@@ -334,18 +322,7 @@ export function LendActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, kind, market, position, previewUi, router, session, stage, successUi, walletId])
-
-  const applyPercent = useCallback(
-    (pct: number) => {
-      const balance =
-        kind === "deposit"
-          ? getWalletBalanceForLendMarket(session.state, walletId, market!)
-          : (previewUi?.maxAmount ?? position?.currentSuppliedAmount ?? 0)
-      setAmount(String((balance * pct) / 100))
-    },
-    [kind, market, position, previewUi?.maxAmount, session.state, walletId],
-  )
+  }, [amount, closeHref, descriptor.primaryVerb, isPending, kind, market, position, previewUi, router, session, stage, successUi, walletId])
 
   if (!market && stage !== "select") {
     return (
@@ -409,6 +386,7 @@ export function LendActionPageClient({
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
+          primaryPending={isPending}
         />
       ) : null}
 

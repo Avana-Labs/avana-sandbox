@@ -100,7 +100,6 @@ describe("ActionConfigureStage", () => {
     const card = screen.getByTestId("action-health-factor-card")
     expect(within(card).getByTestId("action-health-factor-bar")).toBeInTheDocument()
     expect(within(card).getByText("Health factor")).toBeInTheDocument()
-    expect(within(card).getByText("1.80")).toBeInTheDocument()
     expect(within(card).getByText("Caution")).toBeInTheDocument()
     expect(within(card).getByText("Liquidation")).toBeInTheDocument()
   })

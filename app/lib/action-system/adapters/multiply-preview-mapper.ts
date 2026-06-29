@@ -38,12 +38,31 @@ function metricBeforeAfter(
   }
 }
 
+function metricValue(
+  id: string,
+  label: string,
+  value: string,
+  tone?: ActionMetricTone,
+) {
+  return {
+    id,
+    label,
+    value,
+    tone,
+  }
+}
+
+function addedValue(after: number, before: number) {
+  return Math.max(0, after - before)
+}
+
 export function mapMultiplyPreviewToActionUi(
   preview: MultiplyTransactionPreview,
   options: {
     collateralSymbol: string
     borrowSymbol: string
     collateralAmount: number
+    collateralPriceUsd: number
     marketLabel: string
     collateralApy: number
     borrowApy: number
@@ -57,11 +76,46 @@ export function mapMultiplyPreviewToActionUi(
     preview.warnings.find((entry) => entry.toLowerCase().includes("liquidation")) ??
     preview.warnings[0] ??
     "This leverage reduces your safety buffer."
+  const hasExistingPosition = preview.before.collateralValueUsd > 0 || preview.before.debtValueUsd > 0
+  const addedExposureUsd = addedValue(preview.after.collateralValueUsd, preview.before.collateralValueUsd)
+  const addedDebtUsd = addedValue(preview.after.debtValueUsd, preview.before.debtValueUsd)
+  const metrics = hasExistingPosition
+    ? [
+        metricValue("new-exposure", "New exposure", formatActionUsd(addedExposureUsd)),
+        metricValue("new-debt", "New debt", formatActionUsd(addedDebtUsd)),
+        metricValue("projected-exposure", "Projected exposure", formatActionUsd(preview.after.collateralValueUsd)),
+        metricValue("projected-debt", "Projected total debt", formatActionUsd(preview.after.debtValueUsd)),
+        metricValue("ltv", "Projected LTV", formatActionRatioPercent(preview.after.ltv)),
+        metricValue(
+          "hf",
+          "Projected health factor",
+          formatActionHealthFactor(healthAfter),
+          hfTone(healthAfter),
+        ),
+        metricValue("net-apy", "Projected net APY", formatActionRatioPercent(preview.after.netApy)),
+        {
+          id: "liq-price",
+          label: "Liquidation price",
+          value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
+        },
+      ]
+    : [
+        metricValue("exposure", "Exposure", formatActionUsd(preview.after.collateralValueUsd)),
+        metricValue("debt", "Estimated debt", formatActionUsd(preview.after.debtValueUsd)),
+        metricValue("ltv", "LTV", formatActionRatioPercent(preview.after.ltv)),
+        metricValue("hf", "Health factor", formatActionHealthFactor(healthAfter), hfTone(healthAfter)),
+        metricValue("net-apy", "Net APY", formatActionRatioPercent(preview.after.netApy)),
+        {
+          id: "liq-price",
+          label: "Liquidation price",
+          value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
+        },
+      ]
 
   return {
     allowed: preview.allowed,
     amountLabel: `${options.multiplier.toFixed(2)}x · ${formatActionAmount(options.collateralAmount, options.collateralSymbol, 4)}`,
-    amountUsdLabel: formatActionApproxUsd(preview.after.collateralValueUsd),
+    amountUsdLabel: formatActionApproxUsd(options.collateralAmount * options.collateralPriceUsd),
     rateLabel: "",
     rateValue: "",
     marketLabel: "Market",
@@ -76,47 +130,10 @@ export function mapMultiplyPreviewToActionUi(
         apy: formatActionRatioPercent(options.borrowApy),
       },
     },
-    balanceLabel: "Multiplier",
+    balanceLabel: "Selected leverage",
     balanceValue: `${options.multiplier.toFixed(2)}x`,
     maxAmount: options.multiplier,
-    metrics: [
-      metricBeforeAfter(
-        "exposure",
-        "Exposure",
-        formatActionUsd(preview.before.collateralValueUsd),
-        formatActionUsd(preview.after.collateralValueUsd),
-      ),
-      metricBeforeAfter(
-        "debt",
-        "Estimated debt",
-        formatActionUsd(preview.before.debtValueUsd),
-        formatActionUsd(preview.after.debtValueUsd),
-      ),
-      metricBeforeAfter(
-        "ltv",
-        "LTV",
-        formatActionRatioPercent(preview.before.ltv),
-        formatActionRatioPercent(preview.after.ltv),
-      ),
-      metricBeforeAfter(
-        "hf",
-        "Health factor",
-        formatActionHealthFactor(hfNumber(preview.before.healthFactor)),
-        formatActionHealthFactor(healthAfter),
-        hfTone(healthAfter),
-      ),
-      metricBeforeAfter(
-        "net-apy",
-        "Net APY",
-        formatActionRatioPercent(preview.before.netApy),
-        formatActionRatioPercent(preview.after.netApy),
-      ),
-      {
-        id: "liq-price",
-        label: "Liquidation price",
-        value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
-      },
-    ],
+    metrics,
     networkFeeLabel: formatActionFeeSummary(preview.after.collateralValueUsd, 0.04),
     risk:
       preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < 1.05)
@@ -145,6 +162,7 @@ export function mapDeleveragePreviewToActionUi(
   options: {
     marketLabel: string
     targetMultiplier: number
+    collateralSymbol: string
   },
 ): ActionPreviewUi {
   const healthAfter = hfNumber(preview.after.healthFactor)
@@ -152,7 +170,10 @@ export function mapDeleveragePreviewToActionUi(
 
   return {
     allowed: preview.allowed,
-    amountLabel: `${options.targetMultiplier.toFixed(2)}x target`,
+    amountLabel: `${options.targetMultiplier.toFixed(2)}x ${options.collateralSymbol}`,
+    amountValue: `${options.targetMultiplier.toFixed(2)}x`,
+    assetLabel: options.collateralSymbol,
+    assetSymbol: options.collateralSymbol,
     amountUsdLabel: formatActionApproxUsd(preview.after.collateralValueUsd),
     rateLabel: "",
     rateValue: "",

@@ -1,6 +1,7 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { MultiplyMarketRecord, MultiplySystemState } from "@/app/lib/multiply-engine"
-import { calculateMaxLeverageApy, calculateTheoreticalMaxMultiplier } from "@/app/lib/multiply-engine"
+import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine"
+import { resolveMultiplyMarketMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { MULTIPLY_TOKEN_BORROW_APYS, MULTIPLY_TOKEN_LOGOS, MULTIPLY_TOKEN_SUPPLY_APYS } from "@/app/lib/multiply-sim"
@@ -9,6 +10,8 @@ import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult, MultiplyWalletReadSnapshot } from "./contracts"
 import { buildMockMultiplyRiskSnapshots } from "./mock"
+
+const MS_PER_YEAR = 365 * 24 * 60 * 60 * 1000
 
 function formatPct(value: number) {
   return `${(value * 100).toFixed(2)}%`
@@ -36,10 +39,15 @@ export type MultiplyTrendingSnapshot = {
 export function buildMultiplyTrendingSnapshots(markets: MultiplyMarketRecord[]): MultiplyTrendingSnapshot[] {
   return [...markets]
     .map((market) => {
+      // The catalog table label intentionally inflates leverage for discovery, but
+      // the APY here is a real financial formula. Use the de-scaled multiplier the
+      // action page actually lets users select so the trending APY is achievable and
+      // the headline leverage label stays consistent with it.
+      const maxMultiplier = resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
       const maxLeverageApy = calculateMaxLeverageApy({
         supplyApy: market.economics.supplyApy,
         borrowApy: market.economics.borrowApy,
-        safeMaxMultiplier: market.risk.publicMaxMultiplier,
+        safeMaxMultiplier: maxMultiplier,
       })
       const collateralSymbol = market.collateralAsset.symbol
       const borrowSymbol = market.borrowAsset.symbol
@@ -50,9 +58,7 @@ export function buildMultiplyTrendingSnapshots(markets: MultiplyMarketRecord[]):
           marketId: market.id,
           label: `${collateralSymbol}-${borrowSymbol}`,
           href: `/multiply/markets/${market.id}`,
-          maxLeverageLabel: formatFactor(
-            Math.max(market.risk.hardMaxMultiplier, calculateTheoreticalMaxMultiplier(market.risk.liquidationThreshold)),
-          ),
+          maxLeverageLabel: formatFactor(maxMultiplier),
           apyPct: maxLeverageApy * 100,
           apyLabel: formatPct(maxLeverageApy),
           availableUsd: market.economics.availableLiquidityUsd,
@@ -168,6 +174,12 @@ export function buildPortfolioMultiplyData(
     }),
     positions: positions.map((position) => {
       const market = state.markets[position.marketId]!
+      // PnL = net carry accrued on equity since the position opened. (The previous
+      // formula reduced to equity − equity ≡ 0 for every position because
+      // collateralValueUsd / multiplier === equity by definition.)
+      const equityUsd = Math.max(0, position.collateralValueUsd - position.debtValueUsd)
+      const elapsedYears = Math.max(0, Date.now() - position.openedAt) / MS_PER_YEAR
+      const pnlUsd = equityUsd * position.netApy * elapsedYears
       return {
         id: position.id,
         symbol: market.collateralAsset.symbol,
@@ -176,8 +188,8 @@ export function buildPortfolioMultiplyData(
         leverage: position.multiplier,
         collateralUsd: position.collateralValueUsd,
         exposureUsd: position.collateralValueUsd,
-        pnlUsd: position.collateralValueUsd - position.debtValueUsd - position.collateralValueUsd / position.multiplier,
-        pnlPct: position.netApy * 100,
+        pnlUsd,
+        pnlPct: equityUsd > 0 ? (pnlUsd / equityUsd) * 100 : 0,
         status: "open" as const,
       }
     }),
@@ -193,6 +205,7 @@ export function buildMultiplyWalletSnapshot(
   transactionHistory: MultiplyTransactionHistoryItem[],
 ): MultiplyWalletReadSnapshot {
   const portfolio = buildPortfolioMultiplyData(walletId, state, transactionHistory)
+  const walletPositions = Object.values(state.positions).filter((position) => position.walletId === walletId)
   return {
     walletId,
     transactionHistory,
@@ -206,8 +219,8 @@ export function buildMultiplyWalletSnapshot(
       ltv: portfolio.creditLines.currentLtvPct / 100,
       healthFactor: portfolio.creditLines.averageHealthFactor ?? "infinity",
       netApy:
-        portfolio.positions.length > 0
-          ? portfolio.positions.reduce((sum, position) => sum + position.pnlPct, 0) / portfolio.positions.length / 100
+        walletPositions.length > 0
+          ? walletPositions.reduce((sum, position) => sum + position.netApy, 0) / walletPositions.length
           : 0,
     },
     riskSnapshots: buildMockMultiplyRiskSnapshots(state).filter((snapshot) =>

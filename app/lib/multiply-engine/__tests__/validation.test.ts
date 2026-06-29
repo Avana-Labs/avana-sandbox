@@ -14,9 +14,9 @@ describe("multiply engine validation", () => {
     const result = validateMultiplyAction({
       selectedMultiplier: 3,
       theoreticalMaxMultiplier: theoreticalMax,
-      publicMaxMultiplier: 1.8,
-      safeMaxMultiplier: 1.8,
-      recommendedMaxMultiplier: 1.6,
+      publicMaxMultiplier: 5,
+      safeMaxMultiplier: 4,
+      recommendedMaxMultiplier: 3.5,
       minHealthFactor: 1.5,
       maxLtv: 0.5,
       healthFactor: 2.1,
@@ -59,11 +59,11 @@ describe("multiply engine validation", () => {
       collateralPriceUsd: 3500,
     })
 
-    expect(result.allowed).toBe(true)
-    expect(result.warnings.join(" ")).toContain("public maximum")
+    expect(result.allowed).toBe(false)
+    expect(result.errors.join(" ")).toContain("public maximum")
   })
 
-  it("warns when multiply health factor is below the liquidation threshold", () => {
+  it("blocks multiply when health factor is below the liquidation threshold", () => {
     const theoreticalMax = calculateTheoreticalMaxMultiplier(0.5)
     const result = validateMultiplyAction({
       selectedMultiplier: 3,
@@ -86,11 +86,11 @@ describe("multiply engine validation", () => {
       collateralPriceUsd: 280,
     })
 
-    expect(result.allowed).toBe(true)
-    expect(result.warnings.join(" ")).toContain("liquidation threshold")
+    expect(result.allowed).toBe(false)
+    expect(result.errors.join(" ")).toContain("liquidation threshold")
   })
 
-  it("warns when multiply LTV exceeds the market maximum", () => {
+  it("blocks multiply when LTV exceeds the market maximum", () => {
     const theoreticalMax = calculateTheoreticalMaxMultiplier(0.5)
     const result = validateMultiplyAction({
       selectedMultiplier: 3,
@@ -113,8 +113,8 @@ describe("multiply engine validation", () => {
       collateralPriceUsd: 280,
     })
 
-    expect(result.allowed).toBe(true)
-    expect(result.warnings.join(" ")).toContain("LTV exceeds the market maximum")
+    expect(result.allowed).toBe(false)
+    expect(result.errors.join(" ")).toContain("LTV exceeds the market maximum")
   })
 
   it("warns when multiply exceeds the recommended maximum", () => {

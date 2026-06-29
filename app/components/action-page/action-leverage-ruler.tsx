@@ -2,7 +2,9 @@
 
 import { useCallback } from "react"
 import { ActionCard } from "@/app/components/action-page/action-metrics"
+import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import { Slider } from "@/components/ui/slider"
+import { cn } from "@/lib/utils"
 
 function formatMultiplier(value: number) {
   return Number.isInteger(value) ? `${value}x` : `${value.toFixed(1)}x`
@@ -43,6 +45,7 @@ export function ActionLeverageRuler({
 }) {
   const parsed = Number.parseFloat(value)
   const currentValue = Number.isFinite(parsed) ? snapToStep(parsed, min, max, step) : min
+  const fillPct = max > min ? clamp(((currentValue - min) / (max - min)) * 100, 0, 100) : 0
 
   const publishValue = useCallback(
     (next: number) => {
@@ -68,7 +71,7 @@ export function ActionLeverageRuler({
             aria-live="polite"
             aria-atomic="true"
           >
-            {formatMultiplier(currentValue)}
+            <AnimatedTextValue text={formatMultiplier(currentValue)} />
           </div>
           <button
             type="button"
@@ -80,7 +83,20 @@ export function ActionLeverageRuler({
         </div>
 
       <div className={variant === "embedded" ? "relative mt-4 px-2" : "relative mt-5 px-2"}>
-        <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-px -translate-y-1/2 bg-border" aria-hidden />
+        <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-1.5 -translate-y-1/2 rounded-full bg-border/70" aria-hidden />
+        <div
+          className="pointer-events-none absolute left-2 top-1/2 z-[5] h-1.5 -translate-y-1/2 rounded-full bg-brand transition-[width] duration-150 ease-out"
+          style={{ width: `calc((100% - 1rem) * ${fillPct / 100})` }}
+          aria-hidden
+        />
+        <div className="pointer-events-none absolute inset-x-2 top-1/2 z-10 flex -translate-y-1/2 justify-between px-1" aria-hidden>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <span
+              key={index}
+              className={cn("block rounded-full bg-border/80", index === 2 ? "h-3 w-px" : "h-2 w-px")}
+            />
+          ))}
+        </div>
         <Slider
           min={min}
           max={max}
@@ -88,7 +104,7 @@ export function ActionLeverageRuler({
           value={[currentValue]}
           onValueChange={(values) => publishValue(values[0] ?? min)}
           aria-label={`${label} multiplier`}
-          className="relative z-20"
+          className="relative z-20 h-7 w-full touch-none appearance-none bg-transparent accent-primary [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:-mt-2 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:shadow-elev-2 [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-background [&::-moz-range-thumb]:bg-brand [&::-moz-range-thumb]:shadow-elev-2"
         />
       </div>
     </div>

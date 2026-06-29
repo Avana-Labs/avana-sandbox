@@ -91,4 +91,32 @@ describe("Avana rewards bridge", () => {
     expect(eventsAfterClaim.filter((event) => event.type === "lend_withdrawn")).toHaveLength(withdrawCountBeforeClaim)
     expect(eventsAfterClaim.filter((event) => event.type === "reward_claimed")).toHaveLength(rewardClaimCountBeforeClaim)
   })
+
+  it("preserves claimed rewards across provider remounts", async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    const firstMount = renderHook(() => useAvanaSessions(), { wrapper })
+
+    await waitFor(async () => {
+      const progress = await firstMount.result.current.rewards.readAdapter.readProgress(firstMount.result.current.walletId)
+      expect(progress.find((item) => item.taskId === "connect-wallet")?.status).toBe("claimable")
+    })
+
+    await act(async () => {
+      await firstMount.result.current.rewards.claimAllRewards()
+    })
+
+    await waitFor(async () => {
+      const summary = await firstMount.result.current.rewards.readAdapter.readRewardSummary(firstMount.result.current.walletId)
+      expect(summary.totalClaimedAmount).toBe(45)
+    })
+
+    firstMount.unmount()
+
+    const secondMount = renderHook(() => useAvanaSessions(), { wrapper })
+
+    await waitFor(async () => {
+      const summary = await secondMount.result.current.rewards.readAdapter.readRewardSummary(secondMount.result.current.walletId)
+      expect(summary.totalClaimedAmount).toBe(45)
+    })
+  })
 })

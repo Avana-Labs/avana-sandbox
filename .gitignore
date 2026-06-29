@@ -36,6 +36,9 @@ yarn-error.log*
 /.gitconfig
 .DS_Store
 
+# claude code local tooling (preview launcher, etc.)
+.claude/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

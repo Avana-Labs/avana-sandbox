@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
+import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
 import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
@@ -101,10 +101,11 @@ export function DashboardClient({
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const pageData = data ?? initialData
   const readTabFromLocation = useCallback((): DashboardTab => {
-    if (typeof window === "undefined") return "overview"
-    return parseDashboardTab(new URLSearchParams(window.location.search).get("tab")) ?? "overview"
+    if (typeof window === "undefined") return "lending"
+    return parseDashboardTab(new URLSearchParams(window.location.search).get("tab")) ?? "lending"
   }, [])
-  const [activeTab, setActiveTab] = useState<DashboardTab>("overview")
+  const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
+  const dashboardReturnHref = dashboardHrefForTab(activeTab)
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
@@ -193,7 +194,7 @@ export function DashboardClient({
   const debtPositions = liveBorrowTab?.debtPositions ?? pageData?.borrow.debtPositions ?? []
   const activityRows = useMemo(
     () => [
-      ...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory),
+      ...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory, borrowSession.state.markets),
       ...multiplySession.transactionHistory.map((item) => ({
         id: item.id,
         at: new Date(item.timestamp).toISOString(),
@@ -347,6 +348,7 @@ export function DashboardClient({
               collateralPositions={collateralPositions}
               debtPositions={debtPositions}
               showSummary={false}
+              returnHref={dashboardReturnHref}
             />
           </DashboardSection>
           <DashboardPerformanceSection title="Credit Performance" metrics={borrowDashboardMetrics.performance} />
@@ -365,7 +367,7 @@ export function DashboardClient({
             />
           </DashboardSection>
           <DashboardLendPerformanceSection title="Lending Performance" metrics={lendDashboardMetrics} />
-          <PortfolioLendingOpportunities buckets={lendTabData.strategyBuckets} />
+          <PortfolioLendingOpportunities buckets={lendTabData.strategyBuckets} returnHref={dashboardReturnHref} />
         </div>
       ) : null}
       {activeTab === "looping" ? (
@@ -377,7 +379,7 @@ export function DashboardClient({
               onDeleverage={(positionId) => {
                 const position = multiplySession.state.positions[positionId]
                 if (!position) return
-                router.push(actionPagePath("multiply", "deleverage", { market: position.marketId }))
+                router.push(actionPagePath("multiply", "deleverage", { market: position.marketId, return: dashboardReturnHref }))
               }}
             />
           </DashboardSection>

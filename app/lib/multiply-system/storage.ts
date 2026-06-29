@@ -2,6 +2,7 @@ import type { MultiplySystemState } from "@/app/lib/multiply-engine"
 import { deserializeMultiplySystemState, serializeMultiplySystemState } from "./codec"
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult } from "./contracts"
 import { notifyMultiplySessionChanged } from "./session-sync"
+import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
 
 const STORAGE_PREFIX = "avana.multiply.session.v1"
 const META_STORAGE_PREFIX = "avana.multiply.session.meta.v1"
@@ -20,38 +21,34 @@ export function multiplySessionMetadataKey(walletId: string) {
 }
 
 export function readMultiplySessionState(walletId: string, seed: string): MultiplySystemState {
-  if (typeof window === "undefined") {
-    return deserializeMultiplySystemState(seed)
-  }
-
-  const stored = window.localStorage.getItem(multiplySessionStorageKey(walletId))
-  return deserializeMultiplySystemState(stored ?? seed)
+  return safeReadParsed(
+    multiplySessionStorageKey(walletId),
+    (raw) => deserializeMultiplySystemState(raw),
+    () => deserializeMultiplySystemState(seed),
+  )
 }
 
 export function writeMultiplySessionState(walletId: string, state: MultiplySystemState) {
   if (typeof window === "undefined") return
-  window.localStorage.setItem(multiplySessionStorageKey(walletId), serializeMultiplySystemState(state))
+  safeSetItem(multiplySessionStorageKey(walletId), serializeMultiplySystemState(state))
   notifyMultiplySessionChanged(walletId)
 }
 
 export function readMultiplySessionMetadata(walletId: string): MultiplySessionMetadata {
-  if (typeof window === "undefined") {
-    return { transactionHistory: [], receipts: [] }
-  }
-
-  const stored = window.localStorage.getItem(multiplySessionMetadataKey(walletId))
-  if (!stored) return { transactionHistory: [], receipts: [] }
-  return JSON.parse(stored) as MultiplySessionMetadata
+  return safeReadParsed<MultiplySessionMetadata>(
+    multiplySessionMetadataKey(walletId),
+    (raw) => JSON.parse(raw) as MultiplySessionMetadata,
+    () => ({ transactionHistory: [], receipts: [] }),
+  )
 }
 
 export function writeMultiplySessionMetadata(walletId: string, metadata: MultiplySessionMetadata) {
   if (typeof window === "undefined") return
-  window.localStorage.setItem(multiplySessionMetadataKey(walletId), JSON.stringify(metadata))
+  safeSetItem(multiplySessionMetadataKey(walletId), JSON.stringify(metadata))
   notifyMultiplySessionChanged(walletId)
 }
 
 export function clearMultiplySessionState(walletId: string) {
-  if (typeof window === "undefined") return
-  window.localStorage.removeItem(multiplySessionStorageKey(walletId))
-  window.localStorage.removeItem(multiplySessionMetadataKey(walletId))
+  safeRemoveItem(multiplySessionStorageKey(walletId))
+  safeRemoveItem(multiplySessionMetadataKey(walletId))
 }

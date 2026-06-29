@@ -131,7 +131,13 @@ export function useLendSession({
     if (!shouldPersistState || typeof window === "undefined" || process.env.NODE_ENV === "test") return undefined
 
     const tick = () => {
-      setState((current) => accrueLendSystemState(current, Date.now()))
+      setState((current) => {
+        // Without an active position nothing user-visible accrues, so return the
+        // same reference to avoid re-rendering the whole app tree every 30s.
+        const hasActivePosition = Object.values(current.positions).some((position) => position.status === "active")
+        if (!hasActivePosition) return current
+        return accrueLendSystemState(current, Date.now())
+      })
     }
 
     tick()
