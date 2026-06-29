@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
-import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard, StickyDetailHeader } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
 import { QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
@@ -23,7 +23,6 @@ type Props = { detail: MultiplyMarketDetail }
 const PAGE_MAX_W = "max-w-[1152px]"
 
 export function MarketDetailClient({ detail }: Props) {
-  const heroRef = React.useRef<HTMLDivElement | null>(null)
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const session = useMultiplySessionContext()
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
@@ -39,38 +38,6 @@ export function MarketDetailClient({ detail }: Props) {
 
   return (
     <div className="bg-background">
-      <StickyDetailHeader
-        heroRef={heroRef}
-        title={
-          <div className="flex items-center gap-2.5">
-            <div className="flex -space-x-2">
-              <TokenAvatar visual={detail.hero.visuals[0]} />
-              <TokenAvatar visual={detail.hero.visuals[1]} />
-            </div>
-            <span className="text-[13px] font-medium text-foreground">{detail.hero.name}</span>
-          </div>
-        }
-        subtitle={
-          <div className="flex items-center gap-1.5">
-            <span className="rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[10.5px] font-medium text-muted-foreground">
-              {detail.hero.feeTier || detail.hero.venue}
-            </span>
-            <span className="rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[10.5px] font-medium text-muted-foreground">
-              {detail.hero.chain}
-            </span>
-          </div>
-        }
-        actions={
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="inline-flex h-8 items-center justify-center rounded-radius-sm bg-[hsl(var(--brand))] px-3 text-[12.5px] font-medium text-white shadow-elev-1 transition-colors hover:bg-[hsl(var(--brand))]/90 lg:hidden"
-          >
-            Open position
-          </button>
-        }
-      />
-
       <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
         <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
           <Link href="/multiply" className="transition-colors hover:text-foreground">
@@ -87,7 +54,7 @@ export function MarketDetailClient({ detail }: Props) {
             <MarketHeroIdentity detail={detail} className="pb-0" />
           </div>
 
-          <div ref={heroRef} className="min-w-0 lg:col-start-1 lg:row-start-2">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
             <MarketHero detail={detail} hideIdentity className="mb-6" />
 
             <section aria-label="Multiply market analytics" className="space-y-8 pt-8">
@@ -166,21 +133,6 @@ export function MarketDetailClient({ detail }: Props) {
         <MarketSidebar detail={detail} />
       </MobileMultiplyDock>
     </div>
-  )
-}
-
-function TokenAvatar({ visual }: { visual: MultiplyMarketDetail["hero"]["visuals"][number] }) {
-  return (
-    <span
-      className={cn("inline-flex size-10 items-center justify-center rounded-full border-2 border-background ring-1 ring-border", visual.bgClass, visual.textClass)}
-    >
-      {visual.iconUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={visual.iconUrl} alt="" className="size-full rounded-full" />
-      ) : (
-        <span className="text-[10px] font-medium">{visual.shortLabel}</span>
-      )}
-    </span>
   )
 }
 

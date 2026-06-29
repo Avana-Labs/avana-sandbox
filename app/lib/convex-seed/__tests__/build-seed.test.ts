@@ -76,4 +76,58 @@ describe("buildBorrowSeed", () => {
     expect(seed.dailyStats.length).toBe(128 * 365) // 46,720
     expect(seed.revenue.length).toBe(128 * 365)
   })
+
+  it("seeds a rich risk breakdown + metrics (not an empty stub)", () => {
+    const seed = buildBorrowSeed({ days: 1, asOf: ASOF })
+    expect(seed.risk.length).toBe(128)
+    for (const r of seed.risk) {
+      // assets get 4 factors, pools get 5 — never the old empty stub.
+      expect(r.breakdown.length).toBeGreaterThanOrEqual(4)
+      expect(r.metrics.length).toBeGreaterThanOrEqual(1)
+      expect(r.premiumBps).toBeGreaterThan(0)
+      expect(r.breakdown.reduce((s, b) => s + b.bps, 0)).toBeGreaterThan(0)
+      for (const b of r.breakdown) expect(b.description.length).toBeGreaterThan(0)
+    }
+  })
+
+  it("seeds per-asset allocation rows (latest day, shares ~sum to 100, calibrated values)", () => {
+    const seed = buildBorrowSeed({ days: 30, asOf: ASOF })
+    const lastDay = new Date(ASOF).toISOString().slice(0, 10)
+    expect(seed.allocation.length).toBeGreaterThan(0)
+    for (const row of seed.allocation) {
+      expect(row.day).toBe(lastDay)
+      expect(row.assetSlug).toContain(":") // asset = spoke-scoped id
+      expect(row.poolSlug).not.toContain(":") // pool = pool id
+      expect(row.sharePct).toBeGreaterThanOrEqual(0)
+      expect(row.sharePct).toBeLessThanOrEqual(100)
+      expect(Number.isFinite(row.valueUsd)).toBe(true)
+      expect(row.valueUsd).toBeGreaterThanOrEqual(0)
+    }
+    // Per asset, the shares are re-scaled to sum to ~100.
+    const sharesByAsset = new Map<string, number>()
+    for (const row of seed.allocation) {
+      sharesByAsset.set(row.assetSlug, (sharesByAsset.get(row.assetSlug) ?? 0) + row.sharePct)
+    }
+    for (const [, sum] of sharesByAsset) expect(Math.abs(sum - 100)).toBeLessThan(0.5)
+  })
+
+  it("anchors allocation value to the calibrated per-asset supplied (sums ≤ asset TVL band)", () => {
+    const seed = buildBorrowSeed({ days: 60, asOf: ASOF })
+    const lastDay = new Date(ASOF).toISOString().slice(0, 10)
+    const suppliedByAsset = new Map<string, number>()
+    for (const s of seed.dailyStats) {
+      if (s.day === lastDay) suppliedByAsset.set(s.slug, s.suppliedUsd)
+    }
+    const valueByAsset = new Map<string, number>()
+    for (const row of seed.allocation) {
+      valueByAsset.set(row.assetSlug, (valueByAsset.get(row.assetSlug) ?? 0) + row.valueUsd)
+    }
+    // Allocation values sum to (very close to) the asset's calibrated supplied,
+    // so the detail "Value" column reconciles with the headline TVL. The small
+    // residual is share-rescale + per-row dollar rounding.
+    for (const [assetSlug, value] of valueByAsset) {
+      const supplied = suppliedByAsset.get(assetSlug) ?? 0
+      if (supplied > 0) expect(Math.abs(value - supplied) / supplied).toBeLessThan(0.01)
+    }
+  })
 })

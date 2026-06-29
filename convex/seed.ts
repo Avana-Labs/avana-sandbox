@@ -27,13 +27,17 @@ export const getCounts = query({
   handler: async (ctx) => {
     const markets = await ctx.db.query("markets").collect()
     const risk = await ctx.db.query("riskAssessments").collect()
+    const allocation = await ctx.db.query("assetPoolAllocationDaily").collect()
     const oneStat = await ctx.db.query("marketDailyStats").take(1)
     const oneRevenue = await ctx.db.query("marketRevenueDaily").take(1)
+    const oneRiskWithBreakdown = risk.find((r) => r.breakdown.length > 0)
     return {
       markets: markets.length,
       assetMarkets: markets.filter((m) => m.scope === "asset").length,
       poolMarkets: markets.filter((m) => m.scope === "pool").length,
       riskAssessments: risk.length,
+      riskBreakdownSeeded: oneRiskWithBreakdown !== undefined,
+      allocationRows: allocation.length,
       dailyStatsSeeded: oneStat.length > 0,
       revenueSeeded: oneRevenue.length > 0,
     }
@@ -166,6 +170,35 @@ export const upsertRisk = mutation({
         .first()
       if (existing) await ctx.db.patch(existing._id, row)
       else await ctx.db.insert("riskAssessments", row)
+    }
+    return { written: rows.length }
+  },
+})
+
+/** Upsert latest-day allocation rows keyed by (assetId, poolId, day). */
+export const upsertAllocation = mutation({
+  args: {
+    rows: v.array(
+      v.object({
+        assetId: v.id("markets"),
+        poolId: v.id("markets"),
+        day: v.string(),
+        valueUsd: v.number(),
+        sharePct: v.number(),
+        utilizationPct: v.number(),
+        borrowAprPct: v.number(),
+      }),
+    ),
+  },
+  handler: async (ctx, { rows }) => {
+    for (const row of rows) {
+      const sameAssetDay = await ctx.db
+        .query("assetPoolAllocationDaily")
+        .withIndex("by_asset_day", (q) => q.eq("assetId", row.assetId).eq("day", row.day))
+        .collect()
+      const existing = sameAssetDay.find((r) => r.poolId === row.poolId)
+      if (existing) await ctx.db.patch(existing._id, row)
+      else await ctx.db.insert("assetPoolAllocationDaily", row)
     }
     return { written: rows.length }
   },
