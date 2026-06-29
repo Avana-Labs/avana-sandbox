@@ -7,6 +7,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
+import { Web3Provider } from "./lib/web3/web3-provider"
 import { AvanaSessionProviders } from "./components/avana-session-providers"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
@@ -113,15 +114,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <DisplayPreferencesProvider>
-            <AvanaSessionProviders>
-              <ConditionalSiteChrome>
+            <Web3Provider>
+              <AvanaSessionProviders>
+                <ConditionalSiteChrome>
                 <Suspense fallback={null}>
                   <PageLoadingBar />
                 </Suspense>
                 {children}
               </ConditionalSiteChrome>
               <DeferredGlobalChrome />
-            </AvanaSessionProviders>
+              </AvanaSessionProviders>
+            </Web3Provider>
           </DisplayPreferencesProvider>
         </ThemeProvider>
         {enableProductionAnalytics ? <Analytics /> : null}
