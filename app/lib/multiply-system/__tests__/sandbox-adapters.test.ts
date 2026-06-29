@@ -122,6 +122,7 @@ describe("SandboxMultiplyTransactionAdapter", () => {
   it("keeps repeated multiply actions additive in state and portfolio reads", async () => {
     let multiplyState = makeExampleMultiplySystemState()
     const existing = multiplyState.positions["wallet-1:eth-usdt"]!
+    const initialLiquidity = multiplyState.markets[existing.marketId]!.economics.availableLiquidityUsd
     const adapter = new SandboxMultiplyTransactionAdapter({
       readState: () => multiplyState,
       writeState: (nextState) => {
@@ -151,5 +152,8 @@ describe("SandboxMultiplyTransactionAdapter", () => {
     expect(result.historyItem.amountUsd).toBeCloseTo(result.preview.after.collateralValueUsd - result.preview.before.collateralValueUsd)
     expect(portfolio.creditLines.totalCollateralUsd).toBeCloseTo(updated.collateralValueUsd)
     expect(portfolio.creditLines.totalBorrowedUsd).toBeCloseTo(updated.debtValueUsd)
+    expect(multiplyState.markets[existing.marketId]!.economics.availableLiquidityUsd).toBeCloseTo(
+      initialLiquidity - (updated.debtValueUsd - existing.debtValueUsd),
+    )
   })
 })
