@@ -45,6 +45,7 @@ export function PoolBorrowActions({ detail, className }: Props) {
 function PoolActionRail({ detail, className, embedActions = false }: Props & { embedActions?: boolean }) {
   const [tab, setTab] = React.useState<SidebarTab>("pledge")
   const session = useBorrowSessionContext()
+  const closeHref = `/borrow/markets/${detail.id}`
 
   const pool = React.useMemo(
     () => session.collateralPools.find((entry) => entry.id === detail.id) ?? resolvePool(detail),
@@ -74,7 +75,7 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
               <ResponsiveBorrowAction
                 kind="supply"
                 market={pool.id}
-                closeHref={`/borrow/pool/${detail.id}`}
+                closeHref={closeHref}
                 sidebar
               />
             ) : (
@@ -82,7 +83,7 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
                 product="borrow"
                 kind="supply"
                 market={pool.id}
-                returnTo={`/borrow/pool/${detail.id}`}
+                returnTo={closeHref}
               />
             )
           ) : null}
@@ -92,7 +93,7 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
               <ResponsiveBorrowAction
                 kind="remove"
                 market={pool.id}
-                closeHref={`/borrow/pool/${detail.id}`}
+                closeHref={closeHref}
                 sidebar
               />
             ) : (
@@ -100,16 +101,16 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
                 product="borrow"
                 kind="remove"
                 market={pool.id}
-                returnTo={`/borrow/pool/${detail.id}`}
+                returnTo={closeHref}
               />
             )
           ) : null}
 
           {tab === "claim" ? (
             embedActions ? (
-              <ResponsiveBorrowAction kind="claim" market={pool.id} closeHref={`/borrow/pool/${detail.id}`} sidebar />
+              <ResponsiveBorrowAction kind="claim" market={pool.id} closeHref={closeHref} sidebar />
             ) : (
-              <ActionPageLaunchCta product="borrow" kind="claim" market={pool.id} returnTo={`/borrow/pool/${detail.id}`} />
+              <ActionPageLaunchCta product="borrow" kind="claim" market={pool.id} returnTo={closeHref} />
             )
           ) : null}
       </div>

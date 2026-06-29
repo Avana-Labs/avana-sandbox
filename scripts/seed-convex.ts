@@ -1,0 +1,116 @@
+/**
+ * Seed the Convex market data layer for all borrow markets.
+ *
+ *   npx tsx scripts/seed-convex.ts --dry-run     # build rows + print counts, no network
+ *   npx tsx scripts/seed-convex.ts               # push to NEXT_PUBLIC_CONVEX_URL (idempotent)
+ *   npx tsx scripts/seed-convex.ts --days 90     # shorter daily window (fewer rows)
+ *
+ * Requires the Convex functions to be deployed first (`npx convex deploy`). All
+ * writes are idempotent upserts, so re-running is safe.
+ */
+
+import { ConvexHttpClient } from "convex/browser"
+import { api } from "../convex/_generated/api"
+import { buildBorrowSeed } from "../app/lib/convex-seed/build-seed"
+
+const BATCH = 400
+
+function arg(name: string): string | undefined {
+  const i = process.argv.indexOf(`--${name}`)
+  return i >= 0 ? process.argv[i + 1] : undefined
+}
+const dryRun = process.argv.includes("--dry-run")
+const days = Number(arg("days") ?? 365)
+
+function chunk<T>(rows: T[], size: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < rows.length; i += size) out.push(rows.slice(i, i + size))
+  return out
+}
+
+// Throttle between batches to stay under Convex's write-rate cap (4 MiB/s on the
+// dev/local deployment). Tunable via --throttle <ms>.
+const throttleMs = Number(arg("throttle") ?? 70)
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+async function main() {
+  const seed = buildBorrowSeed({ days })
+  console.log(
+    `[seed] built ${seed.markets.length} markets · ${seed.dailyStats.length} daily stats · ${seed.revenue.length} revenue · ${seed.risk.length} risk (days=${days})`,
+  )
+  if (dryRun) {
+    console.log("[seed] --dry-run: not writing. Sample market:", JSON.stringify(seed.markets[0]))
+    return
+  }
+
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL
+  if (!url || !/^https?:\/\//.test(url)) {
+    throw new Error("NEXT_PUBLIC_CONVEX_URL is not set to a reachable deployment (check .env.local).")
+  }
+  const client = new ConvexHttpClient(url)
+
+  // 1) Markets → collect slug → _id
+  const idsBySlug: Record<string, string> = {}
+  for (const batch of chunk(seed.markets, BATCH)) {
+    const res = (await client.mutation(api.seed.upsertMarkets, { rows: batch })) as { idsBySlug: Record<string, string> }
+    Object.assign(idsBySlug, res.idsBySlug)
+  }
+  console.log(`[seed] upserted ${Object.keys(idsBySlug).length} markets`)
+
+  const withMarketId = <T extends { slug: string }>(rows: T[]) =>
+    rows
+      .map(({ slug, ...rest }) => {
+        const marketId = idsBySlug[slug]
+        return marketId ? { marketId, ...rest } : null
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+
+  // 2) Daily stats
+  let n = 0
+  for (const batch of chunk(withMarketId(seed.dailyStats), BATCH)) {
+    await client.mutation(api.seed.upsertDailyStats, { rows: batch })
+    n += batch.length
+    await sleep(throttleMs)
+  }
+  console.log(`[seed] upserted ${n} daily stats`)
+
+  // 3) Revenue
+  n = 0
+  for (const batch of chunk(withMarketId(seed.revenue), BATCH)) {
+    await client.mutation(api.seed.upsertRevenue, { rows: batch })
+    n += batch.length
+    await sleep(throttleMs)
+  }
+  console.log(`[seed] upserted ${n} revenue rows`)
+
+  // 4) Risk
+  for (const batch of chunk(withMarketId(seed.risk), BATCH)) {
+    await client.mutation(api.seed.upsertRisk, { rows: batch })
+    await sleep(throttleMs)
+  }
+  console.log(`[seed] upserted ${seed.risk.length} risk assessments`)
+
+  // 5) Wallet events (engagement) — clear then insert so re-seeds stay idempotent.
+  let cleared = 0
+  for (;;) {
+    const res = (await client.mutation(api.seed.clearWalletEvents, {})) as { deleted: number }
+    cleared += res.deleted
+    if (res.deleted === 0) break
+    await sleep(throttleMs)
+  }
+  let events = 0
+  for (const batch of chunk(withMarketId(seed.walletEvents), BATCH)) {
+    await client.mutation(api.seed.insertWalletEvents, { rows: batch })
+    events += batch.length
+    await sleep(throttleMs)
+  }
+  console.log(`[seed] wallet events: cleared ${cleared}, inserted ${events}`)
+
+  const counts = await client.query(api.seed.getCounts, {})
+  console.log("[seed] done. Convex counts:", JSON.stringify(counts))
+}
+
+main().catch((err) => {
+  console.error("[seed] failed:", err)
+  process.exit(1)
+})

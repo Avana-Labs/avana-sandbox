@@ -15,6 +15,7 @@ import type * as liquidity from "../liquidity.js";
 import type * as markets from "../markets.js";
 import type * as sandbox_auth from "../sandbox/auth.js";
 import type * as sandbox_onboarding from "../sandbox/onboarding.js";
+import type * as seed from "../seed.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   markets: typeof markets;
   "sandbox/auth": typeof sandbox_auth;
   "sandbox/onboarding": typeof sandbox_onboarding;
+  seed: typeof seed;
 }>;
 
 /**

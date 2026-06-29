@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { makeExampleBorrowSystemState } from "@/app/lib/credit-engine/__tests__/fixtures"
 import { makeExampleMultiplySystemState } from "@/app/lib/multiply-engine/__tests__/fixtures"
+import { buildMultiplyPageData } from "@/app/lib/multiply-system/read-model"
 import { SandboxMultiplyReadAdapter } from "@/app/lib/multiply-system/sandbox-read-adapter"
 import { SandboxMultiplyTransactionAdapter } from "@/app/lib/multiply-system/sandbox-transaction-adapter"
 
@@ -25,6 +26,24 @@ describe("SandboxMultiplyReadAdapter", () => {
     const adapter = new SandboxMultiplyReadAdapter({ state })
     const snapshot = await adapter.readWalletSnapshot("wallet-1")
     expect(snapshot.riskSnapshots.length).toBeGreaterThan(0)
+  })
+
+  it("builds the multiply page list from live session state, not a static snapshot", () => {
+    // The /multiply page now renders from the wallet's session state so market
+    // availability stays consistent with the detail page and dashboard after the
+    // wallet's own multiply/deleverage actions consume or return liquidity.
+    const state = makeExampleMultiplySystemState()
+    const [firstMarketId] = Object.keys(state.markets)
+    const market = state.markets[firstMarketId!]!
+    const originalLiquidityUsd = market.economics.availableLiquidityUsd
+    const consumedLiquidityUsd = Math.round(originalLiquidityUsd / 2)
+    market.economics.availableLiquidityUsd = consumedLiquidityUsd
+
+    const livePage = buildMultiplyPageData("wallet-1", state)
+
+    // The page read tracks the live market liquidity rather than a frozen value.
+    expect(consumedLiquidityUsd).not.toBe(originalLiquidityUsd)
+    expect(livePage.markets[0]?.volume).toBe(consumedLiquidityUsd)
   })
 })
 
@@ -122,6 +141,7 @@ describe("SandboxMultiplyTransactionAdapter", () => {
   it("keeps repeated multiply actions additive in state and portfolio reads", async () => {
     let multiplyState = makeExampleMultiplySystemState()
     const existing = multiplyState.positions["wallet-1:eth-usdt"]!
+    const initialLiquidity = multiplyState.markets[existing.marketId]!.economics.availableLiquidityUsd
     const adapter = new SandboxMultiplyTransactionAdapter({
       readState: () => multiplyState,
       writeState: (nextState) => {
@@ -151,5 +171,8 @@ describe("SandboxMultiplyTransactionAdapter", () => {
     expect(result.historyItem.amountUsd).toBeCloseTo(result.preview.after.collateralValueUsd - result.preview.before.collateralValueUsd)
     expect(portfolio.creditLines.totalCollateralUsd).toBeCloseTo(updated.collateralValueUsd)
     expect(portfolio.creditLines.totalBorrowedUsd).toBeCloseTo(updated.debtValueUsd)
+    expect(multiplyState.markets[existing.marketId]!.economics.availableLiquidityUsd).toBeCloseTo(
+      initialLiquidity - (updated.debtValueUsd - existing.debtValueUsd),
+    )
   })
 })
