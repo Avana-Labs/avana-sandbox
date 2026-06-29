@@ -630,7 +630,10 @@ export function BorrowActionPageClient({
 
   useEffect(() => {
     if (previewUi == null || successUi != null) return
-    if (stage !== "processing" && stage !== "configure") return
+    // Only recover the success screen while a submit is in flight. Matching on the
+    // "configure" stage too let a revisit within 15s of any same-market success
+    // auto-jump to a phantom "successful" screen without the user submitting.
+    if (stage !== "processing") return
 
     const minTimestamp = Date.now() - 15_000
 
@@ -711,6 +714,7 @@ export function BorrowActionPageClient({
     }
     if (stage !== "review") return
     if (!previewUi?.allowed) return
+    if (isPending) return // guard against double-submit (rapid double-click)
 
     setOutcome(null)
     setIsPending(true)
@@ -798,7 +802,7 @@ export function BorrowActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [activeMarketId, amount, closeHref, debtPosition, descriptor.primaryVerb, kind, marketId, percent, previewUi, resolvedBorrowAssetId, router, session, stage, successUi, walletId])
+  }, [activeMarketId, amount, closeHref, debtPosition, descriptor.primaryVerb, isPending, kind, marketId, percent, previewUi, resolvedBorrowAssetId, router, session, stage, successUi, walletId])
 
   const shellSubtitle =
     stage === "select"
@@ -993,6 +997,7 @@ export function BorrowActionPageClient({
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
+          primaryPending={isPending}
         />
       ) : null}
 

@@ -275,6 +275,7 @@ export function MultiplyActionPageClient({
     }
     if (stage !== "review") return
     if (!market || !previewUi?.allowed) return
+    if (isPending) return // guard against double-submit (rapid double-click)
 
     setIsPending(true)
     setOutcome(null)
@@ -342,7 +343,7 @@ export function MultiplyActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, hasUserInput, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
+  }, [amount, closeHref, descriptor.primaryVerb, hasUserInput, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
 
   if (!market) {
     return (
@@ -427,6 +428,7 @@ export function MultiplyActionPageClient({
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
+          primaryPending={isPending}
         />
       ) : null}
 

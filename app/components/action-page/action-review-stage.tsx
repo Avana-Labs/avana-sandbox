@@ -17,6 +17,7 @@ export function ActionReviewStage({
   onSecondary,
   secondaryHref,
   hideHeader = false,
+  primaryPending = false,
 }: {
   title: string
   subtitle?: string
@@ -27,6 +28,7 @@ export function ActionReviewStage({
   onSecondary?: () => void
   secondaryHref?: string
   hideHeader?: boolean
+  primaryPending?: boolean
 }) {
   const amountDisplay = resolveActionAmountCardProps(preview)
   const isClaimReview = preview.rateLabel === "Claim total"
@@ -105,6 +107,7 @@ export function ActionReviewStage({
         onSecondary={onSecondary}
         secondaryHref={secondaryHref}
         primaryDisabled={!preview.allowed && Boolean(preview.blockedReason)}
+        primaryPending={primaryPending}
       />
     </div>
   )

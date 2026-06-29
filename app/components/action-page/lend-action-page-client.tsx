@@ -262,6 +262,7 @@ export function LendActionPageClient({
     }
     if (stage !== "review") return
     if (!market || !previewUi?.allowed) return
+    if (isPending) return // guard against double-submit (rapid double-click)
 
     setIsPending(true)
     setOutcome(null)
@@ -321,7 +322,7 @@ export function LendActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, kind, market, position, previewUi, router, session, stage, successUi, walletId])
+  }, [amount, closeHref, descriptor.primaryVerb, isPending, kind, market, position, previewUi, router, session, stage, successUi, walletId])
 
   if (!market && stage !== "select") {
     return (
@@ -385,6 +386,7 @@ export function LendActionPageClient({
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
+          primaryPending={isPending}
         />
       ) : null}
 
