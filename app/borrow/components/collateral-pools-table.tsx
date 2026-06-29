@@ -307,8 +307,13 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
   onUseAsCollateral,
   onBorrowAssetDesktop,
 }: CollateralPoolsTableProps) {
+  const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
+
   return (
     <div className="hidden space-y-10 md:block">
+      <div className="flex justify-start px-4">
+        <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
       {groups.flatMap((group) =>
         group.spokes.map((entry) => (
           <SpokeDesktopSection
@@ -320,6 +325,7 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
             onViewMarket={onViewMarket}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetDesktop}
+            activeTab={activeTab}
           />
         )),
       )}
@@ -334,6 +340,7 @@ function SpokeDesktopSection({
   pending,
   onViewMarket,
   onBorrowAsset,
+  activeTab,
 }: {
   spoke: BorrowSpoke
   rows: BorrowPoolRow[]
@@ -342,17 +349,13 @@ function SpokeDesktopSection({
   onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
+  activeTab: SectionTabId
 }) {
-  const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
-
   return (
     <section className="mb-2">
       <div className="mt-4 overflow-hidden rounded-[20px] bg-transparent md:shadow-none">
-        <div className="flex flex-col gap-3 rounded-t-[20px] bg-transparent px-1 py-2 md:flex-row md:items-center md:gap-4 md:px-4 md:py-3">
-          <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
-          <h3 className="text-[16px] font-normal tracking-tight text-foreground md:ml-auto md:text-[18px]">
-            {spoke.label}
-          </h3>
+        <div className="flex justify-end rounded-t-[20px] bg-transparent px-1 py-2 md:px-4 md:py-3">
+          <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
         </div>
         <div className="bg-transparent">
           {activeTab === "collateral" ? (
@@ -374,8 +377,11 @@ export function CollateralPoolsList({
   onUseAsCollateral,
   onBorrowAssetMobile,
 }: CollateralPoolsTableProps) {
+  const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
+
   return (
     <div className="space-y-8 md:hidden">
+      <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
       {groups.flatMap((group) =>
         group.spokes.map((entry) => (
           <SpokeMobileSection
@@ -387,6 +393,7 @@ export function CollateralPoolsList({
             onViewMarket={onViewMarket}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetMobile}
+            activeTab={activeTab}
           />
         )),
       )}
@@ -402,6 +409,7 @@ function SpokeMobileSection({
   onViewMarket,
   onUseAsCollateral,
   onBorrowAsset,
+  activeTab,
 }: {
   spoke: BorrowSpoke
   rows: BorrowPoolRow[]
@@ -410,19 +418,16 @@ function SpokeMobileSection({
   onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
+  activeTab: SectionTabId
 }) {
-  const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
   return (
     <section className="space-y-2">
-      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:rounded-[18px] md:border md:border-black/5 md:bg-transparent md:px-4 md:py-2 md:shadow-none dark:md:border-white/10">
-        <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
-        <h3 className="text-[16px] font-normal tracking-tight text-foreground md:ml-auto md:text-[18px]">
-          {spoke.label}
-        </h3>
+      <div className="mb-3 flex justify-end">
+        <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
       </div>
 
       <div className="mt-4">
