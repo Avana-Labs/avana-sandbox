@@ -66,13 +66,13 @@ export function ActionReviewStage({
           {preview.marketBreakdown ? (
             <>
               <ActionInfoRow
-                label="Collateral"
-                value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy} APY`}
+                label="Collateral APY"
+                value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy}`}
                 tooltip="market"
               />
               <ActionInfoRow
-                label="Borrow"
-                value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy} APY`}
+                label="Borrow APY"
+                value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy}`}
                 tooltip="market"
               />
             </>

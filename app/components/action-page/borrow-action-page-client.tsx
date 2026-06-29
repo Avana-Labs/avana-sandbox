@@ -4,17 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatFixed, parseFixed, currentDebtValueUsd6 } from "@/app/lib/credit-engine"
 import {
-  buildHomeBorrowPreview,
-  buildHomeRepayPreview,
-  buildHomeRemovePreview,
   buildClaimBorrowAction,
   buildHomeClaimPreview,
   selectHomeBorrowTokensForMarket,
   selectHomeDebtMap,
   selectHomeRepayTokensForMarket,
 } from "@/app/lib/borrow-system/action-preview-runtime"
+import { buildRepayPreviewModel, buildWithdrawPreviewModel } from "@/app/lib/borrow-system/preview-builders"
 import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
+import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
 import { useAvanaSessions, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
@@ -236,6 +235,16 @@ export function BorrowActionPageClient({
     return market ? formatBorrowMarketLabel(market) : "Collateral pool"
   }, [marketId, session.marketSummaries])
 
+  const creditScopeLabel = useMemo(() => {
+    const scopedMarketId =
+      kind === "borrow"
+        ? activeMarketId
+        : debtPosition?.marketId ?? marketId ?? activeMarketId
+    const market = scopedMarketId ? session.state.markets[scopedMarketId] : null
+    if (!market) return null
+    return getBorrowSpoke(market.spokeId)?.label ?? market.display.venue
+  }, [activeMarketId, debtPosition?.marketId, kind, marketId, session.state.markets])
+
   const repayAssetOptions = useMemo(() => {
     if (kind !== "repay" || !debtPosition) return undefined
     const options = debtPositions
@@ -420,7 +429,6 @@ export function BorrowActionPageClient({
         setPreviewUi(null)
         return undefined
       }
-      const homePreview = buildHomeBorrowPreview(session.state, walletId, activeMarketId, resolvedAssetId, safeAmount)
       void session
         .previewTransaction(
           session.createIntent({
@@ -440,8 +448,9 @@ export function BorrowActionPageClient({
               amountUsd: safeAmount,
               marketLabel,
               ratePct: token?.borrowApr ?? 0,
-              balanceLabel: "Available to Borrow",
-              balanceUsd: homePreview.remainingBorrowPowerUsd,
+              balanceLabel: creditScopeLabel ? `Available in ${creditScopeLabel}` : "Available to Borrow",
+              balanceUsd: Number.parseFloat(formatFixed(preview.after.availableBorrowCapacityUsd6, 6)),
+              creditScopeLabel: creditScopeLabel ?? undefined,
             }),
           )
         })
@@ -489,6 +498,7 @@ export function BorrowActionPageClient({
               collateralRiskPct: Math.max(0, liquidationPct - collateralFactorPct),
               borrowableAssetsLabel: borrowableAssets.map((asset) => asset.symbol).join(", ") || "—",
               borrowableAssetSymbols: borrowableAssets.map((asset) => asset.symbol),
+              creditScopeLabel: creditScopeLabel ?? undefined,
             }),
           )
         })
@@ -505,7 +515,7 @@ export function BorrowActionPageClient({
         setPreviewUi(null)
         return undefined
       }
-      const repayPreview = buildHomeRepayPreview(session.state, walletId, debtPosition.id, safeAmount)
+      const repayPreview = buildRepayPreviewModel(session.state, walletId, debtPosition.id, safeAmount)
       void session
         .previewTransaction(
           session.createIntent({
@@ -525,6 +535,7 @@ export function BorrowActionPageClient({
               marketLabel,
               remainingDebtUsd: repayPreview.remainingDebtUsd,
               yearlyInterestSavedUsd: repayPreview.yearlyInterestSavedUsd,
+              creditScopeLabel: creditScopeLabel ?? undefined,
             }),
           )
         })
@@ -544,7 +555,7 @@ export function BorrowActionPageClient({
         return undefined
       }
       const pct = percentBps / 100
-      const removePreview = buildHomeRemovePreview(session.state, walletId, marketId, pct)
+      const removePreview = buildWithdrawPreviewModel(session.state, walletId, marketId, pct)
       const pool = session.collateralPools.find((entry) => entry.id === marketId)
       void session
         .previewTransaction(
@@ -564,6 +575,7 @@ export function BorrowActionPageClient({
               removeUsd: removePreview.removeUsd,
               marketLabel,
               positionApyPct: pool?.pairApr ?? 0,
+              creditScopeLabel: creditScopeLabel ?? undefined,
             }),
           )
         })
@@ -590,7 +602,7 @@ export function BorrowActionPageClient({
       )
     }
     return undefined
-  }, [activeMarketId, amount, assetId, claimPositionId, debtPosition, kind, marketId, marketLabel, percent, resolvedBorrowAssetId, session, walletId])
+  }, [activeMarketId, amount, assetId, claimPositionId, creditScopeLabel, debtPosition, kind, marketId, marketLabel, percent, resolvedBorrowAssetId, session, walletId])
 
   useEffect(() => {
     if (!previewUi || previewUi.allowed || stage !== "configure") return

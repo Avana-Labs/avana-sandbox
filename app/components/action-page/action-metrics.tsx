@@ -46,7 +46,7 @@ export function ActionInfoRow({
       </div>
       <div className="font-medium tabular-nums text-foreground">
         {typeof value === "string" || typeof value === "number" ? (
-          <AnimatedTextValue text={String(value)} />
+          <AnimatedTextValue text={String(value)} animateOnMount />
         ) : (
           value
         )}
@@ -105,7 +105,7 @@ function MetricValue({
         <span className="text-muted-foreground/70">→</span>
         <span className={cn("inline-flex items-center gap-1", toneClassName(resolvedTone))}>
           {showHeart ? <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden /> : null}
-          <AnimatedTextValue text={after} />
+          <AnimatedTextValue text={after} animateOnMount />
         </span>
       </div>
     )
@@ -114,7 +114,7 @@ function MetricValue({
   return (
     <div className={cn("inline-flex items-center gap-1 font-medium tabular-nums", toneClassName(resolvedTone))}>
       {showHeart ? <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden /> : null}
-      <AnimatedTextValue text={value} />
+      <AnimatedTextValue text={value} animateOnMount />
     </div>
   )
 }
@@ -154,7 +154,7 @@ export function ActionMetricsBlock({ rows }: { rows: ActionMetricRow[] }) {
     <div className="space-y-3" data-testid="action-metrics-block">
       {hfRow ? (
         <ActionCard className="p-4" data-testid="action-health-factor-card">
-          <ActionHealthFactorBar value={hfValue} />
+          <ActionHealthFactorBar value={hfValue} label={hfRow.label} />
         </ActionCard>
       ) : null}
 

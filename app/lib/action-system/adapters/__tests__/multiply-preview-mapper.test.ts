@@ -26,17 +26,19 @@ describe("multiply preview mappers", () => {
     })
     expect(ui.rateLabel).toBe("")
     expect(ui.metrics.map((row) => row.label)).toEqual([
-      "Exposure",
-      "Estimated debt",
-      "LTV",
-      "Health factor",
-      "Net APY",
+      "New exposure",
+      "New debt",
+      "Projected exposure",
+      "Projected total debt",
+      "Projected LTV",
+      "Projected health factor",
+      "Projected net APY",
       "Liquidation price",
     ])
     expect(ui.amountUsdLabel).toBe("≈ $7,000")
-    expect(ui.metrics.find((row) => row.id === "exposure")?.before).toBeUndefined()
-    expect(ui.metrics.find((row) => row.id === "exposure")?.value).toBe("$12,000")
-    expect(ui.metrics.find((row) => row.id === "net-apy")?.before).toBeUndefined()
+    expect(ui.balanceLabel).toBe("Selected leverage")
+    expect(ui.metrics.find((row) => row.id === "new-exposure")?.value).toBe("$2,000")
+    expect(ui.metrics.find((row) => row.id === "projected-exposure")?.value).toBe("$12,000")
     expect(ui.metrics.find((row) => row.id === "liq-price")?.value).not.toBe("—")
   })
 

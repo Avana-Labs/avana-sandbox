@@ -62,6 +62,22 @@ function borrowingPowerUsd(preview: TransactionPreview, side: "before" | "after"
   return fixedToNumber(snapshot.availableBorrowCapacityUsd6, 6)
 }
 
+function creditScopeMetric(scopeLabel?: string) {
+  if (!scopeLabel) return []
+  return [
+    {
+      id: "credit-scope",
+      label: "Credit scope",
+      value: scopeLabel,
+      tooltip: `Borrowing power, collateral, and health metrics below are scoped to ${scopeLabel}.`,
+    },
+  ]
+}
+
+function scopedMetricLabel(label: string, scopeLabel?: string) {
+  return scopeLabel ? `${label} in scope` : label
+}
+
 export function mapBorrowTransactionPreviewToActionUi(
   preview: TransactionPreview,
   options: {
@@ -72,6 +88,7 @@ export function mapBorrowTransactionPreviewToActionUi(
     balanceLabel: string
     balanceUsd: number
     rateLabel?: string
+    creditScopeLabel?: string
   },
 ): ActionPreviewUi {
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
@@ -93,6 +110,7 @@ export function mapBorrowTransactionPreviewToActionUi(
     balanceValue: formatActionUsd(options.balanceUsd),
     maxAmount: options.balanceUsd,
     metrics: [
+      ...creditScopeMetric(options.creditScopeLabel),
       {
         id: "position-apy",
         label: "Position APY",
@@ -102,28 +120,28 @@ export function mapBorrowTransactionPreviewToActionUi(
       },
       {
         id: "borrowing-power",
-        label: "Borrowing power",
+        label: scopedMetricLabel("Borrowing power", options.creditScopeLabel),
         value: formatActionUsdBeforeAfter(borrowingPowerUsd(preview, "before"), borrowingPowerUsd(preview, "after")),
         before: formatActionUsd(borrowingPowerUsd(preview, "before")),
         after: formatActionUsd(borrowingPowerUsd(preview, "after")),
       },
       {
         id: "net-balance",
-        label: "Net balance",
+        label: scopedMetricLabel("Net balance", options.creditScopeLabel),
         value: formatActionUsdBeforeAfter(netBalanceUsd(preview, "before"), netBalanceUsd(preview, "after")),
         before: formatActionUsd(netBalanceUsd(preview, "before")),
         after: formatActionUsd(netBalanceUsd(preview, "after")),
       },
       {
         id: "net-collateral",
-        label: "Net collateral",
+        label: scopedMetricLabel("Net collateral", options.creditScopeLabel),
         value: formatActionUsdBeforeAfter(beforeCollateral, afterCollateral),
         before: formatActionUsd(beforeCollateral),
         after: formatActionUsd(afterCollateral),
       },
       {
         id: "health-factor",
-        label: "Health factor",
+        label: scopedMetricLabel("Health factor", options.creditScopeLabel),
         value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
         before: formatActionHealthFactor(healthBefore),
         after: formatActionHealthFactor(healthAfter),
@@ -146,6 +164,7 @@ export function mapBorrowRepayPreviewToActionUi(
     marketLabel: string
     remainingDebtUsd: number
     yearlyInterestSavedUsd: number
+    creditScopeLabel?: string
   },
 ): ActionPreviewUi {
   const beforeDebt = fixedToNumber(preview.before.totalBorrowedUsd6, 6)
@@ -165,6 +184,7 @@ export function mapBorrowRepayPreviewToActionUi(
     balanceValue: formatActionUsd(options.remainingDebtUsd),
     maxAmount: beforeDebt,
     metrics: [
+      ...creditScopeMetric(options.creditScopeLabel),
       {
         id: "remaining-debt",
         label: "Remaining debt",
@@ -174,7 +194,7 @@ export function mapBorrowRepayPreviewToActionUi(
       },
       {
         id: "health-factor",
-        label: "Health factor after",
+        label: scopedMetricLabel("Health factor after", options.creditScopeLabel),
         value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
         before: formatActionHealthFactor(healthBefore),
         after: formatActionHealthFactor(healthAfter),
@@ -208,6 +228,7 @@ export function mapBorrowSupplyPreviewToActionUi(
     collateralRiskPct: number
     borrowableAssetsLabel: string
     borrowableAssetSymbols: string[]
+    creditScopeLabel?: string
   },
 ): ActionPreviewUi {
   const borrowPowerBefore = borrowingPowerUsd(preview, "before")
@@ -231,6 +252,7 @@ export function mapBorrowSupplyPreviewToActionUi(
     balanceValue: formatActionUsd(borrowPowerAfter),
     maxAmount: null,
     metrics: [
+      ...creditScopeMetric(options.creditScopeLabel),
       {
         id: "collateral-factor",
         label: "Collateral factor",
@@ -250,14 +272,14 @@ export function mapBorrowSupplyPreviewToActionUi(
       },
       {
         id: "borrow-power",
-        label: "Borrowing power",
+        label: scopedMetricLabel("Borrowing power", options.creditScopeLabel),
         value: formatActionUsdBeforeAfter(borrowPowerBefore, borrowPowerAfter),
         before: formatActionUsd(borrowPowerBefore),
         after: formatActionUsd(borrowPowerAfter),
       },
       {
         id: "hf",
-        label: "Health factor",
+        label: scopedMetricLabel("Health factor", options.creditScopeLabel),
         value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
         before: formatActionHealthFactor(healthBefore),
         after: formatActionHealthFactor(healthAfter),
@@ -280,6 +302,7 @@ export function mapBorrowRemovePreviewToActionUi(
     removeUsd: number
     marketLabel: string
     positionApyPct: number
+    creditScopeLabel?: string
   },
 ): ActionPreviewUi {
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
@@ -301,6 +324,7 @@ export function mapBorrowRemovePreviewToActionUi(
     balanceValue: formatActionUsd(options.removeUsd),
     maxAmount: options.safePercent,
     metrics: [
+      ...creditScopeMetric(options.creditScopeLabel),
       {
         id: "position-apy",
         label: "Position APY",
@@ -315,28 +339,28 @@ export function mapBorrowRemovePreviewToActionUi(
       },
       {
         id: "borrowing-power",
-        label: "Borrowing power",
+        label: scopedMetricLabel("Borrowing power", options.creditScopeLabel),
         value: formatActionUsdBeforeAfter(borrowingPowerUsd(preview, "before"), borrowingPowerUsd(preview, "after")),
         before: formatActionUsd(borrowingPowerUsd(preview, "before")),
         after: formatActionUsd(borrowingPowerUsd(preview, "after")),
       },
       {
         id: "net-balance",
-        label: "Net balance",
+        label: scopedMetricLabel("Net balance", options.creditScopeLabel),
         value: formatActionUsdBeforeAfter(netBalanceUsd(preview, "before"), netBalanceUsd(preview, "after")),
         before: formatActionUsd(netBalanceUsd(preview, "before")),
         after: formatActionUsd(netBalanceUsd(preview, "after")),
       },
       {
         id: "net-collateral",
-        label: "Net collateral",
+        label: scopedMetricLabel("Net collateral", options.creditScopeLabel),
         value: formatActionUsdBeforeAfter(beforeCollateral, afterCollateral),
         before: formatActionUsd(beforeCollateral),
         after: formatActionUsd(afterCollateral),
       },
       {
         id: "hf",
-        label: "Health factor",
+        label: scopedMetricLabel("Health factor", options.creditScopeLabel),
         value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
         before: formatActionHealthFactor(healthBefore),
         after: formatActionHealthFactor(healthAfter),

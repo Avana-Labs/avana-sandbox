@@ -246,7 +246,7 @@ export function ActionConfigureStage({
       {showConfigureHealthFactor ? (
         <div className={previewMotionClassName}>
           <ActionCard className="p-4" data-testid="action-health-factor-card">
-            <ActionHealthFactorBar value={healthFactorValue} />
+            <ActionHealthFactorBar value={healthFactorValue} label={healthFactorRow?.label ?? "Health factor"} />
           </ActionCard>
         </div>
       ) : null}

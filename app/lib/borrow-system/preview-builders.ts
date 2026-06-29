@@ -1,7 +1,9 @@
 import {
+  calculateSpokeCreditMetrics,
   currentCollateralValueUsd6,
   currentDebtValueUsd6,
   formatFixed,
+  mulDiv,
   parseFixed,
   simulateBorrow,
   simulateDeposit,
@@ -114,11 +116,25 @@ export function buildWithdrawPreviewModel(
       healthFactorAfter: null as number | null,
       removeUsd: 0,
       afterCollateralUsd: position && market ? fixedToNumber(currentCollateralValueUsd6(position, market), 6) : 0,
+      safePercent: 0,
       warningMessage: null as string | null,
     }
   }
 
   const currentCollateralUsd = fixedToNumber(currentCollateralValueUsd6(position, market), 6)
+  const currentMetrics = calculateSpokeCreditMetrics(state, walletId, market.spokeId)
+  const liquidationHeadroomUsd6 =
+    currentMetrics.liquidationValueUsd6 > currentMetrics.totalBorrowedUsd6
+      ? currentMetrics.liquidationValueUsd6 - currentMetrics.totalBorrowedUsd6
+      : 0n
+  const maxRemoveUsd6 =
+    currentMetrics.totalBorrowedUsd6 > 0n
+      ? mulDiv(liquidationHeadroomUsd6, parseFixed("1", 18), market.riskConfig.liquidationThresholdWad)
+      : currentCollateralValueUsd6(position, market)
+  const safePercent =
+    currentCollateralUsd > 0
+      ? Math.max(0, Math.min(100, Math.floor((fixedToNumber(maxRemoveUsd6, 6) / currentCollateralUsd) * 100)))
+      : 0
   const preview = simulateWithdraw(state, {
     type: "removeCollateral",
     walletId,
@@ -131,6 +147,7 @@ export function buildWithdrawPreviewModel(
     healthFactorAfter: healthFactorToNumber(preview.after.metrics.healthFactorWad),
     removeUsd: Math.round((currentCollateralUsd * percent) / 100),
     afterCollateralUsd: fixedToNumber(preview.after.metrics.collateralValueUsd6, 6),
+    safePercent,
     warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,
   }
 }

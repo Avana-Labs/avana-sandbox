@@ -44,8 +44,9 @@ function easeOutCubic(value: number) {
 export function AnimatedTextValue({
   text,
   className,
-  durationMs = 240,
+  durationMs = 520,
   disabled = false,
+  animateOnMount = false,
   ariaLive,
   ariaAtomic = true,
 }: {
@@ -53,11 +54,17 @@ export function AnimatedTextValue({
   className?: string
   durationMs?: number
   disabled?: boolean
+  animateOnMount?: boolean
   ariaLive?: "off" | "polite" | "assertive"
   ariaAtomic?: boolean
 }) {
-  const [displayText, setDisplayText] = useState(text)
-  const previousTextRef = useRef(text)
+  const [displayText, setDisplayText] = useState(() => {
+    const parsed = parseAnimatedValue(text)
+    if (!animateOnMount || !parsed) return text
+    return formatAnimatedValue(parsed, 0)
+  })
+  const previousTextRef = useRef<string | null>(null)
+  const hasMountedRef = useRef(false)
   const reducedMotionRef = useRef(false)
   const frameRef = useRef<number | null>(null)
 
@@ -84,30 +91,60 @@ export function AnimatedTextValue({
       frameRef.current = null
     }
 
-    if (disabled || reducedMotionRef.current || previous === text) {
+    if (disabled || reducedMotionRef.current) {
       setDisplayText(text)
+      hasMountedRef.current = true
       return undefined
     }
 
-    const from = parseAnimatedValue(previous)
+    if (previous === text && (hasMountedRef.current || !animateOnMount)) {
+      setDisplayText(text)
+      hasMountedRef.current = true
+      return undefined
+    }
+
     const to = parseAnimatedValue(text)
-    if (!from || !to || from.prefix !== to.prefix || from.suffix !== to.suffix) {
+    if (!to) {
       setDisplayText(text)
+      hasMountedRef.current = true
       return undefined
     }
 
-    const delta = to.numeric - from.numeric
+    const from = previous ? parseAnimatedValue(previous) : null
+    if (from && (from.prefix !== to.prefix || from.suffix !== to.suffix)) {
+      setDisplayText(text)
+      hasMountedRef.current = true
+      return undefined
+    }
+
+    const source =
+      from ??
+      (!hasMountedRef.current && animateOnMount
+        ? { prefix: to.prefix, numeric: 0, suffix: to.suffix, decimals: to.decimals }
+        : null)
+
+    if (!source) {
+      setDisplayText(text)
+      hasMountedRef.current = true
+      return undefined
+    }
+
+    const delta = to.numeric - source.numeric
     if (delta === 0) {
       setDisplayText(text)
+      hasMountedRef.current = true
       return undefined
     }
+
+    hasMountedRef.current = true
+    setDisplayText(formatAnimatedValue(to, source.numeric))
 
     const start = window.performance.now()
 
     const tick = (now: number) => {
-      const progress = Math.min(1, (now - start) / durationMs)
+      const progress = Math.max(0, Math.min(1, (now - start) / durationMs))
       const eased = easeOutCubic(progress)
-      const current = from.numeric + delta * eased
+      const current = source.numeric + delta * eased
       setDisplayText(formatAnimatedValue(to, current))
 
       if (progress < 1) {
@@ -127,7 +164,7 @@ export function AnimatedTextValue({
         frameRef.current = null
       }
     }
-  }, [disabled, durationMs, text])
+  }, [animateOnMount, disabled, durationMs, text])
 
   return (
     <span aria-live={ariaLive} aria-atomic={ariaAtomic} className={cn("inline-block", className)}>
