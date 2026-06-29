@@ -38,12 +38,27 @@ function metricBeforeAfter(
   }
 }
 
+function metricValue(
+  id: string,
+  label: string,
+  value: string,
+  tone?: ActionMetricTone,
+) {
+  return {
+    id,
+    label,
+    value,
+    tone,
+  }
+}
+
 export function mapMultiplyPreviewToActionUi(
   preview: MultiplyTransactionPreview,
   options: {
     collateralSymbol: string
     borrowSymbol: string
     collateralAmount: number
+    collateralPriceUsd: number
     marketLabel: string
     collateralApy: number
     borrowApy: number
@@ -61,7 +76,7 @@ export function mapMultiplyPreviewToActionUi(
   return {
     allowed: preview.allowed,
     amountLabel: `${options.multiplier.toFixed(2)}x · ${formatActionAmount(options.collateralAmount, options.collateralSymbol, 4)}`,
-    amountUsdLabel: formatActionApproxUsd(preview.after.collateralValueUsd),
+    amountUsdLabel: formatActionApproxUsd(options.collateralAmount * options.collateralPriceUsd),
     rateLabel: "",
     rateValue: "",
     marketLabel: "Market",
@@ -80,35 +95,30 @@ export function mapMultiplyPreviewToActionUi(
     balanceValue: `${options.multiplier.toFixed(2)}x`,
     maxAmount: options.multiplier,
     metrics: [
-      metricBeforeAfter(
+      metricValue(
         "exposure",
         "Exposure",
-        formatActionUsd(preview.before.collateralValueUsd),
         formatActionUsd(preview.after.collateralValueUsd),
       ),
-      metricBeforeAfter(
+      metricValue(
         "debt",
         "Estimated debt",
-        formatActionUsd(preview.before.debtValueUsd),
         formatActionUsd(preview.after.debtValueUsd),
       ),
-      metricBeforeAfter(
+      metricValue(
         "ltv",
         "LTV",
-        formatActionRatioPercent(preview.before.ltv),
         formatActionRatioPercent(preview.after.ltv),
       ),
-      metricBeforeAfter(
+      metricValue(
         "hf",
         "Health factor",
-        formatActionHealthFactor(hfNumber(preview.before.healthFactor)),
         formatActionHealthFactor(healthAfter),
         hfTone(healthAfter),
       ),
-      metricBeforeAfter(
+      metricValue(
         "net-apy",
         "Net APY",
-        formatActionRatioPercent(preview.before.netApy),
         formatActionRatioPercent(preview.after.netApy),
       ),
       {
@@ -145,6 +155,7 @@ export function mapDeleveragePreviewToActionUi(
   options: {
     marketLabel: string
     targetMultiplier: number
+    collateralSymbol: string
   },
 ): ActionPreviewUi {
   const healthAfter = hfNumber(preview.after.healthFactor)
@@ -152,7 +163,10 @@ export function mapDeleveragePreviewToActionUi(
 
   return {
     allowed: preview.allowed,
-    amountLabel: `${options.targetMultiplier.toFixed(2)}x target`,
+    amountLabel: `${options.targetMultiplier.toFixed(2)}x ${options.collateralSymbol}`,
+    amountValue: `${options.targetMultiplier.toFixed(2)}x`,
+    assetLabel: options.collateralSymbol,
+    assetSymbol: options.collateralSymbol,
     amountUsdLabel: formatActionApproxUsd(preview.after.collateralValueUsd),
     rateLabel: "",
     rateValue: "",

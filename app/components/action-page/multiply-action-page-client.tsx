@@ -23,6 +23,7 @@ import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-syst
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import {
   MULTIPLY_ACTION_MIN_LEVERAGE,
+  getDeleverageMultiplierMax,
   getDefaultDeleverageMultiplier,
   resolveMultiplyMarketMaxLeverage,
 } from "@/app/lib/multiply-system/leverage-limits"
@@ -77,7 +78,6 @@ export function MultiplyActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
 
-  const multiplierMax = resolveMultiplyMarketMaxLeverage(market?.risk.publicMaxMultiplier)
   const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
   const position = useMemo(() => {
     if (!market) return null
@@ -87,12 +87,24 @@ export function MultiplyActionPageClient({
       null
     )
   }, [market, session.state.positions, walletId, walletPositions])
+  const defaultMultiplyMultiplier = useMemo(() => {
+    if (kind !== "multiply") return ""
+    const marketCap = market ? resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier) : 3
+    const recommendedCap =
+      market && Number.isFinite(market.risk.recommendedMaxMultiplier)
+        ? Math.min(marketCap, market.risk.recommendedMaxMultiplier)
+        : marketCap
+    const options = buildMultiplierOptions(marketCap)
+    const clamped = clampMultiplierToOptions(Math.min(3, recommendedCap), options)
+    return String(Number(clamped.toFixed(2)))
+  }, [kind, market])
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
-  const [multiplier, setMultiplier] = useState(() => initialMultiplier ?? (kind === "deleverage" ? "" : "3"))
+  const [multiplier, setMultiplier] = useState(() => initialMultiplier ?? (kind === "deleverage" ? "" : defaultMultiplyMultiplier))
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
   const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
+  const [hasUserInput, setHasUserInput] = useState(() => Boolean(initialAmount || initialMultiplier))
 
   useEffect(() => {
     if (kind !== "deleverage" || initialMarketId || selectedMarketId || walletPositions.length === 0) return
@@ -108,17 +120,25 @@ export function MultiplyActionPageClient({
   }, [initialMultiplier, kind, multiplier, position])
 
   useEffect(() => {
+    setHasUserInput(Boolean(initialAmount || initialMultiplier))
+  }, [initialAmount, initialMultiplier, kind, market?.id])
+
+  useEffect(() => {
     if (!market) return
     const parsed = parsePositiveActionAmount(multiplier)
     if (parsed == null) return
-    const options = buildMultiplierOptions(market.risk.publicMaxMultiplier)
+    const effectiveMax =
+      kind === "deleverage"
+        ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
+        : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
+    const options = buildMultiplierOptions(effectiveMax)
     const clamped = clampMultiplierToOptions(
-      Math.min(multiplierMax, Math.max(multiplierMin, parsed)),
+      Math.min(effectiveMax, Math.max(multiplierMin, parsed)),
       options,
     )
     const next = String(Number(clamped.toFixed(2)))
     if (next !== multiplier) setMultiplier(next)
-  }, [market, multiplier, multiplierMax, multiplierMin])
+  }, [kind, market, multiplier, multiplierMin, position?.multiplier])
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
@@ -135,6 +155,11 @@ export function MultiplyActionPageClient({
     }
 
     if (kind === "deleverage" && !position) {
+      setPreviewUi(null)
+      return
+    }
+
+    if (kind === "deleverage" && !hasUserInput) {
       setPreviewUi(null)
       return
     }
@@ -164,6 +189,7 @@ export function MultiplyActionPageClient({
               collateralSymbol: market.collateralAsset.symbol,
               borrowSymbol: market.borrowAsset.symbol,
               collateralAmount: multiplyCollateralAmount,
+              collateralPriceUsd: market.collateralAsset.priceUsd,
               marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
               collateralApy: market.collateralAsset.apy,
               borrowApy: market.borrowAsset.borrowApy,
@@ -200,6 +226,7 @@ export function MultiplyActionPageClient({
           mapDeleveragePreviewToActionUi(preview, {
             marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
             targetMultiplier: parsedMultiplier,
+            collateralSymbol: market.collateralAsset.symbol,
           }),
         )
       })
@@ -315,7 +342,7 @@ export function MultiplyActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId])
+  }, [amount, closeHref, descriptor.primaryVerb, hasUserInput, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
 
   if (!market) {
     return (
@@ -332,13 +359,20 @@ export function MultiplyActionPageClient({
   const shellDensity = isHomeLayout ? "home" : "default"
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const marketLabel = formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol)
+  const effectiveMultiplierMax =
+    kind === "deleverage"
+      ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
+      : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
   const useWorkspaceFields =
     embedded && isHomeLayout && market != null && isConfigureVisibleStage(stage) && !showInlineBlocked
   const stackedAmountField = useWorkspaceFields ? (
     <ActionConfigureAmountSection
       verb={descriptor.primaryVerb}
       amount={amount}
-      onAmountChange={setAmount}
+      onAmountChange={(value) => {
+        setHasUserInput(true)
+        setAmount(value)
+      }}
       preview={previewUi}
       assetSymbol={market.collateralAsset.symbol}
       borrowSymbol={market.borrowAsset.symbol}
@@ -346,6 +380,7 @@ export function MultiplyActionPageClient({
       assetOptions={!initialMarketId ? marketOptions : undefined}
       selectedAssetId={market.id}
       onAssetSelect={(id) => {
+        setHasUserInput(true)
         setSelectedMarketId(id)
         setAmount("")
       }}
@@ -354,9 +389,12 @@ export function MultiplyActionPageClient({
         <ActionLeverageRuler
           variant="embedded"
           value={multiplier}
-          onChange={setMultiplier}
+          onChange={(value) => {
+            setHasUserInput(true)
+            setMultiplier(value)
+          }}
           min={multiplierMin}
-          max={multiplierMax}
+          max={effectiveMultiplierMax}
           step={0.1}
         />
       }
@@ -411,20 +449,27 @@ export function MultiplyActionPageClient({
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
           amount={amount}
-          onAmountChange={setAmount}
+          onAmountChange={(value) => {
+            setHasUserInput(true)
+            setAmount(value)
+          }}
           preview={previewUi}
           assetSymbol={market.collateralAsset.symbol}
           borrowSymbol={market.borrowAsset.symbol}
           assetOptions={marketOptions}
           selectedAssetId={market.id}
           onAssetSelect={(id) => {
+            setHasUserInput(true)
             setSelectedMarketId(id)
             setAmount("")
           }}
           multiplier={multiplier}
-          onMultiplierChange={setMultiplier}
+          onMultiplierChange={(value) => {
+            setHasUserInput(true)
+            setMultiplier(value)
+          }}
           multiplierMin={multiplierMin}
-          multiplierMax={multiplierMax}
+          multiplierMax={effectiveMultiplierMax}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}

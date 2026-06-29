@@ -36,11 +36,11 @@ describe("MultiplyActionPageClient", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText("5.4x")).toBeInTheDocument()
+      expect(screen.getByText("1.8x")).toBeInTheDocument()
     })
   })
 
-  it("defaults deleverage to the wallet's live position and a lower target multiplier", async () => {
+  it("keeps deleverage preview blank until the target multiplier changes", async () => {
     render(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="deleverage" />
@@ -48,29 +48,47 @@ describe("MultiplyActionPageClient", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText("ETH collateral · borrow USDT")).toBeInTheDocument()
-      expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument()
+      expect(screen.getByRole("slider", { name: "Leverage multiplier" })).toBeInTheDocument()
     })
 
-    expect(screen.getByText("1.5x")).toBeInTheDocument()
+    expect(screen.getByRole("slider", { name: "Leverage multiplier" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Enter an amount" })).toBeDisabled()
+    expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("action-risk-banner")).not.toBeInTheDocument()
   })
 
-  it("completes deleverage from the default route without crashing", async () => {
+  it("keeps embedded deleverage preview blank while showing the default target multiplier", async () => {
+    render(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="deleverage" embedded layout="home" initialMarketId="aave-gho" />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole("slider", { name: "Leverage multiplier" })).toBeInTheDocument()
+    })
+
+    expect(screen.getByRole("button", { name: "Min" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Max" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Enter an amount" })).toBeDisabled()
+    expect(screen.queryByTestId("action-health-factor-card")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
+  })
+
+  it("uses the ruler max to produce a valid deleverage preview", async () => {
     render(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="deleverage" />
       </AvanaSessionsProvider>,
     )
+
+    fireEvent.click(screen.getByRole("button", { name: "Max" }))
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument()
     })
 
     fireEvent.click(screen.getByRole("button", { name: "Review" }))
-
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Deleverage" })).toBeInTheDocument()
-    })
 
     fireEvent.click(screen.getByRole("button", { name: "Deleverage" }))
 
