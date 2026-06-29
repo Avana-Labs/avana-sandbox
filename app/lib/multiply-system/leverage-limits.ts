@@ -1,13 +1,16 @@
-/** Catalog tables intentionally inflate leverage labels for discovery UI only. */
-export const MULTIPLY_CATALOG_LEVERAGE_SCALE = 3
+/**
+ * Catalog leverage labels are shown as-is (no inflation). Kept as a named constant
+ * so the division in resolveMultiplyMarketMaxLeverage stays explicit; 1 = truthful.
+ */
+export const MULTIPLY_CATALOG_LEVERAGE_SCALE = 1
 
 /** Multiply action modal slider range (independent of per-market public caps). */
 export const MULTIPLY_ACTION_MIN_LEVERAGE = 1
 export const MULTIPLY_ACTION_MAX_LEVERAGE = 10
 
 /**
- * Action pages should use the seeded market cap, not the scaled catalog label.
- * The state model currently stores the scaled value, so divide it back down here.
+ * Resolve the per-market public cap into the action slider's max, clamped to the
+ * global slider ceiling. (Catalog values are no longer inflated, so this is just a clamp.)
  */
 export function resolveMultiplyMarketMaxLeverage(publicMaxMultiplier: number | undefined) {
   if (!Number.isFinite(publicMaxMultiplier) || publicMaxMultiplier == null || publicMaxMultiplier < 1) {

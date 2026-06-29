@@ -7,8 +7,8 @@ import {
 } from "@/app/lib/multiply-system/leverage-limits"
 
 describe("resolveMultiplyMarketMaxLeverage", () => {
-  it("converts the catalog display cap back into the real action cap", () => {
-    expect(resolveMultiplyMarketMaxLeverage(5.4)).toBe(1.8)
+  it("passes the (uninflated) catalog cap through as the action cap", () => {
+    expect(resolveMultiplyMarketMaxLeverage(1.8)).toBe(1.8)
   })
 
   it("never exceeds the global action slider maximum", () => {
