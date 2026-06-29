@@ -94,8 +94,11 @@ export function MultiplyActionPageClient({
       market && Number.isFinite(market.risk.recommendedMaxMultiplier)
         ? Math.min(marketCap, market.risk.recommendedMaxMultiplier)
         : marketCap
+    // Start at ~75% of the cap (a practical target, never pinned at max) so the
+    // ruler is obviously draggable in both directions instead of feeling stuck.
+    const practicalTarget = Math.max(MULTIPLY_ACTION_MIN_LEVERAGE + 0.5, Math.min(recommendedCap, marketCap * 0.75))
     const options = buildMultiplierOptions(marketCap)
-    const clamped = clampMultiplierToOptions(Math.min(3, recommendedCap), options)
+    const clamped = clampMultiplierToOptions(practicalTarget, options)
     return String(Number(clamped.toFixed(2)))
   }, [kind, market])
 
