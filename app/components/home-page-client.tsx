@@ -4,9 +4,19 @@ import { useEffect, useState } from "react"
 import type { HomeMode } from "@/app/lib/home-sim"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
-import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+import { AvanaSessionsProvider, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+
+const HOME_WORKSPACE_WALLET_ID = "home-demo-wallet"
 
 export function HomePageClient() {
+  return (
+    <AvanaSessionsProvider walletId={HOME_WORKSPACE_WALLET_ID}>
+      <HomePageWorkspace />
+    </AvanaSessionsProvider>
+  )
+}
+
+function HomePageWorkspace() {
   const { borrow: session } = useAvanaSessions()
   const [isClientReady, setIsClientReady] = useState(false)
   const [mode, setMode] = useState<HomeMode>("borrow")
