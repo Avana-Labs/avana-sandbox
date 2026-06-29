@@ -74,8 +74,13 @@ export function calculatePriceImpact(params: {
   collateralValueUsd: number
 }): number {
   const multiplierImpact = Math.max(0, params.multiplier - 1) * 0.0005
+  // Clamp the whole liquidity term, not just the ratio: a position that is a large
+  // fraction of available liquidity should add up to ~1% impact, not a value capped
+  // at 0.01 * 0.002 = 0.002% regardless of size.
   const liquidityImpact =
-    params.availableLiquidityUsd > 0 ? Math.min(0.01, params.collateralValueUsd / params.availableLiquidityUsd) * 0.002 : 0.002
+    params.availableLiquidityUsd > 0
+      ? Math.min(0.01, (params.collateralValueUsd / params.availableLiquidityUsd) * 0.002)
+      : 0.002
   return params.baseImpact + multiplierImpact + liquidityImpact
 }
 
