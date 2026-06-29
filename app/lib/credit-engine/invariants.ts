@@ -40,6 +40,12 @@ function assertAssetRecord(asset: BorrowAssetRecord) {
 function assertAccountState(account: BorrowAccountState, system: BorrowSystemState) {
   assertNonNegative(`${account.walletId}.walletBalanceUsd6`, account.walletBalanceUsd6)
   assertNonNegative(`${account.walletId}.interestSettledUsd6`, account.interestSettledUsd6)
+  for (const [marketId, balanceUsd6] of Object.entries(account.walletLpBalancesUsd6)) {
+    if (!system.markets[marketId]) {
+      throw new Error(`Unknown market on wallet LP balance for ${account.walletId}: ${marketId}`)
+    }
+    assertNonNegative(`${account.walletId}.walletLpBalancesUsd6.${marketId}`, balanceUsd6)
+  }
 
   assertUnique(account.collateralPositions, `${account.walletId} collateral position`)
   assertUnique(account.debtPositions, `${account.walletId} debt position`)

@@ -1,8 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionAmountCard } from "@/app/components/action-page/action-amount-card"
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 const baseProps = {
   label: "Deposit",
@@ -26,6 +29,22 @@ describe("ActionAmountCard", () => {
     const { container } = render(<ActionAmountCard {...baseProps} />)
     expect(screen.queryByRole("listbox")).toBeNull()
     // No chevron / haspopup affordance when there's nothing to switch to.
+    expect(container.querySelector('[aria-haspopup="listbox"]')).toBeNull()
+  })
+
+  it("keeps the asset chip labeled when switching is disabled in embedded layouts", () => {
+    const { container } = render(
+      <ActionAmountCard
+        {...baseProps}
+        assetLabel="AAVE"
+        assetSymbol="AAVE"
+        borrowSymbol="GHO"
+        variant="raised"
+      />,
+    )
+
+    expect(screen.queryByRole("listbox")).toBeNull()
+    expect(screen.getByText("AAVE")).toBeInTheDocument()
     expect(container.querySelector('[aria-haspopup="listbox"]')).toBeNull()
   })
 
@@ -53,5 +72,12 @@ describe("ActionAmountCard", () => {
     expect(onAssetSelect).toHaveBeenCalledWith("usdc")
     // Menu closes after selection.
     expect(screen.queryByRole("listbox")).toBeNull()
+  })
+
+  it("renders a fixed unit pill when a unit label is provided", () => {
+    render(<ActionAmountCard {...baseProps} unitLabel="%" />)
+
+    expect(screen.getByText("%")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /change asset/i })).toBeNull()
   })
 })

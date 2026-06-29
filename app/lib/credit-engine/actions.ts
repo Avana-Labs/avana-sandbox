@@ -14,6 +14,7 @@ function cloneState(state: BorrowSystemState): BorrowSystemState {
         id,
         {
           ...account,
+          walletLpBalancesUsd6: { ...(account.walletLpBalancesUsd6 ?? {}) },
           collateralPositions: (account.collateralPositions ?? []).map((position) => ({ ...position })),
           debtPositions: (account.debtPositions ?? []).map((position) => ({ ...position })),
           rewardPositions: (account.rewardPositions ?? []).map((position) => ({ ...position })),
@@ -131,6 +132,10 @@ function applySupplyCollateralAction(state: BorrowSystemState, action: Extract<B
   if (!market) throw new Error(`Unknown market ${action.marketId}`)
   if (!account) throw new Error(`Unknown wallet ${action.walletId}`)
   if (action.amountUsd6 <= 0n) throw new Error("Supply amount must be positive")
+  const walletLpBalanceUsd6 = account.walletLpBalancesUsd6[action.marketId] ?? 0n
+  if (walletLpBalanceUsd6 < action.amountUsd6) {
+    throw new Error("Wallet has insufficient LP balance for this collateral deposit")
+  }
 
   const tokenAmount = usd6ToTokenAmount(action.amountUsd6, market.snapshot.lpTokenPriceUsd6)
   const collateralShares = assetsToShares(tokenAmount, market.snapshot.supplyIndexRay)
@@ -152,6 +157,7 @@ function applySupplyCollateralAction(state: BorrowSystemState, action: Extract<B
   market.snapshot.totalCollateralShares += collateralShares
   market.snapshot.totalLiquidityUsd6 += action.amountUsd6
   market.snapshot.availableUsd6 += action.amountUsd6
+  account.walletLpBalancesUsd6[action.marketId] = walletLpBalanceUsd6 - action.amountUsd6
   state.transactions.push({
     id: `tx-${state.transactions.length + 1}`,
     walletId: action.walletId,
@@ -200,7 +206,7 @@ function applyRepayAction(state: BorrowSystemState, action: Extract<BorrowAction
   asset.snapshot.totalBorrowedUsd6 = asset.snapshot.totalBorrowedUsd6 > repayAmountUsd6 ? asset.snapshot.totalBorrowedUsd6 - repayAmountUsd6 : 0n
   asset.snapshot.totalDebtSharesUsd6 = asset.snapshot.totalDebtSharesUsd6 > sharesToBurn ? asset.snapshot.totalDebtSharesUsd6 - sharesToBurn : 0n
 
-  if (position.debtSharesUsd6 === 0n || position.principalBorrowedUsd6 === 0n) {
+  if (position.debtSharesUsd6 === 0n) {
     account.debtPositions.splice(debtIndex, 1)
   }
 
@@ -251,6 +257,7 @@ function applyRemoveCollateralAction(state: BorrowSystemState, action: Extract<B
     market.snapshot.totalCollateralShares > collateralShares ? market.snapshot.totalCollateralShares - collateralShares : 0n
   market.snapshot.totalLiquidityUsd6 = market.snapshot.totalLiquidityUsd6 > removeUsd6 ? market.snapshot.totalLiquidityUsd6 - removeUsd6 : 0n
   market.snapshot.availableUsd6 = market.snapshot.availableUsd6 > removeUsd6 ? market.snapshot.availableUsd6 - removeUsd6 : 0n
+  account.walletLpBalancesUsd6[position.marketId] = (account.walletLpBalancesUsd6[position.marketId] ?? 0n) + removeUsd6
 
   if (position.collateralShares === 0n) {
     account.collateralPositions.splice(positionIndex, 1)
@@ -351,7 +358,7 @@ function applyLiquidationAction(state: BorrowSystemState, action: Extract<Borrow
   if (scopedCollateralPosition.collateralShares === 0n) {
     account.collateralPositions.splice(positionIndex, 1)
   }
-  if (debtPosition.debtSharesUsd6 === 0n || debtPosition.principalBorrowedUsd6 === 0n) {
+  if (debtPosition.debtSharesUsd6 === 0n) {
     account.debtPositions.splice(debtIndex, 1)
   }
 

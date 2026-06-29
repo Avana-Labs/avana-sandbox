@@ -256,8 +256,6 @@ export function CurrentLtvCard({
   collateralUsd: number
   showBalance: boolean
 }) {
-  const ltv = collateralUsd > 0 ? Math.min(1, borrowedUsd / collateralUsd) : 0
-  const ltvPct = ltv * 100
   const masked = !showBalance
   const liquidationValueUsd = collateralUsd * LIQUIDATION_LTV
   const remainingBorrowingPowerUsd = Math.max(0, liquidationValueUsd - borrowedUsd)

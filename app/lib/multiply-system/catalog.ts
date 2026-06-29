@@ -71,8 +71,11 @@ function toMarketRecord(seed: CatalogSeed): MultiplyMarketRecord {
   const publicMaxMultiplier = seed.publicMaxMultiplier * MULTIPLY_CATALOG_LEVERAGE_SCALE
   const hardMaxMultiplier = seed.hardMaxMultiplier * MULTIPLY_CATALOG_LEVERAGE_SCALE
   const theoreticalMaxMultiplier = calculateTheoreticalMaxMultiplier(seed.maxLtv)
+  // Use the real (un-scaled) public cap here: recommendedMaxMultiplier must not
+  // exceed the leverage the action-page slider actually lets a user select
+  // (resolveMultiplyMarketMaxLeverage divides the inflated catalog label back down).
   const safeMaxMultiplier = calculateSafeMaxMultiplier({
-    publicMaxMultiplier,
+    publicMaxMultiplier: seed.publicMaxMultiplier,
     theoreticalMaxMultiplier,
     minHealthFactor: seed.minHealthFactor,
     liquidationThreshold: seed.liquidationThreshold,

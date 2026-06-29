@@ -78,11 +78,29 @@ app/
 
 Clear site data for `localhost` in your browser, or use in-app flows that write fresh seeds. Stale `localStorage` from older builds is normalized on load (e.g. missing `rewardPositions` on accounts).
 
+## Shared market liquidity (Convex)
+
+Market liquidity stats (Total Borrowed / Available / Utilization) are layered with a
+**shared, multi-user ledger** in Convex (`convex/liquidity.ts`, table `marketLiquidityDeltas`).
+Every borrow/repay/supply/withdraw from **any** client folds an aggregate delta per market;
+every client subscribes and layers it onto the static catalog, so the numbers move with
+activity across all users — live — instead of staying frozen.
+
+- **Local:** run `npx convex dev` (serves an anonymous backend on `:3210`); `.env.local` already
+  points `NEXT_PUBLIC_CONVEX_URL` there. Open two tabs and borrow in one — the asset's stats move in both.
+- **Graceful degradation:** if `NEXT_PUBLIC_CONVEX_URL` is unset/unreachable, the ledger layer is a
+  no-op and the app shows base catalog numbers (client-only). Nothing breaks.
+
 ## Deployment
 
 Production preview: [https://avana-ashen.vercel.app/](https://avana-ashen.vercel.app/)
 
 Lightpaper: [https://avana-ashen.vercel.app/lightpaper](https://avana-ashen.vercel.app/lightpaper)
+
+**Enable the shared ledger in production:** run `npx convex deploy` (after `npx convex login`) to push
+`convex/` to a Convex Cloud deployment, then set `NEXT_PUBLIC_CONVEX_URL` in Vercel to that deployment's
+URL. Until that env var points at a reachable deployment, the app runs client-only (see graceful
+degradation above).
 
 ## Contributing
 

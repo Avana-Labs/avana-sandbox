@@ -12,15 +12,18 @@ vi.mock("@/app/components/action-page/borrow-action-page-client", () => ({
     kind,
     embedded,
     layout,
+    initialAmount,
   }: {
     kind: string
     embedded?: boolean
     layout?: string
+    initialAmount?: string
   }) => (
     <div
       data-testid={`embedded-borrow-action-${kind}`}
       data-embedded={embedded ? "true" : "false"}
       data-layout={layout ?? "default"}
+      data-initial-amount={initialAmount ?? ""}
     />
   ),
 }))
@@ -61,6 +64,6 @@ describe("HomePageClient", () => {
     expect(screen.getByTestId("embedded-borrow-action-claim")).toBeInTheDocument()
 
     fireEvent.click(within(card).getByRole("tab", { name: "Remove" }))
-    expect(screen.getByTestId("embedded-borrow-action-remove")).toBeInTheDocument()
+    expect(screen.getByTestId("embedded-borrow-action-remove")).toHaveAttribute("data-initial-amount", "")
   })
 })

@@ -38,7 +38,7 @@ export function HomePageClient() {
           <BorrowActionPageClient kind="claim" embedded layout="home" closeHref="/" />
         ) : null}
         {mode === "remove" ? (
-          <BorrowActionPageClient kind="remove" embedded layout="home" closeHref="/" initialAmount="25" />
+          <BorrowActionPageClient kind="remove" embedded layout="home" closeHref="/" />
         ) : null}
       </HomeWorkspaceCard>
     </div>

@@ -30,6 +30,7 @@ import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-action
 import { PortfolioHeroHeader } from "@/app/portfolio/hero/portfolio-hero-header"
 import type { PortfolioHeroAction } from "@/app/portfolio/hero/types"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { dashboardHrefForTab } from "@/app/lib/action-system/dashboard-routing"
 
 const HeroChartSection = dynamic(
   () => import("@/app/components/charts/hero-chart-section").then((mod) => mod.HeroChartSection),
@@ -87,6 +88,7 @@ const HERO_UI_CONFIG: Record<DashboardHeroProps["tab"], HeroUiConfig> = {
   },
   looping: {
     actionLabels: ["Increase loop", "Unwind loop"],
+    hideChart: true,
     statOneLabel: "Open positions",
     statOneHelpText: "Open multiply positions in the wallet profile.",
     statTwoLabel: "Net carry",
@@ -105,11 +107,13 @@ function buildActions({
   actionLabels,
   primaryActionLabel,
   secondaryActionLabel,
+  returnHref,
   onNavigate,
 }: {
   actionLabels?: string[]
   primaryActionLabel: string
   secondaryActionLabel: string
+  returnHref?: string
   onNavigate?: (href: string) => void
 }): PortfolioHeroAction[] {
   const labels = actionLabels?.length ? actionLabels : [primaryActionLabel, secondaryActionLabel]
@@ -155,12 +159,13 @@ function buildActions({
 
   return labels.map((label, index) => {
     const href = resolveHref(label)
+    const actionHref = href && returnHref ? `${href}${href.includes("?") ? "&" : "?"}return=${encodeURIComponent(returnHref)}` : href
     return {
       id: `${index}-${label.toLowerCase().replace(/\s+/g, "-")}`,
       label,
       icon: resolveIcon(label),
-      href: href ?? undefined,
-      onClick: href && onNavigate ? () => onNavigate(href) : undefined,
+      href: actionHref ?? undefined,
+      onClick: actionHref && onNavigate ? () => onNavigate(actionHref) : undefined,
       className: resolveClasses(label),
     }
   })
@@ -246,6 +251,7 @@ export function DashboardHero({
         actionLabels: uiConfig.actionLabels,
         primaryActionLabel: uiConfig.actionLabels?.[0] ?? "Deposit",
         secondaryActionLabel: uiConfig.actionLabels?.[1] ?? "Withdraw",
+        returnHref: dashboardHrefForTab(tab),
         onNavigate: (href) => router.push(href),
       })
     : []

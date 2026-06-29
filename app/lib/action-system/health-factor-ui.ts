@@ -64,19 +64,20 @@ export function healthFactorBarPositionPct(value: number | null): number {
   const zone = HF_ZONES[zoneIdx]
   const innerPadding = zone.widthPct * 0.1
 
-  let ratioInZone = 0.5
-  if (zone.id === "safe") {
+  const ratioInZone =
+    zone.id === "safe"
+      ? (() => {
     const clamped = Number.isFinite(value) ? Math.min(value, 10) : 10
-    ratioInZone = 1 - Math.min((clamped - zone.min) / (10 - zone.min), 1)
-  } else if (zone.id === "warn") {
-    ratioInZone = 1 - (value - zone.min) / (zone.max - zone.min)
-  } else {
-    const clamped = Math.max(value, 1)
-    ratioInZone = clamped <= 1 ? 1 : 1 - (clamped - 1) / (zone.max - 1)
-  }
+          return 1 - Math.min((clamped - zone.min) / (10 - zone.min), 1)
+        })()
+      : zone.id === "warn"
+        ? 1 - (value - zone.min) / (zone.max - zone.min)
+        : (() => {
+            const clamped = Math.max(value, 1)
+            return clamped <= 1 ? 1 : 1 - (clamped - 1) / (zone.max - 1)
+          })()
 
-  ratioInZone = Math.max(0, Math.min(1, ratioInZone))
-  return zoneStart + innerPadding + ratioInZone * Math.max(0, zone.widthPct - innerPadding * 2)
+  return zoneStart + innerPadding + Math.max(0, Math.min(1, ratioInZone)) * Math.max(0, zone.widthPct - innerPadding * 2)
 }
 
 export function healthFactorBarTone(value: number | null): { text: string; fill: string; border: string } {

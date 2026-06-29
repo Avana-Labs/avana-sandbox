@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { fireEvent, render, screen, cleanup } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { BorrowWorkspace } from "@/app/borrow/components/borrow-workspace"
 
 const push = vi.fn()
@@ -44,6 +45,23 @@ const asset = {
   },
 }
 
+let borrowSessionState = buildMockBorrowSystemState("wallet-1")
+let borrowAssetToLaunch = asset
+
+const unsupportedAsset = {
+  id: "uni-v3-stable:usdt",
+  name: "Tether USD",
+  symbol: "USDT",
+  subtitle: "Stablecoin",
+  borrowApr: 4.2,
+  visual: {
+    symbol: "USDT",
+    shortLabel: "USDT",
+    bgClass: "bg-emerald-500",
+    textClass: "text-white",
+  },
+}
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }))
@@ -58,7 +76,7 @@ vi.mock("@/app/lib/use-media-query", () => ({
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useBorrowSessionContext: () => ({
-    state: buildMockBorrowSystemState("wallet-1"),
+    state: borrowSessionState,
     marketSummaries: [market],
     collateralPools: [
       {
@@ -102,7 +120,7 @@ vi.mock("@/app/borrow/components/collateral-pools-table", () => ({
       <button type="button" onClick={() => onUseAsCollateral(market)}>
         open-supply
       </button>
-      <button type="button" onClick={() => onBorrowAssetMobile(asset)}>
+      <button type="button" onClick={() => onBorrowAssetMobile(borrowAssetToLaunch)}>
         open-borrow
       </button>
     </div>
@@ -111,6 +129,15 @@ vi.mock("@/app/borrow/components/collateral-pools-table", () => ({
 }))
 
 describe("BorrowWorkspace", () => {
+  beforeEach(() => {
+    push.mockClear()
+    borrowAssetToLaunch = asset
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
   it("routes supply and borrow actions to the shared action pages", () => {
     render(
       <BorrowWorkspace
@@ -141,5 +168,36 @@ describe("BorrowWorkspace", () => {
     expect(push).toHaveBeenCalledWith(
       "/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&asset=uni-v3-bluechip%3Ausdc",
     )
+  })
+
+  it("falls back to the asset detail page when the mobile borrow asset has no matching collateral spoke", () => {
+    borrowSessionState = buildMockBorrowSystemState("wallet-1")
+    borrowSessionState.accounts["wallet-1"]!.collateralPositions = []
+    borrowAssetToLaunch = unsupportedAsset
+
+    render(
+      <BorrowWorkspace
+        pageData={{
+          walletId: "wallet-1",
+          borrowSessionSeed: "{}",
+          poolCatalog: [market],
+          borrowableAssets: [unsupportedAsset],
+          pendingRows: [],
+          dexes: [],
+          collateralPools: [],
+          initialDebts: {},
+          borrowSnapshot: {
+            totalBorrowedUsd: 0,
+            availableCreditUsd: 0,
+            totalCollateralUsd: 0,
+            liquidationValueUsd: 0,
+            healthFactor: null,
+          },
+        }}
+      />,
+    )
+
+    fireEvent.click(screen.getByText("open-borrow"))
+    expect(push).toHaveBeenCalledWith(borrowAssetDetailPath(unsupportedAsset.id))
   })
 })

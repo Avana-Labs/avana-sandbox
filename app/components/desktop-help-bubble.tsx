@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { ArrowUpRight, BookOpen, CircleHelp, FileText, LifeBuoy, Mail, ShieldCheck } from "lucide-react"
+import { AVANA_EXTERNAL_LINKS } from "./external-links"
 
 type HelpLink = {
   href: string
@@ -18,13 +19,13 @@ type HelpLinkItemProps = HelpLink & {
 
 const HELP_LINKS: HelpLink[] = [
   {
-    href: "https://avana-ashen.vercel.app/terms",
+    href: AVANA_EXTERNAL_LINKS.terms,
     label: "Terms of Service",
     icon: FileText,
     external: true,
   },
   {
-    href: "https://avana-ashen.vercel.app/privacy",
+    href: AVANA_EXTERNAL_LINKS.privacy,
     label: "Privacy policy",
     icon: ShieldCheck,
     external: true,
@@ -41,7 +42,7 @@ const HELP_LINKS: HelpLink[] = [
     icon: LifeBuoy,
   },
   {
-    href: "https://avana-ashen.vercel.app/developers",
+    href: AVANA_EXTERNAL_LINKS.developers,
     label: "Docs",
     icon: BookOpen,
     external: true,

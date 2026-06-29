@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getMultiplyMarketDetail } from "@/app/lib/multiply-detail"
-import { MarketDetailClient } from "./market-detail-client"
+import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 
 type PageProps = {
   params: Promise<{ marketId: string }>
@@ -21,5 +21,5 @@ export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
   const detail = getMultiplyMarketDetail(marketId)
   if (!detail) notFound()
-  return <MarketDetailClient detail={detail} />
+  return <MultiplyMarketDetailClientShell detail={detail} />
 }

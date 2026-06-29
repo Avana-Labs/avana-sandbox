@@ -42,29 +42,6 @@ const STATUS_OPTIONS: Array<{ id: PortfolioActivityRow["status"]; label: string 
   { id: "failed", label: "Failed" },
 ]
 
-const PRODUCT_TONE: Record<PortfolioActivityRow["product"], string> = {
-  borrow: "text-sky-700 dark:text-sky-300",
-  pool: "text-violet-700 dark:text-violet-300",
-  lend: "text-emerald-700 dark:text-emerald-300",
-  multiply: "text-amber-700 dark:text-amber-300",
-}
-
-const KIND_TONE: Record<PortfolioActivityRow["kind"], string> = {
-  supply: "text-emerald-600 dark:text-emerald-400",
-  withdraw: "text-rose-600 dark:text-rose-400",
-  borrow: "text-rose-600 dark:text-rose-400",
-  repay: "text-emerald-600 dark:text-emerald-400",
-  pledge: "text-emerald-600 dark:text-emerald-400",
-  claim: "text-slate-700 dark:text-slate-300",
-  open: "text-emerald-600 dark:text-emerald-400",
-  addCollateral: "text-emerald-600 dark:text-emerald-400",
-  reduce: "text-rose-600 dark:text-rose-400",
-  close: "text-rose-600 dark:text-rose-400",
-  rebalance: "text-amber-600 dark:text-amber-400",
-  interest: "text-slate-700 dark:text-slate-300",
-  liquidation: "text-amber-600 dark:text-amber-400",
-}
-
 const KIND_LABEL: Record<PortfolioActivityRow["kind"], string> = {
   supply: "Supply",
   withdraw: "Withdraw",
@@ -228,7 +205,9 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
         .filter((row) => (products.length ? products.includes(row.product) : true))
         .filter((row) => (kinds.length ? kinds.includes(row.kind) : true))
         .filter((row) => (statuses.length ? statuses.includes(row.status) : true))
-        .filter((row) => matchesSearch(row, search)),
+        .filter((row) => matchesSearch(row, search))
+        // Newest first so a just-completed action lands at the top immediately.
+        .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
     [kinds, products, rows, search, statuses],
   )
 
@@ -259,8 +238,52 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-radius-md bg-transparent md:overflow-visible">
-        <div className="min-w-[920px] md:min-w-0">
+      {/* Mobile: card list (the wide table is unusable on phones) */}
+      <div className="space-y-2 md:hidden">
+        {visibleItems.length ? (
+          visibleItems.map((row) => (
+            <div key={row.id} className="rounded-2xl border border-border bg-card p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-baseline gap-1.5">
+                  <span className="text-[14px] font-medium text-foreground">{KIND_LABEL[row.kind]}</span>
+                  <span className="truncate text-[12px] text-muted-foreground">
+                    · {PRODUCT_OPTIONS.find((option) => option.id === row.product)?.label}
+                  </span>
+                </div>
+                <span className="shrink-0 font-data text-[12.5px] tabular-nums text-muted-foreground">{formatRelativeTime(row.at)}</span>
+              </div>
+              <div className="mt-1.5 min-w-0">
+                <div className="truncate text-[14px] text-foreground">{row.primaryLabel}</div>
+                <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
+              </div>
+              <div className="mt-2.5 flex items-center justify-between gap-3">
+                <span className="font-data text-[14px] font-medium tabular-nums text-foreground">{formatSignedUsd(row.amountUsd)}</span>
+                <div className="flex items-center gap-2.5">
+                  <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium", STATUS_TONE[row.status])}>
+                    {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
+                  </span>
+                  <a
+                    href={getTxnHref(row.txHash)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-data text-[12px] tabular-nums text-muted-foreground underline-offset-2 hover:underline"
+                  >
+                    {shortHash(row.txHash)}
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
+            No activity matches the current filters.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden rounded-radius-md bg-transparent md:block md:overflow-visible">
+        <div className="min-w-0">
           <table className="w-full table-fixed border-separate border-spacing-0 text-[14px]">
             <colgroup>
               <col className="w-[72px]" />
@@ -288,10 +311,10 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                   <tr key={row.id} className="transition-colors hover:bg-muted/80 dark:hover:bg-slate-900/70">
                     <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">{formatRelativeTime(row.at)}</td>
                     <td className="px-5 py-4 align-middle">
-                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium", KIND_TONE[row.kind])}>{KIND_LABEL[row.kind]}</span>
+                      <span className="inline-block whitespace-nowrap text-[15px] font-medium text-foreground">{KIND_LABEL[row.kind]}</span>
                     </td>
                     <td className="px-5 py-4 align-middle">
-                      <span className={cn("text-[14px] font-medium", PRODUCT_TONE[row.product])}>
+                      <span className="text-[14px] text-muted-foreground">
                         {PRODUCT_OPTIONS.find((option) => option.id === row.product)?.label}
                       </span>
                     </td>

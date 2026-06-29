@@ -1,9 +1,18 @@
 import type { RewardsSessionState } from "./contracts"
+import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
 
 const REWARDS_STATE_PREFIX = "avana.rewards.session.v1"
 
 function stateKey(walletId: string) {
   return `${REWARDS_STATE_PREFIX}:${walletId}`
+}
+
+function parseSeedOrDefault(sessionSeed: string): RewardsSessionState {
+  try {
+    return JSON.parse(sessionSeed) as RewardsSessionState
+  } catch {
+    return buildDefaultRewardsSessionState()
+  }
 }
 
 export function buildDefaultRewardsSessionState(): RewardsSessionState {
@@ -19,22 +28,22 @@ export function buildDefaultRewardsSessionState(): RewardsSessionState {
 
 export function readRewardsSessionState(walletId: string, sessionSeed: string): RewardsSessionState {
   if (typeof window === "undefined") {
-    return JSON.parse(sessionSeed) as RewardsSessionState
+    return parseSeedOrDefault(sessionSeed)
   }
 
-  const raw = window.localStorage.getItem(stateKey(walletId))
-  if (!raw) return JSON.parse(sessionSeed) as RewardsSessionState
-  return JSON.parse(raw) as RewardsSessionState
+  return safeReadParsed(
+    stateKey(walletId),
+    (raw) => JSON.parse(raw) as RewardsSessionState,
+    () => parseSeedOrDefault(sessionSeed),
+  )
 }
 
 export function writeRewardsSessionState(walletId: string, state: RewardsSessionState) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(stateKey(walletId), JSON.stringify(state))
+  safeSetItem(stateKey(walletId), JSON.stringify(state))
 }
 
 export function clearRewardsSessionState(walletId: string) {
-  if (typeof window === "undefined") return
-  window.localStorage.removeItem(stateKey(walletId))
+  safeRemoveItem(stateKey(walletId))
 }
 
 export function buildDefaultRewardsSessionSeed() {

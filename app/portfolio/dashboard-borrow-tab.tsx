@@ -30,17 +30,20 @@ export function DashboardBorrowTab({
   collateralPositions = [],
   debtPositions = [],
   showSummary = true,
+  returnHref,
 }: {
   section?: "all" | "supplies" | "debts"
   collateralPositions?: SupplyRowContext[]
   debtPositions?: DebtRowContext[]
   showSummary?: boolean
+  returnHref?: string
 }) {
   const router = useRouter()
   const { showDollarAmounts } = useDisplayPreferences()
   const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">(section === "debts" ? "debts" : "supplies")
   const supplies = collateralPositions
   const debtsRows = useMemo(() => debtPositions.filter((row) => row.borrowedUsd > 0), [debtPositions])
+  const returnParams = returnHref ? { return: returnHref } : undefined
 
   const sortedSupplies = useMemo(() => sortByCollateralDesc(supplies), [supplies])
   const sortedDebts = useMemo(() => sortByBorrowedDesc(debtsRows), [debtsRows])
@@ -65,37 +68,37 @@ export function DashboardBorrowTab({
 
   const handleSupplyBorrowMore = useCallback(
     (context: SupplyRowContext) => {
-      router.push(actionPagePath("borrow", "borrow", { market: context.pool.id }))
+      router.push(actionPagePath("borrow", "borrow", { market: context.pool.id, ...returnParams }))
     },
-    [router],
+    [returnParams, router],
   )
 
   const handleSupplyAddCollateral = useCallback(
     (context: SupplyRowContext) => {
-      router.push(actionPagePath("borrow", "supply", { market: context.pool.id }))
+      router.push(actionPagePath("borrow", "supply", { market: context.pool.id, ...returnParams }))
     },
-    [router],
+    [returnParams, router],
   )
 
   const handleSupplyRemove = useCallback(
     (context: SupplyRowContext) => {
-      router.push(actionPagePath("borrow", "remove", { market: context.pool.id, amount: "25" }))
+      router.push(actionPagePath("borrow", "remove", { market: context.pool.id, ...returnParams }))
     },
-    [router],
+    [returnParams, router],
   )
 
   const handleDebtRepay = useCallback(
     (context: DebtRowContext) => {
-      router.push(actionPagePath("borrow", "repay", { market: context.pool.id }))
+      router.push(actionPagePath("borrow", "repay", { market: context.pool.id, ...returnParams }))
     },
-    [router],
+    [returnParams, router],
   )
 
   const handleDebtManage = useCallback(
     (context: DebtRowContext) => {
-      router.push(actionPagePath("borrow", "borrow", { market: context.pool.id }))
+      router.push(actionPagePath("borrow", "borrow", { market: context.pool.id, ...returnParams }))
     },
-    [router],
+    [returnParams, router],
   )
 
   return (

@@ -32,7 +32,7 @@ export function validateMultiplyAction(params: {
     warnings.push("Multiplier exceeds the theoretical maximum for this market.")
   }
   if (params.selectedMultiplier > params.publicMaxMultiplier) {
-    warnings.push("Multiplier exceeds the public maximum for this market.")
+    errors.push("Multiplier exceeds the public maximum for this market.")
   }
   if (params.initialCollateralValueUsd <= 0) errors.push("Collateral amount must be positive.")
   if (
@@ -48,10 +48,10 @@ export function validateMultiplyAction(params: {
     errors.push("Debt must be positive for leveraged positions.")
   }
   if (params.ltv > params.maxLtv) {
-    warnings.push("LTV exceeds the market maximum.")
+    errors.push("LTV exceeds the market maximum.")
   }
   if (params.healthFactor !== "infinity" && params.healthFactor < 1.0) {
-    warnings.push("Health factor is below the liquidation threshold.")
+    errors.push("Health factor is below the liquidation threshold.")
   }
   if (params.priceImpactPct > params.maxAllowedPriceImpact) {
     errors.push("Estimated price impact is too high.")

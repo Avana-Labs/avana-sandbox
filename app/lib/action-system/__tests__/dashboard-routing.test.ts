@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   dashboardHrefForProduct,
+  dashboardHrefForTab,
   dashboardTabForProduct,
   parseDashboardTab,
   successDashboardCtaLabel,
@@ -19,6 +20,8 @@ describe("dashboard-routing", () => {
     expect(dashboardHrefForProduct("borrow")).toBe("/dashboard?tab=overview")
     expect(dashboardHrefForProduct("multiply")).toBe("/dashboard?tab=looping")
     expect(dashboardHrefForProduct("rewards")).toBe("/dashboard?tab=activity")
+    expect(dashboardHrefForTab("overview")).toBe("/dashboard?tab=overview")
+    expect(dashboardHrefForTab("lending")).toBe("/dashboard?tab=lending")
   })
 
   it("parses valid tab query values", () => {

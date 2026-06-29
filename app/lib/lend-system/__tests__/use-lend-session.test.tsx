@@ -5,6 +5,7 @@ import { writeLendSessionState } from "@/app/lib/lend-system/storage"
 import { buildMockLendSystemStateWithSeedPosition } from "@/app/lib/lend-system/mock"
 import { ProductionLendReadAdapter } from "@/app/lib/lend-system/production-read-adapter"
 import { ProductionLendTransactionAdapter } from "@/app/lib/lend-system/production-transaction-adapter"
+import { deserializeLendSystemState } from "@/app/lib/lend-system/codec"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 
 describe("useLendSession", () => {
@@ -196,5 +197,22 @@ describe("useLendSession", () => {
     expect(result.current.transactionHistory[0]?.kind).toBe("claim")
     expect(result.current.state.now).toBe(456)
     expect(window.localStorage.length).toBe(0)
+  })
+
+  it("hydrates legacy lend state that is missing wallet balances", () => {
+    const legacy = JSON.stringify({
+      now: 123,
+      markets: {},
+      positions: {},
+      transactions: [],
+    })
+
+    expect(deserializeLendSystemState(legacy)).toEqual({
+      now: 123,
+      markets: {},
+      positions: {},
+      walletBalances: {},
+      transactions: [],
+    })
   })
 })

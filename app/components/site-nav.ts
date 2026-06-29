@@ -9,6 +9,7 @@ import {
   HandCoins,
   House,
 } from "lucide-react"
+import { AVANA_EXTERNAL_LINKS } from "./external-links"
 
 export type SiteNavLink = {
   href: string
@@ -37,7 +38,7 @@ export const siteNavLinks: SiteNavLink[] = [
     description: "Track borrowing power, venue coverage, and progress from one calmer LP collateral workspace.",
     highlights: ["Borrowing power", "Quest progress"],
     actionLabel: "Open lightpaper",
-    actionHref: "https://avana-ashen.vercel.app/lightpaper",
+    actionHref: AVANA_EXTERNAL_LINKS.lightpaper,
     actionExternal: true,
   },
   {
@@ -58,7 +59,7 @@ export const siteNavLinks: SiteNavLink[] = [
     description: "Lend into sleeves, compare APY, and size positions without losing portfolio context.",
     highlights: ["Yield sleeves", "Position sizing"],
     actionLabel: "Open resources",
-    actionHref: "https://avana-ashen.vercel.app/developers",
+    actionHref: AVANA_EXTERNAL_LINKS.developers,
     actionExternal: true,
   },
   {

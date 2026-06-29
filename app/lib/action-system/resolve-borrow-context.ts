@@ -1,5 +1,5 @@
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
-import { formatFixed } from "@/app/lib/credit-engine"
+import { currentDebtValueUsd6, formatFixed } from "@/app/lib/credit-engine"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { buildHomeBorrowPreview, selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
 import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
@@ -94,33 +94,57 @@ function assetAvailableUsd(state: BorrowSystemState, assetId: string) {
   return Number.parseFloat(formatFixed(asset.snapshot.availableLiquidityUsd6, 6))
 }
 
-export function resolveBorrowMarketForAsset(session: BorrowContextSession, assetId: string, preferredMarketId?: string) {
-  const resolvedAssetId = resolveBorrowAssetId(session.state, assetId, preferredMarketId)
-  const asset = session.state.assets[resolvedAssetId]
-  if (!asset) return preferredMarketId ?? session.collateralPools[0]?.id ?? ""
+function borrowMarketCandidates(session: BorrowContextSession, preferredMarketId?: string) {
+  return [
+    preferredMarketId,
+    ...session.collateralPools.map((pool) => pool.id),
+    ...session.marketSummaries.map((market) => market.id),
+  ].filter((marketId, index, entries): marketId is string => Boolean(marketId) && entries.indexOf(marketId) === index)
+}
 
-  if (preferredMarketId) {
-    const preferred = session.state.markets[preferredMarketId]
-    if (preferred?.relations.supportedBorrowAssetIds.includes(resolvedAssetId)) {
-      return preferredMarketId
+function resolveBorrowSelectionInMarket(session: BorrowContextSession, tokenId: string, marketId: string) {
+  const assetId = resolveBorrowAssetId(session.state, tokenId, marketId)
+  if (!assetId) return null
+
+  const market = session.state.markets[marketId]
+  if (!market?.relations.supportedBorrowAssetIds.includes(assetId)) return null
+
+  return {
+    assetId,
+    marketId,
+  }
+}
+
+export function resolveBorrowMarketForAsset(session: BorrowContextSession, assetId: string, preferredMarketId?: string) {
+  for (const marketId of borrowMarketCandidates(session, preferredMarketId)) {
+    if (resolveBorrowSelectionInMarket(session, assetId, marketId)) {
+      return marketId
     }
   }
 
-  const collateralMatch = session.collateralPools.find((pool) => {
-    const market = session.state.markets[pool.id]
-    return market?.relations.supportedBorrowAssetIds.includes(resolvedAssetId)
-  })
-  if (collateralMatch) return collateralMatch.id
+  const resolvedAssetId = resolveBorrowAssetId(session.state, assetId)
+  if (resolvedAssetId) {
+    const market = Object.values(session.state.markets).find((entry) => entry.relations.supportedBorrowAssetIds.includes(resolvedAssetId))
+    if (market) return market.id
+  }
 
-  const market = Object.values(session.state.markets).find((entry) => entry.relations.supportedBorrowAssetIds.includes(resolvedAssetId))
-  return market?.id ?? preferredMarketId ?? session.collateralPools[0]?.id ?? ""
+  return preferredMarketId ?? session.collateralPools[0]?.id ?? ""
+}
+
+export function resolveBorrowTokenSelection(session: BorrowContextSession, tokenId: string, preferredMarketId?: string) {
+  for (const marketId of borrowMarketCandidates(session, preferredMarketId)) {
+    const selection = resolveBorrowSelectionInMarket(session, tokenId, marketId)
+    if (selection) return selection
+  }
+
+  return null
 }
 
 export function supplySelectItemsForWallet(session: BorrowContextSession, walletId: string) {
   return session.marketSummaries
     .map((pool) => {
       const market = session.state.markets[pool.id]
-      const walletLpUsd = getWalletLpBalanceUsd(walletId, pool.id)
+      const walletLpUsd = getWalletLpBalanceUsd(session.state, walletId, pool.id)
       const visuals = market?.display.visuals ?? []
       return {
         id: pool.id,
@@ -166,24 +190,17 @@ export function claimSelectItemsForWallet(session: BorrowContextSession, walletI
   if (!account) return []
 
   const claimableById = selectRewardClaimableTotals(session.state, walletId)
-  const rewardPositions = account.rewardPositions ?? []
-  const rewardById = Object.fromEntries(rewardPositions.map((position) => [position.id, position]))
 
   return HOME_CLAIM_POSITIONS.map((position) => {
-    const reward = rewardById[position.id]
     const engineClaimable = claimableById[position.id]
-    const claimableUsd = reward
-      ? Number.parseFloat(formatFixed(reward.claimableUsd6, 6))
-      : engineClaimable != null && engineClaimable > 0
-        ? engineClaimable
-        : position.totalUsd
+    const claimableUsd = engineClaimable != null && engineClaimable > 0 ? engineClaimable : 0
 
     return {
       id: position.id,
       name: position.name,
       symbol: position.name.split("/")[0]?.trim() ?? "Rewards",
-      trailingLabel: `${formatActionUsd(Math.max(0, claimableUsd))} claimable`,
-      claimableUsd: Math.max(0, claimableUsd),
+      trailingLabel: `${formatActionUsd(claimableUsd)} claimable`,
+      claimableUsd,
     }
   }).filter((item) => item.claimableUsd > 0)
 }
@@ -198,7 +215,7 @@ export function repaySelectItemsForWallet(session: BorrowContextSession, walletI
 
   return account.debtPositions.map((position) => {
     const asset = session.state.assets[position.assetId]
-    const debtUsd = Number.parseFloat(formatFixed(position.debtSharesUsd6, 6))
+    const debtUsd = Number.parseFloat(formatFixed(currentDebtValueUsd6(position), 6))
 
     return {
       id: position.id,
