@@ -11,6 +11,7 @@
 
 import { ConvexHttpClient } from "convex/browser"
 import { api } from "../convex/_generated/api"
+import type { Id } from "../convex/_generated/dataModel"
 import { buildBorrowSeed } from "../app/lib/convex-seed/build-seed"
 
 const BATCH = 400
@@ -36,7 +37,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 async function main() {
   const seed = buildBorrowSeed({ days })
   console.log(
-    `[seed] built ${seed.markets.length} markets · ${seed.dailyStats.length} daily stats · ${seed.revenue.length} revenue · ${seed.risk.length} risk (days=${days})`,
+    `[seed] built ${seed.markets.length} markets · ${seed.dailyStats.length} daily stats · ${seed.revenue.length} revenue · ${seed.risk.length} risk · ${seed.allocation.length} allocation (days=${days})`,
   )
   if (dryRun) {
     console.log("[seed] --dry-run: not writing. Sample market:", JSON.stringify(seed.markets[0]))
@@ -50,9 +51,9 @@ async function main() {
   const client = new ConvexHttpClient(url)
 
   // 1) Markets → collect slug → _id
-  const idsBySlug: Record<string, string> = {}
+  const idsBySlug: Record<string, Id<"markets">> = {}
   for (const batch of chunk(seed.markets, BATCH)) {
-    const res = (await client.mutation(api.seed.upsertMarkets, { rows: batch })) as { idsBySlug: Record<string, string> }
+    const res = (await client.mutation(api.seed.upsertMarkets, { rows: batch })) as { idsBySlug: Record<string, Id<"markets">> }
     Object.assign(idsBySlug, res.idsBySlug)
   }
   console.log(`[seed] upserted ${Object.keys(idsBySlug).length} markets`)
@@ -105,6 +106,22 @@ async function main() {
     await sleep(throttleMs)
   }
   console.log(`[seed] wallet events: cleared ${cleared}, inserted ${events}`)
+
+  // 6) Allocation (per-asset → pool split) — maps BOTH slugs to market ids.
+  const allocationRows = seed.allocation
+    .map(({ assetSlug, poolSlug, ...rest }) => {
+      const assetId = idsBySlug[assetSlug]
+      const poolId = idsBySlug[poolSlug]
+      return assetId && poolId ? { assetId, poolId, ...rest } : null
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null)
+  let alloc = 0
+  for (const batch of chunk(allocationRows, BATCH)) {
+    await client.mutation(api.seed.upsertAllocation, { rows: batch })
+    alloc += batch.length
+    await sleep(throttleMs)
+  }
+  console.log(`[seed] upserted ${alloc} allocation rows`)
 
   const counts = await client.query(api.seed.getCounts, {})
   console.log("[seed] done. Convex counts:", JSON.stringify(counts))

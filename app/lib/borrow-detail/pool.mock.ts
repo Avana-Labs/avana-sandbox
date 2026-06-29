@@ -23,7 +23,8 @@ import {
 import { HOME_COLLATERAL_POOLS } from "@/app/lib/home-sim"
 import { buildSeriesFamily, prngFromString } from "./prng"
 import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
-import { formatBpsAsPct, formatPct, riskLevelFromBps, riskLevelLabel, riskScoreFromBps } from "./allocation"
+import { formatBpsAsPct, formatPct } from "./allocation"
+import { buildPoolRiskAssessment } from "./risk-model"
 import type {
   AboutCard,
   CashflowCard,
@@ -521,30 +522,8 @@ function buildPoolEngagement(row: BorrowPoolRow, fixture: FixtureOverride | unde
 
 function buildRisk(row: BorrowPoolRow, fixture: FixtureOverride | undefined): RiskAssessment {
   if (fixture?.risk) return fixture.risk
-  const bps = row.riskPremiumBps
-  const level = riskLevelFromBps(bps)
-  const score = riskScoreFromBps(bps)
-  const headline = `${riskLevelLabel(level)} risk · ${formatBpsAsPct(bps)} premium`
-  return {
-    premiumBps: bps,
-    level,
-    score,
-    headline,
-    summary: `Risk premium is derived from pool volatility, depth, oracle latency, and spoke parameters (${getSpokeById(row.spoke).label}).`,
-    breakdown: [
-      { id: "vol", label: "Pair volatility", bps: Math.round(bps * 0.42), level, description: "Realized 30d σ relative to the spoke's target band." },
-      { id: "depth", label: "Liquidity depth", bps: Math.round(bps * 0.18), level: "low", description: "Depth at ±2% is above the spoke's liquidation threshold." },
-      { id: "oracle", label: "Oracle", bps: Math.round(bps * 0.22), level, description: "Primary oracle + deviation guard monitored by the risk council." },
-      { id: "sc", label: "Smart-contract surface", bps: Math.round(bps * 0.12), level: "low", description: "Source dex + LP wrapper audits reviewed quarterly." },
-      { id: "il", label: "Expected IL", bps: Math.max(2, Math.round(bps * 0.06)), level: "low", description: "Rolling 90d weekly impermanent loss for this tier." },
-    ],
-    metrics: [
-      { id: "dex", label: "Source dex", value: getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue },
-      { id: "spoke", label: "Spoke", value: getSpokeById(row.spoke).label },
-      { id: "maxLtv", label: "Max LTV", value: formatPct(getSpokeById(row.spoke).maxLtv, 0) },
-      { id: "apr", label: "Supply APY range", value: aprRangeLabel(row) },
-    ],
-  }
+  // Single source of truth shared with the Convex seed (build-seed.ts).
+  return buildPoolRiskAssessment(row)
 }
 
 function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): AboutCard {

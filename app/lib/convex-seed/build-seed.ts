@@ -16,6 +16,9 @@
 import { BORROW_POOL_CATALOG, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
+import { computeAssetAllocationRows } from "@/app/lib/borrow-detail/allocation"
+import { buildAssetRiskAssessment, buildPoolRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
+import type { RiskAssessment } from "@/app/lib/borrow-detail/types"
 
 const DAY_MS = 86_400_000
 
@@ -76,12 +79,25 @@ export type SeedWalletEventRow = {
   at: number
 }
 
+/** One per (asset, pool) — the latest-day allocation snapshot. Keyed by both slugs;
+ *  the push script resolves each to a `markets._id` before writing. */
+export type SeedAllocationRow = {
+  assetSlug: string
+  poolSlug: string
+  day: string
+  valueUsd: number
+  sharePct: number
+  utilizationPct: number
+  borrowAprPct: number
+}
+
 export type SeedData = {
   markets: SeedMarketRow[]
   dailyStats: SeedDailyStatRow[]
   revenue: SeedRevenueRow[]
   risk: SeedRiskRow[]
   walletEvents: SeedWalletEventRow[]
+  allocation: SeedAllocationRow[]
 }
 
 export type BuildSeedOptions = {
@@ -117,13 +133,6 @@ function round(value: number, dp = 2): number {
 
 function schemaCategory(category: string): "stable" | "crypto" {
   return category === "stable" ? "stable" : "crypto"
-}
-
-function riskLevelFromBps(bps: number): SeedRiskRow["level"] {
-  if (bps < 40) return "low"
-  if (bps < 90) return "moderate"
-  if (bps < 160) return "elevated"
-  return "high"
 }
 
 /**
@@ -247,13 +256,22 @@ function hex(rand: () => number, length: number): string {
   return out.slice(0, length)
 }
 
+/** Size of the recurring per-market wallet pool (see walletEventsForMarket). */
+const WALLET_POOL_SIZE = 14
+
 /**
  * Deterministic per-market wallet activity over the trailing engagement window.
- * Drives convex/engagement.ts (distinct active wallets/day). Several distinct
- * wallets per day so the engagement trend has signal.
+ * Drives convex/engagement.ts (distinct active wallets/day + the repay/borrow
+ * conversion metric).
+ *
+ * Events are drawn from a small RECURRING wallet pool (not a fresh address per
+ * event) so the same wallet emits multiple actions over time — e.g. a `supply`
+ * then a `borrow`, or a `borrow` then a `repay`. That recurrence is what makes
+ * the conversion KPI (computeConversionPct) a real aggregation instead of 0.
  */
 function walletEventsForMarket(slug: string, asOf: number, days: number): SeedWalletEventRow[] {
   const rand = prngFromString(`${slug}:events`)
+  const wallets = Array.from({ length: WALLET_POOL_SIZE }, () => `0x${hex(rand, 40)}`)
   const out: SeedWalletEventRow[] = []
   for (let d = days - 1; d >= 0; d--) {
     const dayStart = asOf - d * DAY_MS
@@ -261,7 +279,7 @@ function walletEventsForMarket(slug: string, asOf: number, days: number): SeedWa
     for (let i = 0; i < count; i++) {
       out.push({
         slug,
-        wallet: `0x${hex(rand, 40)}`,
+        wallet: wallets[Math.floor(rand() * wallets.length)]!,
         kind: WALLET_EVENT_KINDS[Math.floor(rand() * WALLET_EVENT_KINDS.length)]!,
         amountUsd: round(rand() * 50_000, 2),
         txHash: `0x${hex(rand, 64)}`,
@@ -273,20 +291,22 @@ function walletEventsForMarket(slug: string, asOf: number, days: number): SeedWa
   return out
 }
 
-function riskForMarket(slug: string, scope: "asset" | "pool", premiumBps: number, assessedAt: number): SeedRiskRow {
-  const bps = Math.round(premiumBps)
-  const level = riskLevelFromBps(bps)
-  const score = Math.min(100, Math.max(0, Math.round(100 - bps / 4)))
+/**
+ * Convert a computed `RiskAssessment` (from the shared risk-model — the same one
+ * the UI mock uses) into the seed row shape. This is why the seeded risk has the
+ * full breakdown + metrics instead of an empty stub.
+ */
+function riskRow(slug: string, assessedAt: number, assessment: RiskAssessment): SeedRiskRow {
   return {
     slug,
     assessedAt,
-    premiumBps: bps,
-    level,
-    score,
-    headline: `Risk premium ${(bps / 100).toFixed(2)}%`,
-    summary: `${scope === "pool" ? "Collateral pool" : "Borrowable asset"} risk review (seeded).`,
-    breakdown: [],
-    metrics: [{ id: "premium", label: "Risk premium", value: `${bps} bps` }],
+    premiumBps: assessment.premiumBps,
+    level: assessment.level,
+    score: assessment.score,
+    headline: assessment.headline,
+    summary: assessment.summary,
+    breakdown: assessment.breakdown,
+    metrics: assessment.metrics,
   }
 }
 
@@ -295,6 +315,7 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
   const days = options.days ?? 365
   const asOf = options.asOf ?? Date.now()
   const reserveFactor = options.reserveFactor ?? RESERVE_FACTOR_DEFAULT
+  const lastDay = isoDay(asOf)
 
   // Trailing window of wallet activity for the engagement card (covers the 12-day
   // engagement window in convex/engagement.ts with headroom).
@@ -305,6 +326,7 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
   const revenue: SeedRevenueRow[] = []
   const risk: SeedRiskRow[] = []
   const walletEvents: SeedWalletEventRow[] = []
+  const allocation: SeedAllocationRow[] = []
 
   for (const pool of BORROW_POOL_CATALOG) {
     markets.push(poolMarketRow(pool, asOf))
@@ -318,7 +340,7 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     )
     dailyStats.push(...stats)
     revenue.push(...revenueForMarket(stats, reserveFactor))
-    risk.push(riskForMarket(pool.id, "pool", pool.riskPremiumBps, asOf))
+    risk.push(riskRow(pool.id, asOf, buildPoolRiskAssessment(pool)))
     walletEvents.push(...walletEventsForMarket(pool.id, asOf, walletEventDays))
   }
 
@@ -334,9 +356,22 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     )
     dailyStats.push(...stats)
     revenue.push(...revenueForMarket(stats, reserveFactor))
-    const premiumBps = Math.round(20 + prngFromString(`risk:${asset.id}`)() * 180)
-    risk.push(riskForMarket(asset.id, "asset", premiumBps, asOf))
+    risk.push(riskRow(asset.id, asOf, buildAssetRiskAssessment(asset)))
     walletEvents.push(...walletEventsForMarket(asset.id, asOf, walletEventDays))
+    // Per-pool allocation shares (deterministic, shared with the UI mock). `valueUsd`
+    // is filled in below from the CALIBRATED asset TVL so the breakdown sums to the
+    // asset's reference value rather than the inflated raw catalog total.
+    for (const r of computeAssetAllocationRows(asset)) {
+      allocation.push({
+        assetSlug: asset.id,
+        poolSlug: r.pool.id,
+        day: lastDay,
+        valueUsd: 0,
+        sharePct: r.sharePct,
+        utilizationPct: r.utilizationPct,
+        borrowAprPct: r.borrowAprPct,
+      })
+    }
   }
 
   // Calibrate the latest day to the canonical economy aggregates. `dailyStats` and
@@ -347,7 +382,18 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     assetTvlTargetUsd: options.assetTvlTargetUsd ?? ASSET_TVL_TARGET_USD,
   })
 
-  return { markets, dailyStats, revenue, risk, walletEvents }
+  // Anchor allocation values to the post-calibration per-asset supplied (latest day)
+  // so the asset detail "Value" column reconciles with the headline TVL.
+  const suppliedByAsset = new Map<string, number>()
+  for (const row of dailyStats) {
+    if (row.day === lastDay) suppliedByAsset.set(row.slug, row.suppliedUsd)
+  }
+  for (const row of allocation) {
+    const supplied = suppliedByAsset.get(row.assetSlug) ?? 0
+    row.valueUsd = round((supplied * row.sharePct) / 100, 0)
+  }
+
+  return { markets, dailyStats, revenue, risk, walletEvents, allocation }
 }
 
 function calibrateToTargets(

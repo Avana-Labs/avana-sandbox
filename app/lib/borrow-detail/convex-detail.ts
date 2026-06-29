@@ -2,6 +2,7 @@ import "server-only"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { mergeConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration"
 import {
+  fetchAllocation,
   fetchAssetBorrowSeries,
   fetchAssetCashflowTrend,
   fetchCashflowBreakdown,
@@ -9,6 +10,7 @@ import {
   fetchEngagement,
   fetchPoolTvlSeries,
   fetchRecentTransactions,
+  fetchRisk,
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
@@ -37,11 +39,12 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
   const detail = resolvePoolDetailFromState(hydrated, detailWalletId, normalizeBorrowMarketRouteId(id))
   if (!detail) return null
 
-  const [tvlPoints, engagement, cashflow, transactions] = await Promise.all([
+  const [tvlPoints, engagement, cashflow, transactions, risk] = await Promise.all([
     fetchPoolTvlSeries(detail.row.id),
     fetchEngagement("pool", detail.row.id),
     fetchCashflowBreakdown("pool", detail.row.id),
     fetchRecentTransactions("pool", detail.row.id),
+    fetchRisk("pool", detail.row.id),
   ])
   return {
     ...detail,
@@ -49,6 +52,7 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
+    risk: (risk as typeof detail.risk) ?? detail.risk,
   }
 }
 
@@ -69,12 +73,14 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   )
   if (!detail) return null
 
-  const [borrowPoints, engagement, cashflow, cashflowTrend, transactions] = await Promise.all([
+  const [borrowPoints, engagement, cashflow, cashflowTrend, transactions, allocation, risk] = await Promise.all([
     fetchAssetBorrowSeries(slug),
     fetchEngagement("asset", slug),
     fetchCashflowBreakdown("asset", slug),
     fetchAssetCashflowTrend(slug),
     fetchRecentTransactions("asset", slug),
+    fetchAllocation(slug),
+    fetchRisk("asset", slug),
   ])
   return {
     ...detail,
@@ -83,5 +89,7 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     cashflowTrend: (cashflowTrend as typeof detail.cashflowTrend) ?? detail.cashflowTrend,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
+    allocation: allocation ?? detail.allocation,
+    risk: (risk as typeof detail.risk) ?? detail.risk,
   }
 }

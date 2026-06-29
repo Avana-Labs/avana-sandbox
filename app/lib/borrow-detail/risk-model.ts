@@ -1,0 +1,108 @@
+/**
+ * Shared, pure risk-assessment builders — the single source of truth for the
+ * `RiskAssessment` shape on both detail pages.
+ *
+ * Both the mock fallback (`asset.mock.ts` / `pool.mock.ts`) AND the Convex seed
+ * (`app/lib/convex-seed/build-seed.ts`) call these so the seeded `riskAssessments`
+ * rows are byte-for-byte identical to the procedural fallback. That makes the
+ * de-mock swap invisible to QA: the page renders the same numbers whether risk
+ * comes from Convex or the catalog.
+ *
+ * Keep this module dependency-light (catalog + pure formatters only) so it can be
+ * imported from the Node seed runner as well as client components.
+ */
+
+import {
+  type BorrowPoolRow,
+  aprRangeLabel,
+  formatCompactUsd,
+  getDexById,
+  getSpokeById,
+} from "@/app/lib/borrow-sim"
+import type { SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
+import {
+  formatBpsAsPct,
+  formatPct,
+  riskLevelFromBps,
+  riskLevelLabel,
+  riskScoreFromBps,
+} from "./allocation"
+import { prngFromString } from "./prng"
+import type { RiskAssessment } from "./types"
+
+/**
+ * Deterministic per-asset risk premium (bps). Base by category, then shifted by
+ * utilization + borrow rate signals and a seeded spread so each gauge is distinct.
+ * Kept here so the seed and the mock derive the identical premium.
+ */
+export function assetRiskPremiumBps(asset: SpokeBorrowableRecord): number {
+  const isStable = asset.category === "stable"
+  const base = isStable ? 28 : 110
+  const utilAdj = (asset.utilization - 50) * (isStable ? 0.2 : 0.45)
+  const aprAdj = (asset.borrowApr - (isStable ? 4 : 6)) * (isStable ? 1.4 : 2.2)
+  const seed = prngFromString(`asset-risk:${asset.id}`)()
+  const spread = (seed - 0.5) * (isStable ? 24 : 70)
+  return Math.max(8, Math.round(base + utilAdj + aprAdj + spread))
+}
+
+/** Full risk rating for a borrowable asset. */
+export function buildAssetRiskAssessment(asset: SpokeBorrowableRecord): RiskAssessment {
+  const isStable = asset.category === "stable"
+  const bps = assetRiskPremiumBps(asset)
+  const level = riskLevelFromBps(bps)
+  return {
+    premiumBps: bps,
+    level,
+    score: riskScoreFromBps(bps),
+    headline: `${riskLevelLabel(level)} risk · ${formatBpsAsPct(bps)} premium`,
+    summary: isStable
+      ? `${asset.symbol} is a stablecoin. Primary risk is a de-peg or issuer-solvency event; monitored by oracle deviation guards.`
+      : `${asset.symbol} is a volatile asset used for directional carry. Primary risk is realized volatility and oracle latency under stress.`,
+    breakdown: isStable
+      ? [
+          { id: "depeg", label: "De-peg tail", bps: Math.round(bps * 0.5), level: "low", description: "Guardrails pause new borrows on >50bps deviation for 5m." },
+          { id: "issuer", label: "Issuer solvency", bps: Math.round(bps * 0.3), level: "low", description: "Attestations / reserve reports monitored weekly." },
+          { id: "bridge", label: "Bridge / wrapping", bps: Math.round(bps * 0.15), level: "low", description: "Only canonical bridges accepted." },
+          { id: "sc", label: "Smart-contract surface", bps: Math.round(bps * 0.05), level: "low", description: "Standard ERC-20 implementations only." },
+        ]
+      : [
+          { id: "vol", label: "Realized volatility", bps: Math.round(bps * 0.5), level, description: "30d σ relative to the category's target band." },
+          { id: "oracle", label: "Oracle latency", bps: Math.round(bps * 0.2), level, description: "Chainlink feed + deviation guard." },
+          { id: "depth", label: "Liquidity depth", bps: Math.round(bps * 0.15), level: "low", description: "Depth across routing venues." },
+          { id: "sc", label: "Smart-contract surface", bps: Math.round(bps * 0.15), level: "low", description: "Token contract + wrapper if applicable." },
+        ],
+    metrics: [
+      { id: "category", label: "Category", value: asset.category === "stable" ? "Stablecoin" : "Volatile" },
+      { id: "borrowApr", label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%` },
+      { id: "utilization", label: "Utilization", value: `${asset.utilization.toFixed(1)}%` },
+      { id: "available", label: "Available", value: formatCompactUsd(asset.availableUsd) },
+    ],
+  }
+}
+
+/** Full risk rating for an LP collateral pool. Premium comes from the catalog row. */
+export function buildPoolRiskAssessment(row: BorrowPoolRow): RiskAssessment {
+  const bps = row.riskPremiumBps
+  const level = riskLevelFromBps(bps)
+  const score = riskScoreFromBps(bps)
+  return {
+    premiumBps: bps,
+    level,
+    score,
+    headline: `${riskLevelLabel(level)} risk · ${formatBpsAsPct(bps)} premium`,
+    summary: `Risk premium is derived from pool volatility, depth, oracle latency, and spoke parameters (${getSpokeById(row.spoke).label}).`,
+    breakdown: [
+      { id: "vol", label: "Pair volatility", bps: Math.round(bps * 0.42), level, description: "Realized 30d σ relative to the spoke's target band." },
+      { id: "depth", label: "Liquidity depth", bps: Math.round(bps * 0.18), level: "low", description: "Depth at ±2% is above the spoke's liquidation threshold." },
+      { id: "oracle", label: "Oracle", bps: Math.round(bps * 0.22), level, description: "Primary oracle + deviation guard monitored by the risk council." },
+      { id: "sc", label: "Smart-contract surface", bps: Math.round(bps * 0.12), level: "low", description: "Source dex + LP wrapper audits reviewed quarterly." },
+      { id: "il", label: "Expected IL", bps: Math.max(2, Math.round(bps * 0.06)), level: "low", description: "Rolling 90d weekly impermanent loss for this tier." },
+    ],
+    metrics: [
+      { id: "dex", label: "Source dex", value: getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue },
+      { id: "spoke", label: "Spoke", value: getSpokeById(row.spoke).label },
+      { id: "maxLtv", label: "Max LTV", value: formatPct(getSpokeById(row.spoke).maxLtv, 0) },
+      { id: "apr", label: "Supply APY range", value: aprRangeLabel(row) },
+    ],
+  }
+}
