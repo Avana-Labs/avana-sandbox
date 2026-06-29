@@ -1,6 +1,8 @@
 "use client"
 
+import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import type { HomeCollateralPool } from "@/app/lib/home-sim"
+import { formatActionApproxUsd } from "@/app/lib/action-system/formatters"
 import { ActionContextSelectorCard } from "@/app/components/action-page/action-context-selector-card"
 import { ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
@@ -21,6 +23,7 @@ export function HomeActionContextBar({
   switchable?: boolean
 }) {
   const [collateralSymbol, borrowSymbol] = pool.visuals.map((visual) => visual.symbol)
+  const approxUsdLabel = formatActionApproxUsd(pool.collateralUsd)
 
   if (variant === "inset") {
     return (
@@ -43,6 +46,9 @@ export function HomeActionContextBar({
             ) : null}
           </div>
         </button>
+        <div className="mt-2 text-[14px] text-foreground/60">
+          <AnimatedTextValue text={approxUsdLabel} />
+        </div>
       </SwapStyleField>
     )
   }
@@ -52,6 +58,7 @@ export function HomeActionContextBar({
       <ActionContextSelectorCard
         label={label}
         value={pool.name}
+        approxUsdLabel={approxUsdLabel}
         collateralSymbol={collateralSymbol ?? "LP"}
         borrowSymbol={borrowSymbol}
         onClick={onOpenPool}

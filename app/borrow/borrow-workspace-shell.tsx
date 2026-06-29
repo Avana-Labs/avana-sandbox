@@ -41,7 +41,7 @@ export function BorrowWorkspaceShell({ pageData }: { pageData: BorrowWorkspaceDa
       new IntersectionObserver(
         ([entry]) => {
           if (entry?.isIntersecting) {
-            window.setTimeout(mount, 8_000)
+            mount()
           }
         },
         { rootMargin: "0px 0px -200px 0px", threshold: 0.1 },
@@ -49,7 +49,7 @@ export function BorrowWorkspaceShell({ pageData }: { pageData: BorrowWorkspaceDa
 
     if (observer && shell) observer.observe(shell)
 
-    const fallbackId = window.setTimeout(mount, 12_000)
+    const fallbackId = window.setTimeout(mount, 250)
 
     return () => {
       cancelled = true

@@ -1,11 +1,13 @@
 "use client"
 
+import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { cn } from "@/lib/utils"
 
 export function ActionContextSelectorCard({
   label,
   value,
+  approxUsdLabel,
   collateralSymbol,
   borrowSymbol,
   onClick,
@@ -13,6 +15,7 @@ export function ActionContextSelectorCard({
 }: {
   label: string
   value: string
+  approxUsdLabel?: string
   collateralSymbol: string
   borrowSymbol?: string
   onClick: () => void
@@ -49,6 +52,11 @@ export function ActionContextSelectorCard({
               </span>
             </div>
           </div>
+          {approxUsdLabel ? (
+            <div className="mt-2 text-[14px] text-foreground/60">
+              <AnimatedTextValue text={approxUsdLabel} />
+            </div>
+          ) : null}
         </div>
       </div>
     </button>
