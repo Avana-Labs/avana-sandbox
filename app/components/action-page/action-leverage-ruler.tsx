@@ -45,6 +45,7 @@ export function ActionLeverageRuler({
 }) {
   const parsed = Number.parseFloat(value)
   const currentValue = Number.isFinite(parsed) ? snapToStep(parsed, min, max, step) : min
+  const fillPct = max > min ? clamp(((currentValue - min) / (max - min)) * 100, 0, 100) : 0
 
   const publishValue = useCallback(
     (next: number) => {
@@ -83,6 +84,11 @@ export function ActionLeverageRuler({
 
       <div className={variant === "embedded" ? "relative mt-4 px-2" : "relative mt-5 px-2"}>
         <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-1.5 -translate-y-1/2 rounded-full bg-border/70" aria-hidden />
+        <div
+          className="pointer-events-none absolute left-2 top-1/2 z-[5] h-1.5 -translate-y-1/2 rounded-full bg-brand transition-[width] duration-150 ease-out"
+          style={{ width: `calc((100% - 1rem) * ${fillPct / 100})` }}
+          aria-hidden
+        />
         <div className="pointer-events-none absolute inset-x-2 top-1/2 z-10 flex -translate-y-1/2 justify-between px-1" aria-hidden>
           {Array.from({ length: 5 }).map((_, index) => (
             <span
