@@ -11,6 +11,7 @@
 import type * as allocation from "../allocation.js";
 import type * as cashflow from "../cashflow.js";
 import type * as engagement from "../engagement.js";
+import type * as liquidity from "../liquidity.js";
 import type * as markets from "../markets.js";
 
 import type {
@@ -23,6 +24,7 @@ declare const fullApi: ApiFromModules<{
   allocation: typeof allocation;
   cashflow: typeof cashflow;
   engagement: typeof engagement;
+  liquidity: typeof liquidity;
   markets: typeof markets;
 }>;
 

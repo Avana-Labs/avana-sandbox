@@ -220,4 +220,21 @@ export default defineSchema({
     ),
   })
     .index("by_market_assessed_at", ["marketId", "assessedAt"]),
+
+  /**
+   * Shared, multi-user market liquidity ledger. Every borrow / repay / supply /
+   * withdraw from ANY client increments one aggregate row per market, and every
+   * client subscribes (see `convex/liquidity.ts`) and layers these deltas onto the
+   * base catalog so liquidity stats move with aggregate activity across all users
+   * instead of staying frozen. One row per market keeps reads O(#markets).
+   */
+  marketLiquidityDeltas: defineTable({
+    /** Catalog market id — a pool id ("uni-v3-bluechip-weth-usdc") or borrowable asset id ("uni-v2:usdc"). */
+    marketSlug: v.string(),
+    /** Net borrowed change in USD (borrow +, repay −). */
+    borrowedDeltaUsd: v.number(),
+    /** Net supplied/collateral change in USD (supply/deposit +, withdraw −). */
+    suppliedDeltaUsd: v.number(),
+    updatedAt: v.number(),
+  }).index("by_slug", ["marketSlug"]),
 })
