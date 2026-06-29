@@ -30,14 +30,6 @@ const InterestRateModelCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
 )
-const SupplyBorrowCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.SupplyBorrowCard),
-  { ssr: false, loading: () => <DeferredBlock className="h-[280px]" /> },
-)
-const HistoricalUtilizationCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.HistoricalUtilizationCard),
-  { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
-)
 const CashflowTrendCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.CashflowTrendCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
@@ -153,8 +145,6 @@ export function AssetDetailClient({ detail }: Props) {
               <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
               <QuickStatsGrid detail={detail} />
               <InterestRateModelCard detail={detail} />
-              <SupplyBorrowCard detail={detail} />
-              <HistoricalUtilizationCard detail={detail} />
               <AllocationBreakdownCard detail={detail} />
               <AssetCashflowCard detail={detail} />
               <RiskSection detail={detail} />

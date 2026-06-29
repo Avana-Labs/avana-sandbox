@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { getAssetDetail } from "@/app/lib/borrow-detail"
+import { getAssetDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
 import { AssetDetailClient } from "@/app/borrow/asset/[assetId]/asset-detail-client"
 
 type PageProps = {
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BorrowAssetPage({ params }: PageProps) {
   const { assetId } = await params
-  const detail = getAssetDetail(assetId)
+  const detail = await getAssetDetailFromConvex(assetId)
   if (!detail) notFound()
   return <AssetDetailClient detail={detail} />
 }

@@ -12,7 +12,14 @@
  * — nothing in the UI layer needs to change.
  */
 
-import { buildRangeData, formatChartValue, type ChartFeed, type ChartValueFormat } from "@/app/components/charts"
+import {
+  buildRangeData,
+  formatChartValue,
+  type ChartFeed,
+  type ChartPoint,
+  type ChartRangeData,
+  type ChartValueFormat,
+} from "@/app/components/charts"
 
 function hashString(input: string): number {
   let hash = 2166136261
@@ -96,6 +103,47 @@ export function getMultiplyMarketHeroFeed(marketId: string): ChartFeed {
     headlineMeta: todayLabel(),
     rangeData: buildRangeData(base, variance),
     valueFormat: "usdCompact",
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Convex-backed hero feed (daily series → ChartFeed)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a hero `ChartFeed` from a Convex daily series (points `{t: "YYYY-MM-DD", v}`).
+ * Used for the borrow pool hero (TVL / total supplied) and asset hero (total
+ * borrows). The daily granularity means short ranges (1H/1D) are necessarily
+ * sparse. Returns null when there's no data so callers can fall back to the
+ * local mock feed.
+ */
+export function buildHeroFeedFromConvexSeries(
+  points: ReadonlyArray<{ t: string; v: number }>,
+  valueFormat: ChartValueFormat,
+): ChartFeed | null {
+  if (!points || points.length === 0) return null
+  const sorted = [...points].sort((a, b) => a.t.localeCompare(b.t))
+  const toChartPoints = (slice: ReadonlyArray<{ t: string; v: number }>): ChartPoint[] =>
+    slice.map((p) => ({ time: Date.parse(`${p.t}T00:00:00Z`), value: p.v, label: p.t }))
+  const lastN = (n: number) => sorted.slice(Math.max(0, sorted.length - n))
+  const rangeData: ChartRangeData = {
+    "1H": toChartPoints(lastN(2)),
+    "1D": toChartPoints(lastN(2)),
+    "1W": toChartPoints(lastN(7)),
+    "1M": toChartPoints(lastN(30)),
+    "1Y": toChartPoints(lastN(365)),
+    All: toChartPoints(sorted),
+  }
+  const last = sorted[sorted.length - 1]?.v ?? 0
+  const first = sorted[0]?.v ?? last
+  const pct = first ? ((last - first) / first) * 100 : 0
+  return {
+    headlineValue: formatChartValue(valueFormat, last),
+    headlineDelta: `${Math.abs(pct).toFixed(2)}%`,
+    deltaTone: deltaTone(pct),
+    headlineMeta: todayLabel(),
+    rangeData,
+    valueFormat,
   }
 }
 

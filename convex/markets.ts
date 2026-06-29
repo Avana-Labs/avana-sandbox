@@ -175,6 +175,170 @@ export const getQuickStats = query({
   },
 })
 
+/**
+ * Borrow economy headline aggregates from the latest daily snapshot per market.
+ * Efficient: one indexed read per market (≈128), never a full-table scan.
+ *   - Total Collateral = Σ latest pool suppliedUsd (pools = LP collateral)
+ *   - Outstanding Loans = Σ latest asset suppliedUsd (borrowable assets, ≈ fully borrowed)
+ *   - Available Credit  = Collateral − Loans
+ */
+export const getBorrowEconomy = query({
+  args: {},
+  handler: async (ctx) => {
+    const markets = await ctx.db.query("markets").collect()
+    let totalCollateralUsd = 0
+    let outstandingLoansUsd = 0
+    for (const market of markets) {
+      if (market.scope !== "pool" && market.scope !== "asset") continue
+      const latest = await ctx.db
+        .query("marketDailyStats")
+        .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
+        .order("desc")
+        .first()
+      if (!latest) continue
+      if (market.scope === "pool") totalCollateralUsd += latest.suppliedUsd
+      else outstandingLoansUsd += latest.suppliedUsd
+    }
+    return {
+      totalCollateralUsd,
+      outstandingLoansUsd,
+      availableCreditUsd: Math.max(0, totalCollateralUsd - outstandingLoansUsd),
+      poolMarkets: markets.filter((m) => m.scope === "pool").length,
+      assetMarkets: markets.filter((m) => m.scope === "asset").length,
+    }
+  },
+})
+
+/**
+ * Latest-day reference snapshot for every market (one indexed read per market).
+ * Powers the borrow list/Explore cards and the session market-data hydration so
+ * every surface reads the same Convex numbers. Keyed by the market `slug`
+ * (pool id, or spoke-scoped asset id) for a direct lookup against the catalog.
+ */
+export const listMarketSnapshots = query({
+  args: {},
+  handler: async (ctx) => {
+    const markets = await ctx.db.query("markets").collect()
+    const out = await Promise.all(
+      markets.map(async (market) => {
+        const latest = await ctx.db
+          .query("marketDailyStats")
+          .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
+          .order("desc")
+          .first()
+        if (!latest) return null
+        return {
+          slug: market.slug,
+          scope: market.scope,
+          suppliedUsd: latest.suppliedUsd,
+          borrowedUsd: latest.borrowedUsd,
+          availableUsd: Math.max(0, latest.suppliedUsd - latest.borrowedUsd),
+          utilizationPct: latest.utilizationPct,
+          supplyApyPct: latest.supplyApyPct,
+          borrowAprPct: latest.borrowAprPct,
+          tvlUsd: latest.tvlUsd,
+          volumeUsd: latest.volumeUsd,
+          feesUsd: latest.feesUsd,
+        }
+      }),
+    )
+    return out.filter((row): row is NonNullable<typeof row> => row !== null)
+  },
+})
+
+const assetHeroMetric = v.union(
+  v.literal("price"),
+  v.literal("supply"),
+  v.literal("borrow"),
+  v.literal("utilization"),
+  v.literal("apy"),
+)
+
+/** Asset-page hero series (price/supply/borrow/utilization/apy) folded from daily stats. */
+export const getAssetHeroSeries = query({
+  args: { slug: v.string(), metric: assetHeroMetric, range: rangeValidator },
+  handler: async (ctx, { slug, metric, range }) => {
+    const market = await resolveMarket(ctx, "asset", slug)
+    if (!market) return null
+    const rows = await dailyRows(ctx, market._id, range)
+    const field =
+      metric === "price"
+        ? "priceUsd"
+        : metric === "supply"
+          ? "suppliedUsd"
+          : metric === "borrow"
+            ? "borrowedUsd"
+            : metric === "utilization"
+              ? "utilizationPct"
+              : "borrowAprPct"
+    return {
+      id: `${market._id}:hero:${metric}:${range}`,
+      label: metric,
+      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+    }
+  },
+})
+
+const poolHeroMetric = v.union(
+  v.literal("tvl"),
+  v.literal("volume"),
+  v.literal("fees"),
+  v.literal("utilization"),
+  v.literal("apy"),
+)
+
+/** Pool-page hero series (tvl/volume/fees/utilization/apy) folded from daily stats. */
+export const getPoolHeroSeries = query({
+  args: { slug: v.string(), metric: poolHeroMetric, range: rangeValidator },
+  handler: async (ctx, { slug, metric, range }) => {
+    const market = await resolveMarket(ctx, "pool", slug)
+    if (!market) return null
+    const rows = await dailyRows(ctx, market._id, range)
+    const field =
+      metric === "tvl"
+        ? "tvlUsd"
+        : metric === "volume"
+          ? "volumeUsd"
+          : metric === "fees"
+            ? "feesUsd"
+            : metric === "utilization"
+              ? "utilizationPct"
+              : "supplyApyPct"
+    return {
+      id: `${market._id}:hero:${metric}:${range}`,
+      label: metric,
+      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+    }
+  },
+})
+
+/**
+ * Recent wallet transactions for a market's detail-page history card. Reads
+ * walletEvents (the engagement source) so the history is real, not random mock.
+ * Returns shape: `TxHistoryRow[]` (app/lib/borrow-detail/types.ts).
+ */
+export const getRecentTransactions = query({
+  args: { scope: v.union(v.literal("asset"), v.literal("pool")), slug: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { scope, slug, limit }) => {
+    const market = await resolveMarket(ctx, scope, slug)
+    if (!market) return []
+    const rows = await ctx.db
+      .query("walletEvents")
+      .withIndex("by_market_at", (q) => q.eq("marketId", market._id))
+      .order("desc")
+      .take(limit ?? 12)
+    return rows.map((r) => ({
+      id: String(r._id),
+      at: new Date(r.at).toISOString(),
+      kind: r.kind === "rewardsClaim" ? ("rewards" as const) : (r.kind as "supply" | "withdraw" | "borrow" | "repay" | "liquidation"),
+      amountLabel: formatCompactUsd(r.amountUsd),
+      walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
+      counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,
+      txHashShort: r.txHash.slice(0, 10),
+    }))
+  },
+})
+
 async function dailyRows(ctx: QueryCtx, marketId: Id<"markets">, range: RangeId) {
   const days = RANGE_DAYS[range]
   const start = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
