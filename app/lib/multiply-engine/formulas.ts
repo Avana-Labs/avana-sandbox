@@ -9,7 +9,10 @@ export function calculateSafeMaxMultiplier(params: {
   minHealthFactor: number
   liquidationThreshold: number
 }): number {
-  const hfBased = params.minHealthFactor / (params.minHealthFactor - params.liquidationThreshold)
+  // When minHealthFactor <= liquidationThreshold the HF-based bound is negative or
+  // infinite; treat it as non-binding so the safe max never goes negative.
+  const denominator = params.minHealthFactor - params.liquidationThreshold
+  const hfBased = denominator > 0 ? params.minHealthFactor / denominator : Number.POSITIVE_INFINITY
   return Math.min(params.publicMaxMultiplier, params.theoreticalMaxMultiplier, hfBased)
 }
 
