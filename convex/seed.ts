@@ -28,6 +28,7 @@ export const getCounts = query({
     const markets = await ctx.db.query("markets").collect()
     const risk = await ctx.db.query("riskAssessments").collect()
     const allocation = await ctx.db.query("assetPoolAllocationDaily").collect()
+    const content = await ctx.db.query("marketContent").collect()
     const oneStat = await ctx.db.query("marketDailyStats").take(1)
     const oneRevenue = await ctx.db.query("marketRevenueDaily").take(1)
     const oneRiskWithBreakdown = risk.find((r) => r.breakdown.length > 0)
@@ -38,6 +39,7 @@ export const getCounts = query({
       riskAssessments: risk.length,
       riskBreakdownSeeded: oneRiskWithBreakdown !== undefined,
       allocationRows: allocation.length,
+      contentRows: content.length,
       dailyStatsSeeded: oneStat.length > 0,
       revenueSeeded: oneRevenue.length > 0,
     }
@@ -199,6 +201,32 @@ export const upsertAllocation = mutation({
       const existing = sameAssetDay.find((r) => r.poolId === row.poolId)
       if (existing) await ctx.db.patch(existing._id, row)
       else await ctx.db.insert("assetPoolAllocationDaily", row)
+    }
+    return { written: rows.length }
+  },
+})
+
+/** Upsert per-market editorial content (about/stats/history/faqs) by marketId. */
+export const upsertContent = mutation({
+  args: {
+    rows: v.array(
+      v.object({
+        marketId: v.id("markets"),
+        description: v.string(),
+        stats: v.array(v.object({ label: v.string(), value: v.string(), href: v.optional(v.string()) })),
+        history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
+        faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
+      }),
+    ),
+  },
+  handler: async (ctx, { rows }) => {
+    for (const row of rows) {
+      const existing = await ctx.db
+        .query("marketContent")
+        .withIndex("by_market", (q) => q.eq("marketId", row.marketId))
+        .unique()
+      if (existing) await ctx.db.patch(existing._id, row)
+      else await ctx.db.insert("marketContent", row)
     }
     return { written: rows.length }
   },

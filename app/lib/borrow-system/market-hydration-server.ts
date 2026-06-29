@@ -167,6 +167,17 @@ export async function fetchQuickStats(scope: "pool" | "asset", slug: string) {
   }
 }
 
+/** Editorial content (About description/stats/history + FAQs) for a pool or asset. */
+export async function fetchContent(scope: "pool" | "asset", slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.content.getContent, { scope, slug })
+  } catch {
+    return null
+  }
+}
+
 /** Real token prices (base symbol → USD) from the Convex oracle (DefiLlama). */
 export async function fetchTokenPrices(): Promise<Record<string, number> | null> {
   const client = convexClient()

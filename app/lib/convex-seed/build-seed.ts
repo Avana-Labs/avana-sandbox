@@ -18,6 +18,9 @@ import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borr
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
 import { computeAssetAllocationRows } from "@/app/lib/borrow-detail/allocation"
 import { buildAssetRiskAssessment, buildPoolRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
+import { buildAssetFaqs, buildPoolFaqs } from "@/app/lib/borrow-detail/content-model"
+import { getAssetAboutCard } from "@/app/lib/borrow-detail/asset.mock"
+import { getPoolAboutCard } from "@/app/lib/borrow-detail/pool.mock"
 import type { RiskAssessment } from "@/app/lib/borrow-detail/types"
 
 const DAY_MS = 86_400_000
@@ -91,6 +94,15 @@ export type SeedAllocationRow = {
   borrowAprPct: number
 }
 
+/** Static editorial content (About description + stats, parameter-change history, FAQs). */
+export type SeedContentRow = {
+  slug: string
+  description: string
+  stats: { label: string; value: string; href?: string }[]
+  history: { date: string; title: string; description?: string }[]
+  faqs: { question: string; answer: string }[]
+}
+
 export type SeedData = {
   markets: SeedMarketRow[]
   dailyStats: SeedDailyStatRow[]
@@ -98,6 +110,7 @@ export type SeedData = {
   risk: SeedRiskRow[]
   walletEvents: SeedWalletEventRow[]
   allocation: SeedAllocationRow[]
+  content: SeedContentRow[]
 }
 
 export type BuildSeedOptions = {
@@ -327,6 +340,7 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
   const risk: SeedRiskRow[] = []
   const walletEvents: SeedWalletEventRow[] = []
   const allocation: SeedAllocationRow[] = []
+  const content: SeedContentRow[] = []
 
   for (const pool of BORROW_POOL_CATALOG) {
     markets.push(poolMarketRow(pool, asOf))
@@ -342,6 +356,14 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     revenue.push(...revenueForMarket(stats, reserveFactor))
     risk.push(riskRow(pool.id, asOf, buildPoolRiskAssessment(pool)))
     walletEvents.push(...walletEventsForMarket(pool.id, asOf, walletEventDays))
+    const poolAbout = getPoolAboutCard(pool)
+    content.push({
+      slug: pool.id,
+      description: poolAbout.description,
+      stats: poolAbout.stats,
+      history: poolAbout.history,
+      faqs: buildPoolFaqs(pool.name),
+    })
   }
 
   for (const asset of listSpokeBorrowables()) {
@@ -372,6 +394,14 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
         borrowAprPct: r.borrowAprPct,
       })
     }
+    const assetAbout = getAssetAboutCard(asset)
+    content.push({
+      slug: asset.id,
+      description: assetAbout.description,
+      stats: assetAbout.stats,
+      history: assetAbout.history,
+      faqs: buildAssetFaqs(asset.symbol, asset.name),
+    })
   }
 
   // Calibrate the latest day to the canonical economy aggregates. `dailyStats` and
@@ -393,7 +423,7 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     row.valueUsd = round((supplied * row.sharePct) / 100, 0)
   }
 
-  return { markets, dailyStats, revenue, risk, walletEvents, allocation }
+  return { markets, dailyStats, revenue, risk, walletEvents, allocation, content }
 }
 
 function calibrateToTargets(

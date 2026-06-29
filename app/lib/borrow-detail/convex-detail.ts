@@ -6,6 +6,7 @@ import {
   fetchAssetBorrowSeries,
   fetchAssetCashflowTrend,
   fetchCashflowBreakdown,
+  fetchContent,
   fetchConvexMarketSnapshots,
   fetchEngagement,
   fetchPoolTvlSeries,
@@ -116,13 +117,14 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
   const detail = resolvePoolDetailFromState(hydrated, detailWalletId, normalizeBorrowMarketRouteId(id))
   if (!detail) return null
 
-  const [tvlPoints, engagement, cashflow, transactions, risk, quickStats] = await Promise.all([
+  const [tvlPoints, engagement, cashflow, transactions, risk, quickStats, content] = await Promise.all([
     fetchPoolTvlSeries(detail.row.id),
     fetchEngagement("pool", detail.row.id),
     fetchCashflowBreakdown("pool", detail.row.id),
     fetchRecentTransactions("pool", detail.row.id),
     fetchRisk("pool", detail.row.id),
     fetchQuickStats("pool", detail.row.id),
+    fetchContent("pool", detail.row.id),
   ])
   return {
     ...detail,
@@ -132,6 +134,8 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
     risk: (risk as typeof detail.risk) ?? detail.risk,
+    about: content ? { ...detail.about, description: content.description, stats: content.stats, history: content.history } : detail.about,
+    faqs: content?.faqs ?? detail.faqs,
   }
 }
 
@@ -160,7 +164,7 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   )
   if (!detail) return null
 
-  const [borrowPoints, engagement, cashflow, cashflowTrend, transactions, allocation, risk, quickStats, prices] = await Promise.all([
+  const [borrowPoints, engagement, cashflow, cashflowTrend, transactions, allocation, risk, quickStats, prices, content] = await Promise.all([
     fetchAssetBorrowSeries(slug),
     fetchEngagement("asset", slug),
     fetchCashflowBreakdown("asset", slug),
@@ -170,6 +174,7 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     fetchRisk("asset", slug),
     fetchQuickStats("asset", slug),
     fetchTokenPrices(),
+    fetchContent("asset", slug),
   ])
   return {
     ...detail,
@@ -185,5 +190,7 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
     allocation: allocation ?? detail.allocation,
     risk: (risk as typeof detail.risk) ?? detail.risk,
+    about: content ? { ...detail.about, description: content.description, stats: content.stats, history: content.history } : detail.about,
+    faqs: content?.faqs ?? detail.faqs,
   }
 }
