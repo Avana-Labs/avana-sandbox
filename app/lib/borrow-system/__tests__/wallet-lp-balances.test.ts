@@ -14,7 +14,8 @@ describe("getWalletLpBalanceUsd", () => {
   it("returns zero when the wallet has no LP balance for a market", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
 
-    expect(getWalletLpBalanceUsd(state, "demo-wallet", "curve-crypto-wbtc-eth")).toBe(0)
+    // A market id that is not in the catalog has no seeded balance.
+    expect(getWalletLpBalanceUsd(state, "demo-wallet", "nonexistent-market-xyz")).toBe(0)
     expect(getWalletLpBalanceUsd(state, "other-wallet", "uni-v3-bluechip-wbtc-weth")).toBe(0)
   })
 })

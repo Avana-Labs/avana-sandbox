@@ -98,7 +98,14 @@ export function BorrowActionPageClient({
   const { walletId } = useAvanaSessions()
   const session = useBorrowSessionContext()
   const hasInvalidInitialMarket = Boolean(
-    initialMarketId && !initialAssetId && !session.collateralPools.some((pool) => pool.id === initialMarketId),
+    initialMarketId &&
+      !initialAssetId &&
+      // Supply/pledge can target ANY market in the catalog (you're creating a new
+      // position), so validate it against the full market list. Remove/claim act on
+      // an existing position, so those still validate against the pledged pools.
+      (kind === "supply"
+        ? !session.state.markets[initialMarketId]
+        : !session.collateralPools.some((pool) => pool.id === initialMarketId)),
   )
   const resolvedInitialMarket = useMemo(
     () => {

@@ -297,11 +297,15 @@ function rewardPositionsFromHomeClaims(walletId: string, markets: Record<string,
 }
 
 function walletLpBalancesFromHomePools() {
+  // Seed an LP balance for every catalog market so any listed market can be
+  // pledged in the sandbox (home pools keep their larger seeded balances).
+  const homeBalances = new Map<string, bigint>()
+  for (const pool of HOME_COLLATERAL_POOLS) {
+    const marketId = HOME_POOL_TO_MARKET_ID[pool.id]
+    if (marketId) homeBalances.set(marketId, usd6(pool.collateralUsd * 2))
+  }
   return Object.fromEntries(
-    HOME_COLLATERAL_POOLS.map((pool) => {
-      const marketId = HOME_POOL_TO_MARKET_ID[pool.id]
-      return marketId ? [marketId, usd6(pool.collateralUsd * 2)] : null
-    }).filter((entry): entry is [string, bigint] => Boolean(entry)),
+    BORROW_POOL_CATALOG.map((pool) => [pool.id, homeBalances.get(pool.id) ?? usd6(25_000)]),
   )
 }
 
