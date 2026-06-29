@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
+import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
 import { sanitizeDecimalInput } from "@/app/lib/action-system/amount-input"
 import type { HomeBorrowToken } from "@/app/lib/home-sim"
@@ -24,6 +25,7 @@ type ActionAmountCardProps = {
   onAmountChange: (value: string) => void
   approxUsdLabel: string
   assetLabel: string
+  unitLabel?: string
   assetSymbol?: string
   borrowSymbol?: string
   balanceLabel?: string
@@ -48,6 +50,7 @@ export function ActionAmountCard({
   onAmountChange,
   approxUsdLabel,
   assetLabel,
+  unitLabel,
   assetSymbol,
   borrowSymbol,
   readOnly = false,
@@ -120,7 +123,11 @@ export function ActionAmountCard({
       )}
       {!hideAssetSelector ? (
         <div className="relative shrink-0" ref={switchable ? menuRef : undefined}>
-          {switchable ? (
+          {unitLabel ? (
+            <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground">
+              <span>{unitLabel}</span>
+            </div>
+          ) : switchable ? (
             <button
               type="button"
               onMouseDown={(event) => event.preventDefault()}
@@ -194,7 +201,11 @@ export function ActionAmountCard({
     </div>
   )
 
-  const usdRow = <div className="mt-2 text-[14px] text-foreground/60">{approxUsdLabel}</div>
+  const usdRow = (
+    <div className="mt-2 text-[14px] text-foreground/60">
+      <AnimatedTextValue text={approxUsdLabel} />
+    </div>
+  )
 
   const assetPickerDialog =
     useDialogPicker && switchable && pickerTokens ? (

@@ -854,6 +854,7 @@ export function BorrowActionPageClient({
           setAmount("")
         }}
         amountVariant="inset"
+        amountUnitLabel={kind === "remove" ? "%" : undefined}
         hideAssetSelector={kind === "supply"}
         assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
         pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
@@ -1064,6 +1065,7 @@ export function BorrowActionPageClient({
           hideAmountInput={kind === "claim" || Boolean(useWorkspaceFields)}
           amountVariant="card"
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
+          amountUnitLabel={kind === "remove" ? "%" : undefined}
           homeLayout={isHomeLayout}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}

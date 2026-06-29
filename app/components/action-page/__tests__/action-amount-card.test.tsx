@@ -1,8 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionAmountCard } from "@/app/components/action-page/action-amount-card"
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 const baseProps = {
   label: "Deposit",
@@ -69,5 +72,12 @@ describe("ActionAmountCard", () => {
     expect(onAssetSelect).toHaveBeenCalledWith("usdc")
     // Menu closes after selection.
     expect(screen.queryByRole("listbox")).toBeNull()
+  })
+
+  it("renders a fixed unit pill when a unit label is provided", () => {
+    render(<ActionAmountCard {...baseProps} unitLabel="%" />)
+
+    expect(screen.getByText("%")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /change asset/i })).toBeNull()
   })
 })
