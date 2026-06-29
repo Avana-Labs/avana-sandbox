@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useRef, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
 import { useRewardsSession } from "@/app/lib/rewards-system"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
@@ -147,21 +147,20 @@ export function AvanaSessionsProvider({
     rewards,
   })
 
-  return (
-    <AvanaSessionsContext.Provider
-      value={{
-        walletId: avana.walletId,
-        walletAddress: avana.walletAddress,
-        sandboxMode: avana.sandboxMode,
-        borrow,
-        multiply,
-        lend,
-        rewards,
-      }}
-    >
-      {children}
-    </AvanaSessionsContext.Provider>
+  const value = useMemo<AvanaSessions>(
+    () => ({
+      walletId: avana.walletId,
+      walletAddress: avana.walletAddress,
+      sandboxMode: avana.sandboxMode,
+      borrow,
+      multiply,
+      lend,
+      rewards,
+    }),
+    [avana.walletId, avana.walletAddress, avana.sandboxMode, borrow, multiply, lend, rewards],
   )
+
+  return <AvanaSessionsContext.Provider value={value}>{children}</AvanaSessionsContext.Provider>
 }
 
 export function useAvanaSessions() {
