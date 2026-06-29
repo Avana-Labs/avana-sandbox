@@ -240,7 +240,7 @@ function CollateralDesktopTable({
                     sortKey === "supplied" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>TOTAL SUPPLIED</span>
+                  <span>AVAILABLE</span>
                   <SortIcon />
                 </button>
               </th>
@@ -307,13 +307,8 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
   onUseAsCollateral,
   onBorrowAssetDesktop,
 }: CollateralPoolsTableProps) {
-  const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
-
   return (
     <div className="hidden space-y-10 md:block">
-      <div className="flex justify-start px-4">
-        <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
       {groups.flatMap((group) =>
         group.spokes.map((entry) => (
           <SpokeDesktopSection
@@ -325,7 +320,6 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
             onViewMarket={onViewMarket}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetDesktop}
-            activeTab={activeTab}
           />
         )),
       )}
@@ -340,7 +334,6 @@ function SpokeDesktopSection({
   pending,
   onViewMarket,
   onBorrowAsset,
-  activeTab,
 }: {
   spoke: BorrowSpoke
   rows: BorrowPoolRow[]
@@ -349,13 +342,15 @@ function SpokeDesktopSection({
   onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
-  activeTab: SectionTabId
 }) {
+  // Each spoke/category owns its own Markets/Assets toggle.
+  const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   return (
     <section className="mb-2">
       <div className="mt-4 overflow-hidden rounded-[20px] bg-transparent md:shadow-none">
-        <div className="flex justify-end rounded-t-[20px] bg-transparent px-1 py-2 md:px-4 md:py-3">
+        <div className="flex items-center justify-between gap-3 rounded-t-[20px] bg-transparent px-1 py-2 md:px-4 md:py-3">
           <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
+          <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
         <div className="bg-transparent">
           {activeTab === "collateral" ? (
@@ -377,11 +372,8 @@ export function CollateralPoolsList({
   onUseAsCollateral,
   onBorrowAssetMobile,
 }: CollateralPoolsTableProps) {
-  const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
-
   return (
     <div className="space-y-8 md:hidden">
-      <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
       {groups.flatMap((group) =>
         group.spokes.map((entry) => (
           <SpokeMobileSection
@@ -393,7 +385,6 @@ export function CollateralPoolsList({
             onViewMarket={onViewMarket}
             onUseAsCollateral={onUseAsCollateral}
             onBorrowAsset={onBorrowAssetMobile}
-            activeTab={activeTab}
           />
         )),
       )}
@@ -409,7 +400,6 @@ function SpokeMobileSection({
   onViewMarket,
   onUseAsCollateral,
   onBorrowAsset,
-  activeTab,
 }: {
   spoke: BorrowSpoke
   rows: BorrowPoolRow[]
@@ -418,16 +408,18 @@ function SpokeMobileSection({
   onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
-  activeTab: SectionTabId
 }) {
+  // Each spoke/category owns its own Markets/Assets toggle.
+  const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
   return (
     <section className="space-y-2">
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
+        <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
 
       <div className="mt-4">
@@ -461,7 +453,7 @@ function SpokeMobileSection({
                       flashGoodDirection="down"
                     />
                     <MobileField
-                      label="Supplied"
+                      label="Available"
                       value={formatCompactUsd(pool.availableUsd)}
                       flashValue={pool.availableUsd}
                       flashGoodDirection="up"

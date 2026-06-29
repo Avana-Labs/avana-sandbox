@@ -9,10 +9,13 @@ import {
   fetchConvexMarketSnapshots,
   fetchEngagement,
   fetchPoolTvlSeries,
+  fetchQuickStats,
   fetchRecentTransactions,
   fetchRisk,
 } from "@/app/lib/borrow-system/market-hydration-server"
+import type { QuickStat } from "./types"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
+import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import { normalizeBorrowAssetRouteId, normalizeBorrowMarketRouteId } from "@/app/lib/borrow-routes"
 import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
@@ -32,6 +35,40 @@ import type { AssetDetail, PoolDetail } from "./types"
  */
 const detailWalletId = getDefaultWalletProfileId()
 
+/**
+ * The asset mock uses quick-stat ids supplied/borrowed/supplyApy; the pool mock uses
+ * totalSupplied/totalBorrowed/apr for the same concepts. Convex `getQuickStats` emits
+ * the asset-style ids, so map each Convex id to every mock id it should override.
+ */
+const QUICK_STAT_ALIASES: Record<string, string[]> = {
+  supplied: ["supplied", "totalSupplied"],
+  borrowed: ["borrowed", "totalBorrowed"],
+  utilization: ["utilization"],
+  supplyApy: ["supplyApy", "apr"],
+  borrowApy: ["borrowApy"],
+}
+
+/**
+ * Overlay the Convex Market-overview quick stats (supplied / borrowed / utilization /
+ * APY) onto the mock quick stats, keeping the mock-only stats (price, dex liquidity,
+ * risk exposure) untouched. This makes the headline numbers match the hero + the page
+ * aggregate instead of the curated-fixture values, for both asset and pool pages.
+ */
+function mergeConvexQuickStats(
+  base: QuickStat[],
+  convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
+): QuickStat[] {
+  if (!convex || convex.length === 0) return base
+  const byMockId = new Map<string, { value: string; delta?: QuickStat["delta"] }>()
+  for (const c of convex) {
+    for (const mockId of QUICK_STAT_ALIASES[c.id] ?? [c.id]) byMockId.set(mockId, c)
+  }
+  return base.map((s) => {
+    const c = byMockId.get(s.id)
+    return c ? { ...s, value: c.value, delta: c.delta ?? s.delta } : s
+  })
+}
+
 export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | null> {
   const snapshots = await fetchConvexMarketSnapshots()
   const state = buildMockBorrowSystemState(detailWalletId)
@@ -39,15 +76,17 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
   const detail = resolvePoolDetailFromState(hydrated, detailWalletId, normalizeBorrowMarketRouteId(id))
   if (!detail) return null
 
-  const [tvlPoints, engagement, cashflow, transactions, risk] = await Promise.all([
+  const [tvlPoints, engagement, cashflow, transactions, risk, quickStats] = await Promise.all([
     fetchPoolTvlSeries(detail.row.id),
     fetchEngagement("pool", detail.row.id),
     fetchCashflowBreakdown("pool", detail.row.id),
     fetchRecentTransactions("pool", detail.row.id),
     fetchRisk("pool", detail.row.id),
+    fetchQuickStats("pool", detail.row.id),
   ])
   return {
     ...detail,
+    quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
     heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? detail.heroFeed,
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
@@ -57,7 +96,15 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
 }
 
 export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail | null> {
-  const slug = normalizeBorrowAssetRouteId(id)
+  const routeSlug = normalizeBorrowAssetRouteId(id)
+  // The route id may be a BASE-asset id ("usdc") or a spoke-scoped id ("uni-v2:usdc").
+  // Convex markets are keyed by the spoke-scoped id, so resolve to the canonical
+  // record and query Convex by ITS id — otherwise a base id finds no Convex market and
+  // the hero/quick-stats fall back to a random mock feed (the "$65K total borrows" bug).
+  const record = resolveAsset(routeSlug)
+  if (!record) return null
+  const slug = record.id
+
   const snapshots = await fetchConvexMarketSnapshots()
   const snap = snapshots.find((row) => row.scope === "asset" && row.slug === slug)
   const detail = resolveAssetDetailFromState(
@@ -73,7 +120,7 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   )
   if (!detail) return null
 
-  const [borrowPoints, engagement, cashflow, cashflowTrend, transactions, allocation, risk] = await Promise.all([
+  const [borrowPoints, engagement, cashflow, cashflowTrend, transactions, allocation, risk, quickStats] = await Promise.all([
     fetchAssetBorrowSeries(slug),
     fetchEngagement("asset", slug),
     fetchCashflowBreakdown("asset", slug),
@@ -81,9 +128,11 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     fetchRecentTransactions("asset", slug),
     fetchAllocation(slug),
     fetchRisk("asset", slug),
+    fetchQuickStats("asset", slug),
   ])
   return {
     ...detail,
+    quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
     heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? detail.heroFeed,
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
