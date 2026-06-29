@@ -6,13 +6,13 @@ export function ActionMetricHelp({ text, topic }: { text: string; topic?: string
   const ariaLabel = topic ? `More information about ${topic}` : "More information"
 
   return (
-    <span
-      className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground/70"
+    <button
+      type="button"
+      className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       aria-label={ariaLabel}
       title={text}
-      role="img"
     >
       <Info className="size-3.5" aria-hidden />
-    </span>
+    </button>
   )
 }
