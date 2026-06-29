@@ -30,6 +30,24 @@ import { useTheme } from "./theme-provider"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+import { ConnectKitButton } from "connectkit"
+
+/** Brand-styled wallet button that opens ConnectKit's real wallet modal. */
+function WalletButton({ size = "desktop" }: { size?: "mobile" | "desktop" }) {
+  const className =
+    size === "mobile"
+      ? "inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
+      : "inline-flex h-10 items-center justify-center rounded-full bg-brand px-4 font-sans text-[15px] font-medium text-brand-foreground shadow-none transition-colors hover:bg-brand/90"
+  return (
+    <ConnectKitButton.Custom>
+      {({ show, isConnected, truncatedAddress, ensName }) => (
+        <button type="button" aria-label={isConnected ? "Wallet" : "Connect"} className={className} onClick={show}>
+          {isConnected ? (ensName ?? truncatedAddress ?? "Wallet") : "Connect"}
+        </button>
+      )}
+    </ConnectKitButton.Custom>
+  )
+}
 
 type PreferencesView = "root" | "language" | "currency"
 
@@ -321,14 +339,7 @@ export function Header() {
       <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">
         {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
       </span>
-      <button
-        type="button"
-        aria-label="Connect"
-        className="inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
-        onClick={() => setWalletDialogOpen(true)}
-      >
-        Connect
-      </button>
+      <WalletButton size="mobile" />
     </>
   )
 
@@ -436,14 +447,7 @@ export function Header() {
 
               <PreferencesMenu />
 
-              <button
-                type="button"
-                aria-label="Connect"
-                className="inline-flex h-10 items-center justify-center rounded-full bg-brand px-4 font-sans text-[15px] font-medium text-brand-foreground shadow-none transition-colors hover:bg-brand/90"
-                onClick={() => setWalletDialogOpen(true)}
-              >
-                Connect
-              </button>
+              <WalletButton size="desktop" />
 
             </div>
           </div>
