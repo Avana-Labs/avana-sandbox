@@ -15,6 +15,8 @@ type MarketHeroChartProps = {
   hideValue?: boolean
   height?: number
   gradientId?: string
+  /** Small uppercase label naming the metric (e.g. "Total borrows"). */
+  label?: string
 }
 
 /**
@@ -28,6 +30,7 @@ export function MarketHeroChart({
   hideValue = false,
   height,
   gradientId = "marketHeroFill",
+  label,
 }: MarketHeroChartProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>(defaultRange)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
@@ -62,7 +65,7 @@ export function MarketHeroChart({
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={meta} hidden={hideValue} />
+      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={meta} hidden={hideValue} label={label} />
       <HeroAreaChart
         data={points}
         activeRange={activeRange}

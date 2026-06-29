@@ -5,6 +5,8 @@ type HeroBalanceDisplayProps = {
   /** Muted text shown after the delta (e.g. a date). */
   meta?: string
   hidden?: boolean
+  /** Small uppercase metric label shown above the value (e.g. "Total borrows"). */
+  label?: string
 }
 
 function HeroDeltaText({ value, tone, meta }: { value: string; tone: "positive" | "negative"; meta?: string }) {
@@ -19,10 +21,13 @@ function HeroDeltaText({ value, tone, meta }: { value: string; tone: "positive" 
   )
 }
 
-export function HeroBalanceDisplay({ value, delta, deltaTone = "positive", meta, hidden = false }: HeroBalanceDisplayProps) {
+export function HeroBalanceDisplay({ value, delta, deltaTone = "positive", meta, hidden = false, label }: HeroBalanceDisplayProps) {
   return (
     <div className="space-y-1.5">
-      <span className="text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
+      {label ? (
+        <span className="block text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
+      ) : null}
+      <span className="block text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
         {hidden ? "••••••••" : value}
       </span>
       {hidden ? (
