@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { HomePageClient } from "@/app/components/home-page-client"
@@ -29,6 +30,7 @@ vi.mock("@/app/components/action-page/borrow-action-page-client", () => ({
 }))
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  AvanaSessionsProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   useAvanaSessions: () => ({
     walletId,
     borrow: {

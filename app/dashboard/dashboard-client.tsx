@@ -383,7 +383,6 @@ export function DashboardClient({
               }}
             />
           </DashboardSection>
-          <DashboardPerformanceSection title="Looping Performance" metrics={multiplyDashboardMetrics.performance} />
         </div>
       ) : null}
       {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}

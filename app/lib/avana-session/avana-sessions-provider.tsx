@@ -1,7 +1,10 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
-import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { hasConvexClient, useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
+import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import { useRewardsSession } from "@/app/lib/rewards-system"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
@@ -139,6 +142,19 @@ function useLiquidityLedgerBridge({ borrow }: { borrow: BorrowSession }) {
   }, [borrow.transactionHistory, recordDelta])
 }
 
+/**
+ * Pushes the Convex market reference data (listMarketSnapshots) into the borrow
+ * session so list/preview/HF read the single source of truth. Rendered only when a
+ * Convex client exists (so useQuery has a ConvexProvider). No-op while loading.
+ */
+function BorrowMarketHydrator({ hydrate }: { hydrate: (snapshots: readonly ConvexMarketSnapshot[]) => void }) {
+  const snapshots = useQuery(api.markets.listMarketSnapshots)
+  useEffect(() => {
+    if (snapshots && snapshots.length > 0) hydrate(snapshots as ConvexMarketSnapshot[])
+  }, [snapshots, hydrate])
+  return null
+}
+
 export type AvanaSessions = {
   walletId: string
   walletAddress: string
@@ -199,7 +215,12 @@ export function AvanaSessionsProvider({
     [avana.walletId, avana.walletAddress, avana.sandboxMode, borrow, multiply, lend, rewards],
   )
 
-  return <AvanaSessionsContext.Provider value={value}>{children}</AvanaSessionsContext.Provider>
+  return (
+    <AvanaSessionsContext.Provider value={value}>
+      {hasConvexClient ? <BorrowMarketHydrator hydrate={borrow.hydrateMarketData} /> : null}
+      {children}
+    </AvanaSessionsContext.Provider>
+  )
 }
 
 export function useAvanaSessions() {

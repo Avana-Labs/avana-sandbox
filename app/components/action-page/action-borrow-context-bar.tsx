@@ -5,6 +5,7 @@ import type { HomeCollateralPool } from "@/app/lib/home-sim"
 import { HomeActionContextBar } from "@/app/components/home/home-action-context-bar"
 import { PoolPickerDialog } from "@/app/components/home/pool-picker-dialog"
 import { SwapStyleFieldStack } from "@/app/components/action-page/swap-style-field"
+import { ActionContextSelectorCard } from "@/app/components/action-page/action-context-selector-card"
 import type { PoolDialogMode } from "@/app/components/home/types"
 
 function poolDialogModeForKind(kind: "borrow" | "repay" | "remove" | "claim"): PoolDialogMode {
@@ -35,15 +36,24 @@ export function ActionBorrowContextBar({
   const [poolDialogOpen, setPoolDialogOpen] = useState(false)
   const poolDialogMode = poolDialogModeForKind(kind)
 
-  if (!pool) return null
-
   const poolField = (
-    <HomeActionContextBar
-      pool={pool}
-      onOpenPool={() => setPoolDialogOpen(true)}
-      variant={variant}
-      workspace={workspace}
-    />
+    pool ? (
+      <HomeActionContextBar
+        pool={pool}
+        onOpenPool={() => setPoolDialogOpen(true)}
+        variant={variant}
+        workspace={workspace}
+      />
+    ) : (
+      <ActionContextSelectorCard
+        label="Collateral"
+        value="0"
+        approxUsdLabel="≈ $0"
+        collateralSymbol="LP"
+        onClick={() => setPoolDialogOpen(true)}
+        workspace={workspace}
+      />
+    )
   )
 
   return (
@@ -60,7 +70,7 @@ export function ActionBorrowContextBar({
       <PoolPickerDialog
         open={poolDialogOpen}
         onOpenChange={setPoolDialogOpen}
-        selectedPoolId={pool.id}
+        selectedPoolId={pool?.id ?? ""}
         onSelect={(poolId) => {
           onPoolChange(poolId)
           setPoolDialogOpen(false)

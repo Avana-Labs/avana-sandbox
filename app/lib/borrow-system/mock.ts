@@ -337,7 +337,8 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
   const collateralPositions = HOME_COLLATERAL_POOLS.map((pool) =>
     collateralPositionFromHomePool(walletId, pool.id, pool.collateralUsd, markets),
   ).filter((position): position is UserCollateralPosition => Boolean(position))
-  const debtPositions = Object.entries(HOME_INITIAL_DEBTS)
+  const initialDebts = walletId === "home-demo-wallet" ? {} : HOME_INITIAL_DEBTS
+  const debtPositions = Object.entries(initialDebts)
     .map(([poolId, debtUsd]) => debtPositionFromHomePool(walletId, poolId, debtUsd, markets, assets))
     .filter((position): position is UserDebtPosition => Boolean(position))
   const rewardPositions = rewardPositionsFromHomeClaims(walletId, markets)
