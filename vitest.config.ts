@@ -10,6 +10,7 @@ export default defineConfig({
     include: [
       "app/**/__tests__/**/*.{test,spec}.{ts,tsx}",
       "tests/unit/**/*.test.ts",
+      "convex/**/*.test.ts",
     ],
     exclude: [
       "**/node_modules/**",

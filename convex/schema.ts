@@ -237,4 +237,76 @@ export default defineSchema({
     suppliedDeltaUsd: v.number(),
     updatedAt: v.number(),
   }).index("by_slug", ["marketSlug"]),
+
+  // ── Phase 2: wallet-scoped sandbox state (synthetic; never source of truth in prod) ──
+
+  /**
+   * Single authoritative row holding the global sandbox economy caps. Caps are
+   * enforced SERVER-SIDE here at claim time — never trusted from the client.
+   */
+  sandboxEconomy: defineTable({
+    userCap: v.number(),
+    totalGrantedUsdCap: v.number(),
+    perUserTargetUsd: v.number(),
+    minMultiplier: v.number(),
+    maxMultiplier: v.number(),
+    userCount: v.number(),
+    totalGrantedUsd: v.number(),
+    status: v.union(v.literal("open"), v.literal("closed")),
+    closedReason: v.optional(v.string()),
+    closedAt: v.optional(v.number()),
+  }),
+
+  /** Single tunable row: allocation basket weights + onboarding copy/links. */
+  sandboxConfig: defineTable({
+    basket: v.array(v.object({ tokenId: v.string(), weight: v.number() })),
+    seedVersion: v.number(),
+    tweetTemplate: v.optional(v.string()),
+    xHandle: v.optional(v.string()),
+    resourcesLinks: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
+  }),
+
+  /** Per-authenticated-user onboarding + allocation profile. */
+  sandboxProfiles: defineTable({
+    /** Lowercased wallet address; must match the authenticated identity. */
+    wallet: v.string(),
+    /** Identity subject from the auth issuer (Privy user id or SIWE-JWT subject). */
+    authSubject: v.optional(v.string()),
+    createdAt: v.number(),
+    seedVersion: v.number(),
+    onboardingStep: v.union(
+      v.literal("wallet"),
+      v.literal("analyzing"),
+      v.literal("eligible"),
+      v.literal("xPending"),
+      v.literal("xConfirmed"),
+      v.literal("claimPending"),
+      v.literal("done"),
+      v.literal("waitlisted"),
+    ),
+    onboardedAt: v.optional(v.number()),
+    eligibilityTier: v.optional(v.number()),
+    tierSeed: v.optional(v.string()),
+    allocatedUsd: v.optional(v.number()),
+    basketSnapshot: v.optional(
+      v.array(v.object({ tokenId: v.string(), amount: v.number(), priceUsdAtClaim: v.number() })),
+    ),
+    xHandle: v.optional(v.string()),
+    tweetUrl: v.optional(v.string()),
+    tweetedAt: v.optional(v.number()),
+    claimTxSynthetic: v.optional(v.string()),
+    preferences: v.optional(v.object({ theme: v.optional(v.string()), currency: v.optional(v.string()) })),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_authSubject", ["authSubject"]),
+
+  /** Wallet-scoped sandbox activity log (one row per balance-changing action). */
+  sandboxActivity: defineTable({
+    wallet: v.string(),
+    kind: v.string(),
+    amountUsd: v.number(),
+    marketSlug: v.optional(v.string()),
+    syntheticTxHash: v.string(),
+    at: v.number(),
+  }).index("by_wallet_at", ["wallet", "at"]),
 })
