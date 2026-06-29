@@ -10,9 +10,11 @@
 
 import type * as allocation from "../allocation.js";
 import type * as cashflow from "../cashflow.js";
+import type * as crons from "../crons.js";
 import type * as engagement from "../engagement.js";
 import type * as liquidity from "../liquidity.js";
 import type * as markets from "../markets.js";
+import type * as prices from "../prices.js";
 import type * as risk from "../risk.js";
 import type * as sandbox_auth from "../sandbox/auth.js";
 import type * as sandbox_onboarding from "../sandbox/onboarding.js";
@@ -27,9 +29,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   allocation: typeof allocation;
   cashflow: typeof cashflow;
+  crons: typeof crons;
   engagement: typeof engagement;
   liquidity: typeof liquidity;
   markets: typeof markets;
+  prices: typeof prices;
   risk: typeof risk;
   "sandbox/auth": typeof sandbox_auth;
   "sandbox/onboarding": typeof sandbox_onboarding;

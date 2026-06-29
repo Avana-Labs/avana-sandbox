@@ -238,6 +238,25 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_slug", ["marketSlug"]),
 
+  /**
+   * Real token spot prices (the ONE place the sandbox reads live market data). A
+   * scheduled action (`convex/prices.ts refreshPrices`) pulls these from DefiLlama
+   * so the detail "Price" + the list price-under-logos reflect production prices,
+   * while supply/borrow/TVL stay simulated. One row per base symbol.
+   */
+  tokenPrices: defineTable({
+    /** Lowercase base symbol/id, e.g. "usdc", "weth". Matches SpokeBorrowableRecord.baseAssetId. */
+    symbol: v.string(),
+    /** DefiLlama coin id used to fetch it (chain:address or coingecko:id). */
+    llamaId: v.string(),
+    priceUsd: v.number(),
+    decimals: v.optional(v.number()),
+    /** DefiLlama price confidence (0..1). */
+    confidence: v.optional(v.number()),
+    source: v.string(),
+    updatedAt: v.number(),
+  }).index("by_symbol", ["symbol"]),
+
   // ── Phase 2: wallet-scoped sandbox state (synthetic; never source of truth in prod) ──
 
   /**

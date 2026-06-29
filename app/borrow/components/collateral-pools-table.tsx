@@ -17,6 +17,8 @@ import {
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { pairExchangeRateLabel } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
 
@@ -101,6 +103,12 @@ function SortIcon() {
 }
 
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
+  const priceFor = usePriceFor()
+  // Pair exchange rate (e.g. "1 ETH = 1,612 USDC") from the real price oracle;
+  // falls back to TVL when either token is unpriced / the oracle is unavailable.
+  const subtitle =
+    pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
+    `${formatCompactUsd(pool.tvlUsd)} TVL`
   return (
     <div className="flex min-w-0 items-center gap-4">
       <div className="flex items-center">
@@ -116,7 +124,7 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
           {pool.visuals[0].symbol} / {pool.visuals[1].symbol}
         </div>
         <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-          {formatCompactUsd(pool.tvlUsd)} TVL
+          {subtitle}
         </div>
       </div>
     </div>
@@ -412,6 +420,7 @@ function SpokeMobileSection({
   // Each spoke/category owns its own Markets/Assets toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
+  const priceFor = usePriceFor()
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
@@ -432,7 +441,10 @@ function SpokeMobileSection({
                     <TokenPairCell
                       visuals={pool.visuals}
                       name={pool.name}
-                      subtitle={`${formatCompactUsd(pool.tvlUsd)} TVL`}
+                      subtitle={
+                        pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
+                        `${formatCompactUsd(pool.tvlUsd)} TVL`
+                      }
                       size="md"
                     />
                     <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />

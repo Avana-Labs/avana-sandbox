@@ -20,6 +20,7 @@ import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import { applyBorrowableAssetDelta } from "@/app/lib/market-liquidity/apply"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
+import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC"])
@@ -189,6 +190,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
       />
 
       <div className="pt-3 pb-6">
+        <TokenPricesProvider>
         {isPoolTab(currentTab) ? (
           <>
             {isDesktop ? (
@@ -214,6 +216,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
             )}
           </>
         ) : null}
+        </TokenPricesProvider>
       </div>
     </section>
   )
