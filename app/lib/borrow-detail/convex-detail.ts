@@ -15,6 +15,8 @@ import {
   fetchTokenPrices,
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { QuickStat } from "./types"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
@@ -83,6 +85,30 @@ function injectRealPrice(
   return quickStats.map((s) => (s.id === "price" ? { ...s, value: formatTokenPrice(price) } : s))
 }
 
+/**
+ * Overlay "Dex Liquidity" (Σ available liquidity across the asset's pools) from the
+ * calibrated Convex pool snapshots, so it matches the rest of the page instead of the
+ * inflated catalog sum. No-op if no pool snapshots are present.
+ */
+function injectDexLiquidity(
+  quickStats: QuickStat[],
+  snapshots: ConvexMarketSnapshot[],
+  poolSlugs: readonly string[],
+): QuickStat[] {
+  const poolAvailable = new Map(snapshots.filter((s) => s.scope === "pool").map((s) => [s.slug, s.availableUsd]))
+  let total = 0
+  let matched = false
+  for (const slug of poolSlugs) {
+    const available = poolAvailable.get(slug)
+    if (available !== undefined) {
+      total += available
+      matched = true
+    }
+  }
+  if (!matched) return quickStats
+  return quickStats.map((s) => (s.id === "dexLiquidity" ? { ...s, value: formatCompactUsd(total) } : s))
+}
+
 export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | null> {
   const snapshots = await fetchConvexMarketSnapshots()
   const state = buildMockBorrowSystemState(detailWalletId)
@@ -147,7 +173,11 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   ])
   return {
     ...detail,
-    quickStats: injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
+    quickStats: injectDexLiquidity(
+      injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
+      snapshots,
+      record.marketIds,
+    ),
     heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? detail.heroFeed,
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
