@@ -194,7 +194,7 @@ export function DashboardClient({
   const debtPositions = liveBorrowTab?.debtPositions ?? pageData?.borrow.debtPositions ?? []
   const activityRows = useMemo(
     () => [
-      ...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory),
+      ...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory, borrowSession.state.markets),
       ...multiplySession.transactionHistory.map((item) => ({
         id: item.id,
         at: new Date(item.timestamp).toISOString(),
