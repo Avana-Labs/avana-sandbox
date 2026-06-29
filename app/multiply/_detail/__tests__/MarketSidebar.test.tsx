@@ -35,7 +35,7 @@ describe("MarketSidebar", () => {
     cleanup()
   })
 
-  it("opens deleverage with a lower target multiplier", async () => {
+  it("opens deleverage without pre-seeding a user-confirmable target", async () => {
     const detail = getMultiplyMarketDetail("aave-gho")
     expect(detail).not.toBeNull()
 
@@ -48,7 +48,7 @@ describe("MarketSidebar", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Deleverage" }))
 
     await waitFor(() => {
-      expect(screen.getByTestId("responsive-multiply-action")).toHaveTextContent("deleverage:1.5")
+      expect(screen.getByTestId("responsive-multiply-action")).toHaveTextContent("deleverage:")
     })
   })
 })
