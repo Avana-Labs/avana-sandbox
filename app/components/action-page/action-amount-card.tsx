@@ -104,13 +104,13 @@ export function ActionAmountCard({
   }, [menuOpen])
 
   const amountRow = (
-    <div className="mt-3 flex items-center justify-between gap-3">
+    <div className="mt-3 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
       {readOnly ? (
         <div className="min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
           {amount || "0"}
         </div>
       ) : (
-        <label className="min-w-0 flex-1">
+        <label className="min-w-0 flex-1 max-[360px]:w-full">
           <span className="sr-only">{label} amount</span>
           <input
             inputMode="decimal"
@@ -122,7 +122,7 @@ export function ActionAmountCard({
         </label>
       )}
       {!hideAssetSelector ? (
-        <div className="relative shrink-0" ref={switchable ? menuRef : undefined}>
+        <div className="relative shrink-0 max-[360px]:self-end" ref={switchable ? menuRef : undefined}>
           {unitLabel ? (
             <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground">
               <span>{unitLabel}</span>
