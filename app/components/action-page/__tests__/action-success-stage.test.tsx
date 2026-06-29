@@ -1,10 +1,24 @@
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { render, screen, waitFor } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 
+// jsdom does not advance performance.now() inside its rAF loop, so mount
+// animations (AnimatedTextValue) never settle. Drive rAF with a far-future
+// timestamp so the animation completes in a single frame.
+beforeEach(() => {
+  vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
+    setTimeout(() => cb(performance.now() + 100000), 0) as unknown as number,
+  )
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id as unknown as ReturnType<typeof setTimeout>))
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 describe("ActionMetricsBlock", () => {
-  it("renders health factor rows with heart styling on after value", () => {
+  it("renders health factor rows with heart styling on after value", async () => {
     render(
       <ActionMetricsBlock
         rows={[
@@ -22,12 +36,13 @@ describe("ActionMetricsBlock", () => {
 
     expect(screen.getByTestId("action-health-factor-bar")).toBeInTheDocument()
     expect(screen.getByTestId("action-health-factor-card")).toBeInTheDocument()
-    expect(screen.getAllByText("1.08").length).toBeGreaterThan(0)
+    // The after value animates from the before value on mount, so wait for it to settle.
+    await waitFor(() => expect(screen.getAllByText("1.08").length).toBeGreaterThan(0))
   })
 })
 
 describe("ActionSuccessStage", () => {
-  it("renders receipt card when receipt context is provided", () => {
+  it("renders receipt card when receipt context is provided", async () => {
     render(
       <ActionSuccessStage
         closeHref="/borrow"
@@ -52,6 +67,7 @@ describe("ActionSuccessStage", () => {
 
     expect(screen.getByTestId("action-success-stage")).toBeInTheDocument()
     expect(screen.getByText("Confirmed")).toBeInTheDocument()
-    expect(screen.getByText("1000.00 USDC")).toBeInTheDocument()
+    // amountLabel animates on mount; wait for the final value to settle.
+    await waitFor(() => expect(screen.getByText("1000.00 USDC")).toBeInTheDocument())
   })
 })
