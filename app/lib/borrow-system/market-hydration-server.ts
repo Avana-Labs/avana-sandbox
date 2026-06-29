@@ -149,3 +149,20 @@ export async function fetchRisk(scope: "pool" | "asset", slug: string) {
     return null
   }
 }
+
+/**
+ * Calibrated Market-overview quick stats (supplied/borrowed/utilization/APY) for a
+ * pool or asset, from the Convex daily rows. The detail builder merges these over
+ * the mock quick stats so the headline numbers match the hero + the page aggregate
+ * (and aren't the curated-fixture values). Returns null when unreachable/unseeded.
+ */
+export async function fetchQuickStats(scope: "pool" | "asset", slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    const rows = await client.query(api.markets.getQuickStats, { scope, slug })
+    return rows && rows.length > 0 ? rows : null
+  } catch {
+    return null
+  }
+}

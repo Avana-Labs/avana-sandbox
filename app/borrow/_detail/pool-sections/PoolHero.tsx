@@ -113,7 +113,7 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
 
       <div className="pt-4" data-testid="pool-hero-chart-card">
         {/* Convex feed carries the full daily history — open on it so the chart is rich. */}
-        <MarketHeroChart feed={feed} defaultRange={detail.heroFeed ? "All" : "1D"} gradientId={`poolHeroFill-${detail.id}`} />
+        <MarketHeroChart feed={feed} defaultRange={detail.heroFeed ? "All" : "1D"} gradientId={`poolHeroFill-${detail.id}`} label="Total supplied" />
       </div>
     </section>
   )
