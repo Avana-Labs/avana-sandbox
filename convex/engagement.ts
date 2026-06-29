@@ -17,6 +17,14 @@ import type { Id } from "./_generated/dataModel"
 const WINDOW_DAYS = 12
 const DAY_MS = 86_400_000
 
+/** How far back conversion looks (wider than the 12-day engagement window so it
+ *  robustly covers the seeded wallet-event window regardless of small clock drift). */
+const CONVERSION_LOOKBACK_DAYS = 45
+/** A repay "converts" a borrow if it lands within 30 days of the latest borrow. */
+const REPAY_WINDOW_MS = 30 * DAY_MS
+/** A borrow "converts" a supply if it lands within 24 hours of the latest supply. */
+const SUPPLY_TO_BORROW_WINDOW_MS = DAY_MS
+
 /**
  * Engagement for a single asset.
  *
@@ -129,8 +137,14 @@ async function buildEngagement(ctx: QueryCtx, marketId: Id<"markets">, cfg: Cfg)
 }
 
 /**
- * Conversion metric per scope. Kept simple (and correct by construction)
- * so anyone replacing the mock can reason about it without reading the UI.
+ * Conversion metric per scope, computed purely from `walletEvents`:
+ *   - `repay`  : fraction of unique borrowers who emitted a `repay` within 30
+ *                days of their latest `borrow`.
+ *   - `borrow` : fraction of unique suppliers who emitted a `borrow` within 24
+ *                hours of their latest `supply`.
+ *
+ * `valuePct` is over the full lookback; `deltaPct` is the change (in points)
+ * between the older and the more-recent half of the window.
  */
 async function computeConversionPct(
   ctx: QueryCtx,
@@ -140,16 +154,51 @@ async function computeConversionPct(
   now: number,
 ): Promise<{ valuePct: number; deltaPct: number }> {
   void since
-  void now
-  // TODO(convex-wire-up): implement once walletEvents is indexed.
-  // For `repay`  : fraction of unique borrowers who emitted a `repay` event
-  //                within 30 days of their latest `borrow`.
-  // For `borrow` : fraction of unique suppliers who emitted a `borrow` event
-  //                within 24 hours of their latest `supply`.
-  void ctx
-  void marketId
-  void kind
-  return { valuePct: 0, deltaPct: 0 }
+  const lookbackStart = now - CONVERSION_LOOKBACK_DAYS * DAY_MS
+  const events = await ctx.db
+    .query("walletEvents")
+    .withIndex("by_market_at", (q) => q.eq("marketId", marketId).gte("at", lookbackStart))
+    .collect()
+
+  const [fromKind, toKind, windowMs] =
+    kind === "repay"
+      ? (["borrow", "repay", REPAY_WINDOW_MS] as const)
+      : (["supply", "borrow", SUPPLY_TO_BORROW_WINDOW_MS] as const)
+
+  const rate = (rows: typeof events): number => {
+    // latest `fromKind` time per wallet + all `toKind` times per wallet
+    const latestFrom = new Map<string, number>()
+    const toTimes = new Map<string, number[]>()
+    for (const e of rows) {
+      const w = e.wallet.toLowerCase()
+      if (e.kind === fromKind) {
+        const prev = latestFrom.get(w)
+        if (prev === undefined || e.at > prev) latestFrom.set(w, e.at)
+      } else if (e.kind === toKind) {
+        const arr = toTimes.get(w)
+        if (arr) arr.push(e.at)
+        else toTimes.set(w, [e.at])
+      }
+    }
+    if (latestFrom.size === 0) return 0
+    let converted = 0
+    for (const [w, from] of latestFrom) {
+      const tos = toTimes.get(w)
+      if (tos && tos.some((t) => t > from && t <= from + windowMs)) converted++
+    }
+    return (converted / latestFrom.size) * 100
+  }
+
+  const valuePct = Math.round(rate(events) * 10) / 10
+
+  // Trend: compare the older half of the window to the more-recent half.
+  const mid = lookbackStart + (now - lookbackStart) / 2
+  const older = events.filter((e) => e.at < mid)
+  const recent = events.filter((e) => e.at >= mid)
+  const deltaPct =
+    older.length > 0 && recent.length > 0 ? Math.round((rate(recent) - rate(older)) * 10) / 10 : 0
+
+  return { valuePct, deltaPct }
 }
 
 function toDelta(pct: number) {

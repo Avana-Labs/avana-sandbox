@@ -5,7 +5,6 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { StickyDetailHeader } from "@/app/borrow/_detail/ui"
 import {
   AssetHero,
   AssetHeroIdentity,
@@ -63,67 +62,16 @@ function DeferredBlock({ className }: { className?: string }) {
   return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
 }
 
-function TokenAvatar({ visual, className }: { visual: AssetDetail["hero"]["visual"]; className?: string }) {
-  return (
-    <span className={cn("inline-flex size-10 items-center justify-center", visual.textClass, className)}>
-      {visual.iconUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={visual.iconUrl} alt="" className="size-full object-contain" />
-      ) : (
-        <span className="text-[11px] font-medium">{visual.shortLabel}</span>
-      )}
-    </span>
-  )
-}
-
 type Props = { detail: AssetDetail }
 
 /** Desktop content max width — 10% narrower than the original 1280px layout. */
 const PAGE_MAX_W = "max-w-[1152px]"
 
 export function AssetDetailClient({ detail }: Props) {
-  const heroRef = React.useRef<HTMLDivElement | null>(null)
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <StickyDetailHeader
-        heroRef={heroRef}
-        sparkline={{ series: detail.heroMetric.series[detail.heroMetric.metricId]["1M"] }}
-        title={
-          <div className="flex items-center gap-2.5">
-            <TokenAvatar visual={detail.hero.visual} />
-            <span className="text-[13px] font-medium text-foreground">{detail.hero.symbol}</span>
-          </div>
-        }
-        subtitle={
-          <div className="flex items-center gap-2">
-            <span className="rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[10.5px] font-medium text-muted-foreground">
-              {detail.hero.name}
-            </span>
-          </div>
-        }
-        actions={
-            <div className="flex items-center gap-3">
-              <div className="hidden items-center gap-3 text-[12px] font-medium sm:flex">
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Borrow APY</span>
-                  <span className="font-data text-emerald-600 dark:text-emerald-400">
-                    {detail.quickStats.find((stat) => stat.id === "borrowApy")?.value || "--"}
-                  </span>
-                </div>
-              </div>
-            <button
-              type="button"
-              onClick={() => setMobileOpen(true)}
-              className="inline-flex h-9 items-center justify-center rounded-radius-sm bg-[#007a99] px-3 text-[12.5px] font-medium text-white shadow-elev-1 transition-colors hover:bg-[#00627a] lg:hidden"
-            >
-              Deposit
-            </button>
-          </div>
-        }
-      />
-
       <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
         <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
           <Link href="/borrow" className="transition-colors hover:text-foreground">
@@ -138,7 +86,7 @@ export function AssetDetailClient({ detail }: Props) {
             <AssetHeroIdentity detail={detail} className="pb-0" />
           </div>
 
-          <div ref={heroRef} className="min-w-0 lg:col-start-1 lg:row-start-2">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
             <AssetHero detail={detail} hideIdentity className="mb-6" />
 
             <section aria-label="Asset analytics" className="space-y-8 pt-8">

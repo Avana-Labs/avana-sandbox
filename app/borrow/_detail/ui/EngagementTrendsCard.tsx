@@ -26,6 +26,11 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
         Active wallets track unique wallets with activity over the last 30 days.
       </p>
 
+      <div className="mt-4 flex flex-wrap items-end gap-x-10 gap-y-3">
+        <EngagementKpi kpi={engagement.primary} />
+        <EngagementKpi kpi={engagement.secondary} />
+      </div>
+
       <div className="relative mt-5">
         {engagement.series.points.length > 0 ? (
           <LightweightChart
@@ -40,5 +45,24 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
         )}
       </div>
     </section>
+  )
+}
+
+/** A single engagement KPI (active wallets / conversion) with a direction-tinted delta. */
+function EngagementKpi({ kpi }: { kpi: EngagementTrend["primary"] }) {
+  const tone =
+    kpi.delta.direction === "up"
+      ? "text-emerald-600 dark:text-emerald-400"
+      : kpi.delta.direction === "down"
+        ? "text-rose-600 dark:text-rose-400"
+        : "text-muted-foreground"
+  return (
+    <div className="min-w-0">
+      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{kpi.label}</div>
+      <div className="mt-1 flex items-baseline gap-2">
+        <span className="font-data text-[20px] font-medium tabular-nums text-foreground">{kpi.valueLabel}</span>
+        <span className={cn("text-[12px] font-medium tabular-nums", tone)}>{kpi.delta.label}</span>
+      </div>
+    </div>
   )
 }
