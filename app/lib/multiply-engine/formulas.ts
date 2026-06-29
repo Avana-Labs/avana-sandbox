@@ -9,7 +9,10 @@ export function calculateSafeMaxMultiplier(params: {
   minHealthFactor: number
   liquidationThreshold: number
 }): number {
-  const hfBased = params.minHealthFactor / (params.minHealthFactor - params.liquidationThreshold)
+  // When minHealthFactor <= liquidationThreshold the HF-based bound is negative or
+  // infinite; treat it as non-binding so the safe max never goes negative.
+  const denominator = params.minHealthFactor - params.liquidationThreshold
+  const hfBased = denominator > 0 ? params.minHealthFactor / denominator : Number.POSITIVE_INFINITY
   return Math.min(params.publicMaxMultiplier, params.theoreticalMaxMultiplier, hfBased)
 }
 
@@ -71,8 +74,13 @@ export function calculatePriceImpact(params: {
   collateralValueUsd: number
 }): number {
   const multiplierImpact = Math.max(0, params.multiplier - 1) * 0.0005
+  // Clamp the whole liquidity term, not just the ratio: a position that is a large
+  // fraction of available liquidity should add up to ~1% impact, not a value capped
+  // at 0.01 * 0.002 = 0.002% regardless of size.
   const liquidityImpact =
-    params.availableLiquidityUsd > 0 ? Math.min(0.01, params.collateralValueUsd / params.availableLiquidityUsd) * 0.002 : 0.002
+    params.availableLiquidityUsd > 0
+      ? Math.min(0.01, (params.collateralValueUsd / params.availableLiquidityUsd) * 0.002)
+      : 0.002
   return params.baseImpact + multiplierImpact + liquidityImpact
 }
 
@@ -158,8 +166,8 @@ export function simulateDeleverageToTarget(params: {
   repayAmountUsd?: number
 }): { collateralUsd: number; debtUsd: number; debtRepaidUsd: number; collateralUnwoundUsd: number } {
   const { collateralUsd: startCollateral, debtUsd: startDebt, targetMultiplier, swapEfficiency } = params
-  let collateral = startCollateral
-  let debt = startDebt
+  const collateral = startCollateral
+  const debt = startDebt
 
   if (params.repayAmountUsd != null && params.repayAmountUsd > 0) {
     const repayUsd = Math.min(params.repayAmountUsd, debt)

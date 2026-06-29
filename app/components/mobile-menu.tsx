@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react"
 import { Switch } from "@/components/ui/switch"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
+import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { useTheme } from "./theme-provider"
 
 const siteRoutes = {
@@ -353,7 +354,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             style={settingsIntroStyle(mainLinks.length + 4)}
           >
             <a
-              href="https://avana-ashen.vercel.app/privacy"
+              href={AVANA_EXTERNAL_LINKS.privacy}
               target="_blank"
               rel="noreferrer"
               onClick={onClose}

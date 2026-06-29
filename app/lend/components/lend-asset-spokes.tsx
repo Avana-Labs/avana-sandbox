@@ -376,6 +376,55 @@ function AssetRowView({
   )
 }
 
+function AssetCardView({
+  row,
+  index,
+  onDeposit,
+}: {
+  row: AssetRow
+  index: number
+  onDeposit?: (marketId: string) => void
+}) {
+  const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4" style={{ animationDelay: `${index * 40}ms` }}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <AssetIcon row={row} />
+          <div className="min-w-0">
+            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.name}</div>
+            <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{row.symbol}</div>
+          </div>
+        </div>
+        <StatusBadge status={row.status} />
+      </div>
+      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+        <div>
+          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Supply APY</dt>
+          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.supplyApyLabel ?? row.apy}</dd>
+        </div>
+        <div>
+          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Rewards APY</dt>
+          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.rewardsApyLabel ?? "0.00%"}</dd>
+        </div>
+        <div>
+          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Utilization</dt>
+          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.utilizationLabel ?? "—"}</dd>
+        </div>
+        <div>
+          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Reserve factor</dt>
+          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.reserveFactorLabel ?? "—"}</dd>
+        </div>
+      </dl>
+      {onDeposit ? (
+        <Button type="button" size="sm" className="mt-4 h-10 w-full rounded-full text-[14px]" onClick={() => onDeposit(marketId)}>
+          Deposit
+        </Button>
+      ) : null}
+    </div>
+  )
+}
+
 function AssetSection({
   title,
   subtitle,
@@ -443,7 +492,18 @@ function AssetSection({
       </div>
 
       <div className="rounded-radius-md bg-transparent">
-        <div className="overflow-x-auto">
+        <div className="space-y-2 md:hidden">
+          {sortedRows.length > 0 ? (
+            sortedRows.map((row, index) => (
+              <AssetCardView key={row.symbol} row={row} index={index} onDeposit={onDeposit} />
+            ))
+          ) : (
+            <div className="rounded-2xl border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
+              No assets match these filters.
+            </div>
+          )}
+        </div>
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[12px]">
             <colgroup>
               <col className="w-[4%]" />

@@ -13,6 +13,7 @@ describe("multiply preview mappers", () => {
       collateralSymbol: "WETH",
       borrowSymbol: "USDC",
       collateralAmount: 2,
+      collateralPriceUsd: 3_500,
       marketLabel: "WETH · USDC",
       collateralApy: 0.0382,
       borrowApy: 0.048,
@@ -25,22 +26,27 @@ describe("multiply preview mappers", () => {
     })
     expect(ui.rateLabel).toBe("")
     expect(ui.metrics.map((row) => row.label)).toEqual([
-      "Exposure",
-      "Estimated debt",
-      "LTV",
-      "Health factor",
-      "Net APY",
+      "New exposure",
+      "New debt",
+      "Projected exposure",
+      "Projected total debt",
+      "Projected LTV",
+      "Projected health factor",
+      "Projected net APY",
       "Liquidation price",
     ])
+    expect(ui.amountUsdLabel).toBe("≈ $7,000")
+    expect(ui.balanceLabel).toBe("Selected leverage")
+    expect(ui.metrics.find((row) => row.id === "new-exposure")?.value).toBe("$2,000")
+    expect(ui.metrics.find((row) => row.id === "projected-exposure")?.value).toBe("$12,000")
     expect(ui.metrics.find((row) => row.id === "liq-price")?.value).not.toBe("—")
-    const netApyRow = ui.metrics.find((row) => row.id === "net-apy")
-    expect(netApyRow?.before).not.toBe(netApyRow?.after)
   })
 
   it("maps deleverage unwind metrics", () => {
     const ui = mapDeleveragePreviewToActionUi(preview, {
       marketLabel: "WETH · USDC",
       targetMultiplier: 1.5,
+      collateralSymbol: "WETH",
     })
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
@@ -51,6 +57,8 @@ describe("multiply preview mappers", () => {
       "Net APY",
       "Liquidation price",
     ])
-    expect(ui.amountLabel).toContain("1.50x target")
+    expect(ui.amountLabel).toBe("1.50x WETH")
+    expect(ui.amountValue).toBe("1.50x")
+    expect(ui.assetSymbol).toBe("WETH")
   })
 })

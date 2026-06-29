@@ -392,7 +392,7 @@ export function buildHomeClaimPreview(
 ): ClaimPreview {
   const engineTotals = selectRewardClaimableTotals(state, walletId)
   const claimableTotals = Object.fromEntries(
-    positions.map((position) => [position.id, engineTotals[position.id] ?? position.totalUsd]),
+    positions.map((position) => [position.id, engineTotals[position.id] ?? 0]),
   )
   return calculateClaimPreview(positions, claimableTotals, selections, partialAmountUsd)
 }

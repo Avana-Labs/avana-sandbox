@@ -36,6 +36,9 @@ yarn-error.log*
 /.gitconfig
 .DS_Store
 
+# local agent tooling (preview launcher, etc.)
+.c?????/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

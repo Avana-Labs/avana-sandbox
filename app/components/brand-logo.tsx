@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+/* eslint-disable @next/next/no-img-element */
 
 type BrandLogoProps = {
   mobileOnly?: boolean
@@ -39,7 +40,7 @@ export function BrandIcon({ className }: BrandIconProps) {
         alt="Avana logo"
         width={32}
         height={32}
-        className={cn("size-8 object-cover", className)}
+        className={cn("block", className)}
       />
     </span>
   )

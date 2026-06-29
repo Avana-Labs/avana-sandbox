@@ -3,6 +3,7 @@ import type { BorrowAccountState, BorrowSystemState } from "@/app/lib/credit-eng
 function normalizeBorrowAccount(account: BorrowAccountState): BorrowAccountState {
   return {
     ...account,
+    walletLpBalancesUsd6: account.walletLpBalancesUsd6 ?? {},
     collateralPositions: account.collateralPositions ?? [],
     debtPositions: account.debtPositions ?? [],
     rewardPositions: account.rewardPositions ?? [],

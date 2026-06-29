@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
+import { MarketLiquidityProvider } from "@/app/lib/convex/market-liquidity-provider"
 
 export function AvanaSessionProviders({
   walletId,
@@ -10,5 +11,9 @@ export function AvanaSessionProviders({
   walletId?: string
   children: ReactNode
 }) {
-  return <AvanaSessionsProvider walletId={walletId}>{children}</AvanaSessionsProvider>
+  return (
+    <MarketLiquidityProvider>
+      <AvanaSessionsProvider walletId={walletId}>{children}</AvanaSessionsProvider>
+    </MarketLiquidityProvider>
+  )
 }

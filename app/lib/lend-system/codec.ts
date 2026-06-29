@@ -5,5 +5,12 @@ export function serializeLendSystemState(state: LendSystemState) {
 }
 
 export function deserializeLendSystemState(serialized: string): LendSystemState {
-  return JSON.parse(serialized) as LendSystemState
+  const parsed = JSON.parse(serialized) as Partial<LendSystemState>
+  return {
+    now: parsed.now ?? Date.now(),
+    markets: parsed.markets ?? {},
+    positions: parsed.positions ?? {},
+    walletBalances: parsed.walletBalances ?? {},
+    transactions: parsed.transactions ?? [],
+  }
 }

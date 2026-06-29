@@ -23,12 +23,19 @@ const preview: ActionPreviewUi = {
 }
 
 describe("ActionProcessingStage", () => {
-  it("renders pending hero with amount context", () => {
+  it("renders pending hero with amount context", async () => {
     render(<ActionProcessingStage verb="Deposit" preview={preview} closeHref="/lend" />)
 
     expect(screen.getByTestId("action-processing-stage")).toBeInTheDocument()
     expect(screen.getByText("Pending")).toBeInTheDocument()
-    expect(screen.getByText("1.5 WETH")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Depositing WETH" })).toBeInTheDocument()
+    expect(screen.getByText("Deposit")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Close" })).toHaveAttribute("href", "/lend")
+  })
+
+  it("uses the correct verb inflection for remove flows", () => {
+    render(<ActionProcessingStage verb="Remove" preview={{ ...preview, amountLabel: "25%" }} closeHref="/dashboard" />)
+
+    expect(screen.getByRole("heading", { name: "Removing 25%" })).toBeInTheDocument()
   })
 })

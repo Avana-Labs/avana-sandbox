@@ -29,6 +29,53 @@ describe("SandboxMultiplyReadAdapter", () => {
 })
 
 describe("SandboxMultiplyTransactionAdapter", () => {
+  it("rejects multiply intents that would open below the liquidation threshold", async () => {
+    let multiplyState = makeExampleMultiplySystemState()
+    multiplyState = {
+      ...multiplyState,
+      markets: {
+        ...multiplyState.markets,
+        "eth-usdt": {
+          ...multiplyState.markets["eth-usdt"]!,
+          risk: {
+            ...multiplyState.markets["eth-usdt"]!.risk,
+            maxLtv: 0.95,
+            publicMaxMultiplier: 10,
+            hardMaxMultiplier: 10,
+          },
+        },
+      },
+    }
+    const adapter = new SandboxMultiplyTransactionAdapter({
+      readState: () => multiplyState,
+      writeState: (nextState) => {
+        multiplyState = nextState
+      },
+      now: () => 1_718_800_000_000,
+      generateId: (() => {
+        let count = 0
+        return (prefix: string) => `${prefix}-${++count}`
+      })(),
+    })
+
+    const dangerousIntent = adapter.createIntent({
+      type: "multiply",
+      walletId: "wallet-2",
+      marketId: "eth-usdt",
+      collateralAmount: 0.5,
+      selectedMultiplier: 7,
+    })
+
+    const preview = await adapter.previewTransaction(dangerousIntent)
+    const result = await adapter.executeTransaction(dangerousIntent)
+
+    expect(preview.allowed).toBe(false)
+    expect(preview.validationErrors.join(" ")).toContain("liquidation threshold")
+    expect(result.receipt.status).toBe("failed")
+    expect(result.state).toEqual(multiplyState)
+    expect(multiplyState.transactions).toHaveLength(0)
+  })
+
   it("simulates multiply and deleverage without touching borrow state", async () => {
     const borrowState = makeExampleBorrowSystemState()
     let multiplyState = makeExampleMultiplySystemState()

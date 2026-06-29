@@ -69,8 +69,16 @@ vi.mock("@/components/ui/dialog", () => ({
 }))
 
 vi.mock("@/app/components/action-page/action-page-launch-cta", () => ({
-  ActionPageLaunchCta: ({ kind, label }: { kind: string; label?: string }) => (
-    <a data-testid={`action-launch-${kind}`} href={`/actions/borrow/${kind}`}>
+  ActionPageLaunchCta: ({
+    kind,
+    label,
+    amount,
+  }: {
+    kind: string
+    label?: string
+    amount?: string
+  }) => (
+    <a data-testid={`action-launch-${kind}`} data-amount={amount ?? ""} href={`/actions/borrow/${kind}`}>
       {label ?? kind}
     </a>
   ),
@@ -232,5 +240,6 @@ describe("detail sidebars", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Remove" }))
     expect(screen.getByTestId("action-launch-remove")).toBeInTheDocument()
+    expect(screen.getByTestId("action-launch-remove")).toHaveAttribute("data-amount", "")
   })
 })

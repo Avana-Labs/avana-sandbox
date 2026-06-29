@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
+import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
 import { sanitizeDecimalInput } from "@/app/lib/action-system/amount-input"
 import type { HomeBorrowToken } from "@/app/lib/home-sim"
@@ -24,6 +25,7 @@ type ActionAmountCardProps = {
   onAmountChange: (value: string) => void
   approxUsdLabel: string
   assetLabel: string
+  unitLabel?: string
   assetSymbol?: string
   borrowSymbol?: string
   balanceLabel?: string
@@ -48,6 +50,7 @@ export function ActionAmountCard({
   onAmountChange,
   approxUsdLabel,
   assetLabel,
+  unitLabel,
   assetSymbol,
   borrowSymbol,
   readOnly = false,
@@ -64,7 +67,6 @@ export function ActionAmountCard({
   pickerTokens,
 }: ActionAmountCardProps) {
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
-  const showAssetLabel = !(borrowSymbol && variant !== "card")
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(
     !hideAssetSelector &&
@@ -72,6 +74,7 @@ export function ActionAmountCard({
       !readOnly &&
       (useDialogPicker ? pickerTokens!.length > 1 : assetOptions && assetOptions.length > 1),
   )
+  const showAssetLabel = !(borrowSymbol && variant !== "card") || !switchable
   const [menuOpen, setMenuOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -101,13 +104,13 @@ export function ActionAmountCard({
   }, [menuOpen])
 
   const amountRow = (
-    <div className="mt-3 flex items-center justify-between gap-3">
+    <div className="mt-3 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
       {readOnly ? (
         <div className="min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
           {amount || "0"}
         </div>
       ) : (
-        <label className="min-w-0 flex-1">
+        <label className="min-w-0 flex-1 max-[360px]:w-full">
           <span className="sr-only">{label} amount</span>
           <input
             inputMode="decimal"
@@ -119,35 +122,47 @@ export function ActionAmountCard({
         </label>
       )}
       {!hideAssetSelector ? (
-        <div className="relative shrink-0" ref={menuRef}>
-          <button
-            type="button"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={
-              switchable
-                ? () => {
-                    if (useDialogPicker) setDialogOpen(true)
-                    else setMenuOpen((open) => !open)
-                  }
-                : undefined
-            }
-            aria-haspopup={switchable && !useDialogPicker ? "listbox" : undefined}
-            aria-expanded={switchable && !useDialogPicker ? menuOpen : undefined}
-            aria-label={switchable ? `Change asset, current ${assetLabel}` : undefined}
-            disabled={readOnly && !switchable}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground",
-              switchable ? "cursor-pointer hover:bg-surface-hover" : "cursor-default",
-            )}
-          >
-            {borrowSymbol ? (
-              <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
-            ) : (
-              <ActionTokenIcon symbol={symbol} />
-            )}
-            {showAssetLabel ? <span>{assetLabel}</span> : null}
-            {switchable ? <span className="text-muted-foreground" aria-hidden>▾</span> : null}
-          </button>
+        <div className="relative shrink-0 max-[360px]:self-end" ref={switchable ? menuRef : undefined}>
+          {unitLabel ? (
+            <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground">
+              <span>{unitLabel}</span>
+            </div>
+          ) : switchable ? (
+            <button
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                if (useDialogPicker) setDialogOpen(true)
+                else setMenuOpen((open) => !open)
+              }}
+              aria-haspopup={!useDialogPicker ? "listbox" : undefined}
+              aria-expanded={!useDialogPicker ? menuOpen : undefined}
+              aria-label={`Change asset, current ${assetLabel}`}
+              disabled={readOnly}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground cursor-pointer hover:bg-surface-hover"
+            >
+              {borrowSymbol ? (
+                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
+              ) : (
+                <ActionTokenIcon symbol={symbol} />
+              )}
+              {showAssetLabel ? <span>{assetLabel}</span> : null}
+              <span className="text-muted-foreground" aria-hidden>
+                ▾
+              </span>
+            </button>
+          ) : (
+            <div
+              className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground"
+            >
+              {borrowSymbol ? (
+                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
+              ) : (
+                <ActionTokenIcon symbol={symbol} />
+              )}
+              {showAssetLabel ? <span>{assetLabel}</span> : null}
+            </div>
+          )}
           {switchable && !useDialogPicker && menuOpen ? (
             <div
               role="listbox"
@@ -186,7 +201,11 @@ export function ActionAmountCard({
     </div>
   )
 
-  const usdRow = <div className="mt-2 text-[14px] text-foreground/60">{approxUsdLabel}</div>
+  const usdRow = (
+    <div className="mt-2 text-[14px] text-foreground/60">
+      <AnimatedTextValue text={approxUsdLabel} />
+    </div>
+  )
 
   const assetPickerDialog =
     useDialogPicker && switchable && pickerTokens ? (

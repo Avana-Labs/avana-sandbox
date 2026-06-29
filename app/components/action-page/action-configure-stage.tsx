@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
 import { cn } from "@/lib/utils"
@@ -49,6 +49,7 @@ type ActionConfigureStageProps = {
   amountVariant?: "card" | "inset" | "raised"
   amountFooter?: ReactNode
   assetLabel?: string
+  amountUnitLabel?: string
   hideAssetSelector?: boolean
   homeLayout?: boolean
   amountPlacement?: "inline" | "stacked"
@@ -76,6 +77,7 @@ export function ActionConfigureAmountSection({
   pickerTokens,
   amountFooter,
   assetLabel,
+  amountUnitLabel,
 }: Pick<
   ActionConfigureStageProps,
   | "verb"
@@ -97,6 +99,7 @@ export function ActionConfigureAmountSection({
   | "pickerTokens"
   | "amountFooter"
   | "assetLabel"
+  | "amountUnitLabel"
 >) {
   const pillLabel = assetLabel ?? assetSymbol ?? preview?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
 
@@ -107,6 +110,7 @@ export function ActionConfigureAmountSection({
       onAmountChange={onAmountChange}
       approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
       assetLabel={pillLabel}
+      unitLabel={amountUnitLabel}
       footer={amountFooter}
       assetSymbol={assetSymbol ?? pillLabel}
       borrowSymbol={borrowSymbol}
@@ -160,6 +164,7 @@ export function ActionConfigureStage({
   pickerTokens,
   amountFooter,
   assetLabel,
+  amountUnitLabel,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -180,6 +185,26 @@ export function ActionConfigureStage({
   const healthFactorValue = parseHealthFactorValue(healthFactorRow?.after ?? healthFactorRow?.value)
   const showConfigureHealthFactor =
     homeLayout && isConfigureVisibleStage(configureStage) && healthFactorRow != null
+  const [previewMounted, setPreviewMounted] = useState(false)
+
+  useEffect(() => {
+    if (!preview) {
+      setPreviewMounted(false)
+      return undefined
+    }
+    if (previewMounted) return undefined
+
+    const frame = window.requestAnimationFrame(() => {
+      setPreviewMounted(true)
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [preview, previewMounted])
+
+  const previewMotionClassName = cn(
+    "transition-all duration-500 ease-out",
+    previewMounted ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
+  )
 
   return (
     <>
@@ -198,11 +223,14 @@ export function ActionConfigureStage({
           selectedAssetId={selectedAssetId}
           onAssetSelect={onAssetSelect}
           amountReadOnly={amountReadOnly}
-      amountVariant={amountVariant}
-      hideAssetSelector={hideAssetSelector}
-      assetPickerVariant={assetPickerVariant}
-      pickerTokens={pickerTokens}
-    />
+          amountVariant={amountVariant}
+          hideAssetSelector={hideAssetSelector}
+          assetPickerVariant={assetPickerVariant}
+          pickerTokens={pickerTokens}
+          amountFooter={amountFooter}
+          assetLabel={assetLabel}
+          amountUnitLabel={amountUnitLabel}
+        />
       ) : null}
 
       {showStandaloneLeverage ? (
@@ -216,43 +244,49 @@ export function ActionConfigureStage({
       ) : null}
 
       {showConfigureHealthFactor ? (
-        <ActionCard className="p-4" data-testid="action-health-factor-card">
-          <ActionHealthFactorBar value={healthFactorValue} />
-        </ActionCard>
+        <div className={previewMotionClassName}>
+          <ActionCard className="p-4" data-testid="action-health-factor-card">
+            <ActionHealthFactorBar value={healthFactorValue} label={healthFactorRow?.label ?? "Health factor"} />
+          </ActionCard>
+        </div>
       ) : null}
 
-      {preview && showHomeDetails && (preview.rateLabel || preview.marketValue || preview.marketBreakdown) ? (
-        <ActionCard>
-          {preview.rateLabel ? (
-            <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
+      {preview && showHomeDetails ? (
+        <div className={previewMotionClassName}>
+          {preview.rateLabel || preview.marketValue || preview.marketBreakdown ? (
+            <ActionCard>
+              {preview.rateLabel ? (
+                <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
+              ) : null}
+              {preview.marketBreakdown ? (
+                <>
+                  <ActionInfoRow
+                    label="Collateral APY"
+                    value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy}`}
+                    tooltip="market"
+                  />
+                  <ActionInfoRow
+                    label="Borrow APY"
+                    value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy}`}
+                    tooltip="market"
+                  />
+                </>
+              ) : preview.marketValue ? (
+                <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
+              ) : null}
+            </ActionCard>
           ) : null}
-          {preview.marketBreakdown ? (
-            <>
-              <ActionInfoRow
-                label="Collateral"
-                value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy} APY`}
-                tooltip="market"
-              />
-              <ActionInfoRow
-                label="Borrow"
-                value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy} APY`}
-                tooltip="market"
-              />
-            </>
-          ) : preview.marketValue ? (
-            <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
+
+          {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
+
+          {preview?.risk?.title && preview.risk.message ? (
+            <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
           ) : null}
-        </ActionCard>
-      ) : null}
 
-      {preview && showHomeDetails && preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
-
-      {preview?.risk?.title && preview.risk.message ? (
-        <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
-      ) : null}
-
-      {preview?.blockedReason && !preview.allowed ? (
-        <ActionOutcomeBanner tone="error" title="Action unavailable" message={preview.blockedReason} />
+          {preview?.blockedReason && !preview.allowed ? (
+            <ActionOutcomeBanner tone="error" title="Action unavailable" message={preview.blockedReason} />
+          ) : null}
+        </div>
       ) : null}
 
       {preview && showHomeDetails ? (

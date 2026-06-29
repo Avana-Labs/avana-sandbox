@@ -24,6 +24,10 @@ export function dashboardHrefForProduct(product: ActionProduct): string {
   return `/dashboard?tab=${dashboardTabForProduct(product)}`
 }
 
+export function dashboardHrefForTab(tab: DashboardTabKey): string {
+  return `/dashboard?tab=${tab}`
+}
+
 export function dashboardTabLabel(tab: DashboardTabKey): string {
   return TAB_LABELS[tab]
 }

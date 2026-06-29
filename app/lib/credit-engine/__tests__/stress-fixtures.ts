@@ -27,6 +27,9 @@ export function makeStressBorrowSystemState(userCount = 1000): BorrowSystemState
     accounts[walletId] = {
       walletId,
       walletBalanceUsd6: usdFromInt(2500 + (index % 10) * 150),
+      walletLpBalancesUsd6: {
+        [marketId]: usdFromInt(5000 + (index % 8) * 250),
+      },
       interestSettledUsd6: 0n,
       lastUpdatedAt: state.now - 60_000,
       collateralPositions: [
@@ -137,6 +140,10 @@ export function makeHeterogeneousStressBorrowSystemState(userCount = 10_000): Bo
     accounts[walletId] = {
       walletId,
       walletBalanceUsd6: usdFromInt(isWhale ? 1_000_000 : 4_000 + (index % 12) * 250),
+      walletLpBalancesUsd6: {
+        [primaryMarketId]: usdFromInt(isWhale ? 150_000 : 8_000 + (index % 9) * 500),
+        ...(multiSpoke ? { [secondaryMarketId]: usdFromInt(6_000 + (index % 5) * 400) } : {}),
+      },
       interestSettledUsd6: 0n,
       lastUpdatedAt: state.now - 60_000,
       collateralPositions: [

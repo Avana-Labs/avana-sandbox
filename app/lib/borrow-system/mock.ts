@@ -296,6 +296,19 @@ function rewardPositionsFromHomeClaims(walletId: string, markets: Record<string,
   }).filter((position): position is UserRewardPosition => Boolean(position))
 }
 
+function walletLpBalancesFromHomePools() {
+  // Seed an LP balance for every catalog market so any listed market can be
+  // pledged in the sandbox (home pools keep their larger seeded balances).
+  const homeBalances = new Map<string, bigint>()
+  for (const pool of HOME_COLLATERAL_POOLS) {
+    const marketId = HOME_POOL_TO_MARKET_ID[pool.id]
+    if (marketId) homeBalances.set(marketId, usd6(pool.collateralUsd * 2))
+  }
+  return Object.fromEntries(
+    BORROW_POOL_CATALOG.map((pool) => [pool.id, homeBalances.get(pool.id) ?? usd6(25_000)]),
+  )
+}
+
 export function buildMockBorrowCatalog() {
   const spokeBorrowables = listSpokeBorrowables()
   const borrowAssetIdsBySpoke = new Map(
@@ -337,6 +350,7 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
       [walletId]: {
         walletId,
         walletBalanceUsd6: usd6(12_500),
+        walletLpBalancesUsd6: walletLpBalancesFromHomePools(),
         interestSettledUsd6: 0n,
         lastUpdatedAt: Date.UTC(2026, 5, 18, 12),
         collateralPositions,

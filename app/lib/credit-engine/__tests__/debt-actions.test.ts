@@ -42,6 +42,25 @@ describe("borrow debt actions", () => {
     expect(next.transactions.at(-1)?.kind).toBe("repay")
   })
 
+  it("preserves residual debt shares when principal is already zero", () => {
+    const state = makeExampleBorrowSystemState()
+    const debt = state.accounts["wallet-1"]!.debtPositions[0]!
+    debt.principalBorrowedUsd6 = 0n
+    debt.debtSharesUsd6 = parseFixed("200", 6)
+
+    const next = applyBorrowAction(state, {
+      type: "repay",
+      walletId: "wallet-1",
+      debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
+      amountUsd6: parseFixed("100", 6),
+    })
+
+    const remaining = next.accounts["wallet-1"]!.debtPositions.find((position) => position.id === EXAMPLE_WALLET_1_DEBT_ID)
+    expect(remaining).toBeDefined()
+    expect(remaining?.principalBorrowedUsd6).toBe(0n)
+    expect(remaining?.debtSharesUsd6).toBe(parseFixed("100", 6))
+  })
+
   it("rejects a borrow when the wallet has no collateral in the target spoke", () => {
     const state = makeExampleBorrowSystemState()
     state.accounts["wallet-1"]!.collateralPositions = state.accounts["wallet-1"]!.collateralPositions.filter(

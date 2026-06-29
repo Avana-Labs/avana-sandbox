@@ -31,6 +31,7 @@ export function useRewardsSession({
   }, [walletId, sessionSeed])
 
   useEffect(() => {
+    if (!hasHydratedStorage) return
     isPersistingRef.current = true
     writeRewardsSessionState(walletId, state)
     if (typeof window !== "undefined") {
@@ -39,7 +40,7 @@ export function useRewardsSession({
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [walletId, state])
+  }, [hasHydratedStorage, walletId, state])
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined
@@ -97,8 +98,9 @@ export function useRewardsSession({
   )
 
   useEffect(() => {
+    if (!hasHydratedStorage) return
     void actionAdapter.initializeRewardsForWallet(walletId)
-  }, [actionAdapter, walletId])
+  }, [actionAdapter, hasHydratedStorage, walletId])
 
   const recordActivityEvent = useCallback(
     async (event: RewardActivityEvent) => actionAdapter.recordActivityEvent(event),

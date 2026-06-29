@@ -1,8 +1,10 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
 import { Heart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import {
   HF_ZONES,
   activeHealthFactorZoneIndex,
@@ -23,22 +25,45 @@ export function HealthFactorPositionBar({
   trackClassName?: string
   heightClassName?: string
 }) {
-  const fillPct = healthFactorBarPositionPct(value)
-  const barTone = healthFactorBarTone(value)
-  const hasValue = value != null && !Number.isNaN(value) && activeHealthFactorZoneIndex(value) >= 0
+  const [displayValue, setDisplayValue] = useState<number | null>(() => (value == null || Number.isNaN(value) ? null : 0))
+  const firstPaintRef = useRef(true)
+
+  useEffect(() => {
+    if (value == null || Number.isNaN(value)) {
+      firstPaintRef.current = true
+      setDisplayValue(value)
+      return undefined
+    }
+
+    if (firstPaintRef.current) {
+      firstPaintRef.current = false
+      setDisplayValue(0)
+      const frame = window.requestAnimationFrame(() => {
+        setDisplayValue(value)
+      })
+      return () => window.cancelAnimationFrame(frame)
+    }
+
+    setDisplayValue(value)
+    return undefined
+  }, [value])
+
+  const fillPct = healthFactorBarPositionPct(displayValue)
+  const barTone = healthFactorBarTone(displayValue)
+  const hasValue = displayValue != null && !Number.isNaN(displayValue) && activeHealthFactorZoneIndex(displayValue) >= 0
 
   return (
     <div className={cn("relative rounded-full", trackClassName, heightClassName, className)}>
       {hasValue ? (
         <>
           <div
-            className={cn("absolute inset-y-0 left-0 rounded-full transition-all", barTone.fill)}
+            className={cn("absolute inset-y-0 left-0 rounded-full transition-[width,left] duration-500 ease-out", barTone.fill)}
             style={{ width: `${fillPct}%` }}
             aria-hidden
           />
           <span
             className={cn(
-              "absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-background",
+              "absolute top-1/2 size-3 -translate-y-1/2 rounded-full border-2 bg-background transition-[left] duration-500 ease-out",
               barTone.border,
             )}
             style={{ left: `calc(${fillPct}% - 6px)` }}
@@ -52,14 +77,16 @@ export function HealthFactorPositionBar({
 
 export function ActionHealthFactorBar({
   value,
+  label = "Health factor",
   className,
 }: {
   value: number | null
+  label?: string
   className?: string
 }) {
   const status = healthFactorStatusLabel(value)
   const activeZoneIdx = activeHealthFactorZoneIndex(value)
-  const label = value == null ? "—" : formatActionHealthFactor(value)
+  const valueLabel = value == null ? "—" : formatActionHealthFactor(value)
 
   return (
     <div className={cn("space-y-3", className)} data-testid="action-health-factor-bar">
@@ -74,9 +101,9 @@ export function ActionHealthFactorBar({
             )}
             aria-hidden
           />
-          <span>Health factor</span>
+          <span>{label}</span>
           <ActionMetricHelp
-            topic="health factor"
+            topic={label}
             text="Health factor estimates how far your position is from liquidation. Above 1.0 is solvent; below 1.0 can be liquidated."
           />
         </div>
@@ -92,7 +119,9 @@ export function ActionHealthFactorBar({
         </span>
       </div>
 
-      <div className="font-data text-[20px] font-semibold leading-none tracking-tight text-foreground">{label}</div>
+      <div className="font-data text-[20px] font-semibold leading-none tracking-tight text-foreground" aria-live="polite" aria-atomic="true">
+        <AnimatedTextValue text={valueLabel} animateOnMount />
+      </div>
 
       <HealthFactorPositionBar value={value} className="mt-1" />
 

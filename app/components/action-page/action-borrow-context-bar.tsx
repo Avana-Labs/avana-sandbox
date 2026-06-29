@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useState } from "react"
 import type { HomeCollateralPool } from "@/app/lib/home-sim"
 import { HomeActionContextBar } from "@/app/components/home/home-action-context-bar"
 import { PoolPickerDialog } from "@/app/components/home/pool-picker-dialog"

@@ -5,6 +5,14 @@ import { Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Eye, EyeOff, Globe
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -19,7 +27,27 @@ import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./dis
 import { LazyMobileMenu } from "./lazy-mobile-menu"
 import { LazySearchCommand, LazySearchCommandIconOnly, SearchCommandIconPlaceholder, SearchCommandPlaceholder } from "./lazy-search-command"
 import { useTheme } from "./theme-provider"
+import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { personalDesktopHeaderLinks } from "./site-nav"
+import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+import { ConnectKitButton } from "connectkit"
+
+/** Brand-styled wallet button that opens ConnectKit's real wallet modal. */
+function WalletButton({ size = "desktop" }: { size?: "mobile" | "desktop" }) {
+  const className =
+    size === "mobile"
+      ? "inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
+      : "inline-flex h-10 items-center justify-center rounded-full bg-brand px-4 font-sans text-[15px] font-medium text-brand-foreground shadow-none transition-colors hover:bg-brand/90"
+  return (
+    <ConnectKitButton.Custom>
+      {({ show, isConnected, truncatedAddress, ensName }) => (
+        <button type="button" aria-label={isConnected ? "Wallet" : "Connect"} className={className} onClick={show}>
+          {isConnected ? (ensName ?? truncatedAddress ?? "Wallet") : "Connect"}
+        </button>
+      )}
+    </ConnectKitButton.Custom>
+  )
+}
 
 type PreferencesView = "root" | "language" | "currency"
 
@@ -156,7 +184,7 @@ function PreferencesMenu() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="px-2 py-2.5 text-[14px] font-normal text-foreground">
-              <a href="https://avana-ashen.vercel.app/privacy" target="_blank" rel="noreferrer" className="flex items-center">
+              <a href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer" className="flex items-center">
                 <Shield className="mr-2 h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
                 Security & privacy
               </a>
@@ -229,11 +257,81 @@ function PreferencesMenu() {
   )
 }
 
+function SandboxWalletDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const { walletId, walletAddress, sandboxMode } = useAvanaSessions()
+  const [copied, setCopied] = useState(false)
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen)
+        if (!nextOpen) {
+          setCopied(false)
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-[460px]">
+        <DialogHeader>
+          <DialogTitle className="text-[20px] font-medium tracking-[-0.02em] text-foreground">
+            Sandbox wallet
+          </DialogTitle>
+          <DialogDescription className="text-[13px] leading-5 text-muted-foreground">
+            This workspace uses a built-in demo wallet. There is no external wallet connection yet.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 rounded-radius-md border border-border bg-surface-inset p-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Wallet</span>
+            <span className="rounded-full bg-brand/10 px-2.5 py-1 text-[12px] font-medium text-brand">
+              {sandboxMode ? "Sandbox active" : "Connected"}
+            </span>
+          </div>
+          <div>
+            <div className="text-[18px] font-medium tracking-[-0.02em] text-foreground">{walletId}</div>
+            <div className="mt-1 break-all text-[13px] text-muted-foreground">{walletAddress}</div>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-2">
+          <button
+            type="button"
+            className="inline-flex h-10 items-center justify-center rounded-radius-sm border border-border px-4 text-[14px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+            onClick={async () => {
+              if (typeof navigator === "undefined" || !navigator.clipboard) return
+              await navigator.clipboard.writeText(walletAddress)
+              setCopied(true)
+              window.setTimeout(() => setCopied(false), 1500)
+            }}
+          >
+            {copied ? "Copied" : "Copy address"}
+          </button>
+          <button
+            type="button"
+            className="inline-flex h-10 items-center justify-center rounded-radius-sm bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
+            onClick={() => onOpenChange(false)}
+          >
+            Close
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function Header() {
   const pathname = usePathname()
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)
+  const [walletDialogOpen, setWalletDialogOpen] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
@@ -241,13 +339,7 @@ export function Header() {
       <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">
         {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
       </span>
-      <button
-        type="button"
-        aria-label="Connect"
-        className="inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
-      >
-        Connect
-      </button>
+      <WalletButton size="mobile" />
     </>
   )
 
@@ -355,13 +447,7 @@ export function Header() {
 
               <PreferencesMenu />
 
-              <button
-                type="button"
-                aria-label="Connect"
-                className="inline-flex h-10 items-center justify-center rounded-full bg-brand px-4 font-sans text-[15px] font-medium text-brand-foreground shadow-none transition-colors hover:bg-brand/90"
-              >
-                Connect
-              </button>
+              <WalletButton size="desktop" />
 
             </div>
           </div>
@@ -381,7 +467,8 @@ export function Header() {
               {renderMobileActions()}
             </div>
           </div>
-        </div>
+      </div>
+      <SandboxWalletDialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen} />
     </header>
   )
 }

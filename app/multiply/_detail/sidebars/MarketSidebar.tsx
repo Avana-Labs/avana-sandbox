@@ -6,7 +6,6 @@ import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-la
 import { ResponsiveMultiplyAction } from "@/app/components/action-page/responsive-multiply-action"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
-import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { cn } from "@/lib/utils"
 
@@ -48,16 +47,9 @@ function MarketActionRail({
   className,
   embedActions = false,
 }: Props & { embedActions?: boolean }) {
-  const session = useMultiplySessionContext()
   const marketId = normalizeMarketId(detail.id)
   const market = getMultiplyMarketById(marketId)
   const closeHref = `/multiply/markets/${marketId}`
-
-  const position = React.useMemo(() => {
-    return Object.values(session.state.positions).find(
-      (entry) => entry.walletId === session.walletId && entry.marketId === marketId,
-    )
-  }, [marketId, session.state.positions, session.walletId])
 
   const [tab, setTab] = React.useState<SidebarTab>("multiply")
 
@@ -98,7 +90,6 @@ function MarketActionRail({
               market={marketId}
               closeHref={closeHref}
               sidebar
-              initialMultiplier={position?.multiplier.toFixed(2) ?? "3"}
             />
           ) : (
             <ActionPageLaunchCta product="multiply" kind="deleverage" market={marketId} returnTo={closeHref} />

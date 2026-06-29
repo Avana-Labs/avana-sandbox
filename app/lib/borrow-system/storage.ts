@@ -6,6 +6,7 @@ import {
   serializeBorrowSystemState,
   serializeBorrowValue,
 } from "@/app/lib/borrow-system/codec"
+import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
 
 const STORAGE_PREFIX = "avana.borrow.session.v1"
 const META_STORAGE_PREFIX = "avana.borrow.session.meta.v1"
@@ -28,36 +29,30 @@ export function readBorrowSessionState(walletId: string, seed: string): BorrowSy
     return deserializeBorrowSystemState(seed)
   }
 
-  const key = borrowSessionStorageKey(walletId)
-  const stored = window.localStorage.getItem(key)
-  return deserializeBorrowSystemState(stored ?? seed)
+  return safeReadParsed(
+    borrowSessionStorageKey(walletId),
+    (raw) => deserializeBorrowSystemState(raw),
+    () => deserializeBorrowSystemState(seed),
+  )
 }
 
 export function writeBorrowSessionState(walletId: string, state: BorrowSystemState) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(borrowSessionStorageKey(walletId), serializeBorrowSystemState(state))
+  safeSetItem(borrowSessionStorageKey(walletId), serializeBorrowSystemState(state))
 }
 
 export function readBorrowSessionMetadata(walletId: string): BorrowSessionMetadata {
-  if (typeof window === "undefined") {
-    return { transactionHistory: [], receipts: [] }
-  }
-
-  const stored = window.localStorage.getItem(borrowSessionMetadataKey(walletId))
-  if (!stored) {
-    return { transactionHistory: [], receipts: [] }
-  }
-
-  return deserializeBorrowValue<BorrowSessionMetadata>(stored)
+  return safeReadParsed<BorrowSessionMetadata>(
+    borrowSessionMetadataKey(walletId),
+    (raw) => deserializeBorrowValue<BorrowSessionMetadata>(raw),
+    () => ({ transactionHistory: [], receipts: [] }),
+  )
 }
 
 export function writeBorrowSessionMetadata(walletId: string, metadata: BorrowSessionMetadata) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(borrowSessionMetadataKey(walletId), serializeBorrowValue(metadata))
+  safeSetItem(borrowSessionMetadataKey(walletId), serializeBorrowValue(metadata))
 }
 
 export function clearBorrowSessionState(walletId: string) {
-  if (typeof window === "undefined") return
-  window.localStorage.removeItem(borrowSessionStorageKey(walletId))
-  window.localStorage.removeItem(borrowSessionMetadataKey(walletId))
+  safeRemoveItem(borrowSessionStorageKey(walletId))
+  safeRemoveItem(borrowSessionMetadataKey(walletId))
 }

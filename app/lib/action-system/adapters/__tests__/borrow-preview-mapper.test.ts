@@ -18,14 +18,16 @@ describe("borrow preview mappers", () => {
       ratePct: 5.2,
       balanceLabel: "Available to Borrow",
       balanceUsd: 5000,
+      creditScopeLabel: "Uniswap Bluechip",
     })
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
+      "Credit scope",
       "Position APY",
-      "Borrowing power",
-      "Net balance",
-      "Net collateral",
-      "Health factor",
+      "Borrowing power in scope",
+      "Net balance in scope",
+      "Net collateral in scope",
+      "Health factor in scope",
     ])
   })
 
@@ -36,11 +38,13 @@ describe("borrow preview mappers", () => {
       marketLabel: "USDC · Core",
       remainingDebtUsd: 3000,
       yearlyInterestSavedUsd: 42,
+      creditScopeLabel: "Uniswap Bluechip",
     })
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
+      "Credit scope",
       "Remaining debt",
-      "Health factor after",
+      "Health factor after in scope",
       "Interest saved (est. yearly)",
     ])
   })
@@ -57,6 +61,7 @@ describe("borrow preview mappers", () => {
       collateralRiskPct: 5,
       borrowableAssetsLabel: "USDC, GHO",
       borrowableAssetSymbols: ["USDC", "GHO"],
+      creditScopeLabel: "Uniswap Bluechip",
     })
 
     expect(ui.amountValue).toBe("2000")
@@ -64,11 +69,12 @@ describe("borrow preview mappers", () => {
     expect(ui.borrowSymbol).toBe("USDC")
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
+      "Credit scope",
       "Collateral factor",
       "Collateral risk",
       "Borrowable assets",
-      "Borrowing power",
-      "Health factor",
+      "Borrowing power in scope",
+      "Health factor in scope",
     ])
     expect(ui.metrics.find((row) => row.id === "borrowable-assets")?.tokenSymbols).toEqual(["USDC", "GHO"])
   })
@@ -80,15 +86,17 @@ describe("borrow preview mappers", () => {
       removeUsd: 2500,
       marketLabel: "WETH · Core",
       positionApyPct: 3.5,
+      creditScopeLabel: "Uniswap Bluechip",
     })
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
+      "Credit scope",
       "Position APY",
       "Annual earnings",
-      "Borrowing power",
-      "Net balance",
-      "Net collateral",
-      "Health factor",
+      "Borrowing power in scope",
+      "Net balance in scope",
+      "Net collateral in scope",
+      "Health factor in scope",
     ])
     expect(ui.maxAmount).toBe(60)
   })

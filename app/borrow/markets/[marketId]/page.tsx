@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { getPoolDetail } from "@/app/lib/borrow-detail"
-import { PoolDetailClient } from "@/app/borrow/pool/[poolId]/pool-detail-client"
+import { BorrowMarketDetailClientShell } from "./page-client-shell"
 
 type PageProps = {
   params: Promise<{ marketId: string }>
@@ -21,5 +21,5 @@ export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
   const detail = getPoolDetail(marketId)
   if (!detail) notFound()
-  return <PoolDetailClient detail={detail} />
+  return <BorrowMarketDetailClientShell detail={detail} />
 }
