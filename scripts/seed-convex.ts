@@ -37,7 +37,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 async function main() {
   const seed = buildBorrowSeed({ days })
   console.log(
-    `[seed] built ${seed.markets.length} markets · ${seed.dailyStats.length} daily stats · ${seed.revenue.length} revenue · ${seed.risk.length} risk · ${seed.allocation.length} allocation (days=${days})`,
+    `[seed] built ${seed.markets.length} markets · ${seed.dailyStats.length} daily stats · ${seed.revenue.length} revenue · ${seed.risk.length} risk · ${seed.allocation.length} allocation · ${seed.content.length} content (days=${days})`,
   )
   if (dryRun) {
     console.log("[seed] --dry-run: not writing. Sample market:", JSON.stringify(seed.markets[0]))
@@ -122,6 +122,15 @@ async function main() {
     await sleep(throttleMs)
   }
   console.log(`[seed] upserted ${alloc} allocation rows`)
+
+  // 7) Market content (about / stats / parameter-change history / FAQs)
+  let cont = 0
+  for (const batch of chunk(withMarketId(seed.content), BATCH)) {
+    await client.mutation(api.seed.upsertContent, { rows: batch })
+    cont += batch.length
+    await sleep(throttleMs)
+  }
+  console.log(`[seed] upserted ${cont} content rows`)
 
   const counts = await client.query(api.seed.getCounts, {})
   console.log("[seed] done. Convex counts:", JSON.stringify(counts))
