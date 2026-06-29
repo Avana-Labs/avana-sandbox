@@ -25,6 +25,7 @@ import { buildSeriesFamily, prngFromString } from "./prng"
 import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
 import { formatBpsAsPct, formatPct } from "./allocation"
 import { buildPoolRiskAssessment } from "./risk-model"
+import { buildPoolFaqs } from "./content-model"
 import type {
   AboutCard,
   CashflowCard,
@@ -671,6 +672,7 @@ export function buildPoolDetail(row: BorrowPoolRow): PoolDetail {
     engagement: buildPoolEngagement(row, fixture),
     risk: buildRisk(row, fixture),
     about: buildAbout(row, fixture),
+    faqs: buildPoolFaqs(row.name),
     transactions: buildCollateralHistory(row),
     related: buildRelated(row),
     governanceNotes: [
@@ -679,6 +681,11 @@ export function buildPoolDetail(row: BorrowPoolRow): PoolDetail {
     ],
     row,
   }
+}
+
+/** About card for seeding the Convex content layer (mirrors what the detail page renders). */
+export function getPoolAboutCard(row: BorrowPoolRow): AboutCard {
+  return buildAbout(row, CURATED_FIXTURES[row.id])
 }
 
 /** Exposed so the app can enumerate home-page → detail-page ids in tests. */

@@ -116,54 +116,7 @@ export function AssetDetailClient({ detail }: Props) {
               />
               <DetailFaqSection
                 title="General FAQs"
-                items={[
-                  {
-                    question: `What is ${detail.hero.symbol}?`,
-                    answer: (
-                      <p>
-                        {detail.hero.name} is a borrowable asset listed on Avana. It can be borrowed anywhere the selected
-                        collateral market supports it, with rates and limits determined by the active market risk settings.
-                      </p>
-                    ),
-                  },
-                  {
-                    question: `How do I supply ${detail.hero.symbol}?`,
-                    answer: (
-                      <p>
-                        Open the market, choose Deposit, enter the amount you want to supply, and confirm the transaction in
-                        your wallet. Your balance and available supply capacity update after the transaction settles.
-                      </p>
-                    ),
-                  },
-                  {
-                    question: `What moves the APY for ${detail.hero.symbol}?`,
-                    answer: (
-                      <p>
-                        APY changes with utilization, available liquidity, and incentive changes. When more capital is borrowed
-                        from a market, supply rates usually move higher as the pool becomes tighter.
-                      </p>
-                    ),
-                  },
-                  {
-                    question: `Can I borrow against ${detail.hero.symbol}?`,
-                    answer: (
-                      <p>
-                        If this asset is enabled as collateral, your borrowing power depends on the market’s loan-to-value and
-                        risk parameters. More volatile assets generally support less borrowing than steadier collateral.
-                      </p>
-                    ),
-                  },
-                  {
-                    question: `What risks should I watch?`,
-                    answer: (
-                      <p>
-                        The main risks are price moves, utilization spikes, and liquidation if your health factor falls too
-                        low. If you supply the asset, there is also protocol and market risk, so it helps to watch the
-                        dashboard before making larger positions.
-                      </p>
-                    ),
-                  },
-                ]}
+                items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
               />
               <RelatedAssetsRow detail={detail} />
             </section>

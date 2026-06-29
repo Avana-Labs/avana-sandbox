@@ -22,6 +22,7 @@ import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
 import { buildCuratedPriceFamily } from "./token-price-series"
 import { computeAssetAllocation, formatPct } from "./allocation"
 import { buildAssetRiskAssessment } from "./risk-model"
+import { buildAssetFaqs } from "./content-model"
 import type {
   AboutCard,
   AllocationRow,
@@ -572,10 +573,16 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
     engagement: buildAssetEngagement(asset, supplied),
     risk: buildAssetRisk(asset, fixture),
     about: buildAssetAbout(asset, fixture),
+    faqs: buildAssetFaqs(asset.symbol, asset.name),
     transactions: buildTransactions(asset),
     related: buildRelated(asset),
     row: asset,
   }
+}
+
+/** About card for seeding the Convex content layer (mirrors what the detail page renders). */
+export function getAssetAboutCard(asset: SpokeBorrowableRecord): AboutCard {
+  return buildAssetAbout(asset, ASSET_FIXTURES[asset.baseAssetId])
 }
 
 for (const id of ALL_ASSET_CHART_METRICS) void id

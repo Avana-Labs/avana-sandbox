@@ -257,6 +257,20 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_symbol", ["symbol"]),
 
+  /**
+   * Static per-market editorial content: the About description + on-chain stats,
+   * the parameter-change history, and the General FAQs. Seeded from the shared
+   * generators so the detail page reads About / Parameter Changes / FAQs from
+   * Convex like everything else. One row per market.
+   */
+  marketContent: defineTable({
+    marketId: v.id("markets"),
+    description: v.string(),
+    stats: v.array(v.object({ label: v.string(), value: v.string(), href: v.optional(v.string()) })),
+    history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
+    faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
+  }).index("by_market", ["marketId"]),
+
   // ── Phase 2: wallet-scoped sandbox state (synthetic; never source of truth in prod) ──
 
   /**
