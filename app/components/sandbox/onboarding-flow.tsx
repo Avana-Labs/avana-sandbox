@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Check, LoaderCircle, MoveUpRight } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
@@ -122,6 +122,56 @@ function ErrorMessage({ error }: { error: string | null }) {
   ) : null
 }
 
+const ANALYSIS_STEPS = [
+  "Reading your wallet history",
+  "Checking sandbox eligibility",
+  "Selecting markets to fund",
+  "Sizing your $1M portfolio",
+]
+const ANALYSIS_STAGGER_MS = 950
+
+/** Fake-but-believable wallet analysis: each check completes in sequence so eligibility
+ *  feels earned. Timed to land just before the flow advances to the eligible step. */
+function AnalyzingStep() {
+  const [done, setDone] = useState(0)
+  useEffect(() => {
+    const timers = ANALYSIS_STEPS.map((_, i) =>
+      window.setTimeout(() => setDone(i + 1), ANALYSIS_STAGGER_MS * (i + 1)),
+    )
+    return () => timers.forEach((t) => window.clearTimeout(t))
+  }, [])
+  return (
+    <>
+      <Headline muted="One moment." active="Analyzing your wallet…" />
+      <ul className="mt-8 max-w-[420px] space-y-3.5">
+        {ANALYSIS_STEPS.map((label, i) => {
+          const state = i < done ? "done" : i === done ? "active" : "pending"
+          return (
+            <motion.li
+              key={label}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: state === "pending" ? 0.45 : 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.12 }}
+              className="flex items-center gap-3 text-[15px]"
+            >
+              {state === "done" ? (
+                <motion.span initial={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 360, damping: 16 }}>
+                  <Check className="size-[18px] text-emerald-500" strokeWidth={2.75} />
+                </motion.span>
+              ) : (
+                <LoaderCircle className={`size-[18px] ${state === "active" ? "animate-spin text-brand" : "text-muted-foreground/40"}`} />
+              )}
+              <span className={state === "done" ? "text-foreground" : state === "active" ? "text-foreground" : "text-muted-foreground"}>
+                {label}
+              </span>
+            </motion.li>
+          )
+        })}
+      </ul>
+    </>
+  )
+}
+
 function BasketPanel({
   amount,
   busy,
@@ -197,7 +247,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             await sleep(900)
             await completeAnalysis({ wallet })
           },
-          1400,
+          // Hold the analysis screen long enough for the step-by-step "thinking"
+          // sequence to play out, so eligibility feels earned — not an instant jump.
+          4200,
         )
       : undefined
 
@@ -315,11 +367,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "analyzing" ? (
         <>
-          <Headline active="Setting up your sandbox…" />
-          <div className="mt-8 inline-flex items-center rounded-full bg-muted px-5 py-3 text-sm text-muted-foreground">
-            <LoaderCircle className="mr-2.5 size-4 animate-spin text-brand" />
-            Picking your markets — one sec
-          </div>
+          <AnalyzingStep />
           <ErrorMessage error={error} />
         </>
       ) : step === "eligible" ? (
