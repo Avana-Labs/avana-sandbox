@@ -36,24 +36,32 @@ import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
 /** Brand-styled wallet button that opens ConnectKit's real wallet modal. */
 function WalletButton({ size = "desktop" }: { size?: "mobile" | "desktop" }) {
-  const { isSignedIn } = useSiweAuth()
+  const { isConnected, isSignedIn } = useSiweAuth()
   const className =
     size === "mobile"
       ? "inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
       : "inline-flex h-10 items-center justify-center rounded-full bg-brand px-4 font-sans text-[15px] font-medium text-brand-foreground shadow-none transition-colors hover:bg-brand/90"
+
+  if (isConnected || isSignedIn) return null
+
   return (
-    <ConnectKitButton.Custom>
-      {({ show, isConnected }) => {
-        // Once the wallet is connected/signed-in, the SandboxSignInButton owns the
-        // single wallet control (sign-in / identicon). Avoid a second "Connect" pill.
-        if (isConnected || isSignedIn) return null
-        return (
-          <button type="button" aria-label="Connect" className={className} onClick={show}>
+    <span className="relative inline-flex">
+      <span aria-hidden className={className}>
+        Connect
+      </span>
+      <ConnectKitButton.Custom>
+        {({ show }) => (
+          <button
+            type="button"
+            aria-label="Connect"
+            className={`${className} absolute inset-0 w-full`}
+            onClick={show}
+          >
             Connect
           </button>
-        )
-      }}
-    </ConnectKitButton.Custom>
+        )}
+      </ConnectKitButton.Custom>
+    </span>
   )
 }
 
@@ -344,11 +352,13 @@ export function Header() {
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
     <>
-      <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">
+      <span className="-mr-1 flex items-center">
         {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
       </span>
-      <SandboxSignInButton size="mobile" />
-      <WalletButton size="mobile" />
+      <span className="flex items-center">
+        <SandboxSignInButton size="mobile" />
+        <WalletButton size="mobile" />
+      </span>
     </>
   )
 
@@ -459,10 +469,13 @@ export function Header() {
                 })}
               </div>
 
-              <PreferencesMenu />
-
-              <SandboxSignInButton size="desktop" />
-              <WalletButton size="desktop" />
+              <div className="flex shrink-0 items-center gap-1.5">
+                <PreferencesMenu />
+                <div className="flex shrink-0">
+                  <SandboxSignInButton size="desktop" />
+                  <WalletButton size="desktop" />
+                </div>
+              </div>
 
             </div>
           </div>
