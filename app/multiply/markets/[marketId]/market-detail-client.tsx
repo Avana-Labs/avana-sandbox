@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
-import { QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
+import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { cn } from "@/lib/utils"
@@ -61,6 +61,7 @@ export function MarketDetailClient({ detail }: Props) {
               <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">Market data</h2>
               <QuickStatsGrid detail={detail} />
               <SupplyBorrowCard detail={detail} />
+              <CashflowCard detail={detail} />
               <EngagementTrendsCard
                 engagement={detail.engagement}
                 accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
@@ -75,44 +76,7 @@ export function MarketDetailClient({ detail }: Props) {
               />
               <DetailFaqSection
                 title="Multiply FAQs"
-                items={[
-                  {
-                    question: `What is ${detail.hero.name}?`,
-                    answer: (
-                      <p>
-                        It is a multiply market that pairs {detail.row.protocol} collateral with {detail.row.asset} exposure.
-                        The route is separate from borrow pools and is meant for leveraged positioning.
-                      </p>
-                    ),
-                  },
-                  {
-                    question: "How does max APY work here?",
-                    answer: (
-                      <p>
-                        Max APY reflects the combination of collateral carry and borrow cost at the current leverage ceiling.
-                        It is the ceiling shown in the table, not a fixed return.
-                      </p>
-                    ),
-                  },
-                  {
-                    question: "Why is leverage capped?",
-                    answer: (
-                      <p>
-                        The cap keeps liquidation risk within the available liquidity and collateral threshold for the pair.
-                        Higher leverage increases both capital efficiency and unwind speed.
-                      </p>
-                    ),
-                  },
-                  {
-                    question: `Why use ${detail.row.protocol} as collateral?`,
-                    answer: (
-                      <p>
-                        The market is tuned for this collateral / borrowable combination because its liquidity profile and
-                        factor settings leave enough room to multiply exposure without making the position unstable.
-                      </p>
-                    ),
-                  },
-                ]}
+                items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
               />
               <TransactionHistoryCard
                 transactions={transactions}

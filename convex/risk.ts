@@ -12,7 +12,7 @@
 import { v } from "convex/values"
 import { query } from "./_generated/server"
 
-const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"))
+const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 
 /** Latest risk assessment for an asset or pool. Returns null when unseeded. */
 export const getRisk = query({

@@ -40,9 +40,10 @@ const walletEventKind = v.union(
 )
 
 /** Scope differentiates an asset (single borrowable token), a pool (LP collateral
- *  market), and a lend market (single-asset supply market). */
-export const MARKET_SCOPES = ["asset", "pool", "lend"] as const
-const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"))
+ *  market), a lend market (single-asset supply market), and a multiply market
+ *  (leveraged collateral→borrow loop). */
+export const MARKET_SCOPES = ["asset", "pool", "lend", "multiply"] as const
+const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 
 /** Risk buckets mirror `RiskLevel` in `app/lib/borrow-detail/types.ts`. */
 const riskLevel = v.union(

@@ -95,6 +95,29 @@ export const getForLend = query({
   },
 })
 
+/**
+ * Engagement for a multiply (leveraged loop) market.
+ *
+ * Primary KPI  : active wallets today.
+ * Secondary KPI: loop conversion = wallets that supplied collateral then borrowed
+ *                (opened a loop) within a 24h window.
+ */
+export const getForMultiply = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const market = await ctx.db
+      .query("markets")
+      .withIndex("by_scope_slug", (q) => q.eq("scope", "multiply").eq("slug", slug))
+      .unique()
+    if (!market) return null
+    return buildEngagement(ctx, market._id, {
+      primaryLabel: "Active wallets",
+      secondaryLabel: "Loop conversion",
+      secondaryKind: "borrow",
+    })
+  },
+})
+
 type SecondaryKind = "repay" | "borrow" | "supply"
 
 type Cfg = {

@@ -59,6 +59,28 @@ export function buildLendFaqs(symbol: string, name: string): FaqContent[] {
   ]
 }
 
+/** General FAQs for a multiply (leveraged loop) market (templated by the pair). */
+export function buildMultiplyFaqs(collateral: string, borrow: string): FaqContent[] {
+  return [
+    {
+      question: `What is the ${collateral} / ${borrow} multiply market?`,
+      answer: `It pairs ${collateral} collateral with ${borrow} exposure in a leveraged loop. The route is separate from borrow pools and is meant for leveraged positioning.`,
+    },
+    {
+      question: "How does max APY work here?",
+      answer: "Max APY reflects the combination of collateral carry and borrow cost at the current leverage ceiling. It is the ceiling shown in the table, not a fixed return.",
+    },
+    {
+      question: "Why is leverage capped?",
+      answer: "The cap keeps liquidation risk within the available liquidity and collateral threshold for the pair. Higher leverage increases both capital efficiency and unwind speed.",
+    },
+    {
+      question: `Why use ${collateral} as collateral?`,
+      answer: `This market is tuned for the ${collateral} / ${borrow} combination because its liquidity profile and factor settings leave enough room to multiply exposure without making the position unstable.`,
+    },
+  ]
+}
+
 /** General FAQs for an LP collateral pool (templated by pair name). */
 export function buildPoolFaqs(name: string): FaqContent[] {
   return [

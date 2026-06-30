@@ -1,10 +1,12 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import type { ChartFeed } from "@/app/components/charts"
 import {
   formatBpsAsPct,
   riskLevelFromBps,
   riskLevelLabel,
   riskScoreFromBps,
   type AboutCard,
+  type CashflowCard,
   type DeltaStat,
   type EngagementTrend,
   type Point,
@@ -13,6 +15,7 @@ import {
   type Series,
 } from "@/app/lib/borrow-detail"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
+import { buildMultiplyFaqs, type FaqContent } from "@/app/lib/borrow-detail/content-model"
 import {
   MULTIPLY_MARKET_ROWS,
   MULTIPLY_TOKEN_AVAILABLE_USD,
@@ -55,16 +58,21 @@ export type MultiplyMarketRelatedSummary = {
 export type MultiplyMarketDetail = {
   id: string
   hero: MultiplyMarketHero
+  /** Convex-backed hero chart feed (TVL). Set only by the Convex builder; the hero
+   * falls back to the local feed when absent. */
+  heroFeed?: ChartFeed
   supplyBorrow: {
     supplied: Series
     borrowed: Series
     utilization: Series
   }
+  cashflow: CashflowCard
   transactions: MultiplyTxHistoryRow[]
   quickStats: QuickStat[]
   engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
+  faqs: FaqContent[]
   related: MultiplyMarketRelatedSummary[]
   row: MultiplyMarketRow
 }
@@ -173,6 +181,28 @@ function buildSupplyBorrow(row: MultiplyMarketRow) {
       ...buildSeries(`${seedBase}:utilization`, 48, 4.4),
       unit: "%",
     },
+  }
+}
+
+function buildCashflow(seedBase: string, liquidityUsd: number, borrowApy: number): CashflowCard {
+  const borrowedUsd = liquidityUsd * 0.6
+  const annualInterest = borrowedUsd * borrowApy
+  const reserve = annualInterest * 0.12
+  const toSuppliers = annualInterest - reserve
+  const rewards = liquidityUsd * 0.004
+  return {
+    bars: [
+      { ...buildSeries(`${seedBase}:cf:interest`, Math.max(1, annualInterest / 12), Math.max(1, annualInterest / 120)), label: "Interest" },
+      { ...buildSeries(`${seedBase}:cf:rewards`, Math.max(1, rewards / 12), Math.max(1, rewards / 60)), label: "Rewards" },
+    ],
+    periodLabel: "Last 12 months",
+    rows: [
+      { label: "Interest paid by borrowers", reported: formatCompactUsd(annualInterest), highlighted: true },
+      { label: "To suppliers", reported: formatCompactUsd(toSuppliers) },
+      { label: "Reserve", reported: formatCompactUsd(reserve) },
+      { label: "Rewards distributed", reported: formatCompactUsd(rewards) },
+      { label: "Net to suppliers", reported: formatCompactUsd(toSuppliers + rewards), highlighted: true },
+    ],
   }
 }
 
@@ -345,16 +375,21 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
   if (!row) return null
 
   const resolvedId = id.toLowerCase()
+  const record = getMultiplyMarketById(resolvedId)
+  const liquidityUsd = record?.economics.availableLiquidityUsd ?? 6_000_000
+  const borrowApy = record?.economics.borrowApy ?? 0.04
 
   return {
     id: resolvedId,
     hero: buildHero(row),
     supplyBorrow: buildSupplyBorrow(row),
+    cashflow: buildCashflow(`multiply:${row.protocol}-${row.asset}`, liquidityUsd, borrowApy),
     transactions: buildTransactions(row),
     quickStats: buildQuickStats(row),
     engagement: buildEngagement(row),
     risk: buildRisk(row),
     about: buildAbout(row),
+    faqs: buildMultiplyFaqs(row.protocol, row.asset),
     related: buildRelated(row),
     row,
   }

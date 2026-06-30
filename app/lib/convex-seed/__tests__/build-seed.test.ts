@@ -1,20 +1,24 @@
 import { describe, expect, it } from "vitest"
 import { ASSET_TVL_TARGET_USD, buildBorrowSeed, POOL_TVL_TARGET_USD } from "@/app/lib/convex-seed/build-seed"
 import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
+import { MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 
 const ASOF = Date.UTC(2026, 5, 19) // fixed for reproducibility
 const LEND_COUNT = LEND_MARKET_CATALOG.length
-const TOTAL_MARKETS = 128 + LEND_COUNT // 64 pools + 64 assets + lend markets
+const MULTIPLY_COUNT = MULTIPLY_MARKET_CATALOG.length
+const TOTAL_MARKETS = 128 + LEND_COUNT + MULTIPLY_COUNT // 64 pools + 64 assets + lend + multiply markets
 
 describe("buildBorrowSeed", () => {
-  it("seeds one market row per borrow pool + asset + lend market", () => {
+  it("seeds one market row per borrow pool + asset + lend + multiply market", () => {
     const seed = buildBorrowSeed({ days: 30, asOf: ASOF })
     const pools = seed.markets.filter((m) => m.scope === "pool")
     const assets = seed.markets.filter((m) => m.scope === "asset")
     const lend = seed.markets.filter((m) => m.scope === "lend")
+    const multiply = seed.markets.filter((m) => m.scope === "multiply")
     expect(pools.length).toBe(64)
     expect(assets.length).toBe(64)
     expect(lend.length).toBe(LEND_COUNT)
+    expect(multiply.length).toBe(MULTIPLY_COUNT)
     expect(seed.markets.length).toBe(TOTAL_MARKETS)
     // one risk assessment per market
     expect(seed.risk.length).toBe(TOTAL_MARKETS)
@@ -38,6 +42,19 @@ describe("buildBorrowSeed", () => {
     const lendSlugs = new Set(lend.map((m) => m.slug))
     expect(seed.content.some((c) => lendSlugs.has(c.slug))).toBe(true)
     expect(seed.risk.some((r) => lendSlugs.has(r.slug) && r.breakdown.length >= 4)).toBe(true)
+  })
+
+  it("seeds multiply markets (scope 'multiply', bare slug, content + 5-factor risk)", () => {
+    const seed = buildBorrowSeed({ days: 30, asOf: ASOF })
+    const multiply = seed.markets.filter((m) => m.scope === "multiply")
+    expect(multiply.length).toBe(MULTIPLY_COUNT)
+    for (const m of multiply) {
+      expect(m.slug).not.toContain(":") // bare market id, e.g. "eth-usdt"
+      expect(m.name).toContain(" / ") // "ETH / USDT"
+    }
+    const multiplySlugs = new Set(multiply.map((m) => m.slug))
+    expect(seed.content.some((c) => multiplySlugs.has(c.slug))).toBe(true)
+    expect(seed.risk.some((r) => multiplySlugs.has(r.slug) && r.breakdown.length >= 5)).toBe(true)
   })
 
   it("uses route-matching slugs (asset = spoke-scoped id, pool = pool id)", () => {
