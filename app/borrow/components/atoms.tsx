@@ -51,6 +51,11 @@ export function TokenBubble({
           width={px}
           height={px}
           className="h-full w-full object-contain"
+          // Logos are local SVGs (see getLocalAssetIcon). Lazy-load + async-decode so a
+          // long market list doesn't decode every off-screen icon up front, and fall back
+          // to the token's colored initials if an icon is ever missing.
+          loading="lazy"
+          decoding="async"
           onError={() => setImgFailed(true)}
           unoptimized
         />

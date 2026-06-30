@@ -56,8 +56,13 @@ const LOCAL_ASSET_ICON_SLUGS: Record<string, string> = {
   RLUSD: "rlusd",
 }
 
+/** Neutral local token placeholder used when a symbol has no mapped icon. */
+export const LOCAL_ASSET_ICON_FALLBACK = "/asset-icons/placeholder.svg"
+
 export function getLocalAssetIcon(key: string) {
   const normalized = key.trim().toUpperCase()
   const slug = LOCAL_ASSET_ICON_SLUGS[normalized]
-  return slug ? `/asset-icons/${slug}.svg` : "/placeholder.svg"
+  // Always resolve to a real local file so an unmapped symbol shows a neutral
+  // token placeholder instead of triggering a 404 for the missing icon.
+  return slug ? `/asset-icons/${slug}.svg` : LOCAL_ASSET_ICON_FALLBACK
 }
