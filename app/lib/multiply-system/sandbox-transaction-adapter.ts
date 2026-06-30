@@ -13,19 +13,13 @@ import type {
   MultiplyTransactionHistoryItem,
   MultiplyTransactionIntent,
   MultiplyTransactionPreview,
+  MultiplyTransactionResult,
 } from "./contracts"
 
 type SandboxAdapterOptions = {
   readState: () => MultiplySystemState
   writeState: (state: MultiplySystemState) => void
-  persistResult?: (result: MultiplySandboxActionResult) => Promise<{
-    id: string
-    hash: string
-    status: "success" | "failed" | "pending"
-    actionType: string
-    simulated: boolean
-    timestamp: number
-  }>
+  persistResult?: (result: MultiplySandboxActionResult) => Promise<MultiplyTransactionResult>
   now?: () => number
   generateId?: (prefix: string) => string
 }
@@ -274,6 +268,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
       state: nextState,
     }
     const persisted = this.persistResult ? await this.persistResult(localResult) : localReceipt
+    if (persisted.status === "idle") throw new Error("Convex returned an invalid idle transaction receipt")
     const receipt = { ...localReceipt, ...persisted, actionType: localReceipt.actionType }
     const persistedResult = {
       ...localResult,

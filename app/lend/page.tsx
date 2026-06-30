@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "Supply assets to the protocol and earn yield.",
 }
 
+export const dynamic = "force-dynamic"
+
 export default async function LendPage() {
   const pageData = await fetchLendPage()
 

@@ -16,7 +16,7 @@ const rowsArgs = {
 
 export const upsertMarkets = action({
   args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }) => {
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     return ctx.runMutation(internal.seed.upsertMarkets, { rows })
   },
@@ -24,7 +24,7 @@ export const upsertMarkets = action({
 
 export const upsertDailyStats = action({
   args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }) => {
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     return ctx.runMutation(internal.seed.upsertDailyStats, { rows })
   },
@@ -32,7 +32,7 @@ export const upsertDailyStats = action({
 
 export const upsertRevenue = action({
   args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }) => {
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     return ctx.runMutation(internal.seed.upsertRevenue, { rows })
   },
@@ -40,7 +40,7 @@ export const upsertRevenue = action({
 
 export const upsertRisk = action({
   args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }) => {
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     return ctx.runMutation(internal.seed.upsertRisk, { rows })
   },
@@ -48,7 +48,7 @@ export const upsertRisk = action({
 
 export const upsertAllocation = action({
   args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }) => {
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     return ctx.runMutation(internal.seed.upsertAllocation, { rows })
   },
@@ -56,7 +56,7 @@ export const upsertAllocation = action({
 
 export const upsertContent = action({
   args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }) => {
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     return ctx.runMutation(internal.seed.upsertContent, { rows })
   },
@@ -64,7 +64,7 @@ export const upsertContent = action({
 
 export const clearWalletEvents = action({
   args: { seedSecret: v.string(), limit: v.optional(v.number()) },
-  handler: async (ctx, { seedSecret, limit }) => {
+  handler: async (ctx, { seedSecret, limit }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     return ctx.runMutation(internal.seed.clearWalletEvents, { limit })
   },
@@ -72,7 +72,7 @@ export const clearWalletEvents = action({
 
 export const insertWalletEvents = action({
   args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }) => {
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     return ctx.runMutation(internal.seed.insertWalletEvents, { rows })
   },

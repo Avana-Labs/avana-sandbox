@@ -23,6 +23,7 @@ import type * as sandbox_onboarding from "../sandbox/onboarding.js";
 import type * as sandbox_rewards from "../sandbox/rewards.js";
 import type * as sandbox_transactions from "../sandbox/transactions.js";
 import type * as seed from "../seed.js";
+import type * as seedAdmin from "../seedAdmin.js";
 
 import type {
   ApiFromModules,
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   "sandbox/rewards": typeof sandbox_rewards;
   "sandbox/transactions": typeof sandbox_transactions;
   seed: typeof seed;
+  seedAdmin: typeof seedAdmin;
 }>;
 
 /**
