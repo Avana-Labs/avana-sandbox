@@ -2,40 +2,36 @@
 
 import { useState, type ReactNode } from "react"
 import { WagmiProvider, createConfig, http } from "wagmi"
-import { coinbaseWallet, injected, metaMask } from "wagmi/connectors"
+import { coinbaseWallet, injected, metaMask, walletConnect } from "wagmi/connectors"
 import { mainnet } from "wagmi/chains"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { ConnectKitProvider, getDefaultConfig } from "connectkit"
+import { ConnectKitProvider } from "connectkit"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
 
-const wagmiConfig = walletConnectProjectId
-  ? createConfig(
-      getDefaultConfig({
-        appName: "Avana Sandbox",
-        chains: [mainnet],
-        transports: { [mainnet.id]: http() },
-        walletConnectProjectId,
-        // Hydrate wallet state on the client (no headers() read) so static generation
-        // of the app's pages is preserved.
-        ssr: true,
-      }),
-    )
-  : // No WalletConnect project id → register the popular wallets explicitly so the
-    // Connect modal lists MetaMask / Coinbase / Browser wallet (not just one generic
-    // "Browser Wallet"). Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID to additionally light
-    // up the full WalletConnect wallet list (Phantom, Rainbow, "More Available", …).
-    createConfig({
-      chains: [mainnet],
-      connectors: [
-        injected(),
-        metaMask(),
-        coinbaseWallet({ appName: "Avana Sandbox" }),
-      ],
-      transports: { [mainnet.id]: http() },
-      ssr: true,
-    })
+// Register connectors EXPLICITLY rather than via ConnectKit's getDefaultConfig. The
+// default config bundles the "@aave/account" connector, which eagerly preloads an
+// app.family.co iframe that (a) runs a ~3s Cloudflare bot-challenge script on every page
+// (killed Lighthouse) and (b) logs CSP/connection console errors that fail the e2e audit.
+// We only need the mainstream wallets; this keeps the Connect modal clean, the console
+// silent, and first load fast. `multiInjectedProviderDiscovery: false` also stops wagmi
+// from auto-attaching announced EIP-6963 providers (e.g. Aave Account) we didn't register.
+const wagmiConfig = createConfig({
+  chains: [mainnet],
+  connectors: [
+    injected(),
+    metaMask(),
+    coinbaseWallet({ appName: "Avana Sandbox" }),
+    ...(walletConnectProjectId
+      ? [walletConnect({ projectId: walletConnectProjectId, showQrModal: false })]
+      : []),
+  ],
+  transports: { [mainnet.id]: http() },
+  multiInjectedProviderDiscovery: false,
+  // Hydrate wallet state on the client (no headers() read) so static generation is preserved.
+  ssr: true,
+})
 
 /**
  * Keep ConnectKit's native theme/colors. We only add a glass-blur backdrop so the
