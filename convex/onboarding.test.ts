@@ -49,6 +49,43 @@ describe("sandbox onboarding + economy caps", () => {
     expect(activity[0]?.kind).toBe("onboardingClaim")
   })
 
+  test("X/tweet sub-flow: startTweet → xPending, confirmTweet → xConfirmed", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+
+    expect(await asUser.mutation(api.sandbox.onboarding.startTweet, { wallet: WALLET })).toBe("xPending")
+    expect(
+      await asUser.mutation(api.sandbox.onboarding.confirmTweet, {
+        wallet: WALLET,
+        xHandle: "@avana",
+        tweetUrl: "https://x.com/avana/status/1",
+      }),
+    ).toBe("xConfirmed")
+
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).toBe("xConfirmed")
+    expect(state.profile?.tweetUrl).toBe("https://x.com/avana/status/1")
+  })
+
+  test("claim seeds wallet-scoped starter state (position + portfolio snapshot)", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    const result = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
+    expect(result.status).toBe("done")
+
+    const positions = await asUser.query(api.sandbox.transactions.getPositions, { wallet: WALLET })
+    expect(positions).toHaveLength(1)
+    expect(positions[0]?.product).toBe("lend")
+    expect(positions[0]?.marketSlug).toBe("sandbox-starter-basket")
+
+    const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
+    expect(portfolio.snapshots).toHaveLength(1)
+    expect(portfolio.latest?.totalSuppliedUsd).toBe(result.allocatedUsd)
+    expect(portfolio.openPositions).toBe(1)
+  })
+
   test("enforces userCap server-side: claims past the cap are waitlisted", async () => {
     const t = convexTest(schema, modules)
     await t.run(async (ctx) => {
