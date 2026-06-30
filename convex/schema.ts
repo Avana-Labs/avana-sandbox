@@ -386,7 +386,9 @@ export default defineSchema({
     marketSlug: v.optional(v.string()),
     syntheticTxHash: v.string(),
     at: v.number(),
-  }).index("by_wallet_at", ["wallet", "at"]),
+  })
+    .index("by_wallet_at", ["wallet", "at"])
+    .index("by_wallet_hash", ["wallet", "syntheticTxHash"]),
 
   /** Wallet-scoped rewards engine state for reactive sandbox rehydration. */
   sandboxRewards: defineTable({
@@ -541,6 +543,7 @@ export default defineSchema({
   })
     .index("by_wallet_at", ["wallet", "at"])
     .index("by_wallet_intent", ["wallet", "intentId"])
+    .index("by_wallet_hash", ["wallet", "syntheticTxHash"])
     .index("by_market_at", ["marketSlug", "at"]),
 
   /**
