@@ -1,8 +1,9 @@
 "use client"
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
-import { ConvexProvider, ConvexReactClient, useMutation, useQuery } from "convex/react"
+import { ConvexProviderWithAuth, ConvexReactClient, useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { useConvexSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
 export type MarketLiquidityDelta = { borrowedDeltaUsd: number; suppliedDeltaUsd: number }
 
@@ -124,11 +125,13 @@ export function MarketLiquidityProvider({ children }: { children: ReactNode }) {
     )
   }
   return (
-    <ConvexProvider client={convexClient}>
+    // ConvexProviderWithAuth attaches the SIWE JWT (when signed in) to authed sandbox
+    // calls; public market-data queries still resolve when signed out (identity null).
+    <ConvexProviderWithAuth client={convexClient} useAuth={useConvexSiweAuth}>
       <MarketLiquidityBridge localDeltas={localDeltas} recordLocal={recordLocal}>
         {children}
       </MarketLiquidityBridge>
-    </ConvexProvider>
+    </ConvexProviderWithAuth>
   )
 }
 

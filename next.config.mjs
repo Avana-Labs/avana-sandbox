@@ -52,6 +52,14 @@ const nextConfig = {
     return [
     ]
   },
+  async rewrites() {
+    return [
+      // SIWE → JWT bridge: Convex fetches the OIDC discovery doc + JWKS at these
+      // well-known paths to verify the sandbox JWTs. Served by /api route handlers.
+      { source: "/.well-known/openid-configuration", destination: "/api/siwe/openid-configuration" },
+      { source: "/.well-known/jwks.json", destination: "/api/siwe/jwks" },
+    ]
+  },
   async headers() {
     return [
       {
