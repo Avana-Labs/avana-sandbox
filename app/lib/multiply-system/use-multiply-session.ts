@@ -3,7 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { MultiplyAction, MultiplySystemState } from "@/app/lib/multiply-engine"
 import { deserializeMultiplySystemState, serializeMultiplySystemState } from "./codec"
-import type { MultiplySandboxActionResult, MultiplyTransactionHistoryItem, MultiplyTransactionIntent, MultiplyTransactionResult } from "./contracts"
+import type {
+  MultiplyReadAdapter,
+  MultiplySandboxActionResult,
+  MultiplyTransactionAdapter,
+  MultiplyTransactionHistoryItem,
+  MultiplyTransactionIntent,
+  MultiplyTransactionResult,
+} from "./contracts"
 import { buildSyntheticReceipts } from "./read-model"
 import { SandboxMultiplyReadAdapter } from "./sandbox-read-adapter"
 import { SandboxMultiplyTransactionAdapter } from "./sandbox-transaction-adapter"
@@ -28,10 +35,18 @@ function mergeReceipts(nextReceipt: MultiplyTransactionResult, receipts: Multipl
 export function useMultiplySession({
   walletId,
   sessionSeed,
+  readAdapter: injectedReadAdapter,
+  transactionAdapter: injectedTransactionAdapter,
+  persistState,
 }: {
   walletId: string
   sessionSeed: string
+  readAdapter?: MultiplyReadAdapter
+  transactionAdapter?: MultiplyTransactionAdapter
+  persistState?: boolean
 }) {
+  const adapterMode = injectedReadAdapter?.mode ?? injectedTransactionAdapter?.mode ?? "sandbox"
+  const shouldPersistState = persistState ?? adapterMode === "sandbox"
   const seededState = useMemo(() => deserializeMultiplySystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<MultiplySystemState>(seededState)
   const [hasHydratedStorage, setHasHydratedStorage] = useState(false)
@@ -48,6 +63,13 @@ export function useMultiplySession({
   const lastPersistedMetadataRef = useRef<string | null>(null)
 
   useEffect(() => {
+    if (!shouldPersistState) {
+      setState(seededState)
+      setTransactionHistory([])
+      setTransactionReceipts([])
+      setHasHydratedStorage(true)
+      return
+    }
     const nextState = readMultiplySessionState(walletId, sessionSeed)
     const metadata = readMultiplySessionMetadata(walletId)
     lastPersistedStateRef.current = serializeMultiplySystemState(nextState)
@@ -59,10 +81,10 @@ export function useMultiplySession({
     setTransactionHistory(metadata.transactionHistory)
     setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(metadata.transactionHistory))
     setHasHydratedStorage(true)
-  }, [walletId, sessionSeed])
+  }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
-    if (!hasHydratedStorage) return
+    if (!shouldPersistState || !hasHydratedStorage) return
     const serializedState = serializeMultiplySystemState(state)
     if (serializedState === lastPersistedStateRef.current) return
     isPersistingRef.current = true
@@ -71,10 +93,10 @@ export function useMultiplySession({
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [hasHydratedStorage, walletId, state])
+  }, [hasHydratedStorage, shouldPersistState, walletId, state])
 
   useEffect(() => {
-    if (!hasHydratedStorage) return
+    if (!shouldPersistState || !hasHydratedStorage) return
     const metadata = {
       transactionHistory,
       receipts: transactionReceipts,
@@ -87,10 +109,10 @@ export function useMultiplySession({
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [hasHydratedStorage, walletId, transactionHistory, transactionReceipts])
+  }, [hasHydratedStorage, shouldPersistState, walletId, transactionHistory, transactionReceipts])
 
   useEffect(() => {
-    if (typeof window === "undefined") return undefined
+    if (!shouldPersistState || typeof window === "undefined") return undefined
 
     const reloadFromStorage = () => {
       const nextState = readMultiplySessionState(walletId, sessionSeed)
@@ -130,20 +152,22 @@ export function useMultiplySession({
       window.removeEventListener("storage", handleStorage)
       window.removeEventListener(MULTIPLY_SESSION_SYNC_EVENT, handleSameTabSync)
     }
-  }, [sessionSeed, walletId])
+  }, [sessionSeed, shouldPersistState, walletId])
 
   const transactionAdapter = useMemo(
-    () =>
-      new SandboxMultiplyTransactionAdapter({
+    () => {
+      if (injectedTransactionAdapter) return injectedTransactionAdapter
+      return new SandboxMultiplyTransactionAdapter({
         readState: () => stateRef.current,
         writeState: setState,
-      }),
-    [],
+      })
+    },
+    [injectedTransactionAdapter],
   )
 
   const readAdapter = useMemo(
-    () => new SandboxMultiplyReadAdapter({ state, transactionHistory }),
-    [state, transactionHistory],
+    () => injectedReadAdapter ?? new SandboxMultiplyReadAdapter({ state, transactionHistory }),
+    [injectedReadAdapter, state, transactionHistory],
   )
 
   const hydrateMarketData = useCallback((snapshots: readonly MultiplyConvexSnapshot[]) => {
@@ -172,11 +196,11 @@ export function useMultiplySession({
   )
 
   const reset = useCallback(() => {
-    clearMultiplySessionState(walletId)
+    if (shouldPersistState) clearMultiplySessionState(walletId)
     setState(seededState)
     setTransactionHistory([])
     setTransactionReceipts([])
-  }, [seededState, walletId])
+  }, [seededState, shouldPersistState, walletId])
 
   return {
     walletId,

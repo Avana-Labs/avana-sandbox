@@ -4,7 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { calculateCreditMetrics, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
 import { deserializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
 import { mergeConvexMarketSnapshots, type ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
-import type { SandboxActionResult, SyntheticTransactionReceipt, TransactionHistoryItem, TransactionIntent } from "@/app/lib/borrow-system/contracts"
+import type {
+  BaseReadAdapter,
+  SandboxActionResult,
+  SyntheticTransactionReceipt,
+  TransactionAdapter,
+  TransactionHistoryItem,
+  TransactionIntent,
+} from "@/app/lib/borrow-system/contracts"
 import { createExecutionFingerprint } from "@/app/lib/borrow-system/execution-guard"
 import { buildLegacyTransactionHistory, buildSyntheticReceipts } from "@/app/lib/borrow-system/read-model"
 import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
@@ -35,10 +42,18 @@ function mergeReceipts(nextReceipt: SyntheticTransactionReceipt, receipts: Synth
 export function useBorrowSession({
   walletId,
   sessionSeed,
+  readAdapter: injectedReadAdapter,
+  transactionAdapter: injectedTransactionAdapter,
+  persistState,
 }: {
   walletId: string
   sessionSeed: string
+  readAdapter?: BaseReadAdapter
+  transactionAdapter?: TransactionAdapter
+  persistState?: boolean
 }) {
+  const adapterMode = injectedReadAdapter?.mode ?? injectedTransactionAdapter?.mode ?? "sandbox"
+  const shouldPersistState = persistState ?? adapterMode === "sandbox"
   const seededState = useMemo(() => deserializeBorrowSystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<BorrowSystemState>(seededState)
   const [transactionHistory, setTransactionHistory] = useState<TransactionHistoryItem[]>(() =>
@@ -56,6 +71,12 @@ export function useBorrowSession({
   }, [state])
 
   useEffect(() => {
+    if (!shouldPersistState) {
+      setState(seededState)
+      setTransactionHistory([])
+      setTransactionReceipts([])
+      return
+    }
     const nextState = readBorrowSessionState(walletId, sessionSeed)
     const metadata = readBorrowSessionMetadata(walletId)
     const fallbackHistory = buildLegacyTransactionHistory(nextState, walletId)
@@ -63,24 +84,25 @@ export function useBorrowSession({
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory.length > 0 ? metadata.transactionHistory : fallbackHistory)
     setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(fallbackHistory))
-  }, [walletId, sessionSeed])
+  }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
     // Skip while state is still the SSR seed (pre-hydration); persisting it here
     // would clobber richer data already in storage before the restore effect runs.
-    if (state === seededState) return
+    if (!shouldPersistState || state === seededState) return
     writeBorrowSessionState(walletId, state)
-  }, [walletId, state, seededState])
+  }, [shouldPersistState, walletId, state, seededState])
 
   useEffect(() => {
+    if (!shouldPersistState) return
     writeBorrowSessionMetadata(walletId, {
       transactionHistory,
       receipts: transactionReceipts,
     })
-  }, [transactionHistory, transactionReceipts, walletId])
+  }, [shouldPersistState, transactionHistory, transactionReceipts, walletId])
 
   useEffect(() => {
-    if (typeof window === "undefined") return undefined
+    if (!shouldPersistState || typeof window === "undefined") return undefined
 
     const handleStorage = (event: StorageEvent) => {
       if (event.key == null || !event.key.endsWith(`:${walletId}`)) return
@@ -96,15 +118,15 @@ export function useBorrowSession({
 
     window.addEventListener("storage", handleStorage)
     return () => window.removeEventListener("storage", handleStorage)
-  }, [sessionSeed, walletId])
+  }, [sessionSeed, shouldPersistState, walletId])
 
   const reset = useCallback(() => {
-    clearBorrowSessionState(walletId)
+    if (shouldPersistState) clearBorrowSessionState(walletId)
     setState(seededState)
     const resetHistory = buildLegacyTransactionHistory(seededState, walletId)
     setTransactionHistory(resetHistory)
     setTransactionReceipts(buildSyntheticReceipts(resetHistory))
-  }, [seededState, walletId])
+  }, [seededState, shouldPersistState, walletId])
 
   /**
    * Overlay Convex market reference data (liquidity/rates) onto the session so the
@@ -118,15 +140,17 @@ export function useBorrowSession({
   }, [])
 
   const transactionAdapter = useMemo(
-    () =>
-      new SandboxTransactionAdapter({
+    () => {
+      if (injectedTransactionAdapter) return injectedTransactionAdapter
+      return new SandboxTransactionAdapter({
         readState: () => stateRef.current,
         writeState: (nextState) => {
           stateRef.current = nextState
           setState(nextState)
         },
-      }),
-    [],
+      })
+    },
+    [injectedTransactionAdapter],
   )
 
   const createIntent = useCallback((action: BorrowAction) => transactionAdapter.createIntent(action), [transactionAdapter])
@@ -161,12 +185,14 @@ export function useBorrowSession({
     [transactionAdapter],
   )
   const readAdapter = useMemo(
-    () =>
-      new SandboxBorrowReadAdapter({
+    () => {
+      if (injectedReadAdapter) return injectedReadAdapter
+      return new SandboxBorrowReadAdapter({
         state,
         transactionHistory,
-      }),
-    [state, transactionHistory],
+      })
+    },
+    [injectedReadAdapter, state, transactionHistory],
   )
 
   const metrics = useMemo(() => calculateCreditMetrics(state, walletId), [state, walletId])
