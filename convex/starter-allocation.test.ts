@@ -51,9 +51,21 @@ describe("starter allocation planner", () => {
     expect(selected.size).toBe(MARKETS.length)
   })
 
-  test("fails closed when a required market scope is empty", () => {
-    expect(() => buildStarterAllocationPlan("0xabc", MARKETS.filter((market) => market.scope !== "multiply"))).toThrow(
-      /STARTER_CATALOG_INCOMPLETE/,
-    )
+  test("redistributes (never hard-fails) when a market scope is missing", () => {
+    // Onboarding must complete even on a partial seed — the missing scope's budget is
+    // spread over the buckets that do have markets, keeping the total at $1M.
+    const plan = buildStarterAllocationPlan("0xabc", MARKETS.filter((market) => market.scope !== "multiply"))
+    expect(plan.multiply).toHaveLength(0)
+    expect(plan.liquid.length).toBeGreaterThan(0)
+    const total = [...plan.liquid, ...plan.collateral, ...plan.lend, ...plan.multiply].reduce((sum, leg) => sum + leg.amountUsd, 0)
+    expect(Math.round(total * 100)).toBe(STARTER_EQUITY_USD * 100)
+  })
+
+  test("returns an empty plan (no throw) when the catalog is entirely unseeded", () => {
+    const plan = buildStarterAllocationPlan("0xabc", [])
+    expect(plan.liquid).toHaveLength(0)
+    expect(plan.collateral).toHaveLength(0)
+    expect(plan.lend).toHaveLength(0)
+    expect(plan.multiply).toHaveLength(0)
   })
 })
