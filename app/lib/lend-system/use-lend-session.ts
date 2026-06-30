@@ -38,12 +38,14 @@ export function useLendSession({
   readAdapter: injectedReadAdapter,
   transactionAdapter: injectedTransactionAdapter,
   persistState,
+  persistTransaction,
 }: {
   walletId: string
   sessionSeed: string
   readAdapter?: LendReadAdapter
   transactionAdapter?: LendTransactionAdapter
   persistState?: boolean
+  persistTransaction?: (result: LendSandboxActionResult) => Promise<LendTransactionResult>
 }) {
   const adapterMode = injectedReadAdapter?.mode ?? injectedTransactionAdapter?.mode ?? "sandbox"
   const shouldPersistState = persistState ?? adapterMode === "sandbox"
@@ -178,13 +180,23 @@ export function useLendSession({
 
   const executeTransaction = useCallback(
     async (intent: LendTransactionIntent): Promise<LendSandboxActionResult> => {
+      const previousState = stateRef.current
       const result = await transactionAdapter.executeTransaction(intent)
-      setState(result.state)
-      setTransactionHistory((current) => mergeHistory(result.historyItem, current))
-      setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
-      return result
+      try {
+        const receipt = persistTransaction ? await persistTransaction(result) : result.receipt
+        const historyItem = { ...result.historyItem, id: receipt.id, hash: receipt.hash, timestamp: receipt.timestamp }
+        const persistedResult = { ...result, receipt, historyItem }
+        setState(result.state)
+        setTransactionHistory((current) => mergeHistory(historyItem, current))
+        setTransactionReceipts((current) => mergeReceipts(receipt, current))
+        return persistedResult
+      } catch (error) {
+        stateRef.current = previousState
+        setState(previousState)
+        throw error
+      }
     },
-    [transactionAdapter],
+    [persistTransaction, transactionAdapter],
   )
 
   const claimRewards = useCallback(async () => {
@@ -192,12 +204,8 @@ export function useLendSession({
       type: "claim",
       walletId,
     })
-    const result = await transactionAdapter.executeTransaction(intent)
-    setState(result.state)
-    setTransactionHistory((current) => mergeHistory(result.historyItem, current))
-    setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
-    return result
-  }, [transactionAdapter, walletId])
+    return executeTransaction(intent)
+  }, [executeTransaction, transactionAdapter, walletId])
 
   const reset = useCallback(() => {
     if (shouldPersistState) {
