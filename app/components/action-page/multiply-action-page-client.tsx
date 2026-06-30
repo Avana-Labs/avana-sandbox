@@ -137,11 +137,10 @@ export function MultiplyActionPageClient({
       kind === "deleverage"
         ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
         : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
-    const options = buildMultiplierOptions(effectiveMax)
-    const clamped = clampMultiplierToOptions(
-      Math.min(effectiveMax, Math.max(multiplierMin, parsed)),
-      options,
-    )
+    // Clamp to the valid RANGE only. Snapping to a handful of discrete presets made
+    // the slider feel broken (e.g. a 1.8x-max market had just 1.5/1.8 reachable);
+    // the ruler steps in 0.1 within [min, max] and stays continuous.
+    const clamped = Math.min(effectiveMax, Math.max(multiplierMin, parsed))
     const next = String(Number(clamped.toFixed(2)))
     if (next !== multiplier) setMultiplier(next)
   }, [kind, market, multiplier, multiplierMin, position?.multiplier])
@@ -360,6 +359,12 @@ export function MultiplyActionPageClient({
   const shellDensity = isHomeLayout ? "home" : "default"
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const marketLabel = formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol)
+  // The only input is the collateral asset. Spell out the loop so the single-token
+  // input reads clearly (no second token icon implying a dual input).
+  const loopHint =
+    kind === "multiply"
+      ? `You supply ${market.collateralAsset.symbol}. We borrow ${market.borrowAsset.symbol} against it, swap back to ${market.collateralAsset.symbol}, and repeat to your target leverage.`
+      : null
   const effectiveMultiplierMax =
     kind === "deleverage"
       ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
@@ -376,7 +381,6 @@ export function MultiplyActionPageClient({
       }}
       preview={previewUi}
       assetSymbol={market.collateralAsset.symbol}
-      borrowSymbol={market.borrowAsset.symbol}
       assetLabel={marketLabel}
       assetOptions={!validInitialMarketId ? marketOptions : undefined}
       selectedAssetId={market.id}
@@ -387,17 +391,20 @@ export function MultiplyActionPageClient({
       }}
       amountVariant="raised"
       amountFooter={
-        <ActionLeverageRuler
-          variant="embedded"
-          value={multiplier}
-          onChange={(value) => {
-            setHasUserInput(true)
-            setMultiplier(value)
-          }}
-          min={multiplierMin}
-          max={effectiveMultiplierMax}
-          step={0.1}
-        />
+        <>
+          {loopHint ? <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{loopHint}</p> : null}
+          <ActionLeverageRuler
+            variant="embedded"
+            value={multiplier}
+            onChange={(value) => {
+              setHasUserInput(true)
+              setMultiplier(value)
+            }}
+            min={multiplierMin}
+            max={effectiveMultiplierMax}
+            step={0.1}
+          />
+        </>
       }
     />
   ) : null
@@ -457,7 +464,6 @@ export function MultiplyActionPageClient({
           }}
           preview={previewUi}
           assetSymbol={market.collateralAsset.symbol}
-          borrowSymbol={market.borrowAsset.symbol}
           assetOptions={marketOptions}
           selectedAssetId={market.id}
           onAssetSelect={(id) => {
@@ -465,6 +471,7 @@ export function MultiplyActionPageClient({
             setSelectedMarketId(id)
             setAmount("")
           }}
+          leverageHint={loopHint}
           multiplier={multiplier}
           onMultiplierChange={(value) => {
             setHasUserInput(true)
