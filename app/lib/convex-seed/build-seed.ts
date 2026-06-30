@@ -37,6 +37,19 @@ export type SeedMarketRow = {
   symbol: string
   venueLabel?: string
   category?: "stable" | "crypto"
+  description?: string
+  iconUrl?: string
+  spokeId?: string
+  feeTier?: string
+  maxLtvPct?: number
+  visuals?: Array<{
+    symbol: string
+    shortLabel: string
+    bgClassName: string
+    textClassName: string
+    iconUrl?: string
+  }>
+  resources?: Array<{ label: string; href: string }>
   createdAt: number
 }
 
@@ -199,6 +212,18 @@ function poolMarketRow(pool: BorrowPoolRow, createdAt: number): SeedMarketRow {
     name: pool.name,
     symbol: `${a?.symbol ?? "LP"}/${b?.symbol ?? "LP"}`,
     venueLabel: pool.venue,
+    description: `${pool.name} liquidity position on ${pool.venue}.`,
+    spokeId: pool.spoke,
+    feeTier: pool.feeTier,
+    maxLtvPct: pool.ltv,
+    visuals: pool.visuals.map((visual) => ({
+      symbol: visual.symbol,
+      shortLabel: visual.shortLabel,
+      bgClassName: visual.bgClass,
+      textClassName: visual.textClass,
+      iconUrl: visual.iconUrl,
+    })),
+    resources: [{ label: "Open market", href: `/borrow/markets/${pool.id}` }],
     createdAt,
   }
 }
@@ -211,6 +236,19 @@ function assetMarketRow(asset: SpokeBorrowableRecord, createdAt: number): SeedMa
     name: asset.name,
     symbol: asset.symbol,
     category: schemaCategory(asset.category),
+    description: asset.subtitle,
+    iconUrl: asset.visual.iconUrl,
+    spokeId: asset.spokeId,
+    visuals: [
+      {
+        symbol: asset.visual.symbol,
+        shortLabel: asset.visual.shortLabel,
+        bgClassName: asset.visual.bgClass,
+        textClassName: asset.visual.textClass,
+        iconUrl: asset.visual.iconUrl,
+      },
+    ],
+    resources: [{ label: "Open asset", href: `/borrow/assets/${asset.id}` }],
     createdAt,
   }
 }
@@ -224,6 +262,8 @@ function lendMarketRow(market: LendMarket, createdAt: number): SeedMarketRow {
     symbol: market.asset.symbol,
     // Low-tier lend markets are the stablecoins; everything else is volatile.
     category: market.riskTier === "low" ? "stable" : "crypto",
+    description: `Supply ${market.asset.symbol} to the Avana lending market.`,
+    resources: [{ label: "Open market", href: `/lend/markets/${market.marketId}` }],
     createdAt,
   }
 }
@@ -273,6 +313,8 @@ function multiplyMarketRow(market: MultiplyMarketRecord, createdAt: number): See
     name: `${market.collateralAsset.symbol} / ${market.borrowAsset.symbol}`,
     symbol: market.collateralAsset.symbol,
     category: market.risk.riskTier === "low" ? "stable" : "crypto",
+    description: `Multiply ${market.collateralAsset.symbol} exposure against ${market.borrowAsset.symbol}.`,
+    resources: [{ label: "Open market", href: `/multiply/markets/${market.id}` }],
     createdAt,
   }
 }

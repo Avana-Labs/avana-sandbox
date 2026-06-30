@@ -3,7 +3,7 @@ import {
   MULTIPLY_TOKEN_BORROW_APYS,
   MULTIPLY_TOKEN_LOGOS,
   MULTIPLY_TOKEN_SUPPLY_APYS,
-} from "@/app/lib/data/mock/shared/multiply"
+} from "@/app/lib/data/catalog/multiply"
 import type { MultiplyTrendingSnapshot } from "@/app/lib/multiply-system/read-model"
 
 export type MultiplyMarket = {

@@ -23,7 +23,7 @@ import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/l
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import { normalizeBorrowAssetRouteId, normalizeBorrowMarketRouteId } from "@/app/lib/borrow-routes"
-import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
+import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import type { AssetDetail, PoolDetail } from "./types"
 
 /**
