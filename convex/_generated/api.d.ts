@@ -20,6 +20,7 @@ import type * as risk from "../risk.js";
 import type * as sandbox_auth from "../sandbox/auth.js";
 import type * as sandbox_liquidation from "../sandbox/liquidation.js";
 import type * as sandbox_onboarding from "../sandbox/onboarding.js";
+import type * as sandbox_rewards from "../sandbox/rewards.js";
 import type * as sandbox_transactions from "../sandbox/transactions.js";
 import type * as seed from "../seed.js";
 
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   "sandbox/auth": typeof sandbox_auth;
   "sandbox/liquidation": typeof sandbox_liquidation;
   "sandbox/onboarding": typeof sandbox_onboarding;
+  "sandbox/rewards": typeof sandbox_rewards;
   "sandbox/transactions": typeof sandbox_transactions;
   seed: typeof seed;
 }>;

@@ -345,6 +345,13 @@ export default defineSchema({
     at: v.number(),
   }).index("by_wallet_at", ["wallet", "at"]),
 
+  /** Wallet-scoped rewards engine state for reactive sandbox rehydration. */
+  sandboxRewards: defineTable({
+    wallet: v.string(),
+    stateJson: v.string(),
+    updatedAt: v.number(),
+  }).index("by_wallet", ["wallet"]),
+
   // ── Phase 2 (cont.): wallet-scoped FINANCIAL state (synthetic; never prod truth) ──
   //
   // ENCODING CONTRACT: the credit-/multiply-engines work in bigint fixed-point —
