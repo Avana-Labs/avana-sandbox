@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { getPoolDetail } from "@/app/lib/borrow-detail"
+import { getPoolDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
 import { BorrowMarketDetailClientShell } from "./page-client-shell"
 
 type PageProps = {
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
-  const detail = getPoolDetail(marketId)
+  const detail = await getPoolDetailFromConvex(marketId)
   if (!detail) notFound()
   return <BorrowMarketDetailClientShell detail={detail} />
 }

@@ -11,6 +11,8 @@ import {
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { formatTokenPrice } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
@@ -159,6 +161,7 @@ function LoanAssetsSection({
 }) {
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "borrows" | "liquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const priceFor = usePriceFor()
 
   const toggleSort = (nextKey: typeof sortKey) => {
     if (sortKey === nextKey) {
@@ -278,7 +281,10 @@ function LoanAssetsSection({
                           {asset.name}
                         </div>
                         <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
-                          {asset.symbol}
+                          {(() => {
+                            const price = priceFor(asset.symbol)
+                            return price !== undefined ? formatTokenPrice(price) : asset.symbol
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -335,6 +341,7 @@ function AssetsSection({
   onBorrow: (asset: BorrowableAsset) => void
   hideHeader?: boolean
 }) {
+  const priceFor = usePriceFor()
   return (
     <section className="mb-2">
       {!hideHeader ? (
@@ -368,7 +375,15 @@ function AssetsSection({
                     {index + 1}
                   </td>
                   <td className={`py-2.5 pl-5 ${TABLE_ROW_HOVER_BG}`}>
-                    <TokenSingleCell visual={asset.visual} name={asset.name} subtitle={asset.subtitle} size="md" />
+                    <TokenSingleCell
+                      visual={asset.visual}
+                      name={asset.name}
+                      subtitle={(() => {
+                        const p = priceFor(asset.symbol)
+                        return p !== undefined ? formatTokenPrice(p) : asset.subtitle
+                      })()}
+                      size="md"
+                    />
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                     <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>

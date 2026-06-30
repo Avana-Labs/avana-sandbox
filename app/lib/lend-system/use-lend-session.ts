@@ -14,6 +14,7 @@ import type {
 } from "./contracts"
 import { SandboxLendReadAdapter } from "./sandbox-read-adapter"
 import { SandboxLendTransactionAdapter } from "./sandbox-transaction-adapter"
+import { mergeConvexLendSnapshots, type LendConvexSnapshot } from "./market-hydration"
 import {
   clearLendSessionState,
   readLendSessionMetadata,
@@ -164,6 +165,10 @@ export function useLendSession({
     [injectedReadAdapter, state, transactionHistory],
   )
 
+  const hydrateMarketData = useCallback((snapshots: readonly LendConvexSnapshot[]) => {
+    setState((prev) => mergeConvexLendSnapshots(prev, snapshots))
+  }, [])
+
   const createIntent = useCallback((action: LendAction) => transactionAdapter.createIntent(action), [transactionAdapter])
 
   const previewTransaction = useCallback(
@@ -209,6 +214,7 @@ export function useLendSession({
     readAdapter,
     transactionHistory,
     transactionReceipts,
+    hydrateMarketData,
     createIntent,
     previewTransaction,
     executeTransaction,

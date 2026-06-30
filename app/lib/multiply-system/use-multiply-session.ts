@@ -7,6 +7,7 @@ import type { MultiplySandboxActionResult, MultiplyTransactionHistoryItem, Multi
 import { buildSyntheticReceipts } from "./read-model"
 import { SandboxMultiplyReadAdapter } from "./sandbox-read-adapter"
 import { SandboxMultiplyTransactionAdapter } from "./sandbox-transaction-adapter"
+import { mergeConvexMultiplySnapshots, type MultiplyConvexSnapshot } from "./market-hydration"
 import {
   clearMultiplySessionState,
   readMultiplySessionMetadata,
@@ -145,6 +146,10 @@ export function useMultiplySession({
     [state, transactionHistory],
   )
 
+  const hydrateMarketData = useCallback((snapshots: readonly MultiplyConvexSnapshot[]) => {
+    setState((prev) => mergeConvexMultiplySnapshots(prev, snapshots))
+  }, [])
+
   const createIntent = useCallback(
     (action: MultiplyAction) => transactionAdapter.createIntent(action),
     [transactionAdapter],
@@ -179,6 +184,7 @@ export function useMultiplySession({
     readAdapter,
     transactionHistory,
     transactionReceipts,
+    hydrateMarketData,
     createIntent,
     previewTransaction,
     executeTransaction,

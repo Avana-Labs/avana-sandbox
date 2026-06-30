@@ -17,6 +17,8 @@ import {
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { pairExchangeRateLabel } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
 
@@ -101,6 +103,12 @@ function SortIcon() {
 }
 
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
+  const priceFor = usePriceFor()
+  // Pair exchange rate (e.g. "1 ETH = 1,612 USDC") from the real price oracle;
+  // falls back to TVL when either token is unpriced / the oracle is unavailable.
+  const subtitle =
+    pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
+    `${formatCompactUsd(pool.tvlUsd)} TVL`
   return (
     <div className="flex min-w-0 items-center gap-4">
       <div className="flex items-center">
@@ -116,7 +124,7 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
           {pool.visuals[0].symbol} / {pool.visuals[1].symbol}
         </div>
         <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-          {formatCompactUsd(pool.tvlUsd)} TVL
+          {subtitle}
         </div>
       </div>
     </div>
@@ -240,7 +248,7 @@ function CollateralDesktopTable({
                     sortKey === "supplied" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>TOTAL SUPPLIED</span>
+                  <span>AVAILABLE</span>
                   <SortIcon />
                 </button>
               </th>
@@ -343,16 +351,14 @@ function SpokeDesktopSection({
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
+  // Each spoke/category owns its own Markets/Assets toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
-
   return (
     <section className="mb-2">
       <div className="mt-4 overflow-hidden rounded-[20px] bg-transparent md:shadow-none">
-        <div className="flex flex-col gap-3 rounded-t-[20px] bg-transparent px-1 py-2 md:flex-row md:items-center md:gap-4 md:px-4 md:py-3">
+        <div className="flex items-center justify-between gap-3 rounded-t-[20px] bg-transparent px-1 py-2 md:px-4 md:py-3">
+          <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
           <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
-          <h3 className="text-[16px] font-normal tracking-tight text-foreground md:ml-auto md:text-[18px]">
-            {spoke.label}
-          </h3>
         </div>
         <div className="bg-transparent">
           {activeTab === "collateral" ? (
@@ -411,18 +417,18 @@ function SpokeMobileSection({
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
+  // Each spoke/category owns its own Markets/Assets toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
+  const priceFor = usePriceFor()
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
   return (
     <section className="space-y-2">
-      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:rounded-[18px] md:border md:border-black/5 md:bg-transparent md:px-4 md:py-2 md:shadow-none dark:md:border-white/10">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
         <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
-        <h3 className="text-[16px] font-normal tracking-tight text-foreground md:ml-auto md:text-[18px]">
-          {spoke.label}
-        </h3>
       </div>
 
       <div className="mt-4">
@@ -435,7 +441,10 @@ function SpokeMobileSection({
                     <TokenPairCell
                       visuals={pool.visuals}
                       name={pool.name}
-                      subtitle={`${formatCompactUsd(pool.tvlUsd)} TVL`}
+                      subtitle={
+                        pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
+                        `${formatCompactUsd(pool.tvlUsd)} TVL`
+                      }
                       size="md"
                     />
                     <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
@@ -456,7 +465,7 @@ function SpokeMobileSection({
                       flashGoodDirection="down"
                     />
                     <MobileField
-                      label="Supplied"
+                      label="Available"
                       value={formatCompactUsd(pool.availableUsd)}
                       flashValue={pool.availableUsd}
                       flashGoodDirection="up"

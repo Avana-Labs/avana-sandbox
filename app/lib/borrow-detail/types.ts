@@ -40,6 +40,8 @@
 
 import type { BorrowAssetVisual, BorrowPoolRow } from "@/app/lib/borrow-sim"
 import type { SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
+import type { ChartFeed } from "@/app/components/charts"
+import type { FaqContent } from "./content-model"
 
 // -------------------------------------------------------------------------
 // Primitive building blocks
@@ -306,11 +308,16 @@ export type PoolDetail = {
   engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
+  /** General FAQs (plain-text answers). @convex-query content.getContent */
+  faqs: FaqContent[]
   transactions: TxHistoryRow[]
   related: RelatedPoolSummary[]
   governanceNotes: Array<{ title: string; body: string; tone?: "info" | "warning" | "positive" }>
   /** Passthrough reference to the table row so sidebars can stay in sync. */
   row: BorrowPoolRow
+  /** Convex-backed hero chart feed (TVL / total supplied). Set only by the
+   * Convex detail builder; the hero falls back to the local feed when absent. */
+  heroFeed?: ChartFeed
 }
 
 // -------------------------------------------------------------------------
@@ -412,10 +419,15 @@ export type AssetDetail = {
   engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
+  /** General FAQs (plain-text answers). @convex-query content.getContent */
+  faqs: FaqContent[]
   transactions: TxHistoryRow[]
   related: RelatedAssetSummary[]
   /** Passthrough reference so sidebars can stay in sync. */
   row: SpokeBorrowableRecord
+  /** Convex-backed hero chart feed (total borrows). Set only by the Convex detail
+   * builder; the hero falls back to the local feed when absent. */
+  heroFeed?: ChartFeed
 }
 
 // -------------------------------------------------------------------------
