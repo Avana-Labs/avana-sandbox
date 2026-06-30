@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
-import { REWARDS_PROMO_TABS } from "@/app/lib/data/mock/shared/rewards"
+import { REWARDS_PROMO_TABS } from "@/app/lib/data/rewards/catalog"
 import { buildDefaultRewardsCatalog, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import { RewardsPageClient } from "@/app/rewards/rewards-page-client"
 

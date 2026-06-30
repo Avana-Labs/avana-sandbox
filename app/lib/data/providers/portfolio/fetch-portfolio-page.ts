@@ -1,7 +1,6 @@
 import {
   executeSourceLoad,
   normalizeDataSourceError,
-  shouldFallbackFromError,
   type DataSourceRequestContext,
 } from "@/app/lib/data/core/source-runtime"
 import { mockPortfolioPageSource } from "@/app/lib/data/mock/wallet/portfolio/source"
@@ -18,7 +17,9 @@ function getPortfolioPageSource(source?: PortfolioPageSource) {
 
 function getPortfolioPageFallback(source?: PortfolioPageSource) {
   if (source || resolveDataSourceMode() === "mock") return undefined
-  return mockPortfolioPageSource
+  // Live mode is strict: authenticated pages must surface missing/unavailable
+  // Convex data instead of silently rendering another wallet's mock portfolio.
+  return undefined
 }
 
 export async function fetchPortfolioPage(
@@ -51,18 +52,11 @@ export async function fetchPortfolioPage(
 
 export function resolvePortfolioWalletProfileId(source?: PortfolioPageSource) {
   const primarySource = getPortfolioPageSource(source)
-  const fallbackSource = getPortfolioPageFallback(source)
 
   try {
     return primarySource.getDefaultWalletProfileId()
   } catch (error) {
-    const normalizedError = normalizeDataSourceError(error, primarySource.adapter, "getDefaultWalletProfileId")
-
-    if (!fallbackSource || !shouldFallbackFromError(normalizedError)) {
-      throw normalizedError
-    }
-
-    return fallbackSource.getDefaultWalletProfileId()
+    throw normalizeDataSourceError(error, primarySource.adapter, "getDefaultWalletProfileId")
   }
 }
 
