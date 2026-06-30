@@ -114,7 +114,7 @@ function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowA
   })
 
   const postBorrowMetrics = calculateSpokeCreditMetrics(state, action.walletId, market.spokeId)
-  if (postBorrowMetrics.totalBorrowedUsd6 > 0n && postBorrowMetrics.healthFactorWad < WAD) {
+  if (postBorrowMetrics.totalBorrowedUsd6 > 0n && postBorrowMetrics.healthFactorWad <= WAD) {
     throw new Error(`Borrowing would make spoke ${market.spokeId} insolvent`)
   }
 
@@ -264,12 +264,12 @@ function applyRemoveCollateralAction(state: BorrowSystemState, action: Extract<B
   }
 
   const walletMetrics = calculateCreditMetrics(state, action.walletId)
-  if (walletMetrics.totalBorrowedUsd6 > 0n && walletMetrics.healthFactorWad < WAD) {
+  if (walletMetrics.totalBorrowedUsd6 > 0n && walletMetrics.healthFactorWad <= WAD) {
     throw new Error(`Removing collateral would make wallet ${action.walletId} insolvent`)
   }
 
   const spokeMetrics = calculateSpokeCreditMetrics(state, action.walletId, market.spokeId)
-  if (spokeMetrics.totalBorrowedUsd6 > 0n && spokeMetrics.healthFactorWad < WAD) {
+  if (spokeMetrics.totalBorrowedUsd6 > 0n && spokeMetrics.healthFactorWad <= WAD) {
     throw new Error(`Removing collateral would make spoke ${market.spokeId} insolvent`)
   }
 
