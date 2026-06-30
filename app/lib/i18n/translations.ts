@@ -26,7 +26,14 @@ const ZH_CN: TranslationDictionary = {
   "Dollar amounts": "金额显示",
   "Connect Wallet": "连接钱包",
   "Sign in": "登录",
-  Settings: "设置",
+  Settings: "设置",  "Connecting…": "连接中…",
+  "Signing in…": "登录中…",
+  "Get started": "开始",
+  "Review": "审核",
+  "Confirm": "确认",
+  "Continue": "继续",
+  "Cancel": "取消",
+  "Back": "返回",
 }
 
 const ZH_TW: TranslationDictionary = {
@@ -43,7 +50,14 @@ const ZH_TW: TranslationDictionary = {
   "Dollar amounts": "金額顯示",
   "Connect Wallet": "連接錢包",
   "Sign in": "登入",
-  Settings: "設定",
+  Settings: "設定",  "Connecting…": "連接中…",
+  "Signing in…": "登入中…",
+  "Get started": "開始",
+  "Review": "審核",
+  "Confirm": "確認",
+  "Continue": "繼續",
+  "Cancel": "取消",
+  "Back": "返回",
 }
 
 const ES: TranslationDictionary = {
@@ -60,7 +74,14 @@ const ES: TranslationDictionary = {
   "Dollar amounts": "Importes",
   "Connect Wallet": "Conectar cartera",
   "Sign in": "Iniciar sesión",
-  Settings: "Ajustes",
+  Settings: "Ajustes",  "Connecting…": "Conectando…",
+  "Signing in…": "Iniciando sesión…",
+  "Get started": "Empezar",
+  "Review": "Revisar",
+  "Confirm": "Confirmar",
+  "Continue": "Continuar",
+  "Cancel": "Cancelar",
+  "Back": "Atrás",
 }
 
 const FR: TranslationDictionary = {
@@ -77,7 +98,14 @@ const FR: TranslationDictionary = {
   "Dollar amounts": "Montants",
   "Connect Wallet": "Connecter le portefeuille",
   "Sign in": "Se connecter",
-  Settings: "Paramètres",
+  Settings: "Paramètres",  "Connecting…": "Connexion…",
+  "Signing in…": "Connexion…",
+  "Get started": "Commencer",
+  "Review": "Vérifier",
+  "Confirm": "Confirmer",
+  "Continue": "Continuer",
+  "Cancel": "Annuler",
+  "Back": "Retour",
 }
 
 const PT: TranslationDictionary = {
@@ -94,7 +122,14 @@ const PT: TranslationDictionary = {
   "Dollar amounts": "Valores",
   "Connect Wallet": "Conectar carteira",
   "Sign in": "Entrar",
-  Settings: "Configurações",
+  Settings: "Configurações",  "Connecting…": "Conectando…",
+  "Signing in…": "Entrando…",
+  "Get started": "Começar",
+  "Review": "Revisar",
+  "Confirm": "Confirmar",
+  "Continue": "Continuar",
+  "Cancel": "Cancelar",
+  "Back": "Voltar",
 }
 
 const NL: TranslationDictionary = {
@@ -111,7 +146,14 @@ const NL: TranslationDictionary = {
   "Dollar amounts": "Bedragen",
   "Connect Wallet": "Wallet verbinden",
   "Sign in": "Inloggen",
-  Settings: "Instellingen",
+  Settings: "Instellingen",  "Connecting…": "Verbinden…",
+  "Signing in…": "Inloggen…",
+  "Get started": "Aan de slag",
+  "Review": "Controleren",
+  "Confirm": "Bevestigen",
+  "Continue": "Doorgaan",
+  "Cancel": "Annuleren",
+  "Back": "Terug",
 }
 
 const ID: TranslationDictionary = {
@@ -128,7 +170,14 @@ const ID: TranslationDictionary = {
   "Dollar amounts": "Nilai",
   "Connect Wallet": "Hubungkan dompet",
   "Sign in": "Masuk",
-  Settings: "Pengaturan",
+  Settings: "Pengaturan",  "Connecting…": "Menghubungkan…",
+  "Signing in…": "Masuk…",
+  "Get started": "Mulai",
+  "Review": "Tinjau",
+  "Confirm": "Konfirmasi",
+  "Continue": "Lanjutkan",
+  "Cancel": "Batal",
+  "Back": "Kembali",
 }
 
 const JA: TranslationDictionary = {
@@ -145,7 +194,14 @@ const JA: TranslationDictionary = {
   "Dollar amounts": "金額表示",
   "Connect Wallet": "ウォレットを接続",
   "Sign in": "サインイン",
-  Settings: "設定",
+  Settings: "設定",  "Connecting…": "接続中…",
+  "Signing in…": "サインイン中…",
+  "Get started": "はじめる",
+  "Review": "確認",
+  "Confirm": "実行",
+  "Continue": "続ける",
+  "Cancel": "キャンセル",
+  "Back": "戻る",
 }
 
 const KO: TranslationDictionary = {
@@ -162,7 +218,14 @@ const KO: TranslationDictionary = {
   "Dollar amounts": "금액 표시",
   "Connect Wallet": "지갑 연결",
   "Sign in": "로그인",
-  Settings: "설정",
+  Settings: "설정",  "Connecting…": "연결 중…",
+  "Signing in…": "로그인 중…",
+  "Get started": "시작하기",
+  "Review": "검토",
+  "Confirm": "확인",
+  "Continue": "계속",
+  "Cancel": "취소",
+  "Back": "뒤로",
 }
 
 const RU: TranslationDictionary = {
@@ -179,7 +242,14 @@ const RU: TranslationDictionary = {
   "Dollar amounts": "Суммы",
   "Connect Wallet": "Подключить кошелёк",
   "Sign in": "Войти",
-  Settings: "Настройки",
+  Settings: "Настройки",  "Connecting…": "Подключение…",
+  "Signing in…": "Вход…",
+  "Get started": "Начать",
+  "Review": "Проверить",
+  "Confirm": "Подтвердить",
+  "Continue": "Продолжить",
+  "Cancel": "Отмена",
+  "Back": "Назад",
 }
 
 export const TRANSLATIONS: Partial<Record<LanguageCode, TranslationDictionary>> = {
