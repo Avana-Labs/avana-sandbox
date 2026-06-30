@@ -217,6 +217,19 @@ export const confirmTweet = mutation({
   },
 })
 
+/** Persist the claim loading state before the atomic allocation mutation runs. */
+export const beginClaim = mutation({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const profile = await profileForWallet(ctx, wallet)
+    if (!profile) throw new Error("NO_PROFILE: start onboarding before claiming.")
+    if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
+    await ctx.db.patch(profile._id, { onboardingStep: "claimPending" })
+    return "claimPending" as const
+  },
+})
+
 /** Final step: enforce caps server-side, allocate the basket, mark done — or waitlist. */
 export const claim = mutation({
   args: { wallet: v.string() },
