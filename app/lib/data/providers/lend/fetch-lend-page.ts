@@ -47,9 +47,8 @@ function getLendPageSource(source?: LendPageSource) {
   return mode === "mock" ? mockLendPageSource : liveLendPageSource
 }
 
-function getLendPageFallback(source?: LendPageSource) {
-  if (source || resolveDataSourceMode() === "mock") return undefined
-  return mockLendPageSource
+function getLendPageFallback() {
+  return undefined
 }
 
 export async function fetchLendPage(
@@ -58,7 +57,7 @@ export async function fetchLendPage(
 ): Promise<LendPageData> {
   const response = await executeSourceLoad<LendPageSource, unknown>({
     primary: getLendPageSource(source),
-    fallback: getLendPageFallback(source),
+    fallback: getLendPageFallback(),
     operation: "getLendPageData",
     context,
     schema: lendPageSchema,

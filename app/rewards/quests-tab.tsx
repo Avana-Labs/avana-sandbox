@@ -21,7 +21,7 @@ import {
   type RewardsPromoTabId,
   type RewardsQuestIconId,
   type RewardsQuest,
-} from "@/app/lib/data/mock/shared/rewards"
+} from "@/app/lib/data/rewards/catalog"
 import { Card } from "@/components/ui/card"
 
 const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {

@@ -4,12 +4,12 @@ import { fetchConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydra
 import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
 import {
   createDataSourceAdapter,
-  createUnsupportedSourceError,
+  DataSourceError,
   type DataSourceAdapter,
   type DataSourceRequestContext,
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
-import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
+import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import type { BorrowPageData } from "./types"
 
@@ -58,6 +58,22 @@ export const mockBorrowPageSource: BorrowPageSource = {
 export const liveBorrowPageSource: BorrowPageSource = {
   adapter: liveBorrowPageAdapter,
   async getBorrowPageData() {
-    throw createUnsupportedSourceError(liveBorrowPageAdapter, "getBorrowPageData")
+    const walletId = "catalog"
+    const snapshots = await fetchConvexMarketSnapshots()
+    if (snapshots.length === 0) {
+      throw new DataSourceError({
+        code: "unavailable",
+        sourceId: liveBorrowPageAdapter.id,
+        operation: "getBorrowPageData",
+        message: "Convex returned no Borrow market snapshots. Seed the market catalog before enabling live mode.",
+        retryable: true,
+      })
+    }
+    const state = mergeConvexMarketSnapshots(buildMockBorrowSystemState(walletId), snapshots)
+    const readAdapter = new SandboxBorrowReadAdapter({ state })
+    return {
+      fetchedAt: new Date().toISOString(),
+      data: await readAdapter.readBorrowPage(walletId),
+    }
   },
 }

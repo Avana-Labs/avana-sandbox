@@ -608,7 +608,7 @@ export function calculateClaimPreview(
   }
 }
 
-export function calculateSafeRemovePercent(pool: HomeCollateralPool, currentDebtUsd: number) {
+function calculateSafeRemovePercent(pool: HomeCollateralPool, currentDebtUsd: number) {
   if (currentDebtUsd <= 0) {
     return 100
   }
@@ -635,20 +635,5 @@ export function calculateRemovePreview(pool: HomeCollateralPool, currentDebtUsd:
     isUnsafe,
     liquidationThresholdAfterUsd: Math.round(afterCollateralUsd * 0.805),
     ctaLabel: `Remove ${percent}% · ${formatCompactUsd(removeUsd)}`,
-  }
-}
-
-export function getClaimBreakdownLabel(symbol: string, totalUsd: number) {
-  switch (symbol) {
-    case "ETH":
-      return `${(totalUsd / 3_285.24).toFixed(4)} ETH`
-    case "USDC":
-      return `${totalUsd.toFixed(2)} USDC`
-    case "USDT":
-      return `${totalUsd.toFixed(2)} USDT`
-    case "WBTC":
-      return `${(totalUsd / 43_727.27).toFixed(4)} WBTC`
-    default:
-      return formatUsd(totalUsd)
   }
 }
