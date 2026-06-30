@@ -7,7 +7,7 @@
  * contract). This module is pure so the mapping is unit-tested without a Convex client.
  */
 
-import type { TransactionHistoryItem } from "@/app/lib/borrow-system/contracts"
+import type { SandboxActionResult, TransactionHistoryItem } from "@/app/lib/borrow-system/contracts"
 import type { LendSandboxActionResult } from "@/app/lib/lend-system/contracts"
 import type { MultiplySandboxActionResult } from "@/app/lib/multiply-system/contracts"
 
@@ -25,6 +25,8 @@ export type RecordTransactionArgs = {
   position?: {
     status: "open" | "closed"
     marketSlug?: string
+    collateralValueUsd6?: string
+    debtValueUsd6?: string
     suppliedUsd6?: string
     earnedUsd6?: string
     collateralAmount?: number
@@ -35,6 +37,23 @@ export type RecordTransactionArgs = {
     healthFactor?: number | "infinity"
     liquidationPrice?: number | null
     netApyPct?: number
+    collateral?: Array<{
+      marketSlug: string
+      collateralShares: string
+      principalTokenAmount: string
+      collateralEnabled: boolean
+      collateralValueUsd6?: string
+    }>
+    debt?: Array<{
+      assetId: string
+      baseAssetId: string
+      spokeId?: string
+      marketSlug?: string
+      debtSharesUsd6: string
+      debtIndexRay: string
+      borrowRateWad: string
+      principalBorrowedUsd6: string
+    }>
   }
   ledger?: {
     marketSlug: string
@@ -128,5 +147,66 @@ export function borrowHistoryItemToRecordArgs(item: TransactionHistoryItem, wall
     executedAmountUsd6: item.executedAmountUsd6.toString(),
     amountUsd: usd6ToNumber(item.executedAmountUsd6),
     simulated: item.simulated,
+  }
+}
+
+export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: string): RecordTransactionArgs {
+  const base = borrowHistoryItemToRecordArgs(result.historyItem, wallet)
+  const account = result.state.accounts[wallet]
+  const marketSlug = result.historyItem.marketId
+  if (!account || !marketSlug) return base
+
+  const collateral = account.collateralPositions
+    .filter((position) => position.marketId === marketSlug)
+    .map((position) => {
+      const market = result.state.markets[position.marketId]
+      return {
+        marketSlug: position.marketId,
+        collateralShares: position.collateralShares.toString(),
+        principalTokenAmount: position.principalTokenAmount.toString(),
+        collateralEnabled: position.collateralEnabled,
+        collateralValueUsd6: market
+          ? ((position.collateralShares * market.snapshot.supplyIndexRay) / 10n ** 27n).toString()
+          : undefined,
+      }
+    })
+  const debt = account.debtPositions
+    .filter((position) => position.marketId === marketSlug)
+    .map((position) => ({
+      assetId: position.assetId,
+      baseAssetId: position.baseAssetId,
+      spokeId: position.spokeId,
+      marketSlug: position.marketId,
+      debtSharesUsd6: position.debtSharesUsd6.toString(),
+      debtIndexRay: position.debtIndexRay.toString(),
+      borrowRateWad: position.borrowRateWad.toString(),
+      principalBorrowedUsd6: position.principalBorrowedUsd6.toString(),
+    }))
+
+  return {
+    ...base,
+    position: {
+      status: collateral.length === 0 && debt.length === 0 ? "closed" : "open",
+      marketSlug,
+      collateralValueUsd6: result.preview.after.collateralValueUsd6.toString(),
+      debtValueUsd6: result.preview.after.totalBorrowedUsd6.toString(),
+      collateral,
+      debt,
+    },
+    ledger: {
+      marketSlug: result.historyItem.assetId ?? marketSlug,
+      borrowedDeltaUsd:
+        result.historyItem.kind === "borrow"
+          ? base.amountUsd
+          : result.historyItem.kind === "repay"
+            ? -base.amountUsd
+            : undefined,
+      suppliedDeltaUsd:
+        result.historyItem.kind === "deposit"
+          ? base.amountUsd
+          : result.historyItem.kind === "withdraw"
+            ? -base.amountUsd
+            : undefined,
+    },
   }
 }

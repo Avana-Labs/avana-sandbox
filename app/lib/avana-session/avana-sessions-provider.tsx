@@ -9,7 +9,7 @@ import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import { useRewardsSession } from "@/app/lib/rewards-system"
 import {
-  borrowHistoryItemToRecordArgs,
+  borrowResultToRecordArgs,
   lendResultToRecordArgs,
   multiplyResultToRecordArgs,
 } from "@/app/lib/sandbox-tx/persistence"
@@ -285,7 +285,7 @@ export function ConvexAvanaSessionsProvider({
   const recordTransaction = useMutation(api.sandbox.transactions.recordTransaction)
   const persistBorrowTransaction = useCallback(
     async (result: SandboxActionResult) => {
-      const persisted = await recordTransaction(borrowHistoryItemToRecordArgs(result.historyItem, walletId))
+      const persisted = await recordTransaction(borrowResultToRecordArgs(result, walletId))
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,

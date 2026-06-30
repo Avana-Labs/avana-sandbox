@@ -16,7 +16,7 @@
  * Fixed-point amounts cross the wire as decimal strings (see schema encoding contract).
  */
 
-import { v } from "convex/values"
+import { v, type Infer } from "convex/values"
 import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "./auth"
@@ -42,7 +42,62 @@ const positionPayload = v.object({
   healthFactor: v.optional(v.union(v.number(), v.literal("infinity"))),
   liquidationPrice: v.optional(v.union(v.number(), v.null())),
   netApyPct: v.optional(v.number()),
+  collateral: v.optional(
+    v.array(
+      v.object({
+        marketSlug: v.string(),
+        collateralShares: v.string(),
+        principalTokenAmount: v.string(),
+        collateralEnabled: v.boolean(),
+        collateralValueUsd6: v.optional(v.string()),
+      }),
+    ),
+  ),
+  debt: v.optional(
+    v.array(
+      v.object({
+        assetId: v.string(),
+        baseAssetId: v.string(),
+        spokeId: v.optional(v.string()),
+        marketSlug: v.optional(v.string()),
+        debtSharesUsd6: v.string(),
+        debtIndexRay: v.string(),
+        borrowRateWad: v.string(),
+        principalBorrowedUsd6: v.string(),
+      }),
+    ),
+  ),
 })
+
+function requireUnsignedInteger(value: string, field: string) {
+  if (!/^\d+$/.test(value) || BigInt(value) < 0n) {
+    throw new Error(`INVALID_POSITION: ${field} must be an unsigned integer string.`)
+  }
+}
+
+function validatePositionPayload(position: Infer<typeof positionPayload>) {
+  for (const [field, value] of Object.entries({
+    collateralValueUsd6: position.collateralValueUsd6,
+    debtValueUsd6: position.debtValueUsd6,
+    suppliedUsd6: position.suppliedUsd6,
+    earnedUsd6: position.earnedUsd6,
+  })) {
+    if (value !== undefined) requireUnsignedInteger(value, field)
+  }
+  for (const collateral of position.collateral ?? []) {
+    requireUnsignedInteger(collateral.collateralShares, "collateralShares")
+    requireUnsignedInteger(collateral.principalTokenAmount, "principalTokenAmount")
+    if (collateral.collateralValueUsd6 !== undefined) {
+      requireUnsignedInteger(collateral.collateralValueUsd6, "collateralValueUsd6")
+    }
+  }
+  for (const debt of position.debt ?? []) {
+    requireUnsignedInteger(debt.debtSharesUsd6, "debtSharesUsd6")
+    requireUnsignedInteger(debt.debtIndexRay, "debtIndexRay")
+    requireUnsignedInteger(debt.borrowRateWad, "borrowRateWad")
+    requireUnsignedInteger(debt.principalBorrowedUsd6, "principalBorrowedUsd6")
+  }
+}
 
 /**
  * Fold a delta into the shared aggregate liquidity ledger (`marketLiquidityDeltas`).
@@ -146,6 +201,7 @@ export const recordTransaction = mutation({
     // Upsert the (wallet, product, market) position on success.
     let positionId: import("../_generated/dataModel").Id<"positions"> | undefined
     if (args.position && status === "success" && marketSlug) {
+      validatePositionPayload(args.position)
       const matches = await ctx.db
         .query("positions")
         .withIndex("by_wallet_market", (q) => q.eq("wallet", wallet).eq("marketSlug", marketSlug))
@@ -182,6 +238,31 @@ export const recordTransaction = mutation({
           openTxSynthetic: hash,
           ...fields,
         })
+      }
+
+      if (args.product === "borrow" && positionId) {
+        const [existingCollateral, existingDebt] = await Promise.all([
+          ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", positionId!)).collect(),
+          ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", positionId!)).collect(),
+        ])
+        for (const row of existingCollateral) await ctx.db.delete(row._id)
+        for (const row of existingDebt) await ctx.db.delete(row._id)
+        for (const collateral of args.position.collateral ?? []) {
+          await ctx.db.insert("positionCollateral", {
+            wallet,
+            positionId,
+            ...collateral,
+            updatedAt: now,
+          })
+        }
+        for (const debt of args.position.debt ?? []) {
+          await ctx.db.insert("positionDebt", {
+            wallet,
+            positionId,
+            ...debt,
+            updatedAt: now,
+          })
+        }
       }
     }
 
