@@ -417,13 +417,15 @@ export const getSessionState = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const [positions, transactions] = await Promise.all([
+    const [positions, transactions, balances, starterAllocation] = await Promise.all([
       ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
       ctx.db
         .query("transactions")
         .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
         .order("desc")
         .take(500),
+      ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+      ctx.db.query("starterAllocations").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
     ])
     const hydratedPositions = []
     for (const position of positions) {
@@ -433,7 +435,7 @@ export const getSessionState = query({
       ])
       hydratedPositions.push({ ...position, collateral, debt })
     }
-    return { positions: hydratedPositions, transactions }
+    return { positions: hydratedPositions, transactions, balances, starterAllocation }
   },
 })
 
@@ -442,7 +444,7 @@ export const getPortfolioPageState = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const [positions, transactions, snapshots, risk, pools, markets, rewards] = await Promise.all([
+    const [positions, transactions, snapshots, risk, pools, markets, rewards, balances, starterAllocation] = await Promise.all([
       ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
       ctx.db
         .query("transactions")
@@ -454,6 +456,8 @@ export const getPortfolioPageState = query({
       ctx.db.query("pools").collect(),
       ctx.db.query("markets").collect(),
       ctx.db.query("sandboxRewards").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
+      ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+      ctx.db.query("starterAllocations").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
     ])
     const hydratedPositions = []
     for (const position of positions) {
@@ -463,7 +467,7 @@ export const getPortfolioPageState = query({
       ])
       hydratedPositions.push({ ...position, collateral, debt })
     }
-    return { positions: hydratedPositions, transactions, snapshots, risk, pools, markets, rewards }
+    return { positions: hydratedPositions, transactions, snapshots, risk, pools, markets, rewards, balances, starterAllocation }
   },
 })
 
