@@ -135,6 +135,31 @@ function ErrorMessage({ error }: { error: string | null }) {
   ) : null
 }
 
+export function OnboardingUnavailable({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8">
+      <StatusRow wallet={null} pct={10} />
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <Headline
+          muted="We couldn't verify your onboarding status."
+          active="Reconnect your wallet and try again."
+          size="hero"
+        />
+        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
+          Authenticated sessions stay locked until Convex confirms access.
+        </p>
+        <button className={`${PRIMARY} mt-9`} onClick={onRetry} type="button">
+          Retry
+        </button>
+      </motion.div>
+    </div>
+  )
+}
+
 const ANALYSIS_STEPS = [
   "Reading your wallet history",
   "Checking sandbox eligibility",
