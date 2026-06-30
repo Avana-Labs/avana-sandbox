@@ -39,7 +39,6 @@ describe("recordTransaction — idempotency + ledger property", () => {
               requestedAmountUsd6: String(amount * 1_000_000),
               executedAmountUsd6: String(amount * 1_000_000),
               amountUsd: amount,
-              ledger: { marketSlug: SLUG, borrowedDeltaUsd: amount },
             })
           }
 
