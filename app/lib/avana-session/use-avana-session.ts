@@ -1,10 +1,10 @@
 "use client"
 
 import { useMemo } from "react"
-import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
+import { buildBorrowSessionSeed, buildConvexBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
 import { resolveWalletIdentity } from "@/app/lib/data/wallet/profiles"
-import { buildLendSessionSeed } from "@/app/lib/lend-system/demo-session"
-import { buildMultiplySessionSeed } from "@/app/lib/multiply-system/demo-session"
+import { buildConvexLendSessionSeed, buildLendSessionSeed } from "@/app/lib/lend-system/demo-session"
+import { buildConvexMultiplySessionSeed, buildMultiplySessionSeed } from "@/app/lib/multiply-system/demo-session"
 import { buildRewardsSessionSeed } from "@/app/lib/rewards-system"
 
 export type AvanaSession = {
@@ -23,7 +23,7 @@ export type AvanaSession = {
  * wallet ADDRESS here (resolveWalletIdentity uses it directly), so every product hook,
  * seed, and Convex read is scoped to the real connected+signed wallet.
  */
-export function useAvanaSession(walletId?: string): AvanaSession {
+export function useAvanaSession(walletId?: string, source: "demo" | "convex" = "demo"): AvanaSession {
   const profile = useMemo(() => resolveWalletIdentity(walletId), [walletId])
 
   return useMemo(
@@ -31,11 +31,13 @@ export function useAvanaSession(walletId?: string): AvanaSession {
       walletId: profile.id,
       walletAddress: profile.walletAddress,
       sandboxMode: true as const,
-      borrowSessionSeed: buildBorrowSessionSeed(profile.id),
-      multiplySessionSeed: buildMultiplySessionSeed(profile.id),
-      lendSessionSeed: buildLendSessionSeed(profile.id),
+      borrowSessionSeed:
+        source === "convex" ? buildConvexBorrowSessionSeed(profile.id) : buildBorrowSessionSeed(profile.id),
+      multiplySessionSeed:
+        source === "convex" ? buildConvexMultiplySessionSeed(profile.id) : buildMultiplySessionSeed(profile.id),
+      lendSessionSeed: source === "convex" ? buildConvexLendSessionSeed(profile.id) : buildLendSessionSeed(profile.id),
       rewardsSessionSeed: buildRewardsSessionSeed(),
     }),
-    [profile.id, profile.walletAddress],
+    [profile.id, profile.walletAddress, source],
   )
 }
