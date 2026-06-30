@@ -194,6 +194,7 @@ describe("page providers", () => {
         return {
           data: {
             markets: [{ symbol: "ETH", name: "Ethereum", price: 3000, funding: 0.01, change: 1, volume: 1000, maxLeverage: 10, longOi: 60, shortOi: 40 }] as unknown as MultiplyPageData["markets"],
+            heroMetrics: { totalLiquidityUsd: 1000, marketCount: 1, averageMaxApy: 0.075, averageMaxLeverage: 10 },
             lendRows: [{ href: "/multiply/markets/eth-usdc", protocol: "ETH", protocolLogo: "https://example.com/eth.png", asset: "USDC", kind: "Loop", apy: "7.50%", apyLabel: "Custom", collateralFactor: 0.8, liquidationThreshold: 0.85 }] as unknown as MultiplyPageData["lendRows"],
             trendingSnapshots: [],
             pageSize: 24,
