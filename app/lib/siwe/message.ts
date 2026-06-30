@@ -14,7 +14,7 @@ export type SiweMessageParams = {
   statement?: string
 }
 
-const DEFAULT_STATEMENT = "Sign in to the Avana sandbox. This request will not trigger a transaction or cost gas."
+const DEFAULT_STATEMENT = "Sign in to Avana. This request will not trigger a transaction or cost gas."
 
 /** Build the canonical EIP-4361 message string a wallet signs. */
 export function buildSiweMessage(p: SiweMessageParams): string {

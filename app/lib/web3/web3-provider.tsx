@@ -31,6 +31,13 @@ const wagmiConfig = createConfig(
     transports: { [mainnet.id]: http() },
     // Hydrate wallet state on the client so static generation is preserved.
     ssr: true,
+    // The @aave/account connector eagerly calls AaveAccountSdk.connect(), which throws
+    // "EIP1193 provider connection timeout" and stalls the ConnectKit transition when no
+    // Aave wallet is present. We don't need it — the mainstream wallets + WalletConnect
+    // (which covers hundreds of wallets) are enough. Disabling EIP-6963 auto-discovery
+    // stops the same provider being re-attached and announced.
+    enableAaveAccount: false,
+    multiInjectedProviderDiscovery: false,
   }),
 )
 

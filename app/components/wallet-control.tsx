@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { ConnectKitButton, useSIWE } from "connectkit"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
@@ -15,13 +16,20 @@ function walletGradient(address: string): string {
 
 /**
  * Single wallet control for the whole app. ConnectKit + SIWE drive a three-state flow:
- *   not connected  → "Connect Wallet" (opens the ConnectKit modal)
- *   connected only → "Sign in" (runs the SIWE signature)
+ *   not connected  → "Connect" (opens the ConnectKit modal)
+ *   connected only → "Sign in" (runs the SIWE signature once)
  *   signed in      → an account pill that opens the modal (switch / disconnect)
  * Clicking the signed-in pill opens the account view — it never silently signs you out.
+ *
+ * Anti-flicker: wallet/SIWE state is client-only, so SSR + the first client render show
+ * a fixed-width "Connect" placeholder that exactly matches the real button. The header
+ * therefore doesn't shift when ConnectKit hydrates.
  */
 export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop" }) {
   const { t } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   const siwe = useSIWE()
   const isSignedIn = Boolean(siwe?.isSignedIn)
   const signingIn = Boolean(siwe?.isLoading)
@@ -33,13 +41,21 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
   const brand = cn(base, "bg-brand text-brand-foreground hover:bg-brand/90")
   const pill = cn(base, "gap-2 border border-border bg-transparent text-foreground hover:bg-surface-inset")
 
+  if (!mounted) {
+    return (
+      <span className={brand} aria-hidden>
+        {t("Connect")}
+      </span>
+    )
+  }
+
   return (
     <ConnectKitButton.Custom>
       {({ isConnected, isConnecting, show, truncatedAddress, ensName, address }) => {
         if (!isConnected) {
           return (
-            <button type="button" onClick={show} className={brand} aria-label={t("Connect Wallet")}>
-              {isConnecting ? t("Connecting…") : t("Connect Wallet")}
+            <button type="button" onClick={show} className={brand} aria-label={t("Connect")}>
+              {isConnecting ? t("Connecting…") : t("Connect")}
             </button>
           )
         }
