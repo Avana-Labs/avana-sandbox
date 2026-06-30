@@ -5,6 +5,7 @@ import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { hasConvexClient, useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
+import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import { useRewardsSession } from "@/app/lib/rewards-system"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
@@ -144,14 +145,25 @@ function useLiquidityLedgerBridge({ borrow }: { borrow: BorrowSession }) {
 
 /**
  * Pushes the Convex market reference data (listMarketSnapshots) into the borrow
- * session so list/preview/HF read the single source of truth. Rendered only when a
- * Convex client exists (so useQuery has a ConvexProvider). No-op while loading.
+ * AND lend sessions so list/preview/HF/hero read the single source of truth. One
+ * query feeds both — it returns every scope (asset/pool/lend) and each session
+ * picks its own rows. Rendered only when a Convex client exists (so useQuery has a
+ * ConvexProvider). No-op while loading.
  */
-function BorrowMarketHydrator({ hydrate }: { hydrate: (snapshots: readonly ConvexMarketSnapshot[]) => void }) {
+function MarketHydrator({
+  hydrateBorrow,
+  hydrateLend,
+}: {
+  hydrateBorrow: (snapshots: readonly ConvexMarketSnapshot[]) => void
+  hydrateLend: (snapshots: readonly LendConvexSnapshot[]) => void
+}) {
   const snapshots = useQuery(api.markets.listMarketSnapshots)
   useEffect(() => {
-    if (snapshots && snapshots.length > 0) hydrate(snapshots as ConvexMarketSnapshot[])
-  }, [snapshots, hydrate])
+    if (snapshots && snapshots.length > 0) {
+      hydrateBorrow(snapshots as ConvexMarketSnapshot[])
+      hydrateLend(snapshots)
+    }
+  }, [snapshots, hydrateBorrow, hydrateLend])
   return null
 }
 
@@ -217,7 +229,9 @@ export function AvanaSessionsProvider({
 
   return (
     <AvanaSessionsContext.Provider value={value}>
-      {hasConvexClient ? <BorrowMarketHydrator hydrate={borrow.hydrateMarketData} /> : null}
+      {hasConvexClient ? (
+        <MarketHydrator hydrateBorrow={borrow.hydrateMarketData} hydrateLend={lend.hydrateMarketData} />
+      ) : null}
       {children}
     </AvanaSessionsContext.Provider>
   )
