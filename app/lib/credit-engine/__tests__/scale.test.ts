@@ -4,7 +4,9 @@ import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-a
 import { makeHeterogeneousStressBorrowActions, makeHeterogeneousStressBorrowSystemState } from "./stress-fixtures"
 
 describe("borrow system scale", () => {
-  it("keeps 10,000 heterogeneous wallet sessions readable while an active subset settles actions consistently", { timeout: 60_000 }, async () => {
+  // This 10k-wallet pass runs ~36s in isolation; allow headroom for CPU contention
+  // when the full suite runs it alongside the other heavy stress files.
+  it("keeps 10,000 heterogeneous wallet sessions readable while an active subset settles actions consistently", { timeout: 180_000 }, async () => {
     const initialState = makeHeterogeneousStressBorrowSystemState(10_000)
     const actions = makeHeterogeneousStressBorrowActions(initialState, 250)
     const nextState = applyBorrowActions(initialState, actions)
