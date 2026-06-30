@@ -1,6 +1,6 @@
 import {
   createDataSourceAdapter,
-  createUnsupportedSourceError,
+  DataSourceError,
   type DataSourceAdapter,
   type DataSourceRequestContext,
   type DataSourceResponse,
@@ -54,6 +54,21 @@ export const mockMultiplyPageSource: MultiplyPageSource = {
 export const liveMultiplyPageSource: MultiplyPageSource = {
   adapter: liveMultiplyPageAdapter,
   async getMultiplyPageData() {
-    throw createUnsupportedSourceError(liveMultiplyPageAdapter, "getMultiplyPageData")
+    const walletId = "catalog"
+    const snapshots = await fetchMultiplyMarketSnapshots()
+    if (snapshots.length === 0) {
+      throw new DataSourceError({
+        code: "unavailable",
+        sourceId: liveMultiplyPageAdapter.id,
+        operation: "getMultiplyPageData",
+        message: "Convex returned no Multiply market snapshots. Seed the market catalog before enabling live mode.",
+        retryable: true,
+      })
+    }
+    const state = mergeConvexMultiplySnapshots(buildMockMultiplySystemState(walletId), snapshots)
+    return {
+      fetchedAt: new Date().toISOString(),
+      data: buildMultiplyPageData(walletId, state),
+    }
   },
 }
