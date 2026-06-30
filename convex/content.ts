@@ -8,7 +8,7 @@
 import { v } from "convex/values"
 import { query } from "./_generated/server"
 
-const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"))
+const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 
 export const getContent = query({
   args: { scope: marketScope, slug: v.string() },

@@ -79,7 +79,21 @@ export const getBreakdownForLend = query({
   },
 })
 
-async function buildBreakdown(ctx: QueryCtx, marketId: Id<"markets">, scope: "asset" | "pool" | "lend") {
+/**
+ * Breakdown rows + monthly bars for a multiply (leveraged loop) market. The market
+ * earns from interest on the borrow leg, so it uses the interest-driven asset shape.
+ * Returns shape: `CashflowCard`.
+ */
+export const getBreakdownForMultiply = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const market = await resolveMarket(ctx, "multiply", slug)
+    if (!market) return null
+    return buildBreakdown(ctx, market._id, "multiply")
+  },
+})
+
+async function buildBreakdown(ctx: QueryCtx, marketId: Id<"markets">, scope: "asset" | "pool" | "lend" | "multiply") {
   const monthly = await monthlyRevenue(ctx, marketId)
   const ttm = monthly.reduce(
     (acc, m) => ({
@@ -174,7 +188,7 @@ async function monthlyRevenue(ctx: QueryCtx, marketId: Id<"markets">) {
   return [...buckets.values()]
 }
 
-async function resolveMarket(ctx: QueryCtx, scope: "asset" | "pool" | "lend", slug: string) {
+async function resolveMarket(ctx: QueryCtx, scope: "asset" | "pool" | "lend" | "multiply", slug: string) {
   return ctx.db
     .query("markets")
     .withIndex("by_scope_slug", (q) => q.eq("scope", scope).eq("slug", slug))

@@ -21,6 +21,7 @@ import {
 } from "@/app/lib/borrow-sim"
 import type { SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
+import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine/types"
 import {
   formatBpsAsPct,
   formatPct,
@@ -105,6 +106,34 @@ export function buildLendRiskAssessment(market: LendMarket): RiskAssessment {
       { id: "supplyApy", label: "Supply APY", value: `${(market.supplyApy * 100).toFixed(2)}%` },
       { id: "utilization", label: "Utilization", value: `${(market.utilization * 100).toFixed(1)}%` },
       { id: "reserveFactor", label: "Reserve factor", value: `${(market.reserveFactor * 100).toFixed(0)}%` },
+    ],
+  }
+}
+
+/** Full risk rating for a multiply (leveraged loop) market, keyed off its leverage +
+ *  collateral-factor settings. Shared by the Convex seed and the detail fallback. */
+export function buildMultiplyRiskAssessment(market: MultiplyMarketRecord): RiskAssessment {
+  const leverage = market.risk.publicMaxMultiplier
+  const bps = Math.max(18, Math.round((leverage - 1) * 8 + (1 - market.risk.collateralFactor) * 120))
+  const level = riskLevelFromBps(bps)
+  return {
+    premiumBps: bps,
+    level,
+    score: riskScoreFromBps(bps),
+    headline: `${riskLevelLabel(level)} risk · ${formatBpsAsPct(bps)} premium`,
+    summary: `${market.collateralAsset.symbol}/${market.borrowAsset.symbol} inherits leverage risk from the borrow leg and price-movement risk from the collateral leg.`,
+    breakdown: [
+      { id: "leverage", label: "Leverage", bps: Math.round(bps * 0.38), level, description: "Higher leverage magnifies both upside and liquidation speed." },
+      { id: "borrow", label: "Borrow APR", bps: Math.round(bps * 0.2), level: "low", description: "Borrow cost moves with utilization and market stress." },
+      { id: "collateral", label: "Collateral factor", bps: Math.round(bps * 0.2), level: "low", description: "The collateral leg sets how much buffer remains before liquidations." },
+      { id: "liquidity", label: "Available liquidity", bps: Math.round(bps * 0.12), level: "low", description: "Available capital limits how much of the market can be opened at once." },
+      { id: "spread", label: "Spread / slippage", bps: Math.max(2, Math.round(bps * 0.08)), level: "low", description: "Execution quality matters more as position size increases." },
+    ],
+    metrics: [
+      { id: "leverage", label: "Max leverage", value: `${market.risk.publicMaxMultiplier.toFixed(2)}x` },
+      { id: "collateralFactor", label: "Collateral factor", value: `${Math.round(market.risk.collateralFactor * 100)}%` },
+      { id: "lt", label: "Liquidation threshold", value: `${Math.round(market.risk.liquidationThreshold * 100)}%` },
+      { id: "liquidity", label: "Available", value: formatCompactUsd(market.economics.availableLiquidityUsd) },
     ],
   }
 }

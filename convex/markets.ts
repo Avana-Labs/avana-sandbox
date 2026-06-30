@@ -128,7 +128,7 @@ export const getKeyMetric = query({
  */
 export const getQuickStats = query({
   args: {
-    scope: v.union(v.literal("asset"), v.literal("pool"), v.literal("lend")),
+    scope: v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply")),
     slug: v.string(),
   },
   handler: async (ctx, { scope, slug }) => {
@@ -330,13 +330,31 @@ export const getLendHeroSeries = query({
   },
 })
 
+const multiplyHeroMetric = v.union(v.literal("supply"), v.literal("utilization"), v.literal("apy"))
+
+/** Multiply-page hero series (TVL / utilization / apy) folded from daily stats. */
+export const getMultiplyHeroSeries = query({
+  args: { slug: v.string(), metric: multiplyHeroMetric, range: rangeValidator },
+  handler: async (ctx, { slug, metric, range }) => {
+    const market = await resolveMarket(ctx, "multiply", slug)
+    if (!market) return null
+    const rows = await dailyRows(ctx, market._id, range)
+    const field = metric === "supply" ? "suppliedUsd" : metric === "utilization" ? "utilizationPct" : "supplyApyPct"
+    return {
+      id: `${market._id}:hero:${metric}:${range}`,
+      label: metric,
+      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+    }
+  },
+})
+
 /**
  * Recent wallet transactions for a market's detail-page history card. Reads
  * walletEvents (the engagement source) so the history is real, not random mock.
  * Returns shape: `TxHistoryRow[]` (app/lib/borrow-detail/types.ts).
  */
 export const getRecentTransactions = query({
-  args: { scope: v.union(v.literal("asset"), v.literal("pool"), v.literal("lend")), slug: v.string(), limit: v.optional(v.number()) },
+  args: { scope: v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply")), slug: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, { scope, slug, limit }) => {
     const market = await resolveMarket(ctx, scope, slug)
     if (!market) return []
@@ -367,7 +385,7 @@ async function dailyRows(ctx: QueryCtx, marketId: Id<"markets">, range: RangeId)
     .collect()
 }
 
-async function resolveMarket(ctx: QueryCtx, scope: "asset" | "pool" | "lend", slug: string) {
+async function resolveMarket(ctx: QueryCtx, scope: "asset" | "pool" | "lend" | "multiply", slug: string) {
   return ctx.db
     .query("markets")
     .withIndex("by_scope_slug", (q) => q.eq("scope", scope).eq("slug", slug))
