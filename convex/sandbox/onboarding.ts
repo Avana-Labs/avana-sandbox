@@ -41,7 +41,7 @@ const DEFAULT_CONFIG = {
   basket: DEFAULT_BASKET,
   seedVersion: SEED_VERSION,
   tweetTemplate:
-    "I just claimed my Avana sandbox allocation. Explore borrowing, lending, and multiplied exposure with synthetic assets.",
+    "I just claimed $1M in Avana play money across assets, LP collateral, lending markets, and multiplied positions.",
   xHandle: "AvanaFinance",
   resourcesLinks: [
     { label: "Read the docs", href: "/docs" },
@@ -238,6 +238,19 @@ export const confirmTweet = mutation({
       tweetUrl: args.tweetUrl,
       tweetedAt: Date.now(),
     })
+    return "xConfirmed" as const
+  },
+})
+
+/** Continue without sharing; participation never changes the $1M allocation. */
+export const skipTweet = mutation({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const profile = await profileForWallet(ctx, wallet)
+    if (!profile) throw new Error("NO_PROFILE: start onboarding before continuing.")
+    if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
+    await ctx.db.patch(profile._id, { onboardingStep: "xConfirmed" })
     return "xConfirmed" as const
   },
 })

@@ -87,6 +87,21 @@ describe("sandbox onboarding + economy caps", () => {
     expect(state.profile?.tweetUrl).toBe("https://x.com/avana/status/1")
   })
 
+  test("skipping X preserves the same allocation and advances to claim", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    const beforeSkip = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+
+    expect(await asUser.mutation(api.sandbox.onboarding.skipTweet, { wallet: WALLET })).toBe("xConfirmed")
+
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).toBe("xConfirmed")
+    expect(state.profile?.eligibilityTier).toBe(beforeSkip.profile?.eligibilityTier)
+    expect(state.economy.perUserTargetUsd).toBe(1_000_000)
+    expect(state.profile?.tweetUrl).toBeUndefined()
+  })
+
   test("claim seeds wallet-scoped starter state (position + portfolio snapshot)", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })

@@ -60,11 +60,29 @@ function StatusRow({ wallet }: { wallet: string | null }) {
   )
 }
 
-function Headline({ muted, active }: { muted: string; active: string }) {
+function Headline({
+  muted,
+  active,
+  size = "standard",
+}: {
+  muted?: string
+  active: string
+  size?: "standard" | "hero"
+}) {
   return (
-    <h1 className="max-w-4xl text-[clamp(2.15rem,5vw,4.65rem)] font-medium leading-[0.98] tracking-[-0.055em]">
-      <span className="text-muted-foreground">{muted}</span>
-      <br />
+    <h1
+      className={
+        size === "hero"
+          ? "max-w-[760px] text-[clamp(2.8rem,4.4vw,3.6rem)] font-medium leading-[1.1] tracking-[-0.045em]"
+          : "max-w-[760px] text-[clamp(1.9rem,3vw,2.25rem)] font-medium leading-[0.98] tracking-[-0.045em]"
+      }
+    >
+      {muted ? (
+        <>
+          <span className="text-muted-foreground">{muted}</span>
+          <br />
+        </>
+      ) : null}
       <span className="text-foreground">{active}</span>
     </h1>
   )
@@ -82,10 +100,10 @@ function ErrorMessage({ error }: { error: string | null }) {
 }
 
 function AllocationMarquee({ amount }: { amount: number }) {
-  const label = `${fmtUsd(amount)} sandbox USD`
+  const label = `${fmtUsd(amount)} PLAY MONEY`
   return (
-    <div className="relative left-1/2 my-10 w-screen -translate-x-1/2 overflow-hidden border-y border-border py-4 sm:my-12">
-      <div className="flex w-max animate-[marquee_22s_linear_infinite] items-center gap-7 whitespace-nowrap text-4xl font-medium tracking-[-0.05em] sm:text-6xl">
+    <div className="relative left-1/2 my-10 w-screen -translate-x-1/2 overflow-hidden py-2 sm:my-11">
+      <div className="flex w-max animate-[marquee_22s_linear_infinite] items-center gap-7 whitespace-nowrap text-4xl font-medium tracking-[-0.05em] sm:text-[58px]">
         {[0, 1, 2, 3].map((item) => (
           <span className="flex items-center gap-7" key={item}>
             <span className="flex size-10 items-center justify-center rounded-full bg-brand text-xl text-brand-foreground sm:size-12">
@@ -101,27 +119,35 @@ function AllocationMarquee({ amount }: { amount: number }) {
 
 function BasketPanel({
   amount,
-  basket,
   busy,
   onClaim,
 }: {
   amount: number
-  basket: BasketSlot[]
   busy: boolean
   onClaim: () => void
 }) {
+  const buckets = [
+    { label: "Liquid assets", detail: "12 assets", amount: "$100K" },
+    { label: "LP collateral", detail: "8 pools", amount: "$350K" },
+    { label: "Lending", detail: "8 markets", amount: "$300K" },
+    { label: "Multiply", detail: "6 positions", amount: "$250K" },
+  ]
   return (
-    <div className="mt-8 w-full max-w-xl rounded-3xl bg-muted/55 p-5 sm:p-7">
-      <p className="text-sm text-muted-foreground">Claim amount</p>
+    <div className="mt-8 w-full max-w-[516px] rounded-[24px] bg-muted/55 p-4 sm:p-6">
+      <p className="text-[13px] text-muted-foreground">Claim amount</p>
       <div className="mt-4 flex items-end justify-between gap-4">
-        <div className="text-3xl font-medium tracking-[-0.04em] sm:text-5xl">{fmtUsd(amount)}</div>
+        <div className="text-3xl font-medium tracking-[-0.04em] sm:text-[44px]">{fmtUsd(amount)}</div>
         <span className="rounded-full bg-background px-3 py-1.5 text-sm text-muted-foreground">Max</span>
       </div>
-      <div className="mt-5 flex flex-wrap gap-2">
-        {basket.map((slot) => (
-          <span className="rounded-full border border-border bg-background px-3 py-1.5 text-xs uppercase" key={slot.tokenId}>
-            {slot.tokenId} {Math.round(slot.weight * 100)}%
-          </span>
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        {buckets.map((bucket) => (
+          <div className="rounded-2xl bg-background/70 p-3" key={bucket.label}>
+            <div className="text-sm font-medium">{bucket.label}</div>
+            <div className="mt-1 flex justify-between gap-2 text-xs text-muted-foreground">
+              <span>{bucket.detail}</span>
+              <span>{bucket.amount}</span>
+            </div>
+          </div>
         ))}
       </div>
       <button className={`${PRIMARY} mt-7 w-full`} disabled={busy} onClick={onClaim} type="button">
@@ -137,10 +163,12 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const completeAnalysis = useMutation(api.sandbox.onboarding.startAnalysis)
   const startTweet = useMutation(api.sandbox.onboarding.startTweet)
   const confirmTweet = useMutation(api.sandbox.onboarding.confirmTweet)
+  const skipTweet = useMutation(api.sandbox.onboarding.skipTweet)
   const beginClaim = useMutation(api.sandbox.onboarding.beginClaim)
   const claim = useMutation(api.sandbox.onboarding.claim)
   const [busy, setBusy] = useState<null | "analyzing" | "sharing" | "claiming">(null)
   const [error, setError] = useState<string | null>(null)
+  const [hasStarted, setHasStarted] = useState(false)
 
   const run = async (label: NonNullable<typeof busy>, task: () => Promise<unknown>, minimumMs = 0) => {
     setBusy(label)
@@ -186,21 +214,34 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
     userCap: 0,
     perUserTargetUsd: 0,
   }
-  const tier = state?.profile?.eligibilityTier
-  const previewUsd = tier != null ? economy.perUserTargetUsd * tier : economy.perUserTargetUsd
+  const previewUsd = 1_000_000
   const seatsLeft = Math.max(0, economy.userCap - economy.userCount)
 
   return (
     <div
-      className="mx-auto w-full max-w-[1152px] px-1 py-4 sm:px-5 sm:py-8"
+      className="mx-auto w-full max-w-[938px] py-4 sm:py-8"
       data-onboarding-step={step ?? "connect"}
       data-testid="onboarding-canvas"
     >
       <StatusRow wallet={wallet} />
 
-      {!wallet || !state ? (
+      {!wallet && !hasStarted ? (
         <>
-          <Headline muted="First, connect your wallet." active="Then sign in to enter the sandbox." />
+          <Headline
+            active="Secure $1M in Avana play money across assets, LP collateral, lending, and multiply."
+            size="hero"
+          />
+          <button className={`${PRIMARY} mt-12`} onClick={() => setHasStarted(true)} type="button">
+            Proceed
+          </button>
+          <p className="mt-12 max-w-[470px] text-[13px] leading-5 text-muted-foreground">
+            You&apos;ll receive a diversified sandbox portfolio built for exploring every Avana market. No real funds
+            are used.
+          </p>
+        </>
+      ) : !wallet || !state ? (
+        <>
+          <Headline muted="First, we need to analyze your wallet history." active="Connect your wallet and let us do the math." />
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <ConnectKitButton.Custom>
               {({ show, isConnected, truncatedAddress, ensName }) => (
@@ -211,6 +252,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             </ConnectKitButton.Custom>
             <SandboxSignInButton size="desktop" />
           </div>
+          <p className="mt-8 max-w-[430px] text-[13px] leading-5 text-muted-foreground">
+            By connecting your wallet, you agree to the Terms &amp; Conditions and Privacy Policy.
+          </p>
         </>
       ) : economy.status === "closed" && step !== "done" ? (
         <>
@@ -219,18 +263,19 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "wallet" ? (
         <>
-          <Headline muted="Secure your sandbox liquidity." active="Claim an Avana starter allocation." />
+          <Headline muted="Your wallet is connected." active="Analyze it to unlock $1M in play money." />
           <button className={`${PRIMARY} mt-9`} onClick={analyze} type="button">
             Proceed
           </button>
           <p className="mt-8 max-w-lg text-sm leading-6 text-muted-foreground">
-            We use a deterministic wallet score to size synthetic assets for borrowing, lending, and multiply flows.
+            Every eligible wallet receives the same $1M of synthetic equity, diversified using a deterministic market
+            selection.
           </p>
           <ErrorMessage error={error} />
         </>
       ) : step === "analyzing" ? (
         <>
-          <Headline muted="We’re analyzing your wallet history." active="Calculating your sandbox allocation." />
+          <Headline muted="First, we need to analyze your wallet history." active="Calculating your $1M sandbox portfolio." />
           <div className="mt-9 inline-flex items-center rounded-full bg-muted px-6 py-4 text-sm">
             <LoaderCircle className="mr-3 size-5 animate-spin" />
             Still calculating — this takes a moment
@@ -240,19 +285,27 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "eligible" ? (
         <>
           <AllocationMarquee amount={previewUsd} />
-          <Headline muted={`Your wallet qualifies for ${fmtUsd(previewUsd)}.`} active="Claim now or share Avana on X first." />
+          <Headline
+            muted={`Based on your wallet, you qualify for ${fmtUsd(previewUsd)} in play money.`}
+            active="Share Avana on X, or continue directly to your allocation."
+          />
           <p className="mt-7 text-sm text-muted-foreground">{seatsLeft.toLocaleString()} sandbox seats remain.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button className={PRIMARY} disabled={busy != null} onClick={claimAllocation} type="button">
-              Claim allocation
-            </button>
             <button
-              className={SECONDARY}
+              className={PRIMARY}
               disabled={busy != null}
               onClick={() => run("sharing", () => startTweet({ wallet }))}
               type="button"
             >
-              Share on X
+              Share on X first
+            </button>
+            <button
+              className={SECONDARY}
+              disabled={busy != null}
+              onClick={() => run("sharing", () => skipTweet({ wallet }))}
+              type="button"
+            >
+              Continue to allocation
             </button>
           </div>
           <ErrorMessage error={error} />
@@ -281,7 +334,12 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             >
               I posted it
             </button>
-            <button className={SECONDARY} disabled={busy != null} onClick={claimAllocation} type="button">
+            <button
+              className={SECONDARY}
+              disabled={busy != null}
+              onClick={() => run("sharing", () => skipTweet({ wallet }))}
+              type="button"
+            >
               Skip
             </button>
           </div>
@@ -289,8 +347,11 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "xConfirmed" ? (
         <>
-          <Headline muted="Thanks for sharing Avana." active="Your allocation is ready to claim." />
-          <BasketPanel amount={previewUsd} basket={state.config.basket} busy={busy === "claiming"} onClaim={claimAllocation} />
+          <Headline
+            muted="Your diversified portfolio is ready."
+            active="$1M across 12 assets, 8 pools, 8 lend markets, and 6 multiply positions."
+          />
+          <BasketPanel amount={previewUsd} busy={busy === "claiming"} onClaim={claimAllocation} />
           <ErrorMessage error={error} />
         </>
       ) : step === "claimPending" ? (
@@ -323,9 +384,15 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             </div>
           ) : null}
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <Link className={PRIMARY} href="/dashboard">
-              Open dashboard
-            </Link>
+            <a
+              className={PRIMARY}
+              href={`https://x.com/intent/post?text=${encodeURIComponent(`${state.config.tweetTemplate} @${state.config.xHandle} https://avana.cc`)}`}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Share on X <MoveUpRight className="ml-2 size-4" />
+            </a>
+            <Link className={SECONDARY} href="/dashboard">Open dashboard</Link>
             {state.profile?.claimTxSynthetic ? (
               <Link className={SECONDARY} href={`/sandbox/transactions/${encodeURIComponent(state.profile.claimTxSynthetic)}`}>
                 View transaction
