@@ -595,17 +595,17 @@ export const getTransactionByHash = query({
   args: { wallet: v.string(), hash: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
+    // Indexed point lookup by (wallet, hash) instead of scanning the wallet's whole
+    // transaction history and post-filtering by hash.
     const transaction = await ctx.db
       .query("transactions")
-      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-      .filter((q) => q.eq(q.field("syntheticTxHash"), args.hash))
+      .withIndex("by_wallet_hash", (q) => q.eq("wallet", wallet).eq("syntheticTxHash", args.hash))
       .first()
     if (transaction) return transaction
 
     return ctx.db
       .query("sandboxActivity")
-      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-      .filter((q) => q.eq(q.field("syntheticTxHash"), args.hash))
+      .withIndex("by_wallet_hash", (q) => q.eq("wallet", wallet).eq("syntheticTxHash", args.hash))
       .first()
   },
 })
