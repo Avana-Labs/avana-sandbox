@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 
 const LEND_METRICS = [
@@ -23,14 +24,10 @@ function parseMarketUsd(value: string) {
   return amount
 }
 
-function formatMarketUsd(value: number) {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`
-  return `$${value.toFixed(2)}`
-}
 
 export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["markets"][number]> }) {
   const { showDollarAmounts } = useDisplayPreferences()
+  const fc = useCurrency()
 
   const metrics = useMemo(() => {
     const activeMarkets = markets.filter((market) => !market.soon)
@@ -70,7 +67,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total TVL</p>
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
-              {showDollarAmounts ? formatMarketUsd(metrics.totalTvl) : "••••••••"}
+              {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
             </p>
             <span className="inline-flex items-center gap-1 font-data text-[11px] font-medium tabular-nums text-emerald-600">
               <span aria-hidden className="text-[10px] leading-none">
