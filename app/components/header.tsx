@@ -31,6 +31,7 @@ import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { ConnectKitButton } from "connectkit"
+import { SandboxSignInButton } from "@/app/lib/siwe/sandbox-sign-in"
 
 /** Brand-styled wallet button that opens ConnectKit's real wallet modal. */
 function WalletButton({ size = "desktop" }: { size?: "mobile" | "desktop" }) {
@@ -339,6 +340,7 @@ export function Header() {
       <span className="-mr-1 flex items-center gap-0 [&>button+button]:-ml-3">
         {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
       </span>
+      <SandboxSignInButton size="mobile" />
       <WalletButton size="mobile" />
     </>
   )
@@ -447,6 +449,7 @@ export function Header() {
 
               <PreferencesMenu />
 
+              <SandboxSignInButton size="desktop" />
               <WalletButton size="desktop" />
 
             </div>
