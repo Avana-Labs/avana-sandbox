@@ -87,6 +87,45 @@ function DashboardSection({
   )
 }
 
+/** Shown while the authenticated portfolio is loading from Convex (was a blank screen). */
+function DashboardLoadingState() {
+  return (
+    <div className="animate-pulse space-y-8" aria-busy="true" aria-label="Loading your portfolio">
+      <div className="space-y-3">
+        <div className="h-8 w-44 rounded-lg bg-muted" />
+        <div className="h-10 w-72 rounded-lg bg-muted" />
+      </div>
+      <div className="flex gap-6">
+        {["a", "b", "c", "d"].map((k) => (
+          <div className="h-5 w-20 rounded bg-muted" key={k} />
+        ))}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {["a", "b", "c", "d", "e", "f"].map((k) => (
+          <div className="h-28 rounded-2xl bg-muted" key={k} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Shown when the authenticated portfolio fails to load (error was previously swallowed). */
+function DashboardLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="mx-auto max-w-lg space-y-4 py-16 text-center">
+      <h2 className="text-2xl font-medium tracking-tight">We couldn&apos;t load your portfolio.</h2>
+      <p className="text-sm text-muted-foreground">{message}</p>
+      <button
+        className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-85"
+        onClick={onRetry}
+        type="button"
+      >
+        Try again
+      </button>
+    </div>
+  )
+}
+
 export function DashboardClient({
   initialData,
   walletProfileId,
@@ -98,7 +137,10 @@ export function DashboardClient({
   const hasMounted = useHasMounted()
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
-  const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
+  const { data, error: portfolioError, isLoading: portfolioLoading } = usePortfolioPage(
+    { walletProfileId: resolvedWalletProfileId ?? "" },
+    initialData,
+  )
   const pageData = data ?? initialData
   const readTabFromLocation = useCallback((): DashboardTab => {
     if (typeof window === "undefined") return "lending"
@@ -317,7 +359,12 @@ export function DashboardClient({
     router.replace(`/dashboard?tab=${tab}`, { scroll: false })
   }
 
-  if (!pageData) return null
+  if (!pageData) {
+    if (portfolioError && !portfolioLoading) {
+      return <DashboardLoadError message={portfolioError} onRetry={() => router.refresh()} />
+    }
+    return <DashboardLoadingState />
+  }
 
   return (
     <>
