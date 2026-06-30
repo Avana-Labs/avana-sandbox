@@ -1,6 +1,6 @@
 import { REWARDS_PROMO_TABS } from "@/app/lib/data/rewards/catalog"
 import type { RewardsPromoTabId, RewardsQuest } from "@/app/lib/data/rewards/catalog"
-import type { BorrowPoolRow } from "@/app/lib/data/mock/shared/borrow"
+import type { BorrowPoolRow } from "@/app/lib/data/catalog/borrow"
 
 export type RewardsHeroPoolRow = {
   id: string

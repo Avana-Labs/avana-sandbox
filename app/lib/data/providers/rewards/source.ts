@@ -6,7 +6,7 @@ import {
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
 import { api } from "@/convex/_generated/api"
-import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/data/mock/shared/borrow"
+import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/data/catalog/borrow"
 import { mockRewardsSharedSource } from "@/app/lib/data/mock/shared/rewards"
 import { REWARDS_PROMO_TABS, type RewardsPromoTabId, type RewardsQuestIconId } from "@/app/lib/data/rewards/catalog"
 import { buildDefaultRewardsCatalog, calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"

@@ -1,4 +1,4 @@
-import { LEND_ASSET_GROUPS } from "@/app/lib/data/mock/shared/lend"
+import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 
 const STABLE_SYMBOLS = new Set(LEND_ASSET_GROUPS[0]?.rows.map((row) => row.symbol) ?? [])
 

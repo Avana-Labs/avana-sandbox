@@ -9,7 +9,7 @@ import {
   type DataSourceRequestContext,
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
-import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
+import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import type { BorrowPageData } from "./types"
 

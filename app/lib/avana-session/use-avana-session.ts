@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
-import { resolveWalletIdentity } from "@/app/lib/data/mock/wallet/portfolio/profiles"
+import { resolveWalletIdentity } from "@/app/lib/data/wallet/profiles"
 import { buildLendSessionSeed } from "@/app/lib/lend-system/demo-session"
 import { buildMultiplySessionSeed } from "@/app/lib/multiply-system/demo-session"
 import { buildRewardsSessionSeed } from "@/app/lib/rewards-system"

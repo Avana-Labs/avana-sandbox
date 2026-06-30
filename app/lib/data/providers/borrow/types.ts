@@ -5,7 +5,7 @@ import {
   BORROW_POOL_CATALOG,
   HOME_COLLATERAL_POOLS,
   HOME_INITIAL_DEBTS,
-} from "@/app/lib/data/mock/shared/borrow"
+} from "@/app/lib/data/catalog/borrow"
 
 export type BorrowPageData = {
   walletId: string

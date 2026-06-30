@@ -1,4 +1,4 @@
-import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
+import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { serializeBorrowSystemState } from "./codec"
 import { buildMockBorrowSystemState } from "./mock"
 
