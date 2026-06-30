@@ -44,3 +44,15 @@ export function extractSiweNonce(message: string): string | null {
   const match = message.match(/^Nonce: (.+)$/m)
   return match ? match[1]!.trim() : null
 }
+
+/** Extract the domain from line 1 (`<domain> wants you to sign in...`). */
+export function extractSiweDomain(message: string): string | null {
+  const match = message.match(/^(.+) wants you to sign in with your Ethereum account:$/m)
+  return match ? match[1]!.trim() : null
+}
+
+/** Extract the `URI:` field from a SIWE message. */
+export function extractSiweUri(message: string): string | null {
+  const match = message.match(/^URI: (.+)$/m)
+  return match ? match[1]!.trim() : null
+}
