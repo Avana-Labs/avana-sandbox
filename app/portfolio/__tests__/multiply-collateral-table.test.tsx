@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
+import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 
 const rows: PortfolioMultiplyCollateral[] = [
   {
@@ -26,7 +27,11 @@ const rows: PortfolioMultiplyCollateral[] = [
 describe("MultiplyCollateralTable", () => {
   it("calls onDeleverage when the row action is clicked", () => {
     const onDeleverage = vi.fn()
-    render(<MultiplyCollateralTable rows={rows} onDeleverage={onDeleverage} />)
+    render(
+      <DisplayPreferencesProvider>
+        <MultiplyCollateralTable rows={rows} onDeleverage={onDeleverage} />
+      </DisplayPreferencesProvider>,
+    )
 
     fireEvent.click(screen.getAllByRole("button", { name: "Deleverage" })[0]!)
     expect(onDeleverage).toHaveBeenCalledWith("demo-wallet:eth-usdt")
