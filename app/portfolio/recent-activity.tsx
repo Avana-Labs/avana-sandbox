@@ -11,7 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { cn } from "@/lib/utils"
+
+const MASK = "••••"
 
 const PRODUCT_OPTIONS: Array<{ id: PortfolioActivityRow["product"]; label: string }> = [
   { id: "borrow", label: "Borrow" },
@@ -193,6 +196,8 @@ function FilterMenu<T extends string>({
 }
 
 export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
+  const { showDollarAmounts } = useDisplayPreferences()
+  const amount = (value: number) => (showDollarAmounts ? formatSignedUsd(value) : MASK)
   const [search, setSearch] = React.useState("")
   const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])
   const [kinds, setKinds] = React.useState<PortfolioActivityRow["kind"][]>([])
@@ -257,7 +262,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                 <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
               </div>
               <div className="mt-2.5 flex items-center justify-between gap-3">
-                <span className="font-data text-[14px] font-medium tabular-nums text-foreground">{formatSignedUsd(row.amountUsd)}</span>
+                <span className="font-data text-[14px] font-medium tabular-nums text-foreground">{amount(row.amountUsd)}</span>
                 <div className="flex items-center gap-2.5">
                   <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium", STATUS_TONE[row.status])}>
                     {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
@@ -324,7 +329,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                         <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">{formatSignedUsd(row.amountUsd)}</td>
+                    <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">{amount(row.amountUsd)}</td>
                     <td className="px-5 py-4 align-middle">
                       <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium", STATUS_TONE[row.status])}>
                         {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
