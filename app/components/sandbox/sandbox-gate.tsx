@@ -8,17 +8,13 @@ import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { HeaderLocked } from "./header-locked"
 import { OnboardingFlow, type OnboardingGateState } from "./onboarding-flow"
 
-/** Fail-open boundary: an auth/Convex error in the gate must never brick the app. */
-class GateErrorBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { errored: boolean }> {
+class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
   state = { errored: false }
   static getDerivedStateFromError() {
     return { errored: true }
   }
-  componentDidCatch() {
-    /* swallow — render the fallback (the app) instead of crashing */
-  }
   render() {
-    return this.state.errored ? <>{this.props.fallback}</> : <>{this.props.children}</>
+    return this.state.errored ? <GateUnavailable /> : <>{this.props.children}</>
   }
 }
 
@@ -31,11 +27,37 @@ function LockedShell({ children }: { children: ReactNode }) {
   )
 }
 
+function GateUnavailable() {
+  return (
+    <LockedShell>
+      <div className="w-full max-w-lg space-y-4 text-left">
+        <p className="text-sm text-muted-foreground">Avana sandbox access</p>
+        <h1 className="text-3xl font-medium tracking-tight">We couldn&apos;t verify your onboarding status.</h1>
+        <p className="text-muted-foreground">
+          Reconnect your wallet and try again. Authenticated sessions stay locked until Convex confirms access.
+        </p>
+        <button
+          className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background"
+          onClick={() => window.location.reload()}
+          type="button"
+        >
+          Retry
+        </button>
+      </div>
+    </LockedShell>
+  )
+}
+
 function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode }) {
   const state = useQuery(api.sandbox.onboarding.getState, { wallet }) as OnboardingGateState | undefined
-  // While loading, render the app (don't flash the lock). Once onboarding is done the
-  // app stays unlocked; any other step replaces the chrome with the locked shell.
-  if (state === undefined || state.onboardingStep === "done") return <>{children}</>
+  if (state === undefined) {
+    return (
+      <LockedShell>
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
+      </LockedShell>
+    )
+  }
+  if (state.onboardingStep === "done") return <>{children}</>
   return (
     <LockedShell>
       <OnboardingFlow wallet={wallet} state={state} />
@@ -44,16 +66,15 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
 }
 
 /**
- * Gates the authenticated app behind onboarding. Fail-open by construction: the public,
- * unauthenticated demo — and any state where Convex is unavailable or a query errors —
- * renders children unchanged. ONLY a signed-in wallet that has not finished onboarding
- * sees the locked shell + onboarding flow.
+ * The public unauthenticated experience is an explicit demo bypass. Signed-in users
+ * remain locked until Convex confirms that onboarding is complete.
  */
 export function SandboxGate({ children }: { children: ReactNode }) {
   const { authedWallet, isSignedIn } = useSiweAuth()
-  if (!isSignedIn || !authedWallet || !hasConvexClient) return <>{children}</>
+  if (!isSignedIn || !authedWallet) return <>{children}</>
+  if (!hasConvexClient) return <GateUnavailable />
   return (
-    <GateErrorBoundary fallback={children}>
+    <GateErrorBoundary key={authedWallet}>
       <AuthedGate wallet={authedWallet}>{children}</AuthedGate>
     </GateErrorBoundary>
   )
