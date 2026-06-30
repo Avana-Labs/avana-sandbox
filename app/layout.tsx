@@ -65,17 +65,13 @@ export const metadata: Metadata = {
     siteName: "Avana",
     title: "Avana - Borrow Against LP Positions on Aave v4",
     description: "Unlock liquidity from your LP tokens while continuing to earn trading fees.",
-    images: [
-      {
-        url: "https://avana.cc/og?title=Avana&subtitle=Borrow+Against+LP+Positions+on+Aave+v4",
-      },
-    ],
+    // og:image is supplied by app/opengraph-image.tsx (auto-resolved to the serving
+    // origin, so the X share card works on whichever domain hosts the app).
   },
   twitter: {
     card: "summary_large_image",
     title: "Avana - Borrow Against LP Positions",
     description: "Unlock liquidity from your LP tokens on Aave v4",
-    images: ["https://avana.cc/og?title=Avana&subtitle=Borrow+Against+LP+Positions+on+Aave+v4"],
   },
   icons: {
     icon: [
