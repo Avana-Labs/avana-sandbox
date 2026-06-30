@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "Multiply LP-backed positions.",
 }
 
+export const dynamic = "force-dynamic"
+
 export default async function MultiplyPage() {
   const pageData = await fetchMultiplyPage()
 
