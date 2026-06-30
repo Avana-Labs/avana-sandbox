@@ -236,10 +236,7 @@ export function ActionAmountCard({
           <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <span>Receive WETH</span>
-              <ActionMetricHelp
-                topic="Receive WETH"
-                text="Receive borrowed ETH as WETH instead of native ETH when repaying or withdrawing."
-              />
+              <ActionMetricHelp topic="Receive WETH" text="Get wrapped ETH (WETH) instead of native ETH." />
             </div>
             <button
               type="button"

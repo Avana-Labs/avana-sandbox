@@ -9,7 +9,6 @@ import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/
 import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
-import { ActionNotFound } from "@/app/components/action-page/action-not-found"
 import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
@@ -56,16 +55,20 @@ export function MultiplyActionPageClient({
     () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
     [session.state.positions, walletId],
   )
+  // Only honor an initial market id that actually exists in the catalog. An unknown
+  // id (stale link) is treated as "no initial market" so the picker shows instead of
+  // dead-ending — every multiply market is available.
+  const validInitialMarketId = initialMarketId && session.state.markets[initialMarketId] ? initialMarketId : undefined
   const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(
-    () => initialMarketId ?? (kind === "deleverage" ? walletPositions[0]?.marketId : undefined),
+    () => validInitialMarketId ?? (kind === "deleverage" ? walletPositions[0]?.marketId : undefined),
   )
   const market = useMemo(() => {
     const markets = Object.values(session.state.markets)
     const selected = selectedMarketId ? markets.find((entry) => entry.id === selectedMarketId) ?? null : null
-    if (selected) return selected
-    if (selectedMarketId || initialMarketId) return null
-    return markets[0] ?? null
-  }, [initialMarketId, selectedMarketId, session.state.markets])
+    // Never dead-end: fall back to the first catalog market (the picker lets the
+    // user switch). market is null only if the catalog itself is empty.
+    return selected ?? markets[0] ?? null
+  }, [selectedMarketId, session.state.markets])
 
   const marketOptions = useMemo(() => {
     if (kind !== "multiply") return undefined
@@ -348,15 +351,9 @@ export function MultiplyActionPageClient({
     }
   }, [amount, closeHref, descriptor.primaryVerb, hasUserInput, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
 
-  if (!market) {
-    return (
-      <ActionNotFound
-        closeHref={closeHref}
-        title="Market unavailable"
-        message="We couldn't find that multiply market. Pick one from the multiply page to continue."
-      />
-    )
-  }
+  // The catalog always has markets, so `market` is non-null in practice; this only
+  // guards the impossible empty-catalog case (and never shows a dead-end card).
+  if (!market) return null
 
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
@@ -381,7 +378,7 @@ export function MultiplyActionPageClient({
       assetSymbol={market.collateralAsset.symbol}
       borrowSymbol={market.borrowAsset.symbol}
       assetLabel={marketLabel}
-      assetOptions={!initialMarketId ? marketOptions : undefined}
+      assetOptions={!validInitialMarketId ? marketOptions : undefined}
       selectedAssetId={market.id}
       onAssetSelect={(id) => {
         setHasUserInput(true)
