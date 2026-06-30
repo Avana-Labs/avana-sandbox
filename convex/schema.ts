@@ -290,6 +290,27 @@ export default defineSchema({
     faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
   }).index("by_market", ["marketId"]),
 
+  /**
+   * Support Center submissions. Captured every time a user sends a request from
+   * the Support Center form so the team has a durable record. Wallet/email are
+   * optional (a user may not be signed in); status defaults to "new".
+   */
+  supportRequests: defineTable({
+    wallet: v.optional(v.string()),
+    userEmail: v.optional(v.string()),
+    category: v.string(),
+    categoryLabel: v.optional(v.string()),
+    topic: v.string(),
+    topicLabel: v.optional(v.string()),
+    message: v.string(),
+    status: v.union(v.literal("new"), v.literal("in_progress"), v.literal("resolved")),
+    userAgent: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_status", ["status"])
+    .index("by_created_at", ["createdAt"]),
+
   // ── Phase 2: wallet-scoped sandbox state (synthetic; never source of truth in prod) ──
 
   /**
