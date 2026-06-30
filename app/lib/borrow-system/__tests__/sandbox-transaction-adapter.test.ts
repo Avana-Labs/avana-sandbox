@@ -181,6 +181,30 @@ describe("sandbox transaction adapter", () => {
     expect(harness.getState().transactions).toHaveLength(beforeTransactions)
   })
 
+  it("does not commit local state when Convex persistence rejects", async () => {
+    let state = makeExampleBorrowSystemState()
+    const before = state
+    const adapter = new SandboxTransactionAdapter({
+      readState: () => state,
+      writeState: (nextState) => {
+        state = nextState
+      },
+      persistResult: async () => {
+        throw new Error("Convex write rejected")
+      },
+    })
+    const intent = adapter.createIntent({
+      type: "borrow",
+      walletId: "wallet-1",
+      marketId: EXAMPLE_UNI_MARKET_ID,
+      assetId: EXAMPLE_UNI_USDC_ASSET_ID,
+      amountUsd6: parseFixed("300", 6),
+    })
+
+    await expect(adapter.executeTransaction(intent)).rejects.toThrow("Convex write rejected")
+    expect(state).toBe(before)
+  })
+
   it("liquidation preview does not mutate state and execute remains preview-only", async () => {
     const harness = createHarness()
     const state = harness.getState()
