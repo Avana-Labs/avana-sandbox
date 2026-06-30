@@ -38,12 +38,14 @@ export function useMultiplySession({
   readAdapter: injectedReadAdapter,
   transactionAdapter: injectedTransactionAdapter,
   persistState,
+  persistTransaction,
 }: {
   walletId: string
   sessionSeed: string
   readAdapter?: MultiplyReadAdapter
   transactionAdapter?: MultiplyTransactionAdapter
   persistState?: boolean
+  persistTransaction?: (result: MultiplySandboxActionResult) => Promise<MultiplyTransactionResult>
 }) {
   const adapterMode = injectedReadAdapter?.mode ?? injectedTransactionAdapter?.mode ?? "sandbox"
   const shouldPersistState = persistState ?? adapterMode === "sandbox"
@@ -186,13 +188,23 @@ export function useMultiplySession({
 
   const executeTransaction = useCallback(
     async (intent: MultiplyTransactionIntent): Promise<MultiplySandboxActionResult> => {
+      const previousState = stateRef.current
       const result = await transactionAdapter.executeTransaction(intent)
-      setState(result.state)
-      setTransactionHistory((current) => mergeHistory(result.historyItem, current))
-      setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
-      return result
+      try {
+        const receipt = persistTransaction ? await persistTransaction(result) : result.receipt
+        const historyItem = { ...result.historyItem, id: receipt.id, hash: receipt.hash, timestamp: receipt.timestamp }
+        const persistedResult = { ...result, receipt, historyItem }
+        setState(result.state)
+        setTransactionHistory((current) => mergeHistory(historyItem, current))
+        setTransactionReceipts((current) => mergeReceipts(receipt, current))
+        return persistedResult
+      } catch (error) {
+        stateRef.current = previousState
+        setState(previousState)
+        throw error
+      }
     },
-    [transactionAdapter],
+    [persistTransaction, transactionAdapter],
   )
 
   const reset = useCallback(() => {

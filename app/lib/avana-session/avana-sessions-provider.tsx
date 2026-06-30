@@ -8,8 +8,14 @@ import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydrat
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import { useRewardsSession } from "@/app/lib/rewards-system"
-import { borrowHistoryItemToRecordArgs } from "@/app/lib/sandbox-tx/persistence"
+import {
+  borrowHistoryItemToRecordArgs,
+  lendResultToRecordArgs,
+  multiplyResultToRecordArgs,
+} from "@/app/lib/sandbox-tx/persistence"
 import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
+import type { LendSandboxActionResult, LendTransactionResult } from "@/app/lib/lend-system/contracts"
+import type { MultiplySandboxActionResult, MultiplyTransactionResult } from "@/app/lib/multiply-system/contracts"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
@@ -189,6 +195,8 @@ export function AvanaSessionsProvider({
   walletId,
   children,
   persistBorrowTransaction,
+  persistLendTransaction,
+  persistMultiplyTransaction,
   persistLocalState = true,
 }: {
   walletId?: string
@@ -200,6 +208,8 @@ export function AvanaSessionsProvider({
     simulated: boolean
     timestamp: number
   }>
+  persistLendTransaction?: (result: LendSandboxActionResult) => Promise<LendTransactionResult>
+  persistMultiplyTransaction?: (result: MultiplySandboxActionResult) => Promise<MultiplyTransactionResult>
   persistLocalState?: boolean
 }) {
   const avana = useAvanaSession(walletId)
@@ -212,10 +222,14 @@ export function AvanaSessionsProvider({
   const multiply = useMultiplySession({
     walletId: avana.walletId,
     sessionSeed: avana.multiplySessionSeed,
+    persistState: persistLocalState,
+    persistTransaction: persistMultiplyTransaction,
   })
   const lend = useLendSession({
     walletId: avana.walletId,
     sessionSeed: avana.lendSessionSeed,
+    persistState: persistLocalState,
+    persistTransaction: persistLendTransaction,
   })
   const rewards = useRewardsSession({
     walletId: avana.walletId,
@@ -282,11 +296,41 @@ export function ConvexAvanaSessionsProvider({
     },
     [recordTransaction, walletId],
   )
+  const persistLendTransaction = useCallback(
+    async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
+      const persisted = await recordTransaction(lendResultToRecordArgs(result, walletId))
+      return {
+        id: String(persisted.receipt.id),
+        hash: persisted.receipt.hash,
+        status: persisted.receipt.status,
+        actionType: result.receipt.actionType,
+        simulated: persisted.receipt.simulated,
+        timestamp: persisted.receipt.timestamp,
+      }
+    },
+    [recordTransaction, walletId],
+  )
+  const persistMultiplyTransaction = useCallback(
+    async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
+      const persisted = await recordTransaction(multiplyResultToRecordArgs(result, walletId))
+      return {
+        id: String(persisted.receipt.id),
+        hash: persisted.receipt.hash,
+        status: persisted.receipt.status,
+        actionType: result.receipt.actionType,
+        simulated: persisted.receipt.simulated,
+        timestamp: persisted.receipt.timestamp,
+      }
+    },
+    [recordTransaction, walletId],
+  )
 
   return (
     <AvanaSessionsProvider
       walletId={walletId}
       persistBorrowTransaction={persistBorrowTransaction}
+      persistLendTransaction={persistLendTransaction}
+      persistMultiplyTransaction={persistMultiplyTransaction}
       persistLocalState={false}
     >
       {children}
