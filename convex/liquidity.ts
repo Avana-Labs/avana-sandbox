@@ -14,6 +14,11 @@
 
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
+import { getAuthedWallet } from "./sandbox/auth"
+
+// A single delta may not move a market by more than this in one write — a sane bound
+// so a tampered client cannot fold an astronomical value into the shared ledger.
+const MAX_DELTA_USD = 5_000_000_000
 
 export const recordDelta = mutation({
   args: {
@@ -22,8 +27,16 @@ export const recordDelta = mutation({
     suppliedDeltaUsd: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const borrowedDeltaUsd = Number.isFinite(args.borrowedDeltaUsd) ? (args.borrowedDeltaUsd as number) : 0
-    const suppliedDeltaUsd = Number.isFinite(args.suppliedDeltaUsd) ? (args.suppliedDeltaUsd as number) : 0
+    // The ledger is shared across ALL users, so an unauthenticated writer could corrupt
+    // every client's market numbers. Require a signed-in wallet (the whole app is gated
+    // behind SIWE anyway) and bound the magnitude.
+    const wallet = await getAuthedWallet(ctx)
+    if (!wallet) {
+      throw new Error("UNAUTHENTICATED: sign in to record market activity.")
+    }
+    const clamp = (n: number) => Math.max(-MAX_DELTA_USD, Math.min(MAX_DELTA_USD, n))
+    const borrowedDeltaUsd = Number.isFinite(args.borrowedDeltaUsd) ? clamp(args.borrowedDeltaUsd as number) : 0
+    const suppliedDeltaUsd = Number.isFinite(args.suppliedDeltaUsd) ? clamp(args.suppliedDeltaUsd as number) : 0
     if (borrowedDeltaUsd === 0 && suppliedDeltaUsd === 0) return
 
     const existing = await ctx.db
