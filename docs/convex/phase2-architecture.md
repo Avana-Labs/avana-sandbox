@@ -92,10 +92,10 @@ fields.)
   it does not own — the one place self-only scoping is relaxed, by design);
   `getLiquidations` (as victim + as liquidator).
 
-Why the mutation trusts a client-computed result: this is a sandbox. The mutation
-verifies *ownership*, *idempotency*, and *rate limits*, then persists the engine's
-synthetic diff. Re-running the engine server-side (trustless recompute) is a hardening
-follow-up — see the migration note.
+The mutation does not trust client liquidity deltas. It validates fixed-point amounts,
+product/action compatibility, lend balance movement and multiply LTV/multiplier, then
+derives aggregate liquidity and the portfolio snapshot from persisted state. Rebuilding
+the complete product transition from the intent is the remaining hardening step.
 
 ## Gating UI (§4)
 
