@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { createDataSourceAdapter } from "@/app/lib/data/core/source-runtime"
 import { fetchBorrowPage } from "@/app/lib/data/providers/borrow"
 import type { BorrowPageData, BorrowPageSource } from "@/app/lib/data/providers/borrow"
@@ -13,6 +13,14 @@ import type { RewardsPageData, RewardsPageSource } from "@/app/lib/data/provider
 import { mockPortfolioPageSource } from "@/app/lib/data/mock/wallet/portfolio/source"
 
 describe("page providers", () => {
+  beforeEach(() => {
+    vi.stubEnv("AVANA_DATA_SOURCE", "mock")
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it("fetches borrow page data from the default source", async () => {
     const data = await fetchBorrowPage()
 
