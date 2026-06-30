@@ -36,6 +36,9 @@ const DEFAULT_BASKET = [
 
 const SEED_VERSION = 1
 
+/** Synthetic market slug for the basket allocated at onboarding (a starter LP supply). */
+const STARTER_LP_SLUG = "sandbox-starter-basket"
+
 // Sandbox-only fallback prices. Production reads `tokens.priceUsd` (live feeds).
 const SANDBOX_TOKEN_PRICE_USD: Record<string, number> = {
   usdc: 1, dai: 1, eth: 3500, wbtc: 95_000, aave: 280, uni: 12,
@@ -120,6 +123,44 @@ export const startAnalysis = mutation({
   },
 })
 
+/**
+ * Optional X/tweet sub-flow (eligible → xPending). The user has signalled intent to
+ * share; no tweet is recorded yet. Idempotent; never regresses a finished profile.
+ */
+export const startTweet = mutation({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const profile = await profileForWallet(ctx, wallet)
+    if (!profile) throw new Error("NO_PROFILE: start onboarding before sharing.")
+    if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
+    if (profile.onboardingStep === "xConfirmed") return "xConfirmed" as const
+    await ctx.db.patch(profile._id, { onboardingStep: "xPending" })
+    return "xPending" as const
+  },
+})
+
+/**
+ * Confirm the share (xPending|eligible → xConfirmed), recording handle + tweet URL.
+ * This is a sandbox attestation — there is no server-side tweet verification.
+ */
+export const confirmTweet = mutation({
+  args: { wallet: v.string(), xHandle: v.optional(v.string()), tweetUrl: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const profile = await profileForWallet(ctx, wallet)
+    if (!profile) throw new Error("NO_PROFILE: start onboarding before sharing.")
+    if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
+    await ctx.db.patch(profile._id, {
+      onboardingStep: "xConfirmed",
+      xHandle: args.xHandle,
+      tweetUrl: args.tweetUrl,
+      tweetedAt: Date.now(),
+    })
+    return "xConfirmed" as const
+  },
+})
+
 /** Final step: enforce caps server-side, allocate the basket, mark done — or waitlist. */
 export const claim = mutation({
   args: { wallet: v.string() },
@@ -149,17 +190,25 @@ export const claim = mutation({
       return { status: "waitlisted" as const, allocatedUsd: 0 }
     }
 
+    const now = Date.now()
+
+    // Live-price basket: read the real DefiLlama-fed `tokenPrices` (the one place the
+    // sandbox mirrors prod), falling back to the synthetic map for tokens not on a
+    // live feed (e.g. aave/uni are not in TOKEN_LLAMA_IDS). Symbol == basket tokenId.
+    const priceRows = await ctx.db.query("tokenPrices").collect()
+    const livePrice: Record<string, number> = {}
+    for (const row of priceRows) livePrice[row.symbol] = row.priceUsd
     const basketSnapshot = config.basket.map((slot) => {
-      const priceUsdAtClaim = SANDBOX_TOKEN_PRICE_USD[slot.tokenId] ?? 1
+      const priceUsdAtClaim = livePrice[slot.tokenId] ?? SANDBOX_TOKEN_PRICE_USD[slot.tokenId] ?? 1
       const amount = (allocatedUsd * slot.weight) / priceUsdAtClaim
       return { tokenId: slot.tokenId, amount, priceUsdAtClaim }
     })
 
-    const syntheticTxHash = `sim-claim-${(profile.tierSeed ?? "0").slice(0, 8)}-${Date.now().toString(36)}`
+    const syntheticTxHash = `sim-claim-${(profile.tierSeed ?? "0").slice(0, 8)}-${now.toString(36)}`
 
     await ctx.db.patch(profile._id, {
       onboardingStep: "done",
-      onboardedAt: Date.now(),
+      onboardedAt: now,
       allocatedUsd,
       basketSnapshot,
       claimTxSynthetic: syntheticTxHash,
@@ -174,9 +223,57 @@ export const claim = mutation({
       kind: "onboardingClaim",
       amountUsd: allocatedUsd,
       syntheticTxHash,
-      at: Date.now(),
+      at: now,
     })
 
-    return { status: "done" as const, allocatedUsd, basketSnapshot, syntheticTxHash }
+    // Seed wallet-scoped starter state so the dashboard reads real Convex rows the
+    // moment onboarding completes: a starter LP supply position, the matching ledger
+    // transaction, an initial portfolio snapshot, and the session marker.
+    const allocatedUsd6 = Math.round(allocatedUsd * 1_000_000).toString()
+    const starterPositionId = await ctx.db.insert("positions", {
+      wallet,
+      product: "lend",
+      marketSlug: STARTER_LP_SLUG,
+      status: "open",
+      suppliedUsd6: allocatedUsd6,
+      earnedUsd6: "0",
+      openedAt: now,
+      lastUpdatedAt: now,
+      openTxSynthetic: syntheticTxHash,
+    })
+    await ctx.db.insert("transactions", {
+      wallet,
+      intentId: `onboarding-${syntheticTxHash}`,
+      product: "lend",
+      kind: "deposit",
+      status: "success",
+      marketSlug: STARTER_LP_SLUG,
+      positionId: starterPositionId,
+      requestedAmountUsd6: allocatedUsd6,
+      executedAmountUsd6: allocatedUsd6,
+      amountUsd: allocatedUsd,
+      syntheticTxHash,
+      simulated: true,
+      at: now,
+    })
+    await ctx.db.insert("portfolioSnapshots", {
+      wallet,
+      at: now,
+      totalValueUsd: allocatedUsd,
+      totalSuppliedUsd: allocatedUsd,
+      totalBorrowedUsd: 0,
+      availableToBorrowUsd: allocatedUsd * 0.7,
+      totalMultiplyExposureUsd: 0,
+      totalEarnedUsd: 0,
+    })
+    await ctx.db.insert("sandboxSessions", {
+      wallet,
+      authSubject: profile.authSubject,
+      seedVersion: SEED_VERSION,
+      seededAt: now,
+      lastSeenAt: now,
+    })
+
+    return { status: "done" as const, allocatedUsd, basketSnapshot, syntheticTxHash, starterPositionId }
   },
 })
