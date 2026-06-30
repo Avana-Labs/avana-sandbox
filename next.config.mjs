@@ -1,13 +1,46 @@
 import process from "node:process"
 
 const isDev = process.env.NODE_ENV === "development"
+
+/**
+ * Convex's reactive client connects over a WebSocket (https→wss, http→ws) and also
+ * falls back to HTTP `/api/query`. The CSP `connect-src` MUST allow that backend
+ * origin in BOTH transports or every client-side `useQuery`/`useMutation` (dashboard,
+ * authed sessions, the shared liquidity ledger) is silently blocked and renders empty.
+ * Derive the exact origins from the public Convex env so dev (http/ws on 127.0.0.1)
+ * and prod (https/wss on *.convex.cloud) both work.
+ */
+function convexConnectOrigins() {
+  const origins = new Set()
+  for (const raw of [process.env.NEXT_PUBLIC_CONVEX_URL, process.env.NEXT_PUBLIC_CONVEX_SITE_URL]) {
+    if (!raw) continue
+    try {
+      const u = new URL(raw)
+      const wsProto = u.protocol === "https:" ? "wss:" : "ws:"
+      origins.add(`${u.protocol}//${u.host}`)
+      origins.add(`${wsProto}//${u.host}`)
+    } catch {
+      // ignore malformed env
+    }
+  }
+  return [...origins]
+}
+
+const connectSrc = [
+  "'self'",
+  "https:",
+  "wss:", // Convex realtime in production (was missing — broke client subscriptions)
+  ...(isDev ? ["ws:", "http:", "blob:"] : []),
+  ...convexConnectOrigins(),
+].join(" ")
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   isDev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  isDev ? "connect-src 'self' ws: wss: blob: https:" : "connect-src 'self' https:",
+  `connect-src ${connectSrc}`,
   "media-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",
