@@ -45,15 +45,15 @@ with a deterministic $1M starter portfolio and portfolio snapshot in Convex.
 
 ## Remaining cutover
 
-1. **Server-side recompute** — re-run product validation inside `recordTransaction`
-   instead of accepting a client-computed before/after state.
-2. **Liquidation execution** — atomically update debt/collateral and create a
-   liquidation action for every newly underwater position.
-3. **Catalog removal** — the live list providers require Convex numeric snapshots but
+1. **Full engine recompute** — `recordTransaction` now validates and canonicalizes
+   amounts, action kinds, lend deltas, multiply ratios, liquidity deltas and portfolio
+   snapshots. The final hardening step is rebuilding the complete product transition
+   from the intent rather than accepting the remaining position fields.
+2. **Catalog removal** — the live list providers require Convex numeric snapshots but
    still use deterministic TypeScript catalogs for engine configuration and display
    shape. Seed those remaining fields and construct the read models directly from
    Convex before deleting the catalog builders.
-4. **Real-wallet E2E** — Playwright exercises the state machine with injected valid
+3. **Real-wallet E2E** — Playwright exercises the state machine with injected valid
    JWTs. A browser wallet signer is still required to automate the actual ConnectKit
    signature prompt.
 
