@@ -45,6 +45,11 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
+  // ConnectKit (Family) preloads an app.family.co iframe and WalletConnect frames
+  // verify.walletconnect.{com,org} during connect. Without an explicit frame-src these
+  // fall back to default-src 'self' and are blocked on every page (console error +
+  // cross-origin localStorage throw). Allow exactly the wallet-connector origins.
+  "frame-src 'self' https://app.family.co https://verify.walletconnect.com https://verify.walletconnect.org",
   "frame-ancestors 'none'",
 ].join("; ")
 
@@ -67,7 +72,7 @@ const securityHeaders = [
   },
   {
     key: "Permissions-Policy",
-    value: "accelerometer=(), ambient-light-sensor=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), usb=()",
+    value: "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), usb=()",
   },
   {
     key: "X-Content-Type-Options",
