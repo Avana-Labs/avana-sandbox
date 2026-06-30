@@ -2,10 +2,11 @@
 
 import { useState, type ReactNode } from "react"
 import { WagmiProvider, createConfig, http } from "wagmi"
-import { injected } from "wagmi/connectors"
+import { coinbaseWallet, injected, metaMask } from "wagmi/connectors"
 import { mainnet } from "wagmi/chains"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ConnectKitProvider, getDefaultConfig } from "connectkit"
+import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
 
@@ -21,12 +22,28 @@ const wagmiConfig = walletConnectProjectId
         ssr: true,
       }),
     )
-  : createConfig({
+  : // No WalletConnect project id → register the popular wallets explicitly so the
+    // Connect modal lists MetaMask / Coinbase / Browser wallet (not just one generic
+    // "Browser Wallet"). Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID to additionally light
+    // up the full WalletConnect wallet list (Phantom, Rainbow, "More Available", …).
+    createConfig({
       chains: [mainnet],
-      connectors: [injected()],
+      connectors: [
+        injected(),
+        metaMask(),
+        coinbaseWallet({ appName: "Avana Sandbox" }),
+      ],
       transports: { [mainnet.id]: http() },
       ssr: true,
     })
+
+/**
+ * Keep ConnectKit's native theme/colors. We only add a glass-blur backdrop so the
+ * Connect Wallet modal matches the blurred overlay used by the app's other popups.
+ */
+const connectKitTheme = {
+  "--ck-overlay-backdrop-filter": "blur(20px)",
+} as const
 
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
@@ -39,7 +56,26 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     // still works.
     <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
       <QueryClientProvider client={queryClient}>
-        <ConnectKitProvider options={{ enforceSupportedChains: false }}>{children}</ConnectKitProvider>
+        <ConnectKitProvider
+          customTheme={connectKitTheme}
+          options={{
+            enforceSupportedChains: false,
+            disclaimer: (
+              <>
+                By connecting your wallet you agree to the{" "}
+                <a href={AVANA_EXTERNAL_LINKS.terms} target="_blank" rel="noreferrer">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer">
+                  Privacy Policy
+                </a>
+              </>
+            ),
+          }}
+        >
+          {children}
+        </ConnectKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )
