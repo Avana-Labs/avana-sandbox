@@ -10,10 +10,15 @@ How to run, verify, and finish the Convex-backed sandbox migration. Pairs with
 | 1 | `Sandbox → Convex (§1/n)` | 10 wallet-scoped schema tables (additive; running app untouched) |
 | 2 | `(§2/n)` | onboarding extension (X-flow + live-price basket + starter state) + `recordTransaction`/`recordRiskSnapshot`/reads + liquidation recording + 13 convex-tests |
 | 3 | `(§3/n)` | authed SIWE wallet becomes the session identity; `AutoSiwe` auto-prompt |
-| 4 | `(§4/n)` | `SandboxGate` (fail-open) + `HeaderLocked` + `OnboardingFlow` + `/onboarding` |
+| 4 | `(§4/n)` | fail-closed `SandboxGate` + shared Avana header + `OnboardingFlow` + `/onboarding` |
 | 8a | `(§8a/n)` | every lend market row/card clicks through to its detail page |
 | 6 | `(§6/n)` | multi-user Convex harness + fast-check property |
 | 9 | this note + `phase2-architecture.md` | architecture + migration notes |
+| 10 | `eebaadb` | deterministic diversified $1M starter portfolio across assets, LP collateral, lend and multiply |
+| 11 | `9962fdf` | live Convex providers become the default; mock mode requires an explicit flag |
+| 12 | `46eb018` | market seed writes move behind secret-guarded actions and internal mutations |
+| 13 | `63a2411` | adapters persist to Convex before committing browser state |
+| 14 | `f221ea0` | authenticated sessions start empty and rehydrate only from Convex |
 
 ## Running locally
 
@@ -27,7 +32,7 @@ npm test                  # vitest (incl. all convex-test suites)
 
 The sandbox is exercised by: connect a wallet → auto-SIWE (or the header "Sign in")
 → the gate shows onboarding → analyze → (optionally share on X) → claim → unlocked app
-with a starter LP position + portfolio snapshot in Convex.
+with a deterministic $1M starter portfolio and portfolio snapshot in Convex.
 
 ## Verification gate (§8) — checklist before prod keys
 
@@ -35,26 +40,22 @@ with a starter LP position + portfolio snapshot in Convex.
 - [ ] Connect + sign-in → onboarding flow runs to `done`; `getState` reflects each step.
 - [ ] After claim, the dashboard/portfolio shows the Convex starter position (not mock).
 - [ ] Every lend market row opens `/lend/markets/[marketId]` (✅ §8a).
-- [ ] Sign out → public demo still renders (fail-open gate).
+- [ ] Sign out → onboarding remains locked until a wallet signs in.
 - [ ] Dashboard + Rewards read wallet-scoped Convex state (see "remaining cutover").
 
-## Remaining cutover (not yet done)
+## Remaining cutover
 
-1. **§5 full** — adapter execute persists best-effort today; the UI still reads the
-   in-browser session. To make Convex the live source: have `useBorrow/Lend/Multiply
-   Session` subscribe to `getPositions`/`getPortfolio` (via `useQuery`) when signed in,
-   and drop the localStorage path for authed wallets. Borrow/multiply hooks need an
-   injection seam like lend's `injectedTransactionAdapter`.
-2. **§7 full** — point the dashboard/rewards live sources (`livePortfolioPageSource`,
-   `liveRewardsPageSource`) at Convex and flip `AVANA_DATA_SOURCE=live`; seed the new
-   tables from a deterministic builder; **convert the public `seed.ts` + `prices.ts`
-   writer mutations to `internalMutation`** (currently world-writable — call them via an
-   internal action / `npx convex run` deploy hook). See `phase2-mock-audit.md`.
-3. **Server-side recompute** — optionally re-run the engine inside `recordTransaction`
-   for trustless validation (engines are pure; bundling `@/app/lib/*` into `convex/`
-   needs path-alias resolution). Sandbox-acceptable to defer.
-4. **Liquidation execution** — sandbox keeps it preview-only; `recordLiquidation`
-   stores analytics only. Enabling real state changes is a separate decision.
+1. **Server-side recompute** — re-run product validation inside `recordTransaction`
+   instead of accepting a client-computed before/after state.
+2. **Liquidation execution** — atomically update debt/collateral and create a
+   liquidation action for every newly underwater position.
+3. **Catalog removal** — the live list providers require Convex numeric snapshots but
+   still use deterministic TypeScript catalogs for engine configuration and display
+   shape. Seed those remaining fields and construct the read models directly from
+   Convex before deleting the catalog builders.
+4. **Real-wallet E2E** — Playwright exercises the state machine with injected valid
+   JWTs. A browser wallet signer is still required to automate the actual ConnectKit
+   signature prompt.
 
 ## GATED — needs you (§10)
 
@@ -80,9 +81,10 @@ These cannot be completed without credentials/decisions only the owner can provi
   number columns alongside the usd6-string borrow/lend columns.
 - **`transactions` is the rich per-wallet ledger**; `sandboxActivity` stays the
   onboarding-claim log; `getActivity` merges both. (Full unification deferred.)
-- **Gate is fail-open and only engages for signed-in wallets** — the public demo and the
-  deployed app must never brick on a Convex/auth hiccup.
+- **Gate is fail-closed** — unauthenticated and backend-error states stay inside
+  onboarding. The normal Avana header remains visible, but protected routes do not
+  render until Convex reports `onboardingStep === "done"`.
 - **X/tweet step is in scope** (the brief's §2 names `xPending`); `confirmTweet` is a
   sandbox attestation with no server-side tweet verification.
-- **Best-effort persistence in §5** keeps the proven in-browser UX while Convex receives
-  a durable copy — the safe intermediate before full subscription cutover.
+- **Convex-first adapter execution** persists the simulated result before committing
+  browser state. A failed Convex write cannot create a locally successful transaction.
