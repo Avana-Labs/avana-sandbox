@@ -10,7 +10,6 @@ import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/con
 import { mapLendDepositPreviewToActionUi, mapLendWithdrawPreviewToActionUi } from "@/app/lib/action-system/adapters/lend-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
-import { ActionNotFound } from "@/app/components/action-page/action-not-found"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
@@ -61,11 +60,20 @@ export function LendActionPageClient({
     () => (kind === "withdraw" ? lendWithdrawSelectItems(session, walletId) : []),
     [kind, session, walletId],
   )
-  const [marketId, setMarketId] = useState(() => initialMarketId ?? (kind === "deposit" ? "gho" : ""))
+  // A lend market is "available" whenever it exists in the catalog or session. An
+  // unknown initial id (stale link) is treated as "no initial market" so the user
+  // lands on the picker instead of a "Market unavailable" dead-end.
+  const validInitialMarketId =
+    initialMarketId && (session.state.markets[initialMarketId] ?? getLendMarketById(initialMarketId))
+      ? initialMarketId
+      : undefined
+  const hasInvalidInitialMarket = Boolean(initialMarketId) && !validInitialMarketId
+  const [marketId, setMarketId] = useState(() => validInitialMarketId ?? (kind === "deposit" ? "gho" : ""))
   const [stage, setStage] = useState<ActionStage>(() => {
     if (embedded) return "configure"
-    if (kind === "withdraw" && !initialMarketId) return "select"
-    if (kind === "deposit" && !initialMarketId) return "select"
+    if (hasInvalidInitialMarket) return "select"
+    if (kind === "withdraw" && !validInitialMarketId) return "select"
+    if (kind === "deposit" && !validInitialMarketId) return "select"
     return "configure"
   })
   const [amount, setAmount] = useState(initialAmount)
@@ -106,10 +114,10 @@ export function LendActionPageClient({
 
   useEffect(() => {
     if (embedded) return
-    if (!initialMarketId) return
-    setMarketId(initialMarketId)
+    if (!validInitialMarketId) return
+    setMarketId(validInitialMarketId)
     setStage("configure")
-  }, [embedded, initialMarketId])
+  }, [embedded, validInitialMarketId])
 
   useEffect(() => {
     if (kind !== "deposit" || !market || stage !== "configure" || dismissedWalletBlock) return
@@ -324,15 +332,10 @@ export function LendActionPageClient({
     }
   }, [amount, closeHref, descriptor.primaryVerb, isPending, kind, market, position, previewUi, router, session, stage, successUi, walletId])
 
-  if (!market && stage !== "select") {
-    return (
-      <ActionNotFound
-        closeHref={closeHref}
-        title="Market unavailable"
-        message="We couldn't find that lending market. Pick one from the lend page to continue."
-      />
-    )
-  }
+  // Never dead-end on "Market unavailable": an unknown id routes to the picker
+  // (stage "select") above. This only guards the impossible no-market/non-select
+  // case and renders nothing rather than an error card.
+  if (!market && stage !== "select") return null
 
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
