@@ -45,11 +45,12 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  // ConnectKit (Family) preloads an app.family.co iframe and WalletConnect frames
-  // verify.walletconnect.{com,org} during connect. Without an explicit frame-src these
-  // fall back to default-src 'self' and are blocked on every page (console error +
-  // cross-origin localStorage throw). Allow exactly the wallet-connector origins.
-  "frame-src 'self' https://app.family.co https://verify.walletconnect.com https://verify.walletconnect.org",
+  // WalletConnect frames verify.walletconnect.{com,org} during connect — allow those.
+  // We deliberately do NOT allow app.family.co: that third-party frame loads a Cloudflare
+  // bot-challenge script costing ~3s of main-thread time on EVERY page (Lighthouse
+  // bootup-time), and it is not needed for injected/MetaMask/Coinbase/WalletConnect
+  // wallets. Blocking it is both faster and one fewer third-party frame.
+  "frame-src 'self' https://verify.walletconnect.com https://verify.walletconnect.org",
   "frame-ancestors 'none'",
 ].join("; ")
 
@@ -84,7 +85,16 @@ const securityHeaders = [
 const nextConfig = {
   poweredByHeader: false,
   experimental: {
-    optimizePackageImports: ["lucide-react", "sonner"],
+    // Tree-shake heavy barrel packages so a 2-icon import doesn't pull the whole library.
+    // @fluentui/react-icons especially ships thousands of icons behind one barrel.
+    optimizePackageImports: [
+      "lucide-react",
+      "sonner",
+      "@fluentui/react-icons",
+      "recharts",
+      "framer-motion",
+      "@radix-ui/react-icons",
+    ],
   },
   async redirects() {
     return [
