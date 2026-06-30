@@ -414,8 +414,13 @@ export function Header() {
               </nav>
             </div>
 
-            <div className="absolute left-1/2 flex w-full max-w-[320px] -translate-x-1/2 justify-center px-4 xl:max-w-[410px]">
-              {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
+            {/* In-flow centered middle column: a flex-1 child can never overlap the
+                left nav the way the previous `absolute left-1/2` search did (it clipped
+                the "Multiply" link at 1024-1440px). */}
+            <div className="flex min-w-0 flex-1 justify-center px-4">
+              <div className="w-full max-w-[320px] xl:max-w-[410px]">
+                {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
+              </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
