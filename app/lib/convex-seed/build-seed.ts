@@ -17,16 +17,18 @@ import { BORROW_POOL_CATALOG, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
 import { computeAssetAllocationRows } from "@/app/lib/borrow-detail/allocation"
-import { buildAssetRiskAssessment, buildPoolRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
-import { buildAssetFaqs, buildPoolFaqs } from "@/app/lib/borrow-detail/content-model"
+import { buildAssetRiskAssessment, buildLendRiskAssessment, buildPoolRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
+import { buildAssetFaqs, buildLendFaqs, buildPoolFaqs } from "@/app/lib/borrow-detail/content-model"
 import { getAssetAboutCard } from "@/app/lib/borrow-detail/asset.mock"
 import { getPoolAboutCard } from "@/app/lib/borrow-detail/pool.mock"
+import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
+import type { LendMarket } from "@/app/lib/lend-engine/types"
 import type { RiskAssessment } from "@/app/lib/borrow-detail/types"
 
 const DAY_MS = 86_400_000
 
 export type SeedMarketRow = {
-  scope: "asset" | "pool"
+  scope: "asset" | "pool" | "lend"
   slug: string
   chainId: number
   name: string
@@ -209,6 +211,56 @@ function assetMarketRow(asset: SpokeBorrowableRecord, createdAt: number): SeedMa
     category: schemaCategory(asset.category),
     createdAt,
   }
+}
+
+function lendMarketRow(market: LendMarket, createdAt: number): SeedMarketRow {
+  return {
+    scope: "lend",
+    slug: market.marketId,
+    chainId: market.chainId,
+    name: market.asset.name,
+    symbol: market.asset.symbol,
+    // Low-tier lend markets are the stablecoins; everything else is volatile.
+    category: market.riskTier === "low" ? "stable" : "crypto",
+    createdAt,
+  }
+}
+
+/**
+ * Daily stats for a lend (single-asset supply) market. Unlike the borrow asset/pool
+ * generator, the supply APY is GIVEN by the catalog (walked around it) rather than
+ * derived from a borrow rate; the borrow APR is back-derived for display only.
+ */
+function dailyStatsForLendMarket(
+  slug: string,
+  base: { suppliedUsd: number; utilizationPct: number; supplyApyPct: number; reserveFactor: number; priceUsd: number },
+  asOf: number,
+  days: number,
+): SeedDailyStatRow[] {
+  const supplied = dailyWalk(slug, "supplied", base.suppliedUsd, asOf, days, { drift: 1.06, noise: 0.04 })
+  const util = dailyWalk(slug, "util", base.utilizationPct, asOf, days, { drift: 1.0, noise: 0.06, wave: 0.05 })
+  const apy = dailyWalk(slug, "supplyapy", base.supplyApyPct, asOf, days, { drift: 1.0, noise: 0.05, wave: 0.04 })
+  return supplied.map((s, i) => {
+    const utilizationPct = Math.min(99, Math.max(1, round(util[i]!.value, 2)))
+    const suppliedUsd = round(s.value, 0)
+    const borrowedUsd = round((suppliedUsd * utilizationPct) / 100, 0)
+    const supplyApyPct = round(Math.max(0.01, apy[i]!.value), 2)
+    // Implied borrow APR from supply = borrow · utilization · (1 − reserveFactor).
+    const borrowAprPct = round(supplyApyPct / Math.max(0.05, utilizationPct / 100) / Math.max(0.5, 1 - base.reserveFactor), 2)
+    return {
+      slug,
+      day: s.day,
+      suppliedUsd,
+      borrowedUsd,
+      utilizationPct,
+      supplyApyPct,
+      borrowAprPct,
+      tvlUsd: suppliedUsd,
+      volumeUsd: 0,
+      feesUsd: round((borrowedUsd * borrowAprPct) / 100 / 365, 2),
+      priceUsd: base.priceUsd,
+    }
+  })
 }
 
 function dailyStatsForMarket(
@@ -421,6 +473,42 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
   for (const row of allocation) {
     const supplied = suppliedByAsset.get(row.assetSlug) ?? 0
     row.valueUsd = round((supplied * row.sharePct) / 100, 0)
+  }
+
+  // Lend markets (single-asset supply). Added AFTER calibration so their catalog-scale
+  // USD values aren't rescaled by the borrow economy targets. No pools → no allocation.
+  for (const market of LEND_MARKET_CATALOG) {
+    markets.push(lendMarketRow(market, asOf))
+    const stats = dailyStatsForLendMarket(
+      market.marketId,
+      {
+        suppliedUsd: Math.max(1, market.totalSupplied * market.assetPriceUsd),
+        utilizationPct: Math.min(99, Math.max(1, market.utilization * 100)),
+        supplyApyPct: Math.max(0.01, market.supplyApy * 100),
+        reserveFactor: market.reserveFactor,
+        priceUsd: market.assetPriceUsd,
+      },
+      asOf,
+      days,
+    )
+    dailyStats.push(...stats)
+    revenue.push(...revenueForMarket(stats, market.reserveFactor))
+    risk.push(riskRow(market.marketId, asOf, buildLendRiskAssessment(market)))
+    walletEvents.push(...walletEventsForMarket(market.marketId, asOf, walletEventDays))
+    content.push({
+      slug: market.marketId,
+      description: `${market.asset.name} (${market.asset.symbol}) is a single-asset supply market on Avana. Deposit to earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""}, and withdraw available liquidity anytime. Yield tracks borrow demand and utilization.`,
+      stats: [
+        { label: "Risk tier", value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High" },
+        { label: "Reserve factor", value: `${(market.reserveFactor * 100).toFixed(0)}%` },
+        { label: "Status", value: market.status === "active" ? "Active" : market.status === "capped" ? "Capped" : "Paused" },
+      ],
+      history: [
+        { date: "2025-01-20", title: "Listed", description: `${market.asset.symbol} supply market opened.` },
+        { date: "2025-09-08", title: "Parameters reviewed", description: "Quarterly risk review — reserve factor unchanged." },
+      ],
+      faqs: buildLendFaqs(market.asset.symbol, market.asset.name),
+    })
   }
 
   return { markets, dailyStats, revenue, risk, walletEvents, allocation, content }

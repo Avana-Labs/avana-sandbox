@@ -33,6 +33,32 @@ export function buildAssetFaqs(symbol: string, name: string): FaqContent[] {
   ]
 }
 
+/** General FAQs for a lend (single-asset supply) market (templated by symbol + name). */
+export function buildLendFaqs(symbol: string, name: string): FaqContent[] {
+  return [
+    {
+      question: `What is supplying ${symbol}?`,
+      answer: `Supplying ${name} deposits it into the Avana lending market to earn yield. Your deposit earns the supply APY plus any active rewards, and you can withdraw available liquidity at any time.`,
+    },
+    {
+      question: `How is the ${symbol} supply APY determined?`,
+      answer: `The supply APY tracks borrow demand: as utilization rises, borrowers pay more and a larger share flows to suppliers. Rewards APY, when present, is an additional incentive on top of the base rate.`,
+    },
+    {
+      question: `Can I withdraw my ${symbol} anytime?`,
+      answer: `You can withdraw up to the market's available liquidity at any time. When utilization is very high, withdrawable liquidity may be limited until borrowers repay or new supply arrives.`,
+    },
+    {
+      question: `What risks should I watch when supplying ${symbol}?`,
+      answer: `The main risks are smart-contract risk, the asset's own volatility or de-peg risk, and utilization spikes that temporarily limit withdrawals. Higher-risk-tier markets carry a larger reserve factor.`,
+    },
+    {
+      question: "What is the reserve factor?",
+      answer: "The reserve factor is the share of borrower interest the protocol retains as a safety buffer rather than passing to suppliers. Lower-risk markets use a smaller reserve factor.",
+    },
+  ]
+}
+
 /** General FAQs for an LP collateral pool (templated by pair name). */
 export function buildPoolFaqs(name: string): FaqContent[] {
   return [
