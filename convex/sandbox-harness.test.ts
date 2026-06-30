@@ -118,7 +118,6 @@ describe("multi-user harness — calm + borrowHeavy (ledger invariant)", () => {
               },
             ],
           },
-          ledger: { marketSlug: SLUG, borrowedDeltaUsd: amount },
         })
       }
     }

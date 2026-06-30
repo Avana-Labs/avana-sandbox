@@ -349,13 +349,9 @@ export const recordTransaction = mutation({
     healthFactorWadBefore: v.optional(v.union(v.string(), v.null())),
     healthFactorWadAfter: v.optional(v.union(v.string(), v.null())),
     position: v.optional(positionPayload),
-    ledger: v.optional(
-      v.object({
-        marketSlug: v.string(),
-        borrowedDeltaUsd: v.optional(v.number()),
-        suppliedDeltaUsd: v.optional(v.number()),
-      }),
-    ),
+    // NOTE: there is intentionally no client `ledger` arg. The aggregate market-liquidity
+    // delta is recomputed server-side (canonicalLedgerDelta) so a client can never dictate
+    // the shared ledger.
   },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
