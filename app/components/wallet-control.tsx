@@ -35,9 +35,11 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
   const signingIn = Boolean(siwe?.isLoading)
 
   const base =
+    // A fixed min-width keeps every state (Connect / Connecting… / Sign in / the
+    // address pill) the same footprint, so the header never shifts as the state changes.
     size === "mobile"
-      ? "inline-flex h-9 items-center justify-center rounded-full px-4 text-[14px] font-medium transition-colors"
-      : "inline-flex h-10 items-center justify-center rounded-full px-4 font-sans text-[15px] font-medium transition-colors"
+      ? "inline-flex h-9 min-w-[136px] items-center justify-center rounded-full px-4 text-[14px] font-medium transition-colors"
+      : "inline-flex h-10 min-w-[152px] items-center justify-center rounded-full px-4 font-sans text-[15px] font-medium transition-colors"
   const brand = cn(base, "bg-brand text-brand-foreground hover:bg-brand/90")
   const pill = cn(base, "gap-2 border border-border bg-transparent text-foreground hover:bg-surface-inset")
 
@@ -81,7 +83,7 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
                 style={{ background: walletGradient(address) }}
               />
             ) : null}
-            <span className="font-data tabular-nums">{ensName ?? truncatedAddress}</span>
+            <span className="max-w-[110px] truncate font-data tabular-nums">{ensName ?? truncatedAddress}</span>
           </button>
         )
       }}
