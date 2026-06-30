@@ -1,68 +1,64 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { LendMarketDetailClient } from "@/app/lend/markets/[marketId]/market-detail-client"
+import { getLendMarketDetail } from "@/app/lib/lend-detail"
 
-const pushMock = vi.fn()
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: pushMock }),
+// The rich detail sections (charts, embedded action forms) are exercised in the
+// browser; here we stub them so we can assert the CLIENT wires the right data
+// into each section from a real Convex/mock-shaped LendMarketDetail.
+vi.mock("@/app/lend/_detail", () => ({
+  LendHero: () => <div data-testid="lend-hero" />,
+  LendHeroIdentity: ({ detail }: { detail: { hero: { name: string } } }) => (
+    <div data-testid="lend-hero-identity">{detail.hero.name}</div>
+  ),
+  SupplyCard: () => <div data-testid="supply-card" />,
+  RelatedMarketsRow: ({ detail }: { detail: { related: unknown[] } }) => (
+    <div data-testid="related">{detail.related.length}</div>
+  ),
+  LendSidebar: () => <div data-testid="lend-sidebar" />,
 }))
-
+vi.mock("@/app/borrow/_detail/ui", () => ({
+  AboutNewsSection: () => <div data-testid="about" />,
+  EngagementTrendsCard: () => <div data-testid="engagement" />,
+  DetailFaqSection: ({ items }: { items: unknown[] }) => <div data-testid="faqs">{items.length}</div>,
+}))
+vi.mock("@/app/borrow/_detail/pool-sections", () => ({
+  CashflowCard: () => <div data-testid="cashflow" />,
+  QuickStatsGrid: ({ detail }: { detail: { quickStats: unknown[] } }) => (
+    <div data-testid="quickstats">{detail.quickStats.length}</div>
+  ),
+  RiskSection: () => <div data-testid="risk" />,
+}))
+vi.mock("@/app/borrow/_detail/asset-sections", () => ({
+  TransactionHistoryCard: ({ transactions, assetSymbol }: { transactions: unknown[]; assetSymbol: string }) => (
+    <div data-testid="transactions">{`${assetSymbol}:${transactions.length}`}</div>
+  ),
+}))
 vi.mock("@/app/lib/lend-system/lend-session-context", () => ({
-  useLendSessionContext: () => ({
-    walletId: "demo-wallet",
-    state: {
-      markets: {
-        eth: {
-          marketId: "eth",
-          asset: { symbol: "ETH", name: "Ethereum" },
-          supplyApy: 0.0411,
-          rewardsApy: 0.01,
-          totalApy: 0.0511,
-          utilization: 0.5812,
-          reserveFactor: 0.15,
-          status: "active",
-          availableLiquidity: 14900,
-        },
-      },
-      positions: {
-        "demo-wallet:eth": {
-          walletId: "demo-wallet",
-          marketId: "eth",
-          status: "active",
-          currentSuppliedAmount: 2.4,
-          interestEarned: 0.08,
-        },
-      },
-    },
-    transactionHistory: [],
-  }),
+  useLendSessionContext: () => ({ walletId: "demo-wallet", transactionHistory: [] }),
 }))
 
 describe("LendMarketDetailClient", () => {
-  afterEach(() => {
-    cleanup()
-    pushMock.mockClear()
-  })
+  afterEach(cleanup)
 
-  it("renders live session market metrics instead of the catalog defaults", () => {
-    render(<LendMarketDetailClient marketId="eth" />)
+  it("composes the rich sections from a LendMarketDetail", () => {
+    const detail = getLendMarketDetail("usdc")!
+    render(<LendMarketDetailClient detail={detail} />)
 
-    expect(screen.getByText("5.11%")).toBeInTheDocument()
-    expect(screen.getByText("58.12%")).toBeInTheDocument()
-    expect(screen.getByText("2.4000")).toBeInTheDocument()
-  })
-
-  it("preserves the market detail as the return context for deposit and withdraw", () => {
-    render(<LendMarketDetailClient marketId="eth" />)
-
-    fireEvent.click(screen.getByRole("button", { name: "Deposit" }))
-    expect(pushMock).toHaveBeenLastCalledWith(
-      expect.stringContaining("/actions/lend/deposit?market=eth&return=%2Flend%2Fmarkets%2Feth"),
-    )
-
-    fireEvent.click(screen.getByRole("button", { name: "Withdraw" }))
-    expect(pushMock).toHaveBeenLastCalledWith(
-      expect.stringContaining("/actions/lend/withdraw?market=eth&return=%2Flend%2Fmarkets%2Feth"),
-    )
+    // Breadcrumb back to the lend list.
+    expect(screen.getByRole("link", { name: "Lend" })).toHaveAttribute("href", "/lend")
+    // Identity + every analytics section is wired.
+    expect(screen.getByTestId("lend-hero-identity")).toHaveTextContent(detail.hero.name)
+    expect(screen.getByTestId("lend-hero")).toBeInTheDocument()
+    expect(screen.getByTestId("quickstats")).toHaveTextContent(String(detail.quickStats.length))
+    expect(screen.getByTestId("supply-card")).toBeInTheDocument()
+    expect(screen.getByTestId("cashflow")).toBeInTheDocument()
+    expect(screen.getByTestId("engagement")).toBeInTheDocument()
+    expect(screen.getByTestId("risk")).toBeInTheDocument()
+    expect(screen.getByTestId("faqs")).toHaveTextContent(String(detail.faqs.length))
+    expect(screen.getByTestId("transactions")).toHaveTextContent(`USDC:${detail.transactions.length}`)
+    expect(screen.getByTestId("related")).toHaveTextContent(String(detail.related.length))
+    // Sidebar renders (desktop + mobile dock → 2 instances).
+    expect(screen.getAllByTestId("lend-sidebar").length).toBeGreaterThanOrEqual(1)
   })
 })

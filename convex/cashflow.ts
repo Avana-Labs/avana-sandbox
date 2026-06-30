@@ -65,7 +65,21 @@ export const getBreakdownForPool = query({
   },
 })
 
-async function buildBreakdown(ctx: QueryCtx, marketId: Id<"markets">, scope: "asset" | "pool") {
+/**
+ * Breakdown rows + monthly bars for a lend (single-asset supply) market. Lend earns
+ * from borrower interest (no swap fees), so it uses the interest-driven asset shape.
+ * Returns shape: `CashflowCard`.
+ */
+export const getBreakdownForLend = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const market = await resolveMarket(ctx, "lend", slug)
+    if (!market) return null
+    return buildBreakdown(ctx, market._id, "lend")
+  },
+})
+
+async function buildBreakdown(ctx: QueryCtx, marketId: Id<"markets">, scope: "asset" | "pool" | "lend") {
   const monthly = await monthlyRevenue(ctx, marketId)
   const ttm = monthly.reduce(
     (acc, m) => ({
@@ -160,7 +174,7 @@ async function monthlyRevenue(ctx: QueryCtx, marketId: Id<"markets">) {
   return [...buckets.values()]
 }
 
-async function resolveMarket(ctx: QueryCtx, scope: "asset" | "pool", slug: string) {
+async function resolveMarket(ctx: QueryCtx, scope: "asset" | "pool" | "lend", slug: string) {
   return ctx.db
     .query("markets")
     .withIndex("by_scope_slug", (q) => q.eq("scope", scope).eq("slug", slug))
