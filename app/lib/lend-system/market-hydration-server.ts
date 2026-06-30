@@ -2,6 +2,7 @@ import "server-only"
 import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
 import { fetchTokenPrices, type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
+import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 
 /**
  * Server-side Convex fetchers for the lend (single-asset supply) detail page.
@@ -31,6 +32,28 @@ function convexClient(): ConvexHttpClient | null {
     return new ConvexHttpClient(url)
   } catch {
     return null
+  }
+}
+
+/** All lend-scope latest-day snapshots (for SSR list hydration). [] when unreachable. */
+export async function fetchLendMarketSnapshots(): Promise<LendConvexSnapshot[]> {
+  const client = convexClient()
+  if (!client) return []
+  try {
+    const rows = await client.query(api.markets.listMarketSnapshots, {})
+    return rows
+      .filter((row) => row.scope === "lend")
+      .map((row) => ({
+        slug: row.slug,
+        scope: row.scope,
+        suppliedUsd: row.suppliedUsd,
+        borrowedUsd: row.borrowedUsd,
+        availableUsd: row.availableUsd,
+        utilizationPct: row.utilizationPct,
+        supplyApyPct: row.supplyApyPct,
+      }))
+  } catch {
+    return []
   }
 }
 
