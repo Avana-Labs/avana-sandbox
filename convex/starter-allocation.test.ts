@@ -1,0 +1,59 @@
+import { describe, expect, test } from "vitest"
+import {
+  buildStarterAllocationPlan,
+  STARTER_BUCKETS,
+  STARTER_EQUITY_USD,
+  type StarterMarket,
+} from "./sandbox/starterAllocation"
+
+function catalog(scope: StarterMarket["scope"], count: number): StarterMarket[] {
+  return Array.from({ length: count }, (_, index) => ({
+    scope,
+    slug: `${scope}-${String(index + 1).padStart(2, "0")}`,
+  }))
+}
+
+const MARKETS = [
+  ...catalog("asset", 64),
+  ...catalog("pool", 64),
+  ...catalog("lend", 25),
+  ...catalog("multiply", 20),
+]
+
+describe("starter allocation planner", () => {
+  test("allocates exactly $1M across the configured diversified buckets", () => {
+    const plan = buildStarterAllocationPlan("0xabc", MARKETS)
+    expect(plan.totalEquityUsd).toBe(STARTER_EQUITY_USD)
+    expect(plan.liquid).toHaveLength(STARTER_BUCKETS.liquid.count)
+    expect(plan.collateral).toHaveLength(STARTER_BUCKETS.collateral.count)
+    expect(plan.lend).toHaveLength(STARTER_BUCKETS.lend.count)
+    expect(plan.multiply).toHaveLength(STARTER_BUCKETS.multiply.count)
+    expect(Math.round([...plan.liquid, ...plan.collateral, ...plan.lend, ...plan.multiply].reduce(
+      (sum, leg) => sum + leg.amountUsd,
+      0,
+    ) * 100)).toBe(STARTER_EQUITY_USD * 100)
+  })
+
+  test("is deterministic and changes selection for another wallet", () => {
+    const first = buildStarterAllocationPlan("0xabc", MARKETS)
+    expect(buildStarterAllocationPlan("0xAbC", MARKETS)).toEqual(first)
+    expect(buildStarterAllocationPlan("0xdef", MARKETS)).not.toEqual(first)
+  })
+
+  test("distributes 10,000 wallets across every eligible market", () => {
+    const selected = new Set<string>()
+    for (let index = 0; index < 10_000; index += 1) {
+      const plan = buildStarterAllocationPlan(`0x${index.toString(16).padStart(40, "0")}`, MARKETS)
+      for (const leg of [...plan.liquid, ...plan.collateral, ...plan.lend, ...plan.multiply]) {
+        selected.add(leg.marketSlug)
+      }
+    }
+    expect(selected.size).toBe(MARKETS.length)
+  })
+
+  test("fails closed when a required market scope is empty", () => {
+    expect(() => buildStarterAllocationPlan("0xabc", MARKETS.filter((market) => market.scope !== "multiply"))).toThrow(
+      /STARTER_CATALOG_INCOMPLETE/,
+    )
+  })
+})
