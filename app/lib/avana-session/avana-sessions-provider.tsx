@@ -1,14 +1,15 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
-import { useQuery } from "convex/react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
+import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { hasConvexClient, useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import { useRewardsSession } from "@/app/lib/rewards-system"
-import { SandboxPersistenceBridge } from "@/app/lib/sandbox-tx/sandbox-persistence-bridge"
+import { borrowHistoryItemToRecordArgs } from "@/app/lib/sandbox-tx/persistence"
+import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
@@ -187,14 +188,26 @@ const AvanaSessionsContext = createContext<AvanaSessions | null>(null)
 export function AvanaSessionsProvider({
   walletId,
   children,
+  persistBorrowTransaction,
+  persistLocalState = true,
 }: {
   walletId?: string
   children: ReactNode
+  persistBorrowTransaction?: (result: SandboxActionResult) => Promise<{
+    id: string
+    hash: string
+    status: "success" | "failed" | "pending"
+    simulated: boolean
+    timestamp: number
+  }>
+  persistLocalState?: boolean
 }) {
   const avana = useAvanaSession(walletId)
   const borrow = useBorrowSession({
     walletId: avana.walletId,
     sessionSeed: avana.borrowSessionSeed,
+    persistState: persistLocalState,
+    persistTransaction: persistBorrowTransaction,
   })
   const multiply = useMultiplySession({
     walletId: avana.walletId,
@@ -241,16 +254,43 @@ export function AvanaSessionsProvider({
             hydrateLend={lend.hydrateMarketData}
             hydrateMultiply={multiply.hydrateMarketData}
           />
-          {/* keyed by wallet → a fresh seen-set per identity (see the bridge docstring) */}
-          <SandboxPersistenceBridge
-            key={avana.walletId}
-            wallet={avana.walletId}
-            transactionHistory={borrow.transactionHistory}
-          />
         </>
       ) : null}
       {children}
     </AvanaSessionsContext.Provider>
+  )
+}
+
+export function ConvexAvanaSessionsProvider({
+  walletId,
+  children,
+}: {
+  walletId: string
+  children: ReactNode
+}) {
+  const recordTransaction = useMutation(api.sandbox.transactions.recordTransaction)
+  const persistBorrowTransaction = useCallback(
+    async (result: SandboxActionResult) => {
+      const persisted = await recordTransaction(borrowHistoryItemToRecordArgs(result.historyItem, walletId))
+      return {
+        id: String(persisted.receipt.id),
+        hash: persisted.receipt.hash,
+        status: persisted.receipt.status,
+        simulated: persisted.receipt.simulated,
+        timestamp: persisted.receipt.timestamp,
+      }
+    },
+    [recordTransaction, walletId],
+  )
+
+  return (
+    <AvanaSessionsProvider
+      walletId={walletId}
+      persistBorrowTransaction={persistBorrowTransaction}
+      persistLocalState={false}
+    >
+      {children}
+    </AvanaSessionsProvider>
   )
 }
 
