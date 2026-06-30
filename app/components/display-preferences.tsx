@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
 
 const STORAGE_KEY = "avana-show-dollar-amounts"
 const LANGUAGE_STORAGE_KEY = "avana-language"
@@ -97,6 +98,12 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
     }
 
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
+  }, [language])
+
+  // Keep the document language attribute in sync so the browser (and assistive
+  // tech) treat the page as the selected locale.
+  useEffect(() => {
+    document.documentElement.lang = LANGUAGE_HTML_LANG[language] ?? "en"
   }, [language])
 
   useEffect(() => {
