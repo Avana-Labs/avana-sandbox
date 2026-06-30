@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
@@ -20,6 +21,7 @@ function AssetSubLabel({ symbol }: { symbol: string }) {
 
 type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
   marketId?: string
+  href?: string
   supplyApyLabel?: string
   rewardsApyLabel?: string
   totalApyLabel?: string
@@ -331,11 +333,14 @@ function AssetRowView({
   index: number
   onDeposit?: (marketId: string) => void
 }) {
+  const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
+  const detailHref = row.href ?? `/lend/markets/${marketId}`
   return (
     <tr
-      className="asset-swap group transition-colors"
+      className="asset-swap group cursor-pointer transition-colors"
       style={{ animationDelay: `${delay}ms` }}
+      onClick={() => router.push(detailHref)}
     >
       <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
         {index + 1}
@@ -376,7 +381,15 @@ function AssetRowView({
 
       <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
         {onDeposit ? (
-          <Button type="button" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]" onClick={() => onDeposit(marketId)}>
+          <Button
+            type="button"
+            size="sm"
+            className="h-7 rounded-xs px-2.5 text-[11px]"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDeposit(marketId)
+            }}
+          >
             Deposit
           </Button>
         ) : null}
@@ -394,9 +407,15 @@ function AssetCardView({
   index: number
   onDeposit?: (marketId: string) => void
 }) {
+  const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
+  const detailHref = row.href ?? `/lend/markets/${marketId}`
   return (
-    <div className="rounded-2xl border border-border bg-card p-4" style={{ animationDelay: `${index * 40}ms` }}>
+    <div
+      className="cursor-pointer rounded-2xl border border-border bg-card p-4 transition-colors hover:border-brand/40"
+      style={{ animationDelay: `${index * 40}ms` }}
+      onClick={() => router.push(detailHref)}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} />
@@ -428,7 +447,15 @@ function AssetCardView({
         </div>
       </dl>
       {onDeposit ? (
-        <Button type="button" size="sm" className="mt-4 h-10 w-full rounded-full text-[14px]" onClick={() => onDeposit(marketId)}>
+        <Button
+          type="button"
+          size="sm"
+          className="mt-4 h-10 w-full rounded-full text-[14px]"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDeposit(marketId)
+          }}
+        >
           Deposit
         </Button>
       ) : null}
