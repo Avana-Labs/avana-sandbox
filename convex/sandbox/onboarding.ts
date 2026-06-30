@@ -88,8 +88,18 @@ export const getState = query({
       onboardingStep: profile?.onboardingStep ?? "wallet",
       profile,
       economy: economy
-        ? { status: economy.status, userCount: economy.userCount, userCap: economy.userCap }
-        : { status: "open" as const, userCount: 0, userCap: DEFAULT_ECONOMY.userCap },
+        ? {
+            status: economy.status,
+            userCount: economy.userCount,
+            userCap: economy.userCap,
+            perUserTargetUsd: economy.perUserTargetUsd,
+          }
+        : {
+            status: "open" as const,
+            userCount: 0,
+            userCap: DEFAULT_ECONOMY.userCap,
+            perUserTargetUsd: DEFAULT_ECONOMY.perUserTargetUsd,
+          },
     }
   },
 })

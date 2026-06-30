@@ -12,6 +12,7 @@ import { AvanaSessionProviders } from "./components/avana-session-providers"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
+import { SandboxGate } from "./components/sandbox/sandbox-gate"
 const enableProductionAnalytics = process.env.NODE_ENV === "production"
 
 const diatypeSans = localFont({
@@ -116,13 +117,15 @@ export default function RootLayout({
           <DisplayPreferencesProvider>
             <Web3Provider>
               <AvanaSessionProviders>
-                <ConditionalSiteChrome>
-                <Suspense fallback={null}>
-                  <PageLoadingBar />
-                </Suspense>
-                {children}
-              </ConditionalSiteChrome>
-              <DeferredGlobalChrome />
+                <SandboxGate>
+                  <ConditionalSiteChrome>
+                    <Suspense fallback={null}>
+                      <PageLoadingBar />
+                    </Suspense>
+                    {children}
+                  </ConditionalSiteChrome>
+                </SandboxGate>
+                <DeferredGlobalChrome />
               </AvanaSessionProviders>
             </Web3Provider>
           </DisplayPreferencesProvider>
