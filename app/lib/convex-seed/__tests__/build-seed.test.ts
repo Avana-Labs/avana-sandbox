@@ -1,25 +1,43 @@
 import { describe, expect, it } from "vitest"
 import { ASSET_TVL_TARGET_USD, buildBorrowSeed, POOL_TVL_TARGET_USD } from "@/app/lib/convex-seed/build-seed"
+import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
 
 const ASOF = Date.UTC(2026, 5, 19) // fixed for reproducibility
+const LEND_COUNT = LEND_MARKET_CATALOG.length
+const TOTAL_MARKETS = 128 + LEND_COUNT // 64 pools + 64 assets + lend markets
 
 describe("buildBorrowSeed", () => {
-  it("seeds one market row per borrow pool + asset (128 total)", () => {
+  it("seeds one market row per borrow pool + asset + lend market", () => {
     const seed = buildBorrowSeed({ days: 30, asOf: ASOF })
     const pools = seed.markets.filter((m) => m.scope === "pool")
     const assets = seed.markets.filter((m) => m.scope === "asset")
+    const lend = seed.markets.filter((m) => m.scope === "lend")
     expect(pools.length).toBe(64)
     expect(assets.length).toBe(64)
-    expect(seed.markets.length).toBe(128)
+    expect(lend.length).toBe(LEND_COUNT)
+    expect(seed.markets.length).toBe(TOTAL_MARKETS)
     // one risk assessment per market
-    expect(seed.risk.length).toBe(128)
+    expect(seed.risk.length).toBe(TOTAL_MARKETS)
   })
 
   it("generates `days` daily stat + revenue rows per market", () => {
     const days = 30
     const seed = buildBorrowSeed({ days, asOf: ASOF })
-    expect(seed.dailyStats.length).toBe(128 * days)
-    expect(seed.revenue.length).toBe(128 * days)
+    expect(seed.dailyStats.length).toBe(TOTAL_MARKETS * days)
+    expect(seed.revenue.length).toBe(TOTAL_MARKETS * days)
+  })
+
+  it("seeds lend markets (scope 'lend', bare slug, content + risk)", () => {
+    const seed = buildBorrowSeed({ days: 30, asOf: ASOF })
+    const lend = seed.markets.filter((m) => m.scope === "lend")
+    expect(lend.length).toBe(LEND_COUNT)
+    for (const m of lend) {
+      expect(m.slug).not.toContain(":") // bare marketId, e.g. "usdc"
+      expect(m.category === "stable" || m.category === "crypto").toBe(true)
+    }
+    const lendSlugs = new Set(lend.map((m) => m.slug))
+    expect(seed.content.some((c) => lendSlugs.has(c.slug))).toBe(true)
+    expect(seed.risk.some((r) => lendSlugs.has(r.slug) && r.breakdown.length >= 4)).toBe(true)
   })
 
   it("uses route-matching slugs (asset = spoke-scoped id, pool = pool id)", () => {
@@ -55,8 +73,9 @@ describe("buildBorrowSeed", () => {
     let assetTvl = 0
     for (const row of seed.dailyStats) {
       if (row.day !== lastDay) continue
-      if (scopeBySlug.get(row.slug) === "pool") poolTvl += row.suppliedUsd
-      else assetTvl += row.suppliedUsd
+      const scope = scopeBySlug.get(row.slug)
+      if (scope === "pool") poolTvl += row.suppliedUsd
+      else if (scope === "asset") assetTvl += row.suppliedUsd // lend excluded — own scale
     }
     // Calibrated to the targets (within rounding).
     expect(Math.abs(poolTvl - POOL_TVL_TARGET_USD)).toBeLessThan(POOL_TVL_TARGET_USD * 0.0001)
@@ -73,13 +92,13 @@ describe("buildBorrowSeed", () => {
 
   it("scales daily rows with the window (365-day default ≈ 46.7k per table)", () => {
     const seed = buildBorrowSeed({ days: 365, asOf: ASOF })
-    expect(seed.dailyStats.length).toBe(128 * 365) // 46,720
-    expect(seed.revenue.length).toBe(128 * 365)
+    expect(seed.dailyStats.length).toBe(TOTAL_MARKETS * 365)
+    expect(seed.revenue.length).toBe(TOTAL_MARKETS * 365)
   })
 
   it("seeds a rich risk breakdown + metrics (not an empty stub)", () => {
     const seed = buildBorrowSeed({ days: 1, asOf: ASOF })
-    expect(seed.risk.length).toBe(128)
+    expect(seed.risk.length).toBe(TOTAL_MARKETS)
     for (const r of seed.risk) {
       // assets get 4 factors, pools get 5 — never the old empty stub.
       expect(r.breakdown.length).toBeGreaterThanOrEqual(4)

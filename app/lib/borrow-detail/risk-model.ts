@@ -20,6 +20,7 @@ import {
   getSpokeById,
 } from "@/app/lib/borrow-sim"
 import type { SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
+import type { LendMarket } from "@/app/lib/lend-engine/types"
 import {
   formatBpsAsPct,
   formatPct,
@@ -76,6 +77,34 @@ export function buildAssetRiskAssessment(asset: SpokeBorrowableRecord): RiskAsse
       { id: "borrowApr", label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%` },
       { id: "utilization", label: "Utilization", value: `${asset.utilization.toFixed(1)}%` },
       { id: "available", label: "Available", value: formatCompactUsd(asset.availableUsd) },
+    ],
+  }
+}
+
+const LEND_PREMIUM_BPS: Record<LendMarket["riskTier"], number> = { low: 32, medium: 95, high: 165 }
+
+/** Full risk rating for a lend (single-asset supply) market, keyed off its risk tier. */
+export function buildLendRiskAssessment(market: LendMarket): RiskAssessment {
+  const bps = LEND_PREMIUM_BPS[market.riskTier]
+  const level = riskLevelFromBps(bps)
+  const isStable = market.riskTier === "low"
+  return {
+    premiumBps: bps,
+    level,
+    score: riskScoreFromBps(bps),
+    headline: `${riskLevelLabel(level)} risk · ${formatBpsAsPct(bps)} premium`,
+    summary: `${market.asset.name} is a single-asset supply market. Primary risks are ${isStable ? "a de-peg or issuer-solvency event" : "price volatility and withdrawal liquidity"} plus smart-contract surface; the reserve factor buffers supplier yield.`,
+    breakdown: [
+      { id: "asset", label: isStable ? "De-peg tail" : "Price volatility", bps: Math.round(bps * 0.45), level, description: isStable ? "Oracle deviation guardrails pause new supply on a sustained de-peg." : "30d realized volatility relative to the asset's risk tier." },
+      { id: "liquidity", label: "Withdrawal liquidity", bps: Math.round(bps * 0.25), level: "low", description: "Available liquidity vs. utilization; high utilization can delay withdrawals." },
+      { id: "sc", label: "Smart-contract surface", bps: Math.round(bps * 0.18), level: "low", description: "Supply vault + oracle dependencies, reviewed by the risk council." },
+      { id: "reserve", label: "Reserve coverage", bps: Math.max(2, Math.round(bps * 0.12)), level: "low", description: "The reserve factor accrues a protocol safety buffer from borrower interest." },
+    ],
+    metrics: [
+      { id: "riskTier", label: "Risk tier", value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High" },
+      { id: "supplyApy", label: "Supply APY", value: `${(market.supplyApy * 100).toFixed(2)}%` },
+      { id: "utilization", label: "Utilization", value: `${(market.utilization * 100).toFixed(1)}%` },
+      { id: "reserveFactor", label: "Reserve factor", value: `${(market.reserveFactor * 100).toFixed(0)}%` },
     ],
   }
 }

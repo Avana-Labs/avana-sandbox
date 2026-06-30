@@ -13,7 +13,7 @@ import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
 
-const marketScope = v.union(v.literal("asset"), v.literal("pool"))
+const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"))
 const riskLevel = v.union(v.literal("low"), v.literal("moderate"), v.literal("elevated"), v.literal("high"))
 
 /**
