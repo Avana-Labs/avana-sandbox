@@ -107,6 +107,28 @@ export function getMultiplyMarketHeroFeed(marketId: string): ChartFeed {
 }
 
 // ---------------------------------------------------------------------------
+// Lend — market (total supplied)
+// ---------------------------------------------------------------------------
+
+/** @swap-to-api Local fallback for the lend hero; Convex supplies `buildHeroFeedFromConvexSeries`. */
+export function getLendMarketHeroFeed(marketId: string): ChartFeed {
+  const seed = hashString(`lend:${marketId}`)
+  // Base supplied between ~$3M and ~$120M, deterministic per market.
+  const base = 3_000_000 + (seed % 780) * 150_000
+  const variance = base * 0.05
+  const pct = ((seed % 800) / 100 - 3.5) // ~ -3.5%..+4.5%
+
+  return {
+    headlineValue: formatChartValue("usdCompact", base),
+    headlineDelta: `${Math.abs(pct).toFixed(2)}%`,
+    deltaTone: deltaTone(pct),
+    headlineMeta: todayLabel(),
+    rangeData: buildRangeData(base, variance),
+    valueFormat: "usdCompact",
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Convex-backed hero feed (daily series → ChartFeed)
 // ---------------------------------------------------------------------------
 
