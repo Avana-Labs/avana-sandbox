@@ -137,6 +137,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const completeAnalysis = useMutation(api.sandbox.onboarding.startAnalysis)
   const startTweet = useMutation(api.sandbox.onboarding.startTweet)
   const confirmTweet = useMutation(api.sandbox.onboarding.confirmTweet)
+  const beginClaim = useMutation(api.sandbox.onboarding.beginClaim)
   const claim = useMutation(api.sandbox.onboarding.claim)
   const [busy, setBusy] = useState<null | "analyzing" | "sharing" | "claiming">(null)
   const [error, setError] = useState<string | null>(null)
@@ -166,7 +167,18 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         )
       : undefined
 
-  const claimAllocation = () => (wallet ? run("claiming", () => claim({ wallet }), 1200) : undefined)
+  const claimAllocation = () =>
+    wallet
+      ? run(
+          "claiming",
+          async () => {
+            await beginClaim({ wallet })
+            await sleep(800)
+            await claim({ wallet })
+          },
+          1200,
+        )
+      : undefined
   const step = busy === "analyzing" ? "analyzing" : busy === "claiming" ? "claimPending" : state?.onboardingStep
   const economy = state?.economy ?? {
     status: "open" as const,
