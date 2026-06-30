@@ -10,18 +10,11 @@
  */
 
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
+import { internalMutation, query } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
 
 const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 const riskLevel = v.union(v.literal("low"), v.literal("moderate"), v.literal("elevated"), v.literal("high"))
-
-function requireSeedSecret(seedSecret: string) {
-  const expected = process.env.CONVEX_SEED_SECRET
-  if (!expected || seedSecret !== expected) {
-    throw new Error("Unauthorized seed write")
-  }
-}
 
 /**
  * Lightweight seed-verification: exact counts for the small tables (markets, risk)
@@ -54,9 +47,8 @@ export const getCounts = query({
 })
 
 /** Upsert canonical markets by (scope, slug); returns the slug → _id map for this batch. */
-export const upsertMarkets = mutation({
+export const upsertMarkets = internalMutation({
   args: {
-    seedSecret: v.string(),
     rows: v.array(
       v.object({
         scope: marketScope,
@@ -89,8 +81,7 @@ export const upsertMarkets = mutation({
       }),
     ),
   },
-  handler: async (ctx, { rows, seedSecret }) => {
-    requireSeedSecret(seedSecret)
+  handler: async (ctx, { rows }) => {
     const idsBySlug: Record<string, Id<"markets">> = {}
     for (const row of rows) {
       const existing = await ctx.db
@@ -109,9 +100,8 @@ export const upsertMarkets = mutation({
 })
 
 /** Upsert daily market stats by (marketId, day). */
-export const upsertDailyStats = mutation({
+export const upsertDailyStats = internalMutation({
   args: {
-    seedSecret: v.string(),
     rows: v.array(
       v.object({
         marketId: v.id("markets"),
@@ -130,8 +120,7 @@ export const upsertDailyStats = mutation({
       }),
     ),
   },
-  handler: async (ctx, { rows, seedSecret }) => {
-    requireSeedSecret(seedSecret)
+  handler: async (ctx, { rows }) => {
     for (const row of rows) {
       const existing = await ctx.db
         .query("marketDailyStats")
@@ -145,9 +134,8 @@ export const upsertDailyStats = mutation({
 })
 
 /** Upsert daily revenue by (marketId, day). */
-export const upsertRevenue = mutation({
+export const upsertRevenue = internalMutation({
   args: {
-    seedSecret: v.string(),
     rows: v.array(
       v.object({
         marketId: v.id("markets"),
@@ -160,8 +148,7 @@ export const upsertRevenue = mutation({
       }),
     ),
   },
-  handler: async (ctx, { rows, seedSecret }) => {
-    requireSeedSecret(seedSecret)
+  handler: async (ctx, { rows }) => {
     for (const row of rows) {
       const existing = await ctx.db
         .query("marketRevenueDaily")
@@ -175,9 +162,8 @@ export const upsertRevenue = mutation({
 })
 
 /** Upsert the latest risk assessment per market (one row per marketId). */
-export const upsertRisk = mutation({
+export const upsertRisk = internalMutation({
   args: {
-    seedSecret: v.string(),
     rows: v.array(
       v.object({
         marketId: v.id("markets"),
@@ -194,8 +180,7 @@ export const upsertRisk = mutation({
       }),
     ),
   },
-  handler: async (ctx, { rows, seedSecret }) => {
-    requireSeedSecret(seedSecret)
+  handler: async (ctx, { rows }) => {
     for (const row of rows) {
       const existing = await ctx.db
         .query("riskAssessments")
@@ -210,9 +195,8 @@ export const upsertRisk = mutation({
 })
 
 /** Upsert latest-day allocation rows keyed by (assetId, poolId, day). */
-export const upsertAllocation = mutation({
+export const upsertAllocation = internalMutation({
   args: {
-    seedSecret: v.string(),
     rows: v.array(
       v.object({
         assetId: v.id("markets"),
@@ -225,8 +209,7 @@ export const upsertAllocation = mutation({
       }),
     ),
   },
-  handler: async (ctx, { rows, seedSecret }) => {
-    requireSeedSecret(seedSecret)
+  handler: async (ctx, { rows }) => {
     for (const row of rows) {
       const sameAssetDay = await ctx.db
         .query("assetPoolAllocationDaily")
@@ -241,9 +224,8 @@ export const upsertAllocation = mutation({
 })
 
 /** Upsert per-market editorial content (about/stats/history/faqs) by marketId. */
-export const upsertContent = mutation({
+export const upsertContent = internalMutation({
   args: {
-    seedSecret: v.string(),
     rows: v.array(
       v.object({
         marketId: v.id("markets"),
@@ -254,8 +236,7 @@ export const upsertContent = mutation({
       }),
     ),
   },
-  handler: async (ctx, { rows, seedSecret }) => {
-    requireSeedSecret(seedSecret)
+  handler: async (ctx, { rows }) => {
     for (const row of rows) {
       const existing = await ctx.db
         .query("marketContent")
@@ -278,10 +259,9 @@ const walletEventKind = v.union(
 )
 
 /** Delete a page of walletEvents (batched; loop from the caller until deleted=0). */
-export const clearWalletEvents = mutation({
-  args: { seedSecret: v.string(), limit: v.optional(v.number()) },
-  handler: async (ctx, { limit, seedSecret }) => {
-    requireSeedSecret(seedSecret)
+export const clearWalletEvents = internalMutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
     const rows = await ctx.db.query("walletEvents").take(limit ?? 2000)
     for (const row of rows) await ctx.db.delete(row._id)
     return { deleted: rows.length }
@@ -289,9 +269,8 @@ export const clearWalletEvents = mutation({
 })
 
 /** Insert wallet activity events (engagement source). Clear first for idempotent re-seed. */
-export const insertWalletEvents = mutation({
+export const insertWalletEvents = internalMutation({
   args: {
-    seedSecret: v.string(),
     rows: v.array(
       v.object({
         marketId: v.id("markets"),
@@ -305,8 +284,7 @@ export const insertWalletEvents = mutation({
       }),
     ),
   },
-  handler: async (ctx, { rows, seedSecret }) => {
-    requireSeedSecret(seedSecret)
+  handler: async (ctx, { rows }) => {
     for (const row of rows) await ctx.db.insert("walletEvents", row)
     return { written: rows.length }
   },
