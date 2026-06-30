@@ -8,6 +8,8 @@
  */
 
 import type { TransactionHistoryItem } from "@/app/lib/borrow-system/contracts"
+import type { LendSandboxActionResult } from "@/app/lib/lend-system/contracts"
+import type { MultiplySandboxActionResult } from "@/app/lib/multiply-system/contracts"
 
 export type RecordTransactionArgs = {
   wallet: string
@@ -20,6 +22,88 @@ export type RecordTransactionArgs = {
   executedAmountUsd6: string
   amountUsd: number
   simulated: boolean
+  position?: {
+    status: "open" | "closed"
+    marketSlug?: string
+    suppliedUsd6?: string
+    earnedUsd6?: string
+    collateralAmount?: number
+    collateralValueUsd?: number
+    debtValueUsd?: number
+    multiplier?: number
+    ltv?: number
+    healthFactor?: number | "infinity"
+    liquidationPrice?: number | null
+    netApyPct?: number
+  }
+  ledger?: {
+    marketSlug: string
+    borrowedDeltaUsd?: number
+    suppliedDeltaUsd?: number
+  }
+}
+
+export function lendResultToRecordArgs(result: LendSandboxActionResult, wallet: string): RecordTransactionArgs {
+  const item = result.historyItem
+  const position = item.positionId ? result.state.positions[item.positionId] : undefined
+  const amountUsd = item.amount
+  return {
+    wallet,
+    intentId: item.intentId,
+    product: "lend",
+    kind: item.kind,
+    marketSlug: item.marketId,
+    requestedAmountUsd6: Math.round(amountUsd * 1_000_000).toString(),
+    executedAmountUsd6: Math.round(amountUsd * 1_000_000).toString(),
+    amountUsd,
+    simulated: item.simulated,
+    position: position
+      ? {
+          status: position.status === "active" ? "open" : "closed",
+          marketSlug: position.marketId,
+          suppliedUsd6: Math.round(position.suppliedValueUsd * 1_000_000).toString(),
+          earnedUsd6: Math.round(position.interestEarned * 1_000_000).toString(),
+        }
+      : undefined,
+    ledger:
+      item.kind === "claim"
+        ? undefined
+        : {
+            marketSlug: item.marketId,
+            suppliedDeltaUsd: item.kind === "deposit" ? amountUsd : -amountUsd,
+          },
+  }
+}
+
+export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, wallet: string): RecordTransactionArgs {
+  const item = result.historyItem
+  const positionId = item.positionId ?? Object.keys(result.state.positions).find((id) => result.state.positions[id]?.marketId === item.marketId)
+  const position = positionId ? result.state.positions[positionId] : undefined
+  return {
+    wallet,
+    intentId: item.intentId,
+    product: "multiply",
+    kind: item.kind,
+    marketSlug: position?.marketId ?? item.marketId,
+    requestedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
+    executedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
+    amountUsd: item.amountUsd,
+    simulated: item.simulated,
+    position: position
+      ? {
+          status: position.multiplier <= 1 ? "closed" : "open",
+          marketSlug: position.marketId,
+          collateralAmount: position.collateralAmount,
+          collateralValueUsd: position.collateralValueUsd,
+          debtValueUsd: position.debtValueUsd,
+          multiplier: position.multiplier,
+          ltv: position.ltv,
+          healthFactor: position.healthFactor,
+          liquidationPrice: position.liquidationPrice,
+          netApyPct: position.netApy,
+        }
+      : undefined,
+  }
 }
 
 /** usd6 bigint → human USD number (UI-edge conversion). */
