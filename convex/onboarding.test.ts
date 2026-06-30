@@ -41,6 +41,8 @@ describe("sandbox onboarding + economy caps", () => {
     const asUser = t.withIdentity({ subject: WALLET })
 
     await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    expect(await asUser.mutation(api.sandbox.onboarding.beginClaim, { wallet: WALLET })).toBe("claimPending")
+    expect((await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })).onboardingStep).toBe("claimPending")
     const result = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
 
     expect(result.status).toBe("done")
