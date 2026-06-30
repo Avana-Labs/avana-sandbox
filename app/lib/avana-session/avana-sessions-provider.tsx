@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api"
 import { hasConvexClient, useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
+import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import { useRewardsSession } from "@/app/lib/rewards-system"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
@@ -153,17 +154,20 @@ function useLiquidityLedgerBridge({ borrow }: { borrow: BorrowSession }) {
 function MarketHydrator({
   hydrateBorrow,
   hydrateLend,
+  hydrateMultiply,
 }: {
   hydrateBorrow: (snapshots: readonly ConvexMarketSnapshot[]) => void
   hydrateLend: (snapshots: readonly LendConvexSnapshot[]) => void
+  hydrateMultiply: (snapshots: readonly MultiplyConvexSnapshot[]) => void
 }) {
   const snapshots = useQuery(api.markets.listMarketSnapshots)
   useEffect(() => {
     if (snapshots && snapshots.length > 0) {
       hydrateBorrow(snapshots as ConvexMarketSnapshot[])
       hydrateLend(snapshots)
+      hydrateMultiply(snapshots)
     }
-  }, [snapshots, hydrateBorrow, hydrateLend])
+  }, [snapshots, hydrateBorrow, hydrateLend, hydrateMultiply])
   return null
 }
 
@@ -230,7 +234,11 @@ export function AvanaSessionsProvider({
   return (
     <AvanaSessionsContext.Provider value={value}>
       {hasConvexClient ? (
-        <MarketHydrator hydrateBorrow={borrow.hydrateMarketData} hydrateLend={lend.hydrateMarketData} />
+        <MarketHydrator
+          hydrateBorrow={borrow.hydrateMarketData}
+          hydrateLend={lend.hydrateMarketData}
+          hydrateMultiply={multiply.hydrateMarketData}
+        />
       ) : null}
       {children}
     </AvanaSessionsContext.Provider>

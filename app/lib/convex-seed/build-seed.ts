@@ -17,18 +17,20 @@ import { BORROW_POOL_CATALOG, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
 import { computeAssetAllocationRows } from "@/app/lib/borrow-detail/allocation"
-import { buildAssetRiskAssessment, buildLendRiskAssessment, buildPoolRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
-import { buildAssetFaqs, buildLendFaqs, buildPoolFaqs } from "@/app/lib/borrow-detail/content-model"
+import { buildAssetRiskAssessment, buildLendRiskAssessment, buildMultiplyRiskAssessment, buildPoolRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
+import { buildAssetFaqs, buildLendFaqs, buildMultiplyFaqs, buildPoolFaqs } from "@/app/lib/borrow-detail/content-model"
 import { getAssetAboutCard } from "@/app/lib/borrow-detail/asset.mock"
 import { getPoolAboutCard } from "@/app/lib/borrow-detail/pool.mock"
 import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
+import { MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
+import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine/types"
 import type { RiskAssessment } from "@/app/lib/borrow-detail/types"
 
 const DAY_MS = 86_400_000
 
 export type SeedMarketRow = {
-  scope: "asset" | "pool" | "lend"
+  scope: "asset" | "pool" | "lend" | "multiply"
   slug: string
   chainId: number
   name: string
@@ -258,6 +260,52 @@ function dailyStatsForLendMarket(
       tvlUsd: suppliedUsd,
       volumeUsd: 0,
       feesUsd: round((borrowedUsd * borrowAprPct) / 100 / 365, 2),
+      priceUsd: base.priceUsd,
+    }
+  })
+}
+
+function multiplyMarketRow(market: MultiplyMarketRecord, createdAt: number): SeedMarketRow {
+  return {
+    scope: "multiply",
+    slug: market.id,
+    chainId: 1,
+    name: `${market.collateralAsset.symbol} / ${market.borrowAsset.symbol}`,
+    symbol: market.collateralAsset.symbol,
+    category: market.risk.riskTier === "low" ? "stable" : "crypto",
+    createdAt,
+  }
+}
+
+/**
+ * Daily stats for a multiply (leveraged loop) market. "Supplied" is the market's
+ * available loop liquidity (TVL); supply + borrow APY are both given by the catalog.
+ */
+function dailyStatsForMultiplyMarket(
+  slug: string,
+  base: { suppliedUsd: number; utilizationPct: number; supplyApyPct: number; borrowAprPct: number; priceUsd: number },
+  asOf: number,
+  days: number,
+): SeedDailyStatRow[] {
+  const supplied = dailyWalk(slug, "supplied", base.suppliedUsd, asOf, days, { drift: 1.05, noise: 0.05 })
+  const util = dailyWalk(slug, "util", base.utilizationPct, asOf, days, { drift: 1.0, noise: 0.06, wave: 0.05 })
+  const apy = dailyWalk(slug, "supplyapy", base.supplyApyPct, asOf, days, { drift: 1.0, noise: 0.05, wave: 0.04 })
+  return supplied.map((s, i) => {
+    const utilizationPct = Math.min(99, Math.max(1, round(util[i]!.value, 2)))
+    const suppliedUsd = round(s.value, 0)
+    const borrowedUsd = round((suppliedUsd * utilizationPct) / 100, 0)
+    const supplyApyPct = round(Math.max(0.01, apy[i]!.value), 2)
+    return {
+      slug,
+      day: s.day,
+      suppliedUsd,
+      borrowedUsd,
+      utilizationPct,
+      supplyApyPct,
+      borrowAprPct: base.borrowAprPct,
+      tvlUsd: suppliedUsd,
+      volumeUsd: 0,
+      feesUsd: round((borrowedUsd * base.borrowAprPct) / 100 / 365, 2),
       priceUsd: base.priceUsd,
     }
   })
@@ -508,6 +556,44 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
         { date: "2025-09-08", title: "Parameters reviewed", description: "Quarterly risk review — reserve factor unchanged." },
       ],
       faqs: buildLendFaqs(market.asset.symbol, market.asset.name),
+    })
+  }
+
+  // Multiply markets (leveraged loops). Like lend, appended after calibration so their
+  // catalog-scale liquidity isn't rescaled by the borrow economy targets. No pools/allocation.
+  for (const market of MULTIPLY_MARKET_CATALOG) {
+    markets.push(multiplyMarketRow(market, asOf))
+    const utilBase = market.risk.riskTier === "low" ? 68 : market.risk.riskTier === "medium" ? 58 : 48
+    const stats = dailyStatsForMultiplyMarket(
+      market.id,
+      {
+        suppliedUsd: Math.max(1, market.economics.availableLiquidityUsd),
+        utilizationPct: utilBase,
+        supplyApyPct: Math.max(0.01, market.economics.supplyApy * 100),
+        borrowAprPct: Math.max(0.01, market.economics.borrowApy * 100),
+        priceUsd: market.collateralAsset.priceUsd,
+      },
+      asOf,
+      days,
+    )
+    dailyStats.push(...stats)
+    revenue.push(...revenueForMarket(stats, reserveFactor))
+    risk.push(riskRow(market.id, asOf, buildMultiplyRiskAssessment(market)))
+    walletEvents.push(...walletEventsForMarket(market.id, asOf, walletEventDays))
+    content.push({
+      slug: market.id,
+      description: `Multiply market pairing ${market.collateralAsset.name} (${market.collateralAsset.symbol}) collateral with ${market.borrowAsset.symbol} exposure in a leveraged loop, up to ${market.risk.publicMaxMultiplier.toFixed(2)}x. The route is dedicated to leveraged positions, separate from LP collateral pools.`,
+      stats: [
+        { label: "Collateral", value: market.collateralAsset.symbol },
+        { label: "Borrowable", value: market.borrowAsset.symbol },
+        { label: "Max leverage", value: `${market.risk.publicMaxMultiplier.toFixed(2)}x` },
+        { label: "Risk tier", value: market.risk.riskTier === "low" ? "Low" : market.risk.riskTier === "medium" ? "Medium" : "High" },
+      ],
+      history: [
+        { date: "2025-08-12", title: "Market listed", description: `${market.collateralAsset.symbol}/${market.borrowAsset.symbol} added to Multiply.` },
+        { date: "2026-01-18", title: "Risk limits refreshed", description: "Updated leverage and availability parameters." },
+      ],
+      faqs: buildMultiplyFaqs(market.collateralAsset.symbol, market.borrowAsset.symbol),
     })
   }
 
