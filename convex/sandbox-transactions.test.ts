@@ -286,3 +286,100 @@ describe("liquidation recording", () => {
     expect(state.snapshots).toHaveLength(1)
   })
 })
+
+describe("recordTransaction — server-side solvency re-derivation", () => {
+  test("rejects an undercollateralized borrow (debt > liquidation value)", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("insolvent", {
+          amountUsd: 2000,
+          requestedAmountUsd6: "2000000000",
+          executedAmountUsd6: "2000000000",
+          position: {
+            status: "open",
+            marketSlug: "uni-v3-bluechip-weth-usdc",
+            debtValueUsd6: "2000000000", // $2000 debt vs $2000 collateral @ 85% = $1700 max
+            collateral: [
+              {
+                marketSlug: "uni-v3-bluechip-weth-usdc",
+                collateralShares: "2000000000",
+                principalTokenAmount: "2000000000",
+                collateralEnabled: true,
+                collateralValueUsd6: "2000000000",
+              },
+            ],
+          },
+        }),
+      ),
+    ).rejects.toThrow(/undercollateralized|health factor/i)
+  })
+
+  test("rejects borrow debt with no backing collateral", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("unbacked", {
+          position: {
+            status: "open",
+            marketSlug: "uni-v3-bluechip-weth-usdc",
+            debtValueUsd6: "1000000000",
+            collateral: [],
+          },
+        }),
+      ),
+    ).rejects.toThrow(/no backing collateral/i)
+  })
+
+  test("rejects a multiply position above the protocol leverage ceiling", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("overlev", {
+          product: "multiply",
+          kind: "multiply",
+          marketSlug: "eth-usdt",
+          position: {
+            status: "open",
+            marketSlug: "eth-usdt",
+            collateralValueUsd: 15000,
+            debtValueUsd: 14000, // equity 1000 → multiplier 15x (> 10 ceiling)
+            multiplier: 15,
+            ltv: 14000 / 15000,
+          },
+        }),
+      ),
+    ).rejects.toThrow(/multiplier exceeds the protocol maximum/i)
+  })
+
+  test("still accepts a healthy borrow (debt within liquidation value)", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    const res = await asUser.mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("healthy", {
+        position: {
+          status: "open",
+          marketSlug: "uni-v3-bluechip-weth-usdc",
+          debtValueUsd6: "1000000000", // $1000 debt vs $2000 collateral @ 85% = $1700 max
+          collateral: [
+            {
+              marketSlug: "uni-v3-bluechip-weth-usdc",
+              collateralShares: "2000000000",
+              principalTokenAmount: "2000000000",
+              collateralEnabled: true,
+              collateralValueUsd6: "2000000000",
+            },
+          ],
+        },
+      }),
+    )
+    expect(res.receipt.status).toBe("success")
+  })
+})

@@ -27,6 +27,12 @@ import type { Doc } from "../_generated/dataModel"
 /** Hourly per-wallet transaction cap (anti-abuse). Exported for tests. */
 export const MAX_TX_PER_HOUR = 200
 
+/** Global multiply leverage ceiling, mirrors MULTIPLY_ACTION_MAX_LEVERAGE (client slider). */
+const MAX_MULTIPLIER = 10
+
+/** Liquidation threshold (%) assumed when a pledged pool has none recorded. Conservative. */
+const BORROW_FALLBACK_LIQUIDATION_PCT = 85
+
 /** Optional position upsert payload carried by a transaction. */
 const positionPayload = v.object({
   status: v.union(v.literal("open"), v.literal("closed")),
@@ -159,6 +165,55 @@ function validateTransactionTransition(
     const expectedLtv = collateral > 0 ? debt / collateral : 0
     assertClose(args.position.multiplier ?? 1, expectedMultiplier, "multiply multiplier", 0.0001)
     assertClose(args.position.ltv ?? 0, expectedLtv, "multiply LTV", 0.0001)
+    // Cap enforcement: the client slider tops out at MULTIPLY_ACTION_MAX_LEVERAGE, but a
+    // tampered client could submit an internally-consistent position above it. Reject so
+    // leverage caps are enforced server-side, not just in the UI.
+    if ((args.position.multiplier ?? 1) > MAX_MULTIPLIER + 0.01) {
+      throw new Error("INVALID_TRANSITION: multiplier exceeds the protocol maximum.")
+    }
+  }
+}
+
+/**
+ * Server-side borrow solvency re-derivation. The Credit Engine runs in the browser, so
+ * the server must independently confirm a borrow/withdraw write does not persist an
+ * underwater (HF < 1) or unbacked position — otherwise a tampered client could record
+ * arbitrary debt against arbitrary (or zero) collateral. We re-derive the liquidation
+ * value from the pledged pools' real liquidation thresholds (NOT any client-supplied HF)
+ * and reject when debt exceeds it.
+ */
+async function assertBorrowSolvent(
+  ctx: MutationCtx,
+  args: { product: "borrow" | "lend" | "multiply"; kind: string; position?: Infer<typeof positionPayload> },
+) {
+  if (args.product !== "borrow" || !args.position) return
+  const debtUsd = usd6Number(args.position.debtValueUsd6)
+  if (debtUsd <= 0) return // no debt → nothing to back
+
+  const collateralRows = (args.position.collateral ?? []).filter((row) => row.collateralEnabled !== false)
+  if (collateralRows.length === 0) {
+    throw new Error("INVALID_TRANSITION: borrow debt has no backing collateral.")
+  }
+
+  let liquidationValueUsd = 0
+  let valuedCollateralUsd = 0
+  for (const row of collateralRows) {
+    const valueUsd = usd6Number(row.collateralValueUsd6)
+    if (valueUsd <= 0) continue // value not provided for this leg — can't bound it
+    valuedCollateralUsd += valueUsd
+    const pool = await ctx.db
+      .query("pools")
+      .withIndex("by_slug", (q) => q.eq("slug", row.marketSlug))
+      .unique()
+    const thresholdPct = pool?.liquidationThresholdPct ?? pool?.maxLtvPct ?? BORROW_FALLBACK_LIQUIDATION_PCT
+    liquidationValueUsd += valueUsd * (thresholdPct / 100)
+  }
+
+  // Only enforce the health-factor bound when we actually have collateral values to
+  // re-derive from; missing value data fails open (don't block a legitimate borrow on a
+  // mapping gap) while a clearly underwater position (debt > liquidation value) is rejected.
+  if (valuedCollateralUsd > 0 && debtUsd > liquidationValueUsd + 0.01) {
+    throw new Error("INVALID_TRANSITION: borrow position would be undercollateralized (health factor < 1).")
   }
 }
 
@@ -347,6 +402,7 @@ export const recordTransaction = mutation({
       const existing = matches.find((p) => p.product === args.product)
       existingPosition = existing
       validateTransactionTransition(args, existing)
+      await assertBorrowSolvent(ctx, args)
       const fields = {
         spokeId: args.position.spokeId,
         assetId: args.position.assetId ?? args.assetId,
