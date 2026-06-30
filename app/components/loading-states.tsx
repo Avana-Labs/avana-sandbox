@@ -27,9 +27,9 @@ type BlockProps = {
 
 function Page({ children, className }: BlockProps) {
   return (
-    <div className="bg-background">
+    <div className="bg-background" aria-busy="true" aria-label="Loading">
       <main className="container mx-auto px-4 py-8">
-        <div className={cn("mx-auto max-w-5xl", className)}>{children}</div>
+        <div className={cn("skeleton-enter mx-auto max-w-5xl", className)}>{children}</div>
       </main>
     </div>
   )

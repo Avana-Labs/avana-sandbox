@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import type { HomeMode } from "@/app/lib/home-sim"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AvanaSessionsProvider, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
@@ -41,7 +42,10 @@ function HomePageWorkspace() {
     return (
       <div className="bg-background">
         <section className="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-8">
-          <div className="h-[360px] w-full max-w-[480px] animate-pulse rounded-[20px] bg-muted/40" data-testid="home-workspace-loading" />
+          <Skeleton
+            className="skeleton-enter h-[360px] w-full max-w-[480px] rounded-[20px]"
+            data-testid="home-workspace-loading"
+          />
         </section>
       </div>
     )

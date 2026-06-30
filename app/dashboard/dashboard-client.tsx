@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Skeleton } from "@/components/ui/skeleton"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -90,19 +91,19 @@ function DashboardSection({
 /** Shown while the authenticated portfolio is loading from Convex (was a blank screen). */
 function DashboardLoadingState() {
   return (
-    <div className="animate-pulse space-y-8" aria-busy="true" aria-label="Loading your portfolio">
+    <div className="skeleton-enter space-y-8" aria-busy="true" aria-label="Loading your portfolio">
       <div className="space-y-3">
-        <div className="h-8 w-44 rounded-lg bg-muted" />
-        <div className="h-10 w-72 rounded-lg bg-muted" />
+        <Skeleton className="h-8 w-44 rounded-radius-sm" />
+        <Skeleton className="h-10 w-72 rounded-radius-sm" />
       </div>
       <div className="flex gap-6">
         {["a", "b", "c", "d"].map((k) => (
-          <div className="h-5 w-20 rounded bg-muted" key={k} />
+          <Skeleton className="h-5 w-20 rounded-xs" key={k} />
         ))}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {["a", "b", "c", "d", "e", "f"].map((k) => (
-          <div className="h-28 rounded-2xl bg-muted" key={k} />
+          <Skeleton className="h-28 rounded-radius-md" key={k} />
         ))}
       </div>
     </div>
