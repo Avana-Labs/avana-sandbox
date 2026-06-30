@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import type { RewardsPromoTabId, RewardsQuest, RewardsQuestIconId } from "@/app/lib/data/mock/shared/rewards"
+import { REWARDS_PROMO_TABS, type RewardsPromoTabId, type RewardsQuest, type RewardsQuestIconId } from "@/app/lib/data/rewards/catalog"
 import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -169,7 +169,7 @@ function mapTaskToQuest(
   }
 }
 
-export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
+export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) {
   const router = useRouter()
   const avana = useAvanaSessions()
   const {
@@ -398,7 +398,7 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
   return (
     <>
       <RewardsBalanceHero
-        rewardPools={pageData.rewardPools}
+        rewardPools={pageData?.rewardPools ?? []}
         balanceTotal={snapshot.summary.totalClaimedAmount}
         claimableAmount={snapshot.summary.totalClaimableAmount}
         claimableCount={snapshot.summary.claimableTaskCount}
@@ -409,7 +409,7 @@ export function RewardsPageClient({ pageData }: { pageData: RewardsPageData }) {
       />
 
       <RewardsTabs
-        promoTabs={pageData.promoTabs}
+        promoTabs={pageData?.promoTabs ?? REWARDS_PROMO_TABS}
         questsByTab={questsByTab}
         onTaskAction={(taskId) => handleTaskAction(taskId)}
       />

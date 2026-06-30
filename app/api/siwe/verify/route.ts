@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { recoverMessageAddress } from "viem"
-import { extractSiweAddress, extractSiweNonce } from "@/app/lib/siwe/message"
+import { extractSiweAddress, extractSiweDomain, extractSiweNonce, extractSiweUri } from "@/app/lib/siwe/message"
 import { mintSandboxJwt, resolveIssuer } from "@/app/lib/siwe/jwt"
 
 export const dynamic = "force-dynamic"
@@ -25,6 +25,26 @@ export async function POST(req: Request) {
   const nonce = extractSiweNonce(message)
   if (!address || !nonce) {
     return Response.json({ error: "malformed SIWE message" }, { status: 400 })
+  }
+
+  // Bind the signature to THIS origin. EIP-4361 puts the domain/URI in the signed
+  // payload precisely so a signature phished for another site cannot be relayed here.
+  // The client signs with domain = window.location.host, so it must equal our host.
+  const host = req.headers.get("host")
+  const domain = extractSiweDomain(message)
+  if (!domain || (host && domain !== host)) {
+    return Response.json({ error: "SIWE domain does not match this origin" }, { status: 401 })
+  }
+  const uri = extractSiweUri(message)
+  if (uri) {
+    try {
+      const uriHost = new URL(uri).host
+      if (host && uriHost !== host) {
+        return Response.json({ error: "SIWE URI does not match this origin" }, { status: 401 })
+      }
+    } catch {
+      return Response.json({ error: "malformed SIWE URI" }, { status: 400 })
+    }
   }
 
   const jar = await cookies()

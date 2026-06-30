@@ -36,7 +36,7 @@ function getRewardsPageSource(source?: RewardsPageSource) {
 
 function getRewardsPageFallback(source?: RewardsPageSource) {
   if (source || resolveDataSourceMode() === "mock") return undefined
-  return mockRewardsPageSource
+  return undefined
 }
 
 export async function fetchRewardsPage(

@@ -10,7 +10,7 @@
  */
 
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
+import { internalMutation, query } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
 
 const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
@@ -47,7 +47,7 @@ export const getCounts = query({
 })
 
 /** Upsert canonical markets by (scope, slug); returns the slug → _id map for this batch. */
-export const upsertMarkets = mutation({
+export const upsertMarkets = internalMutation({
   args: {
     rows: v.array(
       v.object({
@@ -60,6 +60,23 @@ export const upsertMarkets = mutation({
         category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
         explorerUrl: v.optional(v.string()),
         reserveFactorPct: v.optional(v.number()),
+        description: v.optional(v.string()),
+        iconUrl: v.optional(v.string()),
+        spokeId: v.optional(v.string()),
+        feeTier: v.optional(v.string()),
+        maxLtvPct: v.optional(v.number()),
+        visuals: v.optional(
+          v.array(
+            v.object({
+              symbol: v.string(),
+              shortLabel: v.string(),
+              bgClassName: v.string(),
+              textClassName: v.string(),
+              iconUrl: v.optional(v.string()),
+            }),
+          ),
+        ),
+        resources: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
         createdAt: v.number(),
       }),
     ),
@@ -83,7 +100,7 @@ export const upsertMarkets = mutation({
 })
 
 /** Upsert daily market stats by (marketId, day). */
-export const upsertDailyStats = mutation({
+export const upsertDailyStats = internalMutation({
   args: {
     rows: v.array(
       v.object({
@@ -117,7 +134,7 @@ export const upsertDailyStats = mutation({
 })
 
 /** Upsert daily revenue by (marketId, day). */
-export const upsertRevenue = mutation({
+export const upsertRevenue = internalMutation({
   args: {
     rows: v.array(
       v.object({
@@ -145,7 +162,7 @@ export const upsertRevenue = mutation({
 })
 
 /** Upsert the latest risk assessment per market (one row per marketId). */
-export const upsertRisk = mutation({
+export const upsertRisk = internalMutation({
   args: {
     rows: v.array(
       v.object({
@@ -178,7 +195,7 @@ export const upsertRisk = mutation({
 })
 
 /** Upsert latest-day allocation rows keyed by (assetId, poolId, day). */
-export const upsertAllocation = mutation({
+export const upsertAllocation = internalMutation({
   args: {
     rows: v.array(
       v.object({
@@ -207,7 +224,7 @@ export const upsertAllocation = mutation({
 })
 
 /** Upsert per-market editorial content (about/stats/history/faqs) by marketId. */
-export const upsertContent = mutation({
+export const upsertContent = internalMutation({
   args: {
     rows: v.array(
       v.object({
@@ -242,7 +259,7 @@ const walletEventKind = v.union(
 )
 
 /** Delete a page of walletEvents (batched; loop from the caller until deleted=0). */
-export const clearWalletEvents = mutation({
+export const clearWalletEvents = internalMutation({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
     const rows = await ctx.db.query("walletEvents").take(limit ?? 2000)
@@ -252,7 +269,7 @@ export const clearWalletEvents = mutation({
 })
 
 /** Insert wallet activity events (engagement source). Clear first for idempotent re-seed. */
-export const insertWalletEvents = mutation({
+export const insertWalletEvents = internalMutation({
   args: {
     rows: v.array(
       v.object({

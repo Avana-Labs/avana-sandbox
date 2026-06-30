@@ -7,11 +7,13 @@ import type {
   LendTransactionHistoryItem,
   LendTransactionIntent,
   LendTransactionPreview,
+  LendTransactionResult,
 } from "./contracts"
 
 type SandboxAdapterOptions = {
   readState: () => LendSystemState
   writeState: (state: LendSystemState) => void
+  persistResult?: (result: LendSandboxActionResult) => Promise<LendTransactionResult>
   now?: () => number
   generateId?: (prefix: string) => string
 }
@@ -149,6 +151,7 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
   readonly mode = "sandbox" as const
   private readonly readStateImpl: SandboxAdapterOptions["readState"]
   private readonly writeStateImpl: SandboxAdapterOptions["writeState"]
+  private readonly persistResult?: SandboxAdapterOptions["persistResult"]
   private readonly now: () => number
   private readonly generateId: (prefix: string) => string
   private readonly previewCache = new Map<string, LendTransactionPreview>()
@@ -156,6 +159,7 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
   constructor(options: SandboxAdapterOptions) {
     this.readStateImpl = options.readState
     this.writeStateImpl = options.writeState
+    this.persistResult = options.persistResult
     this.now = options.now ?? Date.now
     this.generateId = options.generateId ?? defaultId
   }
@@ -202,9 +206,8 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
         : findWalletPosition(state, action.walletId, action.marketId)?.positionId ?? `${action.walletId}:${action.marketId}`
     const transactionId = this.generateId("tx")
     const nextState = applyLendAction(state, action, { positionId, transactionId })
-    this.writeStateImpl(nextState)
 
-    const receipt = {
+    const localReceipt = {
       id: transactionId,
       hash: `sim_lend_${transactionId}`,
       status: "success" as const,
@@ -224,10 +227,31 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
       asset: action.type === "claim" ? "Rewards" : state.markets[action.marketId]?.asset.symbol ?? "",
       amount: action.type === "deposit" ? action.depositAmount : action.type === "withdraw" ? action.withdrawAmount : preview.before.rewardsEarnedUsd,
       simulated: true,
-      timestamp: receipt.timestamp,
-      hash: receipt.hash,
+      timestamp: localReceipt.timestamp,
+      hash: localReceipt.hash,
     }
 
-    return { preview, receipt, historyItem, state: nextState }
+    const localResult: LendSandboxActionResult = {
+      preview,
+      receipt: localReceipt,
+      historyItem,
+      state: nextState,
+    }
+    const persisted = this.persistResult ? await this.persistResult(localResult) : localReceipt
+    if (persisted.status === "idle") throw new Error("Convex returned an invalid idle transaction receipt")
+    const receipt = { ...localReceipt, ...persisted, actionType: localReceipt.actionType }
+    const persistedResult = {
+      ...localResult,
+      receipt,
+      historyItem: {
+        ...historyItem,
+        id: persisted.id,
+        hash: persisted.hash,
+        status: persisted.status,
+        timestamp: persisted.timestamp,
+      },
+    }
+    this.writeStateImpl(nextState)
+    return persistedResult
   }
 }

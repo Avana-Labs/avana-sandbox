@@ -1,17 +1,57 @@
 import process from "node:process"
+import { URL } from "node:url"
 
 const isDev = process.env.NODE_ENV === "development"
+
+/**
+ * Convex's reactive client connects over a WebSocket (https→wss, http→ws) and also
+ * falls back to HTTP `/api/query`. The CSP `connect-src` MUST allow that backend
+ * origin in BOTH transports or every client-side `useQuery`/`useMutation` (dashboard,
+ * authed sessions, the shared liquidity ledger) is silently blocked and renders empty.
+ * Derive the exact origins from the public Convex env so dev (http/ws on 127.0.0.1)
+ * and prod (https/wss on *.convex.cloud) both work.
+ */
+function convexConnectOrigins() {
+  const origins = new Set()
+  for (const raw of [process.env.NEXT_PUBLIC_CONVEX_URL, process.env.NEXT_PUBLIC_CONVEX_SITE_URL]) {
+    if (!raw) continue
+    try {
+      const u = new URL(raw)
+      const wsProto = u.protocol === "https:" ? "wss:" : "ws:"
+      origins.add(`${u.protocol}//${u.host}`)
+      origins.add(`${wsProto}//${u.host}`)
+    } catch {
+      // ignore malformed env
+    }
+  }
+  return [...origins]
+}
+
+const connectSrc = [
+  "'self'",
+  "https:",
+  "wss:", // Convex realtime in production (was missing — broke client subscriptions)
+  ...(isDev ? ["ws:", "http:", "blob:"] : []),
+  ...convexConnectOrigins(),
+].join(" ")
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   isDev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  isDev ? "connect-src 'self' ws: wss: blob: https:" : "connect-src 'self' https:",
+  `connect-src ${connectSrc}`,
   "media-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
+  // WalletConnect frames verify.walletconnect.{com,org} during connect — allow those.
+  // We deliberately do NOT allow app.family.co: that third-party frame loads a Cloudflare
+  // bot-challenge script costing ~3s of main-thread time on EVERY page (Lighthouse
+  // bootup-time), and it is not needed for injected/MetaMask/Coinbase/WalletConnect
+  // wallets. Blocking it is both faster and one fewer third-party frame.
+  "frame-src 'self' https://verify.walletconnect.com https://verify.walletconnect.org",
   "frame-ancestors 'none'",
 ].join("; ")
 
@@ -34,7 +74,7 @@ const securityHeaders = [
   },
   {
     key: "Permissions-Policy",
-    value: "accelerometer=(), ambient-light-sensor=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), usb=()",
+    value: "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), usb=()",
   },
   {
     key: "X-Content-Type-Options",
@@ -46,7 +86,16 @@ const securityHeaders = [
 const nextConfig = {
   poweredByHeader: false,
   experimental: {
-    optimizePackageImports: ["lucide-react", "sonner"],
+    // Tree-shake heavy barrel packages so a 2-icon import doesn't pull the whole library.
+    // @fluentui/react-icons especially ships thousands of icons behind one barrel.
+    optimizePackageImports: [
+      "lucide-react",
+      "sonner",
+      "@fluentui/react-icons",
+      "recharts",
+      "framer-motion",
+      "@radix-ui/react-icons",
+    ],
   },
   async redirects() {
     return [

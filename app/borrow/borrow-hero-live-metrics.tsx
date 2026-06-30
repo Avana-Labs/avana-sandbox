@@ -41,7 +41,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 md:ml-auto md:text-right">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 md:ml-auto md:text-right">
         <div>
           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-hero-metric-emerald md:justify-end">
             <span className="h-1.5 w-1.5 rounded-full bg-[#7ec39f]" />

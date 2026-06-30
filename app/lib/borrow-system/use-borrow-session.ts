@@ -4,7 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { calculateCreditMetrics, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
 import { deserializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
 import { mergeConvexMarketSnapshots, type ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
-import type { SandboxActionResult, SyntheticTransactionReceipt, TransactionHistoryItem, TransactionIntent } from "@/app/lib/borrow-system/contracts"
+import type {
+  BaseReadAdapter,
+  SandboxActionResult,
+  SyntheticTransactionReceipt,
+  TransactionAdapter,
+  TransactionHistoryItem,
+  TransactionIntent,
+} from "@/app/lib/borrow-system/contracts"
 import { createExecutionFingerprint } from "@/app/lib/borrow-system/execution-guard"
 import { buildLegacyTransactionHistory, buildSyntheticReceipts } from "@/app/lib/borrow-system/read-model"
 import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
@@ -32,13 +39,69 @@ function mergeReceipts(nextReceipt: SyntheticTransactionReceipt, receipts: Synth
   return [nextReceipt, ...receipts.filter((receipt) => receipt.id !== nextReceipt.id)]
 }
 
+export type ConvexBorrowWalletData = {
+  balances?: Array<{ valueUsd: number }>
+  positions: Array<{
+    product: "borrow" | "lend" | "multiply"
+    marketSlug: string
+    collateral: Array<{
+      _id: string
+      marketSlug: string
+      collateralShares: string
+      principalTokenAmount: string
+      collateralEnabled: boolean
+    }>
+    debt: Array<{
+      _id: string
+      assetId: string
+      baseAssetId: string
+      spokeId?: string
+      marketSlug?: string
+      debtSharesUsd6: string
+      debtIndexRay: string
+      borrowRateWad: string
+      principalBorrowedUsd6: string
+    }>
+  }>
+  transactions: Array<{
+    _id: string
+    intentId?: string
+    product: "borrow" | "lend" | "multiply"
+    kind: string
+    status: "success" | "failed" | "pending"
+    marketSlug?: string
+    assetId?: string
+    requestedAmountUsd6: string
+    executedAmountUsd6: string
+    syntheticTxHash: string
+    simulated: boolean
+    at: number
+  }>
+}
+
 export function useBorrowSession({
   walletId,
   sessionSeed,
+  readAdapter: injectedReadAdapter,
+  transactionAdapter: injectedTransactionAdapter,
+  persistState,
+  persistTransaction,
 }: {
   walletId: string
   sessionSeed: string
+  readAdapter?: BaseReadAdapter
+  transactionAdapter?: TransactionAdapter
+  persistState?: boolean
+  persistTransaction?: (result: SandboxActionResult) => Promise<{
+    id: string
+    hash: string
+    status: "success" | "failed" | "pending"
+    simulated: boolean
+    timestamp: number
+  }>
 }) {
+  const adapterMode = injectedReadAdapter?.mode ?? injectedTransactionAdapter?.mode ?? "sandbox"
+  const shouldPersistState = persistState ?? adapterMode === "sandbox"
   const seededState = useMemo(() => deserializeBorrowSystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<BorrowSystemState>(seededState)
   const [transactionHistory, setTransactionHistory] = useState<TransactionHistoryItem[]>(() =>
@@ -56,6 +119,12 @@ export function useBorrowSession({
   }, [state])
 
   useEffect(() => {
+    if (!shouldPersistState) {
+      setState(seededState)
+      setTransactionHistory([])
+      setTransactionReceipts([])
+      return
+    }
     const nextState = readBorrowSessionState(walletId, sessionSeed)
     const metadata = readBorrowSessionMetadata(walletId)
     const fallbackHistory = buildLegacyTransactionHistory(nextState, walletId)
@@ -63,24 +132,25 @@ export function useBorrowSession({
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory.length > 0 ? metadata.transactionHistory : fallbackHistory)
     setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(fallbackHistory))
-  }, [walletId, sessionSeed])
+  }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
     // Skip while state is still the SSR seed (pre-hydration); persisting it here
     // would clobber richer data already in storage before the restore effect runs.
-    if (state === seededState) return
+    if (!shouldPersistState || state === seededState) return
     writeBorrowSessionState(walletId, state)
-  }, [walletId, state, seededState])
+  }, [shouldPersistState, walletId, state, seededState])
 
   useEffect(() => {
+    if (!shouldPersistState) return
     writeBorrowSessionMetadata(walletId, {
       transactionHistory,
       receipts: transactionReceipts,
     })
-  }, [transactionHistory, transactionReceipts, walletId])
+  }, [shouldPersistState, transactionHistory, transactionReceipts, walletId])
 
   useEffect(() => {
-    if (typeof window === "undefined") return undefined
+    if (!shouldPersistState || typeof window === "undefined") return undefined
 
     const handleStorage = (event: StorageEvent) => {
       if (event.key == null || !event.key.endsWith(`:${walletId}`)) return
@@ -96,15 +166,15 @@ export function useBorrowSession({
 
     window.addEventListener("storage", handleStorage)
     return () => window.removeEventListener("storage", handleStorage)
-  }, [sessionSeed, walletId])
+  }, [sessionSeed, shouldPersistState, walletId])
 
   const reset = useCallback(() => {
-    clearBorrowSessionState(walletId)
+    if (shouldPersistState) clearBorrowSessionState(walletId)
     setState(seededState)
     const resetHistory = buildLegacyTransactionHistory(seededState, walletId)
     setTransactionHistory(resetHistory)
     setTransactionReceipts(buildSyntheticReceipts(resetHistory))
-  }, [seededState, walletId])
+  }, [seededState, shouldPersistState, walletId])
 
   /**
    * Overlay Convex market reference data (liquidity/rates) onto the session so the
@@ -117,16 +187,84 @@ export function useBorrowSession({
     setState((prev) => mergeConvexMarketSnapshots(prev, snapshots))
   }, [])
 
+  const hydrateWalletData = useCallback(
+    (data: ConvexBorrowWalletData) => {
+      const borrowPositions = data.positions.filter((position) => position.product === "borrow")
+      const nextHistory: TransactionHistoryItem[] = data.transactions
+        .filter((transaction) => transaction.product === "borrow")
+        .map((transaction) => ({
+          id: String(transaction._id),
+          intentId: transaction.intentId ?? String(transaction._id),
+          walletId,
+          marketId: transaction.marketSlug,
+          assetId: transaction.assetId,
+          kind: transaction.kind as TransactionHistoryItem["kind"],
+          status: transaction.status,
+          requestedAmountUsd6: BigInt(transaction.requestedAmountUsd6),
+          executedAmountUsd6: BigInt(transaction.executedAmountUsd6),
+          simulated: transaction.simulated,
+          timestamp: transaction.at,
+          hash: transaction.syntheticTxHash,
+        }))
+
+      setState((current) => {
+        const account = current.accounts[walletId]
+        if (!account) return current
+        return {
+          ...current,
+          accounts: {
+            ...current.accounts,
+            [walletId]: {
+              ...account,
+              walletBalanceUsd6: BigInt(
+                Math.round((data.balances ?? []).reduce((sum, balance) => sum + balance.valueUsd, 0) * 1_000_000),
+              ),
+              collateralPositions: borrowPositions.flatMap((position) =>
+                position.collateral.map((collateral) => ({
+                  id: String(collateral._id),
+                  marketId: collateral.marketSlug,
+                  collateralShares: BigInt(collateral.collateralShares),
+                  principalTokenAmount: BigInt(collateral.principalTokenAmount),
+                  collateralEnabled: collateral.collateralEnabled,
+                })),
+              ),
+              debtPositions: borrowPositions.flatMap((position) =>
+                position.debt.map((debt) => ({
+                  id: String(debt._id),
+                  assetId: debt.assetId,
+                  baseAssetId: debt.baseAssetId,
+                  spokeId: debt.spokeId as import("@/app/lib/credit-engine").BorrowSpokeId,
+                  marketId: debt.marketSlug,
+                  debtSharesUsd6: BigInt(debt.debtSharesUsd6),
+                  debtIndexRay: BigInt(debt.debtIndexRay),
+                  borrowRateWad: BigInt(debt.borrowRateWad),
+                  principalBorrowedUsd6: BigInt(debt.principalBorrowedUsd6),
+                })),
+              ),
+              lastUpdatedAt: Math.max(account.lastUpdatedAt, ...nextHistory.map((item) => item.timestamp), 0),
+            },
+          },
+        }
+      })
+      setTransactionHistory(nextHistory)
+      setTransactionReceipts(buildSyntheticReceipts(nextHistory))
+    },
+    [walletId],
+  )
+
   const transactionAdapter = useMemo(
-    () =>
-      new SandboxTransactionAdapter({
+    () => {
+      if (injectedTransactionAdapter) return injectedTransactionAdapter
+      return new SandboxTransactionAdapter({
         readState: () => stateRef.current,
         writeState: (nextState) => {
           stateRef.current = nextState
           setState(nextState)
         },
-      }),
-    [],
+        persistResult: persistTransaction,
+      })
+    },
+    [injectedTransactionAdapter, persistTransaction],
   )
 
   const createIntent = useCallback((action: BorrowAction) => transactionAdapter.createIntent(action), [transactionAdapter])
@@ -146,6 +284,8 @@ export function useBorrowSession({
       const execution = transactionAdapter
         .executeTransaction(intent)
         .then((result) => {
+          stateRef.current = result.state
+          setState(result.state)
           setTransactionHistory((current) => mergeHistory(result.historyItem, current))
           setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
           return result
@@ -161,12 +301,14 @@ export function useBorrowSession({
     [transactionAdapter],
   )
   const readAdapter = useMemo(
-    () =>
-      new SandboxBorrowReadAdapter({
+    () => {
+      if (injectedReadAdapter) return injectedReadAdapter
+      return new SandboxBorrowReadAdapter({
         state,
         transactionHistory,
-      }),
-    [state, transactionHistory],
+      })
+    },
+    [injectedReadAdapter, state, transactionHistory],
   )
 
   const metrics = useMemo(() => calculateCreditMetrics(state, walletId), [state, walletId])
@@ -200,5 +342,6 @@ export function useBorrowSession({
     executeTransaction,
     reset,
     hydrateMarketData,
+    hydrateWalletData,
   }
 }

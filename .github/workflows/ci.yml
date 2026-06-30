@@ -12,7 +12,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -27,29 +27,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
       - name: Typecheck
         run: npx tsc --noEmit
 
       - name: Unit tests
         run: npm test
 
-      - name: E2E visual regression
-        run: npm run test:e2e
-        env:
-          CI: true
-
-      - name: Route performance budgets
-        run: npm run test:e2e:performance
-        env:
-          CI: true
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
+# NOTE: The Playwright e2e (app-audit / route-performance) suites are intentionally not
+# run in CI. They drive the authenticated app, which requires a running Convex backend and
+# a signed-in wallet (the onboarding gate blocks unauthenticated routes) — neither of which
+# CI provisions. Run them locally against `npm run dev` (NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1
+# + a SIWE token + a local `npx convex dev`). CI keeps the deterministic gates: typecheck
+# + the full unit/integration suite (`npm test`).

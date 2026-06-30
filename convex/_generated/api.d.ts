@@ -18,8 +18,12 @@ import type * as markets from "../markets.js";
 import type * as prices from "../prices.js";
 import type * as risk from "../risk.js";
 import type * as sandbox_auth from "../sandbox/auth.js";
+import type * as sandbox_liquidation from "../sandbox/liquidation.js";
 import type * as sandbox_onboarding from "../sandbox/onboarding.js";
+import type * as sandbox_rewards from "../sandbox/rewards.js";
+import type * as sandbox_transactions from "../sandbox/transactions.js";
 import type * as seed from "../seed.js";
+import type * as seedAdmin from "../seedAdmin.js";
 
 import type {
   ApiFromModules,
@@ -38,8 +42,12 @@ declare const fullApi: ApiFromModules<{
   prices: typeof prices;
   risk: typeof risk;
   "sandbox/auth": typeof sandbox_auth;
+  "sandbox/liquidation": typeof sandbox_liquidation;
   "sandbox/onboarding": typeof sandbox_onboarding;
+  "sandbox/rewards": typeof sandbox_rewards;
+  "sandbox/transactions": typeof sandbox_transactions;
   seed: typeof seed;
+  seedAdmin: typeof seedAdmin;
 }>;
 
 /**

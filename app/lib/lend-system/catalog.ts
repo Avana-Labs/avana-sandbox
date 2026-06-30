@@ -1,4 +1,4 @@
-import { LEND_ASSET_GROUPS } from "@/app/lib/data/mock/shared/lend/asset-groups"
+import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend/asset-groups"
 import { calculateAvailableLiquidity, calculateTotalApy, calculateUtilization } from "@/app/lib/lend-engine/formulas"
 import { INITIAL_LIQUIDITY_INDEX } from "@/app/lib/lend-engine/constants"
 import type { LendMarket, LendRiskTier } from "@/app/lib/lend-engine/types"

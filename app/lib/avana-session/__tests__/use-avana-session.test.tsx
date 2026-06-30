@@ -5,6 +5,9 @@ import { useAvanaSession } from "@/app/lib/avana-session"
 import { buildLendSessionSeed } from "@/app/lib/lend-system/demo-session"
 import { buildMultiplySessionSeed } from "@/app/lib/multiply-system/demo-session"
 import { buildRewardsSessionSeed } from "@/app/lib/rewards-system"
+import { deserializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
+import { deserializeLendSystemState } from "@/app/lib/lend-system/codec"
+import { deserializeMultiplySystemState } from "@/app/lib/multiply-system/codec"
 
 describe("useAvanaSession", () => {
   it("returns shared wallet identity and independent product session seeds", () => {
@@ -19,5 +22,20 @@ describe("useAvanaSession", () => {
     expect(result.current.rewardsSessionSeed).toBe(buildRewardsSessionSeed())
     expect(result.current.borrowSessionSeed).not.toBe(result.current.multiplySessionSeed)
     expect(result.current.borrowSessionSeed).not.toBe(result.current.lendSessionSeed)
+  })
+
+  it("does not seed authenticated Convex sessions with demo positions or balances", () => {
+    const wallet = "0xabc0000000000000000000000000000000000001"
+    const { result } = renderHook(() => useAvanaSession(wallet, "convex"))
+    const borrow = deserializeBorrowSystemState(result.current.borrowSessionSeed)
+    const lend = deserializeLendSystemState(result.current.lendSessionSeed)
+    const multiply = deserializeMultiplySystemState(result.current.multiplySessionSeed)
+
+    expect(borrow.accounts[wallet]?.walletBalanceUsd6).toBe(0n)
+    expect(borrow.accounts[wallet]?.collateralPositions).toEqual([])
+    expect(borrow.accounts[wallet]?.debtPositions).toEqual([])
+    expect(lend.walletBalances[wallet]).toEqual({})
+    expect(lend.positions).toEqual({})
+    expect(multiply.positions).toEqual({})
   })
 })

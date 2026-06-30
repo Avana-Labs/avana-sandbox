@@ -2,7 +2,7 @@ import {
   LEND_ASSET_GROUPS,
   LEND_FEATURED_ASSETS,
   LEND_FEATURED_SEQUENCE,
-} from "@/app/lib/data/mock/shared/lend"
+} from "@/app/lib/data/catalog/lend"
 import type { LendFeaturedSnapshot, LendMarketRow } from "@/app/lib/lend-system/read-model"
 
 export type LendToken = {
@@ -24,6 +24,8 @@ export type LendMarket = {
   apy: number
   apyChange24h: number
   tvl: string
+  /** Raw USD TVL — the hero aggregates this directly instead of re-parsing `tvl`. */
+  tvlUsd?: number
   utilization: number
   type: string
   protocol: string

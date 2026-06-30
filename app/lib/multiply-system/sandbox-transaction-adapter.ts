@@ -13,11 +13,13 @@ import type {
   MultiplyTransactionHistoryItem,
   MultiplyTransactionIntent,
   MultiplyTransactionPreview,
+  MultiplyTransactionResult,
 } from "./contracts"
 
 type SandboxAdapterOptions = {
   readState: () => MultiplySystemState
   writeState: (state: MultiplySystemState) => void
+  persistResult?: (result: MultiplySandboxActionResult) => Promise<MultiplyTransactionResult>
   now?: () => number
   generateId?: (prefix: string) => string
 }
@@ -158,6 +160,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
   readonly mode = "sandbox" as const
   private readonly readStateImpl: SandboxAdapterOptions["readState"]
   private readonly writeStateImpl: SandboxAdapterOptions["writeState"]
+  private readonly persistResult?: SandboxAdapterOptions["persistResult"]
   private readonly now: () => number
   private readonly generateId: (prefix: string) => string
   private readonly previewCache = new Map<string, MultiplyTransactionPreview>()
@@ -165,6 +168,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
   constructor(options: SandboxAdapterOptions) {
     this.readStateImpl = options.readState
     this.writeStateImpl = options.writeState
+    this.persistResult = options.persistResult
     this.now = options.now ?? Date.now
     this.generateId = options.generateId ?? defaultId
   }
@@ -228,9 +232,8 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
     }
 
     const nextState = applyMultiplyAction(this.readStateImpl(), { ...action, at: this.now() })
-    this.writeStateImpl(nextState)
 
-    const receipt = {
+    const localReceipt = {
       id: this.generateId("receipt"),
       hash: `0xsim${Math.random().toString(16).slice(2, 10)}`,
       status: "success" as const,
@@ -240,7 +243,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
     }
 
     const historyItem: MultiplyTransactionHistoryItem = {
-      id: receipt.id,
+      id: localReceipt.id,
       intentId: intent.id,
       walletId: intent.walletId,
       marketId: intent.marketId ?? (action.type === "deleverage" ? nextState.positions[action.positionId]?.marketId : action.marketId),
@@ -254,15 +257,31 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
       multiplierBefore: preview.before.multiplier,
       multiplierAfter: preview.after.multiplier,
       simulated: true,
-      timestamp: receipt.timestamp,
-      hash: receipt.hash,
+      timestamp: localReceipt.timestamp,
+      hash: localReceipt.hash,
     }
 
-    return {
+    const localResult: MultiplySandboxActionResult = {
       preview,
-      receipt,
+      receipt: localReceipt,
       historyItem,
       state: nextState,
     }
+    const persisted = this.persistResult ? await this.persistResult(localResult) : localReceipt
+    if (persisted.status === "idle") throw new Error("Convex returned an invalid idle transaction receipt")
+    const receipt = { ...localReceipt, ...persisted, actionType: localReceipt.actionType }
+    const persistedResult = {
+      ...localResult,
+      receipt,
+      historyItem: {
+        ...historyItem,
+        id: persisted.id,
+        hash: persisted.hash,
+        status: persisted.status,
+        timestamp: persisted.timestamp,
+      },
+    }
+    this.writeStateImpl(nextState)
+    return persistedResult
   }
 }
