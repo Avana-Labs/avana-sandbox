@@ -219,6 +219,8 @@ export function AvanaSessionsProvider({
   persistBorrowTransaction,
   persistLendTransaction,
   persistMultiplyTransaction,
+  remoteRewardsState,
+  persistRewardsState,
   persistLocalState = true,
 }: {
   walletId?: string
@@ -232,6 +234,8 @@ export function AvanaSessionsProvider({
   }>
   persistLendTransaction?: (result: LendSandboxActionResult) => Promise<LendTransactionResult>
   persistMultiplyTransaction?: (result: MultiplySandboxActionResult) => Promise<MultiplyTransactionResult>
+  remoteRewardsState?: string | null
+  persistRewardsState?: (stateJson: string) => Promise<unknown>
   persistLocalState?: boolean
 }) {
   const avana = useAvanaSession(walletId)
@@ -256,6 +260,9 @@ export function AvanaSessionsProvider({
   const rewards = useRewardsSession({
     walletId: avana.walletId,
     sessionSeed: avana.rewardsSessionSeed,
+    persistState: persistLocalState,
+    remoteState: remoteRewardsState,
+    persistRemoteState: persistRewardsState,
   })
 
   useRewardsEventBridge({
@@ -313,6 +320,8 @@ export function ConvexAvanaSessionsProvider({
   children: ReactNode
 }) {
   const recordTransaction = useMutation(api.sandbox.transactions.recordTransaction)
+  const saveRewardsState = useMutation(api.sandbox.rewards.saveState)
+  const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
   const persistBorrowTransaction = useCallback(
     async (result: SandboxActionResult) => {
       const persisted = await recordTransaction(borrowResultToRecordArgs(result, walletId))
@@ -354,6 +363,10 @@ export function ConvexAvanaSessionsProvider({
     },
     [recordTransaction, walletId],
   )
+  const persistRewardsState = useCallback(
+    (stateJson: string) => saveRewardsState({ wallet: walletId, stateJson }),
+    [saveRewardsState, walletId],
+  )
 
   return (
     <AvanaSessionsProvider
@@ -361,6 +374,8 @@ export function ConvexAvanaSessionsProvider({
       persistBorrowTransaction={persistBorrowTransaction}
       persistLendTransaction={persistLendTransaction}
       persistMultiplyTransaction={persistMultiplyTransaction}
+      remoteRewardsState={rewardsState?.stateJson ?? (rewardsState === null ? null : undefined)}
+      persistRewardsState={persistRewardsState}
       persistLocalState={false}
     >
       {children}

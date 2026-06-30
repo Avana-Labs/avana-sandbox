@@ -12,9 +12,15 @@ import { REWARDS_SESSION_SYNC_EVENT } from "./session-sync"
 export function useRewardsSession({
   walletId,
   sessionSeed,
+  persistState = true,
+  remoteState,
+  persistRemoteState,
 }: {
   walletId: string
   sessionSeed: string
+  persistState?: boolean
+  remoteState?: string | null
+  persistRemoteState?: (stateJson: string) => Promise<unknown>
 }) {
   const seededState = useMemo(() => JSON.parse(sessionSeed) as RewardsSessionState, [sessionSeed])
   const [state, setState] = useState(seededState)
@@ -22,16 +28,37 @@ export function useRewardsSession({
   const stateRef = useRef(state)
   stateRef.current = state
   const isPersistingRef = useRef(false)
+  const lastRemoteStateRef = useRef<string | null>(null)
   const tasks = useMemo(() => buildDefaultRewardsCatalog(), [])
 
   useEffect(() => {
+    if (!persistState) {
+      if (remoteState === undefined) {
+        setHasHydratedStorage(false)
+        return
+      }
+      const serialized = remoteState ?? sessionSeed
+      lastRemoteStateRef.current = serialized
+      setState(JSON.parse(serialized) as RewardsSessionState)
+      setHasHydratedStorage(true)
+      return
+    }
     const nextState = readRewardsSessionState(walletId, sessionSeed)
     setState(nextState)
     setHasHydratedStorage(true)
-  }, [walletId, sessionSeed])
+  }, [persistState, remoteState, walletId, sessionSeed])
 
   useEffect(() => {
     if (!hasHydratedStorage) return
+    if (!persistState) {
+      const serialized = JSON.stringify(state)
+      if (serialized === lastRemoteStateRef.current || !persistRemoteState) return
+      lastRemoteStateRef.current = serialized
+      void persistRemoteState(serialized).catch(() => {
+        lastRemoteStateRef.current = null
+      })
+      return
+    }
     isPersistingRef.current = true
     writeRewardsSessionState(walletId, state)
     if (typeof window !== "undefined") {
@@ -40,10 +67,10 @@ export function useRewardsSession({
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [hasHydratedStorage, walletId, state])
+  }, [hasHydratedStorage, persistRemoteState, persistState, walletId, state])
 
   useEffect(() => {
-    if (typeof window === "undefined") return undefined
+    if (!persistState || typeof window === "undefined") return undefined
 
     const reloadFromStorage = () => {
       const nextState = readRewardsSessionState(walletId, sessionSeed)
@@ -67,7 +94,7 @@ export function useRewardsSession({
       window.removeEventListener("storage", handleStorage)
       window.removeEventListener(REWARDS_SESSION_SYNC_EVENT, handleSameTabSync)
     }
-  }, [sessionSeed, walletId])
+  }, [persistState, sessionSeed, walletId])
 
   const writeRewardsState = useCallback(
     (next: RewardsSessionState | ((current: RewardsSessionState) => RewardsSessionState)) => {
@@ -127,9 +154,9 @@ export function useRewardsSession({
   const applyReferralCode = useCallback((referralCode: string) => actionAdapter.applyReferralCode(walletId, referralCode), [actionAdapter, walletId])
   const refreshTaskProgress = useCallback(() => actionAdapter.refreshTaskProgress(walletId), [actionAdapter, walletId])
   const reset = useCallback(() => {
-    clearRewardsSessionState(walletId)
+    if (persistState) clearRewardsSessionState(walletId)
     setState(JSON.parse(sessionSeed))
-  }, [sessionSeed, walletId])
+  }, [persistState, sessionSeed, walletId])
 
   return {
     walletId,
