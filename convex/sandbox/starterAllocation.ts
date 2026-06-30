@@ -86,6 +86,8 @@ function allocateBucket(
   }))
 }
 
+type BucketKey = "liquid" | "collateral" | "lend" | "multiply"
+
 export function buildStarterAllocationPlan(
   wallet: string,
   markets: readonly StarterMarket[],
@@ -102,27 +104,40 @@ export function buildStarterAllocationPlan(
     version: 1,
     wallet: normalizedWallet,
     totalEquityUsd: STARTER_EQUITY_USD,
-    liquid: allocateBucket(byScope("asset"), STARTER_BUCKETS.liquid.amountUsd, STARTER_BUCKETS.liquid.count, seed),
-    collateral: allocateBucket(
-      byScope("pool"),
-      STARTER_BUCKETS.collateral.amountUsd,
-      STARTER_BUCKETS.collateral.count,
-      seed ^ 0x9e3779b9,
-    ),
-    lend: allocateBucket(byScope("lend"), STARTER_BUCKETS.lend.amountUsd, STARTER_BUCKETS.lend.count, seed ^ 0x85ebca6b),
-    multiply: allocateBucket(
-      byScope("multiply"),
-      STARTER_BUCKETS.multiply.amountUsd,
-      STARTER_BUCKETS.multiply.count,
-      seed ^ 0xc2b2ae35,
-    ),
+    liquid: [],
+    collateral: [],
+    lend: [],
+    multiply: [],
   }
+
+  const bucketDefs: Array<{ key: BucketKey; scope: StarterMarket["scope"]; target: number; count: number; seed: number }> = [
+    { key: "liquid", scope: "asset", target: STARTER_BUCKETS.liquid.amountUsd, count: STARTER_BUCKETS.liquid.count, seed },
+    { key: "collateral", scope: "pool", target: STARTER_BUCKETS.collateral.amountUsd, count: STARTER_BUCKETS.collateral.count, seed: seed ^ 0x9e3779b9 },
+    { key: "lend", scope: "lend", target: STARTER_BUCKETS.lend.amountUsd, count: STARTER_BUCKETS.lend.count, seed: seed ^ 0x85ebca6b },
+    { key: "multiply", scope: "multiply", target: STARTER_BUCKETS.multiply.amountUsd, count: STARTER_BUCKETS.multiply.count, seed: seed ^ 0xc2b2ae35 },
+  ]
+
+  // Onboarding must never hard-fail just because a scope is missing from the seed (e.g.
+  // an un-seeded deployment). Allocate only across the buckets that have markets and
+  // redistribute the full equity over them, proportional to each bucket's base target.
+  // When every scope is present this reproduces the original per-bucket amounts exactly.
+  const available = bucketDefs.map((def) => ({ ...def, candidates: byScope(def.scope) })).filter((def) => def.candidates.length > 0)
+  if (available.length === 0) return plan
+
+  const targetCents = STARTER_EQUITY_USD * 100
+  const baseTotal = available.reduce((sum, def) => sum + def.target, 0)
+  let assignedCents = 0
+  available.forEach((def, index) => {
+    const cents = index === available.length - 1 ? targetCents - assignedCents : Math.round((def.target / baseTotal) * targetCents)
+    assignedCents += index === available.length - 1 ? 0 : cents
+    plan[def.key] = allocateBucket(def.candidates, cents / 100, def.count, def.seed)
+  })
 
   const total = [...plan.liquid, ...plan.collateral, ...plan.lend, ...plan.multiply].reduce(
     (sum, leg) => sum + leg.amountUsd,
     0,
   )
-  if (Math.round(total * 100) !== STARTER_EQUITY_USD * 100) {
+  if (Math.round(total * 100) !== targetCents) {
     throw new Error(`STARTER_ALLOCATION_INVALID: expected ${STARTER_EQUITY_USD}, received ${total}.`)
   }
   return plan
