@@ -41,7 +41,7 @@ const DEFAULT_CONFIG = {
   basket: DEFAULT_BASKET,
   seedVersion: SEED_VERSION,
   tweetTemplate:
-    "I just claimed $1M in Avana play money across assets, LP collateral, lending markets, and multiplied positions.",
+    "I'm practicing DeFi risk-free on the Avana sandbox — borrowing against LP, lending, and looping positions with $1M of synthetic funds.",
   xHandle: "AvanaFinance",
   resourcesLinks: [
     { label: "Read the docs", href: "/docs" },
