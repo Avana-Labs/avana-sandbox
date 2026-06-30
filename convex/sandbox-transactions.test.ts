@@ -49,7 +49,30 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     const res = await asUser.mutation(
       api.sandbox.transactions.recordTransaction,
       borrowIntent("i1", {
-        position: { status: "open", marketSlug: "uni-v3-bluechip-weth-usdc", debtValueUsd6: "1000000000" },
+        position: {
+          status: "open",
+          marketSlug: "uni-v3-bluechip-weth-usdc",
+          debtValueUsd6: "1000000000",
+          collateral: [
+            {
+              marketSlug: "uni-v3-bluechip-weth-usdc",
+              collateralShares: "2000000000",
+              principalTokenAmount: "2000000000",
+              collateralEnabled: true,
+              collateralValueUsd6: "2000000000",
+            },
+          ],
+          debt: [
+            {
+              assetId: "uni-v2:usdc",
+              baseAssetId: "usdc",
+              debtSharesUsd6: "1000000000",
+              debtIndexRay: "1000000000000000000000000000",
+              borrowRateWad: "50000000000000000",
+              principalBorrowedUsd6: "1000000000",
+            },
+          ],
+        },
         ledger: { marketSlug: "uni-v2:usdc", borrowedDeltaUsd: 1000 },
       }),
     )
@@ -65,10 +88,31 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(positions).toHaveLength(1)
     expect(positions[0]?.product).toBe("borrow")
     expect(positions[0]?.debtValueUsd6).toBe("1000000000")
+    expect(positions[0]?.collateral).toHaveLength(1)
+    expect(positions[0]?.debt).toHaveLength(1)
 
     const ledger = await t.query(api.liquidity.listDeltas)
     const row = ledger.find((r) => r.marketSlug === "uni-v2:usdc")
     expect(row?.borrowedDeltaUsd).toBe(1000)
+  })
+
+  test("rejects malformed fixed-point position state before writing", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("invalid", {
+          position: {
+            status: "open",
+            marketSlug: "uni-v3-bluechip-weth-usdc",
+            debtValueUsd6: "-1",
+          },
+        }),
+      ),
+    ).rejects.toThrow(/INVALID_POSITION/)
+
+    expect(await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET })).toHaveLength(0)
   })
 
   test("idempotent on intentId — a replay returns the existing row and does not double-apply", async () => {
