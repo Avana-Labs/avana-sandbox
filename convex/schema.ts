@@ -76,6 +76,23 @@ export default defineSchema({
     explorerUrl: v.optional(v.string()),
     /** Used to cap user-visible utilization / LTV on the front end. */
     reserveFactorPct: v.optional(v.number()),
+    description: v.optional(v.string()),
+    iconUrl: v.optional(v.string()),
+    spokeId: v.optional(v.string()),
+    feeTier: v.optional(v.string()),
+    maxLtvPct: v.optional(v.number()),
+    visuals: v.optional(
+      v.array(
+        v.object({
+          symbol: v.string(),
+          shortLabel: v.string(),
+          bgClassName: v.string(),
+          textClassName: v.string(),
+          iconUrl: v.optional(v.string()),
+        }),
+      ),
+    ),
+    resources: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
     createdAt: v.number(),
   })
     .index("by_scope_slug", ["scope", "slug"])

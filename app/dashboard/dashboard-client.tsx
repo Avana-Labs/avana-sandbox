@@ -9,7 +9,6 @@ import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provide
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
 import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
-import { getWalletLendAssets } from "@/app/lib/data/mock/wallet/portfolio/lend-wallet-assets"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import {
@@ -293,15 +292,8 @@ export function DashboardClient({
       }
     }
 
-    if (resolvedWalletProfileId) {
-      for (const asset of getWalletLendAssets(resolvedWalletProfileId)) {
-        const key = asset.symbol.toUpperCase()
-        if (balances[key] == null) balances[key] = asset.balance
-      }
-    }
-
     return balances
-  }, [lendSession.state, resolvedWalletProfileId, walletId])
+  }, [lendSession.state, walletId])
 
   const multiplyHero = useMemo(() => {
     const template = pageData?.heroByTab.looping ?? {}
