@@ -8,6 +8,7 @@ import { useMutation } from "convex/react"
 import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type BasketSlot = { tokenId: string; weight: number }
 type BasketClaim = { tokenId: string; amount: number; priceUsdAtClaim: number }
@@ -264,6 +265,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const [busy, setBusy] = useState<null | "analyzing" | "sharing" | "claiming">(null)
   const [error, setError] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
+  const { t } = useTranslation()
 
   const run = async (label: NonNullable<typeof busy>, task: () => Promise<unknown>, minimumMs = 0) => {
     setBusy(label)
@@ -363,7 +365,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             ))}
           </ul>
           <button className={`${PRIMARY} mt-9`} onClick={() => setHasStarted(true)} type="button">
-            Get started
+            {t("Get started")}
           </button>
         </>
       ) : !wallet || !state ? (
@@ -397,7 +399,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             Every wallet gets $1M in practice funds, spread across markets so you can try every flow risk-free.
           </p>
           <button className={`${PRIMARY} mt-7`} onClick={analyze} type="button">
-            Fund my sandbox
+            {t("Fund my sandbox")}
           </button>
           <ErrorMessage error={error} />
         </>
@@ -420,7 +422,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
               onClick={() => run("sharing", () => skipTweet({ wallet }))}
               type="button"
             >
-              Continue to allocation
+              {t("Continue to allocation")}
             </button>
             <button
               className={SECONDARY}
@@ -428,7 +430,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
               onClick={() => run("sharing", () => startTweet({ wallet }))}
               type="button"
             >
-              Share on X first
+              {t("Share on X first")}
             </button>
           </div>
           <ErrorMessage error={error} />
@@ -449,7 +451,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
               onClick={() => run("sharing", () => confirmTweet({ wallet }))}
               type="button"
             >
-              I posted it
+              {t("I posted it")}
             </button>
             <button
               className={SECONDARY}
@@ -496,7 +498,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             $1M in practice funds is now in your wallet. Jump into the dashboard to start exploring.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <Link className={PRIMARY} href="/dashboard">Open dashboard</Link>
+            <Link className={PRIMARY} href="/dashboard">{t("Open dashboard")}</Link>
             <a className={SECONDARY} href={X_INTENT_HREF} rel="noreferrer" target="_blank">
               Share on X <MoveUpRight className="ml-2 size-4" />
             </a>
