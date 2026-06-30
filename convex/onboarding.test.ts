@@ -25,6 +25,17 @@ describe("sandbox onboarding + economy caps", () => {
     )
   })
 
+  test("persists analyzing before eligibility is completed", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    expect(await asUser.mutation(api.sandbox.onboarding.beginAnalysis, { wallet: WALLET })).toBe("analyzing")
+    expect((await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })).onboardingStep).toBe("analyzing")
+
+    expect(await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })).toBe("eligible")
+    expect((await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })).onboardingStep).toBe("eligible")
+  })
+
   test("claim allocates the basket, marks done, and increments the economy atomically", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
@@ -84,6 +95,20 @@ describe("sandbox onboarding + economy caps", () => {
     expect(portfolio.snapshots).toHaveLength(1)
     expect(portfolio.latest?.totalSuppliedUsd).toBe(result.allocatedUsd)
     expect(portfolio.openPositions).toBe(1)
+
+    const receipt = await asUser.query(api.sandbox.transactions.getTransactionByHash, {
+      wallet: WALLET,
+      hash: result.syntheticTxHash ?? "",
+    })
+    expect(receipt?.syntheticTxHash).toBe(result.syntheticTxHash)
+
+    const otherWallet = "0xAbC0000000000000000000000000000000000002"
+    await expect(
+      t.withIdentity({ subject: otherWallet }).query(api.sandbox.transactions.getTransactionByHash, {
+        wallet: WALLET,
+        hash: result.syntheticTxHash ?? "",
+      }),
+    ).rejects.toThrow(/WALLET_MISMATCH/)
   })
 
   test("enforces userCap server-side: claims past the cap are waitlisted", async () => {

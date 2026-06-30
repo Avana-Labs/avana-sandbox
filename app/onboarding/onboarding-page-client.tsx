@@ -18,7 +18,7 @@ function OnboardingConnected() {
 
 export function OnboardingPageClient() {
   return (
-    <main className="flex min-h-[70vh] items-center justify-center px-5 py-12">
+    <main className="min-h-[calc(100vh-4rem)] px-5 py-6 sm:px-8">
       {hasConvexClient ? (
         <OnboardingConnected />
       ) : (
