@@ -100,16 +100,18 @@ describe("MultiplyActionPageClient", () => {
     )
   })
 
-  it("shows an unavailable state for an invalid multiply market", async () => {
+  it("falls back to a usable market instead of dead-ending on an unknown id", async () => {
     render(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="multiply" initialMarketId="not-a-market" />
       </AvanaSessionsProvider>,
     )
 
+    // No "Market unavailable" dead-end — the action renders against a catalog
+    // market and offers the picker so the user can switch.
     await waitFor(() => {
-      expect(screen.getByTestId("action-not-found")).toBeInTheDocument()
+      expect(screen.getByTestId("action-amount-card")).toBeInTheDocument()
     })
-    expect(screen.getByRole("link", { name: "Go back" })).toHaveAttribute("href", "/multiply")
+    expect(screen.queryByTestId("action-not-found")).not.toBeInTheDocument()
   })
 })
