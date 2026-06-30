@@ -65,14 +65,17 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
   )
 }
 
-/**
- * The public unauthenticated experience is an explicit demo bypass. Signed-in users
- * remain locked until Convex confirms that onboarding is complete.
- */
+/** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
   const { authedWallet, isSignedIn } = useSiweAuth()
-  if (!isSignedIn || !authedWallet) return <>{children}</>
   if (!hasConvexClient) return <GateUnavailable />
+  if (!isSignedIn || !authedWallet) {
+    return (
+      <LockedShell>
+        <OnboardingFlow wallet={null} state={null} />
+      </LockedShell>
+    )
+  }
   return (
     <GateErrorBoundary key={authedWallet}>
       <AuthedGate wallet={authedWallet}>{children}</AuthedGate>
