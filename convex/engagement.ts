@@ -72,7 +72,30 @@ export const getForPool = query({
   },
 })
 
-type SecondaryKind = "repay" | "borrow"
+/**
+ * Engagement for a lend (single-asset supply) market.
+ *
+ * Primary KPI  : active wallets today.
+ * Secondary KPI: supply retention = suppliers who did NOT exit (withdraw) within
+ *                30 days of their latest supply.
+ */
+export const getForLend = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const market = await ctx.db
+      .query("markets")
+      .withIndex("by_scope_slug", (q) => q.eq("scope", "lend").eq("slug", slug))
+      .unique()
+    if (!market) return null
+    return buildEngagement(ctx, market._id, {
+      primaryLabel: "Active wallets",
+      secondaryLabel: "Supply retention",
+      secondaryKind: "supply",
+    })
+  },
+})
+
+type SecondaryKind = "repay" | "borrow" | "supply"
 
 type Cfg = {
   primaryLabel: string
@@ -163,7 +186,9 @@ async function computeConversionPct(
   const [fromKind, toKind, windowMs] =
     kind === "repay"
       ? (["borrow", "repay", REPAY_WINDOW_MS] as const)
-      : (["supply", "borrow", SUPPLY_TO_BORROW_WINDOW_MS] as const)
+      : kind === "borrow"
+        ? (["supply", "borrow", SUPPLY_TO_BORROW_WINDOW_MS] as const)
+        : (["supply", "withdraw", REPAY_WINDOW_MS] as const)
 
   const rate = (rows: typeof events): number => {
     // latest `fromKind` time per wallet + all `toKind` times per wallet
@@ -197,6 +222,12 @@ async function computeConversionPct(
   const recent = events.filter((e) => e.at >= mid)
   const deltaPct =
     older.length > 0 && recent.length > 0 ? Math.round((rate(recent) - rate(older)) * 10) / 10 : 0
+
+  // "supply" expresses RETENTION = 100 − the exit (supply→withdraw) rate, so invert
+  // both the value and the trend direction.
+  if (kind === "supply") {
+    return { valuePct: Math.round((100 - valuePct) * 10) / 10, deltaPct: -deltaPct }
+  }
 
   return { valuePct, deltaPct }
 }
