@@ -39,7 +39,7 @@ export function SandboxSignInButton({ size = "desktop" }: { size?: "mobile" | "d
         type="button"
         onClick={signOut}
         title={`${address} — click to disconnect`}
-        className={`${base} gap-2 border border-border bg-surface-inset text-foreground hover:bg-surface-inset/80`}
+        className={`${base} gap-2 border border-border bg-transparent text-foreground transition-colors hover:bg-surface-inset`}
       >
         <span
           aria-hidden
