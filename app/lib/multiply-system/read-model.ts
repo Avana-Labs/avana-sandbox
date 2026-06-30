@@ -108,8 +108,17 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
   const markets = state ? Object.values(state.markets) : MULTIPLY_MARKET_CATALOG
   const lendRows = [...markets].sort((a, b) => a.rank - b.rank).map(catalogMarketToRow)
 
+  // Aggregate the hero headline over EVERY loop market (not a 5-market sample) and
+  // anchor it to available liquidity — the same figure the markets table lists per
+  // row — so the headline reconciles with the table instead of showing a fraction.
+  const totalLiquidityUsd = markets.reduce((sum, market) => sum + market.economics.availableLiquidityUsd, 0)
+  const marketCount = markets.length
+  const averageMaxApy = marketCount > 0 ? markets.reduce((sum, market) => sum + market.economics.estimatedMaxApy, 0) / marketCount : 0
+  const averageMaxLeverage =
+    marketCount > 0 ? markets.reduce((sum, market) => sum + market.risk.publicMaxMultiplier, 0) / marketCount : 0
+
   return {
-    markets: markets.slice(0, 5).map((market) => ({
+    markets: [...markets].map((market) => ({
       symbol: market.collateralAsset.symbol,
       name: market.collateralAsset.name,
       price: market.collateralAsset.priceUsd,
@@ -120,6 +129,7 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
       longOi: 62,
       shortOi: 38,
     })),
+    heroMetrics: { totalLiquidityUsd, marketCount, averageMaxApy, averageMaxLeverage },
     lendRows,
     trendingSnapshots: buildMultiplyTrendingSnapshots(markets),
     pageSize: 12,

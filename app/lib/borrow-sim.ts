@@ -1,4 +1,5 @@
 import { getTokenIconMeta } from "@/app/lib/token-icons"
+import { getActiveCurrency } from "@/app/lib/currency/active-rate"
 
 export type BorrowDexId = "uniswap" | "curve" | "balancer" | "aerodrome"
 
@@ -1223,17 +1224,22 @@ export function formatRiskPremium(bps: number): string {
   return `+${value.toFixed(2)}%`
 }
 
-export function formatCompactUsd(value: number): string {
-  if (!Number.isFinite(value)) return "—"
-  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`
-  if (value === 0) return "$0"
-  return `$${value.toLocaleString("en-US", { maximumFractionDigits: value >= 100 ? 0 : 2 })}`
+export function formatCompactUsd(usdValue: number): string {
+  if (!Number.isFinite(usdValue)) return "—"
+  const { symbol, rate } = getActiveCurrency()
+  const value = usdValue * rate
+  if (value >= 1_000_000_000) return `${symbol}${(value / 1_000_000_000).toFixed(1)}B`
+  if (value >= 1_000_000) return `${symbol}${(value / 1_000_000).toFixed(1)}M`
+  if (value >= 1_000) return `${symbol}${(value / 1_000).toFixed(1)}K`
+  if (value === 0) return `${symbol}0`
+  return `${symbol}${value.toLocaleString("en-US", { maximumFractionDigits: value >= 100 ? 0 : 2 })}`
 }
 
-export function formatUsdExact(value: number): string {
-  return `$${value.toLocaleString("en-US", { maximumFractionDigits: value >= 100 ? 0 : 2 })}`
+export function formatUsdExact(usdValue: number): string {
+  const { symbol, rate, zeroDecimal } = getActiveCurrency()
+  const value = usdValue * rate
+  const maximumFractionDigits = zeroDecimal ? 0 : value >= 100 ? 0 : 2
+  return `${symbol}${value.toLocaleString("en-US", { maximumFractionDigits })}`
 }
 
 // ----- Filtering / grouping / sorting --------------------------------------

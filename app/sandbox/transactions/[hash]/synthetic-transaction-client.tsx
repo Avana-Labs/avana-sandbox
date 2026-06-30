@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Check } from "lucide-react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
 export function SyntheticTransactionClient({ hash }: { hash: string }) {
@@ -20,7 +21,7 @@ export function SyntheticTransactionClient({ hash }: { hash: string }) {
       {!isSignedIn ? (
         <p className="mt-8 text-muted-foreground">Sign in with the wallet that created this transaction.</p>
       ) : receipt === undefined ? (
-        <div className="mt-8 h-32 animate-pulse rounded-3xl bg-muted" />
+        <Skeleton className="skeleton-enter mt-8 h-32 rounded-3xl" />
       ) : receipt === null ? (
         <p className="mt-8 text-muted-foreground">This receipt does not exist for the authenticated wallet.</p>
       ) : (

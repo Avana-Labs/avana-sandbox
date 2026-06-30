@@ -6,6 +6,7 @@ import { ArrowUpRight, Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Glob
 import type { ReactNode } from "react"
 import { useEffect, useRef, useState } from "react"
 import { Switch } from "@/components/ui/switch"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
@@ -44,6 +45,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
   const { language, setLanguage, currency, setCurrency } = useDisplayPreferences()
+  const { t } = useTranslation()
   const accentClass = "text-[#007a99]"
 
   useEffect(() => {
@@ -278,7 +280,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                       isActive ? "text-foreground" : "text-foreground/95"
                     }`}
                   >
-                    {link.label}
+                    {t(link.label)}
                   </span>
                   <span className="shrink-0 pb-0.5 text-[0.88rem] font-medium tracking-[-0.02em] text-[#007a99]">
                     {String(index + 1).padStart(2, "0")}
@@ -297,7 +299,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             <button type="button" onClick={() => setView("language")} className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <Globe2 className={rootSettingsIconClass} />
-                <span>Language</span>
+                <span>{t("Language")}</span>
               </span>
               <span className="flex items-center gap-2 text-[1rem] text-muted-foreground">
                 {currentLanguage.label}
@@ -312,7 +314,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             <button type="button" onClick={() => setView("currency")} className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <Coins className={rootSettingsIconClass} />
-                <span>Currency</span>
+                <span>{t("Currency")}</span>
               </span>
               <span className="flex items-center gap-2 text-[1rem] text-muted-foreground">
                 {currentCurrency.code}

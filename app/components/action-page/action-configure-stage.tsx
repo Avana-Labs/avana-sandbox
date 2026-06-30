@@ -43,6 +43,8 @@ type ActionConfigureStageProps = {
   multiplierMin?: number
   multiplierMax?: number
   multiplierStep?: number
+  /** Short explanation rendered above the standalone leverage ruler. */
+  leverageHint?: ReactNode
   canGoBack?: boolean
   hideAmountInput?: boolean
   amountReadOnly?: boolean
@@ -153,6 +155,7 @@ export function ActionConfigureStage({
   multiplierMin = 1,
   multiplierMax = 20,
   multiplierStep = 0.1,
+  leverageHint,
   canGoBack = false,
   hideAmountInput = false,
   amountReadOnly = false,
@@ -234,13 +237,16 @@ export function ActionConfigureStage({
       ) : null}
 
       {showStandaloneLeverage ? (
-        <ActionLeverageRuler
-          value={multiplier ?? "3"}
-          onChange={onMultiplierChange!}
-          min={multiplierMin}
-          max={multiplierMax}
-          step={multiplierStep}
-        />
+        <div>
+          {leverageHint ? <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{leverageHint}</p> : null}
+          <ActionLeverageRuler
+            value={multiplier ?? "3"}
+            onChange={onMultiplierChange!}
+            min={multiplierMin}
+            max={multiplierMax}
+            step={multiplierStep}
+          />
+        </div>
       ) : null}
 
       {showConfigureHealthFactor ? (

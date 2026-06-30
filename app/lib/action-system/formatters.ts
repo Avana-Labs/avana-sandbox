@@ -1,21 +1,25 @@
+import { getActiveCurrency } from "@/app/lib/currency/active-rate"
+
 export function formatActionInputAmount(value: number, maxDecimals = 6) {
   if (!Number.isFinite(value)) return "0"
   return String(Number(value.toFixed(maxDecimals)))
 }
 
-export function formatActionUsd(value: number, options?: { compact?: boolean }) {
-  if (!Number.isFinite(value)) return "—"
+export function formatActionUsd(usdValue: number, options?: { compact?: boolean }) {
+  if (!Number.isFinite(usdValue)) return "—"
+  // Action amounts are computed in USD; convert into the active display currency.
+  const { symbol, rate, zeroDecimal } = getActiveCurrency()
+  const value = usdValue * rate
   if (options?.compact) {
-    if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`
-    if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-    if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`
+    if (value >= 1_000_000_000) return `${symbol}${(value / 1_000_000_000).toFixed(1)}B`
+    if (value >= 1_000_000) return `${symbol}${(value / 1_000_000).toFixed(1)}M`
+    if (value >= 1_000) return `${symbol}${(value / 1_000).toFixed(1)}K`
   }
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: value >= 100 ? 0 : 2,
-    maximumFractionDigits: value >= 100 ? 0 : 2,
-  }).format(value)
+  const fractionDigits = zeroDecimal ? 0 : value >= 100 ? 0 : 2
+  return `${symbol}${value.toLocaleString("en-US", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })}`
 }
 
 export function formatActionApproxUsd(value: number) {

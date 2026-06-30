@@ -1,8 +1,15 @@
+import type { ReactElement } from "react"
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { BorrowPageHero } from "@/app/borrow/borrow-page-hero"
 import { BorrowWorkspaceClient } from "@/app/borrow/borrow-workspace-client"
+import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
+
+// The hero reads display preferences (currency / hide-amounts), so renders need the provider.
+function renderWithPrefs(ui: ReactElement) {
+  return render(<DisplayPreferencesProvider>{ui}</DisplayPreferencesProvider>)
+}
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useBorrowSessionContext: () => ({
@@ -99,7 +106,7 @@ const basePageData = {
 
 describe("BorrowPageHero", () => {
   it("renders fetched hero metrics and explore sections without recomputing them locally", () => {
-    render(<BorrowPageHero pageData={basePageData} />)
+    renderWithPrefs(<BorrowPageHero pageData={basePageData} />)
 
     expect(screen.getByText("Total TVL")).toBeInTheDocument()
     expect(screen.getByText("$327.4M")).toBeInTheDocument()
@@ -126,7 +133,7 @@ describe("BorrowPageHero", () => {
       explore: { trendingCollateral: [], topMarkets: [], highApyPools: [] },
     } as unknown as BorrowPageData
 
-    render(<BorrowPageHero pageData={pageData} />)
+    renderWithPrefs(<BorrowPageHero pageData={pageData} />)
 
     expect(screen.getByText("$6.9B")).toBeInTheDocument()
   })
@@ -134,7 +141,7 @@ describe("BorrowPageHero", () => {
 
 describe("BorrowWorkspaceClient", () => {
   it("renders the deferred workspace shell", () => {
-    render(<BorrowWorkspaceClient pageData={basePageData} />)
+    renderWithPrefs(<BorrowWorkspaceClient pageData={basePageData} />)
     expect(screen.getByTestId("borrow-workspace-shell")).toBeInTheDocument()
   })
 })

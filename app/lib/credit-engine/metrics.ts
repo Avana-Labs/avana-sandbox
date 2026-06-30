@@ -76,6 +76,10 @@ function calculateMetricsForAccount(state: BorrowSystemState, account: BorrowAcc
     const market = state.markets[position.marketId]
     if (!market) continue
     const valueUsd6 = currentCollateralValueUsd6(position, market)
+    // Borrow capacity is capped on the COLLATERAL FACTOR (a.k.a. max LTV), not the
+    // liquidation threshold. The liquidation threshold is strictly higher and is
+    // used only below for the liquidation value / health factor — never to size how
+    // much a user may borrow.
     creditLimitUsd6 += mulDiv(valueUsd6, market.riskConfig.collateralFactorWad, WAD)
     liquidationValueUsd6 += mulDiv(valueUsd6, market.riskConfig.liquidationThresholdWad, WAD)
     weightedRiskNumerator += valueUsd6 * market.riskConfig.riskScoreWad

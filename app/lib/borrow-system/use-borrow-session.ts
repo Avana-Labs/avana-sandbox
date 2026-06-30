@@ -18,6 +18,7 @@ import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-a
 import { SandboxTransactionAdapter } from "@/app/lib/borrow-system/sandbox-transaction-adapter"
 import {
   selectBorrowableAssets,
+  selectAllAvailableCollateralPools,
   selectBorrowCollateralPools,
   selectBorrowMarketSummaries,
   selectInitialBorrowDebts,
@@ -111,6 +112,7 @@ export function useBorrowSession({
     buildSyntheticReceipts(buildLegacyTransactionHistory(seededState, walletId)),
   )
   const stateRef = useRef(state)
+  const lastPersistedAtRef = useRef(0)
   const pendingExecutionsRef = useRef(new Map<string, Promise<SandboxActionResult>>())
   const [isPending, setIsPending] = useState(false)
 
@@ -143,9 +145,15 @@ export function useBorrowSession({
 
   useEffect(() => {
     if (!shouldPersistState) return
+    // Stamp every write so other tabs can tell newer state from older. Track the
+    // value locally so this tab never treats a stale cross-tab write as fresher
+    // than what it just persisted.
+    const persistedAt = Date.now()
+    lastPersistedAtRef.current = persistedAt
     writeBorrowSessionMetadata(walletId, {
       transactionHistory,
       receipts: transactionReceipts,
+      persistedAt,
     })
   }, [shouldPersistState, transactionHistory, transactionReceipts, walletId])
 
@@ -155,8 +163,13 @@ export function useBorrowSession({
     const handleStorage = (event: StorageEvent) => {
       if (event.key == null || !event.key.endsWith(`:${walletId}`)) return
 
-      const nextState = readBorrowSessionState(walletId, sessionSeed)
       const metadata = readBorrowSessionMetadata(walletId)
+      // Multi-tab guard: ignore a cross-tab write that isn't strictly newer than
+      // what this tab last persisted, so a stale tab can't clobber live state.
+      if (metadata.persistedAt != null && metadata.persistedAt <= lastPersistedAtRef.current) return
+      if (metadata.persistedAt != null) lastPersistedAtRef.current = metadata.persistedAt
+
+      const nextState = readBorrowSessionState(walletId, sessionSeed)
       const fallbackHistory = buildLegacyTransactionHistory(nextState, walletId)
 
       setState(nextState)
@@ -315,6 +328,10 @@ export function useBorrowSession({
   const marketSummaries = useMemo(() => selectBorrowMarketSummaries(state, walletId), [state, walletId])
   const borrowableAssets = useMemo(() => selectBorrowableAssets(state, walletId), [state, walletId])
   const collateralPools = useMemo(() => selectBorrowCollateralPools(state, walletId), [state, walletId])
+  const availableCollateralPools = useMemo(
+    () => selectAllAvailableCollateralPools(state, walletId),
+    [state, walletId],
+  )
   const initialDebts = useMemo(() => selectInitialBorrowDebts(state, walletId), [state, walletId])
   const walletSnapshot = useMemo(() => selectWalletBorrowSnapshot(state, walletId), [state, walletId])
 
@@ -329,6 +346,7 @@ export function useBorrowSession({
     marketSummaries,
     borrowableAssets,
     collateralPools,
+    availableCollateralPools,
     initialDebts,
     walletSnapshot,
     transactionHistory,

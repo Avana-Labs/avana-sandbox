@@ -64,17 +64,18 @@ describe("BorrowActionPageClient", () => {
     })
   })
 
-  it("shows an unavailable state for an invalid borrow market", async () => {
+  it("routes an unknown borrow market to the picker instead of dead-ending", async () => {
     render(
       <AvanaSessionsProvider>
         <BorrowActionPageClient kind="borrow" initialMarketId="not-a-market" />
       </AvanaSessionsProvider>,
     )
 
+    // No "Market unavailable" dead-end — the user lands on the market/asset picker.
     await waitFor(() => {
-      expect(screen.getByTestId("action-not-found")).toBeInTheDocument()
+      expect(screen.getByTestId("action-select-stage")).toBeInTheDocument()
     })
-    expect(screen.getByRole("link", { name: "Go back" })).toHaveAttribute("href", "/borrow")
+    expect(screen.queryByTestId("action-not-found")).not.toBeInTheDocument()
   })
 
   it("boots the home borrow workspace at a true zero state (no pool, no value, no health factor)", async () => {

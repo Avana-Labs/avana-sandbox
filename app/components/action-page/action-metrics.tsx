@@ -20,7 +20,7 @@ export function ActionCard({
   className?: string
 } & ComponentPropsWithoutRef<"div">) {
   return (
-    <div className={cn("rounded-radius-md border border-border/80 bg-card text-card-foreground shadow-none", className)} {...props}>
+    <div className={cn("rounded-radius-md border border-border bg-card text-card-foreground shadow-elev-1", className)} {...props}>
       {children}
     </div>
   )

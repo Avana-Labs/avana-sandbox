@@ -151,6 +151,40 @@ export function selectBorrowCollateralPools(state: BorrowSystemState, walletId: 
     .filter((pool): pool is HomeCollateralPool => Boolean(pool))
 }
 
+/**
+ * Every market in the catalog as a collateral pool — pledged or not. Pools the
+ * wallet already holds carry their real collateral/borrow-power; the rest report
+ * zero until the user pledges. The Express borrow card uses this so its pool
+ * picker is always pre-loaded (a fresh wallet with no positions still sees the
+ * full market list), mirroring the dashboard's borrow view.
+ */
+export function selectAllAvailableCollateralPools(state: BorrowSystemState, walletId: string): HomeCollateralPool[] {
+  const account = state.accounts[walletId]
+
+  return Object.values(state.markets).map((market) => {
+    const position = account?.collateralPositions.find((row) => row.marketId === market.id)
+    const collateralUsd = position ? fixedToNumber(currentCollateralValueUsd6(position, market), 6) : 0
+    const metrics = position ? metricsForPosition(state, walletId, market.id) : null
+    return {
+      id: market.id,
+      name: market.display.name,
+      venue: market.display.venue,
+      category: `${market.display.venue} ${market.display.feeTier}`,
+      collateralUsd,
+      maxLtv: Math.round(fixedToNumber(market.riskConfig.collateralFactorWad, 18) * 1000) / 10,
+      borrowPowerUsd: metrics ? fixedToNumber(metrics.creditLimitUsd6, 6) : 0,
+      liquidationUsd: metrics ? fixedToNumber(metrics.liquidationValueUsd6, 6) : 0,
+      pairApr: fixedToNumber(market.snapshot.feeApyWad, 18) * 100,
+      visuals: market.display.visuals.map((visual) => ({
+        symbol: visual.symbol,
+        shortLabel: visual.shortLabel,
+        bgClassName: visual.bgClassName,
+        textClassName: visual.textClassName,
+      })) as HomeCollateralPool["visuals"],
+    }
+  })
+}
+
 function metricsForPosition(state: BorrowSystemState, walletId: string, marketId: string) {
   const base = state.accounts[walletId]
   if (!base) throw new Error(`Unknown wallet ${walletId}`)
