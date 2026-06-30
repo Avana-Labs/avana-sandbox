@@ -10,11 +10,11 @@ to reach the "NO mock data" verification gate (§8). Status legend:
 
 ## Default data-source mode
 
-`AVANA_DATA_SOURCE` is unset → `resolveDataSourceMode()` returns `"mock"`, so list/
-dashboard pages render mock by default. The `"live"` sources for portfolio + rewards
-are unimplemented stubs (`livePortfolioPageSource` / `liveRewardsPageSource` throw
-`createUnsupportedSourceError`). **Flipping `AVANA_DATA_SOURCE=live` today would break
-those pages** — the live sources must be implemented (Convex-backed) first.
+`AVANA_DATA_SOURCE` is unset → `resolveDataSourceMode()` returns `"live"`.
+`AVANA_DATA_SOURCE=mock` is now the only way to enable deterministic demo providers.
+Portfolio and Rewards have authenticated Convex implementations. Borrow, Lend and
+Multiply live providers require non-empty Convex snapshots and no longer fall back to
+mock providers when Convex is unavailable.
 
 ## Surfaces
 
@@ -25,35 +25,21 @@ those pages** — the live sources must be implemented (Convex-backed) first.
 | Lend list **row → detail link** | — | ✅ (§8a) | Done — rows/cards navigate to `/lend/markets/[marketId]`. |
 | Borrow/Lend/Multiply **detail pages** (markets) | `*FromConvex` builders w/ per-section mock fallback | 🟡 | Strict mode: assert every section resolves from Convex so the fallback is dead. |
 | Legacy detail routes `/borrow/asset/[assetId]`, `/borrow/pool/[poolId]` | `getAssetDetail`/`getPoolDetail` — pure mock, no Convex | 🔴 | Confirm still linked; migrate to the Convex-hydrated `/borrow/(assets|markets)/[id]` or remove. |
-| **Dashboard / portfolio** (snapshots/supplies/debts/collaterals/multiply/orders/activity/strategies/rewards) | `app/lib/data/mock/wallet/portfolio/*`, all tagged `demo-wallet`; `livePortfolioPageSource` throws | 🔴 | Implement a Convex `PortfolioPageSource` reading the new `positions`/`portfolioSnapshots`/`transactions` tables (scoped by the authed wallet). §2 already seeds a starter position + snapshot at claim. |
+| **Dashboard / portfolio** (snapshots/supplies/debts/collaterals/multiply/orders/activity/strategies/rewards) | authenticated Convex `positions`/`portfolioSnapshots`/`transactions`; explicit mock provider remains for demo/tests | ✅ | Remaining static strategy buckets should become a global Convex catalog. |
 | Dashboard residual mock even with a session | `strategyBuckets` always static; `getWalletLendAssets` balance fallback | 🔴 | Move strategy buckets to a Convex table (global catalog) and lend balances to `positions`. |
-| **Rewards** quest board | client `rewards-engine/catalog.ts` over localStorage events | 🔴 | Seed the task catalog into Convex; make claim/progress wallet-scoped + server-authoritative (the `sandboxEconomy` cap pattern is the precedent). |
+| **Rewards** quest board | wallet state persists in Convex; task definitions remain a TypeScript catalog | 🟡 | Seed task definitions and normalize wallet progress/claims instead of storing the session JSON blob. |
 | Rewards `rewardPools` | derived from `BORROW_POOL_CATALOG` (mock) | 🔴 | Source from a rewards Convex table. |
-| **Per-wallet sandbox state** (borrow/lend/multiply/rewards sessions) | `*-system/storage.ts` localStorage, keyed by walletId | 🟡 | §2 added `positions`/`transactions`; §5 persists on execute (best-effort). Full cutover = UI subscribes to Convex; drop localStorage for authed wallets. |
+| **Per-wallet sandbox state** (borrow/lend/multiply/rewards sessions) | authenticated sessions subscribe to Convex; localStorage is explicit demo mode only | ✅ | Keep regression coverage preventing authenticated storage access. |
 | **Wallet identity** | §3 — authed SIWE wallet drives the client session | ✅ | Done client-side. SSR pages still resolve `demo-wallet` (server can't see the client wallet) — move portfolio SSR to a Convex source keyed by the JWT identity. |
 | **Token prices** | Convex `tokenPrices` (DefiLlama cron) | ✅ | Done (basket pricing now reads it too). |
 | **Market liquidity** | Convex `marketLiquidityDeltas` | ✅ | Done; §2 routes deltas through the owner-verified `recordTransaction`. |
 
 ## Hardening: world-writable seed writers (recommended follow-up)
 
-`convex/seed.ts` (`upsertMarkets`/`upsertDailyStats`/`upsertRevenue`/`upsertRisk`/
-`upsertAllocation`/`upsertContent`/`clearWalletEvents`/`insertWalletEvents`) and
-`convex/prices.ts` (`upsertPrices`) are exported as **public `mutation`** — any client
-can write the market-data layer. They are intended for the seed pipeline only.
-
-Why not converted in this branch: `scripts/seed-convex.ts` calls them as public
-mutations via `ConvexHttpClient`, which can only invoke public functions. Converting to
-`internalMutation` without refactoring the script would break seeding (untestable here
-against a deployment).
-
-Two ready options (pick one in the cutover):
-
-1. **internal + run** — convert the writers to `internalMutation`/`internalAction` and
-   drive the seed via `npx convex run` (admin credentials can invoke internal
-   functions), replacing the `ConvexHttpClient` path in `scripts/seed-convex.ts`.
-2. **admin-secret guard** — keep them public but require a `seedSecret` arg matching a
-   `SEED_SECRET` Convex env var (allow when unset, for local dev); pass the secret from
-   the seed script. Non-breaking for local, closes the public-write hole in prod.
+`convex/seed.ts` and `prices.upsertPrices` now use `internalMutation`. The seed script
+calls `convex/seedAdmin.ts`, whose public actions require `CONVEX_SEED_SECRET` before
+invoking those internal functions. An unset or incorrect secret is rejected in local
+and production deployments.
 
 ## Seeding the new §1 tables
 
