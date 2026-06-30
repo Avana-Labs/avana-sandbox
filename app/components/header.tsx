@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Switch } from "@/components/ui/switch"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { BrandIcon, BrandLogo } from "./brand-logo"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
@@ -70,6 +71,7 @@ type PreferencesView = "root" | "language" | "currency"
 function PreferencesMenu() {
   const { theme, resolvedTheme, setTheme } = useTheme()
   const { showDollarAmounts, setShowDollarAmounts, language, setLanguage, currency, setCurrency } = useDisplayPreferences()
+  const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [view, setView] = useState<PreferencesView>("root")
@@ -152,7 +154,7 @@ function PreferencesMenu() {
                 ) : (
                   <EyeOff className="h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
                 )}
-                Dollar amounts
+                {t("Dollar amounts")}
               </span>
               <Switch
                 checked={showDollarAmounts}
@@ -169,7 +171,7 @@ function PreferencesMenu() {
             >
               <span className="flex items-center gap-2 text-muted-foreground">
                 <Globe2 className="h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
-                <span>Language</span>
+                <span>{t("Language")}</span>
               </span>
               <span className="flex items-center gap-2">
                 {currentLanguage.label}
@@ -185,7 +187,7 @@ function PreferencesMenu() {
             >
               <span className="flex items-center gap-2 text-muted-foreground">
                 <Coins className="h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
-                <span>Currency</span>
+                <span>{t("Currency")}</span>
               </span>
               <span className="flex items-center gap-2">
                 {currentCurrency.code}
@@ -196,7 +198,7 @@ function PreferencesMenu() {
             <DropdownMenuItem asChild className="px-2 py-2.5 text-[14px] font-normal text-foreground">
               <Link href="/support-center" className="flex items-center">
                 <CircleHelp className="mr-2 h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
-                Support center
+                {t("Support center")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="px-2 py-2.5 text-[14px] font-normal text-foreground">
@@ -344,6 +346,7 @@ function SandboxWalletDialog({
 
 export function Header() {
   const pathname = usePathname()
+  const { t } = useTranslation()
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)
@@ -424,7 +427,7 @@ export function Header() {
                           <link.icon className="h-6 w-6 shrink-0" />
                         </span>
                       ) : null}
-                      {link.label}
+                      {t(link.label)}
                     </Link>
                   )
                 })}
@@ -463,7 +466,7 @@ export function Header() {
                           <link.icon className={isUtilityLink ? "h-5 w-5 shrink-0" : "h-6 w-6 shrink-0"} />
                         </span>
                       ) : null}
-                      {link.label}
+                      {t(link.label)}
                     </Link>
                   )
                 })}
