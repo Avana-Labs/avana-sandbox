@@ -8,6 +8,15 @@ import { LEND_ASSET_GROUPS } from "@/app/lib/data/mock/shared/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { formatTokenPrice } from "@/app/lib/prices/format"
+
+/** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
+function AssetSubLabel({ symbol }: { symbol: string }) {
+  const priceFor = usePriceFor()
+  const price = priceFor(symbol)
+  return <>{price !== undefined ? formatTokenPrice(price) : symbol}</>
+}
 
 type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
   marketId?: string
@@ -339,7 +348,7 @@ function AssetRowView({
               {row.name}
             </div>
             <div className="mt-0.5 text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[12px]">
-              {row.symbol}
+              <AssetSubLabel symbol={row.symbol} />
             </div>
           </div>
         </div>
@@ -393,7 +402,9 @@ function AssetCardView({
           <AssetIcon row={row} />
           <div className="min-w-0">
             <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.name}</div>
-            <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{row.symbol}</div>
+            <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+              <AssetSubLabel symbol={row.symbol} />
+            </div>
           </div>
         </div>
         <StatusBadge status={row.status} />
