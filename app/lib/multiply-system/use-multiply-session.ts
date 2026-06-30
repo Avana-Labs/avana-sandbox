@@ -192,10 +192,14 @@ export function useMultiplySession({
       if (injectedTransactionAdapter) return injectedTransactionAdapter
       return new SandboxMultiplyTransactionAdapter({
         readState: () => stateRef.current,
-        writeState: setState,
+        writeState: (nextState) => {
+          stateRef.current = nextState
+          setState(nextState)
+        },
+        persistResult: persistTransaction,
       })
     },
-    [injectedTransactionAdapter],
+    [injectedTransactionAdapter, persistTransaction],
   )
 
   const readAdapter = useMemo(
@@ -269,23 +273,14 @@ export function useMultiplySession({
 
   const executeTransaction = useCallback(
     async (intent: MultiplyTransactionIntent): Promise<MultiplySandboxActionResult> => {
-      const previousState = stateRef.current
       const result = await transactionAdapter.executeTransaction(intent)
-      try {
-        const receipt = persistTransaction ? await persistTransaction(result) : result.receipt
-        const historyItem = { ...result.historyItem, id: receipt.id, hash: receipt.hash, timestamp: receipt.timestamp }
-        const persistedResult = { ...result, receipt, historyItem }
-        setState(result.state)
-        setTransactionHistory((current) => mergeHistory(historyItem, current))
-        setTransactionReceipts((current) => mergeReceipts(receipt, current))
-        return persistedResult
-      } catch (error) {
-        stateRef.current = previousState
-        setState(previousState)
-        throw error
-      }
+      stateRef.current = result.state
+      setState(result.state)
+      setTransactionHistory((current) => mergeHistory(result.historyItem, current))
+      setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
+      return result
     },
-    [persistTransaction, transactionAdapter],
+    [transactionAdapter],
   )
 
   const reset = useCallback(() => {

@@ -189,4 +189,29 @@ describe("SandboxLendTransactionAdapter", () => {
     expect(Object.keys(state.positions)).toHaveLength(0)
     expect(state.transactions).toHaveLength(0)
   })
+
+  it("does not commit local state when Convex persistence rejects", async () => {
+    let state = buildMockLendSystemState("wallet-1")
+    state.walletBalances["wallet-1"] = { ...(state.walletBalances["wallet-1"] ?? {}), eth: 1 }
+    const before = state
+    const adapter = new SandboxLendTransactionAdapter({
+      readState: () => state,
+      writeState: (nextState) => {
+        state = nextState
+      },
+      persistResult: async () => {
+        throw new Error("Convex write rejected")
+      },
+    })
+    const intent = adapter.createIntent({
+      type: "deposit",
+      walletId: "wallet-1",
+      marketId: "eth",
+      depositAmount: 0.5,
+      walletBalance: 1,
+    })
+
+    await expect(adapter.executeTransaction(intent)).rejects.toThrow("Convex write rejected")
+    expect(state).toBe(before)
+  })
 })
