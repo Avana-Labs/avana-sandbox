@@ -37,8 +37,8 @@ Wallet connect (ConnectKit/wagmi) → SIWE sign-in → JWT → Convex ctx.auth
 - **§3 change**: the *client* session walletId now comes from the authed wallet.
   `AvanaSessionProviders` reads `useSiweAuth()`; a signed-in SIWE wallet drives the
   whole session (`resolveWalletIdentity` treats a non-profile id as a raw address).
-  Not signed in → the built-in demo profile (public demo unchanged). `AutoSiwe`
-  auto-prompts sign-in once per newly connected address.
+  Not signed in → the onboarding gate remains locked. `AutoSiwe` auto-prompts sign-in
+  once per newly connected address.
 - Issuer config must agree across three places or Convex JWT verification silently
   fails: `SIWE_JWT_ISSUER` (Convex), `NEXT_PUBLIC_SIWE_ISSUER` (Next), and the token
   `iss`. JWT is **RS256** (`SIWE_JWT_PRIVATE_JWK` must be RSA).
@@ -77,10 +77,9 @@ fields.)
 - **onboarding.ts** — `getState` (own wallet only, now also returns
   `economy.perUserTargetUsd`), `startAnalysis` (deterministic tier), `startTweet`
   (→`xPending`), `confirmTweet` (→`xConfirmed`), `claim`. `claim` now:
-  prices the basket from the **live `tokenPrices`** feed (falling back to the synthetic
-  map for tokens off a feed, e.g. aave/uni), enforces caps server-side, and seeds
-  **starter state** — a starter LP supply `positions` row, the matching `transactions`
-  row, an initial `portfolioSnapshots` point, and a `sandboxSessions` marker.
+  enforces caps server-side and seeds a deterministic **$1M starter state**: 12 liquid
+  assets, 8 LP collateral positions, 8 lend positions and 6 multiply positions, plus
+  their transactions, liquidity deltas and initial portfolio snapshot.
 - **transactions.ts** — `recordTransaction` is the single write path for a balance
   change: owner-gated, **idempotent on `intentId`** (`by_wallet_intent`), **hourly
   per-wallet rate limit** (`MAX_TX_PER_HOUR = 200`), upserts the
@@ -100,19 +99,19 @@ follow-up — see the migration note.
 
 ## Gating UI (§4)
 
-`SandboxGate` (mounted in `layout.tsx` around the site chrome) is **fail-open**: the
-public/unauthenticated demo, a missing Convex client, and any `getState` error
-(`GateErrorBoundary`) all render the app unchanged. Only a **signed-in** wallet whose
-`onboardingStep !== "done"` sees `HeaderLocked` + `OnboardingFlow` (the step machine
-mapped 1:1 onto `getState`). `/onboarding` is the standalone funnel.
+`SandboxGate` (mounted in `layout.tsx` around the site chrome) is **fail-closed**.
+Unauthenticated users, missing Convex configuration and query/auth errors remain in the
+locked onboarding shell. The shell reuses the normal Avana `Header`; protected page
+content is released only when Convex returns `onboardingStep === "done"`.
 
-## Transaction adapter (§5 — in progress)
+## Transaction adapter (§5)
 
-`previewTransaction` stays pure Credit-Engine simulation. `executeTransaction` gains a
-Convex persistence path (best-effort, signed-in only) that records the action via
-`recordTransaction` while the in-browser engine still drives live UX. `Production*`
-adapters remain throwing stubs. Full cutover (UI subscribes to Convex instead of the
-in-browser session) is tracked in the migration note.
+`previewTransaction` stays pure Credit-Engine simulation. For authenticated sessions,
+`executeTransaction` calls the injected Convex persistence port and waits for the
+canonical synthetic receipt before committing local React state. Convex query
+subscriptions then rehydrate wallet state. Rejected writes leave the browser state
+unchanged. `Production*` adapters remain intentional placeholders for future contract
+writes.
 
 ## Tests (§6)
 

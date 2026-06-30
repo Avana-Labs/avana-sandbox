@@ -32,6 +32,18 @@ async function attachStateScreenshot(
   })
 }
 
+async function attachResponsiveStateScreenshots(
+  page: import("@playwright/test").Page,
+  locator: import("@playwright/test").Locator,
+  name: string,
+) {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await attachStateScreenshot(locator, `${name}-desktop`)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await attachStateScreenshot(locator, `${name}-mobile`)
+  await page.setViewportSize({ width: 1440, height: 900 })
+}
+
 test.describe("sandbox onboarding", () => {
   test("rejects malformed and unsigned SIWE verification", async ({ request }) => {
     const malformed = await request.post("/api/siwe/verify", { data: { message: "invalid", signature: "0x00" } })
@@ -69,20 +81,26 @@ test.describe("sandbox onboarding", () => {
     if (initialStep === "wallet") {
       await page.getByRole("button", { name: "Proceed" }).click()
       await expect(canvas).toHaveAttribute("data-onboarding-step", "analyzing")
-      await attachStateScreenshot(canvas, "onboarding-analyzing-desktop")
+      await attachResponsiveStateScreenshots(page, canvas, "onboarding-analyzing")
       await expect(canvas).toHaveAttribute("data-onboarding-step", "eligible", { timeout: 15_000 })
-      await attachStateScreenshot(canvas, "onboarding-eligible-desktop")
+      await attachResponsiveStateScreenshots(page, canvas, "onboarding-eligible")
     }
 
     if ((await canvas.getAttribute("data-onboarding-step")) === "eligible") {
-      await page.getByRole("button", { name: "Claim allocation" }).click()
+      await page.getByRole("button", { name: "Continue to allocation" }).click()
+      await expect(canvas).toHaveAttribute("data-onboarding-step", "xConfirmed")
+      await attachResponsiveStateScreenshots(page, canvas, "onboarding-allocation")
+    }
+
+    if ((await canvas.getAttribute("data-onboarding-step")) === "xConfirmed") {
+      await page.getByRole("button", { name: "Claim your allocation" }).click()
       await expect(canvas).toHaveAttribute("data-onboarding-step", "claimPending")
-      await attachStateScreenshot(canvas, "onboarding-claim-pending-desktop")
+      await attachResponsiveStateScreenshots(page, canvas, "onboarding-claim-pending")
     }
 
     await expect(canvas).toHaveAttribute("data-onboarding-step", "done", { timeout: 20_000 })
     await expect(page.getByText("Synthetic transaction receipt")).toBeVisible()
-    await attachStateScreenshot(canvas, "onboarding-success-desktop")
+    await attachResponsiveStateScreenshots(page, canvas, "onboarding-success")
 
     await page.reload()
     await expect(page.getByTestId("onboarding-canvas")).toHaveAttribute("data-onboarding-step", "done")
