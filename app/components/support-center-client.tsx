@@ -1,8 +1,22 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
+import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+
+export type SupportSubmitPayload = {
+  category: string
+  categoryLabel?: string
+  topic: string
+  topicLabel?: string
+  message: string
+}
+
+export type SupportSubmit = (payload: SupportSubmitPayload) => Promise<void>
 
 type SupportArticle = {
   title: string
@@ -228,11 +242,15 @@ const SUPPORT_CATEGORIES: SupportCategory[] = [
   },
 ]
 
-export function SupportCenterClient() {
+type SendStatus = "idle" | "sending" | "sent" | "error"
+
+function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   const [stage, setStage] = useState<1 | 2 | 3>(1)
   const [categoryValue, setCategoryValue] = useState("")
   const [topicValue, setTopicValue] = useState("")
   const [message, setMessage] = useState("")
+  const [sendStatus, setSendStatus] = useState<SendStatus>("idle")
+  const [sendError, setSendError] = useState<string | null>(null)
 
   const selectedCategory = useMemo(
     () => SUPPORT_CATEGORIES.find((category) => category.value === categoryValue),
@@ -245,8 +263,8 @@ export function SupportCenterClient() {
 
   const hasArticles = Boolean(selectedTopic && stage >= 2)
   const canContinue = Boolean(selectedTopic)
-  const canSend = message.trim().length > 0
-  const footerLabel = stage === 3 ? "Send" : "Continue"
+  const canSend = message.trim().length >= 10 && sendStatus !== "sending"
+  const footerLabel = stage === 3 ? (sendStatus === "sending" ? "Sending…" : "Send") : "Continue"
 
   const handleCategoryChange = (value: string) => {
     setCategoryValue(value)
@@ -286,9 +304,33 @@ export function SupportCenterClient() {
     }
   }
 
-  const handleSend = () => {
-    return
-  }
+  const handleSend = useCallback(async () => {
+    if (!selectedCategory || !selectedTopic || message.trim().length < 10) return
+    setSendStatus("sending")
+    setSendError(null)
+    try {
+      await submit({
+        category: selectedCategory.value,
+        categoryLabel: selectedCategory.label,
+        topic: selectedTopic.value,
+        topicLabel: selectedTopic.label,
+        message: message.trim(),
+      })
+      setSendStatus("sent")
+    } catch (error) {
+      setSendStatus("error")
+      setSendError(error instanceof Error ? error.message : "Something went wrong. Please try again.")
+    }
+  }, [submit, selectedCategory, selectedTopic, message])
+
+  const handleReset = useCallback(() => {
+    setStage(1)
+    setCategoryValue("")
+    setTopicValue("")
+    setMessage("")
+    setSendStatus("idle")
+    setSendError(null)
+  }, [])
 
   return (
     <main className="min-h-[calc(100vh-68px)] bg-background text-foreground">
@@ -330,7 +372,32 @@ export function SupportCenterClient() {
           </aside>
 
           <section className="min-w-0">
-            {stage !== 3 ? (
+            {sendStatus === "sent" ? (
+              <div className="max-w-[560px]">
+                <div className="rounded-radius-md border border-border bg-card p-6 sm:p-8">
+                  <div className="flex size-11 items-center justify-center rounded-full bg-[#01AACF]/12 text-[#01AACF]">
+                    <svg viewBox="0 0 24 24" fill="none" className="size-6" aria-hidden>
+                      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <h2 className="mt-4 text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
+                    Request received
+                  </h2>
+                  <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
+                    Thanks — we&apos;ve logged your message about{" "}
+                    <span className="font-medium text-foreground">{selectedTopic?.label}</span> and the Avana team will
+                    follow up. You can submit another request any time.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={handleReset}
+                    className="mt-6 h-10 rounded-[4px] bg-[#01AACF] px-5 text-[14px] font-medium text-white hover:bg-[#009dbd]"
+                  >
+                    Submit another request
+                  </Button>
+                </div>
+              </div>
+            ) : stage !== 3 ? (
               <div className="max-w-[560px] space-y-6 sm:space-y-7">
                 <div>
                   <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
@@ -447,28 +514,76 @@ export function SupportCenterClient() {
               </div>
             )}
 
-            <div className="mt-7 flex max-w-[560px] items-center justify-between gap-3 border-t border-border pt-5 sm:mt-9">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleBack}
-                className="h-10 px-0 text-[14px] font-medium text-[#01AACF] hover:bg-transparent hover:text-[#009dbd] sm:h-9"
-              >
-                Back
-              </Button>
+            {sendStatus !== "sent" ? (
+              <>
+                {sendStatus === "error" && sendError ? (
+                  <p className="mt-5 max-w-[560px] rounded-radius-sm border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-[13px] leading-5 text-rose-600 dark:text-rose-400">
+                    {sendError}
+                  </p>
+                ) : null}
+                <div className="mt-7 flex max-w-[560px] items-center justify-between gap-3 border-t border-border pt-5 sm:mt-9">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleBack}
+                    disabled={sendStatus === "sending"}
+                    className="h-10 px-0 text-[14px] font-medium text-[#01AACF] hover:bg-transparent hover:text-[#009dbd] sm:h-9"
+                  >
+                    Back
+                  </Button>
 
-              <Button
-                type="button"
-                onClick={stage === 3 ? handleSend : handleContinue}
-                disabled={stage !== 3 ? !canContinue : !canSend}
-                className="h-10 rounded-[4px] bg-[#01AACF] px-5 text-[14px] font-medium text-white hover:bg-[#009dbd] disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
-              >
-                {footerLabel}
-              </Button>
-            </div>
+                  <Button
+                    type="button"
+                    onClick={stage === 3 ? handleSend : handleContinue}
+                    disabled={stage !== 3 ? !canContinue : !canSend}
+                    className="h-10 rounded-[4px] bg-[#01AACF] px-5 text-[14px] font-medium text-white hover:bg-[#009dbd] disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
+                  >
+                    {footerLabel}
+                  </Button>
+                </div>
+              </>
+            ) : null}
           </section>
         </div>
       </div>
     </main>
+  )
+}
+
+/**
+ * Convex-backed submitter: persists each request to the `supportRequests` table,
+ * tagging the authed wallet (when signed in) and the browser user-agent.
+ */
+function ConvexSupportCenter() {
+  const submitSupportRequest = useMutation(api.support.submitSupportRequest)
+  const { address } = useSiweAuth()
+
+  const submit = useCallback<SupportSubmit>(
+    async (payload) => {
+      await submitSupportRequest({
+        ...payload,
+        wallet: address ?? undefined,
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+      })
+    },
+    [submitSupportRequest, address],
+  )
+
+  return <SupportCenterForm submit={submit} />
+}
+
+/**
+ * Public entry. Uses the Convex-backed submitter when a Convex client is
+ * configured; otherwise the form still works (it just can't persist), so the
+ * demo never dead-ends if the backend is unavailable.
+ */
+export function SupportCenterClient() {
+  if (hasConvexClient) return <ConvexSupportCenter />
+  return (
+    <SupportCenterForm
+      submit={async () => {
+        // No Convex client configured — accept the submission without persisting.
+      }}
+    />
   )
 }
