@@ -205,6 +205,68 @@ describe("sandbox transaction adapter", () => {
     expect(state).toBe(before)
   })
 
+  it("records failed actions through persistResult (best-effort) and still returns the receipt", async () => {
+    let state = makeExampleBorrowSystemState()
+    const persistCalls: string[] = []
+    const adapter = new SandboxTransactionAdapter({
+      readState: () => state,
+      writeState: (nextState) => {
+        state = nextState
+      },
+      persistResult: async (result) => {
+        persistCalls.push(result.receipt.status)
+        // Mirror a backend that records the failure and echoes it back.
+        return {
+          id: "persisted-fail",
+          hash: "0xpersisted",
+          status: result.receipt.status,
+          simulated: true,
+          timestamp: 1,
+        }
+      },
+    })
+    // Liquidation is always a failed (preview-only) action in the sandbox.
+    const intent = adapter.createIntent({
+      type: "liquidate",
+      walletId: "wallet-1",
+      positionId: "wallet-1:weth-usdc",
+      repayAssetId: EXAMPLE_UNI_USDC_ASSET_ID,
+      repayAmountUsd6: parseFixed("100", 6),
+      debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
+    } as BorrowAction)
+
+    const result = await adapter.executeTransaction(intent)
+    expect(persistCalls).toEqual(["failed"])
+    expect(result.receipt.status).toBe("failed")
+    expect(result.historyItem.status).toBe("failed")
+    expect(result.historyItem.hash).toBe("0xpersisted")
+  })
+
+  it("keeps a failed receipt even when persistence of the failure throws", async () => {
+    let state = makeExampleBorrowSystemState()
+    const adapter = new SandboxTransactionAdapter({
+      readState: () => state,
+      writeState: (nextState) => {
+        state = nextState
+      },
+      persistResult: async () => {
+        throw new Error("backend unavailable")
+      },
+    })
+    const intent = adapter.createIntent({
+      type: "liquidate",
+      walletId: "wallet-1",
+      positionId: "wallet-1:weth-usdc",
+      repayAssetId: EXAMPLE_UNI_USDC_ASSET_ID,
+      repayAmountUsd6: parseFixed("100", 6),
+      debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
+    } as BorrowAction)
+
+    // Best-effort: a failed action whose persistence fails does not reject.
+    const result = await adapter.executeTransaction(intent)
+    expect(result.receipt.status).toBe("failed")
+  })
+
   it("liquidation preview does not mutate state and execute remains preview-only", async () => {
     const harness = createHarness()
     const state = harness.getState()

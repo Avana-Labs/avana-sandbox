@@ -14,6 +14,8 @@ const META_STORAGE_PREFIX = "avana.borrow.session.meta.v1"
 export type BorrowSessionMetadata = {
   transactionHistory: TransactionHistoryItem[]
   receipts: SyntheticTransactionReceipt[]
+  /** Monotonic write timestamp used to reject stale cross-tab overwrites. */
+  persistedAt?: number
 }
 
 export function borrowSessionStorageKey(walletId: string) {
