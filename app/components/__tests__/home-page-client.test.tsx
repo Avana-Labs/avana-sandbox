@@ -3,7 +3,10 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { HomePageClient } from "@/app/components/home-page-client"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
-import { selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
+import {
+  selectAllAvailableCollateralPools,
+  selectBorrowCollateralPools,
+} from "@/app/lib/borrow-system/selectors"
 
 const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)
@@ -36,8 +39,13 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
     borrow: {
       state,
       collateralPools: selectBorrowCollateralPools(state, walletId),
+      availableCollateralPools: selectAllAvailableCollateralPools(state, walletId),
     },
   }),
+}))
+
+vi.mock("@/app/lib/siwe/use-siwe-auth", () => ({
+  useSiweAuth: () => ({ isSignedIn: false, address: null }),
 }))
 
 describe("HomePageClient", () => {

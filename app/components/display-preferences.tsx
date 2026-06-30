@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { setActiveCurrency } from "@/app/lib/currency/active-rate"
 
 const STORAGE_KEY = "avana-show-dollar-amounts"
 const LANGUAGE_STORAGE_KEY = "avana-language"
@@ -77,6 +79,9 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
       setLanguageState(storedLanguage)
     }
     if (storedCurrency && CURRENCY_OPTIONS.some((option) => option.code === storedCurrency)) {
+      // Update the module-level rate first so the shared USD formatters convert on the
+      // very next render (no one-frame lag in the wrong currency).
+      setActiveCurrency(storedCurrency)
       setCurrencyState(storedCurrency)
     }
 
@@ -97,6 +102,12 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
     }
 
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
+  }, [language])
+
+  // Keep the document language attribute in sync so the browser (and assistive
+  // tech) treat the page as the selected locale.
+  useEffect(() => {
+    document.documentElement.lang = LANGUAGE_HTML_LANG[language] ?? "en"
   }, [language])
 
   useEffect(() => {
@@ -120,6 +131,8 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
   }, [])
 
   const setCurrency = useCallback((value: CurrencyCode) => {
+    // Sync the shared formatters' rate before the state-driven re-render.
+    setActiveCurrency(value)
     setCurrencyState(value)
   }, [])
 

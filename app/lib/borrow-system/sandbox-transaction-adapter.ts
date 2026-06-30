@@ -190,13 +190,16 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
         hash: receipt.hash,
       }
 
-      return {
-        preview,
-        receipt,
-        result: receipt,
-        historyItem,
-        state: current,
-      }
+      return this.finalize(
+        {
+          preview,
+          receipt,
+          result: receipt,
+          historyItem,
+          state: current,
+        },
+        true,
+      )
     }
 
     if (!preview.allowed) {
@@ -224,13 +227,16 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
         hash: receipt.hash,
       }
 
-      return {
-        preview,
-        receipt,
-        result: receipt,
-        historyItem,
-        state: current,
-      }
+      return this.finalize(
+        {
+          preview,
+          receipt,
+          result: receipt,
+          historyItem,
+          state: current,
+        },
+        true,
+      )
     }
 
     const nextState = applyBorrowAction(current, {
@@ -267,22 +273,42 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
       historyItem,
       state: nextState,
     }
-    const persisted = this.persistResult ? await this.persistResult(localResult) : localReceipt
-    const receipt = { ...localReceipt, ...persisted }
-    const persistedResult = {
-      ...localResult,
-      receipt,
-      result: receipt,
-      historyItem: {
-        ...historyItem,
-        id: persisted.id,
-        hash: persisted.hash,
-        status: persisted.status,
-        timestamp: persisted.timestamp,
-      },
-    }
+    const finalized = await this.finalize(localResult)
     this.writeStateImpl(nextState)
-    return persistedResult
+    return finalized
+  }
+
+  /**
+   * Persist a result through the configured backend (Convex when authed) and fold
+   * the persisted ids/status back into the receipt + history item. Used for BOTH
+   * successful and failed actions so a rejected/liquidation attempt is still
+   * recorded (and survives reload), not silently dropped. When there's no backend
+   * (local sandbox) or persistence throws, the local result is returned unchanged
+   * so nothing is lost.
+   */
+  private async finalize(localResult: SandboxActionResult, bestEffort = false): Promise<SandboxActionResult> {
+    if (!this.persistResult) return localResult
+    try {
+      const persisted = await this.persistResult(localResult)
+      const receipt = { ...localResult.receipt, ...persisted }
+      return {
+        ...localResult,
+        receipt,
+        result: receipt,
+        historyItem: {
+          ...localResult.historyItem,
+          id: persisted.id,
+          hash: persisted.hash,
+          status: persisted.status,
+          timestamp: persisted.timestamp,
+        },
+      }
+    } catch (error) {
+      // Recording a FAILED action is best-effort — keep the local receipt so the
+      // attempt still shows in-session. A SUCCESS that can't be saved must surface.
+      if (bestEffort) return localResult
+      throw error
+    }
   }
 
   resetSandboxState() {

@@ -321,7 +321,9 @@ export const claim = mutation({
 
     for (const [index, leg] of allocation.liquid.entries()) {
       const market = marketBySlug.get(leg.marketSlug)
-      if (!market) throw new Error(`STARTER_CATALOG_INCOMPLETE: missing asset ${leg.marketSlug}.`)
+      // Skip a missing asset rather than failing the whole claim (the plan only ever
+      // references seeded slugs, so this is just belt-and-suspenders against seed drift).
+      if (!market) continue
       const symbol = market.symbol.toLowerCase()
       const priceUsd = livePrice[symbol] ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
       await ctx.db.insert("sandboxBalances", {

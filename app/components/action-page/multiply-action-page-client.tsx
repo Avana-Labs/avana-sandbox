@@ -9,7 +9,6 @@ import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/
 import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
-import { ActionNotFound } from "@/app/components/action-page/action-not-found"
 import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
@@ -56,16 +55,20 @@ export function MultiplyActionPageClient({
     () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
     [session.state.positions, walletId],
   )
+  // Only honor an initial market id that actually exists in the catalog. An unknown
+  // id (stale link) is treated as "no initial market" so the picker shows instead of
+  // dead-ending — every multiply market is available.
+  const validInitialMarketId = initialMarketId && session.state.markets[initialMarketId] ? initialMarketId : undefined
   const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(
-    () => initialMarketId ?? (kind === "deleverage" ? walletPositions[0]?.marketId : undefined),
+    () => validInitialMarketId ?? (kind === "deleverage" ? walletPositions[0]?.marketId : undefined),
   )
   const market = useMemo(() => {
     const markets = Object.values(session.state.markets)
     const selected = selectedMarketId ? markets.find((entry) => entry.id === selectedMarketId) ?? null : null
-    if (selected) return selected
-    if (selectedMarketId || initialMarketId) return null
-    return markets[0] ?? null
-  }, [initialMarketId, selectedMarketId, session.state.markets])
+    // Never dead-end: fall back to the first catalog market (the picker lets the
+    // user switch). market is null only if the catalog itself is empty.
+    return selected ?? markets[0] ?? null
+  }, [selectedMarketId, session.state.markets])
 
   const marketOptions = useMemo(() => {
     if (kind !== "multiply") return undefined
@@ -134,11 +137,10 @@ export function MultiplyActionPageClient({
       kind === "deleverage"
         ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
         : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
-    const options = buildMultiplierOptions(effectiveMax)
-    const clamped = clampMultiplierToOptions(
-      Math.min(effectiveMax, Math.max(multiplierMin, parsed)),
-      options,
-    )
+    // Clamp to the valid RANGE only. Snapping to a handful of discrete presets made
+    // the slider feel broken (e.g. a 1.8x-max market had just 1.5/1.8 reachable);
+    // the ruler steps in 0.1 within [min, max] and stays continuous.
+    const clamped = Math.min(effectiveMax, Math.max(multiplierMin, parsed))
     const next = String(Number(clamped.toFixed(2)))
     if (next !== multiplier) setMultiplier(next)
   }, [kind, market, multiplier, multiplierMin, position?.multiplier])
@@ -348,21 +350,21 @@ export function MultiplyActionPageClient({
     }
   }, [amount, closeHref, descriptor.primaryVerb, hasUserInput, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
 
-  if (!market) {
-    return (
-      <ActionNotFound
-        closeHref={closeHref}
-        title="Market unavailable"
-        message="We couldn't find that multiply market. Pick one from the multiply page to continue."
-      />
-    )
-  }
+  // The catalog always has markets, so `market` is non-null in practice; this only
+  // guards the impossible empty-catalog case (and never shows a dead-end card).
+  if (!market) return null
 
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = isHomeLayout ? "home" : "default"
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const marketLabel = formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol)
+  // The only input is the collateral asset. Spell out the loop so the single-token
+  // input reads clearly (no second token icon implying a dual input).
+  const loopHint =
+    kind === "multiply"
+      ? `You supply ${market.collateralAsset.symbol}. We borrow ${market.borrowAsset.symbol} against it, swap back to ${market.collateralAsset.symbol}, and repeat to your target leverage.`
+      : null
   const effectiveMultiplierMax =
     kind === "deleverage"
       ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
@@ -379,9 +381,8 @@ export function MultiplyActionPageClient({
       }}
       preview={previewUi}
       assetSymbol={market.collateralAsset.symbol}
-      borrowSymbol={market.borrowAsset.symbol}
       assetLabel={marketLabel}
-      assetOptions={!initialMarketId ? marketOptions : undefined}
+      assetOptions={!validInitialMarketId ? marketOptions : undefined}
       selectedAssetId={market.id}
       onAssetSelect={(id) => {
         setHasUserInput(true)
@@ -390,17 +391,20 @@ export function MultiplyActionPageClient({
       }}
       amountVariant="raised"
       amountFooter={
-        <ActionLeverageRuler
-          variant="embedded"
-          value={multiplier}
-          onChange={(value) => {
-            setHasUserInput(true)
-            setMultiplier(value)
-          }}
-          min={multiplierMin}
-          max={effectiveMultiplierMax}
-          step={0.1}
-        />
+        <>
+          {loopHint ? <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{loopHint}</p> : null}
+          <ActionLeverageRuler
+            variant="embedded"
+            value={multiplier}
+            onChange={(value) => {
+              setHasUserInput(true)
+              setMultiplier(value)
+            }}
+            min={multiplierMin}
+            max={effectiveMultiplierMax}
+            step={0.1}
+          />
+        </>
       }
     />
   ) : null
@@ -460,7 +464,6 @@ export function MultiplyActionPageClient({
           }}
           preview={previewUi}
           assetSymbol={market.collateralAsset.symbol}
-          borrowSymbol={market.borrowAsset.symbol}
           assetOptions={marketOptions}
           selectedAssetId={market.id}
           onAssetSelect={(id) => {
@@ -468,6 +471,7 @@ export function MultiplyActionPageClient({
             setSelectedMarketId(id)
             setAmount("")
           }}
+          leverageHint={loopHint}
           multiplier={multiplier}
           onMultiplierChange={(value) => {
             setHasUserInput(true)

@@ -34,7 +34,6 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { ActionNotFound } from "@/app/components/action-page/action-not-found"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi, blockedUiForMissingWalletLp } from "@/app/lib/action-system/blocked-ui"
@@ -98,13 +97,19 @@ export function BorrowActionPageClient({
   const { walletId } = useAvanaSessions()
   const session = useBorrowSessionContext()
   const isHomeBorrowZeroState = embedded && layout === "home" && kind === "borrow" && !initialMarketId && !initialAssetId
+  // Borrow and supply can target ANY market in the catalog — you pledge collateral
+  // as part of the flow — so their pool picker is the full available list (not just
+  // the markets already pledged). Repay/remove/claim act on existing positions, so
+  // they keep the pledged-pool list.
+  const usesAllMarketPools = kind === "borrow" || kind === "supply"
+  const collateralPoolOptions = usesAllMarketPools ? session.availableCollateralPools : session.collateralPools
   const hasInvalidInitialMarket = Boolean(
     initialMarketId &&
       !initialAssetId &&
-      // Supply/pledge can target ANY market in the catalog (you're creating a new
-      // position), so validate it against the full market list. Remove/claim act on
-      // an existing position, so those still validate against the pledged pools.
-      (kind === "supply"
+      // A market is "available" whenever it exists in the catalog — the wallet may
+      // simply not hold a position in it yet (never a dead-end). Borrow/supply
+      // validate against the full catalog; repay/remove/claim need a pledged position.
+      (usesAllMarketPools
         ? !session.state.markets[initialMarketId]
         : !session.collateralPools.some((pool) => pool.id === initialMarketId)),
   )
@@ -124,6 +129,9 @@ export function BorrowActionPageClient({
   )
   const [stage, setStage] = useState<ActionStage>(() => {
     if (embedded) return "configure"
+    // A bad/unknown market id lands on the picker (pick a market) rather than a
+    // "Market unavailable" dead-end.
+    if (hasInvalidInitialMarket) return "select"
     if (kind === "borrow" && !resolvedInitialAsset) return "select"
     if (kind === "supply" && !initialMarketId) return "select"
     if (kind === "claim" && !initialMarketId && !initialPositionId) return "select"
@@ -177,14 +185,14 @@ export function BorrowActionPageClient({
   )
   const debts = useMemo(() => selectHomeDebtMap(session.state, walletId), [session.state, walletId])
   const activePool = useMemo(() => {
-    const matched = session.collateralPools.find((pool) => pool.id === activeMarketId)
+    const matched = collateralPoolOptions.find((pool) => pool.id === activeMarketId)
     if (matched) return matched
     // In the home borrow zero-state we intentionally render no pre-selected pool
     // (no collateral value, no health factor) until the user picks one — so don't
     // fall back to the first pledged pool here.
     if (isHomeBorrowZeroState) return null
-    return session.collateralPools[0] ?? null
-  }, [activeMarketId, isHomeBorrowZeroState, session.collateralPools])
+    return collateralPoolOptions[0] ?? null
+  }, [activeMarketId, collateralPoolOptions, isHomeBorrowZeroState])
   const borrowTokens = useMemo(
     () => (activeMarketId ? selectHomeBorrowTokensForMarket(session.state, walletId, activeMarketId) : []),
     [activeMarketId, session.state, walletId],
@@ -892,16 +900,6 @@ export function BorrowActionPageClient({
       />
     ) : null
 
-  if (hasInvalidInitialMarket) {
-    return (
-      <ActionNotFound
-        closeHref={closeHref}
-        title="Market unavailable"
-        message="We couldn't find that collateral market. Pick one from the borrow page to continue."
-      />
-    )
-  }
-
   return (
     <ActionPageShell
       mode={embedded ? "embedded" : "page"}
@@ -916,7 +914,7 @@ export function BorrowActionPageClient({
       {useSupplyWorkspace && activePool ? (
         <ActionSupplyContextBar
           pool={activePool}
-          pools={session.collateralPools}
+          pools={collateralPoolOptions}
           debts={debts}
           onPoolChange={(poolId) => {
             setMarketId(poolId)
@@ -929,7 +927,7 @@ export function BorrowActionPageClient({
         <ActionBorrowContextBar
           kind={kind}
           pool={activePool}
-          pools={session.collateralPools}
+          pools={collateralPoolOptions}
           debts={debts}
           onPoolChange={handlePoolChange}
           variant={useWorkspaceFields ? "inset" : "card"}

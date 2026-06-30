@@ -61,6 +61,26 @@ describe("credit metrics", () => {
     expect(formatFixed(calculateBorrowCapacityUsd6(state, "wallet-1"), 6)).toBe("14480.3956")
   })
 
+  it("caps borrow capacity on the collateral factor, NOT the liquidation threshold", () => {
+    const state = makeExampleBorrowSystemState()
+    const before = calculateBorrowCapacityUsd6(state, "wallet-1")
+    const metrics = calculateCreditMetrics(state, "wallet-1")
+
+    // Collateral factor < liquidation threshold, so credit limit must be strictly
+    // below the liquidation value. Borrow capacity tracks the credit limit.
+    expect(metrics.creditLimitUsd6).toBeLessThan(metrics.liquidationValueUsd6)
+    expect(before).toBe(metrics.creditLimitUsd6)
+
+    // Raising ONLY the liquidation threshold must not change borrow capacity —
+    // it would only move the liquidation value / health factor.
+    for (const market of Object.values(state.markets)) {
+      market.riskConfig.liquidationThresholdWad = parseFixed("0.99", 18)
+    }
+    const after = calculateBorrowCapacityUsd6(state, "wallet-1")
+    expect(after).toBe(before)
+    expect(calculateCreditMetrics(state, "wallet-1").liquidationValueUsd6).toBeGreaterThan(metrics.liquidationValueUsd6)
+  })
+
   it("never returns borrow capacity above the sum allowed by collateral factors", () => {
     const state = makeExampleBorrowSystemState()
     state.markets["uni-v3-bluechip-weth-usdc"]!.riskConfig.collateralFactorWad = parseFixed("1.25", 18)
