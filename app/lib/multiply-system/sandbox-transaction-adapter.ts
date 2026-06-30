@@ -223,12 +223,15 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
         timestamp: receipt.timestamp,
         hash: receipt.hash,
       }
-      return {
-        preview,
-        receipt,
-        historyItem,
-        state: this.readStateImpl(),
-      }
+      return this.finalize(
+        {
+          preview,
+          receipt,
+          historyItem,
+          state: this.readStateImpl(),
+        },
+        true,
+      )
     }
 
     const nextState = applyMultiplyAction(this.readStateImpl(), { ...action, at: this.now() })
@@ -267,21 +270,43 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
       historyItem,
       state: nextState,
     }
-    const persisted = this.persistResult ? await this.persistResult(localResult) : localReceipt
-    if (persisted.status === "idle") throw new Error("Convex returned an invalid idle transaction receipt")
-    const receipt = { ...localReceipt, ...persisted, actionType: localReceipt.actionType }
-    const persistedResult = {
-      ...localResult,
-      receipt,
-      historyItem: {
-        ...historyItem,
-        id: persisted.id,
-        hash: persisted.hash,
-        status: persisted.status,
-        timestamp: persisted.timestamp,
-      },
-    }
+    const finalized = await this.finalize(localResult)
     this.writeStateImpl(nextState)
-    return persistedResult
+    return finalized
+  }
+
+  /**
+   * Persist a result (Convex when authed) and fold the ids/status back in. Routed
+   * for BOTH successful and failed actions so a rejected multiply/deleverage is
+   * recorded and survives reload. A SUCCESS persistence failure surfaces; a FAILED
+   * one is best-effort (keep the local receipt). No-op without a backend.
+   */
+  private async finalize(
+    localResult: MultiplySandboxActionResult,
+    bestEffort = false,
+  ): Promise<MultiplySandboxActionResult> {
+    if (!this.persistResult) return localResult
+    try {
+      const persisted = await this.persistResult(localResult)
+      if (persisted.status === "idle") {
+        if (bestEffort) return localResult
+        throw new Error("Convex returned an invalid idle transaction receipt")
+      }
+      const receipt = { ...localResult.receipt, ...persisted, actionType: localResult.receipt.actionType }
+      return {
+        ...localResult,
+        receipt,
+        historyItem: {
+          ...localResult.historyItem,
+          id: persisted.id,
+          hash: persisted.hash,
+          status: persisted.status,
+          timestamp: persisted.timestamp,
+        },
+      }
+    } catch (error) {
+      if (bestEffort) return localResult
+      throw error
+    }
   }
 }
