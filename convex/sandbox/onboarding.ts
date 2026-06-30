@@ -36,6 +36,18 @@ const DEFAULT_BASKET = [
 
 const SEED_VERSION = 1
 
+const DEFAULT_CONFIG = {
+  basket: DEFAULT_BASKET,
+  seedVersion: SEED_VERSION,
+  tweetTemplate:
+    "I just claimed my Avana sandbox allocation. Explore borrowing, lending, and multiplied exposure with synthetic assets.",
+  xHandle: "AvanaFinance",
+  resourcesLinks: [
+    { label: "Read the docs", href: "/docs" },
+    { label: "Explore markets", href: "/borrow" },
+  ],
+}
+
 /** Synthetic market slug for the basket allocated at onboarding (a starter LP supply). */
 const STARTER_LP_SLUG = "sandbox-starter-basket"
 
@@ -66,7 +78,7 @@ async function getOrSeedEconomy(ctx: MutationCtx) {
 async function getOrSeedConfig(ctx: MutationCtx) {
   const existing = await ctx.db.query("sandboxConfig").first()
   if (existing) return existing
-  const id = await ctx.db.insert("sandboxConfig", { basket: DEFAULT_BASKET, seedVersion: SEED_VERSION })
+  const id = await ctx.db.insert("sandboxConfig", DEFAULT_CONFIG)
   return (await ctx.db.get(id))!
 }
 
@@ -83,10 +95,21 @@ export const getState = query({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
-    const economy = await ctx.db.query("sandboxEconomy").first()
+    const [economy, config] = await Promise.all([
+      ctx.db.query("sandboxEconomy").first(),
+      ctx.db.query("sandboxConfig").first(),
+    ])
     return {
       onboardingStep: profile?.onboardingStep ?? "wallet",
       profile,
+      config: config
+        ? {
+            basket: config.basket,
+            tweetTemplate: config.tweetTemplate ?? DEFAULT_CONFIG.tweetTemplate,
+            xHandle: config.xHandle ?? DEFAULT_CONFIG.xHandle,
+            resourcesLinks: config.resourcesLinks ?? DEFAULT_CONFIG.resourcesLinks,
+          }
+        : DEFAULT_CONFIG,
       economy: economy
         ? {
             status: economy.status,
@@ -101,6 +124,29 @@ export const getState = query({
             perUserTargetUsd: DEFAULT_ECONOMY.perUserTargetUsd,
           },
     }
+  },
+})
+
+/** Persist the analysis loading state before the deterministic eligibility pass. */
+export const beginAnalysis = mutation({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const authSubject = (await getAuthSubject(ctx)) ?? undefined
+    const existing = await profileForWallet(ctx, wallet)
+    if (existing) {
+      if (existing.onboardingStep === "done" || existing.onboardingStep === "waitlisted") return existing.onboardingStep
+      await ctx.db.patch(existing._id, { onboardingStep: "analyzing" })
+      return "analyzing" as const
+    }
+    await ctx.db.insert("sandboxProfiles", {
+      wallet,
+      authSubject,
+      createdAt: Date.now(),
+      seedVersion: SEED_VERSION,
+      onboardingStep: "analyzing",
+    })
+    return "analyzing" as const
   },
 })
 
