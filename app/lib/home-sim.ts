@@ -608,7 +608,7 @@ export function calculateClaimPreview(
   }
 }
 
-export function calculateSafeRemovePercent(pool: HomeCollateralPool, currentDebtUsd: number) {
+function calculateSafeRemovePercent(pool: HomeCollateralPool, currentDebtUsd: number) {
   if (currentDebtUsd <= 0) {
     return 100
   }
