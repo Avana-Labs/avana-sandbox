@@ -520,3 +520,19 @@
 .surface-elevated {
   box-shadow: none;
 }
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-25%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-[marquee"] {
+    animation: none !important;
+  }
+}

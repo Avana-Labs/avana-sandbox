@@ -22,7 +22,7 @@ function LockedShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <HeaderLocked />
-      <main className="flex flex-1 items-center justify-center px-5 py-12">{children}</main>
+      <main className="flex flex-1 px-5 py-6 sm:px-8">{children}</main>
     </div>
   )
 }

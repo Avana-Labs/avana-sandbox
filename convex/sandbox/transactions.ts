@@ -290,6 +290,26 @@ export const getActivity = query({
   },
 })
 
+/** Resolve one synthetic receipt by hash, restricted to its authenticated owner. */
+export const getTransactionByHash = query({
+  args: { wallet: v.string(), hash: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const transaction = await ctx.db
+      .query("transactions")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .filter((q) => q.eq(q.field("syntheticTxHash"), args.hash))
+      .first()
+    if (transaction) return transaction
+
+    return ctx.db
+      .query("sandboxActivity")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .filter((q) => q.eq(q.field("syntheticTxHash"), args.hash))
+      .first()
+  },
+})
+
 /** Wallet-scoped positions with their collateral + debt legs. */
 export const getPositions = query({
   args: { wallet: v.string() },
