@@ -3,9 +3,9 @@
 import { Component, type ReactNode } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-import { HeaderLocked } from "./header-locked"
 import { OnboardingFlow, type OnboardingGateState } from "./onboarding-flow"
 
 class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
@@ -21,7 +21,7 @@ class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: bo
 function LockedShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <HeaderLocked />
+      <Header />
       <main className="flex flex-1 px-5 py-6 sm:px-8">{children}</main>
     </div>
   )
