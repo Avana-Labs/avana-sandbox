@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode } from "react"
+import { useSIWE } from "connectkit"
+import { useAccount } from "wagmi"
 import {
   AvanaSessionsProvider,
   ConvexAvanaSessionsProvider,
@@ -9,22 +11,24 @@ import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/marke
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
 /**
- * Auto-prompt SIWE once per newly connected address. If the user rejects, the manual
- * "Sign in" control (SandboxSignInButton) remains. The attempted-set lives here — NOT
- * inside the session provider — so it survives the session re-scope on identity change
- * and never re-prompts after an explicit sign-out.
+ * Auto-prompt ConnectKit's SIWE once per newly connected address so the user goes
+ * straight from connect → signed in. Routed through ConnectKit's useSIWE (the same flow
+ * the header/onboarding "Sign in" button uses) so state stays consistent. If the user
+ * rejects, the explicit "Sign in" control remains. The attempted-set survives the
+ * session re-scope on identity change and never re-prompts after an explicit sign-out.
  */
 function AutoSiwe() {
-  const { isConnected, isSignedIn, address, signIn } = useSiweAuth()
+  const { address, isConnected } = useAccount()
+  const siwe = useSIWE()
   const attempted = useRef<Set<string>>(new Set())
   useEffect(() => {
-    if (!isConnected || isSignedIn || !address) return
+    if (!siwe?.isReady || !isConnected || siwe.isSignedIn || siwe.isLoading || !address) return
     const key = address.toLowerCase()
     if (attempted.current.has(key)) return
     attempted.current.add(key)
     // Swallow rejection/failure — the user can still sign in via the header button.
-    void signIn().catch(() => {})
-  }, [isConnected, isSignedIn, address, signIn])
+    void siwe.signIn?.().catch(() => {})
+  }, [address, isConnected, siwe])
   return null
 }
 

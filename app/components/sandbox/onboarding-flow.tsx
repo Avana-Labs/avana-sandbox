@@ -5,9 +5,8 @@ import Link from "next/link"
 import { Check, LoaderCircle, MoveUpRight } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useMutation } from "convex/react"
-import { ConnectKitButton } from "connectkit"
+import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
-import { SandboxSignInButton } from "@/app/lib/siwe/sandbox-sign-in"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 
 type BasketSlot = { tokenId: string; weight: number }
@@ -371,14 +370,8 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         <>
           <Headline muted="Connect a wallet." active="We&apos;ll set up your sandbox and scope it to your address." />
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <ConnectKitButton.Custom>
-              {({ show, isConnected, truncatedAddress, ensName }) => (
-                <button className={PRIMARY} onClick={show} type="button">
-                  {isConnected ? (ensName ?? truncatedAddress ?? "Wallet connected") : "Connect wallet"}
-                </button>
-              )}
-            </ConnectKitButton.Custom>
-            <SandboxSignInButton size="desktop" />
+            {/* One control: connect → sign in → account, all via the ConnectKit modal. */}
+            <WalletControl size="desktop" />
           </div>
           <p className="mt-8 max-w-[430px] text-[13px] leading-5 text-muted-foreground">
             By connecting your wallet, you agree to the{" "}
