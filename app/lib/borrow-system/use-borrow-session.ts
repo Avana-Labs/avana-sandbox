@@ -18,6 +18,7 @@ import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-a
 import { SandboxTransactionAdapter } from "@/app/lib/borrow-system/sandbox-transaction-adapter"
 import {
   selectBorrowableAssets,
+  selectAllAvailableCollateralPools,
   selectBorrowCollateralPools,
   selectBorrowMarketSummaries,
   selectInitialBorrowDebts,
@@ -315,6 +316,10 @@ export function useBorrowSession({
   const marketSummaries = useMemo(() => selectBorrowMarketSummaries(state, walletId), [state, walletId])
   const borrowableAssets = useMemo(() => selectBorrowableAssets(state, walletId), [state, walletId])
   const collateralPools = useMemo(() => selectBorrowCollateralPools(state, walletId), [state, walletId])
+  const availableCollateralPools = useMemo(
+    () => selectAllAvailableCollateralPools(state, walletId),
+    [state, walletId],
+  )
   const initialDebts = useMemo(() => selectInitialBorrowDebts(state, walletId), [state, walletId])
   const walletSnapshot = useMemo(() => selectWalletBorrowSnapshot(state, walletId), [state, walletId])
 
@@ -329,6 +334,7 @@ export function useBorrowSession({
     marketSummaries,
     borrowableAssets,
     collateralPools,
+    availableCollateralPools,
     initialDebts,
     walletSnapshot,
     transactionHistory,

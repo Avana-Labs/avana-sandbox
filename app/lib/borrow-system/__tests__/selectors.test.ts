@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import {
+  selectAllAvailableCollateralPools,
   selectBorrowableAssets,
   selectBorrowCollateralPools,
   selectBorrowMarketSummaries,
@@ -29,5 +30,29 @@ describe("borrow system selectors", () => {
     expect(debts["uni-v3-bluechip-wbtc-weth"]).toBeUndefined()
     expect(snapshot.totalBorrowedUsd).toBe(2000)
     expect(snapshot.availableCreditUsd).toBeGreaterThan(0)
+  })
+
+  it("exposes every market as an available collateral pool (pre-loaded picker)", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const pledged = selectBorrowCollateralPools(state, "demo-wallet")
+    const available = selectAllAvailableCollateralPools(state, "demo-wallet")
+
+    // Available is the full market catalog — strictly a superset of pledged pools.
+    expect(available.length).toBe(Object.keys(state.markets).length)
+    expect(available.length).toBeGreaterThan(pledged.length)
+    for (const pool of pledged) {
+      const match = available.find((entry) => entry.id === pool.id)
+      expect(match?.collateralUsd).toBeCloseTo(pool.collateralUsd, 6)
+    }
+    // Unpledged pools surface with zero collateral until the user pledges.
+    const unpledged = available.find((entry) => !pledged.some((p) => p.id === entry.id))
+    expect(unpledged?.collateralUsd).toBe(0)
+  })
+
+  it("returns the full catalog even for a wallet with no positions", () => {
+    const state = buildMockBorrowSystemState("home-demo-wallet")
+    const available = selectAllAvailableCollateralPools(state, "no-such-wallet")
+    expect(available.length).toBe(Object.keys(state.markets).length)
+    expect(available.every((pool) => pool.collateralUsd === 0)).toBe(true)
   })
 })
