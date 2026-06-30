@@ -28,9 +28,8 @@ function getMultiplyPageSource(source?: MultiplyPageSource) {
   return mode === "mock" ? mockMultiplyPageSource : liveMultiplyPageSource
 }
 
-function getMultiplyPageFallback(source?: MultiplyPageSource) {
-  if (source || resolveDataSourceMode() === "mock") return undefined
-  return mockMultiplyPageSource
+function getMultiplyPageFallback() {
+  return undefined
 }
 
 export async function fetchMultiplyPage(
@@ -39,7 +38,7 @@ export async function fetchMultiplyPage(
 ): Promise<MultiplyPageData> {
   const response = await executeSourceLoad<MultiplyPageSource, unknown>({
     primary: getMultiplyPageSource(source),
-    fallback: getMultiplyPageFallback(source),
+    fallback: getMultiplyPageFallback(),
     operation: "getMultiplyPageData",
     context,
     schema: multiplyPageSchema,

@@ -1,13 +1,12 @@
 import {
   createDataSourceAdapter,
-  createUnsupportedSourceError,
+  DataSourceError,
   type DataSourceAdapter,
   type DataSourceRequestContext,
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
 import type { LendReadAdapter } from "@/app/lib/lend-system/contracts"
 import { buildMockLendSystemState } from "@/app/lib/lend-system/mock"
-import { ProductionLendReadAdapter } from "@/app/lib/lend-system/production-read-adapter"
 import { SandboxLendReadAdapter } from "@/app/lib/lend-system/sandbox-read-adapter"
 import { mergeConvexLendSnapshots } from "@/app/lib/lend-system/market-hydration"
 import { fetchLendMarketSnapshots } from "@/app/lib/lend-system/market-hydration-server"
@@ -41,10 +40,6 @@ export const liveLendPageAdapter = createDataSourceAdapter({
   mode: "live",
 })
 
-function isNotImplementedError(error: unknown) {
-  return error instanceof Error && error.message.includes("not implemented")
-}
-
 function createLendPageSource({
   adapter,
   walletId = "demo-wallet",
@@ -57,17 +52,10 @@ function createLendPageSource({
   return {
     adapter,
     async getLendPageData() {
-      try {
-        const data = await readAdapter.readLendPage(walletId)
-        return {
-          fetchedAt: new Date().toISOString(),
-          data,
-        }
-      } catch (error) {
-        if (adapter.mode === "live" && isNotImplementedError(error)) {
-          throw createUnsupportedSourceError(adapter, "getLendPageData")
-        }
-        throw error
+      const data = await readAdapter.readLendPage(walletId)
+      return {
+        fetchedAt: new Date().toISOString(),
+        data,
       }
     },
   }
@@ -86,9 +74,27 @@ export const mockLendPageSource: LendPageSource = {
   },
 }
 
-export const liveLendPageSource: LendPageSource = createLendPageSource({
+export const liveLendPageSource: LendPageSource = {
   adapter: liveLendPageAdapter,
-  readAdapter: new ProductionLendReadAdapter(),
-})
+  async getLendPageData() {
+    const walletId = "catalog"
+    const snapshots = await fetchLendMarketSnapshots()
+    if (snapshots.length === 0) {
+      throw new DataSourceError({
+        code: "unavailable",
+        sourceId: liveLendPageAdapter.id,
+        operation: "getLendPageData",
+        message: "Convex returned no Lend market snapshots. Seed the market catalog before enabling live mode.",
+        retryable: true,
+      })
+    }
+    const state = mergeConvexLendSnapshots(buildMockLendSystemState(walletId), snapshots)
+    const readAdapter = new SandboxLendReadAdapter({ state })
+    return {
+      fetchedAt: new Date().toISOString(),
+      data: await readAdapter.readLendPage(walletId),
+    }
+  },
+}
 
 export { createLendPageSource }
