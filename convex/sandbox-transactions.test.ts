@@ -73,7 +73,6 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
             },
           ],
         },
-        ledger: { marketSlug: "attacker-controlled-market", borrowedDeltaUsd: 99_000 },
       }),
     )
     expect(res.idempotent).toBe(false)
@@ -91,10 +90,11 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(positions[0]?.collateral).toHaveLength(1)
     expect(positions[0]?.debt).toHaveLength(1)
 
+    // The aggregate ledger delta is recomputed server-side (there is no client ledger
+    // arg), keyed by the borrowed asset, never anything the client could dictate.
     const ledger = await t.query(api.liquidity.listDeltas)
     const row = ledger.find((r) => r.marketSlug === "uni-v2:usdc")
     expect(row?.borrowedDeltaUsd).toBe(1000)
-    expect(ledger.some((entry) => entry.marketSlug === "attacker-controlled-market")).toBe(false)
 
     const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
     expect(portfolio.latest?.totalBorrowedUsd).toBe(1000)

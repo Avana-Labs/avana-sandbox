@@ -55,11 +55,6 @@ export type RecordTransactionArgs = {
       principalBorrowedUsd6: string
     }>
   }
-  ledger?: {
-    marketSlug: string
-    borrowedDeltaUsd?: number
-    suppliedDeltaUsd?: number
-  }
 }
 
 export function lendResultToRecordArgs(result: LendSandboxActionResult, wallet: string): RecordTransactionArgs {
@@ -89,13 +84,6 @@ export function lendResultToRecordArgs(result: LendSandboxActionResult, wallet: 
           earnedUsd6: Math.round(position.interestEarned * 1_000_000).toString(),
         }
       : undefined,
-    ledger:
-      item.kind === "claim"
-        ? undefined
-        : {
-            marketSlug: item.marketId,
-            suppliedDeltaUsd: item.kind === "deposit" ? amountUsd : -amountUsd,
-          },
   }
 }
 
@@ -197,21 +185,6 @@ export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: st
       debtValueUsd6: result.preview.after.totalBorrowedUsd6.toString(),
       collateral,
       debt,
-    },
-    ledger: {
-      marketSlug: result.historyItem.assetId ?? marketSlug,
-      borrowedDeltaUsd:
-        result.historyItem.kind === "borrow"
-          ? base.amountUsd
-          : result.historyItem.kind === "repay"
-            ? -base.amountUsd
-            : undefined,
-      suppliedDeltaUsd:
-        result.historyItem.kind === "deposit"
-          ? base.amountUsd
-          : result.historyItem.kind === "withdraw"
-            ? -base.amountUsd
-            : undefined,
     },
   }
 }

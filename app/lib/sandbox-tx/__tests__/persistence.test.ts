@@ -65,20 +65,18 @@ describe("lendResultToRecordArgs (token→USD reconciliation)", () => {
     } as LendSandboxActionResult
   }
 
-  it("converts a non-$1 token deposit (2 ETH @ $3500) to USD for the amount and ledger delta", () => {
+  it("converts a non-$1 token deposit (2 ETH @ $3500) to USD for the recorded amount", () => {
     const args = lendResultToRecordArgs(ethDepositResult(2, 7000), "0xWALLET")
     expect(args.amountUsd).toBe(7000)
     expect(args.requestedAmountUsd6).toBe("7000000000")
     expect(args.executedAmountUsd6).toBe("7000000000")
     expect(args.position?.suppliedUsd6).toBe("7000000000")
-    expect(args.ledger?.suppliedDeltaUsd).toBe(7000)
   })
 
-  it("uses a negative USD delta for a withdraw", () => {
+  it("reports the USD amount for a withdraw (server recomputes the ledger delta)", () => {
     const result = ethDepositResult(1, 3500)
     result.historyItem.kind = "withdraw"
     const args = lendResultToRecordArgs(result, "0xWALLET")
     expect(args.amountUsd).toBe(3500)
-    expect(args.ledger?.suppliedDeltaUsd).toBe(-3500)
   })
 })
