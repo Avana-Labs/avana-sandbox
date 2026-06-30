@@ -95,9 +95,10 @@ export function DashboardClient({
   initialData?: PortfolioPageData
   walletProfileId?: string
 }) {
-  const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
   const router = useRouter()
   const hasMounted = useHasMounted()
+  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
+  const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
   const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const pageData = data ?? initialData
   const readTabFromLocation = useCallback((): DashboardTab => {
@@ -107,7 +108,6 @@ export function DashboardClient({
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const dashboardReturnHref = dashboardHrefForTab(activeTab)
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
-  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
   const sessionBorrowTab = useMemo(() => {
     if (!hasMounted || !walletId || !borrowSession.state.accounts[walletId]) return null

@@ -1,5 +1,5 @@
-import { REWARDS_PROMO_TABS } from "@/app/lib/data/mock/shared/rewards"
-import type { RewardsPromoTabId, RewardsQuest } from "@/app/lib/data/mock/shared/rewards"
+import { REWARDS_PROMO_TABS } from "@/app/lib/data/rewards/catalog"
+import type { RewardsPromoTabId, RewardsQuest } from "@/app/lib/data/rewards/catalog"
 import type { BorrowPoolRow } from "@/app/lib/data/mock/shared/borrow"
 
 export type RewardsHeroPoolRow = {
