@@ -57,10 +57,16 @@ function MarketActionRail({
     setTab("multiply")
   }, [detail.id])
 
+  // Every market is openable — if the catalog record can't be resolved inline, still
+  // route the user into the full-screen multiply action (which resolves it itself)
+  // rather than dead-ending on an "unavailable" message.
   if (!market) {
     return (
-      <div className={cn("rounded-[20px] border border-border bg-background px-4 py-4", className)}>
-        <p className="text-[15px] leading-6 text-muted-foreground">Market unavailable in sandbox.</p>
+      <div className={cn("rounded-[20px] border border-border bg-background px-4 py-5", className)}>
+        <p className="text-[15px] leading-6 text-muted-foreground">
+          Open a looped position in {detail.hero.name}.
+        </p>
+        <ActionPageLaunchCta product="multiply" kind="multiply" market={marketId} className="mt-3 w-full" label="Multiply" />
       </div>
     )
   }
