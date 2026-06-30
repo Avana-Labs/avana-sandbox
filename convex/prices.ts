@@ -9,8 +9,8 @@
  */
 
 import { v } from "convex/values"
-import { action, mutation, query } from "./_generated/server"
-import { api } from "./_generated/api"
+import { action, internalMutation, query } from "./_generated/server"
+import { internal } from "./_generated/api"
 
 /**
  * Base symbol (lowercase, = SpokeBorrowableRecord.baseAssetId) → DefiLlama coin id.
@@ -49,7 +49,7 @@ export const getPrices = query({
 })
 
 /** Upsert price rows by symbol. Called by the refresh action; not a public write. */
-export const upsertPrices = mutation({
+export const upsertPrices = internalMutation({
   args: {
     rows: v.array(
       v.object({
@@ -108,7 +108,7 @@ export const refreshPrices = action({
         }
       })
       .filter((r): r is NonNullable<typeof r> => r !== null)
-    await ctx.runMutation(api.prices.upsertPrices, { rows })
+    await ctx.runMutation(internal.prices.upsertPrices, { rows })
     return { written: rows.length, fetched: Object.keys(json.coins).length }
   },
 })
