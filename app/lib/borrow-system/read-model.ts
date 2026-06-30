@@ -21,7 +21,7 @@ import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import type { TransactionHistoryItem, TransactionMetricsSnapshot, WalletReadSnapshot } from "./contracts"
 import { selectBorrowCollateralPools, selectBorrowMarketSummaries, selectBorrowableAssets, selectInitialBorrowDebts, selectWalletBorrowSnapshot } from "./selectors"
 import { selectBorrowSnapshot, selectPortfolioDebtRows, selectPortfolioSupplyRows } from "./dashboard-selectors"
-import { BORROW_DEXES, BORROW_PENDING_ROWS } from "@/app/lib/data/mock/shared/borrow"
+import { BORROW_DEXES, BORROW_PENDING_ROWS } from "@/app/lib/data/catalog/borrow"
 import { serializeBorrowSystemState } from "./codec"
 
 function fixedToNumber(value: bigint, decimals: number) {

@@ -3,6 +3,7 @@ import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import schema from "./schema"
 import { api } from "./_generated/api"
+import { STARTER_TEST_MARKETS } from "./starterTestMarkets"
 
 // Rooted at the convex directory so convex-test can resolve "sandbox/onboarding".
 const modules = import.meta.glob("./**/*.*s")
@@ -25,11 +26,29 @@ describe("sandbox onboarding + economy caps", () => {
     )
   })
 
-  test("claim allocates the basket, marks done, and increments the economy atomically", async () => {
+  test("persists analyzing before eligibility is completed", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
 
+    expect(await asUser.mutation(api.sandbox.onboarding.beginAnalysis, { wallet: WALLET })).toBe("analyzing")
+    expect((await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })).onboardingStep).toBe("analyzing")
+
+    expect(await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })).toBe("eligible")
+    expect((await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })).onboardingStep).toBe("eligible")
+  })
+
+  test("claim allocates the basket, marks done, and increments the economy atomically", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await t.run(async (ctx) => {
+      for (const market of STARTER_TEST_MARKETS) {
+        await ctx.db.insert("markets", { ...market, chainId: 1, createdAt: 0 })
+      }
+    })
+
     await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    expect(await asUser.mutation(api.sandbox.onboarding.beginClaim, { wallet: WALLET })).toBe("claimPending")
+    expect((await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })).onboardingStep).toBe("claimPending")
     const result = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
 
     expect(result.status).toBe("done")
@@ -45,8 +64,91 @@ describe("sandbox onboarding + economy caps", () => {
         .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
         .collect(),
     )
-    expect(activity).toHaveLength(1)
-    expect(activity[0]?.kind).toBe("onboardingClaim")
+    expect(activity).toHaveLength(13)
+    expect(activity.some((entry) => entry.kind === "onboardingClaim")).toBe(true)
+  })
+
+  test("X/tweet sub-flow: startTweet → xPending, confirmTweet → xConfirmed", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+
+    expect(await asUser.mutation(api.sandbox.onboarding.startTweet, { wallet: WALLET })).toBe("xPending")
+    expect(
+      await asUser.mutation(api.sandbox.onboarding.confirmTweet, {
+        wallet: WALLET,
+        xHandle: "@avana",
+        tweetUrl: "https://x.com/avana/status/1",
+      }),
+    ).toBe("xConfirmed")
+
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).toBe("xConfirmed")
+    expect(state.profile?.tweetUrl).toBe("https://x.com/avana/status/1")
+  })
+
+  test("skipping X preserves the same allocation and advances to claim", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    const beforeSkip = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+
+    expect(await asUser.mutation(api.sandbox.onboarding.skipTweet, { wallet: WALLET })).toBe("xConfirmed")
+
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).toBe("xConfirmed")
+    expect(state.profile?.eligibilityTier).toBe(beforeSkip.profile?.eligibilityTier)
+    expect(state.economy.perUserTargetUsd).toBe(1_000_000)
+    expect(state.profile?.tweetUrl).toBeUndefined()
+  })
+
+  test("claim seeds wallet-scoped starter state (position + portfolio snapshot)", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await t.run(async (ctx) => {
+      for (const market of STARTER_TEST_MARKETS) {
+        await ctx.db.insert("markets", { ...market, chainId: 1, createdAt: 0 })
+      }
+    })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    const result = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
+    expect(result.status).toBe("done")
+
+    const positions = await asUser.query(api.sandbox.transactions.getPositions, { wallet: WALLET })
+    expect(positions).toHaveLength(22)
+    expect(positions.filter((position) => position.product === "borrow")).toHaveLength(8)
+    expect(positions.filter((position) => position.product === "lend")).toHaveLength(8)
+    expect(positions.filter((position) => position.product === "multiply")).toHaveLength(6)
+
+    const balances = await t.run((ctx) =>
+      ctx.db
+        .query("sandboxBalances")
+        .withIndex("by_wallet", (queryBuilder) => queryBuilder.eq("wallet", WALLET.toLowerCase()))
+        .collect(),
+    )
+    expect(balances).toHaveLength(12)
+    expect(Math.round(balances.reduce((sum, balance) => sum + balance.valueUsd, 0) * 100)).toBe(100_000 * 100)
+
+    const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
+    expect(portfolio.snapshots).toHaveLength(1)
+    expect(portfolio.latest?.totalValueUsd).toBe(1_000_000)
+    expect(portfolio.latest?.totalSuppliedUsd).toBe(1_150_000)
+    expect(portfolio.latest?.totalBorrowedUsd).toBe(250_000)
+    expect(portfolio.openPositions).toBe(22)
+
+    const receipt = await asUser.query(api.sandbox.transactions.getTransactionByHash, {
+      wallet: WALLET,
+      hash: result.syntheticTxHash ?? "",
+    })
+    expect(receipt?.syntheticTxHash).toBe(result.syntheticTxHash)
+
+    const otherWallet = "0xAbC0000000000000000000000000000000000002"
+    await expect(
+      t.withIdentity({ subject: otherWallet }).query(api.sandbox.transactions.getTransactionByHash, {
+        wallet: WALLET,
+        hash: result.syntheticTxHash ?? "",
+      }),
+    ).rejects.toThrow(/WALLET_MISMATCH/)
   })
 
   test("enforces userCap server-side: claims past the cap are waitlisted", async () => {

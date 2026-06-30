@@ -2,6 +2,8 @@ import { BorrowPageHero } from "./borrow-page-hero"
 import { BorrowWorkspaceClient } from "./borrow-workspace-client"
 import { fetchBorrowPage } from "@/app/lib/data/providers/borrow"
 
+export const dynamic = "force-dynamic"
+
 export default async function BorrowPage() {
   const pageData = await fetchBorrowPage()
 

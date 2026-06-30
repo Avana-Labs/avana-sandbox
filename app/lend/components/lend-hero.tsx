@@ -36,7 +36,9 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
     const activeMarkets = markets.filter((market) => !market.soon)
     const marketValues = activeMarkets.map((market) => ({
       ...market,
-      tvlUsd: parseMarketUsd(market.tvl),
+      // Prefer the raw USD value (live path); only re-parse the formatted label as a
+      // fallback for sources that don't carry it. Avoids precision loss / silent zeroing.
+      tvlUsd: market.tvlUsd ?? parseMarketUsd(market.tvl),
     }))
     const totalTvl = marketValues.reduce((sum, market) => sum + market.tvlUsd, 0)
     const weightedApy =
@@ -79,7 +81,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 md:ml-auto md:text-right">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 md:ml-auto md:text-right">
           {LEND_METRICS.map((metric) => (
             <div key={metric.label}>
               <div

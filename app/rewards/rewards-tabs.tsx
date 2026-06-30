@@ -1,7 +1,7 @@
 "use client"
 
 import { QuestsTab } from "./quests-tab"
-import type { RewardsPromoTabId, RewardsQuest } from "@/app/lib/data/mock/shared/rewards"
+import type { RewardsPromoTabId, RewardsQuest } from "@/app/lib/data/rewards/catalog"
 
 export function RewardsTabs({
   promoTabs,

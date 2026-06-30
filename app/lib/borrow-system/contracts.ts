@@ -104,6 +104,7 @@ export type ProductionReadAdapter = BaseReadAdapter & {
 
 export type TransactionAdapter = {
   mode: "sandbox" | "production"
+  createIntent(action: BorrowAction): TransactionIntent
   previewTransaction(intent: TransactionIntent): Promise<TransactionPreview>
   executeTransaction(intent: TransactionIntent): Promise<SandboxActionResult>
 }

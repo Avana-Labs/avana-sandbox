@@ -1,13 +1,21 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
-import { useQuery } from "convex/react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
+import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { hasConvexClient, useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import { useRewardsSession } from "@/app/lib/rewards-system"
+import {
+  borrowResultToRecordArgs,
+  lendResultToRecordArgs,
+  multiplyResultToRecordArgs,
+} from "@/app/lib/sandbox-tx/persistence"
+import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
+import type { LendSandboxActionResult, LendTransactionResult } from "@/app/lib/lend-system/contracts"
+import type { MultiplySandboxActionResult, MultiplyTransactionResult } from "@/app/lib/multiply-system/contracts"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
@@ -114,11 +122,12 @@ function useRewardsEventBridge({
  * already-seen on mount so it isn't re-imported on every page load — the ledger
  * only accumulates genuine session actions, across all users, over time.
  */
-function useLiquidityLedgerBridge({ borrow }: { borrow: BorrowSession }) {
+function useLiquidityLedgerBridge({ borrow, enabled }: { borrow: BorrowSession; enabled: boolean }) {
   const { recordDelta } = useMarketLiquidity()
   const seenIdsRef = useRef<Set<string> | null>(null)
 
   useEffect(() => {
+    if (!enabled) return
     if (seenIdsRef.current === null) {
       seenIdsRef.current = new Set(borrow.transactionHistory.map((item) => item.id))
       return
@@ -141,7 +150,7 @@ function useLiquidityLedgerBridge({ borrow }: { borrow: BorrowSession }) {
         recordDelta({ marketSlug: item.marketId, suppliedDeltaUsd: -amountUsd })
       }
     }
-  }, [borrow.transactionHistory, recordDelta])
+  }, [borrow.transactionHistory, enabled, recordDelta])
 }
 
 /**
@@ -171,6 +180,27 @@ function MarketHydrator({
   return null
 }
 
+function WalletHydrator({
+  walletId,
+  hydrateBorrow,
+  hydrateLend,
+  hydrateMultiply,
+}: {
+  walletId: string
+  hydrateBorrow: BorrowSession["hydrateWalletData"]
+  hydrateLend: LendSession["hydrateWalletData"]
+  hydrateMultiply: MultiplySession["hydrateWalletData"]
+}) {
+  const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
+  useEffect(() => {
+    if (!session) return
+    hydrateBorrow(session)
+    hydrateLend(session)
+    hydrateMultiply(session)
+  }, [hydrateBorrow, hydrateLend, hydrateMultiply, session])
+  return null
+}
+
 export type AvanaSessions = {
   walletId: string
   walletAddress: string
@@ -186,26 +216,55 @@ const AvanaSessionsContext = createContext<AvanaSessions | null>(null)
 export function AvanaSessionsProvider({
   walletId,
   children,
+  persistBorrowTransaction,
+  persistLendTransaction,
+  persistMultiplyTransaction,
+  remoteRewardsState,
+  persistRewardsState,
+  persistLocalState = true,
+  sessionSource = "demo",
 }: {
   walletId?: string
   children: ReactNode
+  persistBorrowTransaction?: (result: SandboxActionResult) => Promise<{
+    id: string
+    hash: string
+    status: "success" | "failed" | "pending"
+    simulated: boolean
+    timestamp: number
+  }>
+  persistLendTransaction?: (result: LendSandboxActionResult) => Promise<LendTransactionResult>
+  persistMultiplyTransaction?: (result: MultiplySandboxActionResult) => Promise<MultiplyTransactionResult>
+  remoteRewardsState?: string | null
+  persistRewardsState?: (stateJson: string) => Promise<unknown>
+  persistLocalState?: boolean
+  sessionSource?: "demo" | "convex"
 }) {
-  const avana = useAvanaSession(walletId)
+  const avana = useAvanaSession(walletId, sessionSource)
   const borrow = useBorrowSession({
     walletId: avana.walletId,
     sessionSeed: avana.borrowSessionSeed,
+    persistState: persistLocalState,
+    persistTransaction: persistBorrowTransaction,
   })
   const multiply = useMultiplySession({
     walletId: avana.walletId,
     sessionSeed: avana.multiplySessionSeed,
+    persistState: persistLocalState,
+    persistTransaction: persistMultiplyTransaction,
   })
   const lend = useLendSession({
     walletId: avana.walletId,
     sessionSeed: avana.lendSessionSeed,
+    persistState: persistLocalState,
+    persistTransaction: persistLendTransaction,
   })
   const rewards = useRewardsSession({
     walletId: avana.walletId,
     sessionSeed: avana.rewardsSessionSeed,
+    persistState: persistLocalState,
+    remoteState: remoteRewardsState,
+    persistRemoteState: persistRewardsState,
   })
 
   useRewardsEventBridge({
@@ -216,7 +275,7 @@ export function AvanaSessionsProvider({
     rewards,
   })
 
-  useLiquidityLedgerBridge({ borrow })
+  useLiquidityLedgerBridge({ borrow, enabled: persistLocalState })
 
   const value = useMemo<AvanaSessions>(
     () => ({
@@ -234,14 +293,96 @@ export function AvanaSessionsProvider({
   return (
     <AvanaSessionsContext.Provider value={value}>
       {hasConvexClient ? (
-        <MarketHydrator
-          hydrateBorrow={borrow.hydrateMarketData}
-          hydrateLend={lend.hydrateMarketData}
-          hydrateMultiply={multiply.hydrateMarketData}
-        />
+        <>
+          <MarketHydrator
+            hydrateBorrow={borrow.hydrateMarketData}
+            hydrateLend={lend.hydrateMarketData}
+            hydrateMultiply={multiply.hydrateMarketData}
+          />
+          {!persistLocalState ? (
+            <WalletHydrator
+              walletId={avana.walletId}
+              hydrateBorrow={borrow.hydrateWalletData}
+              hydrateLend={lend.hydrateWalletData}
+              hydrateMultiply={multiply.hydrateWalletData}
+            />
+          ) : null}
+        </>
       ) : null}
       {children}
     </AvanaSessionsContext.Provider>
+  )
+}
+
+export function ConvexAvanaSessionsProvider({
+  walletId,
+  children,
+}: {
+  walletId: string
+  children: ReactNode
+}) {
+  const recordTransaction = useMutation(api.sandbox.transactions.recordTransaction)
+  const saveRewardsState = useMutation(api.sandbox.rewards.saveState)
+  const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
+  const persistBorrowTransaction = useCallback(
+    async (result: SandboxActionResult) => {
+      const persisted = await recordTransaction(borrowResultToRecordArgs(result, walletId))
+      return {
+        id: String(persisted.receipt.id),
+        hash: persisted.receipt.hash,
+        status: persisted.receipt.status,
+        simulated: persisted.receipt.simulated,
+        timestamp: persisted.receipt.timestamp,
+      }
+    },
+    [recordTransaction, walletId],
+  )
+  const persistLendTransaction = useCallback(
+    async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
+      const persisted = await recordTransaction(lendResultToRecordArgs(result, walletId))
+      return {
+        id: String(persisted.receipt.id),
+        hash: persisted.receipt.hash,
+        status: persisted.receipt.status,
+        actionType: result.receipt.actionType,
+        simulated: persisted.receipt.simulated,
+        timestamp: persisted.receipt.timestamp,
+      }
+    },
+    [recordTransaction, walletId],
+  )
+  const persistMultiplyTransaction = useCallback(
+    async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
+      const persisted = await recordTransaction(multiplyResultToRecordArgs(result, walletId))
+      return {
+        id: String(persisted.receipt.id),
+        hash: persisted.receipt.hash,
+        status: persisted.receipt.status,
+        actionType: result.receipt.actionType,
+        simulated: persisted.receipt.simulated,
+        timestamp: persisted.receipt.timestamp,
+      }
+    },
+    [recordTransaction, walletId],
+  )
+  const persistRewardsState = useCallback(
+    (stateJson: string) => saveRewardsState({ wallet: walletId, stateJson }),
+    [saveRewardsState, walletId],
+  )
+
+  return (
+    <AvanaSessionsProvider
+      walletId={walletId}
+      persistBorrowTransaction={persistBorrowTransaction}
+      persistLendTransaction={persistLendTransaction}
+      persistMultiplyTransaction={persistMultiplyTransaction}
+      remoteRewardsState={rewardsState?.stateJson ?? (rewardsState === null ? null : undefined)}
+      persistRewardsState={persistRewardsState}
+      persistLocalState={false}
+      sessionSource="convex"
+    >
+      {children}
+    </AvanaSessionsProvider>
   )
 }
 

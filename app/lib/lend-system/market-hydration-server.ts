@@ -1,7 +1,7 @@
 import "server-only"
 import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
-import { fetchTokenPrices, type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
+import { type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 
 /**

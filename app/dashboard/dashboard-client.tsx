@@ -9,7 +9,6 @@ import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provide
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
 import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
-import { getWalletLendAssets } from "@/app/lib/data/mock/wallet/portfolio/lend-wallet-assets"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import {
@@ -88,6 +87,45 @@ function DashboardSection({
   )
 }
 
+/** Shown while the authenticated portfolio is loading from Convex (was a blank screen). */
+function DashboardLoadingState() {
+  return (
+    <div className="animate-pulse space-y-8" aria-busy="true" aria-label="Loading your portfolio">
+      <div className="space-y-3">
+        <div className="h-8 w-44 rounded-lg bg-muted" />
+        <div className="h-10 w-72 rounded-lg bg-muted" />
+      </div>
+      <div className="flex gap-6">
+        {["a", "b", "c", "d"].map((k) => (
+          <div className="h-5 w-20 rounded bg-muted" key={k} />
+        ))}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {["a", "b", "c", "d", "e", "f"].map((k) => (
+          <div className="h-28 rounded-2xl bg-muted" key={k} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Shown when the authenticated portfolio fails to load (error was previously swallowed). */
+function DashboardLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="mx-auto max-w-lg space-y-4 py-16 text-center">
+      <h2 className="text-2xl font-medium tracking-tight">We couldn&apos;t load your portfolio.</h2>
+      <p className="text-sm text-muted-foreground">{message}</p>
+      <button
+        className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-85"
+        onClick={onRetry}
+        type="button"
+      >
+        Try again
+      </button>
+    </div>
+  )
+}
+
 export function DashboardClient({
   initialData,
   walletProfileId,
@@ -95,10 +133,14 @@ export function DashboardClient({
   initialData?: PortfolioPageData
   walletProfileId?: string
 }) {
-  const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id
   const router = useRouter()
   const hasMounted = useHasMounted()
-  const { data } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
+  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
+  const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
+  const { data, error: portfolioError, isLoading: portfolioLoading } = usePortfolioPage(
+    { walletProfileId: resolvedWalletProfileId ?? "" },
+    initialData,
+  )
   const pageData = data ?? initialData
   const readTabFromLocation = useCallback((): DashboardTab => {
     if (typeof window === "undefined") return "lending"
@@ -107,7 +149,6 @@ export function DashboardClient({
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const dashboardReturnHref = dashboardHrefForTab(activeTab)
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
-  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
   const sessionBorrowTab = useMemo(() => {
     if (!hasMounted || !walletId || !borrowSession.state.accounts[walletId]) return null
@@ -293,15 +334,8 @@ export function DashboardClient({
       }
     }
 
-    if (resolvedWalletProfileId) {
-      for (const asset of getWalletLendAssets(resolvedWalletProfileId)) {
-        const key = asset.symbol.toUpperCase()
-        if (balances[key] == null) balances[key] = asset.balance
-      }
-    }
-
     return balances
-  }, [lendSession.state, resolvedWalletProfileId, walletId])
+  }, [lendSession.state, walletId])
 
   const multiplyHero = useMemo(() => {
     const template = pageData?.heroByTab.looping ?? {}
@@ -325,7 +359,12 @@ export function DashboardClient({
     router.replace(`/dashboard?tab=${tab}`, { scroll: false })
   }
 
-  if (!pageData) return null
+  if (!pageData) {
+    if (portfolioError && !portfolioLoading) {
+      return <DashboardLoadError message={portfolioError} onRetry={() => router.refresh()} />
+    }
+    return <DashboardLoadingState />
+  }
 
   return (
     <>

@@ -34,7 +34,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 
-import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
+import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import { selectBorrowMarketSummaries } from "@/app/lib/borrow-system/selectors"

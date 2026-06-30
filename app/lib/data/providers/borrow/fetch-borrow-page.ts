@@ -40,9 +40,8 @@ function getBorrowPageSource(source?: BorrowPageSource) {
   return mode === "mock" ? mockBorrowPageSource : liveBorrowPageSource
 }
 
-function getBorrowPageFallback(source?: BorrowPageSource) {
-  if (source || resolveDataSourceMode() === "mock") return undefined
-  return mockBorrowPageSource
+function getBorrowPageFallback() {
+  return undefined
 }
 
 export async function fetchBorrowPage(
@@ -51,7 +50,7 @@ export async function fetchBorrowPage(
 ): Promise<BorrowPageData> {
   const response = await executeSourceLoad<BorrowPageSource, unknown>({
     primary: getBorrowPageSource(source),
-    fallback: getBorrowPageFallback(source),
+    fallback: getBorrowPageFallback(),
     operation: "getBorrowPageData",
     context,
     schema: borrowPageSchema,
