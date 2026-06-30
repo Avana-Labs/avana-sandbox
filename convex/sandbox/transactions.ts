@@ -412,6 +412,31 @@ export const getPositions = query({
   },
 })
 
+/** Complete reactive session payload for an authenticated wallet. */
+export const getSessionState = query({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const [positions, transactions] = await Promise.all([
+      ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+      ctx.db
+        .query("transactions")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+        .order("desc")
+        .take(500),
+    ])
+    const hydratedPositions = []
+    for (const position of positions) {
+      const [collateral, debt] = await Promise.all([
+        ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+        ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+      ])
+      hydratedPositions.push({ ...position, collateral, debt })
+    }
+    return { positions: hydratedPositions, transactions }
+  },
+})
+
 /** Wallet-scoped portfolio: the snapshot time series + position summary. */
 export const getPortfolio = query({
   args: { wallet: v.string() },

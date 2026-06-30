@@ -32,6 +32,31 @@ function mergeReceipts(nextReceipt: LendTransactionResult, receipts: LendTransac
   return [nextReceipt, ...receipts.filter((receipt) => receipt.id !== nextReceipt.id)]
 }
 
+export type ConvexLendWalletData = {
+  positions: Array<{
+    _id: string
+    product: "borrow" | "lend" | "multiply"
+    marketSlug: string
+    status: "open" | "closed"
+    suppliedUsd6?: string
+    earnedUsd6?: string
+    openedAt: number
+    lastUpdatedAt: number
+  }>
+  transactions: Array<{
+    _id: string
+    intentId?: string
+    product: "borrow" | "lend" | "multiply"
+    kind: string
+    status: "success" | "failed" | "pending"
+    marketSlug?: string
+    amountUsd: number
+    syntheticTxHash: string
+    simulated: boolean
+    at: number
+  }>
+}
+
 export function useLendSession({
   walletId,
   sessionSeed,
@@ -171,6 +196,69 @@ export function useLendSession({
     setState((prev) => mergeConvexLendSnapshots(prev, snapshots))
   }, [])
 
+  const hydrateWalletData = useCallback(
+    (data: ConvexLendWalletData) => {
+      const positions = Object.fromEntries(
+        data.positions
+          .filter((position) => position.product === "lend")
+          .map((position) => {
+            const market = stateRef.current.markets[position.marketSlug]
+            const suppliedValueUsd = Number(BigInt(position.suppliedUsd6 ?? "0")) / 1_000_000
+            const suppliedAmount = market?.assetPriceUsd ? suppliedValueUsd / market.assetPriceUsd : suppliedValueUsd
+            const earnedUsd = Number(BigInt(position.earnedUsd6 ?? "0")) / 1_000_000
+            const id = String(position._id)
+            return [
+              id,
+              {
+                positionId: id,
+                walletId,
+                marketId: position.marketSlug,
+                asset: market?.asset.symbol ?? position.marketSlug,
+                principalAmount: Math.max(0, suppliedAmount - earnedUsd),
+                scaledBalance: suppliedAmount,
+                liquidityIndexAtLastAction: market?.liquidityIndex ?? 1,
+                currentSuppliedAmount: suppliedAmount,
+                interestEarned: earnedUsd,
+                rewardsEarnedUsd: 0,
+                suppliedValueUsd,
+                openedAt: position.openedAt,
+                updatedAt: position.lastUpdatedAt,
+                status: position.status === "open" ? ("active" as const) : ("closed" as const),
+              },
+            ]
+          }),
+      )
+      const history: LendTransactionHistoryItem[] = data.transactions
+        .filter((transaction) => transaction.product === "lend")
+        .map((transaction) => ({
+          id: String(transaction._id),
+          intentId: transaction.intentId ?? String(transaction._id),
+          walletId,
+          marketId: transaction.marketSlug ?? "rewards",
+          kind: transaction.kind as LendTransactionHistoryItem["kind"],
+          status: transaction.status,
+          asset: stateRef.current.markets[transaction.marketSlug ?? ""]?.asset.symbol ?? "",
+          amount: transaction.amountUsd,
+          simulated: transaction.simulated,
+          timestamp: transaction.at,
+          hash: transaction.syntheticTxHash,
+        }))
+      setState((current) => ({ ...current, positions }))
+      setTransactionHistory(history)
+      setTransactionReceipts(
+        history.map((item) => ({
+          id: item.id,
+          hash: item.hash,
+          status: item.status,
+          actionType: item.kind,
+          simulated: item.simulated,
+          timestamp: item.timestamp,
+        })),
+      )
+    },
+    [walletId],
+  )
+
   const createIntent = useCallback((action: LendAction) => transactionAdapter.createIntent(action), [transactionAdapter])
 
   const previewTransaction = useCallback(
@@ -223,6 +311,7 @@ export function useLendSession({
     transactionHistory,
     transactionReceipts,
     hydrateMarketData,
+    hydrateWalletData,
     createIntent,
     previewTransaction,
     executeTransaction,

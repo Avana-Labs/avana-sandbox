@@ -32,6 +32,37 @@ function mergeReceipts(nextReceipt: MultiplyTransactionResult, receipts: Multipl
   return [nextReceipt, ...receipts.filter((receipt) => receipt.id !== nextReceipt.id)]
 }
 
+export type ConvexMultiplyWalletData = {
+  positions: Array<{
+    _id: string
+    product: "borrow" | "lend" | "multiply"
+    marketSlug: string
+    status: "open" | "closed"
+    collateralAmount?: number
+    collateralValueUsd?: number
+    debtValueUsd?: number
+    multiplier?: number
+    ltv?: number
+    healthFactor?: number | "infinity"
+    liquidationPrice?: number | null
+    netApyPct?: number
+    openedAt: number
+    lastUpdatedAt: number
+  }>
+  transactions: Array<{
+    _id: string
+    intentId?: string
+    product: "borrow" | "lend" | "multiply"
+    kind: string
+    status: "success" | "failed" | "pending"
+    marketSlug?: string
+    amountUsd: number
+    syntheticTxHash: string
+    simulated: boolean
+    at: number
+  }>
+}
+
 export function useMultiplySession({
   walletId,
   sessionSeed,
@@ -176,6 +207,56 @@ export function useMultiplySession({
     setState((prev) => mergeConvexMultiplySnapshots(prev, snapshots))
   }, [])
 
+  const hydrateWalletData = useCallback(
+    (data: ConvexMultiplyWalletData) => {
+      const positions = Object.fromEntries(
+        data.positions
+          .filter((position) => position.product === "multiply")
+          .map((position) => {
+            const id = String(position._id)
+            return [
+              id,
+              {
+                id,
+                walletId,
+                marketId: position.marketSlug,
+                collateralAmount: position.collateralAmount ?? 0,
+                collateralValueUsd: position.collateralValueUsd ?? 0,
+                debtValueUsd: position.debtValueUsd ?? 0,
+                multiplier: position.multiplier ?? 1,
+                ltv: position.ltv ?? 0,
+                healthFactor: position.healthFactor ?? "infinity",
+                liquidationPrice: position.liquidationPrice ?? null,
+                netApy: position.netApyPct ?? 0,
+                openedAt: position.openedAt,
+                lastUpdatedAt: position.lastUpdatedAt,
+              },
+            ]
+          }),
+      )
+      const history: MultiplyTransactionHistoryItem[] = data.transactions
+        .filter((transaction) => transaction.product === "multiply")
+        .map((transaction) => ({
+          id: String(transaction._id),
+          intentId: transaction.intentId ?? String(transaction._id),
+          walletId,
+          marketId: transaction.marketSlug,
+          kind: transaction.kind as MultiplyTransactionHistoryItem["kind"],
+          status: transaction.status,
+          amountUsd: transaction.amountUsd,
+          multiplierBefore: 1,
+          multiplierAfter: positions[String(transaction._id)]?.multiplier ?? 1,
+          simulated: transaction.simulated,
+          timestamp: transaction.at,
+          hash: transaction.syntheticTxHash,
+        }))
+      setState((current) => ({ ...current, positions }))
+      setTransactionHistory(history)
+      setTransactionReceipts(buildSyntheticReceipts(history))
+    },
+    [walletId],
+  )
+
   const createIntent = useCallback(
     (action: MultiplyAction) => transactionAdapter.createIntent(action),
     [transactionAdapter],
@@ -221,6 +302,7 @@ export function useMultiplySession({
     transactionHistory,
     transactionReceipts,
     hydrateMarketData,
+    hydrateWalletData,
     createIntent,
     previewTransaction,
     executeTransaction,

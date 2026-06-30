@@ -122,11 +122,12 @@ function useRewardsEventBridge({
  * already-seen on mount so it isn't re-imported on every page load — the ledger
  * only accumulates genuine session actions, across all users, over time.
  */
-function useLiquidityLedgerBridge({ borrow }: { borrow: BorrowSession }) {
+function useLiquidityLedgerBridge({ borrow, enabled }: { borrow: BorrowSession; enabled: boolean }) {
   const { recordDelta } = useMarketLiquidity()
   const seenIdsRef = useRef<Set<string> | null>(null)
 
   useEffect(() => {
+    if (!enabled) return
     if (seenIdsRef.current === null) {
       seenIdsRef.current = new Set(borrow.transactionHistory.map((item) => item.id))
       return
@@ -149,7 +150,7 @@ function useLiquidityLedgerBridge({ borrow }: { borrow: BorrowSession }) {
         recordDelta({ marketSlug: item.marketId, suppliedDeltaUsd: -amountUsd })
       }
     }
-  }, [borrow.transactionHistory, recordDelta])
+  }, [borrow.transactionHistory, enabled, recordDelta])
 }
 
 /**
@@ -176,6 +177,27 @@ function MarketHydrator({
       hydrateMultiply(snapshots)
     }
   }, [snapshots, hydrateBorrow, hydrateLend, hydrateMultiply])
+  return null
+}
+
+function WalletHydrator({
+  walletId,
+  hydrateBorrow,
+  hydrateLend,
+  hydrateMultiply,
+}: {
+  walletId: string
+  hydrateBorrow: BorrowSession["hydrateWalletData"]
+  hydrateLend: LendSession["hydrateWalletData"]
+  hydrateMultiply: MultiplySession["hydrateWalletData"]
+}) {
+  const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
+  useEffect(() => {
+    if (!session) return
+    hydrateBorrow(session)
+    hydrateLend(session)
+    hydrateMultiply(session)
+  }, [hydrateBorrow, hydrateLend, hydrateMultiply, session])
   return null
 }
 
@@ -244,7 +266,7 @@ export function AvanaSessionsProvider({
     rewards,
   })
 
-  useLiquidityLedgerBridge({ borrow })
+  useLiquidityLedgerBridge({ borrow, enabled: persistLocalState })
 
   const value = useMemo<AvanaSessions>(
     () => ({
@@ -268,6 +290,14 @@ export function AvanaSessionsProvider({
             hydrateLend={lend.hydrateMarketData}
             hydrateMultiply={multiply.hydrateMarketData}
           />
+          {!persistLocalState ? (
+            <WalletHydrator
+              walletId={avana.walletId}
+              hydrateBorrow={borrow.hydrateWalletData}
+              hydrateLend={lend.hydrateWalletData}
+              hydrateMultiply={multiply.hydrateWalletData}
+            />
+          ) : null}
         </>
       ) : null}
       {children}
