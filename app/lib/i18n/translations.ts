@@ -34,7 +34,11 @@ const ZH_CN: TranslationDictionary = {
   "Confirm": "确认",
   "Continue": "继续",
   "Cancel": "取消",
-  "Back": "返回",
+  "Back": "返回",  "Fund my sandbox": "注资沙盒",
+  "Continue to allocation": "继续分配",
+  "Share on X first": "先在 X 分享",
+  "I posted it": "我已发布",
+  "Open dashboard": "打开仪表盘",
 }
 
 const ZH_TW: TranslationDictionary = {
@@ -59,7 +63,11 @@ const ZH_TW: TranslationDictionary = {
   "Confirm": "確認",
   "Continue": "繼續",
   "Cancel": "取消",
-  "Back": "返回",
+  "Back": "返回",  "Fund my sandbox": "注資沙盒",
+  "Continue to allocation": "繼續分配",
+  "Share on X first": "先在 X 分享",
+  "I posted it": "我已發布",
+  "Open dashboard": "打開儀表板",
 }
 
 const ES: TranslationDictionary = {
@@ -84,7 +92,11 @@ const ES: TranslationDictionary = {
   "Confirm": "Confirmar",
   "Continue": "Continuar",
   "Cancel": "Cancelar",
-  "Back": "Atrás",
+  "Back": "Atrás",  "Fund my sandbox": "Financiar mi sandbox",
+  "Continue to allocation": "Continuar a la asignación",
+  "Share on X first": "Compartir en X primero",
+  "I posted it": "Ya lo publiqué",
+  "Open dashboard": "Abrir panel",
 }
 
 const FR: TranslationDictionary = {
@@ -109,7 +121,11 @@ const FR: TranslationDictionary = {
   "Confirm": "Confirmer",
   "Continue": "Continuer",
   "Cancel": "Annuler",
-  "Back": "Retour",
+  "Back": "Retour",  "Fund my sandbox": "Financer mon bac à sable",
+  "Continue to allocation": "Continuer vers l'allocation",
+  "Share on X first": "Partager sur X d'abord",
+  "I posted it": "Je l'ai publié",
+  "Open dashboard": "Ouvrir le tableau de bord",
 }
 
 const PT: TranslationDictionary = {
@@ -134,7 +150,11 @@ const PT: TranslationDictionary = {
   "Confirm": "Confirmar",
   "Continue": "Continuar",
   "Cancel": "Cancelar",
-  "Back": "Voltar",
+  "Back": "Voltar",  "Fund my sandbox": "Financiar meu sandbox",
+  "Continue to allocation": "Continuar para alocação",
+  "Share on X first": "Compartilhar no X primeiro",
+  "I posted it": "Já publiquei",
+  "Open dashboard": "Abrir painel",
 }
 
 const NL: TranslationDictionary = {
@@ -159,7 +179,11 @@ const NL: TranslationDictionary = {
   "Confirm": "Bevestigen",
   "Continue": "Doorgaan",
   "Cancel": "Annuleren",
-  "Back": "Terug",
+  "Back": "Terug",  "Fund my sandbox": "Mijn sandbox financieren",
+  "Continue to allocation": "Doorgaan naar toewijzing",
+  "Share on X first": "Eerst delen op X",
+  "I posted it": "Ik heb het geplaatst",
+  "Open dashboard": "Dashboard openen",
 }
 
 const ID: TranslationDictionary = {
@@ -184,7 +208,11 @@ const ID: TranslationDictionary = {
   "Confirm": "Konfirmasi",
   "Continue": "Lanjutkan",
   "Cancel": "Batal",
-  "Back": "Kembali",
+  "Back": "Kembali",  "Fund my sandbox": "Danai sandbox saya",
+  "Continue to allocation": "Lanjut ke alokasi",
+  "Share on X first": "Bagikan di X dulu",
+  "I posted it": "Sudah saya posting",
+  "Open dashboard": "Buka dasbor",
 }
 
 const JA: TranslationDictionary = {
@@ -209,7 +237,11 @@ const JA: TranslationDictionary = {
   "Confirm": "実行",
   "Continue": "続ける",
   "Cancel": "キャンセル",
-  "Back": "戻る",
+  "Back": "戻る",  "Fund my sandbox": "サンドボックスに入金",
+  "Continue to allocation": "配分へ進む",
+  "Share on X first": "まず X で共有",
+  "I posted it": "投稿しました",
+  "Open dashboard": "ダッシュボードを開く",
 }
 
 const KO: TranslationDictionary = {
@@ -234,7 +266,11 @@ const KO: TranslationDictionary = {
   "Confirm": "확인",
   "Continue": "계속",
   "Cancel": "취소",
-  "Back": "뒤로",
+  "Back": "뒤로",  "Fund my sandbox": "샌드박스 충전",
+  "Continue to allocation": "배분으로 계속",
+  "Share on X first": "먼저 X에 공유",
+  "I posted it": "게시했어요",
+  "Open dashboard": "대시보드 열기",
 }
 
 const RU: TranslationDictionary = {
@@ -259,7 +295,11 @@ const RU: TranslationDictionary = {
   "Confirm": "Подтвердить",
   "Continue": "Продолжить",
   "Cancel": "Отмена",
-  "Back": "Назад",
+  "Back": "Назад",  "Fund my sandbox": "Пополнить песочницу",
+  "Continue to allocation": "Перейти к распределению",
+  "Share on X first": "Сначала поделиться в X",
+  "I posted it": "Я опубликовал",
+  "Open dashboard": "Открыть панель",
 }
 
 export const TRANSLATIONS: Partial<Record<LanguageCode, TranslationDictionary>> = {
