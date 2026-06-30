@@ -98,6 +98,11 @@ export function BorrowActionPageClient({
   const { walletId } = useAvanaSessions()
   const session = useBorrowSessionContext()
   const isHomeBorrowZeroState = embedded && layout === "home" && kind === "borrow" && !initialMarketId && !initialAssetId
+  // The home Express borrow card lets the user pledge+borrow against ANY market,
+  // so its pool picker is pre-loaded with every available pool (not just the ones
+  // already pledged). Every other flow keeps the pledged-pool list.
+  const isHomeBorrowLayout = embedded && layout === "home" && kind === "borrow"
+  const collateralPoolOptions = isHomeBorrowLayout ? session.availableCollateralPools : session.collateralPools
   const hasInvalidInitialMarket = Boolean(
     initialMarketId &&
       !initialAssetId &&
@@ -177,14 +182,14 @@ export function BorrowActionPageClient({
   )
   const debts = useMemo(() => selectHomeDebtMap(session.state, walletId), [session.state, walletId])
   const activePool = useMemo(() => {
-    const matched = session.collateralPools.find((pool) => pool.id === activeMarketId)
+    const matched = collateralPoolOptions.find((pool) => pool.id === activeMarketId)
     if (matched) return matched
     // In the home borrow zero-state we intentionally render no pre-selected pool
     // (no collateral value, no health factor) until the user picks one — so don't
     // fall back to the first pledged pool here.
     if (isHomeBorrowZeroState) return null
-    return session.collateralPools[0] ?? null
-  }, [activeMarketId, isHomeBorrowZeroState, session.collateralPools])
+    return collateralPoolOptions[0] ?? null
+  }, [activeMarketId, collateralPoolOptions, isHomeBorrowZeroState])
   const borrowTokens = useMemo(
     () => (activeMarketId ? selectHomeBorrowTokensForMarket(session.state, walletId, activeMarketId) : []),
     [activeMarketId, session.state, walletId],
@@ -929,7 +934,7 @@ export function BorrowActionPageClient({
         <ActionBorrowContextBar
           kind={kind}
           pool={activePool}
-          pools={session.collateralPools}
+          pools={collateralPoolOptions}
           debts={debts}
           onPoolChange={handlePoolChange}
           variant={useWorkspaceFields ? "inset" : "card"}
