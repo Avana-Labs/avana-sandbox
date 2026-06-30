@@ -6,7 +6,7 @@ import { api } from "@/convex/_generated/api"
 import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-import { OnboardingFlow, type OnboardingGateState } from "./onboarding-flow"
+import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
 
 class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
   state = { errored: false }
@@ -30,20 +30,7 @@ function LockedShell({ children }: { children: ReactNode }) {
 function GateUnavailable() {
   return (
     <LockedShell>
-      <div className="w-full max-w-lg space-y-4 text-left">
-        <p className="text-sm text-muted-foreground">Avana sandbox access</p>
-        <h1 className="text-3xl font-medium tracking-tight">We couldn&apos;t verify your onboarding status.</h1>
-        <p className="text-muted-foreground">
-          Reconnect your wallet and try again. Authenticated sessions stay locked until Convex confirms access.
-        </p>
-        <button
-          className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background"
-          onClick={() => window.location.reload()}
-          type="button"
-        >
-          Retry
-        </button>
-      </div>
+      <OnboardingUnavailable onRetry={() => window.location.reload()} />
     </LockedShell>
   )
 }
