@@ -375,12 +375,13 @@ export const recordTransaction = mutation({
       }
     }
 
-    // Hourly per-wallet rate limit.
+    // Hourly per-wallet rate limit. `take(MAX_TX_PER_HOUR)` bounds the read instead of
+    // collecting the wallet's entire trailing-hour history just to count it.
     const windowStart = now - 60 * 60 * 1000
     const recent = await ctx.db
       .query("transactions")
       .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet).gte("at", windowStart))
-      .collect()
+      .take(MAX_TX_PER_HOUR)
     if (recent.length >= MAX_TX_PER_HOUR) {
       throw new Error(`RATE_LIMITED: more than ${MAX_TX_PER_HOUR} sandbox transactions in the last hour.`)
     }
@@ -657,34 +658,55 @@ export const getSessionState = query({
   },
 })
 
-/** Full wallet-scoped portfolio read model plus global catalog identity rows. */
+/** Full wallet-scoped portfolio read model plus the catalog identity rows it references. */
 export const getPortfolioPageState = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const [positions, transactions, snapshots, risk, pools, markets, rewards, balances, starterAllocation] = await Promise.all([
-      ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
-      ctx.db
-        .query("transactions")
-        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-        .order("desc")
-        .take(500),
+    const positions = await ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect()
+
+    // Hydrate collateral/debt in parallel (was a sequential per-position loop).
+    const hydratedPositions = await Promise.all(
+      positions.map(async (position) => {
+        const [collateral, debt] = await Promise.all([
+          ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+          ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+        ])
+        return { ...position, collateral, debt }
+      }),
+    )
+
+    // Fetch ONLY the catalog rows this wallet's positions reference (the mapper just needs
+    // them for labels), not the entire 173-market / all-pools catalog per authenticated
+    // subscriber. Borrow collateral joins to `pools`; lend/multiply join to `markets`.
+    const poolSlugs = new Set<string>()
+    const marketRefs = new Map<string, { scope: "lend" | "multiply"; slug: string }>()
+    for (const position of hydratedPositions) {
+      if (position.product === "borrow") {
+        for (const c of position.collateral) poolSlugs.add(c.marketSlug)
+      } else if (position.product === "lend" || position.product === "multiply") {
+        marketRefs.set(`${position.product}:${position.marketSlug}`, { scope: position.product, slug: position.marketSlug })
+      }
+    }
+
+    const [transactions, snapshots, risk, rewards, balances, starterAllocation, poolRows, marketRows] = await Promise.all([
+      ctx.db.query("transactions").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("desc").take(500),
       ctx.db.query("portfolioSnapshots").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("asc").collect(),
       ctx.db.query("riskSnapshots").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("desc").first(),
-      ctx.db.query("pools").collect(),
-      ctx.db.query("markets").collect(),
       ctx.db.query("sandboxRewards").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
       ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
       ctx.db.query("starterAllocations").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
+      Promise.all(
+        [...poolSlugs].map((slug) => ctx.db.query("pools").withIndex("by_slug", (q) => q.eq("slug", slug)).unique()),
+      ),
+      Promise.all(
+        [...marketRefs.values()].map((ref) =>
+          ctx.db.query("markets").withIndex("by_scope_slug", (q) => q.eq("scope", ref.scope).eq("slug", ref.slug)).unique(),
+        ),
+      ),
     ])
-    const hydratedPositions = []
-    for (const position of positions) {
-      const [collateral, debt] = await Promise.all([
-        ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
-        ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
-      ])
-      hydratedPositions.push({ ...position, collateral, debt })
-    }
+    const pools = poolRows.filter((row): row is NonNullable<typeof row> => row !== null)
+    const markets = marketRows.filter((row): row is NonNullable<typeof row> => row !== null)
     return { positions: hydratedPositions, transactions, snapshots, risk, pools, markets, rewards, balances, starterAllocation }
   },
 })
