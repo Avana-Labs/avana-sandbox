@@ -40,7 +40,11 @@ export function RewardsBalanceHero({
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const claimLabel =
-    claimableCount > 0 ? `Claim ${formatClaimAmount(claimableAmount)} AVA` : "No rewards ready"
+    claimableCount > 0
+      ? showDollarAmounts
+        ? `Claim ${formatClaimAmount(claimableAmount)} AVA`
+        : "Claim rewards"
+      : "No rewards ready"
   const claimButtonClass = cn(
     "inline-flex h-10 w-full items-center justify-center rounded-radius-sm px-4 text-[12px] transition-colors sm:h-9 sm:w-auto",
     claimableCount > 0
@@ -91,7 +95,7 @@ export function RewardsBalanceHero({
                 </span>
                 {claimableAmount > 0 ? (
                   <span className="text-foreground/80">
-                    +{formatClaimAmount(claimableAmount)} AVA ready to claim
+                    +{showDollarAmounts ? formatClaimAmount(claimableAmount) : "••••"} AVA ready to claim
                   </span>
                 ) : null}
               </div>
