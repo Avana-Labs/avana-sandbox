@@ -1,3 +1,5 @@
+import { getActiveCurrency } from "@/app/lib/currency/active-rate"
+
 export type HomeMode = "borrow" | "repay" | "claim" | "remove"
 
 export type HomeAssetVisual = {
@@ -390,8 +392,10 @@ export function formatUsd(value: number) {
   return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-export function formatCompactUsd(value: number) {
-  return `$${value.toLocaleString("en-US", { maximumFractionDigits: value >= 100 ? 0 : 2 })}`
+export function formatCompactUsd(usdValue: number) {
+  const { symbol, rate } = getActiveCurrency()
+  const value = usdValue * rate
+  return `${symbol}${value.toLocaleString("en-US", { maximumFractionDigits: value >= 100 ? 0 : 2 })}`
 }
 
 export function formatHealthFactor(value: number | null) {
