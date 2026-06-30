@@ -191,7 +191,11 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const seatsLeft = Math.max(0, economy.userCap - economy.userCount)
 
   return (
-    <div className="mx-auto w-full max-w-[1152px] px-1 py-4 sm:px-5 sm:py-8">
+    <div
+      className="mx-auto w-full max-w-[1152px] px-1 py-4 sm:px-5 sm:py-8"
+      data-onboarding-step={step ?? "connect"}
+      data-testid="onboarding-canvas"
+    >
       <StatusRow wallet={wallet} />
 
       {!wallet || !state ? (

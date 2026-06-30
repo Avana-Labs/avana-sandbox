@@ -37,8 +37,12 @@ export function useSiweAuth() {
   const { signMessageAsync } = useSignMessage()
 
   const authedWallet = token?.wallet ?? null
+  const testSession = process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1" && authedWallet != null
+  const effectiveAddress = testSession ? authedWallet : address
+  const effectiveConnected = testSession || isConnected
   // "Signed in" only counts when the SIWE wallet matches the connected wallet.
-  const isSignedIn = isConnected && authedWallet != null && address?.toLowerCase() === authedWallet
+  const isSignedIn =
+    effectiveConnected && authedWallet != null && effectiveAddress?.toLowerCase() === authedWallet
 
   const signIn = useCallback(async (): Promise<string> => {
     if (!address) throw new Error("Connect a wallet first.")
@@ -70,5 +74,12 @@ export function useSiweAuth() {
 
   const signOut = useCallback(() => clearSiweToken(), [])
 
-  return { authedWallet, isSignedIn, isConnected, address: address ?? null, signIn, signOut }
+  return {
+    authedWallet,
+    isSignedIn,
+    isConnected: effectiveConnected,
+    address: effectiveAddress ?? null,
+    signIn,
+    signOut,
+  }
 }
