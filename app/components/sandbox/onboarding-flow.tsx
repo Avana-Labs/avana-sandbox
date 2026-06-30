@@ -64,24 +64,21 @@ const PROGRESS: Record<string, number> = {
   closed: 100,
 }
 
-/** Animated progress rail (replaces the static tagline) + the connected-wallet chip. */
+/** Full-width animated progress rail — it IS the divider (no extra border line). */
 function StatusRow({ wallet, pct }: { wallet: string | null; pct: number }) {
   return (
-    <div className="mb-10 flex min-h-12 items-center justify-between gap-5 border-b border-border pb-4 sm:mb-12">
-      <div className="flex flex-1 items-center gap-3">
-        <div className="h-1.5 w-full max-w-[300px] overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-[linear-gradient(90deg,#01AACF,#5b8def,#a855f7)] transition-[width] duration-700 ease-out"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <span className="font-data text-[11px] tabular-nums text-muted-foreground">{pct}%</span>
-      </div>
+    <div className="mb-9 sm:mb-11">
       {wallet ? (
-        <span className="shrink-0 text-xs text-muted-foreground sm:text-sm">
+        <div className="mb-2.5 text-right text-xs text-muted-foreground">
           Wallet <strong className="ml-1 font-medium text-foreground">{shortWallet(wallet)}</strong>
-        </span>
+        </div>
       ) : null}
+      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-brand transition-[width] duration-700 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   )
 }
@@ -99,8 +96,8 @@ function Headline({
     <h1
       className={
         size === "hero"
-          ? "max-w-[680px] text-[clamp(1.9rem,3.4vw,2.6rem)] font-medium leading-[1.12] tracking-[-0.03em]"
-          : "max-w-[640px] text-[clamp(1.45rem,2.4vw,1.85rem)] font-medium leading-[1.12] tracking-[-0.03em]"
+          ? "max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-medium leading-[1.14] tracking-[-0.03em]"
+          : "max-w-[560px] text-balance text-[clamp(1.4rem,2.3vw,1.75rem)] font-medium leading-[1.16] tracking-[-0.03em]"
       }
     >
       {muted ? (
@@ -125,24 +122,6 @@ function ErrorMessage({ error }: { error: string | null }) {
   ) : null
 }
 
-function AllocationMarquee({ amount }: { amount: number }) {
-  const label = `${fmtUsd(amount)} PRACTICE FUNDS`
-  return (
-    <div className="relative left-1/2 my-10 w-screen -translate-x-1/2 overflow-hidden py-2 sm:my-11">
-      <div className="flex w-max animate-[marquee_22s_linear_infinite] items-center gap-7 whitespace-nowrap text-3xl font-medium tracking-[-0.04em] sm:text-[40px]">
-        {[0, 1, 2, 3].map((item) => (
-          <span className="flex items-center gap-7" key={item}>
-            <span className="flex size-10 items-center justify-center rounded-full bg-brand text-xl text-brand-foreground sm:size-12">
-              A
-            </span>
-            <span>{label}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function BasketPanel({
   amount,
   busy,
@@ -159,23 +138,24 @@ function BasketPanel({
     { label: "Multiply", detail: "6 positions", amount: "$250K" },
   ]
   return (
-    <div className="mt-8 w-full max-w-[516px] rounded-[24px] bg-muted/55 p-4 sm:p-6">
-      <p className="text-[13px] text-muted-foreground">Claim amount</p>
-      <div className="mt-4 flex items-end justify-between gap-4">
-        <div className="text-3xl font-medium tracking-[-0.04em] sm:text-[44px]">{fmtUsd(amount)}</div>
-        <span className="rounded-full bg-background px-3 py-1.5 text-sm text-muted-foreground">Max</span>
+    <div className="mt-8 w-full max-w-[460px]">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-[13px] text-muted-foreground">You&apos;ll claim</p>
+          <div className="mt-1 text-4xl font-semibold tracking-[-0.03em] sm:text-[44px]">{fmtUsd(amount)}</div>
+        </div>
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-2">
+      <ul className="mt-6 divide-y divide-border border-y border-border">
         {buckets.map((bucket) => (
-          <div className="rounded-2xl bg-background/70 p-3" key={bucket.label}>
-            <div className="text-sm font-medium">{bucket.label}</div>
-            <div className="mt-1 flex justify-between gap-2 text-xs text-muted-foreground">
+          <li className="flex items-center justify-between py-3" key={bucket.label}>
+            <span className="text-[15px] font-medium">{bucket.label}</span>
+            <span className="flex items-baseline gap-2 text-sm text-muted-foreground">
               <span>{bucket.detail}</span>
-              <span>{bucket.amount}</span>
-            </div>
-          </div>
+              <span className="font-data tabular-nums text-foreground">{bucket.amount}</span>
+            </span>
+          </li>
         ))}
-      </div>
+      </ul>
       <button className={`${PRIMARY} mt-7 w-full`} disabled={busy} onClick={onClaim} type="button">
         {busy ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
         {busy ? "Claiming allocation…" : "Claim your allocation"}
@@ -344,10 +324,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "eligible" ? (
         <>
-          <AllocationMarquee amount={previewUsd} />
           <Headline
-            muted={`Your ${fmtUsd(previewUsd)} practice portfolio is ready.`}
-            active="Share Avana, or jump straight in."
+            muted="You're eligible."
+            active={`A ${fmtUsd(previewUsd)} practice portfolio is ready.`}
           />
           <p className="mt-6 text-sm text-muted-foreground">{seatsLeft.toLocaleString()} sandbox seats remain.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -439,12 +418,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             <Check className="size-6" strokeWidth={3} />
           </motion.div>
           <Headline muted="You're all set." active="Your Avana sandbox is ready to explore." />
-          {state.profile?.claimTxSynthetic ? (
-            <div className="mt-8 max-w-2xl rounded-2xl border border-border bg-muted/40 p-5">
-              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Synthetic transaction receipt</p>
-              <p className="mt-2 break-all font-mono text-sm">{state.profile.claimTxSynthetic}</p>
-            </div>
-          ) : null}
+          <p className="mt-4 max-w-md text-pretty text-[15px] leading-6 text-muted-foreground">
+            $1M in practice funds is now in your wallet. Jump into the dashboard to start exploring.
+          </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link className={PRIMARY} href="/dashboard">Open dashboard</Link>
             <a
