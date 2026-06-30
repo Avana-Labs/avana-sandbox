@@ -49,6 +49,13 @@ const fmtUsd = (value: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
 const shortWallet = (wallet: string) => `${wallet.slice(0, 6)}…${wallet.slice(-4)}`
 
+const SHARE_URL = "https://avana.cc"
+/** Launch-style tweet auto-populated into the X composer (multi-line, @handle + CTA + link). */
+const buildShareText = (handle: string) =>
+  `Just claimed my $1M practice portfolio on the @${handle} sandbox 🚀\n\nBorrow against LP, lend, and loop positions — all risk-free before mainnet.\n\nTry it 👉 ${SHARE_URL}`
+const xIntentHref = (handle: string) =>
+  `https://x.com/intent/post?text=${encodeURIComponent(buildShareText(handle))}`
+
 // Onboarding progress (%) per phase — drives the animated rail + AnimatePresence key.
 const PROGRESS: Record<string, number> = {
   intro: 10,
@@ -128,23 +135,27 @@ const ANALYSIS_STEPS = [
   "Selecting markets to fund",
   "Sizing your $1M portfolio",
 ]
-const ANALYSIS_STAGGER_MS = 950
+const CLAIM_STEPS = [
+  "Minting your practice funds",
+  "Opening LP & lending positions",
+  "Building your multiply loops",
+  "Finalizing your sandbox",
+]
+const STEP_STAGGER_MS = 950
 
-/** Fake-but-believable wallet analysis: each check completes in sequence so eligibility
- *  feels earned. Timed to land just before the flow advances to the eligible step. */
-function AnalyzingStep() {
+/** Fake-but-believable staged "thinking" sequence: each check completes in turn so the
+ *  moment feels earned. Timed to land just before the flow advances to the next step. */
+function ThinkingSteps({ muted, active, steps }: { muted?: string; active: string; steps: string[] }) {
   const [done, setDone] = useState(0)
   useEffect(() => {
-    const timers = ANALYSIS_STEPS.map((_, i) =>
-      window.setTimeout(() => setDone(i + 1), ANALYSIS_STAGGER_MS * (i + 1)),
-    )
+    const timers = steps.map((_, i) => window.setTimeout(() => setDone(i + 1), STEP_STAGGER_MS * (i + 1)))
     return () => timers.forEach((t) => window.clearTimeout(t))
-  }, [])
+  }, [steps])
   return (
     <>
-      <Headline muted="One moment." active="Analyzing your wallet…" />
+      <Headline muted={muted} active={active} />
       <ul className="mt-8 max-w-[420px] space-y-3.5">
-        {ANALYSIS_STEPS.map((label, i) => {
+        {steps.map((label, i) => {
           const state = i < done ? "done" : i === done ? "active" : "pending"
           return (
             <motion.li
@@ -161,9 +172,7 @@ function AnalyzingStep() {
               ) : (
                 <LoaderCircle className={`size-[18px] ${state === "active" ? "animate-spin text-brand" : "text-muted-foreground/40"}`} />
               )}
-              <span className={state === "done" ? "text-foreground" : state === "active" ? "text-foreground" : "text-muted-foreground"}>
-                {label}
-              </span>
+              <span className={state === "pending" ? "text-muted-foreground" : "text-foreground"}>{label}</span>
             </motion.li>
           )
         })}
@@ -259,10 +268,13 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           "claiming",
           async () => {
             await beginClaim({ wallet })
-            await sleep(800)
+            // Let the staged build sequence play out BEFORE claim() flips the profile to
+            // "done" — that flip unmounts onboarding (the gate opens the app), so the
+            // delay must live here, not in run()'s minimumMs.
+            await sleep(CLAIM_STEPS.length * STEP_STAGGER_MS + 250)
             await claim({ wallet })
           },
-          1200,
+          0,
         )
       : undefined
   const step = busy === "analyzing" ? "analyzing" : busy === "claiming" ? "claimPending" : state?.onboardingStep
@@ -367,7 +379,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "analyzing" ? (
         <>
-          <AnalyzingStep />
+          <ThinkingSteps muted="One moment." active="Analyzing your wallet…" steps={ANALYSIS_STEPS} />
           <ErrorMessage error={error} />
         </>
       ) : step === "eligible" ? (
@@ -400,17 +412,11 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "xPending" ? (
         <>
           <Headline muted="Tell your network about Avana." active="Post the prepared message on X." />
-          <div className="mt-8 max-w-2xl rounded-3xl border border-border p-5 text-base leading-7 sm:p-7">
-            {state.config.tweetTemplate}
-            <span className="ml-1 text-brand">@{state.config.xHandle}</span>
+          <div className="mt-8 max-w-2xl whitespace-pre-line rounded-3xl border border-border p-5 text-[15px] leading-7 sm:p-7">
+            {buildShareText(state.config.xHandle)}
           </div>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <a
-              className={PRIMARY}
-              href={`https://x.com/intent/post?text=${encodeURIComponent(`${state.config.tweetTemplate} @${state.config.xHandle}`)}`}
-              rel="noreferrer"
-              target="_blank"
-            >
+            <a className={PRIMARY} href={xIntentHref(state.config.xHandle)} rel="noreferrer" target="_blank">
               Open X <MoveUpRight className="ml-2 size-4" />
             </a>
             <button
@@ -443,11 +449,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "claimPending" ? (
         <>
-          <Headline active="Almost there…" />
-          <div className="mt-8 inline-flex items-center rounded-full bg-muted px-5 py-3 text-sm text-muted-foreground">
-            <LoaderCircle className="mr-2.5 size-4 animate-spin text-brand" />
-            Dropping the funds into your sandbox
-          </div>
+          <ThinkingSteps muted="Hang tight." active="Funding your sandbox…" steps={CLAIM_STEPS} />
           <ErrorMessage error={error} />
         </>
       ) : step === "waitlisted" ? (
@@ -471,19 +473,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link className={PRIMARY} href="/dashboard">Open dashboard</Link>
-            <a
-              className={SECONDARY}
-              href={`https://x.com/intent/post?text=${encodeURIComponent(`${state.config.tweetTemplate} @${state.config.xHandle} https://avana.cc`)}`}
-              rel="noreferrer"
-              target="_blank"
-            >
+            <a className={SECONDARY} href={xIntentHref(state.config.xHandle)} rel="noreferrer" target="_blank">
               Share on X <MoveUpRight className="ml-2 size-4" />
             </a>
-            {state.profile?.claimTxSynthetic ? (
-              <Link className={SECONDARY} href={`/sandbox/transactions/${encodeURIComponent(state.profile.claimTxSynthetic)}`}>
-                View transaction
-              </Link>
-            ) : null}
           </div>
         </>
       ) : null}
