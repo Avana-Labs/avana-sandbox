@@ -2,8 +2,8 @@
 
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { formatCompactUsd } from "@/app/lib/data/borrow-domain"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import { cn } from "@/lib/utils"
 
 export type BorrowHeroMetrics = {
@@ -15,6 +15,7 @@ export type BorrowHeroMetrics = {
 }
 
 function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
+  const fc = useCurrency()
   const changeIsUp = metrics.totalTvlChangePct >= 0
   const changeLabel = `${changeIsUp ? "+" : ""}${metrics.totalTvlChangePct.toFixed(2)}%`
   return (
@@ -24,7 +25,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total TVL</p>
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
-              {formatCompactUsd(metrics.totalTvlUsd)}
+              {fc.compact(metrics.totalTvlUsd)}
             </p>
             <span
               className={cn(
@@ -48,7 +49,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
             Total Collateral
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-            {formatCompactUsd(metrics.totalCollateralUsd)}
+            {fc.compact(metrics.totalCollateralUsd)}
           </p>
         </div>
 
@@ -58,7 +59,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
             Available Credit
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-            {formatCompactUsd(metrics.availableCreditUsd)}
+            {fc.compact(metrics.availableCreditUsd)}
           </p>
         </div>
 
@@ -68,7 +69,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
             Outstanding Loans
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
-            {formatCompactUsd(metrics.outstandingLoansUsd)}
+            {fc.compact(metrics.outstandingLoansUsd)}
           </p>
         </div>
       </div>
