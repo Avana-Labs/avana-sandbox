@@ -81,7 +81,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 md:ml-auto md:text-right">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 md:ml-auto md:text-right">
           {LEND_METRICS.map((metric) => (
             <div key={metric.label}>
               <div
