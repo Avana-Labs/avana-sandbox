@@ -15,6 +15,13 @@ import type { SandboxActionResult, TransactionActionType, TransactionAdapter, Tr
 type SandboxAdapterOptions = {
   readState: () => BorrowSystemState
   writeState: (state: BorrowSystemState) => void
+  persistResult?: (result: SandboxActionResult) => Promise<{
+    id: string
+    hash: string
+    status: "success" | "failed" | "pending"
+    simulated: boolean
+    timestamp: number
+  }>
   now?: () => number
   generateId?: (prefix: string) => string
 }
@@ -101,6 +108,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
   readonly mode = "sandbox" as const
   private readonly readStateImpl: SandboxAdapterOptions["readState"]
   private readonly writeStateImpl: SandboxAdapterOptions["writeState"]
+  private readonly persistResult?: SandboxAdapterOptions["persistResult"]
   private readonly now: () => number
   private readonly generateId: (prefix: string) => string
   private readonly seed: BorrowSystemState
@@ -109,6 +117,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
   constructor(options: SandboxAdapterOptions) {
     this.readStateImpl = options.readState
     this.writeStateImpl = options.writeState
+    this.persistResult = options.persistResult
     this.now = options.now ?? Date.now
     this.generateId = options.generateId ?? defaultId
     this.seed = options.readState()
@@ -228,9 +237,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
       ...action,
       at: timestamp,
     } as BorrowAction)
-    this.writeStateImpl(nextState)
-
-    const receipt = {
+    const localReceipt = {
       id: this.generateId("receipt"),
       hash: this.generateId("sim"),
       status: "success" as const,
@@ -250,16 +257,32 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
         executedAmountUsd6: executedAmountFromPreview(action, preview),
         simulated: true,
         timestamp,
-        hash: receipt.hash,
+        hash: localReceipt.hash,
       }
 
-    return {
+    const localResult: SandboxActionResult = {
       preview,
-      receipt,
-      result: receipt,
+      receipt: localReceipt,
+      result: localReceipt,
       historyItem,
       state: nextState,
     }
+    const persisted = this.persistResult ? await this.persistResult(localResult) : localReceipt
+    const receipt = { ...localReceipt, ...persisted }
+    const persistedResult = {
+      ...localResult,
+      receipt,
+      result: receipt,
+      historyItem: {
+        ...historyItem,
+        id: persisted.id,
+        hash: persisted.hash,
+        status: persisted.status,
+        timestamp: persisted.timestamp,
+      },
+    }
+    this.writeStateImpl(nextState)
+    return persistedResult
   }
 
   resetSandboxState() {

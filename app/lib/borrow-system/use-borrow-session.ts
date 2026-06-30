@@ -261,9 +261,10 @@ export function useBorrowSession({
           stateRef.current = nextState
           setState(nextState)
         },
+        persistResult: persistTransaction,
       })
     },
-    [injectedTransactionAdapter],
+    [injectedTransactionAdapter, persistTransaction],
   )
 
   const createIntent = useCallback((action: BorrowAction) => transactionAdapter.createIntent(action), [transactionAdapter])
@@ -280,38 +281,11 @@ export function useBorrowSession({
       }
 
       setIsPending(true)
-      const previousState = stateRef.current
       const execution = transactionAdapter
         .executeTransaction(intent)
-        .then(async (result) => {
-          if (persistTransaction && result.receipt.status === "success") {
-            try {
-              const persisted = await persistTransaction(result)
-              const receipt = {
-                ...result.receipt,
-                id: persisted.id,
-                hash: persisted.hash,
-                status: persisted.status,
-                simulated: persisted.simulated,
-                timestamp: persisted.timestamp,
-              }
-              const historyItem = {
-                ...result.historyItem,
-                id: persisted.id,
-                hash: persisted.hash,
-                status: persisted.status,
-                timestamp: persisted.timestamp,
-              }
-              const persistedResult = { ...result, receipt, result: receipt, historyItem }
-              setTransactionHistory((current) => mergeHistory(historyItem, current))
-              setTransactionReceipts((current) => mergeReceipts(receipt, current))
-              return persistedResult
-            } catch (error) {
-              stateRef.current = previousState
-              setState(previousState)
-              throw error
-            }
-          }
+        .then((result) => {
+          stateRef.current = result.state
+          setState(result.state)
           setTransactionHistory((current) => mergeHistory(result.historyItem, current))
           setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
           return result
@@ -324,7 +298,7 @@ export function useBorrowSession({
       pendingExecutionsRef.current.set(fingerprint, execution)
       return execution
     },
-    [persistTransaction, transactionAdapter],
+    [transactionAdapter],
   )
   const readAdapter = useMemo(
     () => {

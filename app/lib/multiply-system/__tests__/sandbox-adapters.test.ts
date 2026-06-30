@@ -175,4 +175,28 @@ describe("SandboxMultiplyTransactionAdapter", () => {
       initialLiquidity - (updated.debtValueUsd - existing.debtValueUsd),
     )
   })
+
+  it("does not commit local state when Convex persistence rejects", async () => {
+    let state = makeExampleMultiplySystemState()
+    const before = state
+    const adapter = new SandboxMultiplyTransactionAdapter({
+      readState: () => state,
+      writeState: (nextState) => {
+        state = nextState
+      },
+      persistResult: async () => {
+        throw new Error("Convex write rejected")
+      },
+    })
+    const intent = adapter.createIntent({
+      type: "multiply",
+      walletId: "wallet-2",
+      marketId: "eth-usdt",
+      collateralAmount: 0.5,
+      selectedMultiplier: 2,
+    })
+
+    await expect(adapter.executeTransaction(intent)).rejects.toThrow("Convex write rejected")
+    expect(state).toBe(before)
+  })
 })
