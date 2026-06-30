@@ -65,7 +65,12 @@ export type RecordTransactionArgs = {
 export function lendResultToRecordArgs(result: LendSandboxActionResult, wallet: string): RecordTransactionArgs {
   const item = result.historyItem
   const position = item.positionId ? result.state.positions[item.positionId] : undefined
-  const amountUsd = item.amount
+  // `item.amount` is TOKEN-denominated (e.g. 1 ETH). The server reconciles the supplied
+  // balance in USD (position.suppliedValueUsd), so the transaction amount and the liquidity
+  // delta must be USD too — otherwise every non-$1 asset (ETH, BTC, …) trips
+  // INVALID_TRANSITION on execute and lend is silently restricted to $1 stablecoins.
+  const assetPriceUsd = result.state.markets[item.marketId]?.assetPriceUsd ?? 1
+  const amountUsd = item.amount * assetPriceUsd
   return {
     wallet,
     intentId: item.intentId,
