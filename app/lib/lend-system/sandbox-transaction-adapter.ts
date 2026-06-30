@@ -7,19 +7,13 @@ import type {
   LendTransactionHistoryItem,
   LendTransactionIntent,
   LendTransactionPreview,
+  LendTransactionResult,
 } from "./contracts"
 
 type SandboxAdapterOptions = {
   readState: () => LendSystemState
   writeState: (state: LendSystemState) => void
-  persistResult?: (result: LendSandboxActionResult) => Promise<{
-    id: string
-    hash: string
-    status: "success" | "failed" | "pending"
-    actionType: string
-    simulated: boolean
-    timestamp: number
-  }>
+  persistResult?: (result: LendSandboxActionResult) => Promise<LendTransactionResult>
   now?: () => number
   generateId?: (prefix: string) => string
 }
@@ -244,6 +238,7 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
       state: nextState,
     }
     const persisted = this.persistResult ? await this.persistResult(localResult) : localReceipt
+    if (persisted.status === "idle") throw new Error("Convex returned an invalid idle transaction receipt")
     const receipt = { ...localReceipt, ...persisted, actionType: localReceipt.actionType }
     const persistedResult = {
       ...localResult,
