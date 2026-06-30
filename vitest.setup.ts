@@ -1,5 +1,13 @@
 import "@testing-library/jest-dom/vitest"
-import { vi } from "vitest"
+import { beforeEach, vi } from "vitest"
+import { setActiveCurrency } from "@/app/lib/currency/active-rate"
+
+// The shared USD formatters read a module-level active currency. Reset it to USD
+// before every test so one test selecting a non-USD currency can't leak into
+// another test's formatted-string assertions.
+beforeEach(() => {
+  setActiveCurrency("USD")
+})
 
 class ResizeObserverMock {
   observe() {}
