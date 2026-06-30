@@ -12,6 +12,8 @@
  *   - idempotency — a replayed `intentId` returns the existing row (no double-apply).
  *   - rate limit  — at most `MAX_TX_PER_HOUR` per wallet per trailing hour.
  *   - one row     — exactly one `transactions` row per balance-changing action.
+ *   - transition  — fixed-point amounts, product/action compatibility, lend deltas,
+ *                   multiply LTV/multiplier and aggregate ledger deltas are recomputed.
  *
  * Fixed-point amounts cross the wire as decimal strings (see schema encoding contract).
  */
@@ -20,6 +22,7 @@ import { v, type Infer } from "convex/values"
 import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "./auth"
+import type { Doc } from "../_generated/dataModel"
 
 /** Hourly per-wallet transaction cap (anti-abuse). Exported for tests. */
 export const MAX_TX_PER_HOUR = 200
@@ -99,13 +102,147 @@ function validatePositionPayload(position: Infer<typeof positionPayload>) {
   }
 }
 
+function usd6Number(value?: string) {
+  return Number(BigInt(value ?? "0")) / 1_000_000
+}
+
+function assertClose(actual: number, expected: number, field: string, tolerance = 0.02) {
+  if (!Number.isFinite(actual) || Math.abs(actual - expected) > tolerance) {
+    throw new Error(`INVALID_TRANSITION: ${field} does not match the server recomputation.`)
+  }
+}
+
+function validateTransactionTransition(
+  args: {
+    product: "borrow" | "lend" | "multiply"
+    kind: string
+    requestedAmountUsd6: string
+    executedAmountUsd6: string
+    amountUsd: number
+    position?: Infer<typeof positionPayload>
+  },
+  existing?: Doc<"positions">,
+) {
+  requireUnsignedInteger(args.requestedAmountUsd6, "requestedAmountUsd6")
+  requireUnsignedInteger(args.executedAmountUsd6, "executedAmountUsd6")
+  const requested = BigInt(args.requestedAmountUsd6)
+  const executed = BigInt(args.executedAmountUsd6)
+  if (requested > 0n && executed > requested) {
+    throw new Error("INVALID_TRANSITION: executed amount exceeds the requested amount.")
+  }
+  assertClose(args.amountUsd, Number(executed) / 1_000_000, "amountUsd")
+
+  const allowedKinds = {
+    borrow: new Set(["deposit", "withdraw", "borrow", "repay", "claim"]),
+    lend: new Set(["deposit", "withdraw", "claim"]),
+    multiply: new Set(["multiply", "deleverage"]),
+  }
+  if (!allowedKinds[args.product].has(args.kind)) {
+    throw new Error(`INVALID_TRANSITION: ${args.kind} is not valid for ${args.product}.`)
+  }
+
+  if (!args.position) return
+  if (args.product === "lend" && args.kind !== "claim") {
+    const before = usd6Number(existing?.suppliedUsd6)
+    const after = usd6Number(args.position.suppliedUsd6)
+    const expected = args.kind === "deposit" ? before + args.amountUsd : before - args.amountUsd
+    assertClose(after, Math.max(0, expected), "lend supplied balance")
+  }
+  if (args.product === "multiply") {
+    const collateral = args.position.collateralValueUsd ?? 0
+    const debt = args.position.debtValueUsd ?? 0
+    if (collateral < 0 || debt < 0 || debt > collateral) {
+      throw new Error("INVALID_TRANSITION: multiply collateral and debt are inconsistent.")
+    }
+    const equity = collateral - debt
+    const expectedMultiplier = equity > 0 ? collateral / equity : 1
+    const expectedLtv = collateral > 0 ? debt / collateral : 0
+    assertClose(args.position.multiplier ?? 1, expectedMultiplier, "multiply multiplier", 0.0001)
+    assertClose(args.position.ltv ?? 0, expectedLtv, "multiply LTV", 0.0001)
+  }
+}
+
+function canonicalLedgerDelta(
+  args: {
+    product: "borrow" | "lend" | "multiply"
+    kind: string
+    marketSlug?: string
+    assetId?: string
+    amountUsd: number
+    position?: Infer<typeof positionPayload>
+  },
+  existing?: Doc<"positions">,
+) {
+  if (args.product === "borrow") {
+    const marketSlug = args.kind === "borrow" || args.kind === "repay" ? args.assetId : args.marketSlug
+    if (!marketSlug || args.kind === "claim") return null
+    return {
+      marketSlug,
+      borrowedDeltaUsd: args.kind === "borrow" ? args.amountUsd : args.kind === "repay" ? -args.amountUsd : 0,
+      suppliedDeltaUsd: args.kind === "deposit" ? args.amountUsd : args.kind === "withdraw" ? -args.amountUsd : 0,
+    }
+  }
+  if (args.product === "lend") {
+    if (!args.marketSlug || args.kind === "claim") return null
+    return {
+      marketSlug: args.marketSlug,
+      borrowedDeltaUsd: 0,
+      suppliedDeltaUsd: args.kind === "deposit" ? args.amountUsd : -args.amountUsd,
+    }
+  }
+  if (!args.marketSlug || !args.position) return null
+  return {
+    marketSlug: args.marketSlug,
+    borrowedDeltaUsd: (args.position.debtValueUsd ?? 0) - (existing?.debtValueUsd ?? 0),
+    suppliedDeltaUsd: (args.position.collateralValueUsd ?? 0) - (existing?.collateralValueUsd ?? 0),
+  }
+}
+
+export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, now: number) {
+  const [positions, balances] = await Promise.all([
+    ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+    ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+  ])
+  const open = positions.filter((position) => position.status === "open")
+  const liquid = balances.reduce((sum, balance) => sum + balance.valueUsd, 0)
+  const borrowCollateral = open
+    .filter((position) => position.product === "borrow")
+    .reduce((sum, position) => sum + usd6Number(position.collateralValueUsd6), 0)
+  const borrowDebt = open
+    .filter((position) => position.product === "borrow")
+    .reduce((sum, position) => sum + usd6Number(position.debtValueUsd6), 0)
+  const lendSupplied = open
+    .filter((position) => position.product === "lend")
+    .reduce((sum, position) => sum + usd6Number(position.suppliedUsd6), 0)
+  const earned = open
+    .filter((position) => position.product === "lend")
+    .reduce((sum, position) => sum + usd6Number(position.earnedUsd6), 0)
+  const multiplyCollateral = open
+    .filter((position) => position.product === "multiply")
+    .reduce((sum, position) => sum + (position.collateralValueUsd ?? 0), 0)
+  const multiplyDebt = open
+    .filter((position) => position.product === "multiply")
+    .reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
+
+  await ctx.db.insert("portfolioSnapshots", {
+    wallet,
+    at: now,
+    totalValueUsd: liquid + borrowCollateral - borrowDebt + lendSupplied + multiplyCollateral - multiplyDebt,
+    totalSuppliedUsd: borrowCollateral + lendSupplied + multiplyCollateral,
+    totalBorrowedUsd: borrowDebt + multiplyDebt,
+    availableToBorrowUsd: Math.max(0, borrowCollateral * 0.7 - borrowDebt),
+    totalMultiplyExposureUsd: multiplyCollateral,
+    totalEarnedUsd: earned,
+  })
+}
+
 /**
  * Fold a delta into the shared aggregate liquidity ledger (`marketLiquidityDeltas`).
  * This is the auth-gated, wallet-attributed write path that unifies every product's
  * supply/borrow movement onto one ledger (mirrors `convex/liquidity.recordDelta`, but
  * reached only from inside an owner-verified mutation).
  */
-async function applyLedgerDelta(
+export async function applyLedgerDelta(
   ctx: MutationCtx,
   marketSlug: string,
   borrowedDeltaUsd: number,
@@ -200,6 +337,7 @@ export const recordTransaction = mutation({
 
     // Upsert the (wallet, product, market) position on success.
     let positionId: import("../_generated/dataModel").Id<"positions"> | undefined
+    let existingPosition: Doc<"positions"> | undefined
     if (args.position && status === "success" && marketSlug) {
       validatePositionPayload(args.position)
       const matches = await ctx.db
@@ -207,6 +345,8 @@ export const recordTransaction = mutation({
         .withIndex("by_wallet_market", (q) => q.eq("wallet", wallet).eq("marketSlug", marketSlug))
         .collect()
       const existing = matches.find((p) => p.product === args.product)
+      existingPosition = existing
+      validateTransactionTransition(args, existing)
       const fields = {
         spokeId: args.position.spokeId,
         assetId: args.position.assetId ?? args.assetId,
@@ -266,6 +406,8 @@ export const recordTransaction = mutation({
       }
     }
 
+    if (!args.position) validateTransactionTransition(args)
+
     const transactionId = await ctx.db.insert("transactions", {
       wallet,
       intentId: args.intentId,
@@ -286,8 +428,28 @@ export const recordTransaction = mutation({
     })
 
     // Unify products on the shared aggregate ledger (auth-gated, attributed write).
-    if (args.ledger && status === "success") {
-      await applyLedgerDelta(ctx, args.ledger.marketSlug, args.ledger.borrowedDeltaUsd ?? 0, args.ledger.suppliedDeltaUsd ?? 0, now)
+    if (status === "success") {
+      const ledger = canonicalLedgerDelta(
+        {
+          product: args.product,
+          kind: args.kind,
+          marketSlug,
+          assetId: args.assetId,
+          amountUsd: args.amountUsd,
+          position: args.position,
+        },
+        existingPosition,
+      )
+      if (ledger) {
+        await applyLedgerDelta(
+          ctx,
+          ledger.marketSlug,
+          ledger.borrowedDeltaUsd,
+          ledger.suppliedDeltaUsd,
+          now,
+        )
+      }
+      await appendPortfolioSnapshot(ctx, wallet, now)
     }
 
     return {

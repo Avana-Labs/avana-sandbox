@@ -73,7 +73,7 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
             },
           ],
         },
-        ledger: { marketSlug: "uni-v2:usdc", borrowedDeltaUsd: 1000 },
+        ledger: { marketSlug: "attacker-controlled-market", borrowedDeltaUsd: 99_000 },
       }),
     )
     expect(res.idempotent).toBe(false)
@@ -94,6 +94,11 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     const ledger = await t.query(api.liquidity.listDeltas)
     const row = ledger.find((r) => r.marketSlug === "uni-v2:usdc")
     expect(row?.borrowedDeltaUsd).toBe(1000)
+    expect(ledger.some((entry) => entry.marketSlug === "attacker-controlled-market")).toBe(false)
+
+    const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
+    expect(portfolio.latest?.totalBorrowedUsd).toBe(1000)
+    expect(portfolio.latest?.totalValueUsd).toBe(-1000)
   })
 
   test("rejects malformed fixed-point position state before writing", async () => {
@@ -112,6 +117,19 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
       ),
     ).rejects.toThrow(/INVALID_POSITION/)
 
+    expect(await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET })).toHaveLength(0)
+  })
+
+  test("rejects client amounts that do not match the fixed-point execution", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("invalid-amount", { amountUsd: 50_000 }),
+      ),
+    ).rejects.toThrow(/INVALID_TRANSITION/)
     expect(await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET })).toHaveLength(0)
   })
 
@@ -192,5 +210,79 @@ describe("liquidation recording", () => {
         healthFactorWadAfter: null,
       }),
     ).rejects.toThrow(/LIQUIDATOR_MISMATCH/)
+  })
+
+  test("atomically reduces victim debt and collateral and records the transaction", async () => {
+    const t = convexTest(schema, modules)
+    const ids = await t.run(async (ctx) => {
+      const positionId = await ctx.db.insert("positions", {
+        wallet: WALLET.toLowerCase(),
+        product: "borrow",
+        marketSlug: "uni-v3-bluechip-weth-usdc",
+        status: "open",
+        collateralValueUsd6: "2000000000",
+        debtValueUsd6: "1200000000",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+      })
+      await ctx.db.insert("positionCollateral", {
+        wallet: WALLET.toLowerCase(),
+        positionId,
+        marketSlug: "uni-v3-bluechip-weth-usdc",
+        collateralShares: "2000000000",
+        principalTokenAmount: "2000000000",
+        collateralEnabled: true,
+        collateralValueUsd6: "2000000000",
+        updatedAt: 1,
+      })
+      const debtPositionId = await ctx.db.insert("positionDebt", {
+        wallet: WALLET.toLowerCase(),
+        positionId,
+        assetId: "uni-v2:usdc",
+        baseAssetId: "usdc",
+        debtSharesUsd6: "1200000000",
+        debtIndexRay: "1000000000000000000000000000",
+        borrowRateWad: "50000000000000000",
+        principalBorrowedUsd6: "1200000000",
+        updatedAt: 1,
+      })
+      return { positionId, debtPositionId }
+    })
+    const asLiquidator = t.withIdentity({ subject: OTHER })
+    await asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
+      wallet: WALLET,
+      liquidatorWallet: OTHER,
+      positionId: ids.positionId,
+      debtPositionId: ids.debtPositionId,
+      marketSlug: "uni-v3-bluechip-weth-usdc",
+      repaidUsd6: "500000000",
+      seizedCollateralUsd6: "550000000",
+      healthFactorWadBefore: "900000000000000000",
+      healthFactorWadAfter: "1100000000000000000",
+    })
+
+    const state = await t.run(async (ctx) => ({
+      position: await ctx.db.get(ids.positionId),
+      debt: await ctx.db.get(ids.debtPositionId),
+      collateral: await ctx.db
+        .query("positionCollateral")
+        .withIndex("by_position", (q) => q.eq("positionId", ids.positionId))
+        .first(),
+      transactions: await ctx.db
+        .query("transactions")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
+        .collect(),
+      snapshots: await ctx.db
+        .query("portfolioSnapshots")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
+        .collect(),
+    }))
+    expect(state.position?.debtValueUsd6).toBe("700000000")
+    expect(state.position?.collateralValueUsd6).toBe("1450000000")
+    expect(state.debt?.principalBorrowedUsd6).toBe("700000000")
+    expect(state.collateral?.collateralValueUsd6).toBe("1450000000")
+    expect(state.transactions).toHaveLength(1)
+    expect(state.transactions[0]?.kind).toBe("liquidation")
+    expect(state.snapshots).toHaveLength(1)
   })
 })
