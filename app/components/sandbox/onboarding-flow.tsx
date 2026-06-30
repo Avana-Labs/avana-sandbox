@@ -7,6 +7,7 @@ import { useMutation } from "convex/react"
 import { ConnectKitButton } from "connectkit"
 import { api } from "@/convex/_generated/api"
 import { SandboxSignInButton } from "@/app/lib/siwe/sandbox-sign-in"
+import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 
 type BasketSlot = { tokenId: string; weight: number }
 type BasketClaim = { tokenId: string; amount: number; priceUsdAtClaim: number }
@@ -50,7 +51,7 @@ const shortWallet = (wallet: string) => `${wallet.slice(0, 6)}…${wallet.slice(
 function StatusRow({ wallet }: { wallet: string | null }) {
   return (
     <div className="mb-10 flex min-h-12 items-center justify-between gap-4 border-b border-border pb-4 text-xs text-muted-foreground sm:mb-12 sm:text-sm">
-      <span>Claim your Avana sandbox allocation in seconds</span>
+      <span>Set up your Avana practice account in seconds</span>
       {wallet ? (
         <span className="shrink-0">
           Wallet connected <strong className="ml-1 font-medium text-foreground">{shortWallet(wallet)}</strong>
@@ -100,7 +101,7 @@ function ErrorMessage({ error }: { error: string | null }) {
 }
 
 function AllocationMarquee({ amount }: { amount: number }) {
-  const label = `${fmtUsd(amount)} PLAY MONEY`
+  const label = `${fmtUsd(amount)} PRACTICE FUNDS`
   return (
     <div className="relative left-1/2 my-10 w-screen -translate-x-1/2 overflow-hidden py-2 sm:my-11">
       <div className="flex w-max animate-[marquee_22s_linear_infinite] items-center gap-7 whitespace-nowrap text-4xl font-medium tracking-[-0.05em] sm:text-[58px]">
@@ -228,15 +229,16 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       {!wallet && !hasStarted ? (
         <>
           <Headline
-            active="Secure $1M in Avana play money across assets, LP collateral, lending, and multiply."
+            muted="Welcome to Avana."
+            active="A risk-free sandbox to practice borrowing against LP, lending, and looped positions."
             size="hero"
           />
           <button className={`${PRIMARY} mt-12`} onClick={() => setHasStarted(true)} type="button">
-            Proceed
+            Get started
           </button>
           <p className="mt-12 max-w-[470px] text-[13px] leading-5 text-muted-foreground">
-            You&apos;ll receive a diversified sandbox portfolio built for exploring every Avana market. No real funds
-            are used.
+            You&apos;ll get a diversified practice portfolio to explore every Avana market. Nothing here uses real
+            funds — it&apos;s a safe place to learn the flows before mainnet.
           </p>
         </>
       ) : !wallet || !state ? (
@@ -253,7 +255,15 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             <SandboxSignInButton size="desktop" />
           </div>
           <p className="mt-8 max-w-[430px] text-[13px] leading-5 text-muted-foreground">
-            By connecting your wallet, you agree to the Terms &amp; Conditions and Privacy Policy.
+            By connecting your wallet, you agree to the{" "}
+            <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.terms} target="_blank" rel="noreferrer">
+              Terms &amp; Conditions
+            </a>{" "}
+            and{" "}
+            <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer">
+              Privacy Policy
+            </a>
+            .
           </p>
         </>
       ) : economy.status === "closed" && step !== "done" ? (
@@ -263,13 +273,12 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "wallet" ? (
         <>
-          <Headline muted="Your wallet is connected." active="Analyze it to unlock $1M in play money." />
+          <Headline muted="Your wallet is connected." active="Analyze it to fund your practice portfolio." />
           <button className={`${PRIMARY} mt-9`} onClick={analyze} type="button">
-            Proceed
+            Continue
           </button>
           <p className="mt-8 max-w-lg text-sm leading-6 text-muted-foreground">
-            Every eligible wallet receives the same $1M of synthetic equity, diversified using a deterministic market
-            selection.
+            Every wallet gets the same $1M of synthetic equity, diversified across markets so you can try every flow.
           </p>
           <ErrorMessage error={error} />
         </>
@@ -286,8 +295,8 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         <>
           <AllocationMarquee amount={previewUsd} />
           <Headline
-            muted={`Based on your wallet, you qualify for ${fmtUsd(previewUsd)} in play money.`}
-            active="Share Avana on X, or continue directly to your allocation."
+            muted={`Your wallet qualifies for a ${fmtUsd(previewUsd)} practice portfolio.`}
+            active="Share Avana on X, or continue straight to your portfolio."
           />
           <p className="mt-7 text-sm text-muted-foreground">{seatsLeft.toLocaleString()} sandbox seats remain.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
