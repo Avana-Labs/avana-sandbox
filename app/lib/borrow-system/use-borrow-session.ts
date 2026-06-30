@@ -40,6 +40,7 @@ function mergeReceipts(nextReceipt: SyntheticTransactionReceipt, receipts: Synth
 }
 
 export type ConvexBorrowWalletData = {
+  balances?: Array<{ valueUsd: number }>
   positions: Array<{
     product: "borrow" | "lend" | "multiply"
     marketSlug: string
@@ -215,6 +216,9 @@ export function useBorrowSession({
             ...current.accounts,
             [walletId]: {
               ...account,
+              walletBalanceUsd6: BigInt(
+                Math.round((data.balances ?? []).reduce((sum, balance) => sum + balance.valueUsd, 0) * 1_000_000),
+              ),
               collateralPositions: borrowPositions.flatMap((position) =>
                 position.collateral.map((collateral) => ({
                   id: String(collateral._id),

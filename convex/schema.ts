@@ -352,6 +352,32 @@ export default defineSchema({
     .index("by_wallet", ["wallet"])
     .index("by_authSubject", ["authSubject"]),
 
+  /** Liquid play-money balances granted at onboarding but not yet deployed into a market. */
+  sandboxBalances: defineTable({
+    wallet: v.string(),
+    assetSlug: v.string(),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    priceUsd: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_asset", ["wallet", "assetSlug"]),
+
+  /** Immutable, idempotent manifest of the wallet's diversified $1M starter grant. */
+  starterAllocations: defineTable({
+    wallet: v.string(),
+    version: v.number(),
+    totalEquityUsd: v.number(),
+    liquid: v.array(v.object({ marketSlug: v.string(), amountUsd: v.number() })),
+    collateral: v.array(v.object({ marketSlug: v.string(), amountUsd: v.number() })),
+    lend: v.array(v.object({ marketSlug: v.string(), amountUsd: v.number() })),
+    multiply: v.array(v.object({ marketSlug: v.string(), amountUsd: v.number() })),
+    receiptHashes: v.array(v.string()),
+    createdAt: v.number(),
+  }).index("by_wallet", ["wallet"]),
+
   /** Wallet-scoped sandbox activity log (one row per balance-changing action). */
   sandboxActivity: defineTable({
     wallet: v.string(),
