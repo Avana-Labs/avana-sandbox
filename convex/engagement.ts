@@ -12,7 +12,7 @@
 
 import { v } from "convex/values"
 import { query, type QueryCtx } from "./_generated/server"
-import type { Id } from "./_generated/dataModel"
+import type { Doc, Id } from "./_generated/dataModel"
 
 const WINDOW_DAYS = 12
 const DAY_MS = 86_400_000
@@ -134,11 +134,15 @@ type Cfg = {
  */
 async function buildEngagement(ctx: QueryCtx, marketId: Id<"markets">, cfg: Cfg) {
   const now = Date.now()
-  const since = now - WINDOW_DAYS * DAY_MS
 
+  // Collect the events ONCE over the larger of the two windows (conversion lookback ⊇
+  // the daily-bucket window) and share them with computeConversionPct, instead of
+  // querying walletEvents twice per detail-page load. The 12-day bucketing below
+  // naturally ignores anything older (no matching bucket).
+  const lookbackStart = now - CONVERSION_LOOKBACK_DAYS * DAY_MS
   const events = await ctx.db
     .query("walletEvents")
-    .withIndex("by_market_at", (q) => q.eq("marketId", marketId).gte("at", since))
+    .withIndex("by_market_at", (q) => q.eq("marketId", marketId).gte("at", lookbackStart))
     .collect()
 
   const buckets = new Map<string, Set<string>>()
@@ -160,7 +164,7 @@ async function buildEngagement(ctx: QueryCtx, marketId: Id<"markets">, cfg: Cfg)
   const previous = points[points.length - 2]?.v ?? 0
   const deltaPct = previous === 0 ? 0 : Math.round(((current - previous) / previous) * 1000) / 10
 
-  const conversion = await computeConversionPct(ctx, marketId, cfg.secondaryKind, since, now)
+  const conversion = computeConversionPct(events, cfg.secondaryKind, now)
 
   return {
     title: "User Engagement Trends",
@@ -192,19 +196,12 @@ async function buildEngagement(ctx: QueryCtx, marketId: Id<"markets">, cfg: Cfg)
  * `valuePct` is over the full lookback; `deltaPct` is the change (in points)
  * between the older and the more-recent half of the window.
  */
-async function computeConversionPct(
-  ctx: QueryCtx,
-  marketId: Id<"markets">,
+function computeConversionPct(
+  events: Doc<"walletEvents">[],
   kind: SecondaryKind,
-  since: number,
   now: number,
-): Promise<{ valuePct: number; deltaPct: number }> {
-  void since
+): { valuePct: number; deltaPct: number } {
   const lookbackStart = now - CONVERSION_LOOKBACK_DAYS * DAY_MS
-  const events = await ctx.db
-    .query("walletEvents")
-    .withIndex("by_market_at", (q) => q.eq("marketId", marketId).gte("at", lookbackStart))
-    .collect()
 
   const [fromKind, toKind, windowMs] =
     kind === "repay"
