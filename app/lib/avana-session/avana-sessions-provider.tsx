@@ -8,6 +8,7 @@ import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydrat
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import { useRewardsSession } from "@/app/lib/rewards-system"
+import { SandboxPersistenceBridge } from "@/app/lib/sandbox-tx/sandbox-persistence-bridge"
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
@@ -234,11 +235,19 @@ export function AvanaSessionsProvider({
   return (
     <AvanaSessionsContext.Provider value={value}>
       {hasConvexClient ? (
-        <MarketHydrator
-          hydrateBorrow={borrow.hydrateMarketData}
-          hydrateLend={lend.hydrateMarketData}
-          hydrateMultiply={multiply.hydrateMarketData}
-        />
+        <>
+          <MarketHydrator
+            hydrateBorrow={borrow.hydrateMarketData}
+            hydrateLend={lend.hydrateMarketData}
+            hydrateMultiply={multiply.hydrateMarketData}
+          />
+          {/* keyed by wallet → a fresh seen-set per identity (see the bridge docstring) */}
+          <SandboxPersistenceBridge
+            key={avana.walletId}
+            wallet={avana.walletId}
+            transactionHistory={borrow.transactionHistory}
+          />
+        </>
       ) : null}
       {children}
     </AvanaSessionsContext.Provider>
