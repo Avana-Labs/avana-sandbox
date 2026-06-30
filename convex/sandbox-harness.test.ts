@@ -102,7 +102,22 @@ describe("multi-user harness — calm + borrowHeavy (ledger invariant)", () => {
           requestedAmountUsd6: String(amount * 1_000_000),
           executedAmountUsd6: String(amount * 1_000_000),
           amountUsd: amount,
-          position: { status: "open", marketSlug: "uni-v3-bluechip-weth-usdc", debtValueUsd6: String(amount * 1_000_000) },
+          position: {
+            status: "open",
+            marketSlug: "uni-v3-bluechip-weth-usdc",
+            debtValueUsd6: String(amount * 1_000_000),
+            // Back the debt with collateral (2x) so the server-side solvency guard accepts
+            // it — a real borrow always carries its pledged collateral.
+            collateral: [
+              {
+                marketSlug: "uni-v3-bluechip-weth-usdc",
+                collateralShares: String(amount * 2 * 1_000_000),
+                principalTokenAmount: String(amount * 2 * 1_000_000),
+                collateralEnabled: true,
+                collateralValueUsd6: String(amount * 2 * 1_000_000),
+              },
+            ],
+          },
           ledger: { marketSlug: SLUG, borrowedDeltaUsd: amount },
         })
       }
