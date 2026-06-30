@@ -137,11 +137,18 @@ export function buildPortfolioMultiplyData(
   const positions = Object.values(state.positions).filter((position) => position.walletId === walletId)
   const totalCollateralUsd = positions.reduce((sum, position) => sum + position.collateralValueUsd, 0)
   const totalDebtUsd = positions.reduce((sum, position) => sum + position.debtValueUsd, 0)
+  // Average only the leveraged (finite-HF) positions. A zero-debt position has an
+  // infinite health factor, so folding it in as a synthetic "99" produced an
+  // obviously-fake average. If every position is debt-free there is no meaningful
+  // average, so report null (the UI renders "—"); buildMultiplyWalletSnapshot maps
+  // that back to "infinity" for the headline.
+  const finiteHealthFactors = positions
+    .map((position) => (position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor))
+    .filter((healthFactor) => Number.isFinite(healthFactor))
   const averageHealthFactor =
-    positions.length === 0
+    finiteHealthFactors.length === 0
       ? null
-      : positions.reduce((sum, position) => sum + (position.healthFactor === "infinity" ? 99 : position.healthFactor), 0) /
-        positions.length
+      : finiteHealthFactors.reduce((sum, healthFactor) => sum + healthFactor, 0) / finiteHealthFactors.length
 
   return {
     creditLines: {
@@ -162,7 +169,9 @@ export function buildPortfolioMultiplyData(
         borrowableToken: market.borrowAsset.symbol,
         multiplier: position.multiplier,
         protocol: "Avana Multiply",
-        healthFactor: position.healthFactor === "infinity" ? 99 : position.healthFactor,
+        // Real value: a zero-debt position is genuinely infinite. The table renders
+        // non-finite health factors as "∞" rather than a fabricated number.
+        healthFactor: position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor,
         collateralUsd: position.collateralValueUsd,
         borrowPowerUsd: Math.max(0, position.collateralValueUsd - position.debtValueUsd),
         debtUsd: position.debtValueUsd,

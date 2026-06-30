@@ -99,14 +99,21 @@ export function MarketHeroIdentity({
 }
 
 export function MarketHero({ detail, leading, actions, className, hideIdentity = false }: MarketHeroProps) {
-  const feed = React.useMemo(() => getMultiplyMarketHeroFeed(detail.id), [detail.id])
+  // Prefer the Convex-backed feed (set by the server detail builder); fall back to the
+  // local deterministic feed only when Convex is unreachable.
+  const feed = React.useMemo(() => detail.heroFeed ?? getMultiplyMarketHeroFeed(detail.id), [detail.heroFeed, detail.id])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="market-hero">
       {hideIdentity ? null : <MarketHeroIdentity detail={detail} leading={leading} actions={actions} />}
 
       <div className="pt-4" data-testid="market-hero-chart-card">
-        <MarketHeroChart feed={feed} gradientId={`multiplyHeroFill-${detail.id}`} />
+        <MarketHeroChart
+          feed={feed}
+          defaultRange={detail.heroFeed ? "All" : "1D"}
+          gradientId={`multiplyHeroFill-${detail.id}`}
+          label="Total value locked"
+        />
       </div>
     </section>
   )

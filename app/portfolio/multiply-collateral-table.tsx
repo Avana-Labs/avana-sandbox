@@ -17,6 +17,10 @@ function formatPct(value: number) {
   return `${value.toFixed(2)}%`
 }
 
+function formatHealthFactor(value: number) {
+  return Number.isFinite(value) ? value.toFixed(2) : "∞"
+}
+
 function statusClass(status: PortfolioMultiplyCollateral["status"]) {
   return status === "open"
     ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
@@ -119,7 +123,7 @@ export function MultiplyCollateralTable({
                     {formatPct(row.ltvPct)}
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-emerald-600 dark:text-emerald-400">
-                    {row.healthFactor.toFixed(2)}
+                    {formatHealthFactor(row.healthFactor)}
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
                     {row.liquidationPriceUsd ? formatUsd(row.liquidationPriceUsd) : "—"}
@@ -171,7 +175,7 @@ export function MultiplyCollateralTable({
                   <div className="min-w-0">
                     <div className="text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.label}</div>
                     <div className="truncate text-[12px] text-muted-foreground dark:text-white/38">
-                      {row.multiplier.toFixed(2)}x · LTV {formatPct(row.ltvPct)} · HF {row.healthFactor.toFixed(2)}
+                      {row.multiplier.toFixed(2)}x · LTV {formatPct(row.ltvPct)} · HF {formatHealthFactor(row.healthFactor)}
                     </div>
                   </div>
                 </div>

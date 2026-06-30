@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getMultiplyMarketDetail } from "@/app/lib/multiply-detail"
+import { getMultiplyMarketDetailFromConvex } from "@/app/lib/multiply-detail/convex-detail"
 import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 
 type PageProps = {
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
-  const detail = getMultiplyMarketDetail(marketId)
+  const detail = await getMultiplyMarketDetailFromConvex(marketId)
   if (!detail) notFound()
   return <MultiplyMarketDetailClientShell detail={detail} />
 }

@@ -97,6 +97,7 @@ export function BorrowActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useBorrowSessionContext()
+  const isHomeBorrowZeroState = embedded && layout === "home" && kind === "borrow" && !initialMarketId && !initialAssetId
   const hasInvalidInitialMarket = Boolean(
     initialMarketId &&
       !initialAssetId &&
@@ -131,7 +132,7 @@ export function BorrowActionPageClient({
   })
   const [assetId, setAssetId] = useState(resolvedInitialAsset)
   const [marketId, setMarketId] = useState(
-    resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
+    isHomeBorrowZeroState ? "" : resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
   )
   const [amount, setAmount] = useState(initialAmount)
   const [percent, setPercent] = useState(() => (kind === "remove" ? initialAmount : "25"))
@@ -168,17 +169,22 @@ export function BorrowActionPageClient({
     return debtPositions.length === 1 ? (debtPositions[0] ?? null) : null
   }, [debtPositionId, debtPositions, initialMarketId, kind, session.state.markets])
 
-  const activeMarketId = hasInvalidInitialMarket ? "" : marketId || session.collateralPools[0]?.id || ""
+  const activeMarketId = hasInvalidInitialMarket ? "" : marketId || (isHomeBorrowZeroState ? "" : session.collateralPools[0]?.id || "")
   const selectMarketId = activeMarketId
   const resolvedBorrowAssetId = useMemo(
     () => (kind === "borrow" && assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : ""),
     [activeMarketId, assetId, kind, session.state],
   )
   const debts = useMemo(() => selectHomeDebtMap(session.state, walletId), [session.state, walletId])
-  const activePool = useMemo(
-    () => session.collateralPools.find((pool) => pool.id === activeMarketId) ?? session.collateralPools[0] ?? null,
-    [activeMarketId, session.collateralPools],
-  )
+  const activePool = useMemo(() => {
+    const matched = session.collateralPools.find((pool) => pool.id === activeMarketId)
+    if (matched) return matched
+    // In the home borrow zero-state we intentionally render no pre-selected pool
+    // (no collateral value, no health factor) until the user picks one — so don't
+    // fall back to the first pledged pool here.
+    if (isHomeBorrowZeroState) return null
+    return session.collateralPools[0] ?? null
+  }, [activeMarketId, isHomeBorrowZeroState, session.collateralPools])
   const borrowTokens = useMemo(
     () => (activeMarketId ? selectHomeBorrowTokensForMarket(session.state, walletId, activeMarketId) : []),
     [activeMarketId, session.state, walletId],
@@ -189,7 +195,9 @@ export function BorrowActionPageClient({
   )
   const usesCollateralContext = kind === "borrow" || kind === "repay" || kind === "remove" || kind === "claim"
   const showCollateralContextBar =
-    usesCollateralContext && (isConfigureVisibleStage(stage) || stage === "review") && activePool != null
+    usesCollateralContext &&
+    (isConfigureVisibleStage(stage) || stage === "review") &&
+    (activePool != null || isHomeBorrowZeroState)
 
   const handlePoolChange = useCallback(
     (poolId: string) => {
@@ -404,10 +412,10 @@ export function BorrowActionPageClient({
   }, [embedded, initialMarketId, kind, marketId, session, walletId])
 
   useEffect(() => {
-    if (!embedded || usesCollateralContext === false || session.collateralPools.length === 0) return
+    if (!embedded || usesCollateralContext === false || session.collateralPools.length === 0 || isHomeBorrowZeroState) return
     if (marketId && session.collateralPools.some((pool) => pool.id === marketId)) return
     setMarketId(session.collateralPools[0]!.id)
-  }, [embedded, marketId, session.collateralPools, usesCollateralContext])
+  }, [embedded, isHomeBorrowZeroState, marketId, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
     if (kind !== "supply" || !marketId || stage !== "configure" || dismissedLpBlock) return

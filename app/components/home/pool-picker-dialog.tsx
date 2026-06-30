@@ -165,7 +165,7 @@ export function PoolPickerDialog({
         <div className="border-t border-border p-3">
           <Button
             type="button"
-            onClick={() => onSelect(focusedPoolId)}
+            onClick={() => onSelect(focusedPool.id)}
             className="h-11 w-full rounded-radius-sm bg-[hsl(var(--brand))] text-[13px] font-medium text-white shadow-elev-1 transition-colors hover:bg-[hsl(var(--brand))]/90"
           >
             Use {focusedPool.name}

@@ -31,7 +31,7 @@ vi.mock("@/app/portfolio/hero/portfolio-hero-actions", () => ({
 }))
 
 describe("DashboardHero", () => {
-  it("renders the hero chart on the multiply tab", () => {
+  it("renders multiply health + stats on the looping tab without a price chart", () => {
     render(
       <DashboardHero
         tab="looping"
@@ -51,9 +51,13 @@ describe("DashboardHero", () => {
       />,
     )
 
-    expect(screen.getByText("hero-chart-section")).toBeInTheDocument()
+    // The looping tab no longer renders the fake price/performance chart.
+    expect(screen.queryByText("hero-chart-section")).not.toBeInTheDocument()
+    // It surfaces the multiply stats and the real (non-synthetic) health factor.
     expect(screen.getByText("1")).toBeInTheDocument()
     expect(screen.getByText("8.75%")).toBeInTheDocument()
+    expect(screen.getAllByText("2.48").length).toBeGreaterThan(0)
+    expect(screen.queryByText("99.00")).not.toBeInTheDocument()
   })
 
   it("threads the current dashboard tab into quick action return urls", () => {

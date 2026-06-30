@@ -9,7 +9,20 @@ import type { LendReadAdapter } from "@/app/lib/lend-system/contracts"
 import { buildMockLendSystemState } from "@/app/lib/lend-system/mock"
 import { ProductionLendReadAdapter } from "@/app/lib/lend-system/production-read-adapter"
 import { SandboxLendReadAdapter } from "@/app/lib/lend-system/sandbox-read-adapter"
+import { mergeConvexLendSnapshots } from "@/app/lib/lend-system/market-hydration"
+import { fetchLendMarketSnapshots } from "@/app/lib/lend-system/market-hydration-server"
+import type { LendSystemState } from "@/app/lib/lend-engine"
 import type { LendPageData } from "./types"
+
+/**
+ * Hydrate the catalog state with Convex lend snapshots so the server-rendered lend
+ * page (hero overview, spokes, featured) matches the client session and the single
+ * source of truth. Falls back to the catalog state when Convex is unreachable.
+ */
+async function hydrateLendStateFromConvex(state: LendSystemState): Promise<LendSystemState> {
+  const snapshots = await fetchLendMarketSnapshots()
+  return snapshots.length > 0 ? mergeConvexLendSnapshots(state, snapshots) : state
+}
 
 export type LendPageSource = {
   adapter: DataSourceAdapter
@@ -60,12 +73,18 @@ function createLendPageSource({
   }
 }
 
-export const mockLendPageSource: LendPageSource = createLendPageSource({
+export const mockLendPageSource: LendPageSource = {
   adapter: mockLendPageAdapter,
-  readAdapter: new SandboxLendReadAdapter({
-    state: buildMockLendSystemState("demo-wallet"),
-  }),
-})
+  async getLendPageData() {
+    const walletId = "demo-wallet"
+    const state = await hydrateLendStateFromConvex(buildMockLendSystemState(walletId))
+    const readAdapter = new SandboxLendReadAdapter({ state })
+    return {
+      fetchedAt: new Date().toISOString(),
+      data: await readAdapter.readLendPage(walletId),
+    }
+  },
+}
 
 export const liveLendPageSource: LendPageSource = createLendPageSource({
   adapter: liveLendPageAdapter,

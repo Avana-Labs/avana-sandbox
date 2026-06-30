@@ -2,7 +2,9 @@
  * Allocation queries — powers `AllocationBreakdownCard` on the asset page.
  *
  * Reads from `assetPoolAllocationDaily` joined to `markets` (for pool display
- * names). Returns shape: `AllocationRow[]` in `app/lib/borrow-detail/types.ts`.
+ * names). Returns the raw rows (incl. `poolSlug`); the server fetcher hydrates
+ * token `visuals` from the catalog and maps to `AllocationRow[]`
+ * (`app/lib/borrow-detail/types.ts`) — icon assets are a client concern.
  */
 
 import { v } from "convex/values"
@@ -38,9 +40,10 @@ export const getForAsset = query({
         if (!pool) return null
         return {
           id: String(row.poolId),
+          /** Catalog pool id — the server uses it to hydrate token `visuals`. */
+          poolSlug: pool.slug,
           poolName: pool.name,
           venueLabel: pool.venueLabel ?? "",
-          visuals: [] as unknown as [unknown, unknown],
           sharePct: row.sharePct,
           valueUsd: row.valueUsd,
           utilizationPct: row.utilizationPct,

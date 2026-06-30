@@ -104,14 +104,16 @@ export function PoolHeroIdentity({
 }
 
 export function PoolHero({ detail, leading, actions, className, hideIdentity = false }: PoolHeroProps) {
-  const feed = React.useMemo(() => getPoolHeroFeed(detail.id), [detail.id])
+  // Prefer the Convex-backed feed (TVL / total supplied); fall back to the local feed.
+  const feed = React.useMemo(() => detail.heroFeed ?? getPoolHeroFeed(detail.id), [detail.heroFeed, detail.id])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="pool-hero">
       {hideIdentity ? null : <PoolHeroIdentity detail={detail} leading={leading} actions={actions} />}
 
       <div className="pt-4" data-testid="pool-hero-chart-card">
-        <MarketHeroChart feed={feed} gradientId={`poolHeroFill-${detail.id}`} />
+        {/* Convex feed carries the full daily history — open on it so the chart is rich. */}
+        <MarketHeroChart feed={feed} defaultRange={detail.heroFeed ? "All" : "1D"} gradientId={`poolHeroFill-${detail.id}`} label="Total supplied" />
       </div>
     </section>
   )

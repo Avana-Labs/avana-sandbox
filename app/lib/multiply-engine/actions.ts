@@ -4,7 +4,18 @@ import type { MultiplyAction, MultiplyPosition, MultiplySystemState, MultiplyTra
 function cloneState(state: MultiplySystemState): MultiplySystemState {
   return {
     ...state,
-    markets: { ...state.markets },
+    markets: Object.fromEntries(
+      Object.entries(state.markets).map(([id, market]) => [
+        id,
+        {
+          ...market,
+          economics: { ...market.economics },
+          risk: { ...market.risk },
+          collateralAsset: { ...market.collateralAsset },
+          borrowAsset: { ...market.borrowAsset },
+        },
+      ]),
+    ),
     positions: Object.fromEntries(Object.entries(state.positions).map(([id, position]) => [id, { ...position }])),
     transactions: [...state.transactions],
   }
@@ -36,6 +47,12 @@ function buildPosition(params: {
     openedAt: params.openedAt ?? params.now,
     lastUpdatedAt: params.now,
   }
+}
+
+function applyBorrowLiquidityDelta(state: MultiplySystemState, marketId: string, debtDeltaUsd: number) {
+  const market = state.markets[marketId]
+  if (!market || !Number.isFinite(debtDeltaUsd) || debtDeltaUsd === 0) return
+  market.economics.availableLiquidityUsd = Math.max(0, market.economics.availableLiquidityUsd - debtDeltaUsd)
 }
 
 export function applyMultiplyAction(state: MultiplySystemState, action: MultiplyAction): MultiplySystemState {
@@ -74,6 +91,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
     })
 
     next.positions[position.id] = position
+    applyBorrowLiquidityDelta(next, action.marketId, simulation.after.debtValueUsd - simulation.before.debtValueUsd)
     next.transactions.push({
       id: `tx-${next.transactions.length + 1}`,
       walletId: action.walletId,
@@ -123,6 +141,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
   }
 
   next.positions[position.id] = updated
+  applyBorrowLiquidityDelta(next, position.marketId, simulation.after.debtValueUsd - simulation.before.debtValueUsd)
   next.transactions.push({
     id: `tx-${next.transactions.length + 1}`,
     walletId: action.walletId,

@@ -16,4 +16,11 @@ describe("mock borrow system source", () => {
     expect(metrics.poolCollateralValueUsd6).toBeGreaterThan(0n)
     expect(metrics.availableCreditUsd6).toBeGreaterThan(0n)
   })
+
+  it("keeps the home workspace wallet free of seeded debt", () => {
+    const state = buildMockBorrowSystemState("home-demo-wallet")
+
+    expect(state.accounts["home-demo-wallet"]?.collateralPositions.length).toBe(3)
+    expect(state.accounts["home-demo-wallet"]?.debtPositions).toEqual([])
+  })
 })

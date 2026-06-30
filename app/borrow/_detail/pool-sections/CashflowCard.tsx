@@ -2,11 +2,13 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import type { PoolDetail } from "@/app/lib/borrow-detail"
+import type { CashflowCard as CashflowCardData } from "@/app/lib/borrow-detail"
 import { SectionCard } from "../ui"
 import { DeltaPill } from "@/app/components/ui/live/delta-pill"
 
-type Props = { detail: PoolDetail }
+// Structural prop (like QuickStatsGrid / RiskSection) so any detail view-model
+// carrying a `cashflow: CashflowCard` (borrow pool, lend market) can reuse this.
+type Props = { detail: { cashflow: CashflowCardData } }
 
 export function CashflowCard({ detail }: Props) {
   const { cashflow } = detail

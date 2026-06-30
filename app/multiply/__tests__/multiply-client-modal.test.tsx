@@ -9,6 +9,16 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }))
 
+vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  // MultiplyClient now renders the live session-backed catalog. The routing
+  // assertion below doesn't depend on session content (the markets table is
+  // mocked), so a minimal session state is enough.
+  useMultiplySessionContext: () => ({
+    walletId: "wallet-1",
+    state: { markets: {}, positions: {}, now: 0, transactions: [] },
+  }),
+}))
+
 vi.mock("@/app/multiply/components/explore-loops-markets-table", () => ({
   ExploreLoopsMarketsTable: (props: { onOpenMultiply: (href: string) => void }) => (
     <button type="button" onClick={() => props.onOpenMultiply("/multiply/markets/aave-gho")}>

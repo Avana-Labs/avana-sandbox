@@ -76,4 +76,27 @@ describe("BorrowActionPageClient", () => {
     })
     expect(screen.getByRole("link", { name: "Go back" })).toHaveAttribute("href", "/borrow")
   })
+
+  it("boots the home borrow workspace at a true zero state (no pool, no value, no health factor)", async () => {
+    render(
+      <AvanaSessionsProvider walletId="home-demo-wallet">
+        <BorrowActionPageClient kind="borrow" embedded layout="home" closeHref="/" />
+      </AvanaSessionsProvider>,
+    )
+
+    // The collateral context renders the empty selector card, not a pre-selected pool.
+    const selector = await screen.findByTestId("action-context-selector-card")
+    expect(within(selector).getByText("0")).toBeInTheDocument()
+    expect(within(selector).getByText("≈ $0")).toBeInTheDocument()
+
+    // Nothing should auto-select a pledged pool or surface a health factor before
+    // the user acts. Give effects a tick to (not) run, then assert the zero state held.
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Enter an amount" })).toBeInTheDocument()
+    })
+    expect(screen.queryByText("WETH / USDC")).not.toBeInTheDocument()
+    expect(screen.queryByText(/\$4,2\d\d/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/health factor/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument()
+  })
 })

@@ -211,9 +211,26 @@ export function resolvePoolDetailFromState(state: BorrowSystemState, walletId: s
   return buildPoolDetail(row)
 }
 
-export function resolveAssetDetailFromState(assetId: string): AssetDetail | null {
-  const asset = listSpokeBorrowables().find((candidate) => candidate.id === assetId) ?? resolveAsset(assetId)
-  if (!asset) return null
+/** Convex market reference overrides applied to a borrowable asset before building its detail. */
+export type AssetLiquidityOverrides = {
+  availableUsd?: number
+  totalBorrowedUsd?: number
+  utilization?: number
+  borrowApr?: number
+}
+
+export function resolveAssetDetailFromState(assetId: string, overrides?: AssetLiquidityOverrides): AssetDetail | null {
+  const base = listSpokeBorrowables().find((candidate) => candidate.id === assetId) ?? resolveAsset(assetId)
+  if (!base) return null
+  const asset = overrides
+    ? {
+        ...base,
+        availableUsd: overrides.availableUsd ?? base.availableUsd,
+        totalBorrowedUsd: overrides.totalBorrowedUsd ?? base.totalBorrowedUsd,
+        utilization: overrides.utilization ?? base.utilization,
+        borrowApr: overrides.borrowApr ?? base.borrowApr,
+      }
+    : base
   return buildAssetDetail(asset)
 }
 
