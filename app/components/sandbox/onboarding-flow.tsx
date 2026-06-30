@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Check, LoaderCircle, MoveUpRight } from "lucide-react"
+import { AnimatePresence, motion } from "framer-motion"
 import { useMutation } from "convex/react"
 import { ConnectKitButton } from "connectkit"
 import { api } from "@/convex/_generated/api"
@@ -48,13 +49,37 @@ const fmtUsd = (value: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
 const shortWallet = (wallet: string) => `${wallet.slice(0, 6)}…${wallet.slice(-4)}`
 
-function StatusRow({ wallet }: { wallet: string | null }) {
+// Onboarding progress (%) per phase — drives the animated rail + AnimatePresence key.
+const PROGRESS: Record<string, number> = {
+  intro: 10,
+  connect: 25,
+  wallet: 45,
+  analyzing: 60,
+  eligible: 72,
+  xPending: 78,
+  xConfirmed: 88,
+  claimPending: 96,
+  done: 100,
+  waitlisted: 100,
+  closed: 100,
+}
+
+/** Animated progress rail (replaces the static tagline) + the connected-wallet chip. */
+function StatusRow({ wallet, pct }: { wallet: string | null; pct: number }) {
   return (
-    <div className="mb-10 flex min-h-12 items-center justify-between gap-4 border-b border-border pb-4 text-xs text-muted-foreground sm:mb-12 sm:text-sm">
-      <span>Set up your Avana practice account in seconds</span>
+    <div className="mb-10 flex min-h-12 items-center justify-between gap-5 border-b border-border pb-4 sm:mb-12">
+      <div className="flex flex-1 items-center gap-3">
+        <div className="h-1.5 w-full max-w-[300px] overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-[linear-gradient(90deg,#01AACF,#5b8def,#a855f7)] transition-[width] duration-700 ease-out"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <span className="font-data text-[11px] tabular-nums text-muted-foreground">{pct}%</span>
+      </div>
       {wallet ? (
-        <span className="shrink-0">
-          Wallet connected <strong className="ml-1 font-medium text-foreground">{shortWallet(wallet)}</strong>
+        <span className="shrink-0 text-xs text-muted-foreground sm:text-sm">
+          Wallet <strong className="ml-1 font-medium text-foreground">{shortWallet(wallet)}</strong>
         </span>
       ) : null}
     </div>
@@ -74,8 +99,8 @@ function Headline({
     <h1
       className={
         size === "hero"
-          ? "max-w-[760px] text-[clamp(2.8rem,4.4vw,3.6rem)] font-medium leading-[1.1] tracking-[-0.045em]"
-          : "max-w-[760px] text-[clamp(1.9rem,3vw,2.25rem)] font-medium leading-[0.98] tracking-[-0.045em]"
+          ? "max-w-[680px] text-[clamp(1.9rem,3.4vw,2.6rem)] font-medium leading-[1.12] tracking-[-0.03em]"
+          : "max-w-[640px] text-[clamp(1.45rem,2.4vw,1.85rem)] font-medium leading-[1.12] tracking-[-0.03em]"
       }
     >
       {muted ? (
@@ -104,7 +129,7 @@ function AllocationMarquee({ amount }: { amount: number }) {
   const label = `${fmtUsd(amount)} PRACTICE FUNDS`
   return (
     <div className="relative left-1/2 my-10 w-screen -translate-x-1/2 overflow-hidden py-2 sm:my-11">
-      <div className="flex w-max animate-[marquee_22s_linear_infinite] items-center gap-7 whitespace-nowrap text-4xl font-medium tracking-[-0.05em] sm:text-[58px]">
+      <div className="flex w-max animate-[marquee_22s_linear_infinite] items-center gap-7 whitespace-nowrap text-3xl font-medium tracking-[-0.04em] sm:text-[40px]">
         {[0, 1, 2, 3].map((item) => (
           <span className="flex items-center gap-7" key={item}>
             <span className="flex size-10 items-center justify-center rounded-full bg-brand text-xl text-brand-foreground sm:size-12">
@@ -218,32 +243,58 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const previewUsd = 1_000_000
   const seatsLeft = Math.max(0, economy.userCap - economy.userCount)
 
+  const phase =
+    !wallet && !hasStarted
+      ? "intro"
+      : !wallet || !state
+        ? "connect"
+        : economy.status === "closed" && step !== "done"
+          ? "closed"
+          : (step ?? "connect")
+  const pct = PROGRESS[phase] ?? 10
+
   return (
     <div
       className="mx-auto w-full max-w-[938px] py-4 sm:py-8"
       data-onboarding-step={step ?? "connect"}
       data-testid="onboarding-canvas"
     >
-      <StatusRow wallet={wallet} />
+      <StatusRow wallet={wallet} pct={pct} />
 
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={phase}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+        >
       {!wallet && !hasStarted ? (
         <>
           <Headline
-            muted="Welcome to Avana."
-            active="A risk-free sandbox to practice borrowing against LP, lending, and looped positions."
+            muted="Welcome to the Avana Sandbox."
+            active="A risk-free space to test the app and learn how it works."
             size="hero"
           />
-          <button className={`${PRIMARY} mt-12`} onClick={() => setHasStarted(true)} type="button">
+          <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
+            Borrow against LP, lend, and loop positions with practice funds. When you&apos;re ready, switch to the real
+            world. Have fun exploring.
+          </p>
+          <ul className="mt-7 space-y-2.5">
+            {["Unlimited practice funds", "Risk-free exploration", "No real assets involved", "Fast — no transactions to sign"].map((perk) => (
+              <li className="flex items-center gap-2.5 text-[15px] font-medium" key={perk}>
+                <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
+                {perk}
+              </li>
+            ))}
+          </ul>
+          <button className={`${PRIMARY} mt-9`} onClick={() => setHasStarted(true)} type="button">
             Get started
           </button>
-          <p className="mt-12 max-w-[470px] text-[13px] leading-5 text-muted-foreground">
-            You&apos;ll get a diversified practice portfolio to explore every Avana market. Nothing here uses real
-            funds — it&apos;s a safe place to learn the flows before mainnet.
-          </p>
         </>
       ) : !wallet || !state ? (
         <>
-          <Headline muted="First, we need to analyze your wallet history." active="Connect your wallet and let us do the math." />
+          <Headline muted="Connect a wallet." active="We&apos;ll set up your sandbox and scope it to your address." />
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <ConnectKitButton.Custom>
               {({ show, isConnected, truncatedAddress, ensName }) => (
@@ -273,21 +324,21 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "wallet" ? (
         <>
-          <Headline muted="Your wallet is connected." active="Analyze it to fund your practice portfolio." />
-          <button className={`${PRIMARY} mt-9`} onClick={analyze} type="button">
-            Continue
-          </button>
-          <p className="mt-8 max-w-lg text-sm leading-6 text-muted-foreground">
-            Every wallet gets the same $1M of synthetic equity, diversified across markets so you can try every flow.
+          <Headline muted="Wallet connected." active="Fund your sandbox to start exploring." />
+          <p className="mt-6 max-w-lg text-[15px] leading-6 text-muted-foreground">
+            Every wallet gets $1M in practice funds, spread across markets so you can try every flow risk-free.
           </p>
+          <button className={`${PRIMARY} mt-7`} onClick={analyze} type="button">
+            Fund my sandbox
+          </button>
           <ErrorMessage error={error} />
         </>
       ) : step === "analyzing" ? (
         <>
-          <Headline muted="First, we need to analyze your wallet history." active="Calculating your $1M sandbox portfolio." />
-          <div className="mt-9 inline-flex items-center rounded-full bg-muted px-6 py-4 text-sm">
-            <LoaderCircle className="mr-3 size-5 animate-spin" />
-            Still calculating — this takes a moment
+          <Headline active="Setting up your sandbox…" />
+          <div className="mt-8 inline-flex items-center rounded-full bg-muted px-5 py-3 text-sm text-muted-foreground">
+            <LoaderCircle className="mr-2.5 size-4 animate-spin text-brand" />
+            Picking your markets — one sec
           </div>
           <ErrorMessage error={error} />
         </>
@@ -295,26 +346,26 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         <>
           <AllocationMarquee amount={previewUsd} />
           <Headline
-            muted={`Your wallet qualifies for a ${fmtUsd(previewUsd)} practice portfolio.`}
-            active="Share Avana on X, or continue straight to your portfolio."
+            muted={`Your ${fmtUsd(previewUsd)} practice portfolio is ready.`}
+            active="Share Avana, or jump straight in."
           />
-          <p className="mt-7 text-sm text-muted-foreground">{seatsLeft.toLocaleString()} sandbox seats remain.</p>
+          <p className="mt-6 text-sm text-muted-foreground">{seatsLeft.toLocaleString()} sandbox seats remain.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button
               className={PRIMARY}
-              disabled={busy != null}
-              onClick={() => run("sharing", () => startTweet({ wallet }))}
-              type="button"
-            >
-              Share on X first
-            </button>
-            <button
-              className={SECONDARY}
               disabled={busy != null}
               onClick={() => run("sharing", () => skipTweet({ wallet }))}
               type="button"
             >
               Continue to allocation
+            </button>
+            <button
+              className={SECONDARY}
+              disabled={busy != null}
+              onClick={() => run("sharing", () => startTweet({ wallet }))}
+              type="button"
+            >
+              Share on X first
             </button>
           </div>
           <ErrorMessage error={error} />
@@ -357,18 +408,18 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "xConfirmed" ? (
         <>
           <Headline
-            muted="Your diversified portfolio is ready."
-            active="$1M across 12 assets, 8 pools, 8 lend markets, and 6 multiply positions."
+            muted="Here's what you'll get."
+            active="$1M across assets, LP collateral, lending, and multiply."
           />
           <BasketPanel amount={previewUsd} busy={busy === "claiming"} onClaim={claimAllocation} />
           <ErrorMessage error={error} />
         </>
       ) : step === "claimPending" ? (
         <>
-          <Headline muted="Your claim is being finalized." active="Building your starter token basket." />
-          <div className="mt-9 inline-flex items-center rounded-full bg-muted px-6 py-4 text-sm">
-            <LoaderCircle className="mr-3 size-5 animate-spin" />
-            Writing the transaction to your sandbox
+          <Headline active="Almost there…" />
+          <div className="mt-8 inline-flex items-center rounded-full bg-muted px-5 py-3 text-sm text-muted-foreground">
+            <LoaderCircle className="mr-2.5 size-4 animate-spin text-brand" />
+            Dropping the funds into your sandbox
           </div>
           <ErrorMessage error={error} />
         </>
@@ -379,13 +430,15 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "done" ? (
         <>
-          <div className="mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white">
-            <Check className="size-6" />
-          </div>
-          <Headline
-            muted={`You claimed ${fmtUsd(state.profile?.allocatedUsd ?? 0)}.`}
-            active="Your Avana sandbox is ready."
-          />
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 320, damping: 18 }}
+            className="mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white"
+          >
+            <Check className="size-6" strokeWidth={3} />
+          </motion.div>
+          <Headline muted="You're all set." active="Your Avana sandbox is ready to explore." />
           {state.profile?.claimTxSynthetic ? (
             <div className="mt-8 max-w-2xl rounded-2xl border border-border bg-muted/40 p-5">
               <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Synthetic transaction receipt</p>
@@ -393,15 +446,15 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             </div>
           ) : null}
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <Link className={PRIMARY} href="/dashboard">Open dashboard</Link>
             <a
-              className={PRIMARY}
+              className={SECONDARY}
               href={`https://x.com/intent/post?text=${encodeURIComponent(`${state.config.tweetTemplate} @${state.config.xHandle} https://avana.cc`)}`}
               rel="noreferrer"
               target="_blank"
             >
               Share on X <MoveUpRight className="ml-2 size-4" />
             </a>
-            <Link className={SECONDARY} href="/dashboard">Open dashboard</Link>
             {state.profile?.claimTxSynthetic ? (
               <Link className={SECONDARY} href={`/sandbox/transactions/${encodeURIComponent(state.profile.claimTxSynthetic)}`}>
                 View transaction
@@ -410,6 +463,8 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           </div>
         </>
       ) : null}
+        </motion.div>
+      </AnimatePresence>
     </div>
   )
 }
