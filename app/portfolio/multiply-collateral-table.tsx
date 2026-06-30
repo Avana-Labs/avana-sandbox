@@ -3,9 +3,12 @@
 import * as React from "react"
 import Link from "next/link"
 import { TokenIcon } from "@/app/components/token-icon"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+
+const MASK = "••••"
 
 function formatUsd(value: number) {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
@@ -34,6 +37,9 @@ export function MultiplyCollateralTable({
   rows: PortfolioMultiplyCollateral[]
   onDeleverage?: (positionId: string) => void
 }) {
+  const { showDollarAmounts } = useDisplayPreferences()
+  const usd = (value: number) => (showDollarAmounts ? formatUsd(value) : MASK)
+
   if (rows.length === 0) return null
 
   return (
@@ -111,13 +117,13 @@ export function MultiplyCollateralTable({
                     </div>
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
-                    {formatUsd(row.collateralUsd)}
+                    {usd(row.collateralUsd)}
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
                     {row.multiplier.toFixed(2)}x
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
-                    {formatUsd(row.debtUsd)}
+                    {usd(row.debtUsd)}
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
                     {formatPct(row.ltvPct)}
@@ -126,7 +132,7 @@ export function MultiplyCollateralTable({
                     {formatHealthFactor(row.healthFactor)}
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
-                    {row.liquidationPriceUsd ? formatUsd(row.liquidationPriceUsd) : "—"}
+                    {row.liquidationPriceUsd ? usd(row.liquidationPriceUsd) : "—"}
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
                     {formatPct(row.netApyPct)}
@@ -180,13 +186,13 @@ export function MultiplyCollateralTable({
                   </div>
                 </div>
                 <div className="text-right font-data text-[14px] tabular-nums text-foreground dark:text-white/88">
-                  {formatUsd(row.collateralUsd)}
+                  {usd(row.collateralUsd)}
                 </div>
               </div>
               <dl className="mb-3 grid grid-cols-2 gap-2 text-[12px]">
                 <div>
                   <dt className="text-muted-foreground">Debt</dt>
-                  <dd className="font-data tabular-nums">{formatUsd(row.debtUsd)}</dd>
+                  <dd className="font-data tabular-nums">{usd(row.debtUsd)}</dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Net APY</dt>
