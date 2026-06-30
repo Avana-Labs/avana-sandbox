@@ -24,6 +24,8 @@ export type LendMarket = {
   apy: number
   apyChange24h: number
   tvl: string
+  /** Raw USD TVL — the hero aggregates this directly instead of re-parsing `tvl`. */
+  tvlUsd?: number
   utilization: number
   type: string
   protocol: string

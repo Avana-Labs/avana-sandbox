@@ -132,6 +132,7 @@ export function buildLendPageData(_walletId: string, state?: LendSystemState): L
       apy: market.totalApy * 100,
       apyChange24h: 0,
       tvl: formatCompactUsd(market.totalSupplied * market.assetPriceUsd),
+      tvlUsd: market.totalSupplied * market.assetPriceUsd,
       utilization: Math.round(market.utilization * 100),
       type: market.riskTier,
       protocol: market.asset.symbol,
