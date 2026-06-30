@@ -21,9 +21,12 @@ import type * as sandbox_auth from "../sandbox/auth.js";
 import type * as sandbox_liquidation from "../sandbox/liquidation.js";
 import type * as sandbox_onboarding from "../sandbox/onboarding.js";
 import type * as sandbox_rewards from "../sandbox/rewards.js";
+import type * as sandbox_starterAllocation from "../sandbox/starterAllocation.js";
 import type * as sandbox_transactions from "../sandbox/transactions.js";
 import type * as seed from "../seed.js";
 import type * as seedAdmin from "../seedAdmin.js";
+import type * as starterTestMarkets from "../starterTestMarkets.js";
+import type * as support from "../support.js";
 
 import type {
   ApiFromModules,
@@ -45,9 +48,12 @@ declare const fullApi: ApiFromModules<{
   "sandbox/liquidation": typeof sandbox_liquidation;
   "sandbox/onboarding": typeof sandbox_onboarding;
   "sandbox/rewards": typeof sandbox_rewards;
+  "sandbox/starterAllocation": typeof sandbox_starterAllocation;
   "sandbox/transactions": typeof sandbox_transactions;
   seed: typeof seed;
   seedAdmin: typeof seedAdmin;
+  starterTestMarkets: typeof starterTestMarkets;
+  support: typeof support;
 }>;
 
 /**
