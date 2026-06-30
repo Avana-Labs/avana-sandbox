@@ -39,6 +39,45 @@ function mergeReceipts(nextReceipt: SyntheticTransactionReceipt, receipts: Synth
   return [nextReceipt, ...receipts.filter((receipt) => receipt.id !== nextReceipt.id)]
 }
 
+export type ConvexBorrowWalletData = {
+  positions: Array<{
+    product: "borrow" | "lend" | "multiply"
+    marketSlug: string
+    collateral: Array<{
+      _id: string
+      marketSlug: string
+      collateralShares: string
+      principalTokenAmount: string
+      collateralEnabled: boolean
+    }>
+    debt: Array<{
+      _id: string
+      assetId: string
+      baseAssetId: string
+      spokeId?: string
+      marketSlug?: string
+      debtSharesUsd6: string
+      debtIndexRay: string
+      borrowRateWad: string
+      principalBorrowedUsd6: string
+    }>
+  }>
+  transactions: Array<{
+    _id: string
+    intentId?: string
+    product: "borrow" | "lend" | "multiply"
+    kind: string
+    status: "success" | "failed" | "pending"
+    marketSlug?: string
+    assetId?: string
+    requestedAmountUsd6: string
+    executedAmountUsd6: string
+    syntheticTxHash: string
+    simulated: boolean
+    at: number
+  }>
+}
+
 export function useBorrowSession({
   walletId,
   sessionSeed,
@@ -146,6 +185,68 @@ export function useBorrowSession({
   const hydrateMarketData = useCallback((snapshots: readonly ConvexMarketSnapshot[]) => {
     setState((prev) => mergeConvexMarketSnapshots(prev, snapshots))
   }, [])
+
+  const hydrateWalletData = useCallback(
+    (data: ConvexBorrowWalletData) => {
+      const borrowPositions = data.positions.filter((position) => position.product === "borrow")
+      const nextHistory: TransactionHistoryItem[] = data.transactions
+        .filter((transaction) => transaction.product === "borrow")
+        .map((transaction) => ({
+          id: String(transaction._id),
+          intentId: transaction.intentId ?? String(transaction._id),
+          walletId,
+          marketId: transaction.marketSlug,
+          assetId: transaction.assetId,
+          kind: transaction.kind as TransactionHistoryItem["kind"],
+          status: transaction.status,
+          requestedAmountUsd6: BigInt(transaction.requestedAmountUsd6),
+          executedAmountUsd6: BigInt(transaction.executedAmountUsd6),
+          simulated: transaction.simulated,
+          timestamp: transaction.at,
+          hash: transaction.syntheticTxHash,
+        }))
+
+      setState((current) => {
+        const account = current.accounts[walletId]
+        if (!account) return current
+        return {
+          ...current,
+          accounts: {
+            ...current.accounts,
+            [walletId]: {
+              ...account,
+              collateralPositions: borrowPositions.flatMap((position) =>
+                position.collateral.map((collateral) => ({
+                  id: String(collateral._id),
+                  marketId: collateral.marketSlug,
+                  collateralShares: BigInt(collateral.collateralShares),
+                  principalTokenAmount: BigInt(collateral.principalTokenAmount),
+                  collateralEnabled: collateral.collateralEnabled,
+                })),
+              ),
+              debtPositions: borrowPositions.flatMap((position) =>
+                position.debt.map((debt) => ({
+                  id: String(debt._id),
+                  assetId: debt.assetId,
+                  baseAssetId: debt.baseAssetId,
+                  spokeId: debt.spokeId as import("@/app/lib/credit-engine").BorrowSpokeId,
+                  marketId: debt.marketSlug,
+                  debtSharesUsd6: BigInt(debt.debtSharesUsd6),
+                  debtIndexRay: BigInt(debt.debtIndexRay),
+                  borrowRateWad: BigInt(debt.borrowRateWad),
+                  principalBorrowedUsd6: BigInt(debt.principalBorrowedUsd6),
+                })),
+              ),
+              lastUpdatedAt: Math.max(account.lastUpdatedAt, ...nextHistory.map((item) => item.timestamp), 0),
+            },
+          },
+        }
+      })
+      setTransactionHistory(nextHistory)
+      setTransactionReceipts(buildSyntheticReceipts(nextHistory))
+    },
+    [walletId],
+  )
 
   const transactionAdapter = useMemo(
     () => {
@@ -263,5 +364,6 @@ export function useBorrowSession({
     executeTransaction,
     reset,
     hydrateMarketData,
+    hydrateWalletData,
   }
 }
