@@ -354,7 +354,7 @@ function SpokeDesktopSection({
   // Each spoke/category owns its own Markets/Assets toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   return (
-    <section className="mb-2">
+    <section className="cv-section mb-2">
       <div className="mt-4 overflow-hidden rounded-[20px] bg-transparent md:shadow-none">
         <div className="flex items-center justify-between gap-3 rounded-t-[20px] bg-transparent px-1 py-2 md:px-4 md:py-3">
           <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
@@ -425,7 +425,7 @@ function SpokeMobileSection({
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
   return (
-    <section className="space-y-2">
+    <section className="cv-section space-y-2">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
         <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
