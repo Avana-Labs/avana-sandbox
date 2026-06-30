@@ -31,40 +31,7 @@ import { useTheme } from "./theme-provider"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
-import { ConnectKitButton } from "connectkit"
-import { SandboxSignInButton } from "@/app/lib/siwe/sandbox-sign-in"
-import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-
-/** Brand-styled wallet button that opens ConnectKit's real wallet modal. */
-function WalletButton({ size = "desktop" }: { size?: "mobile" | "desktop" }) {
-  const { isConnected, isSignedIn } = useSiweAuth()
-  const className =
-    size === "mobile"
-      ? "inline-flex h-9 items-center justify-center rounded-full bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
-      : "inline-flex h-10 items-center justify-center rounded-full bg-brand px-4 font-sans text-[15px] font-medium text-brand-foreground shadow-none transition-colors hover:bg-brand/90"
-
-  if (isConnected || isSignedIn) return null
-
-  return (
-    <span className="relative inline-flex">
-      <span aria-hidden className={className}>
-        Connect
-      </span>
-      <ConnectKitButton.Custom>
-        {({ show }) => (
-          <button
-            type="button"
-            aria-label="Connect"
-            className={`${className} absolute inset-0 w-full`}
-            onClick={show}
-          >
-            Connect
-          </button>
-        )}
-      </ConnectKitButton.Custom>
-    </span>
-  )
-}
+import { WalletControl } from "@/app/components/wallet-control"
 
 type PreferencesView = "root" | "language" | "currency"
 
@@ -359,8 +326,7 @@ export function Header() {
         {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
       </span>
       <span className="flex items-center">
-        <SandboxSignInButton size="mobile" />
-        <WalletButton size="mobile" />
+        <WalletControl size="mobile" />
       </span>
     </>
   )
@@ -475,8 +441,7 @@ export function Header() {
               <div className="flex shrink-0 items-center gap-1.5">
                 <PreferencesMenu />
                 <div className="flex shrink-0">
-                  <SandboxSignInButton size="desktop" />
-                  <WalletButton size="desktop" />
+                  <WalletControl size="desktop" />
                 </div>
               </div>
 

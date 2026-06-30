@@ -73,6 +73,14 @@ const securityHeaders = [
     value: "strict-origin-when-cross-origin",
   },
   {
+    // Wallet flows (Coinbase Smart Wallet, WalletConnect, social logins) open auth
+    // popups and post back via window.opener. "same-origin-allow-popups" keeps the
+    // opener reference reachable for those popups while still isolating cross-origin
+    // documents — a stricter "same-origin" would null window.opener and break them.
+    key: "Cross-Origin-Opener-Policy",
+    value: "same-origin-allow-popups",
+  },
+  {
     key: "Permissions-Policy",
     value: "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), usb=()",
   },
