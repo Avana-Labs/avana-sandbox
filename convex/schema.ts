@@ -344,4 +344,251 @@ export default defineSchema({
     syntheticTxHash: v.string(),
     at: v.number(),
   }).index("by_wallet_at", ["wallet", "at"]),
+
+  // ── Phase 2 (cont.): wallet-scoped FINANCIAL state (synthetic; never prod truth) ──
+  //
+  // ENCODING CONTRACT: the credit-/multiply-engines work in bigint fixed-point —
+  // usd6 (1e6), WAD (1e18), RAY (1e27). Convex has no bigint and RAY overflows the
+  // JS Number safe-integer range, so every fixed-point field below is a *decimal
+  // integer string* (e.g. "12400000000" = 12,400 usd6). This is the same lossless
+  // representation `app/lib/borrow-system/codec.ts` uses (it tags bigints as
+  // {__bigint}); here we drop the wrapper and store the bare string. Nullable rates
+  // (e.g. an infinite health factor) are `v.union(<string>, v.null())`. Plain-number
+  // fields belong ONLY to the multiply engine, which is number-native (see types.ts).
+  //
+  // Wallet is always the lowercased authed address (see convex/sandbox/auth.ts). The
+  // server derives it from ctx.auth and never trusts a client-passed wallet.
+
+  /**
+   * LP collateral-pool catalog (global, not wallet-scoped). Mirrors
+   * `PortfolioPoolRecord` (app/lib/data/providers/portfolio/source.ts) — the pool a
+   * `positionCollateral` row pledges into. Distinct from the `markets` directory:
+   * `markets` is the borrow/lend/multiply market catalog; `pools` is the pledgeable
+   * LP-pair catalog the portfolio + collateral views render. One row per slug.
+   */
+  pools: defineTable({
+    /** URL-safe pool id, e.g. "uni-v3-bluechip-weth-usdc". */
+    slug: v.string(),
+    name: v.string(),
+    venue: v.string(),
+    /** e.g. "v3" | "stable" | "volatile". */
+    category: v.string(),
+    chainId: v.optional(v.number()),
+    /** Exactly two legs (PortfolioPoolRecord.visuals tuple). */
+    visuals: v.array(
+      v.object({
+        symbol: v.string(),
+        shortLabel: v.string(),
+        bgClassName: v.string(),
+        textClassName: v.string(),
+      }),
+    ),
+    maxLtvPct: v.number(),
+    liquidationThresholdPct: v.optional(v.number()),
+    pairAprPct: v.number(),
+    lpTokenPriceUsd: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  /**
+   * Open/closed position, one row per (wallet, product, market). Unified across
+   * products via a `product` discriminator: borrow & lend carry usd6 *string*
+   * fields; multiply is number-native (mirrors `MultiplyPosition`, incl. the
+   * "infinity" health-factor sentinel and nullable liquidationPrice). Child
+   * collateral/debt detail lives in `positionCollateral` / `positionDebt`.
+   */
+  positions: defineTable({
+    wallet: v.string(),
+    product: v.union(v.literal("borrow"), v.literal("multiply"), v.literal("lend")),
+    /** Joins to `markets.slug` or `pools.slug`. */
+    marketSlug: v.string(),
+    spokeId: v.optional(v.string()),
+    assetId: v.optional(v.string()),
+    status: v.union(v.literal("open"), v.literal("closed")),
+    // borrow/lend (usd6 decimal strings)
+    collateralValueUsd6: v.optional(v.string()),
+    debtValueUsd6: v.optional(v.string()),
+    suppliedUsd6: v.optional(v.string()),
+    earnedUsd6: v.optional(v.string()),
+    // multiply (number-native — see app/lib/multiply-engine/types.ts MultiplyPosition)
+    collateralAmount: v.optional(v.number()),
+    collateralValueUsd: v.optional(v.number()),
+    debtValueUsd: v.optional(v.number()),
+    multiplier: v.optional(v.number()),
+    ltv: v.optional(v.number()),
+    healthFactor: v.optional(v.union(v.number(), v.literal("infinity"))),
+    liquidationPrice: v.optional(v.union(v.number(), v.null())),
+    netApyPct: v.optional(v.number()),
+    openedAt: v.number(),
+    lastUpdatedAt: v.number(),
+    closedAt: v.optional(v.number()),
+    openTxSynthetic: v.optional(v.string()),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_product", ["wallet", "product"])
+    .index("by_wallet_market", ["wallet", "marketSlug"]),
+
+  /** Collateral leg of a borrow position. Mirrors `UserCollateralPosition`. */
+  positionCollateral: defineTable({
+    wallet: v.string(),
+    positionId: v.id("positions"),
+    /** Collateral pool slug (joins to `pools.slug`). */
+    marketSlug: v.string(),
+    collateralShares: v.string(),
+    principalTokenAmount: v.string(),
+    collateralEnabled: v.boolean(),
+    /** Denormalized USD value for O(1) reads. */
+    collateralValueUsd6: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_position", ["positionId"]),
+
+  /** Debt leg of a borrow position. Mirrors `UserDebtPosition` (share/index accounting). */
+  positionDebt: defineTable({
+    wallet: v.string(),
+    positionId: v.id("positions"),
+    assetId: v.string(),
+    baseAssetId: v.string(),
+    spokeId: v.optional(v.string()),
+    marketSlug: v.optional(v.string()),
+    debtSharesUsd6: v.string(),
+    debtIndexRay: v.string(),
+    borrowRateWad: v.string(),
+    principalBorrowedUsd6: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_position", ["positionId"]),
+
+  /**
+   * Per-wallet transaction ledger — ONE row per balance-changing action (the §2
+   * invariant). Mirrors `TransactionHistoryItem` (borrow-system/contracts.ts) plus
+   * `PortfolioActivityRecord`. `intentId` is the client intent id; the
+   * `by_wallet_intent` index makes the execute mutation idempotent (replays/double
+   * clicks return the existing row). `amountUsd` is the denormalized human-USD value
+   * so activity feeds read without decoding usd6. (`sandboxActivity` stays the
+   * onboarding-claim log; portfolio activity reads merge both — see §7.)
+   */
+  transactions: defineTable({
+    wallet: v.string(),
+    intentId: v.optional(v.string()),
+    product: v.union(v.literal("borrow"), v.literal("lend"), v.literal("multiply")),
+    /** deposit | withdraw | borrow | repay | claim | liquidate | multiply | deleverage */
+    kind: v.string(),
+    status: v.union(v.literal("success"), v.literal("failed"), v.literal("pending")),
+    marketSlug: v.optional(v.string()),
+    assetId: v.optional(v.string()),
+    positionId: v.optional(v.id("positions")),
+    requestedAmountUsd6: v.string(),
+    executedAmountUsd6: v.string(),
+    amountUsd: v.number(),
+    healthFactorWadBefore: v.optional(v.union(v.string(), v.null())),
+    healthFactorWadAfter: v.optional(v.union(v.string(), v.null())),
+    syntheticTxHash: v.string(),
+    simulated: v.boolean(),
+    at: v.number(),
+  })
+    .index("by_wallet_at", ["wallet", "at"])
+    .index("by_wallet_intent", ["wallet", "intentId"])
+    .index("by_market_at", ["marketSlug", "at"]),
+
+  /**
+   * Append-only risk/health history per wallet. Preserves the SPOKE-scoped health
+   * dimension (BorrowSpokeBreakdown) rather than collapsing to one account health
+   * factor — `calculateSpokeCreditMetrics` is per-spoke. Latest row = current risk;
+   * history feeds the hero risk chart.
+   */
+  riskSnapshots: defineTable({
+    wallet: v.string(),
+    at: v.number(),
+    collateralValueUsd6: v.string(),
+    borrowCapacityUsd6: v.string(),
+    availableBorrowCapacityUsd6: v.string(),
+    totalBorrowedUsd6: v.string(),
+    currentLtvWad: v.string(),
+    healthFactorWad: v.union(v.string(), v.null()),
+    spokes: v.array(
+      v.object({
+        spokeId: v.string(),
+        availableCreditUsd6: v.string(),
+        totalBorrowedUsd6: v.string(),
+        liquidationBufferUsd6: v.string(),
+        healthFactorWad: v.union(v.string(), v.null()),
+      }),
+    ),
+    /** Action kind that produced this snapshot (e.g. "borrow"). */
+    trigger: v.optional(v.string()),
+  }).index("by_wallet_at", ["wallet", "at"]),
+
+  /**
+   * Audit log of liquidation PREVIEWS (analytics-only; sandbox liquidation never
+   * executes). One row per computed preview so health-before/after and the
+   * allowed/blocked verdict are inspectable. `wallet` is the position owner (victim).
+   */
+  liquidationPreviews: defineTable({
+    wallet: v.string(),
+    positionId: v.optional(v.id("positions")),
+    marketSlug: v.optional(v.string()),
+    repayAmountUsd6: v.string(),
+    seizeCollateralUsd6: v.string(),
+    healthFactorWadBefore: v.union(v.string(), v.null()),
+    healthFactorWadAfter: v.union(v.string(), v.null()),
+    liquidationBonusBps: v.optional(v.number()),
+    allowed: v.boolean(),
+    reason: v.optional(v.string()),
+    at: v.number(),
+  }).index("by_wallet_at", ["wallet", "at"]),
+
+  /**
+   * Recorded liquidation ACTIONS. Captures the liquidator↔victim pair: `wallet` is
+   * the victim (wallet-scoped read), `liquidatorWallet` is the keeper. Indexed both
+   * ways so each party can list its liquidations.
+   */
+  liquidationActions: defineTable({
+    wallet: v.string(),
+    liquidatorWallet: v.string(),
+    positionId: v.optional(v.id("positions")),
+    debtPositionId: v.optional(v.id("positionDebt")),
+    marketSlug: v.optional(v.string()),
+    repaidUsd6: v.string(),
+    seizedCollateralUsd6: v.string(),
+    liquidationBonusBps: v.optional(v.number()),
+    healthFactorWadBefore: v.union(v.string(), v.null()),
+    healthFactorWadAfter: v.union(v.string(), v.null()),
+    syntheticTxHash: v.string(),
+    at: v.number(),
+  })
+    .index("by_wallet_at", ["wallet", "at"])
+    .index("by_liquidator_at", ["liquidatorWallet", "at"]),
+
+  /**
+   * Append-only portfolio time series per wallet (mirrors `PortfolioSnapshotRecord`;
+   * the mock ships a 13-point series feeding the hero chart). `at` is ms-epoch
+   * (mock used ISO strings). Values are plain-number USD (portfolio view-model unit).
+   */
+  portfolioSnapshots: defineTable({
+    wallet: v.string(),
+    at: v.number(),
+    totalValueUsd: v.number(),
+    totalSuppliedUsd: v.number(),
+    totalBorrowedUsd: v.number(),
+    availableToBorrowUsd: v.number(),
+    totalMultiplyExposureUsd: v.number(),
+    totalEarnedUsd: v.number(),
+  }).index("by_wallet_at", ["wallet", "at"]),
+
+  /**
+   * Optional per-wallet session metadata: which seed version provisioned this
+   * wallet's starter state, when, and last-seen. The hourly transaction rate limit
+   * is enforced by counting `transactions` in the trailing hour (no counter here),
+   * so this table is purely informational/bookkeeping.
+   */
+  sandboxSessions: defineTable({
+    wallet: v.string(),
+    authSubject: v.optional(v.string()),
+    seedVersion: v.number(),
+    seededAt: v.optional(v.number()),
+    lastSeenAt: v.number(),
+  }).index("by_wallet", ["wallet"]),
 })
