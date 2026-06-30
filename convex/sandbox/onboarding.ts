@@ -13,6 +13,7 @@ import { v } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { requireSandboxWallet, getAuthSubject } from "./auth"
+import { buildStarterAllocationPlan, STARTER_EQUITY_USD } from "./starterAllocation"
 
 const DEFAULT_ECONOMY = {
   userCap: 10_000,
@@ -47,9 +48,6 @@ const DEFAULT_CONFIG = {
     { label: "Explore markets", href: "/borrow" },
   ],
 }
-
-/** Synthetic market slug for the basket allocated at onboarding (a starter LP supply). */
-const STARTER_LP_SLUG = "sandbox-starter-basket"
 
 // Sandbox-only fallback prices. Production reads `tokens.priceUsd` (live feeds).
 const SANDBOX_TOKEN_PRICE_USD: Record<string, number> = {
@@ -87,6 +85,33 @@ async function profileForWallet(ctx: QueryCtx | MutationCtx, wallet: string) {
     .query("sandboxProfiles")
     .withIndex("by_wallet", (q) => q.eq("wallet", wallet.toLowerCase()))
     .unique()
+}
+
+async function applyMarketDelta(
+  ctx: MutationCtx,
+  marketSlug: string,
+  suppliedDeltaUsd: number,
+  borrowedDeltaUsd: number,
+  now: number,
+) {
+  const existing = await ctx.db
+    .query("marketLiquidityDeltas")
+    .withIndex("by_slug", (queryBuilder) => queryBuilder.eq("marketSlug", marketSlug))
+    .unique()
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      suppliedDeltaUsd: existing.suppliedDeltaUsd + suppliedDeltaUsd,
+      borrowedDeltaUsd: existing.borrowedDeltaUsd + borrowedDeltaUsd,
+      updatedAt: now,
+    })
+    return
+  }
+  await ctx.db.insert("marketLiquidityDeltas", {
+    marketSlug,
+    suppliedDeltaUsd,
+    borrowedDeltaUsd,
+    updatedAt: now,
+  })
 }
 
 /** Wallet-scoped onboarding state for the SandboxGate (own wallet only). */
@@ -236,13 +261,12 @@ export const claim = mutation({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
     const economy = await getOrSeedEconomy(ctx)
-    const config = await getOrSeedConfig(ctx)
+    await getOrSeedConfig(ctx)
     const profile = await profileForWallet(ctx, wallet)
     if (!profile) throw new Error("NO_PROFILE: start onboarding before claiming.")
     if (profile.onboardingStep === "done") return { status: "done" as const, allocatedUsd: profile.allocatedUsd ?? 0 }
 
-    const tier = profile.eligibilityTier ?? economy.minMultiplier
-    const allocatedUsd = economy.perUserTargetUsd * tier
+    const allocatedUsd = STARTER_EQUITY_USD
 
     // Server-side caps — re-read live counts, never trust the client.
     const capReached =
@@ -261,19 +285,206 @@ export const claim = mutation({
 
     const now = Date.now()
 
-    // Live-price basket: read the real DefiLlama-fed `tokenPrices` (the one place the
-    // sandbox mirrors prod), falling back to the synthetic map for tokens not on a
-    // live feed (e.g. aave/uni are not in TOKEN_LLAMA_IDS). Symbol == basket tokenId.
-    const priceRows = await ctx.db.query("tokenPrices").collect()
+    const [priceRows, markets] = await Promise.all([
+      ctx.db.query("tokenPrices").collect(),
+      ctx.db.query("markets").collect(),
+    ])
+    const allocation = buildStarterAllocationPlan(
+      wallet,
+      markets.map((market) => ({ slug: market.slug, scope: market.scope })),
+    )
+    const marketBySlug = new Map(markets.map((market) => [market.slug, market]))
     const livePrice: Record<string, number> = {}
     for (const row of priceRows) livePrice[row.symbol] = row.priceUsd
-    const basketSnapshot = config.basket.map((slot) => {
-      const priceUsdAtClaim = livePrice[slot.tokenId] ?? SANDBOX_TOKEN_PRICE_USD[slot.tokenId] ?? 1
-      const amount = (allocatedUsd * slot.weight) / priceUsdAtClaim
-      return { tokenId: slot.tokenId, amount, priceUsdAtClaim }
+    const basketSnapshot = allocation.liquid.map((leg) => {
+      const market = marketBySlug.get(leg.marketSlug)
+      const symbol = market?.symbol.toLowerCase() ?? leg.marketSlug
+      const priceUsdAtClaim = livePrice[symbol] ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
+      return { tokenId: leg.marketSlug, amount: leg.amountUsd / priceUsdAtClaim, priceUsdAtClaim }
     })
 
     const syntheticTxHash = `sim-claim-${(profile.tierSeed ?? "0").slice(0, 8)}-${now.toString(36)}`
+    const receiptHashes: string[] = []
+
+    for (const [index, leg] of allocation.liquid.entries()) {
+      const market = marketBySlug.get(leg.marketSlug)
+      if (!market) throw new Error(`STARTER_CATALOG_INCOMPLETE: missing asset ${leg.marketSlug}.`)
+      const symbol = market.symbol.toLowerCase()
+      const priceUsd = livePrice[symbol] ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
+      await ctx.db.insert("sandboxBalances", {
+        wallet,
+        assetSlug: leg.marketSlug,
+        symbol: market.symbol,
+        amount: leg.amountUsd / priceUsd,
+        valueUsd: leg.amountUsd,
+        priceUsd,
+        updatedAt: now,
+      })
+      const hash = `${syntheticTxHash}-asset-${index}`
+      receiptHashes.push(hash)
+      await ctx.db.insert("sandboxActivity", {
+        wallet,
+        kind: "starterAssetGrant",
+        amountUsd: leg.amountUsd,
+        marketSlug: leg.marketSlug,
+        syntheticTxHash: hash,
+        at: now,
+      })
+    }
+
+    for (const [index, leg] of allocation.collateral.entries()) {
+      const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
+      const hash = `${syntheticTxHash}-pool-${index}`
+      receiptHashes.push(hash)
+      const positionId = await ctx.db.insert("positions", {
+        wallet,
+        product: "borrow",
+        marketSlug: leg.marketSlug,
+        status: "open",
+        collateralValueUsd6: amountUsd6,
+        debtValueUsd6: "0",
+        openedAt: now,
+        lastUpdatedAt: now,
+        openTxSynthetic: hash,
+      })
+      await ctx.db.insert("positionCollateral", {
+        wallet,
+        positionId,
+        marketSlug: leg.marketSlug,
+        collateralShares: amountUsd6,
+        principalTokenAmount: amountUsd6,
+        collateralEnabled: true,
+        collateralValueUsd6: amountUsd6,
+        updatedAt: now,
+      })
+      await ctx.db.insert("transactions", {
+        wallet,
+        intentId: `onboarding-pool-${leg.marketSlug}`,
+        product: "borrow",
+        kind: "deposit",
+        status: "success",
+        marketSlug: leg.marketSlug,
+        positionId,
+        requestedAmountUsd6: amountUsd6,
+        executedAmountUsd6: amountUsd6,
+        amountUsd: leg.amountUsd,
+        syntheticTxHash: hash,
+        simulated: true,
+        at: now,
+      })
+      await applyMarketDelta(ctx, leg.marketSlug, leg.amountUsd, 0, now)
+    }
+
+    for (const [index, leg] of allocation.lend.entries()) {
+      const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
+      const hash = `${syntheticTxHash}-lend-${index}`
+      receiptHashes.push(hash)
+      const positionId = await ctx.db.insert("positions", {
+        wallet,
+        product: "lend",
+        marketSlug: leg.marketSlug,
+        status: "open",
+        suppliedUsd6: amountUsd6,
+        earnedUsd6: "0",
+        openedAt: now,
+        lastUpdatedAt: now,
+        openTxSynthetic: hash,
+      })
+      await ctx.db.insert("transactions", {
+        wallet,
+        intentId: `onboarding-lend-${leg.marketSlug}`,
+        product: "lend",
+        kind: "deposit",
+        status: "success",
+        marketSlug: leg.marketSlug,
+        positionId,
+        requestedAmountUsd6: amountUsd6,
+        executedAmountUsd6: amountUsd6,
+        amountUsd: leg.amountUsd,
+        syntheticTxHash: hash,
+        simulated: true,
+        at: now,
+      })
+      await applyMarketDelta(ctx, leg.marketSlug, leg.amountUsd, 0, now)
+    }
+
+    for (const [index, leg] of allocation.multiply.entries()) {
+      const multiplier = 2
+      const grossExposureUsd = leg.amountUsd * multiplier
+      const debtValueUsd = grossExposureUsd - leg.amountUsd
+      const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
+      const hash = `${syntheticTxHash}-multiply-${index}`
+      receiptHashes.push(hash)
+      const positionId = await ctx.db.insert("positions", {
+        wallet,
+        product: "multiply",
+        marketSlug: leg.marketSlug,
+        status: "open",
+        collateralAmount: leg.amountUsd,
+        collateralValueUsd: grossExposureUsd,
+        debtValueUsd,
+        multiplier,
+        ltv: debtValueUsd / grossExposureUsd,
+        healthFactor: 2,
+        liquidationPrice: null,
+        netApyPct: 0,
+        openedAt: now,
+        lastUpdatedAt: now,
+        openTxSynthetic: hash,
+      })
+      await ctx.db.insert("transactions", {
+        wallet,
+        intentId: `onboarding-multiply-${leg.marketSlug}`,
+        product: "multiply",
+        kind: "multiply",
+        status: "success",
+        marketSlug: leg.marketSlug,
+        positionId,
+        requestedAmountUsd6: amountUsd6,
+        executedAmountUsd6: amountUsd6,
+        amountUsd: leg.amountUsd,
+        syntheticTxHash: hash,
+        simulated: true,
+        at: now,
+      })
+      await applyMarketDelta(ctx, leg.marketSlug, grossExposureUsd, debtValueUsd, now)
+    }
+
+    await ctx.db.insert("starterAllocations", {
+      wallet,
+      version: allocation.version,
+      totalEquityUsd: allocation.totalEquityUsd,
+      liquid: allocation.liquid,
+      collateral: allocation.collateral,
+      lend: allocation.lend,
+      multiply: allocation.multiply,
+      receiptHashes,
+      createdAt: now,
+    })
+    const liquidValueUsd = allocation.liquid.reduce((sum, leg) => sum + leg.amountUsd, 0)
+    const collateralValueUsd = allocation.collateral.reduce((sum, leg) => sum + leg.amountUsd, 0)
+    const lendValueUsd = allocation.lend.reduce((sum, leg) => sum + leg.amountUsd, 0)
+    const multiplyEquityUsd = allocation.multiply.reduce((sum, leg) => sum + leg.amountUsd, 0)
+    const multiplyExposureUsd = multiplyEquityUsd * 2
+    const multiplyDebtUsd = multiplyExposureUsd - multiplyEquityUsd
+    await ctx.db.insert("portfolioSnapshots", {
+      wallet,
+      at: now,
+      totalValueUsd:
+        liquidValueUsd + collateralValueUsd + lendValueUsd + multiplyExposureUsd - multiplyDebtUsd,
+      totalSuppliedUsd: collateralValueUsd + lendValueUsd + multiplyExposureUsd,
+      totalBorrowedUsd: multiplyDebtUsd,
+      availableToBorrowUsd: collateralValueUsd * 0.7,
+      totalMultiplyExposureUsd: multiplyExposureUsd,
+      totalEarnedUsd: 0,
+    })
+    await ctx.db.insert("sandboxSessions", {
+      wallet,
+      authSubject: profile.authSubject,
+      seedVersion: SEED_VERSION,
+      seededAt: now,
+      lastSeenAt: now,
+    })
 
     await ctx.db.patch(profile._id, {
       onboardingStep: "done",
@@ -282,7 +493,6 @@ export const claim = mutation({
       basketSnapshot,
       claimTxSynthetic: syntheticTxHash,
     })
-    // Atomic with the profile write (same transaction).
     await ctx.db.patch(economy._id, {
       userCount: economy.userCount + 1,
       totalGrantedUsd: economy.totalGrantedUsd + allocatedUsd,
@@ -295,54 +505,6 @@ export const claim = mutation({
       at: now,
     })
 
-    // Seed wallet-scoped starter state so the dashboard reads real Convex rows the
-    // moment onboarding completes: a starter LP supply position, the matching ledger
-    // transaction, an initial portfolio snapshot, and the session marker.
-    const allocatedUsd6 = Math.round(allocatedUsd * 1_000_000).toString()
-    const starterPositionId = await ctx.db.insert("positions", {
-      wallet,
-      product: "lend",
-      marketSlug: STARTER_LP_SLUG,
-      status: "open",
-      suppliedUsd6: allocatedUsd6,
-      earnedUsd6: "0",
-      openedAt: now,
-      lastUpdatedAt: now,
-      openTxSynthetic: syntheticTxHash,
-    })
-    await ctx.db.insert("transactions", {
-      wallet,
-      intentId: `onboarding-${syntheticTxHash}`,
-      product: "lend",
-      kind: "deposit",
-      status: "success",
-      marketSlug: STARTER_LP_SLUG,
-      positionId: starterPositionId,
-      requestedAmountUsd6: allocatedUsd6,
-      executedAmountUsd6: allocatedUsd6,
-      amountUsd: allocatedUsd,
-      syntheticTxHash,
-      simulated: true,
-      at: now,
-    })
-    await ctx.db.insert("portfolioSnapshots", {
-      wallet,
-      at: now,
-      totalValueUsd: allocatedUsd,
-      totalSuppliedUsd: allocatedUsd,
-      totalBorrowedUsd: 0,
-      availableToBorrowUsd: allocatedUsd * 0.7,
-      totalMultiplyExposureUsd: 0,
-      totalEarnedUsd: 0,
-    })
-    await ctx.db.insert("sandboxSessions", {
-      wallet,
-      authSubject: profile.authSubject,
-      seedVersion: SEED_VERSION,
-      seededAt: now,
-      lastSeenAt: now,
-    })
-
-    return { status: "done" as const, allocatedUsd, basketSnapshot, syntheticTxHash, starterPositionId }
+    return { status: "done" as const, allocatedUsd, basketSnapshot, syntheticTxHash, allocation, receiptHashes }
   },
 })
