@@ -68,11 +68,6 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
   const { authedWallet, isSignedIn } = useSiweAuth()
-  // E2E/test harness: it can't perform a real wallet signature and CI has no Convex
-  // backend to verify a session, so render the app directly (the onboarding gate is a
-  // production-only experience). NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE is never set in prod.
-  // The /onboarding route still renders the flow on its own for explicit onboarding tests.
-  if (process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1") return <>{children}</>
   if (!hasConvexClient) return <GateUnavailable />
   if (!isSignedIn || !authedWallet) {
     return (
