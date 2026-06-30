@@ -222,6 +222,7 @@ export function AvanaSessionsProvider({
   remoteRewardsState,
   persistRewardsState,
   persistLocalState = true,
+  sessionSource = "demo",
 }: {
   walletId?: string
   children: ReactNode
@@ -237,8 +238,9 @@ export function AvanaSessionsProvider({
   remoteRewardsState?: string | null
   persistRewardsState?: (stateJson: string) => Promise<unknown>
   persistLocalState?: boolean
+  sessionSource?: "demo" | "convex"
 }) {
-  const avana = useAvanaSession(walletId)
+  const avana = useAvanaSession(walletId, sessionSource)
   const borrow = useBorrowSession({
     walletId: avana.walletId,
     sessionSeed: avana.borrowSessionSeed,
@@ -377,6 +379,7 @@ export function ConvexAvanaSessionsProvider({
       remoteRewardsState={rewardsState?.stateJson ?? (rewardsState === null ? null : undefined)}
       persistRewardsState={persistRewardsState}
       persistLocalState={false}
+      sessionSource="convex"
     >
       {children}
     </AvanaSessionsProvider>
