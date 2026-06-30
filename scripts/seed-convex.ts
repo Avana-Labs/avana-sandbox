@@ -48,12 +48,18 @@ async function main() {
   if (!url || !/^https?:\/\//.test(url)) {
     throw new Error("NEXT_PUBLIC_CONVEX_URL is not set to a reachable deployment (check .env.local).")
   }
+  const seedSecret = process.env.CONVEX_SEED_SECRET
+  if (!seedSecret) {
+    throw new Error("CONVEX_SEED_SECRET is not set. Set it locally and in the Convex deployment.")
+  }
   const client = new ConvexHttpClient(url)
 
   // 1) Markets → collect slug → _id
   const idsBySlug: Record<string, Id<"markets">> = {}
   for (const batch of chunk(seed.markets, BATCH)) {
-    const res = (await client.mutation(api.seed.upsertMarkets, { rows: batch })) as { idsBySlug: Record<string, Id<"markets">> }
+    const res = (await client.mutation(api.seed.upsertMarkets, { seedSecret, rows: batch })) as {
+      idsBySlug: Record<string, Id<"markets">>
+    }
     Object.assign(idsBySlug, res.idsBySlug)
   }
   console.log(`[seed] upserted ${Object.keys(idsBySlug).length} markets`)
@@ -69,7 +75,7 @@ async function main() {
   // 2) Daily stats
   let n = 0
   for (const batch of chunk(withMarketId(seed.dailyStats), BATCH)) {
-    await client.mutation(api.seed.upsertDailyStats, { rows: batch })
+    await client.mutation(api.seed.upsertDailyStats, { seedSecret, rows: batch })
     n += batch.length
     await sleep(throttleMs)
   }
@@ -78,7 +84,7 @@ async function main() {
   // 3) Revenue
   n = 0
   for (const batch of chunk(withMarketId(seed.revenue), BATCH)) {
-    await client.mutation(api.seed.upsertRevenue, { rows: batch })
+    await client.mutation(api.seed.upsertRevenue, { seedSecret, rows: batch })
     n += batch.length
     await sleep(throttleMs)
   }
@@ -86,7 +92,7 @@ async function main() {
 
   // 4) Risk
   for (const batch of chunk(withMarketId(seed.risk), BATCH)) {
-    await client.mutation(api.seed.upsertRisk, { rows: batch })
+    await client.mutation(api.seed.upsertRisk, { seedSecret, rows: batch })
     await sleep(throttleMs)
   }
   console.log(`[seed] upserted ${seed.risk.length} risk assessments`)
@@ -94,14 +100,14 @@ async function main() {
   // 5) Wallet events (engagement) — clear then insert so re-seeds stay idempotent.
   let cleared = 0
   for (;;) {
-    const res = (await client.mutation(api.seed.clearWalletEvents, {})) as { deleted: number }
+    const res = (await client.mutation(api.seed.clearWalletEvents, { seedSecret })) as { deleted: number }
     cleared += res.deleted
     if (res.deleted === 0) break
     await sleep(throttleMs)
   }
   let events = 0
   for (const batch of chunk(withMarketId(seed.walletEvents), BATCH)) {
-    await client.mutation(api.seed.insertWalletEvents, { rows: batch })
+    await client.mutation(api.seed.insertWalletEvents, { seedSecret, rows: batch })
     events += batch.length
     await sleep(throttleMs)
   }
@@ -117,7 +123,7 @@ async function main() {
     .filter((r): r is NonNullable<typeof r> => r !== null)
   let alloc = 0
   for (const batch of chunk(allocationRows, BATCH)) {
-    await client.mutation(api.seed.upsertAllocation, { rows: batch })
+    await client.mutation(api.seed.upsertAllocation, { seedSecret, rows: batch })
     alloc += batch.length
     await sleep(throttleMs)
   }
@@ -126,7 +132,7 @@ async function main() {
   // 7) Market content (about / stats / parameter-change history / FAQs)
   let cont = 0
   for (const batch of chunk(withMarketId(seed.content), BATCH)) {
-    await client.mutation(api.seed.upsertContent, { rows: batch })
+    await client.mutation(api.seed.upsertContent, { seedSecret, rows: batch })
     cont += batch.length
     await sleep(throttleMs)
   }
