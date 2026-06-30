@@ -358,6 +358,17 @@
   .bg-surface-raised.border {
     border-color: hsl(var(--border) / 0.85) !important;
   }
+
+  /*
+   * Render-virtualize long list sections: the browser skips layout/paint for
+   * off-screen blocks (e.g. the per-spoke market sections) while keeping them in
+   * the DOM, so find-in-page, anchors, and accessibility still work. The
+   * intrinsic-size keeps the scrollbar stable before a section is rendered.
+   */
+  .cv-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 640px;
+  }
 }
 
 .asset-swap {
