@@ -1,8 +1,11 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode } from "react"
-import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
-import { MarketLiquidityProvider } from "@/app/lib/convex/market-liquidity-provider"
+import {
+  AvanaSessionsProvider,
+  ConvexAvanaSessionsProvider,
+} from "@/app/lib/avana-session/avana-sessions-provider"
+import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
 /**
@@ -39,7 +42,11 @@ export function AvanaSessionProviders({
   return (
     <MarketLiquidityProvider>
       <AutoSiwe />
-      <AvanaSessionsProvider walletId={effectiveWalletId}>{children}</AvanaSessionsProvider>
+      {hasConvexClient && isSignedIn && authedWallet ? (
+        <ConvexAvanaSessionsProvider walletId={authedWallet}>{children}</ConvexAvanaSessionsProvider>
+      ) : (
+        <AvanaSessionsProvider walletId={effectiveWalletId}>{children}</AvanaSessionsProvider>
+      )}
     </MarketLiquidityProvider>
   )
 }

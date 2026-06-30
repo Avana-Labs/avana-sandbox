@@ -45,12 +45,20 @@ export function useBorrowSession({
   readAdapter: injectedReadAdapter,
   transactionAdapter: injectedTransactionAdapter,
   persistState,
+  persistTransaction,
 }: {
   walletId: string
   sessionSeed: string
   readAdapter?: BaseReadAdapter
   transactionAdapter?: TransactionAdapter
   persistState?: boolean
+  persistTransaction?: (result: SandboxActionResult) => Promise<{
+    id: string
+    hash: string
+    status: "success" | "failed" | "pending"
+    simulated: boolean
+    timestamp: number
+  }>
 }) {
   const adapterMode = injectedReadAdapter?.mode ?? injectedTransactionAdapter?.mode ?? "sandbox"
   const shouldPersistState = persistState ?? adapterMode === "sandbox"
@@ -167,9 +175,38 @@ export function useBorrowSession({
       }
 
       setIsPending(true)
+      const previousState = stateRef.current
       const execution = transactionAdapter
         .executeTransaction(intent)
-        .then((result) => {
+        .then(async (result) => {
+          if (persistTransaction && result.receipt.status === "success") {
+            try {
+              const persisted = await persistTransaction(result)
+              const receipt = {
+                ...result.receipt,
+                id: persisted.id,
+                hash: persisted.hash,
+                status: persisted.status,
+                simulated: persisted.simulated,
+                timestamp: persisted.timestamp,
+              }
+              const historyItem = {
+                ...result.historyItem,
+                id: persisted.id,
+                hash: persisted.hash,
+                status: persisted.status,
+                timestamp: persisted.timestamp,
+              }
+              const persistedResult = { ...result, receipt, result: receipt, historyItem }
+              setTransactionHistory((current) => mergeHistory(historyItem, current))
+              setTransactionReceipts((current) => mergeReceipts(receipt, current))
+              return persistedResult
+            } catch (error) {
+              stateRef.current = previousState
+              setState(previousState)
+              throw error
+            }
+          }
           setTransactionHistory((current) => mergeHistory(result.historyItem, current))
           setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
           return result
@@ -182,7 +219,7 @@ export function useBorrowSession({
       pendingExecutionsRef.current.set(fingerprint, execution)
       return execution
     },
-    [transactionAdapter],
+    [persistTransaction, transactionAdapter],
   )
   const readAdapter = useMemo(
     () => {
