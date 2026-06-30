@@ -20,14 +20,9 @@ import {
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
 import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
 import { buildCuratedPriceFamily } from "./token-price-series"
-import {
-  computeAssetAllocation,
-  formatBpsAsPct,
-  formatPct,
-  riskLevelFromBps,
-  riskLevelLabel,
-  riskScoreFromBps,
-} from "./allocation"
+import { computeAssetAllocation, formatPct } from "./allocation"
+import { buildAssetRiskAssessment } from "./risk-model"
+import { buildAssetFaqs } from "./content-model"
 import type {
   AboutCard,
   AllocationRow,
@@ -431,47 +426,9 @@ function buildAssetEngagement(asset: SpokeBorrowableRecord, supplied: number): E
 
 function buildAssetRisk(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): RiskAssessment {
   if (fixture?.risk) return fixture.risk
-  const isStable = asset.category === "stable"
-  // Derive a unique bps per asset so every gauge shows a distinct score.
-  // Base = category default, then shift by asset-specific signals:
-  //   +utilization (higher utilization → higher premium)
-  //   +borrowApr (higher rate → higher premium)
-  //   ±seeded hash for deterministic spread across assets with similar stats.
-  const base = isStable ? 28 : 110
-  const utilAdj = (asset.utilization - 50) * (isStable ? 0.2 : 0.45)
-  const aprAdj = (asset.borrowApr - (isStable ? 4 : 6)) * (isStable ? 1.4 : 2.2)
-  const seed = prngFromString(`asset-risk:${asset.id}`)()
-  const spread = (seed - 0.5) * (isStable ? 24 : 70)
-  const bps = Math.max(8, Math.round(base + utilAdj + aprAdj + spread))
-  const level = riskLevelFromBps(bps)
-  return {
-    premiumBps: bps,
-    level,
-    score: riskScoreFromBps(bps),
-    headline: `${riskLevelLabel(level)} risk · ${formatBpsAsPct(bps)} premium`,
-    summary: isStable
-      ? `${asset.symbol} is a stablecoin. Primary risk is a de-peg or issuer-solvency event; monitored by oracle deviation guards.`
-      : `${asset.symbol} is a volatile asset used for directional carry. Primary risk is realized volatility and oracle latency under stress.`,
-    breakdown: isStable
-      ? [
-          { id: "depeg", label: "De-peg tail", bps: Math.round(bps * 0.5), level: "low", description: "Guardrails pause new borrows on >50bps deviation for 5m." },
-          { id: "issuer", label: "Issuer solvency", bps: Math.round(bps * 0.3), level: "low", description: "Attestations / reserve reports monitored weekly." },
-          { id: "bridge", label: "Bridge / wrapping", bps: Math.round(bps * 0.15), level: "low", description: "Only canonical bridges accepted." },
-          { id: "sc", label: "Smart-contract surface", bps: Math.round(bps * 0.05), level: "low", description: "Standard ERC-20 implementations only." },
-        ]
-      : [
-          { id: "vol", label: "Realized volatility", bps: Math.round(bps * 0.5), level, description: "30d σ relative to the category's target band." },
-          { id: "oracle", label: "Oracle latency", bps: Math.round(bps * 0.2), level, description: "Chainlink feed + deviation guard." },
-          { id: "depth", label: "Liquidity depth", bps: Math.round(bps * 0.15), level: "low", description: "Depth across routing venues." },
-          { id: "sc", label: "Smart-contract surface", bps: Math.round(bps * 0.15), level: "low", description: "Token contract + wrapper if applicable." },
-        ],
-    metrics: [
-      { id: "category", label: "Category", value: asset.category === "stable" ? "Stablecoin" : "Volatile" },
-      { id: "borrowApr", label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%` },
-      { id: "utilization", label: "Utilization", value: `${asset.utilization.toFixed(1)}%` },
-      { id: "available", label: "Available", value: formatCompactUsd(asset.availableUsd) },
-    ],
-  }
+  // Single source of truth shared with the Convex seed (build-seed.ts) so the
+  // seeded risk row is identical to this fallback.
+  return buildAssetRiskAssessment(asset)
 }
 
 function buildAssetAbout(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): AboutCard {
@@ -616,10 +573,16 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
     engagement: buildAssetEngagement(asset, supplied),
     risk: buildAssetRisk(asset, fixture),
     about: buildAssetAbout(asset, fixture),
+    faqs: buildAssetFaqs(asset.symbol, asset.name),
     transactions: buildTransactions(asset),
     related: buildRelated(asset),
     row: asset,
   }
+}
+
+/** About card for seeding the Convex content layer (mirrors what the detail page renders). */
+export function getAssetAboutCard(asset: SpokeBorrowableRecord): AboutCard {
+  return buildAssetAbout(asset, ASSET_FIXTURES[asset.baseAssetId])
 }
 
 for (const id of ALL_ASSET_CHART_METRICS) void id

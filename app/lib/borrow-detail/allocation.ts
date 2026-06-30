@@ -53,17 +53,31 @@ export function riskScoreFromBps(bps: number): number {
 }
 
 /**
- * Finds the pools that expose a given borrowable asset and converts them
- * into `AllocationRow` entries (share-of-asset-TVL, utilization, apr).
- *
- * The produced percentages always sum to 100 (the top-N rows are re-scaled
- * so rounding drift doesn't leave the UI showing 99.7%).
+ * Allocation row that still carries its source `pool`. This is the shared core
+ * used by both the UI builder (`computeAssetAllocation`) and the Convex seed
+ * (`build-seed.ts`), which needs the pool's catalog id (slug) to key the
+ * `assetPoolAllocationDaily` rows. Keeping one computation means the seeded
+ * allocation is identical to the procedural fallback.
  */
-export function computeAssetAllocation(
+export type AssetAllocationRow = {
+  pool: BorrowPoolRow
+  sharePct: number
+  valueUsd: number
+  utilizationPct: number
+  borrowAprPct: number
+}
+
+/**
+ * Finds the pools that expose a given borrowable asset and computes each pool's
+ * share-of-asset-TVL, utilization, and apr. The produced percentages always sum
+ * to 100 (the top-N rows are re-scaled so rounding drift doesn't leave the UI
+ * showing 99.7%).
+ */
+export function computeAssetAllocationRows(
   asset: SpokeBorrowableRecord,
   pools: BorrowPoolRow[] = BORROW_POOL_CATALOG,
   limit = 6,
-): AllocationRow[] {
+): AssetAllocationRow[] {
   const candidates = pools.filter((pool) => asset.marketIds.includes(pool.id))
   if (candidates.length === 0) return []
 
@@ -82,16 +96,11 @@ export function computeAssetAllocation(
   weighted.sort((a, b) => b.weight - a.weight)
   const top = weighted.slice(0, limit)
   const totalWeight = top.reduce((sum, row) => sum + row.weight, 0) || 1
-  const rows: AllocationRow[] = top.map(({ pool, weight, utilization, apr }) => {
-    const dex = getDexById(pool.dexes[0]?.id as Parameters<typeof getDexById>[0])
+  const rows: AssetAllocationRow[] = top.map(({ pool, weight, utilization, apr }) => {
     const sharePct = (weight / totalWeight) * 100
     const valueUsd = (asset.totalBorrowedUsd + asset.availableUsd) * (weight / totalWeight)
-    const visuals: [BorrowAssetVisual, BorrowAssetVisual] = pool.visuals
     return {
-      id: `${asset.id}-${pool.id}`,
-      poolName: pool.name,
-      venueLabel: dex?.label ?? pool.venue,
-      visuals,
+      pool,
       sharePct: Math.round(sharePct * 100) / 100,
       valueUsd: Math.round(valueUsd),
       utilizationPct: Math.min(99, Math.max(10, utilization)),
@@ -107,6 +116,36 @@ export function computeAssetAllocation(
     }
   }
   return rows
+}
+
+/** Venue label for an allocation pool (dex label, falling back to the venue string). */
+export function allocationVenueLabel(pool: BorrowPoolRow): string {
+  const dex = getDexById(pool.dexes[0]?.id as Parameters<typeof getDexById>[0])
+  return dex?.label ?? pool.venue
+}
+
+/**
+ * Maps the shared rows into the UI's `AllocationRow[]` (hydrating `visuals` +
+ * display labels). Identical output to the original procedural builder.
+ */
+export function computeAssetAllocation(
+  asset: SpokeBorrowableRecord,
+  pools: BorrowPoolRow[] = BORROW_POOL_CATALOG,
+  limit = 6,
+): AllocationRow[] {
+  return computeAssetAllocationRows(asset, pools, limit).map(({ pool, sharePct, valueUsd, utilizationPct, borrowAprPct }) => {
+    const visuals: [BorrowAssetVisual, BorrowAssetVisual] = pool.visuals
+    return {
+      id: `${asset.id}-${pool.id}`,
+      poolName: pool.name,
+      venueLabel: allocationVenueLabel(pool),
+      visuals,
+      sharePct,
+      valueUsd,
+      utilizationPct,
+      borrowAprPct,
+    }
+  })
 }
 
 // -------------------------------------------------------------------------

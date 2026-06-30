@@ -401,7 +401,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
           type="button"
           aria-label={`Close ${title.toLowerCase()} sheet`}
           onClick={closeSelectorSheet}
-          className={`absolute inset-0 bg-black/35 backdrop-blur-sm transition-opacity duration-200 ${
+          className={`absolute inset-0 bg-black/40 backdrop-blur-xl transition-opacity duration-200 ${
             isSelectorSheetOpen ? "opacity-100" : "opacity-0"
           }`}
         />

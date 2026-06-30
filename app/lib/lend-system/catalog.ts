@@ -90,16 +90,22 @@ function buildMarketFromRow(
 ): LendMarket {
   const symbol = row.symbol.toUpperCase()
   const marketId = toMarketId(row.symbol)
-  const totalSupplied = row.totalDepositsValue
-  const availableLiquidity = row.availableLiquidityValue
-  const totalBorrowed = Math.max(0, totalSupplied - availableLiquidity)
+  const assetPriceUsd = ASSET_PRICES_USD[symbol] ?? 1
+  // Catalog deposit/liquidity figures are USD TVL in thousands (e.g. 120400 → $120.40M).
+  // Convert to token amounts so `totalSupplied * price` reconciles to that USD TVL for
+  // every asset (stable or volatile), keeping the list, detail, and Convex seed in sync
+  // at a realistic $M scale instead of the raw ~$120K the unscaled value produced.
+  const suppliedUsd = row.totalDepositsValue * 1_000
+  const availableUsd = row.availableLiquidityValue * 1_000
+  const totalSupplied = suppliedUsd / assetPriceUsd
+  const availableTokens = availableUsd / assetPriceUsd
+  const totalBorrowed = Math.max(0, totalSupplied - availableTokens)
   const utilization =
     SPEC_UTILIZATION[symbol] ?? calculateUtilization(totalBorrowed, totalSupplied)
   const rewardsApy = SPEC_REWARDS_APY[symbol] ?? 0
   const totalDisplayApy = row.apyValue / 100
   const supplyApy = SPEC_SUPPLY_APY[symbol] ?? Math.max(0, totalDisplayApy - rewardsApy)
   const totalApy = calculateTotalApy(supplyApy, rewardsApy)
-  const assetPriceUsd = ASSET_PRICES_USD[symbol] ?? 1
 
   return {
     marketId,

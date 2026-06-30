@@ -217,6 +217,12 @@ function normalizeReturnHref(returnHref: string) {
   if (returnHref.startsWith("/multiply/market/") && !returnHref.startsWith("/multiply/markets/")) {
     return returnHref.replace("/multiply/market/", "/multiply/markets/")
   }
+  if (returnHref.startsWith("/borrow/pool/") && !returnHref.startsWith("/borrow/markets/")) {
+    return returnHref.replace("/borrow/pool/", "/borrow/markets/")
+  }
+  if (returnHref.startsWith("/borrow/asset/") && !returnHref.startsWith("/borrow/assets/")) {
+    return returnHref.replace("/borrow/asset/", "/borrow/assets/")
+  }
   return returnHref
 }
 

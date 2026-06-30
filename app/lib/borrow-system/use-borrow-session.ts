@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { calculateCreditMetrics, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
 import { deserializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
+import { mergeConvexMarketSnapshots, type ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { SandboxActionResult, SyntheticTransactionReceipt, TransactionHistoryItem, TransactionIntent } from "@/app/lib/borrow-system/contracts"
 import { createExecutionFingerprint } from "@/app/lib/borrow-system/execution-guard"
 import { buildLegacyTransactionHistory, buildSyntheticReceipts } from "@/app/lib/borrow-system/read-model"
@@ -105,6 +106,17 @@ export function useBorrowSession({
     setTransactionReceipts(buildSyntheticReceipts(resetHistory))
   }, [seededState, walletId])
 
+  /**
+   * Overlay Convex market reference data (liquidity/rates) onto the session so the
+   * list, previews, and health factor all read the single source of truth. Wallet
+   * positions are untouched. No-ops when there's no change (same state ref). The
+   * caller (BorrowMarketHydrator) only invokes this when the Convex snapshot set
+   * changes, so this never loops.
+   */
+  const hydrateMarketData = useCallback((snapshots: readonly ConvexMarketSnapshot[]) => {
+    setState((prev) => mergeConvexMarketSnapshots(prev, snapshots))
+  }, [])
+
   const transactionAdapter = useMemo(
     () =>
       new SandboxTransactionAdapter({
@@ -187,5 +199,6 @@ export function useBorrowSession({
     previewTransaction,
     executeTransaction,
     reset,
+    hydrateMarketData,
   }
 }

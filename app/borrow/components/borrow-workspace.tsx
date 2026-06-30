@@ -16,20 +16,12 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowAssetDetailPath, borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { useMarketLiquidity, type MarketLiquidityDelta } from "@/app/lib/convex/market-liquidity-provider"
+import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
+import { applyBorrowableAssetDelta } from "@/app/lib/market-liquidity/apply"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
+import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useMediaQuery } from "@/app/lib/use-media-query"
-
-/** Fold the shared multi-user borrow ledger onto a borrowable asset (live liquidity). */
-function applyLiquidityDelta(asset: BorrowableAsset, delta?: MarketLiquidityDelta): BorrowableAsset {
-  if (!delta || delta.borrowedDeltaUsd === 0) return asset
-  const totalLiquidityUsd = asset.totalBorrowedUsd + asset.availableUsd
-  const totalBorrowedUsd = Math.max(0, asset.totalBorrowedUsd + delta.borrowedDeltaUsd)
-  const availableUsd = Math.max(0, asset.availableUsd - delta.borrowedDeltaUsd)
-  const utilization = totalLiquidityUsd > 0 ? (totalBorrowedUsd / totalLiquidityUsd) * 100 : asset.utilization
-  return { ...asset, totalBorrowedUsd, availableUsd, utilization }
-}
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -118,7 +110,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
           const assets = new Map<string, BorrowableAsset>()
           for (const row of entry.rows) {
             for (const asset of session.getBorrowableAssetsForMarket(row.id)) {
-              assets.set(asset.id, applyLiquidityDelta(asset, liquidityDeltas.get(asset.id)))
+              assets.set(asset.id, applyBorrowableAssetDelta(asset, liquidityDeltas))
             }
           }
           return [entry.spoke.id, Array.from(assets.values())]
@@ -198,6 +190,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
       />
 
       <div className="pt-3 pb-6">
+        <TokenPricesProvider>
         {isPoolTab(currentTab) ? (
           <>
             {isDesktop ? (
@@ -223,6 +216,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
             )}
           </>
         ) : null}
+        </TokenPricesProvider>
       </div>
     </section>
   )

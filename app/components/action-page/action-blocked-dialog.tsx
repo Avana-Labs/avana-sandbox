@@ -58,7 +58,7 @@ export function ActionBlockedDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm" data-testid="action-blocked-dialog" data-variant="modal">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 backdrop-blur-xl" data-testid="action-blocked-dialog" data-variant="modal">
       <div className="relative w-full max-w-[420px] rounded-radius-lg border-0 bg-card p-6 shadow-elev-2">
         <button
           type="button"

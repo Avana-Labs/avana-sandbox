@@ -6,6 +6,7 @@ import { useMemo } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
+import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { LendHero } from "./components/lend-hero"
 import { useLendPageLive } from "./use-lend-page-live"
 
@@ -25,23 +26,25 @@ export function LendClient({ pageData }: { pageData: LendPageData }) {
   const { markets, featuredAssets, featuredSequence, featuredSnapshots, assetGroups } = resolvedPageData
 
   return (
-    <div className="bg-background">
-      <main className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
-            <LendHero markets={markets} />
+    <TokenPricesProvider>
+      <div className="bg-background">
+        <main className="py-8">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
+              <LendHero markets={markets} />
 
-            <div className="mt-12 space-y-8">
-              <HotMarkets assets={featuredAssets} sequence={featuredSequence} snapshots={featuredSnapshots} />
+              <div className="mt-12 space-y-8">
+                <HotMarkets assets={featuredAssets} sequence={featuredSequence} snapshots={featuredSnapshots} />
+              </div>
+
+              <LendAssetSpokes
+                groups={assetGroups}
+                onDeposit={(marketId) => router.push(actionPagePath("lend", "deposit", { market: marketId }))}
+              />
             </div>
-
-            <LendAssetSpokes
-              groups={assetGroups}
-              onDeposit={(marketId) => router.push(actionPagePath("lend", "deposit", { market: marketId }))}
-            />
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </TokenPricesProvider>
   )
 }

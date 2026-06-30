@@ -39,9 +39,11 @@ const walletEventKind = v.union(
   v.literal("rewardsClaim"),
 )
 
-/** Scope differentiates an asset (single token market) from a pool (LP collateral market). */
-export const MARKET_SCOPES = ["asset", "pool"] as const
-const marketScope = v.union(v.literal("asset"), v.literal("pool"))
+/** Scope differentiates an asset (single borrowable token), a pool (LP collateral
+ *  market), a lend market (single-asset supply market), and a multiply market
+ *  (leveraged collateral→borrow loop). */
+export const MARKET_SCOPES = ["asset", "pool", "lend", "multiply"] as const
+const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 
 /** Risk buckets mirror `RiskLevel` in `app/lib/borrow-detail/types.ts`. */
 const riskLevel = v.union(
@@ -237,6 +239,39 @@ export default defineSchema({
     suppliedDeltaUsd: v.number(),
     updatedAt: v.number(),
   }).index("by_slug", ["marketSlug"]),
+
+  /**
+   * Real token spot prices (the ONE place the sandbox reads live market data). A
+   * scheduled action (`convex/prices.ts refreshPrices`) pulls these from DefiLlama
+   * so the detail "Price" + the list price-under-logos reflect production prices,
+   * while supply/borrow/TVL stay simulated. One row per base symbol.
+   */
+  tokenPrices: defineTable({
+    /** Lowercase base symbol/id, e.g. "usdc", "weth". Matches SpokeBorrowableRecord.baseAssetId. */
+    symbol: v.string(),
+    /** DefiLlama coin id used to fetch it (chain:address or coingecko:id). */
+    llamaId: v.string(),
+    priceUsd: v.number(),
+    decimals: v.optional(v.number()),
+    /** DefiLlama price confidence (0..1). */
+    confidence: v.optional(v.number()),
+    source: v.string(),
+    updatedAt: v.number(),
+  }).index("by_symbol", ["symbol"]),
+
+  /**
+   * Static per-market editorial content: the About description + on-chain stats,
+   * the parameter-change history, and the General FAQs. Seeded from the shared
+   * generators so the detail page reads About / Parameter Changes / FAQs from
+   * Convex like everything else. One row per market.
+   */
+  marketContent: defineTable({
+    marketId: v.id("markets"),
+    description: v.string(),
+    stats: v.array(v.object({ label: v.string(), value: v.string(), href: v.optional(v.string()) })),
+    history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
+    faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
+  }).index("by_market", ["marketId"]),
 
   // ── Phase 2: wallet-scoped sandbox state (synthetic; never source of truth in prod) ──
 

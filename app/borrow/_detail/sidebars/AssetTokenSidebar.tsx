@@ -47,7 +47,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
   const [tab, setTab] = React.useState<SidebarTab>("deposit")
   const [depositPromptOpen, setDepositPromptOpen] = React.useState(false)
   const lendMarketId = React.useMemo(() => resolveLendMarketId(detail.hero.symbol), [detail.hero.symbol])
-  const closeHref = `/borrow/asset/${detail.row.id}`
+  const closeHref = `/borrow/assets/${detail.row.id}`
   const session = useBorrowSessionContext()
   const fallbackMarket = React.useMemo(
     () => session.marketSummaries.find((market) => detail.row.marketIds.includes(market.id)) ?? null,

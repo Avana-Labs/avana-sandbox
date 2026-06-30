@@ -25,6 +25,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      // Next.js `server-only` guard isn't resolvable under vitest; stub it.
+      "server-only": path.resolve(__dirname, "test/stubs/server-only.ts"),
     },
   },
 })
