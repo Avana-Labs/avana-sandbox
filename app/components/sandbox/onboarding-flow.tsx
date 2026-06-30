@@ -49,12 +49,18 @@ const fmtUsd = (value: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
 const shortWallet = (wallet: string) => `${wallet.slice(0, 6)}…${wallet.slice(-4)}`
 
-const SHARE_URL = "https://avana.cc"
-/** Launch-style tweet auto-populated into the X composer (multi-line, @handle + CTA + link). */
-const buildShareText = (handle: string) =>
-  `Just claimed my $1M practice portfolio on the @${handle} sandbox 🚀\n\nBorrow against LP, lend, and loop positions — all risk-free before mainnet.\n\nTry it 👉 ${SHARE_URL}`
-const xIntentHref = (handle: string) =>
-  `https://x.com/intent/post?text=${encodeURIComponent(buildShareText(handle))}`
+const SHARE_URL = "https://app.avana.cc"
+/**
+ * Launch-style tweet auto-populated into the X composer. (X Web Intents can't attach an
+ * image — the preview card comes from SHARE_URL's twitter:image meta, served by /og.)
+ */
+const SHARE_TEXT = [
+  "Just claimed my sandbox spot at Avana.",
+  "A new Aave v4 lending market built for AMM markets.",
+  "Borrow against AMM LP positions, lend, and loop — all risk-free before mainnet.",
+  `Try it 👉 ${SHARE_URL}`,
+].join("\n")
+const X_INTENT_HREF = `https://x.com/intent/post?text=${encodeURIComponent(SHARE_TEXT)}`
 
 // Onboarding progress (%) per phase — drives the animated rail + AnimatePresence key.
 const PROGRESS: Record<string, number> = {
@@ -413,10 +419,10 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         <>
           <Headline muted="Tell your network about Avana." active="Post the prepared message on X." />
           <div className="mt-8 max-w-2xl whitespace-pre-line rounded-3xl border border-border p-5 text-[15px] leading-7 sm:p-7">
-            {buildShareText(state.config.xHandle)}
+            {SHARE_TEXT}
           </div>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <a className={PRIMARY} href={xIntentHref(state.config.xHandle)} rel="noreferrer" target="_blank">
+            <a className={PRIMARY} href={X_INTENT_HREF} rel="noreferrer" target="_blank">
               Open X <MoveUpRight className="ml-2 size-4" />
             </a>
             <button
@@ -473,7 +479,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link className={PRIMARY} href="/dashboard">Open dashboard</Link>
-            <a className={SECONDARY} href={xIntentHref(state.config.xHandle)} rel="noreferrer" target="_blank">
+            <a className={SECONDARY} href={X_INTENT_HREF} rel="noreferrer" target="_blank">
               Share on X <MoveUpRight className="ml-2 size-4" />
             </a>
           </div>
