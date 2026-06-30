@@ -23,3 +23,22 @@ export function getWalletProfile(walletProfileId: string) {
 export function getDefaultWalletProfileId() {
   return WALLET_PROFILES[0]?.id ?? "demo-wallet"
 }
+
+/** True when the id is a built-in demo/home profile (not a real, authed address). */
+export function isKnownWalletProfileId(walletProfileId: string) {
+  return WALLET_PROFILES.some((profile) => profile.id === walletProfileId)
+}
+
+/**
+ * Resolve a session identity. A built-in profile id maps to its mock address; ANY
+ * other value is treated as a real (authed) wallet ADDRESS and used directly,
+ * lowercased to match Convex wallet scoping (convex/sandbox/auth.ts). Undefined falls
+ * back to the default demo profile so the public, unauthenticated demo is unchanged.
+ */
+export function resolveWalletIdentity(walletId?: string): PortfolioWalletProfileRecord {
+  if (!walletId) return getWalletProfile(getDefaultWalletProfileId())
+  const known = WALLET_PROFILES.find((profile) => profile.id === walletId)
+  if (known) return known
+  const address = walletId.toLowerCase()
+  return { id: address, walletAddress: address }
+}
