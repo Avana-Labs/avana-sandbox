@@ -1,9 +1,10 @@
 "use client"
 
-import { useCallback, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react"
 import { useAccount, useSignMessage } from "wagmi"
 import { buildSiweMessage } from "./message"
 import { clearSiweToken, getSiweToken, setSiweToken, subscribeSiwe, type SiweToken } from "./auth-store"
+import { getJwtExpirySeconds, isJwtExpired } from "./token-expiry"
 import { IS_OPEN_GATE_TEST_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
 /** Reactively read the current SIWE token (null when signed out). */
@@ -12,14 +13,54 @@ export function useSiweToken(): SiweToken | null {
 }
 
 /**
+ * A valid (unexpired) SIWE token, or null. React re-renders when the token changes AND
+ * when it crosses its own expiry boundary, so a tab left open past the JWT TTL flips to
+ * the signed-out recovery UI instead of silently failing every Convex query behind the
+ * generic error boundary. The expired token is cleared so a reload recovers cleanly.
+ */
+export function useLiveSiweToken(): SiweToken | null {
+  const token = useSiweToken()
+  const [now, setNow] = useState(() => Date.now())
+  const expired = token != null && isJwtExpired(token.jwt, now)
+
+  useEffect(() => {
+    const exp = getJwtExpirySeconds(token?.jwt)
+    if (exp == null) return
+    // Wake exactly when the token lapses (accounting for the skew isJwtExpired uses) so
+    // we don't poll — a single timer is enough per token.
+    const fireAtMs = (exp - 30) * 1000
+    const delay = fireAtMs - Date.now()
+    if (delay <= 0) {
+      setNow(Date.now())
+      return
+    }
+    const id = window.setTimeout(() => setNow(Date.now()), delay)
+    return () => window.clearTimeout(id)
+  }, [token?.jwt])
+
+  useEffect(() => {
+    // Drop the dead token (in an effect, not during render) so the app stops attaching
+    // it and a reload starts from the clean signed-out state.
+    if (expired) clearSiweToken()
+  }, [expired])
+
+  return expired ? null : token
+}
+
+/**
  * The `useAuth` hook for `ConvexProviderWithAuth`. Convex calls `fetchAccessToken`
  * to attach the JWT to authed function calls; public queries still work when null.
  */
 export function useConvexSiweAuth() {
-  const token = useSiweToken()
+  const token = useLiveSiweToken()
   const jwt = token?.jwt ?? null
   const fetchAccessToken = useCallback(
-    async (_args: { forceRefreshToken: boolean }) => getSiweToken()?.jwt ?? null,
+    async (_args: { forceRefreshToken: boolean }) => {
+      // Never hand Convex an expired token — that authenticates as nobody and trips the
+      // error branch instead of falling back to public/unauthenticated behaviour.
+      const stored = getSiweToken()
+      return stored && !isJwtExpired(stored.jwt) ? stored.jwt : null
+    },
     // Re-create when the JWT changes so Convex re-authenticates on sign-in/out.
     [jwt],
   )
@@ -33,7 +74,9 @@ export type SiweAuthStatus = "signed-out" | "signing" | "signed-in"
  * nonce → sign → verify → store-JWT flow; `signOut` clears the token.
  */
 export function useSiweAuth() {
-  const token = useSiweToken()
+  // Live token: an expired JWT reads as signed-out, so the gate shows the sign-in
+  // recovery path rather than crashing into the generic error boundary.
+  const token = useLiveSiweToken()
   const { address, chainId, isConnected } = useAccount()
   const { signMessageAsync } = useSignMessage()
 
