@@ -344,7 +344,7 @@ function pairReferencePrice(row: BorrowPoolRow): number {
   return 1
 }
 
-function formatOraclePrice(v: number): string {
+export function formatOraclePrice(v: number): string {
   if (v >= 100) return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   if (v >= 1) return `$${v.toFixed(4)}`
   return `$${v.toFixed(6)}`
