@@ -2,12 +2,12 @@
 
 import { useState, type ReactNode } from "react"
 import { WagmiProvider, createConfig, http } from "wagmi"
-import { mainnet } from "wagmi/chains"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ConnectKitProvider, SIWEProvider, getDefaultConfig } from "connectkit"
 import { siweConfig } from "@/app/lib/siwe/connectkit-siwe"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import { IS_OPEN_GATE_TEST_MODE } from "@/app/lib/test-mode"
+import { TARGET_CHAIN } from "@/app/lib/web3/target-chain"
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
 // The headless QA harness seeds a SIWE token without a live wagmi connection, so the
@@ -27,8 +27,8 @@ const wagmiConfig = createConfig(
     appIcon: "https://avana.cc/avana-icon.svg",
     walletConnectProjectId,
     coinbaseWalletPreference: "all",
-    chains: [mainnet],
-    transports: { [mainnet.id]: http() },
+    chains: [TARGET_CHAIN],
+    transports: { [TARGET_CHAIN.id]: http() },
     // Hydrate wallet state on the client so static generation is preserved.
     ssr: true,
     // The @aave/account connector eagerly calls AaveAccountSdk.connect(), which throws
