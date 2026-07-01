@@ -1,6 +1,8 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { redenominateCompactUsd } from "@/app/lib/currency/format"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import { cn } from "@/lib/utils"
 
 type QuickStatLike = {
@@ -39,6 +41,7 @@ function splitQuickStats(stats: QuickStatLike[]) {
 }
 
 function StatsGrid({ stats }: { stats: QuickStatLike[] }) {
+  const { ctx } = useCurrency()
   if (stats.length === 0) return null
 
   return (
@@ -46,7 +49,7 @@ function StatsGrid({ stats }: { stats: QuickStatLike[] }) {
       {stats.map((stat) => (
         <article key={stat.id} className="min-w-0">
           <div className="font-data text-[26px] font-semibold leading-none tracking-[-0.04em] text-foreground md:text-[28px]">
-            {stat.value}
+            {redenominateCompactUsd(stat.value, ctx)}
           </div>
           <div className="mt-2 flex items-center gap-1">
             <span className="text-[13px] font-normal leading-snug text-muted-foreground">{stat.label}</span>

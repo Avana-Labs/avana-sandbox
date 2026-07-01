@@ -42,3 +42,30 @@ export function formatExactCurrency(usd: number, ctx: CurrencyContext): string {
     maximumFractionDigits: decimals,
   })}`
 }
+
+// A compact USD amount as produced by formatCompactUsd/formatCompactCurrency:
+// optional sign, "$", digits (with optional thousands separators / decimals),
+// and an optional B/M/K suffix. Anything else (percentages, plain text, prices
+// with cents) is left untouched.
+const COMPACT_USD_RE = /^(-?)\$([\d,]+(?:\.\d+)?)([BMK]?)$/
+
+/**
+ * Re-denominate an already-formatted compact USD string (e.g. "$312.4M") into the
+ * active currency. Detail surfaces bake their quick-stat values as USD strings at
+ * build time; this lets the shared switcher convert them on the client without
+ * threading raw numbers through every producer. Non-USD or non-money strings pass
+ * through unchanged.
+ */
+export function redenominateCompactUsd(value: string, ctx: CurrencyContext): string {
+  if (ctx.currency === "USD") return value
+  const match = COMPACT_USD_RE.exec(value.trim())
+  if (!match) return value
+  const [, sign, digits, suffix] = match
+  const multiplier = suffix === "B" ? 1_000_000_000 : suffix === "M" ? 1_000_000 : suffix === "K" ? 1_000 : 1
+  const usd = Number(digits.replace(/,/g, "")) * multiplier
+  if (!Number.isFinite(usd)) return value
+  const signed = sign === "-" ? -usd : usd
+  // Suffixed magnitudes stay compact; a plain sub-thousand amount (e.g. a token
+  // price "$883.74") keeps its decimals so it matches the live tooltip/axis.
+  return suffix ? formatCompactCurrency(signed, ctx) : formatExactCurrency(signed, ctx)
+}
