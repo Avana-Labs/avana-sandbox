@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { parseActionPercentBps, parsePositiveActionAmount, sanitizeDecimalInput } from "@/app/lib/action-system/amount-input"
+import { parseFixed } from "@/app/lib/credit-engine"
 
 describe("action amount parsing", () => {
   it.each(["1abc", "1.2.3", "1,000", "Infinity", "NaN", "-1", "0", ""])("rejects malformed amount %s", (value) => {
@@ -23,5 +24,21 @@ describe("action amount parsing", () => {
     expect(parseActionPercentBps("12.345")).toBe(1235)
     expect(parseActionPercentBps("100.1")).toBeNull()
     expect(parseActionPercentBps("50abc")).toBeNull()
+  })
+
+  it("rejects amounts at or beyond the exponential-notation threshold (>=1e21)", () => {
+    // Regression: 1e30 was accepted, then Number#toFixed(6) returned "1e+30"
+    // which parseFixed rejected by throwing, crashing the borrow preview.
+    expect(parsePositiveActionAmount("1000000000000000000000000000000")).toBeNull()
+    expect(parsePositiveActionAmount("1e30")).toBeNull()
+    expect(parsePositiveActionAmount(String(1e21))).toBeNull()
+  })
+
+  it("keeps accepted amounts safe to feed parseFixed via toFixed(6)", () => {
+    const value = parsePositiveActionAmount("12345.6789")
+    expect(value).not.toBeNull()
+    const fixed = value!.toFixed(6)
+    expect(fixed).not.toMatch(/e/i)
+    expect(() => parseFixed(fixed, 6)).not.toThrow()
   })
 })
