@@ -118,17 +118,23 @@ function useRewardsEventBridge({
 }
 
 /**
- * Fold every NEW successful borrow-system action into the shared multi-user
- * liquidity ledger (Convex). Existing/persisted history is snapshotted as
- * already-seen on mount so it isn't re-imported on every page load — the ledger
- * only accumulates genuine session actions, across all users, over time.
+ * Fold every NEW successful borrow-system action into the LOCAL in-session liquidity
+ * ledger (the demo fallback used when the shared Convex ledger is unreachable). Existing/
+ * persisted history is snapshotted as already-seen on mount so it isn't re-imported on
+ * every page load.
+ *
+ * When the shared Convex ledger IS connected, this bridge stays out of the way: the
+ * shared ledger is written server-side inside the idempotent recordTransaction (keyed by
+ * intent), so folding here as well would double-count a single action (H20). The client
+ * `recordDelta` is a no-op in connected mode, but we also skip early so the demo bridge
+ * can never contribute to the shared cross-user numbers.
  */
 function useLiquidityLedgerBridge({ borrow, enabled }: { borrow: BorrowSession; enabled: boolean }) {
-  const { recordDelta } = useMarketLiquidity()
+  const { recordDelta, connected } = useMarketLiquidity()
   const seenIdsRef = useRef<Set<string> | null>(null)
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || connected) return
     if (seenIdsRef.current === null) {
       seenIdsRef.current = new Set(borrow.transactionHistory.map((item) => item.id))
       return
@@ -151,7 +157,7 @@ function useLiquidityLedgerBridge({ borrow, enabled }: { borrow: BorrowSession; 
         recordDelta({ marketSlug: item.marketId, suppliedDeltaUsd: -amountUsd })
       }
     }
-  }, [borrow.transactionHistory, enabled, recordDelta])
+  }, [borrow.transactionHistory, enabled, connected, recordDelta])
 }
 
 /**
