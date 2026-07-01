@@ -10,7 +10,7 @@ describe("useMultiplySession", () => {
     window.localStorage.clear()
   })
 
-  it("hydrates persisted multiply state and executes a simulated multiply", async () => {
+  it("removes the legacy ghost position before a fresh-wallet multiply", async () => {
     const walletId = "demo-wallet"
     const seededState = buildMockMultiplySystemStateWithSeedPosition(walletId)
     const sessionSeed = buildMultiplySessionSeed(walletId)
@@ -24,7 +24,7 @@ describe("useMultiplySession", () => {
       }),
     )
 
-    expect(Object.keys(result.current.state.positions).length).toBeGreaterThan(0)
+    expect(Object.keys(result.current.state.positions)).toHaveLength(0)
 
     await act(async () => {
       const intent = result.current.createIntent({
@@ -39,7 +39,7 @@ describe("useMultiplySession", () => {
       await result.current.executeTransaction(intent)
     })
 
-    expect(Object.keys(result.current.state.positions).length).toBeGreaterThan(1)
+    expect(Object.keys(result.current.state.positions)).toHaveLength(1)
     expect(result.current.transactionHistory.length).toBeGreaterThan(0)
   })
 

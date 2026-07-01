@@ -23,6 +23,7 @@ import {
   writeMultiplySessionState,
 } from "./storage"
 import { MULTIPLY_SESSION_SYNC_EVENT } from "./session-sync"
+import { isLegacySeedOnlyMultiplyState } from "./mock"
 
 function mergeHistory(nextItem: MultiplyTransactionHistoryItem, history: MultiplyTransactionHistoryItem[]) {
   return [nextItem, ...history.filter((item) => item.id !== nextItem.id)]
@@ -103,8 +104,13 @@ export function useMultiplySession({
       setHasHydratedStorage(true)
       return
     }
-    const nextState = readMultiplySessionState(walletId, sessionSeed)
+    const persistedState = readMultiplySessionState(walletId, sessionSeed)
     const metadata = readMultiplySessionMetadata(walletId)
+    const nextState =
+      metadata.transactionHistory.length === 0 &&
+      isLegacySeedOnlyMultiplyState(persistedState, walletId)
+        ? seededState
+        : persistedState
     lastPersistedStateRef.current = serializeMultiplySystemState(nextState)
     lastPersistedMetadataRef.current = JSON.stringify({
       transactionHistory: metadata.transactionHistory,

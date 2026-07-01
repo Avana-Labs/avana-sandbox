@@ -4,6 +4,10 @@ import { useEffect, useState } from "react"
 import { ConnectKitButton, useSIWE } from "connectkit"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
+import {
+  IS_OPEN_GATE_TEST_MODE,
+  TEST_MODE_WALLET_ADDRESS,
+} from "@/app/lib/test-mode"
 
 /** Deterministic two-stop gradient identicon derived from the wallet address. */
 function walletGradient(address: string): string {
@@ -42,6 +46,21 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
       : "inline-flex h-10 w-[152px] items-center justify-center truncate rounded-full px-4 font-sans text-[15px] font-medium transition-colors"
   const brand = cn(base, "bg-brand text-brand-foreground hover:bg-brand/90")
   const pill = cn(base, "gap-2 border border-border bg-transparent text-foreground hover:bg-surface-inset")
+
+  if (IS_OPEN_GATE_TEST_MODE) {
+    return (
+      <div className={pill} title={TEST_MODE_WALLET_ADDRESS} data-testid="test-mode-wallet">
+        <span
+          aria-hidden
+          className="size-5 shrink-0 rounded-full ring-1 ring-border"
+          style={{ background: walletGradient(TEST_MODE_WALLET_ADDRESS) }}
+        />
+        <span className="truncate font-data text-[12px] font-semibold uppercase tracking-wide text-amber-500">
+          Test wallet
+        </span>
+      </div>
+    )
+  }
 
   if (!mounted) {
     return (

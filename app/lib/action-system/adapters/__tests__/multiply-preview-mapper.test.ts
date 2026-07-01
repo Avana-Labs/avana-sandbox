@@ -18,6 +18,7 @@ describe("multiply preview mappers", () => {
       collateralApy: 0.0382,
       borrowApy: 0.048,
       multiplier: 2.5,
+      maxLtv: 0.8,
     })
 
     expect(ui.marketBreakdown).toEqual({
@@ -26,19 +27,24 @@ describe("multiply preview mappers", () => {
     })
     expect(ui.rateLabel).toBe("")
     expect(ui.metrics.map((row) => row.label)).toEqual([
-      "New exposure",
-      "New debt",
-      "Projected exposure",
-      "Projected total debt",
+      "Collateral supplied",
+      "Collateral value",
+      "Target leverage",
+      "Looped exposure",
+      "USDC borrowed",
+      "Borrow capacity remaining",
       "Projected LTV",
       "Projected health factor",
       "Projected net APY",
       "Liquidation price",
     ])
+    expect(ui.amountLabel).toBe("2 WETH")
+    expect(ui.amountValue).toBe("2")
     expect(ui.amountUsdLabel).toBe("≈ $7,000")
     expect(ui.balanceLabel).toBe("Selected leverage")
-    expect(ui.metrics.find((row) => row.id === "new-exposure")?.value).toBe("$2,000")
-    expect(ui.metrics.find((row) => row.id === "projected-exposure")?.value).toBe("$12,000")
+    expect(ui.metrics.find((row) => row.id === "looped-exposure")?.value).toBe("$2,000")
+    expect(ui.metrics.find((row) => row.id === "borrow-capacity")?.value).toBe("$2,100")
+    expect(ui.metrics.find((row) => row.id === "borrow-capacity")?.tone).toBe("warning")
     expect(ui.metrics.find((row) => row.id === "liq-price")?.value).not.toBe("—")
   })
 

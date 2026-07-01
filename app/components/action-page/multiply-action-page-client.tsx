@@ -199,6 +199,7 @@ export function MultiplyActionPageClient({
               collateralApy: market.collateralAsset.apy,
               borrowApy: market.borrowAsset.borrowApy,
               multiplier: parsedMultiplier,
+              maxLtv: market.risk.maxLtv,
             }),
           )
         })
@@ -358,7 +359,6 @@ export function MultiplyActionPageClient({
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = isHomeLayout ? "home" : "default"
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
-  const marketLabel = formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol)
   // The only input is the collateral asset. Spell out the loop so the single-token
   // input reads clearly (no second token icon implying a dual input).
   const loopHint =
@@ -374,6 +374,7 @@ export function MultiplyActionPageClient({
   const stackedAmountField = useWorkspaceFields ? (
     <ActionConfigureAmountSection
       verb={descriptor.primaryVerb}
+      inputLabel={kind === "multiply" ? "Collateral supplied" : undefined}
       amount={amount}
       onAmountChange={(value) => {
         setHasUserInput(true)
@@ -381,7 +382,7 @@ export function MultiplyActionPageClient({
       }}
       preview={previewUi}
       assetSymbol={market.collateralAsset.symbol}
-      assetLabel={marketLabel}
+      assetLabel={market.collateralAsset.symbol}
       assetOptions={!validInitialMarketId ? marketOptions : undefined}
       selectedAssetId={market.id}
       onAssetSelect={(id) => {
@@ -403,6 +404,7 @@ export function MultiplyActionPageClient({
             min={multiplierMin}
             max={effectiveMultiplierMax}
             step={0.1}
+            label="Target leverage"
           />
         </>
       }
@@ -457,6 +459,7 @@ export function MultiplyActionPageClient({
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
+          inputLabel={kind === "multiply" ? "Collateral supplied" : undefined}
           amount={amount}
           onAmountChange={(value) => {
             setHasUserInput(true)
@@ -479,6 +482,7 @@ export function MultiplyActionPageClient({
           }}
           multiplierMin={multiplierMin}
           multiplierMax={effectiveMultiplierMax}
+          multiplierLabel="Target leverage"
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}

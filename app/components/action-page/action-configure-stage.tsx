@@ -24,6 +24,7 @@ type ActionConfigureStageProps = {
   verb: string
   amount: string
   onAmountChange: (value: string) => void
+  inputLabel?: string
   preview: ActionPreviewUi | null
   assetSymbol?: string
   borrowSymbol?: string
@@ -43,6 +44,7 @@ type ActionConfigureStageProps = {
   multiplierMin?: number
   multiplierMax?: number
   multiplierStep?: number
+  multiplierLabel?: string
   /** Short explanation rendered above the standalone leverage ruler. */
   leverageHint?: ReactNode
   canGoBack?: boolean
@@ -80,11 +82,13 @@ export function ActionConfigureAmountSection({
   amountFooter,
   assetLabel,
   amountUnitLabel,
+  inputLabel,
 }: Pick<
   ActionConfigureStageProps,
   | "verb"
   | "amount"
   | "onAmountChange"
+  | "inputLabel"
   | "preview"
   | "assetSymbol"
   | "borrowSymbol"
@@ -107,7 +111,7 @@ export function ActionConfigureAmountSection({
 
   return (
     <ActionAmountCard
-      label={verb}
+      label={inputLabel ?? verb}
       amount={amount}
       onAmountChange={onAmountChange}
       approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
@@ -155,6 +159,7 @@ export function ActionConfigureStage({
   multiplierMin = 1,
   multiplierMax = 20,
   multiplierStep = 0.1,
+  multiplierLabel = "Leverage",
   leverageHint,
   canGoBack = false,
   hideAmountInput = false,
@@ -168,6 +173,7 @@ export function ActionConfigureStage({
   amountFooter,
   assetLabel,
   amountUnitLabel,
+  inputLabel,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -233,6 +239,7 @@ export function ActionConfigureStage({
           amountFooter={amountFooter}
           assetLabel={assetLabel}
           amountUnitLabel={amountUnitLabel}
+          inputLabel={inputLabel}
         />
       ) : null}
 
@@ -245,6 +252,7 @@ export function ActionConfigureStage({
             min={multiplierMin}
             max={multiplierMax}
             step={multiplierStep}
+            label={multiplierLabel}
           />
         </div>
       ) : null}
