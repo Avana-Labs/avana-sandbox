@@ -365,9 +365,71 @@ export function MultiplyActionPageClient({
     }
   }, [amount, closeHref, collateralPriceUsd, descriptor.primaryVerb, hasUserInput, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
 
+  const handleClose = useCallback(async () => {
+    if (!market || isPending) return
+    const closingPosition =
+      session.state.positions[`${walletId}:${market.id}`] ??
+      Object.values(session.state.positions).find(
+        (entry) => entry.walletId === walletId && entry.marketId === market.id,
+      )
+    if (!closingPosition) return
+
+    setIsPending(true)
+    setOutcome(null)
+
+    try {
+      const action = {
+        type: "close" as const,
+        walletId,
+        positionId: closingPosition.id,
+      }
+      const intent = session.createIntent(action)
+      const preview = await session.previewTransaction(intent)
+      if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
+
+      const simulated = session.readAdapter.mode === "sandbox"
+      const result = await runActionSubmitFlow({
+        simulated,
+        needsAllowance: false,
+        onStage: setStage,
+        execute: async () => session.executeTransaction(preview.intent),
+      })
+
+      if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? "Transaction failed")
+
+      setSuccessUi(
+        mapBorrowSuccessToActionUi({
+          title: "Position closed",
+          description: `Your ${market.collateralAsset.symbol} position was fully unwound and collateral withdrawn.`,
+          receiptHash: result.receipt.hash ?? null,
+          metrics: previewUi?.metrics ?? [],
+          href: dashboardHrefForProduct("multiply"),
+          primaryCtaLabel: successDashboardCtaLabel("multiply"),
+          preview: previewUi ?? undefined,
+          verb: "Close",
+        }),
+      )
+      setStage("success")
+    } catch (error) {
+      setOutcome({
+        tone: "error",
+        title: "Something went wrong",
+        message: error instanceof Error ? error.message : "Transaction was cancelled",
+      })
+      setStage("error")
+    } finally {
+      setIsPending(false)
+    }
+  }, [isPending, market, previewUi, session, walletId])
+
   // The catalog always has markets, so `market` is non-null in practice; this only
   // guards the impossible empty-catalog case (and never shows a dead-end card).
   if (!market) return null
+
+  // Deleverage is the exit surface: whenever the wallet holds a position in this
+  // market, offer a full Close/Withdraw so collateral can always be reclaimed —
+  // including a fully-unwound 1.0x/$0 position that deleverage itself can no longer act on.
+  const canClosePosition = kind === "deleverage" && position != null
 
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
@@ -507,6 +569,18 @@ export function MultiplyActionPageClient({
           homeLayout={isHomeLayout}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
         />
+      ) : null}
+
+      {canClosePosition && isConfigureVisibleStage(stage) && !showInlineBlocked ? (
+        <button
+          type="button"
+          onClick={() => void handleClose()}
+          disabled={isPending}
+          className="mt-3 w-full rounded-[16px] border border-border/70 px-4 py-3 text-[15px] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          data-testid="multiply-close-position"
+        >
+          Close position and withdraw collateral
+        </button>
       ) : null}
 
       {blockedUi && !embedded ? (

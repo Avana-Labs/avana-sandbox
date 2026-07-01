@@ -269,10 +269,20 @@ export function buildMultiplyActivityHistory(
       id: item.id,
       at: new Date(item.timestamp).toISOString(),
       product: "multiply" as const,
-      kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
+      kind:
+        item.kind === "multiply"
+          ? ("open" as const)
+          : item.kind === "close"
+            ? ("close" as const)
+            : ("reduce" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
       amountUsd: item.amountUsd,
-      primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
+      primaryLabel:
+        item.kind === "multiply"
+          ? "Simulated multiply"
+          : item.kind === "close"
+            ? "Simulated close"
+            : "Simulated deleverage",
       secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
       txHash: item.hash,
     }))

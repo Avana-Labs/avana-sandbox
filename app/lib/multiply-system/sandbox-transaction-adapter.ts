@@ -116,6 +116,39 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
   if (!position) throw new Error(`Unknown position ${action.positionId}`)
   const market = state.markets[position.marketId]
   if (!market) throw new Error(`Unknown market ${position.marketId}`)
+
+  if (action.type === "close") {
+    // A full exit is always allowed: repay remaining debt, withdraw collateral,
+    // and remove the position. The "after" state is the empty (closed) position.
+    return {
+      intent,
+      allowed: true,
+      warnings: [],
+      validationErrors: [],
+      riskLabel: "safe",
+      before: {
+        collateralValueUsd: position.collateralValueUsd,
+        debtValueUsd: position.debtValueUsd,
+        multiplier: position.multiplier,
+        ltv: position.ltv,
+        healthFactor: position.healthFactor,
+        netApy: netApyForPositionState(market, position.collateralValueUsd, position.debtValueUsd, false),
+      },
+      after: {
+        collateralValueUsd: 0,
+        debtValueUsd: 0,
+        multiplier: 1,
+        ltv: 0,
+        healthFactor: "infinity",
+        netApy: 0,
+      },
+      simulationSummary: {
+        liquidationPrice: null,
+        priceImpactPct: 0,
+      },
+    }
+  }
+
   const simulation = simulateDeleverage({
     market,
     position,
@@ -180,7 +213,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
       actionType: action.type,
       walletId: action.walletId,
       marketId: action.type === "multiply" ? action.marketId : undefined,
-      positionId: action.type === "deleverage" ? action.positionId : undefined,
+      positionId: action.type === "multiply" ? undefined : action.positionId,
       requestedAt: this.now(),
       simulated: true,
       payload: action,
@@ -235,7 +268,14 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
       )
     }
 
-    const nextState = applyMultiplyAction(this.readStateImpl(), { ...action, at: this.now() })
+    const priorState = this.readStateImpl()
+    // Capture the market id before applying the action: a close removes the position
+    // from state, so it cannot be resolved from the post-action positions map.
+    const resolvedMarketId =
+      action.type === "multiply"
+        ? action.marketId
+        : priorState.positions[action.positionId]?.marketId
+    const nextState = applyMultiplyAction(priorState, { ...action, at: this.now() })
 
     const localReceipt = {
       id: this.generateId("receipt"),
@@ -250,7 +290,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
       id: localReceipt.id,
       intentId: intent.id,
       walletId: intent.walletId,
-      marketId: intent.marketId ?? (action.type === "deleverage" ? nextState.positions[action.positionId]?.marketId : action.marketId),
+      marketId: intent.marketId ?? resolvedMarketId,
       positionId: intent.positionId,
       kind: intent.actionType,
       status: "success",
