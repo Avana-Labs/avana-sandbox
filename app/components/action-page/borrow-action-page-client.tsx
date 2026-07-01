@@ -947,7 +947,7 @@ export function BorrowActionPageClient({
               : kind === "claim"
                 ? "Nothing to claim"
                 : kind === "supply"
-                  ? "No LP tokens in your wallet"
+                  ? "No pools found"
                   : "No assets found"
           }
           emptyDescription={
@@ -956,7 +956,7 @@ export function BorrowActionPageClient({
               : kind === "claim"
                 ? "You have no claimable rewards right now. Supply collateral and earn fees before claiming."
                 : kind === "supply"
-                  ? "Add liquidity to a supported pool in your wallet before pledging collateral."
+                  ? "Try adjusting your search — every market is available to pledge in the sandbox."
                   : "Try adjusting your search"
           }
           onSelect={(id) => {

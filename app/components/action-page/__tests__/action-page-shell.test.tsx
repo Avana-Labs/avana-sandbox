@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
+import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -11,8 +12,10 @@ describe("ActionPageShell", () => {
     cleanup()
   })
 
+  const renderShell = (ui: React.ReactNode) => render(<DisplayPreferencesProvider>{ui}</DisplayPreferencesProvider>)
+
   it("renders action shell title, subtitle, close control, and body without wallet pill or help menu", async () => {
-    render(
+    renderShell(
       <ActionPageShell
         title="Borrow"
         subtitle="Configure and review your loan."
@@ -25,13 +28,14 @@ describe("ActionPageShell", () => {
     expect(await screen.findByRole("heading", { name: "Borrow" })).toBeInTheDocument()
     expect(screen.getByText("Configure and review your loan.")).toBeInTheDocument()
     expect(screen.getByLabelText("Close")).toBeInTheDocument()
+    expect(screen.getByLabelText("Change language")).toBeInTheDocument()
     expect(screen.getByText("Body")).toBeInTheDocument()
     expect(screen.queryByText(/demo-w/i)).not.toBeInTheDocument()
     expect(screen.queryByLabelText("Open help menu")).not.toBeInTheDocument()
   })
 
   it("does not render a sandbox badge when simulated", () => {
-    render(
+    renderShell(
       <ActionPageShell title="Borrow" subtitle="Configure and review your loan." simulated>
         <div>Body</div>
       </ActionPageShell>,
@@ -41,7 +45,7 @@ describe("ActionPageShell", () => {
   })
 
   it("renders overlay mode on the shell root", async () => {
-    const { container } = render(
+    const { container } = renderShell(
       <ActionPageShell mode="overlay" title="Deposit" subtitle="Configure and review your deposit.">
         <div>Overlay body</div>
       </ActionPageShell>,

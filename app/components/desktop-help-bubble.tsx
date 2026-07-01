@@ -38,7 +38,7 @@ const HELP_LINKS: HelpLink[] = [
   },
   {
     href: "/support-center",
-    label: "Help Center",
+    label: "Support center",
     icon: LifeBuoy,
   },
   {

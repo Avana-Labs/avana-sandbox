@@ -258,7 +258,7 @@ export function ActionConfigureStage({
       ) : null}
 
       {preview && showHomeDetails ? (
-        <div className={previewMotionClassName}>
+        <div className={cn(previewMotionClassName, "space-y-3")}>
           {preview.rateLabel || preview.marketValue || preview.marketBreakdown ? (
             <ActionCard>
               {preview.rateLabel ? (

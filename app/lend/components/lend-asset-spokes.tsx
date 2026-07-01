@@ -712,7 +712,7 @@ export function LendAssetSpokes({
             aria-label="Filter assets"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Filter assets"
+            placeholder="Search assets"
             className="lend-filter-input w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground/45 md:text-[15px] md:font-normal"
           />
         </label>
@@ -745,7 +745,7 @@ export function LendAssetSpokes({
             aria-label="Filter assets"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Filter assets"
+            placeholder="Search assets"
             className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground/45"
           />
         </label>

@@ -15,6 +15,7 @@ import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import type { BorrowAssetVisual } from "@/app/lib/borrow-sim"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type SearchTab = "all" | "pools" | "borrow" | "lend"
 
@@ -163,12 +164,6 @@ function SectionIcon({ tab }: { tab: SearchResult["tab"] }) {
   return <Sparkles className="h-3.5 w-3.5" />
 }
 
-function sectionLabel(tab: SearchResult["tab"]) {
-  if (tab === "pools") return "Pools to use as collateral"
-  if (tab === "borrow") return "Assets to borrow"
-  return "Assets to lend"
-}
-
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
   const tagName = target.tagName
@@ -177,6 +172,7 @@ function isTypingTarget(target: EventTarget | null) {
 
 export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {}) {
   const router = useRouter()
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [activeTab, setActiveTab] = useState<SearchTab>("all")
@@ -244,7 +240,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
     <>
       <button
         type="button"
-        aria-label="Search Avana"
+        aria-label={t("Search Avana")}
         onClick={() => {
           void loadResults()
           setOpen(true)
@@ -260,7 +256,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
         ) : (
           <>
             <Search className="h-4 w-4 shrink-0 text-brand-readable lg:h-[17px] lg:w-[17px]" />
-            <span className="min-w-0 flex-1 truncate">Search pools, borrow, lend, and more</span>
+            <span className="min-w-0 flex-1 truncate">{t("Search pools, borrow, lend, and more")}</span>
             <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-[7px] border border-border bg-muted px-1 text-[10px] font-normal text-brand-readable lg:h-[22px] lg:min-w-[22px] lg:text-[11px]">
               /
             </span>
@@ -270,9 +266,9 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-[20px] border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-[20px] [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
-          <DialogTitle className="sr-only">Search Avana</DialogTitle>
+          <DialogTitle className="sr-only">{t("Search Avana")}</DialogTitle>
           <DialogDescription className="sr-only">
-            Search collateral pools, assets to borrow, and assets to lend.
+            {t("Search collateral pools, assets to borrow, and assets to lend.")}
           </DialogDescription>
 
           <div className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -281,7 +277,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search pools, borrow assets, lend assets"
+              placeholder={t("Search pools, borrow assets, lend assets")}
               className="h-8 min-w-0 flex-1 bg-transparent text-[16px] font-normal text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>
@@ -299,7 +295,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
                     isActive ? "bg-surface-inset text-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {tab.label}
+                  {t(tab.label)}
                 </button>
               )
             })}
@@ -308,15 +304,15 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
           <div className="max-h-[430px] overflow-y-auto px-2 py-2.5">
             {loadingResults && results == null ? (
               <div className="px-5 py-12 text-center">
-                <p className="text-[15px] font-medium text-foreground">Loading results</p>
-                <p className="mt-1 text-[13px] text-muted-foreground">Preparing pools, borrow assets, and lend assets.</p>
+                <p className="text-[15px] font-medium text-foreground">{t("Loading results")}</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">{t("Preparing pools, borrow assets, and lend assets.")}</p>
               </div>
             ) : groupedResults.length > 0 ? (
               groupedResults.map(([tab, group]) => (
                 <section key={tab} className="pb-2">
                   <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium text-muted-foreground">
                     <SectionIcon tab={tab} />
-                    <span>{sectionLabel(tab)}</span>
+                    <span>{t(tab === "pools" ? "Pools to use as collateral" : tab === "borrow" ? "Assets to borrow" : "Assets to lend")}</span>
                   </div>
                   <div className="space-y-0.5">
                     {group.slice(0, activeTab === "all" && !normalizedQuery ? 4 : 12).map((result) => (
@@ -351,8 +347,8 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
               ))
             ) : (
               <div className="px-5 py-12 text-center">
-                <p className="text-[15px] font-medium text-foreground">No results found</p>
-                <p className="mt-1 text-[13px] text-muted-foreground">Try a token symbol, pool pair, or action like borrow.</p>
+                <p className="text-[15px] font-medium text-foreground">{t("No results found")}</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">{t("Try a token symbol, pool pair, or action like borrow.")}</p>
               </div>
             )}
           </div>

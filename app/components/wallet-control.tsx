@@ -35,11 +35,11 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
   const signingIn = Boolean(siwe?.isLoading)
 
   const base =
-    // A fixed min-width keeps every state (Connect / Connecting… / Sign in / the
-    // address pill) the same footprint, so the header never shifts as the state changes.
+    // A fixed width keeps every state and translated label in the same footprint,
+    // so the header never shifts as wallet or locale state changes.
     size === "mobile"
-      ? "inline-flex h-9 min-w-[136px] items-center justify-center rounded-full px-4 text-[14px] font-medium transition-colors"
-      : "inline-flex h-10 min-w-[152px] items-center justify-center rounded-full px-4 font-sans text-[15px] font-medium transition-colors"
+      ? "inline-flex h-9 w-[124px] items-center justify-center truncate rounded-full px-3 text-[14px] font-medium transition-colors sm:w-[136px] sm:px-4"
+      : "inline-flex h-10 w-[152px] items-center justify-center truncate rounded-full px-4 font-sans text-[15px] font-medium transition-colors"
   const brand = cn(base, "bg-brand text-brand-foreground hover:bg-brand/90")
   const pill = cn(base, "gap-2 border border-border bg-transparent text-foreground hover:bg-surface-inset")
 

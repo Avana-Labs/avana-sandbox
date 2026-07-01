@@ -493,7 +493,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       <button
         ref={menuButtonRef}
         type="button"
-        className="inline-flex h-10 w-10 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] md:hidden"
+        className="inline-flex h-10 w-10 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
         aria-label="Toggle menu"
         aria-expanded={open}
         aria-controls="mobile-site-nav"
@@ -511,7 +511,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
       {renderMenu ? (
         <div
-          className={`fixed inset-0 z-[60] min-h-[100dvh] bg-background text-foreground transition-opacity duration-300 ease-out md:hidden ${
+          className={`fixed inset-0 z-[60] min-h-[100dvh] bg-background text-foreground transition-opacity duration-300 ease-out xl:hidden ${
             isVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
           role="dialog"

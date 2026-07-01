@@ -1,7 +1,11 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { MultiplyActionPageClient } from "@/app/components/action-page/multiply-action-page-client"
+
+const renderWithProviders = (ui: ReactNode) => render(<DisplayPreferencesProvider>{ui}</DisplayPreferencesProvider>)
 
 describe("MultiplyActionPageClient", () => {
   beforeEach(() => {
@@ -13,7 +17,7 @@ describe("MultiplyActionPageClient", () => {
   })
 
   it("does not show transaction preview metrics before a multiply amount is entered", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="multiply" />
       </AvanaSessionsProvider>,
@@ -29,7 +33,7 @@ describe("MultiplyActionPageClient", () => {
   })
 
   it("clamps the leverage multiplier to the selected market public maximum", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="10" />
       </AvanaSessionsProvider>,
@@ -41,7 +45,7 @@ describe("MultiplyActionPageClient", () => {
   })
 
   it("keeps deleverage preview blank until the target multiplier changes", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="deleverage" />
       </AvanaSessionsProvider>,
@@ -58,7 +62,7 @@ describe("MultiplyActionPageClient", () => {
   })
 
   it("keeps embedded deleverage preview blank while showing the default target multiplier", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="deleverage" embedded layout="home" initialMarketId="aave-gho" />
       </AvanaSessionsProvider>,
@@ -76,7 +80,7 @@ describe("MultiplyActionPageClient", () => {
   })
 
   it("uses the ruler max to produce a valid deleverage preview", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="deleverage" />
       </AvanaSessionsProvider>,
@@ -101,7 +105,7 @@ describe("MultiplyActionPageClient", () => {
   })
 
   it("falls back to a usable market instead of dead-ending on an unknown id", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="multiply" initialMarketId="not-a-market" />
       </AvanaSessionsProvider>,

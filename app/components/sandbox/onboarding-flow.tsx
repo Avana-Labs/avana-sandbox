@@ -40,7 +40,7 @@ export type OnboardingGateState = {
 }
 
 const PRIMARY =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-7 text-[15px] font-semibold text-background transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
+  "inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-semibold text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
 const SECONDARY =
   "inline-flex min-h-12 items-center justify-center rounded-full bg-muted px-7 text-[15px] font-semibold text-foreground transition-colors hover:bg-muted/75 disabled:opacity-50"
 
@@ -135,7 +135,17 @@ function ErrorMessage({ error }: { error: string | null }) {
   ) : null
 }
 
-export function OnboardingUnavailable({ onRetry }: { onRetry: () => void }) {
+export function OnboardingUnavailable({
+  onRetry,
+  headlineMuted = "We couldn't verify your onboarding status.",
+  headlineActive = "Reconnect your wallet and try again.",
+  note = "Authenticated sessions stay locked until Convex confirms access.",
+}: {
+  onRetry: () => void
+  headlineMuted?: string
+  headlineActive?: string
+  note?: string
+}) {
   return (
     <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8">
       <StatusRow wallet={null} pct={10} />
@@ -144,14 +154,8 @@ export function OnboardingUnavailable({ onRetry }: { onRetry: () => void }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Headline
-          muted="We couldn't verify your onboarding status."
-          active="Reconnect your wallet and try again."
-          size="hero"
-        />
-        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-          Authenticated sessions stay locked until Convex confirms access.
-        </p>
+        <Headline muted={headlineMuted} active={headlineActive} size="hero" />
+        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">{note}</p>
         <button className={`${PRIMARY} mt-9`} onClick={onRetry} type="button">
           Retry
         </button>
@@ -348,19 +352,18 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       {!wallet && !hasStarted ? (
         <>
           <Headline
-            muted="Welcome to the Avana Sandbox."
-            active="A risk-free space to test the app and learn how it works."
+            muted={t("Welcome to the Avana Sandbox.")}
+            active={t("A risk-free space to test the app and learn how it works.")}
             size="hero"
           />
           <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-            Borrow against LP, lend, and loop positions with practice funds. When you&apos;re ready, switch to the real
-            world. Have fun exploring.
+            {t("Borrow against LP, lend, and loop positions with practice funds. When you're ready, switch to the real world. Have fun exploring.")}
           </p>
           <ul className="mt-7 space-y-2.5">
             {["Unlimited practice funds", "Risk-free exploration", "No real assets involved", "Fast — no transactions to sign"].map((perk) => (
               <li className="flex items-center gap-2.5 text-[15px] font-medium" key={perk}>
                 <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
-                {perk}
+                {t(perk)}
               </li>
             ))}
           </ul>

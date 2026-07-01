@@ -11,8 +11,12 @@ const CURRENCY_STORAGE_KEY = "avana-currency"
 
 export const LANGUAGE_OPTIONS = [
   { code: "EN", label: "English" },
-  { code: "ZH-CN", label: "Chinese, Simplified" },
-  { code: "ZH-TW", label: "Chinese, Traditional" },
+  { code: "ZH", label: "Chinese" },
+  { code: "ES", label: "Spanish" },
+  { code: "AR", label: "Arabic" },
+  { code: "DE", label: "German" },
+  { code: "HI", label: "Hindi" },
+  { code: "TR", label: "Turkish" },
   { code: "NL", label: "Dutch" },
   { code: "FR", label: "French" },
   { code: "ID", label: "Indonesian" },
@@ -20,10 +24,6 @@ export const LANGUAGE_OPTIONS = [
   { code: "KO", label: "Korean" },
   { code: "PT", label: "Portuguese" },
   { code: "RU", label: "Russian" },
-  { code: "ES-ES", label: "Spanish (Spain)" },
-  { code: "ES-LATAM", label: "Spanish (Latin America)" },
-  { code: "ES-US", label: "Spanish (US)" },
-  { code: "ES-AR", label: "Spanish (Argentina)" },
 ] as const
 
 export const CURRENCY_OPTIONS = [
@@ -66,7 +66,7 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
 
   useEffect(() => {
     const storedValue = window.localStorage.getItem(STORAGE_KEY)
-    const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode | null
+    const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
     const storedCurrency = window.localStorage.getItem(CURRENCY_STORAGE_KEY) as CurrencyCode | null
 
     if (storedValue === "false") {
@@ -75,8 +75,10 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
     if (storedValue === "true") {
       setShowDollarAmountsState(true)
     }
-    if (storedLanguage && LANGUAGE_OPTIONS.some((option) => option.code === storedLanguage)) {
-      setLanguageState(storedLanguage)
+    const migratedLanguage =
+      storedLanguage?.startsWith("ES-") ? "ES" : storedLanguage?.startsWith("ZH-") ? "ZH" : storedLanguage
+    if (migratedLanguage && LANGUAGE_OPTIONS.some((option) => option.code === migratedLanguage)) {
+      setLanguageState(migratedLanguage as LanguageCode)
     }
     if (storedCurrency && CURRENCY_OPTIONS.some((option) => option.code === storedCurrency)) {
       // Update the module-level rate first so the shared USD formatters convert on the

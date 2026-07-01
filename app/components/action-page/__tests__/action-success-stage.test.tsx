@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
+import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 
 // jsdom does not advance performance.now() inside its rAF loop, so mount
 // animations (AnimatedTextValue) never settle. Drive rAF with a far-future
@@ -44,25 +45,27 @@ describe("ActionMetricsBlock", () => {
 describe("ActionSuccessStage", () => {
   it("renders receipt card when receipt context is provided", async () => {
     render(
-      <ActionSuccessStage
-        closeHref="/borrow"
-        success={{
-          title: "Borrow successful",
-          description: "$1,000 processed.",
-          receiptHash: "sim-123",
-          metrics: [],
-          primaryCtaLabel: "View borrow dashboard",
-          primaryCtaHref: "/borrow",
-          secondaryCtaLabel: "Done",
-          receiptContext: {
-            verb: "Borrow",
-            amountLabel: "1000.00 USDC",
-            rateLabel: "Borrow APY",
-            rateValue: "7.04%",
-            marketValue: "USDC · Core",
-          },
-        }}
-      />,
+      <DisplayPreferencesProvider>
+        <ActionSuccessStage
+          closeHref="/borrow"
+          success={{
+            title: "Borrow successful",
+            description: "$1,000 processed.",
+            receiptHash: "sim-123",
+            metrics: [],
+            primaryCtaLabel: "View borrow dashboard",
+            primaryCtaHref: "/borrow",
+            secondaryCtaLabel: "Done",
+            receiptContext: {
+              verb: "Borrow",
+              amountLabel: "1000.00 USDC",
+              rateLabel: "Borrow APY",
+              rateValue: "7.04%",
+              marketValue: "USDC · Core",
+            },
+          }}
+        />
+      </DisplayPreferencesProvider>,
     )
 
     expect(screen.getByTestId("action-success-stage")).toBeInTheDocument()

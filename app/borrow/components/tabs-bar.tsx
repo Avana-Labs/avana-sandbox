@@ -124,7 +124,7 @@ function ExpandableDesktopSearch({
             aria-label="Filter assets"
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            placeholder="Filter assets"
+            placeholder="Search markets"
             className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
           />
         ) : null}
@@ -404,7 +404,7 @@ export function TabsBar({
             aria-label="Filter assets"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Filter assets"
+            placeholder="Search markets"
             className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
           />
         </label>
