@@ -7,7 +7,7 @@
  */
 
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
+import { internalQuery, mutation } from "./_generated/server"
 
 const MESSAGE_MIN = 10
 const MESSAGE_MAX = 5000
@@ -56,8 +56,12 @@ export const submitSupportRequest = mutation({
   },
 })
 
-/** Most-recent support requests (newest first). For an internal triage view. */
-export const listRecentSupportRequests = query({
+/**
+ * Most-recent support requests (newest first). For an internal triage view only —
+ * these rows contain other users' PII (wallet, email, message), so this is an
+ * `internalQuery` and is never exposed on the public `api`.
+ */
+export const listRecentSupportRequests = internalQuery({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
     const take = Math.min(Math.max(limit ?? 50, 1), 200)
