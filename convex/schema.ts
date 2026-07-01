@@ -308,6 +308,7 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_wallet", ["wallet"])
+    .index("by_wallet_created", ["wallet", "createdAt"])
     .index("by_status", ["status"])
     .index("by_created_at", ["createdAt"]),
 
