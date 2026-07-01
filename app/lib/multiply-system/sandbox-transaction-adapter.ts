@@ -75,6 +75,7 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
       collateralAmount: action.collateralAmount,
       selectedMultiplier: action.selectedMultiplier,
       existingPosition: existing,
+      collateralPriceOverrideUsd: action.collateralPriceUsd,
     })
 
     return {

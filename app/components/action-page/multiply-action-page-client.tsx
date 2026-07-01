@@ -187,6 +187,7 @@ export function MultiplyActionPageClient({
         marketId: market.id,
         collateralAmount: multiplyCollateralAmount,
         selectedMultiplier: parsedMultiplier,
+        collateralPriceUsd,
       }
 
       setPreviewUi(null)
@@ -200,7 +201,11 @@ export function MultiplyActionPageClient({
               borrowSymbol: market.borrowAsset.symbol,
               collateralAmount: multiplyCollateralAmount,
               collateralPriceUsd,
-              catalogCollateralPriceUsd: market.collateralAsset.priceUsd,
+              // The engine now values the position at the same live price (threaded via
+              // action.collateralPriceUsd), so the simulation figures are already live-
+              // priced — no further display rescale (scale === 1). This keeps the preview
+              // exactly equal to the persisted/dashboard position.
+              catalogCollateralPriceUsd: collateralPriceUsd,
               marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
               collateralApy: market.collateralAsset.apy,
               borrowApy: market.borrowAsset.borrowApy,
@@ -309,6 +314,7 @@ export function MultiplyActionPageClient({
               marketId: market.id,
               collateralAmount: parsedAmount!,
               selectedMultiplier: parsedMultiplier,
+              collateralPriceUsd,
             }
           : {
               type: "deleverage" as const,
@@ -355,7 +361,7 @@ export function MultiplyActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, hasUserInput, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
+  }, [amount, closeHref, collateralPriceUsd, descriptor.primaryVerb, hasUserInput, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
 
   // The catalog always has markets, so `market` is non-null in practice; this only
   // guards the impossible empty-catalog case (and never shows a dead-end card).

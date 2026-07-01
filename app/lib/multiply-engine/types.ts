@@ -82,6 +82,10 @@ export type MultiplyAction =
       marketId: string
       collateralAmount: number
       selectedMultiplier: number
+      // Live oracle price for the collateral asset. When provided it overrides the
+      // catalog seed price so the persisted position is valued at exactly the price
+      // shown in the confirm preview (single source of truth for the dollar figures).
+      collateralPriceUsd?: number
       at?: number
     }
   | {

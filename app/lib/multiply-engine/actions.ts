@@ -76,6 +76,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
       collateralAmount: action.collateralAmount,
       selectedMultiplier: action.selectedMultiplier,
       existingPosition: existing,
+      collateralPriceOverrideUsd: action.collateralPriceUsd,
     })
 
     if (!simulation.validation.allowed) {
