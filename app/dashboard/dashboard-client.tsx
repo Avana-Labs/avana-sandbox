@@ -237,10 +237,10 @@ export function DashboardClient({
         secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
         txHash: item.hash,
       })),
-      ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory),
+      ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory, lendSession.state),
       ...(pageData?.activity.rows ?? []),
     ],
-    [borrowSession.transactionHistory, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows],
+    [borrowSession.transactionHistory, lendSession.state, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows],
   )
 
   const lendTabData = useMemo(() => {
