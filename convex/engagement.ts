@@ -145,9 +145,14 @@ async function buildEngagement(ctx: QueryCtx, marketId: Id<"markets">, cfg: Cfg)
     .withIndex("by_market_at", (q) => q.eq("marketId", marketId).gte("at", lookbackStart))
     .collect()
 
+  // Anchor the daily buckets on the last COMPLETE UTC day (yesterday), not on the
+  // partial current day. Today's bucket is always in-progress — using it as the
+  // headline makes every detail page read 0 active wallets / −100% until events
+  // start landing for the current day.
+  const anchor = now - DAY_MS
   const buckets = new Map<string, Set<string>>()
   for (let i = WINDOW_DAYS - 1; i >= 0; i--) {
-    const day = new Date(now - i * DAY_MS).toISOString().slice(0, 10)
+    const day = new Date(anchor - i * DAY_MS).toISOString().slice(0, 10)
     buckets.set(day, new Set())
   }
   for (const e of events) {
@@ -160,6 +165,7 @@ async function buildEngagement(ctx: QueryCtx, marketId: Id<"markets">, cfg: Cfg)
     t: day,
     v: wallets.size,
   }))
+  // Headline = last complete day; delta baseline = the complete day before it.
   const current = points[points.length - 1]?.v ?? 0
   const previous = points[points.length - 2]?.v ?? 0
   const deltaPct = previous === 0 ? 0 : Math.round(((current - previous) / previous) * 1000) / 10
