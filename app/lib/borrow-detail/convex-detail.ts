@@ -19,7 +19,7 @@ import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import { formatOraclePrice } from "@/app/lib/borrow-detail/pool.mock"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
-import type { QuickStat } from "./types"
+import type { QuickStat, RelatedPoolSummary } from "./types"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
@@ -108,6 +108,25 @@ export function injectPoolOraclePrice(
 }
 
 /**
+ * Restate each Related-pools card's "Available" from the calibrated Convex pool snapshot
+ * for that sibling — the SAME value the sibling shows as "Available to borrow" on its own
+ * detail page (both derive from snap.availableUsd via the hydrated market state). Without
+ * this the card reuses the raw catalog availableUsd, which diverges 3–7× from the sibling's
+ * hydrated figure. Falls back to the existing label when a sibling has no snapshot.
+ */
+export function syncRelatedAvailable(
+  related: RelatedPoolSummary[],
+  snapshots: ConvexMarketSnapshot[],
+): RelatedPoolSummary[] {
+  const poolAvailable = new Map(snapshots.filter((s) => s.scope === "pool").map((s) => [s.slug, s.availableUsd]))
+  if (poolAvailable.size === 0) return related
+  return related.map((card) => {
+    const available = poolAvailable.get(card.id)
+    return available === undefined ? card : { ...card, availableLabel: formatCompactUsd(available) }
+  })
+}
+
+/**
  * Overlay "Dex Liquidity" (Σ available liquidity across the asset's pools) from the
  * calibrated Convex pool snapshots, so it matches the rest of the page instead of the
  * inflated catalog sum. No-op if no pool snapshots are present.
@@ -156,6 +175,7 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
       detail.row.visuals[0].symbol,
       detail.row.visuals[1].symbol,
     ),
+    related: syncRelatedAvailable(detail.related, snapshots),
     heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? detail.heroFeed,
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
