@@ -6,7 +6,6 @@ import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
-import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
 export type SupportSubmitPayload = {
   category: string
@@ -551,22 +550,21 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
 }
 
 /**
- * Convex-backed submitter: persists each request to the `supportRequests` table,
- * tagging the authed wallet (when signed in) and the browser user-agent.
+ * Convex-backed submitter: persists each request to the `supportRequests` table.
+ * The wallet is derived server-side from the authenticated session (not sent by
+ * the client), so we only forward the browser user-agent.
  */
 function ConvexSupportCenter() {
   const submitSupportRequest = useMutation(api.support.submitSupportRequest)
-  const { address } = useSiweAuth()
 
   const submit = useCallback<SupportSubmit>(
     async (payload) => {
       await submitSupportRequest({
         ...payload,
-        wallet: address ?? undefined,
         userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
       })
     },
-    [submitSupportRequest, address],
+    [submitSupportRequest],
   )
 
   return <SupportCenterForm submit={submit} />
