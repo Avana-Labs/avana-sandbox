@@ -22,6 +22,8 @@ export type LendFeaturedSnapshot = {
   eyebrow: string
   apyLabel: string
   apyPct: number
+  /** Supply APY as a percent — matches the list-row "Supply APY" column so the card and table agree. */
+  supplyApyPct: number
   tone: "green" | "blue"
   iconUrl: string
   href: string
@@ -56,6 +58,7 @@ export function buildLendFeaturedSnapshots(markets: LendMarket[]): LendFeaturedS
     const featured = LEND_FEATURED_ASSETS[featuredId]
     const market = markets.find((entry) => entry.asset.symbol.toUpperCase() === featured.symbol.toUpperCase())
     const apy = market?.totalApy ?? featured.apy / 100
+    const supplyApy = market?.supplyApy ?? featured.apy / 100
     return {
       marketId: market?.marketId ?? featuredId,
       symbol: featured.symbol,
@@ -63,6 +66,7 @@ export function buildLendFeaturedSnapshots(markets: LendMarket[]): LendFeaturedS
       eyebrow: featured.eyebrow,
       apyLabel: formatPct(apy),
       apyPct: apy * 100,
+      supplyApyPct: supplyApy * 100,
       tone: featured.tone,
       iconUrl: featured.iconUrl,
       href: `/lend/markets/${market?.marketId ?? featuredId}`,
