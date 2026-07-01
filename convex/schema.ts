@@ -242,10 +242,14 @@ export default defineSchema({
 
   /**
    * Shared, multi-user market liquidity ledger. Every borrow / repay / supply /
-   * withdraw from ANY client increments one aggregate row per market, and every
-   * client subscribes (see `convex/liquidity.ts`) and layers these deltas onto the
-   * base catalog so liquidity stats move with aggregate activity across all users
-   * instead of staying frozen. One row per market keeps reads O(#markets).
+   * withdraw from ANY client APPENDS a delta event here (never patches a shared
+   * row), and every client subscribes (see `convex/liquidity.ts`), which folds the
+   * events per market and layers the net onto the base catalog so liquidity stats
+   * move with aggregate activity across all users instead of staying frozen.
+   *
+   * Append-only by design: patching a single per-market row put every writer on the
+   * same document and made concurrent actions contend under Convex OCC. Appending a
+   * fresh row per action removes that hot-write contention; reads fold O(#events).
    */
   marketLiquidityDeltas: defineTable({
     /** Catalog market id — a pool id ("uni-v3-bluechip-weth-usdc") or borrowable asset id ("uni-v2:usdc"). */
@@ -256,6 +260,21 @@ export default defineSchema({
     suppliedDeltaUsd: v.number(),
     updatedAt: v.number(),
   }).index("by_slug", ["marketSlug"]),
+
+  /**
+   * Sharded economy counters. The single `sandboxEconomy` row is read-and-patched
+   * by every claim, so concurrent claims all contend on it under Convex OCC (the
+   * load sweep saw ~53% of concurrent claims fail there). Each claim instead adds
+   * its grant to ONE randomly-chosen shard row; the live count/total is the sum of
+   * all shards. Distinct shards never collide, so the hot counter comes off the
+   * write path while the aggregate stays exact.
+   */
+  sandboxEconomyShards: defineTable({
+    /** 0..N-1 shard bucket; a claim picks one at random to increment. */
+    shard: v.number(),
+    userCount: v.number(),
+    grantedUsd: v.number(),
+  }).index("by_shard", ["shard"]),
 
   /**
    * Real token spot prices (the ONE place the sandbox reads live market data). A

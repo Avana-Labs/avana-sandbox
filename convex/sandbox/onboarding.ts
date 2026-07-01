@@ -37,6 +37,10 @@ const DEFAULT_BASKET = [
 
 const SEED_VERSION = 1
 
+/** Shard count for the economy counters — spreads concurrent claim increments so no
+ *  two claims collide on the same row under OCC. */
+const ECONOMY_SHARDS = 16
+
 const DEFAULT_CONFIG = {
   basket: DEFAULT_BASKET,
   seedVersion: SEED_VERSION,
@@ -70,6 +74,10 @@ async function getOrSeedEconomy(ctx: MutationCtx) {
   const existing = await ctx.db.query("sandboxEconomy").first()
   if (existing) return existing
   const id = await ctx.db.insert("sandboxEconomy", DEFAULT_ECONOMY)
+  // Collapse any duplicate singleton a concurrent cold-start inserted at the same time,
+  // so `.first()` (and the caps read below) stay against exactly one authoritative row.
+  const rows = await ctx.db.query("sandboxEconomy").collect()
+  for (const row of rows) if (row._id !== id) await ctx.db.delete(row._id)
   return (await ctx.db.get(id))!
 }
 
@@ -77,7 +85,39 @@ async function getOrSeedConfig(ctx: MutationCtx) {
   const existing = await ctx.db.query("sandboxConfig").first()
   if (existing) return existing
   const id = await ctx.db.insert("sandboxConfig", DEFAULT_CONFIG)
+  const rows = await ctx.db.query("sandboxConfig").collect()
+  for (const row of rows) if (row._id !== id) await ctx.db.delete(row._id)
   return (await ctx.db.get(id))!
+}
+
+/** Live economy counts = baseline on the singleton row + the sum of every shard. */
+async function readEconomyCounts(ctx: MutationCtx | QueryCtx, economy: { userCount: number; totalGrantedUsd: number }) {
+  const shards = await ctx.db.query("sandboxEconomyShards").collect()
+  let userCount = economy.userCount
+  let totalGrantedUsd = economy.totalGrantedUsd
+  for (const shard of shards) {
+    userCount += shard.userCount
+    totalGrantedUsd += shard.grantedUsd
+  }
+  return { userCount, totalGrantedUsd }
+}
+
+/** Add one claim's grant to a random shard (never the hot singleton row), so
+ *  concurrent claims write disjoint documents and don't contend under OCC. */
+async function incrementEconomyShard(ctx: MutationCtx, grantedUsd: number) {
+  const shard = Math.floor(Math.random() * ECONOMY_SHARDS)
+  const existing = await ctx.db
+    .query("sandboxEconomyShards")
+    .withIndex("by_shard", (q) => q.eq("shard", shard))
+    .first()
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      userCount: existing.userCount + 1,
+      grantedUsd: existing.grantedUsd + grantedUsd,
+    })
+    return
+  }
+  await ctx.db.insert("sandboxEconomyShards", { shard, userCount: 1, grantedUsd })
 }
 
 async function profileForWallet(ctx: QueryCtx | MutationCtx, wallet: string) {
@@ -94,18 +134,8 @@ async function applyMarketDelta(
   borrowedDeltaUsd: number,
   now: number,
 ) {
-  const existing = await ctx.db
-    .query("marketLiquidityDeltas")
-    .withIndex("by_slug", (queryBuilder) => queryBuilder.eq("marketSlug", marketSlug))
-    .unique()
-  if (existing) {
-    await ctx.db.patch(existing._id, {
-      suppliedDeltaUsd: existing.suppliedDeltaUsd + suppliedDeltaUsd,
-      borrowedDeltaUsd: existing.borrowedDeltaUsd + borrowedDeltaUsd,
-      updatedAt: now,
-    })
-    return
-  }
+  // Append-only: never patch a shared per-market row (that put every concurrent
+  // claim on the same document under OCC). Readers fold these events per market.
   await ctx.db.insert("marketLiquidityDeltas", {
     marketSlug,
     suppliedDeltaUsd,
@@ -120,10 +150,12 @@ export const getState = query({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
-    const [economy, config] = await Promise.all([
+    const [economy, config, shards] = await Promise.all([
       ctx.db.query("sandboxEconomy").first(),
       ctx.db.query("sandboxConfig").first(),
+      ctx.db.query("sandboxEconomyShards").collect(),
     ])
+    const shardedUserCount = shards.reduce((sum, shard) => sum + shard.userCount, 0)
     return {
       onboardingStep: profile?.onboardingStep ?? "wallet",
       profile,
@@ -138,13 +170,13 @@ export const getState = query({
       economy: economy
         ? {
             status: economy.status,
-            userCount: economy.userCount,
+            userCount: economy.userCount + shardedUserCount,
             userCap: economy.userCap,
             perUserTargetUsd: economy.perUserTargetUsd,
           }
         : {
             status: "open" as const,
-            userCount: 0,
+            userCount: shardedUserCount,
             userCap: DEFAULT_ECONOMY.userCap,
             perUserTargetUsd: DEFAULT_ECONOMY.perUserTargetUsd,
           },
@@ -281,15 +313,16 @@ export const claim = mutation({
 
     const allocatedUsd = STARTER_EQUITY_USD
 
-    // Server-side caps — re-read live counts, never trust the client.
+    // Server-side caps — re-read live counts (summed across shards), never trust the client.
+    const counts = await readEconomyCounts(ctx, economy)
     const capReached =
       economy.status !== "open" ||
-      economy.userCount >= economy.userCap ||
-      economy.totalGrantedUsd + allocatedUsd > economy.totalGrantedUsdCap
+      counts.userCount >= economy.userCap ||
+      counts.totalGrantedUsd + allocatedUsd > economy.totalGrantedUsdCap
 
     if (capReached) {
       await ctx.db.patch(profile._id, { onboardingStep: "waitlisted" })
-      const justClosed = economy.status === "open" && economy.userCount >= economy.userCap
+      const justClosed = economy.status === "open" && counts.userCount >= economy.userCap
       if (justClosed) {
         await ctx.db.patch(economy._id, { status: "closed", closedReason: "userCap reached", closedAt: Date.now() })
       }
@@ -512,10 +545,9 @@ export const claim = mutation({
       basketSnapshot,
       claimTxSynthetic: syntheticTxHash,
     })
-    await ctx.db.patch(economy._id, {
-      userCount: economy.userCount + 1,
-      totalGrantedUsd: economy.totalGrantedUsd + allocatedUsd,
-    })
+    // Increment a random shard instead of the hot singleton row so concurrent
+    // claims write disjoint documents (no OCC contention on the counter).
+    await incrementEconomyShard(ctx, allocatedUsd)
     await ctx.db.insert("sandboxActivity", {
       wallet,
       kind: "onboardingClaim",
