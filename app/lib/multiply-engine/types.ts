@@ -54,7 +54,7 @@ export type MultiplyPosition = {
   lastUpdatedAt: number
 }
 
-export type MultiplyTransactionKind = "multiply" | "deleverage"
+export type MultiplyTransactionKind = "multiply" | "deleverage" | "close"
 
 export type MultiplyTransaction = {
   id: string
@@ -94,6 +94,14 @@ export type MultiplyAction =
       positionId: string
       targetMultiplier: number
       repayAmountUsd?: number
+      at?: number
+    }
+  | {
+      // Fully exit a position: repay any remaining debt, withdraw the collateral,
+      // and remove the position from state so no 1.0x/$0 "zombie" is left behind.
+      type: "close"
+      walletId: string
+      positionId: string
       at?: number
     }
 

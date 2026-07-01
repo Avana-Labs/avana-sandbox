@@ -6,9 +6,11 @@ import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-pr
 import { MultiplyActionPageClient } from "@/app/components/action-page/multiply-action-page-client"
 import { buildMockMultiplySystemStateWithSeedPosition } from "@/app/lib/multiply-system/mock"
 import {
+  readMultiplySessionState,
   writeMultiplySessionMetadata,
   writeMultiplySessionState,
 } from "@/app/lib/multiply-system/storage"
+import { serializeMultiplySystemState } from "@/app/lib/multiply-system/codec"
 
 const renderWithProviders = (ui: ReactNode) => render(<DisplayPreferencesProvider>{ui}</DisplayPreferencesProvider>)
 const DEMO_WALLET_ID = "demo-wallet"
@@ -196,6 +198,32 @@ describe("MultiplyActionPageClient", () => {
       },
       { timeout: 8000 },
     )
+  })
+
+  it("fully closes a position from the deleverage view and removes it from state", async () => {
+    seedExistingMultiplyPosition()
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="deleverage" />
+      </AvanaSessionsProvider>,
+    )
+
+    const closeButton = await screen.findByTestId("multiply-close-position")
+    fireEvent.click(closeButton)
+
+    await waitFor(
+      () => {
+        expect(screen.getByText("Position closed")).toBeInTheDocument()
+      },
+      { timeout: 8000 },
+    )
+
+    // The closed position is gone from the persisted session state (no zombie left).
+    const persisted = readMultiplySessionState(
+      DEMO_WALLET_ID,
+      serializeMultiplySystemState({ now: 0, markets: {}, positions: {}, transactions: [] }),
+    )
+    expect(persisted.positions[`${DEMO_WALLET_ID}:eth-usdt`]).toBeUndefined()
   })
 
   it("falls back to a usable market instead of dead-ending on an unknown id", async () => {

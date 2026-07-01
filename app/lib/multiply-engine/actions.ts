@@ -108,6 +108,28 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
     return next
   }
 
+  if (action.type === "close") {
+    const position = next.positions[action.positionId]
+    if (!position) throw new Error(`Unknown position ${action.positionId}`)
+
+    delete next.positions[position.id]
+    // Repaying the outstanding debt returns that borrow capacity to the market.
+    applyBorrowLiquidityDelta(next, position.marketId, -position.debtValueUsd)
+    next.transactions.push({
+      id: `tx-${next.transactions.length + 1}`,
+      walletId: action.walletId,
+      marketId: position.marketId,
+      kind: "close",
+      collateralAmountUsd: Math.max(0, position.collateralValueUsd - position.debtValueUsd),
+      debtDeltaUsd: -position.debtValueUsd,
+      multiplierBefore: position.multiplier,
+      multiplierAfter: 1,
+      at,
+    } satisfies MultiplyTransaction)
+
+    return next
+  }
+
   if (!Number.isFinite(action.targetMultiplier) || action.targetMultiplier < 1) {
     throw new Error("Target multiplier must be a finite number of at least 1x")
   }

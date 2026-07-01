@@ -2,7 +2,7 @@ import type { MultiplyAction, MultiplyMarketRecord, MultiplySystemState } from "
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 
-export type MultiplyTransactionActionType = "multiply" | "deleverage"
+export type MultiplyTransactionActionType = "multiply" | "deleverage" | "close"
 export type MultiplyTransactionStatus = "idle" | "pending" | "success" | "failed"
 export type MultiplyTransactionRiskLabel = "safe" | "warning" | "danger"
 
