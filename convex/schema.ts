@@ -162,6 +162,57 @@ export default defineSchema({
     .index("by_market_day", ["marketId", "day"]),
 
   /**
+   * Precomputed reference-snapshot cache for `listMarketSnapshots`. That query is
+   * subscribed app-wide, so recomputing it from a full `markets` collect plus one
+   * indexed read per market (~173 reads) on every subscriber recompute does not
+   * scale. Instead the recompute runs once in `rebuildMarketSnapshots` (on write /
+   * on schedule) and writes the folded rows here; the hot query reads this single
+   * document (O(1)). One row total — `singleton: "markets"`.
+   */
+  marketSnapshotsCache: defineTable({
+    /** Constant discriminator so there is exactly one cache row (`"markets"`). */
+    singleton: v.string(),
+    rows: v.array(
+      v.object({
+        slug: v.string(),
+        scope: marketScope,
+        name: v.string(),
+        symbol: v.string(),
+        chainId: v.number(),
+        venueLabel: v.optional(v.string()),
+        category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+        description: v.optional(v.string()),
+        iconUrl: v.optional(v.string()),
+        spokeId: v.optional(v.string()),
+        feeTier: v.optional(v.string()),
+        maxLtvPct: v.optional(v.number()),
+        visuals: v.optional(
+          v.array(
+            v.object({
+              symbol: v.string(),
+              shortLabel: v.string(),
+              bgClassName: v.string(),
+              textClassName: v.string(),
+              iconUrl: v.optional(v.string()),
+            }),
+          ),
+        ),
+        resources: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
+        suppliedUsd: v.number(),
+        borrowedUsd: v.number(),
+        availableUsd: v.number(),
+        utilizationPct: v.number(),
+        supplyApyPct: v.number(),
+        borrowAprPct: v.number(),
+        tvlUsd: v.number(),
+        volumeUsd: v.number(),
+        feesUsd: v.number(),
+      }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_singleton", ["singleton"]),
+
+  /**
    * Daily revenue per market. Feeds the monthly Cash Flow card. The UI
    * aggregates daily rows into monthly buckets client-side, so any writer
    * can land data at whatever cadence makes sense.

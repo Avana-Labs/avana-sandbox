@@ -30,6 +30,18 @@ export const upsertDailyStats = action({
   },
 })
 
+/**
+ * Rebuild the `listMarketSnapshots` cache. Call ONCE after landing markets +
+ * daily stats (the recompute is expensive; running it per-batch would waste work).
+ */
+export const rebuildMarketSnapshots = action({
+  args: { seedSecret: v.string() },
+  handler: async (ctx, { seedSecret }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    return ctx.runMutation(internal.markets.rebuildMarketSnapshots, {})
+  },
+})
+
 export const upsertRevenue = action({
   args: rowsArgs,
   handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
