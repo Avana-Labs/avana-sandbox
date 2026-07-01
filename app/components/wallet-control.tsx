@@ -8,6 +8,7 @@ import {
   IS_OPEN_GATE_TEST_MODE,
   TEST_MODE_WALLET_ADDRESS,
 } from "@/app/lib/test-mode"
+import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
 
 /** Deterministic two-stop gradient identicon derived from the wallet address. */
 function walletGradient(address: string): string {
@@ -37,6 +38,7 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
   const siwe = useSIWE()
   const isSignedIn = Boolean(siwe?.isSignedIn)
   const signingIn = Boolean(siwe?.isLoading)
+  const { isWrongNetwork, targetChainName, isSwitching, switchToTargetChain } = useWrongNetwork()
 
   const base =
     // A fixed width keeps every state and translated label in the same footprint,
@@ -77,6 +79,25 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
           return (
             <button type="button" onClick={show} className={brand} aria-label={t("Connect")}>
               {isConnecting ? t("Connecting…") : t("Connect")}
+            </button>
+          )
+        }
+        if (isWrongNetwork) {
+          // Block the sign-in gate (and thus every authed action) until the wallet is
+          // on the target chain. The switch prompt replaces the normal wallet states.
+          const switchLabel = t("Switch to {chain}").replace("{chain}", targetChainName)
+          return (
+            <button
+              type="button"
+              onClick={() => void switchToTargetChain()}
+              disabled={isSwitching}
+              className={cn(
+                base,
+                "border border-amber-500/40 bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 disabled:opacity-70 dark:text-amber-200",
+              )}
+              aria-label={switchLabel}
+            >
+              {isSwitching ? t("Switching…") : t("Wrong network")}
             </button>
           )
         }
