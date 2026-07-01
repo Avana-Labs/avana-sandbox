@@ -32,6 +32,7 @@ import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { WalletControl } from "@/app/components/wallet-control"
+import { DesktopPreferenceControls } from "./desktop-preference-controls"
 
 type PreferencesView = "root" | "language" | "currency"
 
@@ -242,6 +243,10 @@ function PreferencesMenu() {
   )
 }
 
+// Kept temporarily as the migration source for the mobile preferences surface.
+// Desktop renders the standalone controls below instead of this menu.
+void PreferencesMenu
+
 function SandboxWalletDialog({
   open,
   onOpenChange,
@@ -369,11 +374,14 @@ export function Header() {
         mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
       }`}
     >
-      <div className="hidden lg:block">
-          <div className="relative flex h-[68px] w-full items-center justify-between px-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
-            <div className="flex shrink-0 items-center gap-2.5">
+      <div className="hidden xl:block">
+          <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(240px,410px)_minmax(0,1fr)] items-center px-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
+            <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
               <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
-                <BrandLogo />
+                <BrandIcon className="size-9 min-[1800px]:hidden" />
+                <span className="hidden min-[1800px]:inline-flex">
+                  <BrandLogo />
+                </span>
               </Link>
 
               <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5">
@@ -393,53 +401,47 @@ export function Header() {
                           <link.icon className="h-6 w-6 shrink-0" />
                         </span>
                       ) : null}
-                      {t(link.label)}
+                      <span className="max-w-[112px] truncate">{t(link.label)}</span>
                     </Link>
                   )
                 })}
               </nav>
             </div>
 
-            {/* In-flow centered middle column: a flex-1 child can never overlap the
-                left nav the way the previous `absolute left-1/2` search did (it clipped
-                the "Multiply" link at 1024-1440px). */}
-            <div className="flex min-w-0 flex-1 justify-center px-4">
-              <div className="w-full max-w-[320px] xl:max-w-[410px]">
+            {/* The fixed center grid track keeps search stable when translated nav
+                labels change the width of either outer column. */}
+            <div className="flex min-w-0 justify-center px-3">
+              <div className="w-full">
                 {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-1.5">
-              <div className="mr-0.5 flex items-center gap-0.5">
+            <div className="flex min-w-0 items-center justify-end gap-2">
+              <div className="flex items-center gap-2">
                 {desktopLinks.slice(4).map((link) => {
                   const isActive = mounted && pathname.startsWith(link.href)
-                  const isUtilityLink = link.href === "/dashboard" || link.href === "/rewards"
 
                   return (
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`group inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+                      className={`group inline-flex size-10 items-center justify-center rounded-full p-0 font-sans text-[16px] font-normal leading-[1.15] outline-none transition-colors focus:outline-none focus-visible:outline-none min-[1600px]:w-auto min-[1600px]:gap-1.5 min-[1600px]:px-2.5 [-webkit-tap-highlight-color:transparent] ${
                         isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {link.icon ? (
-                        <span
-                          className={`inline-flex items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px] ${
-                            isUtilityLink ? "mr-1 h-6 w-6" : "mr-2 h-7 w-7"
-                          }`}
-                        >
-                          <link.icon className={isUtilityLink ? "h-5 w-5 shrink-0" : "h-6 w-6 shrink-0"} />
+                        <span className="inline-flex size-6 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-px">
+                          <link.icon className="size-5 shrink-0" />
                         </span>
                       ) : null}
-                      {t(link.label)}
+                      <span className="sr-only min-[1600px]:not-sr-only">{t(link.label)}</span>
                     </Link>
                   )
                 })}
               </div>
 
-              <div className="flex shrink-0 items-center gap-1.5">
-                <PreferencesMenu />
+              <div className="flex shrink-0 items-center gap-2">
+                <DesktopPreferenceControls />
                 <div className="flex shrink-0">
                   <WalletControl size="desktop" />
                 </div>
@@ -449,7 +451,7 @@ export function Header() {
           </div>
         </div>
 
-        <div className="lg:hidden">
+        <div className="xl:hidden">
           <div className="relative flex h-16 w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
             <div className="flex items-center gap-3">
               <Link href="/" aria-label="Home" title="Home" className="inline-flex items-center">

@@ -14,7 +14,7 @@ class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: bo
     return { errored: true }
   }
   render() {
-    return this.state.errored ? <GateUnavailable /> : <>{this.props.children}</>
+    return this.state.errored ? <GateUnavailable variant="error" /> : <>{this.props.children}</>
   }
 }
 
@@ -27,10 +27,25 @@ function LockedShell({ children }: { children: ReactNode }) {
   )
 }
 
-function GateUnavailable() {
+function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" }) {
+  // A crash inside the gated app is OUR bug, not an auth problem — don't tell the
+  // user to "reconnect their wallet" for a render error. Only the genuine
+  // Convex-unreachable case talks about connectivity.
+  const copy =
+    variant === "offline"
+      ? {
+          headlineMuted: "We can't reach the sandbox right now.",
+          headlineActive: "Please try again in a moment.",
+          note: "Your session is safe — this is a temporary connection issue, not your wallet.",
+        }
+      : {
+          headlineMuted: "Something went wrong.",
+          headlineActive: "We couldn't load this page.",
+          note: "This is on our side, not your wallet. Try again, and let us know if it keeps happening.",
+        }
   return (
     <LockedShell>
-      <OnboardingUnavailable onRetry={() => window.location.reload()} />
+      <OnboardingUnavailable onRetry={() => window.location.reload()} {...copy} />
     </LockedShell>
   )
 }
@@ -55,7 +70,7 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
   const { authedWallet, isSignedIn } = useSiweAuth()
-  if (!hasConvexClient) return <GateUnavailable />
+  if (!hasConvexClient) return <GateUnavailable variant="offline" />
   if (!isSignedIn || !authedWallet) {
     return (
       <LockedShell>

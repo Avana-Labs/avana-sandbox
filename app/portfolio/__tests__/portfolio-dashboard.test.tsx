@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { DashboardClient } from "@/app/dashboard/dashboard-client"
+import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 
 const readPortfolioBorrow = vi.fn()
 const readPortfolioLend = vi.fn()
@@ -212,9 +213,14 @@ describe("DashboardClient", () => {
       history: [],
     })
 
-    render(<DashboardClient walletProfileId="demo-wallet" />)
+    render(
+      <DisplayPreferencesProvider>
+        <DashboardClient walletProfileId="demo-wallet" />
+      </DisplayPreferencesProvider>,
+    )
 
     await waitFor(() => expect(readPortfolioBorrow).toHaveBeenCalledWith("demo-wallet"))
+    expect(screen.getByLabelText("Dollar amounts")).toBeInTheDocument()
     await waitFor(() => expect(screen.getByText("Borrow tab")).toBeInTheDocument())
 
     fireEvent.click(screen.getByText("Borrow tab"))

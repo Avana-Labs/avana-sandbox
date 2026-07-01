@@ -85,49 +85,50 @@
 
   .dark {
     /* Dark — sampled Cursor reference */
-    --background: 220 7% 8.4%; /* #141517 page */
-    --foreground: 0 0% 78%; /* #C7C7C7 primary labels */
+    --background: 220 9% 6.5%; /* #0E0F11 page — deeper so cards lift off it */
+    --foreground: 0 0% 82%; /* brighter primary labels */
 
-    --card: 0 0% 14.5%; /* #252525 — visible step above page */
-    --card-foreground: 0 0% 82%;
+    --card: 0 0% 16%; /* #292929 — clearer step above the deeper page */
+    --card-foreground: 0 0% 86%;
 
-    --popover: 0 0% 11%; /* #1C1C1C dropdowns */
+    --popover: 0 0% 13%; /* #212121 dropdowns */
     --popover-foreground: 0 0% 82%;
 
     --primary: 0 0% 82%;
     --primary-foreground: 0 0% 11%;
 
-    --secondary: 0 0% 14.5%;
-    --secondary-foreground: 0 0% 82%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 86%;
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 58%; /* brighter secondary copy */
-    --section-foreground: 0 0% 68%;
+    --muted: 0 0% 13.5%;
+    --muted-foreground: 0 0% 66%; /* legible secondary copy on dark */
+    --section-foreground: 0 0% 74%;
     --table-header: 214 18% 13%;
 
-    --accent: 0 0% 14.5%;
-    --accent-foreground: 0 0% 82%;
+    --accent: 0 0% 16%;
+    --accent-foreground: 0 0% 86%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 82%;
 
-    --border: 0 0% 22%; /* #383838 — visible dividers */
+    --border: 0 0% 27%; /* #454545 — crisp hairlines so cards don't merge */
     --input: 0 0% 13.7%; /* #232323 recessed inputs */
     --ring: 191 99% 41%;
 
-    --surface-1: 220 7% 8.4%;
-    --surface-2: 0 0% 14.5%;
-    --surface-hover: 0 0% 18%;
+    --surface-1: 220 9% 6.5%;
+    --surface-2: 0 0% 16%;
+    --surface-hover: 0 0% 22%;
 
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 191 55% 18%;
     --brand-soft-foreground: 191 92% 70%;
 
-    /* Dark elevation leans on deeper shadows since the surface step is small. */
-    --elev-1: 0 1px 2px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.28);
-    --elev-2: 0 2px 8px rgba(0, 0, 0, 0.42), 0 8px 20px rgba(0, 0, 0, 0.36);
-    --elev-3: 0 12px 32px rgba(0, 0, 0, 0.55);
+    /* Dark elevation: a faint inset top-light hairline gives every raised card a
+       crisp edge (so stacked cards stop merging) plus a deeper drop shadow. */
+    --elev-1: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+    --elev-2: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 8px rgba(0, 0, 0, 0.5), 0 10px 24px rgba(0, 0, 0, 0.4);
+    --elev-3: 0 12px 32px rgba(0, 0, 0, 0.6);
 
     --accent-primary: 0 0% 82%;
     --accent-primary-foreground: 0 0% 11%;
@@ -137,7 +138,7 @@
     --accent-emphasis-foreground: 0 0% 11%;
     --accent-emphasis-soft: 214 40% 18%;
 
-    --surface-raised: 0 0% 14.5%; /* match card step */
+    --surface-raised: 0 0% 16%; /* match card step */
     --surface-inset: 0 0% 10.5%; /* recessed inputs */
 
     --progress: 221 83% 53%;
@@ -148,6 +149,14 @@
     --scrollbar-thumb-hover: 191 100% 48%;
     --scrollbar-thumb-active: 191 100% 54%;
   }
+}
+
+/* ConnectKit renders its overlay in a portal outside the modal root, so these theme
+   vars must be set globally to take effect. A blur with no scrim is invisible on an
+   already-dark page; this is the shared frosted-scrim treatment for the connect modal. */
+:root {
+  --ck-overlay-background: rgba(7, 9, 12, 0.64);
+  --ck-overlay-backdrop-filter: blur(10px) saturate(118%);
 }
 
 @layer base {
@@ -424,6 +433,18 @@
   .skeleton-enter {
     animation: none;
   }
+}
+
+/* Prevent mouse/touch clicks from leaving browser tap/focus artifacts. Keyboard
+   navigation still receives the existing :focus-visible treatment. */
+a,
+button,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 @keyframes loading-progress-head {

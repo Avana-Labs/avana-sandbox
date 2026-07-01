@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { calculateCreditMetrics, type BorrowAction, type BorrowSystemState } from "@/app/lib/credit-engine"
 import { deserializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
 import { mergeConvexMarketSnapshots, type ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
+import { assetsToShares, TOKEN_SCALE } from "@/app/lib/credit-engine/units"
 import type {
   BaseReadAdapter,
   SandboxActionResult,
@@ -51,6 +52,7 @@ export type ConvexBorrowWalletData = {
       collateralShares: string
       principalTokenAmount: string
       collateralEnabled: boolean
+      collateralValueUsd6?: string
     }>
     debt: Array<{
       _id: string
@@ -233,13 +235,29 @@ export function useBorrowSession({
                 Math.round((data.balances ?? []).reduce((sum, balance) => sum + balance.valueUsd, 0) * 1_000_000),
               ),
               collateralPositions: borrowPositions.flatMap((position) =>
-                position.collateral.map((collateral) => ({
-                  id: String(collateral._id),
-                  marketId: collateral.marketSlug,
-                  collateralShares: BigInt(collateral.collateralShares),
-                  principalTokenAmount: BigInt(collateral.principalTokenAmount),
-                  collateralEnabled: collateral.collateralEnabled,
-                })),
+                position.collateral.map((collateral) => {
+                  let collateralShares = BigInt(collateral.collateralShares)
+                  let principalTokenAmount = BigInt(collateral.principalTokenAmount)
+                  // Onboarding-seeded collateral is stored as 0 shares + a USD value, because the
+                  // seed has no access to the client's catalog LP prices. Derive real shares here
+                  // from that USD using the live market price so the position values to the intended
+                  // USD. Real supplied positions already carry correct (non-zero) shares.
+                  const market = current.markets[collateral.marketSlug]
+                  if (collateralShares === 0n && collateral.collateralValueUsd6 && market) {
+                    const priceUsd6 = market.snapshot.lpTokenPriceUsd6
+                    const tokenAmount =
+                      priceUsd6 > 0n ? (BigInt(collateral.collateralValueUsd6) * TOKEN_SCALE) / priceUsd6 : 0n
+                    collateralShares = assetsToShares(tokenAmount, market.snapshot.supplyIndexRay)
+                    principalTokenAmount = tokenAmount
+                  }
+                  return {
+                    id: String(collateral._id),
+                    marketId: collateral.marketSlug,
+                    collateralShares,
+                    principalTokenAmount,
+                    collateralEnabled: collateral.collateralEnabled,
+                  }
+                }),
               ),
               debtPositions: borrowPositions.flatMap((position) =>
                 position.debt.map((debt) => ({

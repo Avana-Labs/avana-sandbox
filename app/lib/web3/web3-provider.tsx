@@ -23,8 +23,8 @@ const wagmiConfig = createConfig(
   getDefaultConfig({
     appName: "Avana",
     appDescription: "Practice DeFi borrowing, lending, and looping in a live sandbox.",
-    appUrl: "https://avana-webapp.vercel.app",
-    appIcon: "https://avana-webapp.vercel.app/avana-icon.svg",
+    appUrl: "https://avana.cc",
+    appIcon: "https://avana.cc/avana-icon.svg",
     walletConnectProjectId,
     coinbaseWalletPreference: "all",
     chains: [mainnet],
@@ -34,16 +34,21 @@ const wagmiConfig = createConfig(
     // The @aave/account connector eagerly calls AaveAccountSdk.connect(), which throws
     // "EIP1193 provider connection timeout" and stalls the ConnectKit transition when no
     // Aave wallet is present. We don't need it — the mainstream wallets + WalletConnect
-    // (which covers hundreds of wallets) are enough. Disabling EIP-6963 auto-discovery
-    // stops the same provider being re-attached and announced.
+    // (which covers hundreds of wallets) are enough. Keep EIP-6963 discovery enabled:
+    // desktop extensions announce their injected providers through it, and disabling it
+    // makes ConnectKit fall back to WalletConnect QR/deep-link flows.
     enableAaveAccount: false,
-    multiInjectedProviderDiscovery: false,
+    multiInjectedProviderDiscovery: true,
   }),
 )
 
-/** Keep ConnectKit's native theme; only add a glass-blur backdrop to match the app. */
+/**
+ * A real frosted scrim. Blur alone is imperceptible on an already-dark page, so we
+ * darken the overlay too — this becomes the shared modal/sheet scrim treatment.
+ */
 const connectKitTheme = {
-  "--ck-overlay-backdrop-filter": "blur(20px)",
+  "--ck-overlay-background": "rgba(7, 9, 12, 0.64)",
+  "--ck-overlay-backdrop-filter": "blur(10px) saturate(118%)",
 } as const
 
 export function Web3Provider({ children }: { children: ReactNode }) {

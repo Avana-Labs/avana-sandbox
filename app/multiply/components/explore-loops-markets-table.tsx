@@ -15,10 +15,10 @@ const UTILITY_SYMBOLS = new Set(["AAVE", "UNI", "CRV", "LDO", "BAL", "AURA", "GN
 
 const CATEGORY_TABS = [
   { id: "all-markets", label: "All" },
-  { id: "btc", label: "BTC Based" },
-  { id: "eth", label: "ETH Based" },
-  { id: "forex", label: "Forex Based" },
-  { id: "governance", label: "Utility Based" },
+  { id: "btc", label: "BTC Loops" },
+  { id: "eth", label: "ETH Loops" },
+  { id: "forex", label: "Forex Loops" },
+  { id: "governance", label: "Utility Loops" },
   { id: "smart-loops", label: "Smart Loops" },
 ] as const
 

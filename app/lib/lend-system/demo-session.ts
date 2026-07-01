@@ -8,9 +8,22 @@ export function buildLendSessionSeed(walletId: string) {
 
 export function buildConvexLendSessionSeed(walletId: string) {
   const state = buildMockLendSystemState(walletId)
+  // Sandbox wallets hold practice funds in EVERY lend asset so any market can be
+  // deposited into — no "you don't have X in your wallet" dead-ends. ~$1M of practice
+  // funds per asset (it's play money). This is wallet holdings only; it isn't summed
+  // into the portfolio total, so the $1M starter allocation is unchanged. Deposited
+  // positions are still hydrated from Convex.
+  const walletBalances = {
+    [walletId]: Object.fromEntries(
+      Object.values(state.markets).map((market) => [
+        market.marketId,
+        market.assetPriceUsd > 0 ? 1_000_000 / market.assetPriceUsd : 1_000_000,
+      ]),
+    ),
+  }
   return serializeLendSystemState({
     ...state,
-    walletBalances: { [walletId]: {} },
+    walletBalances,
     positions: {},
     transactions: [],
   })

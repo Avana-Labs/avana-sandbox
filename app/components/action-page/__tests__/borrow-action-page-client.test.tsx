@@ -1,7 +1,11 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
+
+const renderWithProviders = (ui: ReactNode) => render(<DisplayPreferencesProvider>{ui}</DisplayPreferencesProvider>)
 
 describe("BorrowActionPageClient", () => {
   beforeEach(() => {
@@ -13,7 +17,7 @@ describe("BorrowActionPageClient", () => {
   })
 
   it("shows the executed USD amount after a collateral removal", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider>
         <BorrowActionPageClient kind="remove" initialMarketId="uni-v3-bluechip-weth-usdc" initialAmount="25" />
       </AvanaSessionsProvider>,
@@ -42,7 +46,7 @@ describe("BorrowActionPageClient", () => {
   })
 
   it("keeps a token picker selection after closing the dialog", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider>
         <BorrowActionPageClient kind="borrow" initialMarketId="uni-v3-bluechip-weth-usdc" initialAssetId="usdc" />
       </AvanaSessionsProvider>,
@@ -65,7 +69,7 @@ describe("BorrowActionPageClient", () => {
   })
 
   it("routes an unknown borrow market to the picker instead of dead-ending", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider>
         <BorrowActionPageClient kind="borrow" initialMarketId="not-a-market" />
       </AvanaSessionsProvider>,
@@ -79,7 +83,7 @@ describe("BorrowActionPageClient", () => {
   })
 
   it("boots the home borrow workspace at a true zero state (no pool, no value, no health factor)", async () => {
-    render(
+    renderWithProviders(
       <AvanaSessionsProvider walletId="home-demo-wallet">
         <BorrowActionPageClient kind="borrow" embedded layout="home" closeHref="/" />
       </AvanaSessionsProvider>,

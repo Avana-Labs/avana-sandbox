@@ -6,6 +6,15 @@ import type { MultiplyPageData } from "./types"
 
 const multiplyPageSchema = z.object({
   markets: z.array(z.object({ symbol: z.string(), name: z.string(), price: z.number() }).passthrough()),
+  // heroMetrics is a required field of MultiplyPageData; it MUST be listed here or
+  // zod strips it from the validated response, leaving the hero with `undefined`
+  // metrics on the pre-mount render (crashes MultiplyHero on metrics.marketCount).
+  heroMetrics: z.object({
+    totalLiquidityUsd: z.number(),
+    marketCount: z.number(),
+    averageMaxApy: z.number(),
+    averageMaxLeverage: z.number(),
+  }),
   lendRows: z.array(z.object({ protocol: z.string(), asset: z.string(), href: z.string() }).passthrough()),
   trendingSnapshots: z.array(
     z

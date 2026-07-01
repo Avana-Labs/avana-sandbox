@@ -362,12 +362,16 @@ export const claim = mutation({
         lastUpdatedAt: now,
         openTxSynthetic: hash,
       })
+      // Store the intended USD in collateralValueUsd6 and leave shares at 0: the client
+      // hydration derives real LP-token shares from this USD using the LIVE market price.
+      // The seed can't compute shares here because Convex has no access to the client's
+      // catalog LP prices, and storing the raw USD as shares made the engine read ~$0.
       await ctx.db.insert("positionCollateral", {
         wallet,
         positionId,
         marketSlug: leg.marketSlug,
-        collateralShares: amountUsd6,
-        principalTokenAmount: amountUsd6,
+        collateralShares: "0",
+        principalTokenAmount: "0",
         collateralEnabled: true,
         collateralValueUsd6: amountUsd6,
         updatedAt: now,

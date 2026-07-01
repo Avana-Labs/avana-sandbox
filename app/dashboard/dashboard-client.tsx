@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
@@ -37,6 +37,10 @@ import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
+import { Eye, EyeOff } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function mergeLendTabData(
   staticData: PortfolioLendTabData,
@@ -110,23 +114,6 @@ function DashboardLoadingState() {
   )
 }
 
-/** Shown when the authenticated portfolio fails to load (error was previously swallowed). */
-function DashboardLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="mx-auto max-w-lg space-y-4 py-16 text-center">
-      <h2 className="text-2xl font-medium tracking-tight">We couldn&apos;t load your portfolio.</h2>
-      <p className="text-sm text-muted-foreground">{message}</p>
-      <button
-        className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-85"
-        onClick={onRetry}
-        type="button"
-      >
-        Try again
-      </button>
-    </div>
-  )
-}
-
 export function DashboardClient({
   initialData,
   walletProfileId,
@@ -135,6 +122,8 @@ export function DashboardClient({
   walletProfileId?: string
 }) {
   const router = useRouter()
+  const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
   const hasMounted = useHasMounted()
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
@@ -350,6 +339,23 @@ export function DashboardClient({
     return () => window.removeEventListener("popstate", onPopState)
   }, [readTabFromLocation])
 
+  // Never surface a portfolio load error (transient aborts / RSC cancellations read as
+  // "Request aborted"). While there's no data yet, keep the loading state and quietly
+  // retry so a flaky fetch self-heals instead of dead-ending on an error screen.
+  const portfolioRetriesRef = useRef(0)
+  useEffect(() => {
+    if (pageData) {
+      portfolioRetriesRef.current = 0
+      return
+    }
+    if (!portfolioError || portfolioLoading || portfolioRetriesRef.current >= 8) return
+    const id = window.setTimeout(() => {
+      portfolioRetriesRef.current += 1
+      router.refresh()
+    }, 1000)
+    return () => window.clearTimeout(id)
+  }, [pageData, portfolioError, portfolioLoading, router])
+
   const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab)
     if (typeof window !== "undefined") {
@@ -361,14 +367,22 @@ export function DashboardClient({
   }
 
   if (!pageData) {
-    if (portfolioError && !portfolioLoading) {
-      return <DashboardLoadError message={portfolioError} onRetry={() => router.refresh()} />
-    }
     return <DashboardLoadingState />
   }
 
   return (
     <>
+      <div className="mb-5 flex justify-end">
+        <label className="inline-flex items-center gap-2.5 text-[13px] font-medium text-muted-foreground">
+          {showDollarAmounts ? <Eye className="size-4 text-brand-readable" /> : <EyeOff className="size-4 text-brand-readable" />}
+          <span>{t("Dollar amounts")}</span>
+          <Switch
+            checked={showDollarAmounts}
+            onCheckedChange={setShowDollarAmounts}
+            aria-label={t("Dollar amounts")}
+          />
+        </label>
+      </div>
       <DashboardTabs
         activeTab={activeTab}
         onTabChange={handleTabChange}
