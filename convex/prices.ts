@@ -9,7 +9,7 @@
  */
 
 import { v } from "convex/values"
-import { action, internalMutation, query } from "./_generated/server"
+import { internalAction, internalMutation, query } from "./_generated/server"
 import { internal } from "./_generated/api"
 
 /**
@@ -84,10 +84,11 @@ type LlamaResponse = {
 }
 
 /**
- * Fetch current prices from DefiLlama and upsert them. Public so it can be run
- * manually (CLI / seed) to populate locally, and scheduled by the cron.
+ * Fetch current prices from DefiLlama and upsert them. Internal-only: invoked by the
+ * cron (or the CLI via `npx convex run`); never publicly callable, so anonymous
+ * callers can't trigger outbound fetches or price-table writes.
  */
-export const refreshPrices = action({
+export const refreshPrices = internalAction({
   args: {},
   handler: async (ctx): Promise<{ written: number; fetched: number }> => {
     const entries = Object.entries(TOKEN_LLAMA_IDS)
