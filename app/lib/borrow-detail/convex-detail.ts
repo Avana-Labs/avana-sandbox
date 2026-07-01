@@ -16,6 +16,7 @@ import {
   fetchTokenPrices,
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
+import { formatOraclePrice } from "@/app/lib/borrow-detail/pool.mock"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { QuickStat } from "./types"
@@ -87,6 +88,26 @@ function injectRealPrice(
 }
 
 /**
+ * Overlay the pool "Oracle price" quick stat with the real pair rate derived from the
+ * DefiLlama token oracle (price0 / price1), so an asset shows one consistent oracle price
+ * across borrow-detail, the lend list, and the multiply catalog. No-op when either leg is
+ * unpriced or the oracle is unavailable, keeping the curated fixture / mock fallback.
+ */
+export function injectPoolOraclePrice(
+  quickStats: QuickStat[],
+  prices: Record<string, number> | null,
+  symbol0: string,
+  symbol1: string,
+): QuickStat[] {
+  if (!prices) return quickStats
+  const p0 = prices[priceKey(symbol0)]
+  const p1 = prices[priceKey(symbol1)]
+  if (p0 === undefined || p1 === undefined || p1 === 0) return quickStats
+  const value = formatOraclePrice(p0 / p1)
+  return quickStats.map((s) => (s.id === "oraclePrice" ? { ...s, value } : s))
+}
+
+/**
  * Overlay "Dex Liquidity" (Σ available liquidity across the asset's pools) from the
  * calibrated Convex pool snapshots, so it matches the rest of the page instead of the
  * inflated catalog sum. No-op if no pool snapshots are present.
@@ -117,18 +138,24 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
   const detail = resolvePoolDetailFromState(hydrated, detailWalletId, normalizeBorrowMarketRouteId(id))
   if (!detail) return null
 
-  const [tvlPoints, engagement, cashflow, transactions, risk, quickStats, content] = await Promise.all([
+  const [tvlPoints, engagement, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
     fetchPoolTvlSeries(detail.row.id),
     fetchEngagement("pool", detail.row.id),
     fetchCashflowBreakdown("pool", detail.row.id),
     fetchRecentTransactions("pool", detail.row.id),
     fetchRisk("pool", detail.row.id),
     fetchQuickStats("pool", detail.row.id),
+    fetchTokenPrices(),
     fetchContent("pool", detail.row.id),
   ])
   return {
     ...detail,
-    quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
+    quickStats: injectPoolOraclePrice(
+      mergeConvexQuickStats(detail.quickStats, quickStats),
+      prices,
+      detail.row.visuals[0].symbol,
+      detail.row.visuals[1].symbol,
+    ),
     heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? detail.heroFeed,
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
