@@ -21,6 +21,22 @@ describe("borrow dashboard selectors", () => {
     expect(supplies.find((row) => row.pool.id === "uni-v3-bluechip-weth-usdc")?.borrowedUsd).toBe(1200)
   })
 
+  it("carries each debt position's real debt-asset symbol, not a hardcoded USDC", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const debts = selectPortfolioDebtRows(state, "demo-wallet")
+
+    // Every row exposes the symbol the repay flow resolves from state.assets.
+    for (const row of debts) {
+      const position = state.accounts["demo-wallet"]!.debtPositions.find((entry) => entry.id === row.id)!
+      expect(row.debtAssetSymbol).toBe(state.assets[position.assetId]?.symbol)
+    }
+
+    // The mock seeds a genuine USDT debt (usdc-usdt spoke) alongside a USDC debt.
+    const symbols = debts.map((row) => row.debtAssetSymbol)
+    expect(symbols).toContain("USDT")
+    expect(symbols).toContain("USDC")
+  })
+
   it("reflects shared-session borrow activity in debt and collateral rows", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
     const next = applyBorrowAction(state, {

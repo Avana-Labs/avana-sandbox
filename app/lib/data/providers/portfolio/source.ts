@@ -81,6 +81,7 @@ export type PortfolioDebtRecord = {
   id: string
   walletProfileId: string
   poolId: string
+  debtAssetSymbol: string
   borrowedUsd: number
   borrowAprPct: number
   accruedInterestUsd: number
@@ -310,6 +311,7 @@ export const livePortfolioPageSource: PortfolioPageSource = {
           id: String(debt._id),
           walletProfileId: wallet,
           poolId: debt.marketSlug ?? position.marketSlug,
+          debtAssetSymbol: debt.baseAssetId.toUpperCase(),
           borrowedUsd: Number((BigInt(debt.debtSharesUsd6) * BigInt(debt.debtIndexRay)) / 10n ** 27n) / 1_000_000,
           borrowAprPct: Number(BigInt(debt.borrowRateWad)) / 10 ** 16,
           accruedInterestUsd: 0,
