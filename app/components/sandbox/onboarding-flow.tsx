@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Check, LoaderCircle, MoveUpRight } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
@@ -133,6 +133,25 @@ function ErrorMessage({ error }: { error: string | null }) {
       </button>
     </div>
   ) : null
+}
+
+/**
+ * Recovery footer for the loading screens. Surfaces any error, and ALWAYS offers a
+ * manual continue that is not gated on a live error — so a stranded reload (spinner
+ * with no active task) is never a dead end even if auto-resume didn't fire.
+ */
+function LoadingRecovery({ error, onResume }: { error: string | null; onResume: () => void }) {
+  return error ? (
+    <ErrorMessage error={error} />
+  ) : (
+    <button
+      className="mt-6 text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+      onClick={onResume}
+      type="button"
+    >
+      Taking longer than expected? Continue
+    </button>
+  )
 }
 
 export function OnboardingUnavailable({
@@ -313,6 +332,34 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           0,
         )
       : undefined
+
+  // Resume a loading step that persisted server-side but has no client task driving it —
+  // i.e. the user reloaded (or dropped the network) mid-analysis/claim. Without this the
+  // gate would render a forever spinner: `step` falls back to the persisted
+  // "analyzing"/"claimPending" while `busy` is null, so no mutation ever advances it.
+  const resume = () => {
+    if (!wallet) return
+    const persisted = state?.onboardingStep
+    if (persisted === "analyzing") void run("analyzing", () => completeAnalysis({ wallet }), 4200)
+    else if (persisted === "claimPending") void claimAllocation()
+  }
+
+  // Auto-resume once when we land on a stranded loading step (busy null but the persisted
+  // step is a loading state). Guarded by a ref so a resume that errors doesn't hot-loop.
+  const resumedFor = useRef<string | null>(null)
+  useEffect(() => {
+    const persisted = state?.onboardingStep
+    const stranded = busy === null && (persisted === "analyzing" || persisted === "claimPending")
+    if (!wallet || !stranded) {
+      if (!stranded) resumedFor.current = null
+      return
+    }
+    if (resumedFor.current === persisted) return
+    resumedFor.current = persisted
+    resume()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet, busy, state?.onboardingStep])
+
   const step = busy === "analyzing" ? "analyzing" : busy === "claiming" ? "claimPending" : state?.onboardingStep
   const economy = state?.economy ?? {
     status: "open" as const,
@@ -409,7 +456,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "analyzing" ? (
         <>
           <ThinkingSteps muted="One moment." active="Analyzing your wallet…" steps={ANALYSIS_STEPS} />
-          <ErrorMessage error={error} />
+          <LoadingRecovery error={error} onResume={resume} />
         </>
       ) : step === "eligible" ? (
         <>
@@ -479,7 +526,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "claimPending" ? (
         <>
           <ThinkingSteps muted="Hang tight." active="Funding your sandbox…" steps={CLAIM_STEPS} />
-          <ErrorMessage error={error} />
+          <LoadingRecovery error={error} onResume={resume} />
         </>
       ) : step === "waitlisted" ? (
         <>
