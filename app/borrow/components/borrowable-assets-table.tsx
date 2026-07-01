@@ -25,9 +25,6 @@ type BorrowableAssetsTableProps = {
   variant?: "default" | "loan"
 }
 
-function formatAssetAmount(value: number, symbol: string) {
-  return `${formatCompactUsd(value).replace(/^\$/, "")} ${symbol}`
-}
 
 export function BorrowableAssetsPanel({
   rows,
@@ -296,17 +293,11 @@ function LoanAssetsSection({
                   </td>
                   <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
-                      {formatAssetAmount(asset.totalBorrowedUsd, asset.symbol)}
-                    </div>
-                    <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
                       {formatCompactUsd(asset.totalBorrowedUsd)}
                     </div>
                   </td>
                   <td className={`py-2.5 px-6 ${TABLE_ROW_HOVER_RIGHT}`}>
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
-                      {formatAssetAmount(asset.availableUsd, asset.symbol)}
-                    </div>
-                    <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
                       {formatCompactUsd(asset.availableUsd)}
                     </div>
                   </td>
