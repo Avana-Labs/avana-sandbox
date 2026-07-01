@@ -7,11 +7,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ConnectKitProvider, SIWEProvider, getDefaultConfig } from "connectkit"
 import { siweConfig } from "@/app/lib/siwe/connectkit-siwe"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
+import { IS_OPEN_GATE_TEST_MODE } from "@/app/lib/test-mode"
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
 // The headless QA harness seeds a SIWE token without a live wagmi connection, so the
 // SIWE provider must not auto-sign-out on "disconnect" in that mode.
-const isTestMode = process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1"
 
 /**
  * ConnectKit's recommended config (Family getDefaultConfig). It wires WalletConnect via
@@ -53,33 +53,41 @@ const connectKitTheme = {
 
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
+  const connectKit = (
+    <ConnectKitProvider
+      customTheme={connectKitTheme}
+      options={{
+        enforceSupportedChains: false,
+        disclaimer: (
+          <>
+            By connecting your wallet you agree to the{" "}
+            <a href={AVANA_EXTERNAL_LINKS.terms} target="_blank" rel="noreferrer">
+              Terms of Service
+            </a>{" "}
+            and{" "}
+            <a href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer">
+              Privacy Policy
+            </a>
+          </>
+        ),
+      }}
+    >
+      {children}
+    </ConnectKitProvider>
+  )
+
   return (
     // No reconnectOnMount override: wagmi restores the wallet session on reload, so a
     // connected/signed-in wallet survives a refresh instead of appearing signed out.
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <SIWEProvider {...siweConfig} signOutOnDisconnect={!isTestMode} signOutOnAccountChange>
-          <ConnectKitProvider
-            customTheme={connectKitTheme}
-            options={{
-              enforceSupportedChains: false,
-              disclaimer: (
-                <>
-                  By connecting your wallet you agree to the{" "}
-                  <a href={AVANA_EXTERNAL_LINKS.terms} target="_blank" rel="noreferrer">
-                    Terms of Service
-                  </a>{" "}
-                  and{" "}
-                  <a href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer">
-                    Privacy Policy
-                  </a>
-                </>
-              ),
-            }}
-          >
-            {children}
-          </ConnectKitProvider>
-        </SIWEProvider>
+        {IS_OPEN_GATE_TEST_MODE ? (
+          connectKit
+        ) : (
+          <SIWEProvider {...siweConfig} signOutOnDisconnect signOutOnAccountChange>
+            {connectKit}
+          </SIWEProvider>
+        )}
       </QueryClientProvider>
     </WagmiProvider>
   )

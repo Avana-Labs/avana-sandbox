@@ -66,14 +66,23 @@ export function mapLendDepositPreviewToActionUi(
     marketLabel: string
     balanceAmount: number
     rewardsApy: number
+    assetPriceUsd?: number
   },
 ): ActionPreviewUi {
-  const beforeSupplied = preview.before.suppliedValueUsd
-  const afterSupplied = preview.after.suppliedValueUsd
+  const beforeSupplied = options.assetPriceUsd
+    ? preview.before.suppliedAmount * options.assetPriceUsd
+    : preview.before.suppliedValueUsd
+  const afterSupplied = options.assetPriceUsd
+    ? preview.after.suppliedAmount * options.assetPriceUsd
+    : preview.after.suppliedValueUsd
   const beforeApy = preview.before.currentApy
   const afterApy = preview.after.currentApy
-  const beforeEarned = preview.before.totalEarnedUsd
-  const afterEarned = preview.after.totalEarnedUsd
+  const beforeEarned = options.assetPriceUsd
+    ? preview.before.interestEarned * options.assetPriceUsd + preview.before.rewardsEarnedUsd
+    : preview.before.totalEarnedUsd
+  const afterEarned = options.assetPriceUsd
+    ? preview.after.interestEarned * options.assetPriceUsd + preview.after.rewardsEarnedUsd
+    : preview.after.totalEarnedUsd
   const beforeRewards = preview.before.rewardsEarnedUsd
   const afterRewards = preview.after.rewardsEarnedUsd
 
@@ -134,14 +143,23 @@ export function mapLendWithdrawPreviewToActionUi(
     amount: number
     marketLabel: string
     balanceAmount: number
+    assetPriceUsd?: number
   },
 ): ActionPreviewUi {
-  const beforeSupplied = preview.before.suppliedValueUsd
-  const afterSupplied = preview.after.suppliedValueUsd
+  const beforeSupplied = options.assetPriceUsd
+    ? preview.before.suppliedAmount * options.assetPriceUsd
+    : preview.before.suppliedValueUsd
+  const afterSupplied = options.assetPriceUsd
+    ? preview.after.suppliedAmount * options.assetPriceUsd
+    : preview.after.suppliedValueUsd
   const beforeApy = preview.before.currentApy
   const afterApy = preview.after.currentApy
-  const beforeEarned = preview.before.totalEarnedUsd
-  const afterEarned = preview.after.totalEarnedUsd
+  const beforeEarned = options.assetPriceUsd
+    ? preview.before.interestEarned * options.assetPriceUsd + preview.before.rewardsEarnedUsd
+    : preview.before.totalEarnedUsd
+  const afterEarned = options.assetPriceUsd
+    ? preview.after.interestEarned * options.assetPriceUsd + preview.after.rewardsEarnedUsd
+    : preview.after.totalEarnedUsd
 
   return {
     ...basePreviewFields(preview, {

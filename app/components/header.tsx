@@ -393,7 +393,7 @@ export function Header() {
                       key={link.href}
                       href={link.href}
                       className={`group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
-                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                        isActive ? "text-foreground" : "text-foreground/78 hover:text-foreground"
                       }`}
                     >
                       {link.icon ? (
@@ -426,7 +426,7 @@ export function Header() {
                       key={link.href}
                       href={link.href}
                       className={`group inline-flex size-10 items-center justify-center rounded-full p-0 font-sans text-[16px] font-normal leading-[1.15] outline-none transition-colors focus:outline-none focus-visible:outline-none min-[1600px]:w-auto min-[1600px]:gap-1.5 min-[1600px]:px-2.5 [-webkit-tap-highlight-color:transparent] ${
-                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                        isActive ? "text-foreground" : "text-foreground/78 hover:text-foreground"
                       }`}
                     >
                       {link.icon ? (

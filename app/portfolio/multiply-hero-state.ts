@@ -2,6 +2,7 @@
 
 import { buildRangeData } from "@/app/components/charts"
 import type { PortfolioHeroData, PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
+import { formatUsdExact } from "@/app/lib/borrow-sim"
 
 export type MultiplyHeroSnapshot = {
   totalExposureUsd: number
@@ -11,13 +12,6 @@ export type MultiplyHeroSnapshot = {
   openPositions: number
   averageNetCarryPct: number
   rangeData: ReturnType<typeof buildRangeData>
-}
-
-function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
 }
 
 function buildMultiplyRangeData(totalExposureUsd: number) {
@@ -46,9 +40,11 @@ export function buildMultiplySnapshotFromTabData(data: PortfolioMultiplyTabData)
 export function buildMultiplyHeroData(template: PortfolioHeroData, snapshot: MultiplyHeroSnapshot): PortfolioHeroData {
   return {
     ...template,
-    headlineValue: formatUsd(snapshot.totalExposureUsd),
+    headlineValue: formatUsdExact(snapshot.totalExposureUsd),
     headlineDelta:
-      snapshot.averageHealthFactor == null ? "— health factor" : `${snapshot.averageHealthFactor.toFixed(2)} health factor`,
+      snapshot.averageHealthFactor == null
+        ? "— health factor"
+        : `${snapshot.averageHealthFactor.toFixed(2)} health factor`,
     rangeData: snapshot.rangeData,
     statOneValue: snapshot.openPositions.toString(),
     statTwoValue: `${snapshot.averageNetCarryPct.toFixed(2)}%`,

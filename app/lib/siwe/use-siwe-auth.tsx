@@ -4,6 +4,7 @@ import { useCallback, useSyncExternalStore } from "react"
 import { useAccount, useSignMessage } from "wagmi"
 import { buildSiweMessage } from "./message"
 import { clearSiweToken, getSiweToken, setSiweToken, subscribeSiwe, type SiweToken } from "./auth-store"
+import { IS_OPEN_GATE_TEST_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
 /** Reactively read the current SIWE token (null when signed out). */
 export function useSiweToken(): SiweToken | null {
@@ -36,13 +37,11 @@ export function useSiweAuth() {
   const { address, chainId, isConnected } = useAccount()
   const { signMessageAsync } = useSignMessage()
 
-  const authedWallet = token?.wallet ?? null
-  const testSession = process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1" && authedWallet != null
-  const effectiveAddress = testSession ? authedWallet : address
-  const effectiveConnected = testSession || isConnected
+  const authedWallet = token?.wallet ?? (IS_OPEN_GATE_TEST_MODE ? TEST_MODE_WALLET_ADDRESS : null)
+  const effectiveAddress = IS_OPEN_GATE_TEST_MODE ? TEST_MODE_WALLET_ADDRESS : address
+  const effectiveConnected = IS_OPEN_GATE_TEST_MODE || isConnected
   // "Signed in" only counts when the SIWE wallet matches the connected wallet.
-  const isSignedIn =
-    effectiveConnected && authedWallet != null && effectiveAddress?.toLowerCase() === authedWallet
+  const isSignedIn = effectiveConnected && authedWallet != null && effectiveAddress?.toLowerCase() === authedWallet
 
   const signIn = useCallback(async (): Promise<string> => {
     if (!address) throw new Error("Connect a wallet first.")
@@ -64,10 +63,15 @@ export function useSiweAuth() {
       body: JSON.stringify({ message, signature }),
     })
     if (!verifyRes.ok) {
-      const err = (await verifyRes.json().catch(() => ({}))) as { error?: string }
+      const err = (await verifyRes.json().catch(() => ({}))) as {
+        error?: string
+      }
       throw new Error(err.error ?? "Sign-in verification failed.")
     }
-    const { token: jwt, wallet } = (await verifyRes.json()) as { token: string; wallet: string }
+    const { token: jwt, wallet } = (await verifyRes.json()) as {
+      token: string
+      wallet: string
+    }
     setSiweToken(jwt, wallet)
     return wallet
   }, [address, chainId, signMessageAsync])

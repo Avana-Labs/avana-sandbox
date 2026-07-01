@@ -186,7 +186,7 @@ export async function fetchTokenPrices(): Promise<Record<string, number> | null>
     const rows = await client.query(api.prices.getPrices, {})
     if (!rows || rows.length === 0) return null
     const map: Record<string, number> = {}
-    for (const r of rows) map[r.symbol] = r.priceUsd
+    for (const r of rows) map[r.symbol.toLowerCase()] = r.priceUsd
     return map
   } catch {
     return null

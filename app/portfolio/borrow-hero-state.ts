@@ -2,6 +2,7 @@
 
 import { buildRangeData } from "@/app/components/charts"
 import type { PortfolioHeroData } from "@/app/lib/data/providers/portfolio"
+import { formatUsdExact } from "@/app/lib/borrow-sim"
 
 export type BorrowSpokeBreakdown = {
   spokeId: string
@@ -22,13 +23,6 @@ export type BorrowSnapshot = {
   spokeBreakdown?: BorrowSpokeBreakdown[]
 }
 
-function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
-}
-
 function buildApprovedCreditRangeData(approvedUsd: number) {
   return buildRangeData(approvedUsd, Math.max(approvedUsd * 0.03, 750))
 }
@@ -36,10 +30,10 @@ function buildApprovedCreditRangeData(approvedUsd: number) {
 export function buildBorrowHeroData(template: PortfolioHeroData, snapshot: BorrowSnapshot): PortfolioHeroData {
   return {
     ...template,
-    headlineValue: formatUsd(snapshot.approvedUsd),
+    headlineValue: formatUsdExact(snapshot.approvedUsd),
     headlineDelta: `${snapshot.currentLtvPct.toFixed(2)}% current LTV`,
     rangeData: buildApprovedCreditRangeData(snapshot.approvedUsd),
-    statOneValue: formatUsd(snapshot.totalBorrowedUsd),
+    statOneValue: formatUsdExact(snapshot.totalBorrowedUsd),
     statTwoValue: snapshot.averageHealthFactor == null ? "—" : snapshot.averageHealthFactor.toFixed(2),
   }
 }

@@ -31,6 +31,9 @@ export const TOKEN_LLAMA_IDS: Record<string, string> = {
   eurc: "ethereum:0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
   cbeth: "ethereum:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704",
   cbbtc: "ethereum:0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+  aave: "coingecko:aave",
+  uni: "coingecko:uniswap",
+  crv: "coingecko:curve-dao-token",
 }
 
 /** All token prices (one row per base symbol). Small table — safe to collect. */

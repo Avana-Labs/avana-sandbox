@@ -12,11 +12,13 @@ function renderWithPrefs(ui: ReactElement) {
 }
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
-  useBorrowSessionContext: () => ({
+  useAvanaSessions: () => ({
     walletId: "wallet-1",
-    state: {},
-    readAdapter: { readBorrowPage: vi.fn() },
-    transactionHistory: [],
+    borrow: {
+      state: {},
+      readAdapter: { readBorrowPage: vi.fn() },
+      transactionHistory: [],
+    },
   }),
 }))
 

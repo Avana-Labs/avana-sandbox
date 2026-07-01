@@ -1,10 +1,12 @@
-import { formatCompactUsd } from "@/app/lib/data/borrow-domain"
+"use client"
+
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { HeroMarketCard } from "./borrow-hero-market-card"
 import { BorrowHeroLiveMetrics } from "./borrow-hero-live-metrics"
 
-function buildHeroCards(pageData: BorrowPageData) {
+function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => string) {
   return [
     {
       title: "Trending Collateral",
@@ -13,8 +15,8 @@ function buildHeroCards(pageData: BorrowPageData) {
         href: borrowMarketDetailPath(pool.id),
         pool,
         title: pool.name,
-        subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
-        value: formatCompactUsd(pool.availableUsd),
+        subtitle: `${compact(pool.tvlUsd)} TVL`,
+        value: compact(pool.availableUsd),
         delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
         deltaClassName: "text-apy-positive",
       })),
@@ -26,8 +28,8 @@ function buildHeroCards(pageData: BorrowPageData) {
         href: borrowMarketDetailPath(pool.id),
         pool,
         title: pool.name,
-        subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
-        value: formatCompactUsd(pool.tvlUsd),
+        subtitle: `${compact(pool.tvlUsd)} TVL`,
+        value: compact(pool.tvlUsd),
         delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
         deltaClassName: "text-apy-positive",
       })),
@@ -39,8 +41,8 @@ function buildHeroCards(pageData: BorrowPageData) {
         href: borrowMarketDetailPath(pool.id),
         pool,
         title: pool.name,
-        subtitle: `${formatCompactUsd(pool.tvlUsd)} TVL`,
-        value: formatCompactUsd(pool.tvlUsd),
+        subtitle: `${compact(pool.tvlUsd)} TVL`,
+        value: compact(pool.tvlUsd),
         delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
         deltaClassName: "text-apy-positive",
       })),
@@ -48,9 +50,9 @@ function buildHeroCards(pageData: BorrowPageData) {
   ]
 }
 
-/** Server-rendered borrow hero so LCP paints in the initial HTML. */
 export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
-  const heroCards = buildHeroCards(pageData)
+  const { compact } = useCurrency()
+  const heroCards = buildHeroCards(pageData, compact)
 
   return (
     <section className="mb-4 px-1 md:px-2">

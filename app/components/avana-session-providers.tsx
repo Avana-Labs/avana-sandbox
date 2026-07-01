@@ -1,21 +1,20 @@
 "use client"
 
 import { type ReactNode } from "react"
-import {
-  AvanaSessionsProvider,
-  ConvexAvanaSessionsProvider,
-} from "@/app/lib/avana-session/avana-sessions-provider"
+import { AvanaSessionsProvider, ConvexAvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+import { IS_OPEN_GATE_TEST_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
-export function AvanaSessionProviders({
-  walletId,
-  children,
-}: {
-  walletId?: string
-  children: ReactNode
-}) {
+export function AvanaSessionProviders({ walletId, children }: { walletId?: string; children: ReactNode }) {
   const { authedWallet, isSignedIn } = useSiweAuth()
+  if (IS_OPEN_GATE_TEST_MODE) {
+    return (
+      <MarketLiquidityProvider>
+        <AvanaSessionsProvider walletId={TEST_MODE_WALLET_ADDRESS}>{children}</AvanaSessionsProvider>
+      </MarketLiquidityProvider>
+    )
+  }
   // A signed-in SIWE wallet drives the entire session (positions, seeds, Convex reads);
   // otherwise keep the explicit / default (demo) wallet so the public demo is unchanged.
   // No auto-prompt: the user signs the SIWE message once via the explicit "Sign in"

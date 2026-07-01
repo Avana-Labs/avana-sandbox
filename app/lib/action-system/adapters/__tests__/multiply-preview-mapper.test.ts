@@ -48,6 +48,25 @@ describe("multiply preview mappers", () => {
     expect(ui.metrics.find((row) => row.id === "liq-price")?.value).not.toBe("—")
   })
 
+  it("revalues the full preview from the live collateral oracle price", () => {
+    const ui = mapMultiplyPreviewToActionUi(preview, {
+      collateralSymbol: "AAVE",
+      borrowSymbol: "GHO",
+      collateralAmount: 2,
+      collateralPriceUsd: 140,
+      catalogCollateralPriceUsd: 280,
+      marketLabel: "AAVE · GHO",
+      collateralApy: 0.076,
+      borrowApy: 0.039,
+      multiplier: 2.5,
+      maxLtv: 0.5,
+    })
+
+    expect(ui.amountUsdLabel).toBe("≈ $280")
+    expect(ui.metrics.find((row) => row.id === "collateral-value")?.value).toBe("$280")
+    expect(ui.metrics.find((row) => row.id === "looped-exposure")?.value).toBe("$1,000")
+  })
+
   it("maps deleverage unwind metrics", () => {
     const ui = mapDeleveragePreviewToActionUi(preview, {
       marketLabel: "WETH · USDC",
