@@ -124,11 +124,13 @@ export function MultiplyActionPageClient({
 
   useEffect(() => {
     if (kind !== "deleverage" || !position) return
-    const parsed = parsePositiveActionAmount(multiplier)
-    if (initialMultiplier && parsed != null) return
-    const next = getDefaultDeleverageMultiplier(position.multiplier)
-    if (multiplier !== next) setMultiplier(next)
-  }, [initialMultiplier, kind, multiplier, position])
+    // Seed the default target ONCE per position (deps deliberately exclude `multiplier`).
+    // Bail if a value already exists — an explicit initial value or one the user has
+    // dragged to wins, so the slider stays user-controlled across [min, current] instead
+    // of snapping back to the default on every change.
+    if (parsePositiveActionAmount(multiplier) != null) return
+    setMultiplier(initialMultiplier ?? getDefaultDeleverageMultiplier(position.multiplier))
+  }, [initialMultiplier, kind, position?.id])
 
   useEffect(() => {
     setHasUserInput(Boolean(initialAmount || initialMultiplier))
