@@ -144,6 +144,34 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
   })
 
+  it("lets the deleverage slider move freely instead of snapping back to the default", async () => {
+    seedExistingMultiplyPosition()
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="deleverage" />
+      </AvanaSessionsProvider>,
+    )
+
+    await screen.findByTestId("action-leverage-ruler")
+    // Assert the controlled slider's own value (the state that drives the preview and
+    // submission) rather than the animated headline text, which lags during transitions.
+    const slider = screen.getByRole("slider", { name: "Target leverage multiplier" }) as HTMLInputElement
+    // The 2.0x seed position defaults the target to max(1, 2 - 0.5) = 1.5x once.
+    await waitFor(() => expect(slider.value).toBe("1.5"))
+
+    // A mid-range value must persist. The frozen slider snapped every drag back to 1.5.
+    fireEvent.change(slider, { target: { value: "1.2" } })
+    await waitFor(() => expect(slider.value).toBe("1.2"))
+
+    // Another value (both directions) also sticks.
+    fireEvent.change(slider, { target: { value: "1.7" } })
+    await waitFor(() => expect(slider.value).toBe("1.7"))
+
+    // Min (→ 1x) is honored too.
+    fireEvent.click(screen.getByRole("button", { name: "Min" }))
+    await waitFor(() => expect(slider.value).toBe("1"))
+  })
+
   it("uses the ruler max to produce a valid deleverage preview", async () => {
     seedExistingMultiplyPosition()
     renderWithProviders(
