@@ -86,27 +86,27 @@
   .dark {
     /* Dark — sampled Cursor reference */
     --background: 220 9% 6.5%; /* #0E0F11 page — deeper so cards lift off it */
-    --foreground: 0 0% 82%; /* brighter primary labels */
+    --foreground: 0 0% 96%; /* high-emphasis text */
 
     --card: 0 0% 16%; /* #292929 — clearer step above the deeper page */
-    --card-foreground: 0 0% 86%;
+    --card-foreground: 0 0% 96%;
 
     --popover: 0 0% 13%; /* #212121 dropdowns */
-    --popover-foreground: 0 0% 82%;
+    --popover-foreground: 0 0% 96%;
 
     --primary: 0 0% 82%;
     --primary-foreground: 0 0% 11%;
 
     --secondary: 0 0% 16%;
-    --secondary-foreground: 0 0% 86%;
+    --secondary-foreground: 0 0% 96%;
 
     --muted: 0 0% 13.5%;
     --muted-foreground: 0 0% 66%; /* legible secondary copy on dark */
-    --section-foreground: 0 0% 74%;
+    --section-foreground: 0 0% 92%;
     --table-header: 214 18% 13%;
 
     --accent: 0 0% 16%;
-    --accent-foreground: 0 0% 86%;
+    --accent-foreground: 0 0% 96%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 82%;

@@ -24,6 +24,7 @@ import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/
 import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 
 function isHardBlock(reason: string | null) {
   if (!reason) return false
@@ -52,6 +53,7 @@ export function LendActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useLendSessionContext()
+  const priceFor = usePriceFor()
   const depositItems = useMemo(
     () => (kind === "deposit" ? lendDepositSelectItems(session, walletId) : []),
     [kind, session, walletId],
@@ -89,6 +91,7 @@ export function LendActionPageClient({
     () => (marketId ? (session.state.markets[marketId] ?? getLendMarketById(marketId)) : null),
     [marketId, session.state.markets],
   )
+  const assetPriceUsd = market ? (priceFor(market.asset.symbol) ?? market.assetPriceUsd) : 0
 
   const depositAssetOptions = useMemo(() => {
     if (kind !== "deposit") return undefined
@@ -202,6 +205,7 @@ export function LendActionPageClient({
               marketLabel: formatLendMarketValueLabel(market.asset.symbol),
               balanceAmount: getWalletBalanceForLendMarket(session.state, walletId, market),
               rewardsApy: market.rewardsApy,
+              assetPriceUsd,
             }),
           )
           return
@@ -212,6 +216,7 @@ export function LendActionPageClient({
             amount: parsed,
             marketLabel: formatLendMarketValueLabel(market.asset.symbol),
             balanceAmount: position?.currentSuppliedAmount ?? 0,
+            assetPriceUsd,
           }),
         )
       })
@@ -221,7 +226,7 @@ export function LendActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [amount, kind, market, position, session, walletId])
+  }, [amount, assetPriceUsd, kind, market, position, session, walletId])
 
   useEffect(() => {
     if (!previewUi || previewUi.allowed || stage !== "configure") return

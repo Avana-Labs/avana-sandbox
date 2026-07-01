@@ -29,7 +29,7 @@ function ConvexTokenPrices({ children }: { children: React.ReactNode }) {
   const rows = useQuery(api.prices.getPrices, {})
   const map = React.useMemo(() => {
     const next: Record<string, number> = {}
-    for (const row of rows ?? []) next[row.symbol] = row.priceUsd
+    for (const row of rows ?? []) next[priceKey(row.symbol)] = row.priceUsd
     return next
   }, [rows])
   return <TokenPricesContext.Provider value={map}>{children}</TokenPricesContext.Provider>

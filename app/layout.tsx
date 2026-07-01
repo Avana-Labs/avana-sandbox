@@ -13,6 +13,8 @@ import { PageLoadingBar } from "./components/page-loading-bar"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 import { SandboxGate } from "./components/sandbox/sandbox-gate"
+import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
+import { TokenPricesProvider } from "./lib/prices/token-prices-context"
 const enableProductionAnalytics = process.env.NODE_ENV === "production"
 
 const diatypeSans = localFont({
@@ -88,40 +90,31 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={diatypeSans.variable}
-      suppressHydrationWarning
-    >
+    <html lang="en" className={diatypeSans.variable} suppressHydrationWarning>
       <head>
         {/* Inline to avoid a render-blocking theme-bootstrap network request. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="min-h-screen bg-background">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <DisplayPreferencesProvider>
             <Web3Provider>
               <AvanaSessionProviders>
-                <SandboxGate>
-                  <ConditionalSiteChrome>
-                    <Suspense fallback={null}>
-                      <PageLoadingBar />
-                    </Suspense>
-                    {children}
-                  </ConditionalSiteChrome>
-                </SandboxGate>
-                <DeferredGlobalChrome />
+                <TokenPricesProvider>
+                  <CurrencyDisplayBoundary>
+                    <SandboxGate>
+                      <ConditionalSiteChrome>
+                        <Suspense fallback={null}>
+                          <PageLoadingBar />
+                        </Suspense>
+                        {children}
+                      </ConditionalSiteChrome>
+                    </SandboxGate>
+                    <DeferredGlobalChrome />
+                  </CurrencyDisplayBoundary>
+                </TokenPricesProvider>
               </AvanaSessionProviders>
             </Web3Provider>
           </DisplayPreferencesProvider>

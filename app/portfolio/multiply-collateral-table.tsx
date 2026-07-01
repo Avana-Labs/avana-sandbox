@@ -7,14 +7,9 @@ import { useDisplayPreferences } from "@/app/components/display-preferences"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
 
 const MASK = "••••"
-
-function formatUsd(value: number) {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`
-  return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
-}
 
 function formatPct(value: number) {
   return `${value.toFixed(2)}%`
@@ -38,7 +33,7 @@ export function MultiplyCollateralTable({
   onDeleverage?: (positionId: string) => void
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
-  const usd = (value: number) => (showDollarAmounts ? formatUsd(value) : MASK)
+  const usd = (value: number) => (showDollarAmounts ? formatCompactUsd(value) : MASK)
 
   if (rows.length === 0) return null
 
@@ -176,12 +171,17 @@ export function MultiplyCollateralTable({
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <span className="font-data text-[13px] tabular-nums text-muted-foreground dark:text-white/42">{index + 1}</span>
+                  <span className="font-data text-[13px] tabular-nums text-muted-foreground dark:text-white/42">
+                    {index + 1}
+                  </span>
                   <TokenIcon symbol={row.collateralToken} size="table" />
                   <div className="min-w-0">
-                    <div className="text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.label}</div>
+                    <div className="text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
+                      {row.label}
+                    </div>
                     <div className="truncate text-[12px] text-muted-foreground dark:text-white/38">
-                      {row.multiplier.toFixed(2)}x · LTV {formatPct(row.ltvPct)} · HF {formatHealthFactor(row.healthFactor)}
+                      {row.multiplier.toFixed(2)}x · LTV {formatPct(row.ltvPct)} · HF{" "}
+                      {formatHealthFactor(row.healthFactor)}
                     </div>
                   </div>
                 </div>
@@ -203,7 +203,12 @@ export function MultiplyCollateralTable({
                 <Button asChild variant="secondary" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]">
                   <Link href={`/multiply/markets/${row.marketId}`}>Manage</Link>
                 </Button>
-                <Button type="button" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]" onClick={() => onDeleverage?.(row.id)}>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-7 rounded-xs px-2.5 text-[11px]"
+                  onClick={() => onDeleverage?.(row.id)}
+                >
                   Deleverage
                 </Button>
               </div>

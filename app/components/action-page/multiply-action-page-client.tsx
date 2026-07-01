@@ -27,6 +27,7 @@ import {
   resolveMultiplyMarketMaxLeverage,
 } from "@/app/lib/multiply-system/leverage-limits"
 import { clampMultiplierToOptions, buildMultiplierOptions } from "@/app/components/action-page/multiplier-options"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 
 export function MultiplyActionPageClient({
   kind,
@@ -51,6 +52,7 @@ export function MultiplyActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useMultiplySessionContext()
+  const priceFor = usePriceFor()
   const walletPositions = useMemo(
     () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
     [session.state.positions, walletId],
@@ -80,6 +82,9 @@ export function MultiplyActionPageClient({
     }))
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
+  const collateralPriceUsd = market
+    ? (priceFor(market.collateralAsset.symbol) ?? market.collateralAsset.priceUsd)
+    : 0
 
   const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
   const position = useMemo(() => {
@@ -194,7 +199,8 @@ export function MultiplyActionPageClient({
               collateralSymbol: market.collateralAsset.symbol,
               borrowSymbol: market.borrowAsset.symbol,
               collateralAmount: multiplyCollateralAmount,
-              collateralPriceUsd: market.collateralAsset.priceUsd,
+              collateralPriceUsd,
+              catalogCollateralPriceUsd: market.collateralAsset.priceUsd,
               marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
               collateralApy: market.collateralAsset.apy,
               borrowApy: market.borrowAsset.borrowApy,
@@ -242,7 +248,7 @@ export function MultiplyActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [amount, kind, market, multiplier, position, session, walletId])
+  }, [amount, collateralPriceUsd, kind, market, multiplier, position, session, walletId])
 
   useEffect(() => {
     if (kind === "multiply") return

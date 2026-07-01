@@ -11,19 +11,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { cn } from "@/lib/utils"
 
 const MASK = "••••"
 
-const PRODUCT_OPTIONS: Array<{ id: PortfolioActivityRow["product"]; label: string }> = [
+const PRODUCT_OPTIONS: Array<{
+  id: PortfolioActivityRow["product"]
+  label: string
+}> = [
   { id: "borrow", label: "Borrow" },
   { id: "pool", label: "Pools" },
   { id: "lend", label: "Lend" },
   { id: "multiply", label: "Multiply" },
 ]
 
-const ACTION_OPTIONS: Array<{ id: PortfolioActivityRow["kind"]; label: string }> = [
+const ACTION_OPTIONS: Array<{
+  id: PortfolioActivityRow["kind"]
+  label: string
+}> = [
   { id: "supply", label: "Supply" },
   { id: "withdraw", label: "Withdraw" },
   { id: "borrow", label: "Borrow" },
@@ -39,7 +46,10 @@ const ACTION_OPTIONS: Array<{ id: PortfolioActivityRow["kind"]; label: string }>
   { id: "liquidation", label: "Liquidation" },
 ]
 
-const STATUS_OPTIONS: Array<{ id: PortfolioActivityRow["status"]; label: string }> = [
+const STATUS_OPTIONS: Array<{
+  id: PortfolioActivityRow["status"]
+  label: string
+}> = [
   { id: "confirmed", label: "Confirmed" },
   { id: "pending", label: "Pending" },
   { id: "failed", label: "Failed" },
@@ -69,10 +79,7 @@ const STATUS_TONE: Record<PortfolioActivityRow["status"], string> = {
 
 function formatSignedUsd(amountUsd: number) {
   const absoluteValue = Math.abs(amountUsd)
-  const formatted = `$${absoluteValue.toLocaleString("en-US", {
-    notation: "compact",
-    maximumFractionDigits: absoluteValue >= 100_000 ? 1 : 2,
-  })}`
+  const formatted = formatCompactUsd(absoluteValue)
   return amountUsd > 0 ? `+${formatted}` : amountUsd < 0 ? `-${formatted}` : formatted
 }
 
@@ -103,19 +110,22 @@ function toggleValue<T extends string>(values: T[], value: T) {
 function matchesSearch(row: PortfolioActivityRow, query: string) {
   if (!query) return true
   const needle = query.toLowerCase()
-  return [formatSignedUsd(row.amountUsd), row.kind, row.primaryLabel, row.product, row.secondaryLabel, row.status, row.txHash, shortHash(row.txHash)]
+  return [
+    formatSignedUsd(row.amountUsd),
+    row.kind,
+    row.primaryLabel,
+    row.product,
+    row.secondaryLabel,
+    row.status,
+    row.txHash,
+    shortHash(row.txHash),
+  ]
     .join(" ")
     .toLowerCase()
     .includes(needle)
 }
 
-function SearchPill({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (nextValue: string) => void
-}) {
+function SearchPill({ value, onChange }: { value: string; onChange: (nextValue: string) => void }) {
   return (
     <label className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-full border border-border bg-card px-4 text-[13px] shadow-none">
       <Search className="h-4 w-4 shrink-0 text-[#01AACF]" />
@@ -255,16 +265,25 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                     · {PRODUCT_OPTIONS.find((option) => option.id === row.product)?.label}
                   </span>
                 </div>
-                <span className="shrink-0 font-data text-[12.5px] tabular-nums text-muted-foreground">{formatRelativeTime(row.at)}</span>
+                <span className="shrink-0 font-data text-[12.5px] tabular-nums text-muted-foreground">
+                  {formatRelativeTime(row.at)}
+                </span>
               </div>
               <div className="mt-1.5 min-w-0">
                 <div className="truncate text-[14px] text-foreground">{row.primaryLabel}</div>
                 <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
               </div>
               <div className="mt-2.5 flex items-center justify-between gap-3">
-                <span className="font-data text-[14px] font-medium tabular-nums text-foreground">{amount(row.amountUsd)}</span>
+                <span className="font-data text-[14px] font-medium tabular-nums text-foreground">
+                  {amount(row.amountUsd)}
+                </span>
                 <div className="flex items-center gap-2.5">
-                  <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium", STATUS_TONE[row.status])}>
+                  <span
+                    className={cn(
+                      "inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                      STATUS_TONE[row.status],
+                    )}
+                  >
                     {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
                   </span>
                   <a
@@ -314,9 +333,13 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
               {visibleItems.length ? (
                 visibleItems.map((row) => (
                   <tr key={row.id} className="transition-colors hover:bg-muted/80 dark:hover:bg-slate-900/70">
-                    <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">{formatRelativeTime(row.at)}</td>
+                    <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
+                      {formatRelativeTime(row.at)}
+                    </td>
                     <td className="px-5 py-4 align-middle">
-                      <span className="inline-block whitespace-nowrap text-[15px] font-medium text-foreground">{KIND_LABEL[row.kind]}</span>
+                      <span className="inline-block whitespace-nowrap text-[15px] font-medium text-foreground">
+                        {KIND_LABEL[row.kind]}
+                      </span>
                     </td>
                     <td className="px-5 py-4 align-middle">
                       <span className="text-[14px] text-muted-foreground">
@@ -329,9 +352,16 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                         <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">{amount(row.amountUsd)}</td>
+                    <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">
+                      {amount(row.amountUsd)}
+                    </td>
                     <td className="px-5 py-4 align-middle">
-                      <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium", STATUS_TONE[row.status])}>
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                          STATUS_TONE[row.status],
+                        )}
+                      >
                         {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
                       </span>
                     </td>

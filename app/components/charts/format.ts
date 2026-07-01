@@ -1,19 +1,24 @@
 import type { ChartValueFormat } from "./types"
+import { getActiveCurrency, toActive } from "@/app/lib/currency/active-rate"
 
 function formatCompactUsd(value: number): string {
+  const { symbol } = getActiveCurrency()
+  value = toActive(value)
   const abs = Math.abs(value)
-  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`
-  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`
-  if (abs >= 1_000) return `$${(value / 1_000).toFixed(2)}K`
-  return `$${value.toFixed(2)}`
+  if (abs >= 1_000_000_000) return `${symbol}${(value / 1_000_000_000).toFixed(2)}B`
+  if (abs >= 1_000_000) return `${symbol}${(value / 1_000_000).toFixed(2)}M`
+  if (abs >= 1_000) return `${symbol}${(value / 1_000).toFixed(2)}K`
+  return `${symbol}${value.toFixed(2)}`
 }
 
 function formatCompactAxis(value: number): string {
+  const { symbol } = getActiveCurrency()
+  value = toActive(value)
   const abs = Math.abs(value)
-  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`
-  if (abs >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-  return `$${Math.round(value)}`
+  if (abs >= 1_000_000_000) return `${symbol}${(value / 1_000_000_000).toFixed(1)}B`
+  if (abs >= 1_000_000) return `${symbol}${(value / 1_000_000).toFixed(0)}M`
+  if (abs >= 1_000) return `${symbol}${(value / 1_000).toFixed(0)}K`
+  return `${symbol}${Math.round(value)}`
 }
 
 /** Tooltip + headline value formatting. */
@@ -24,7 +29,7 @@ export function formatChartValue(format: ChartValueFormat, value: number): strin
     case "price":
     case "usd":
     default:
-      return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      return `${getActiveCurrency().symbol}${toActive(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 }
 
@@ -36,6 +41,6 @@ export function formatChartAxis(format: ChartValueFormat, value: number): string
     case "price":
     case "usd":
     default:
-      return `$${Math.round(value)}`
+      return `${getActiveCurrency().symbol}${Math.round(toActive(value))}`
   }
 }

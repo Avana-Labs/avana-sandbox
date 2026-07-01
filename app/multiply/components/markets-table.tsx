@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { TokenIcon } from "@/app/components/token-icon"
 import { BipolarBar, DeltaPill, FlashValue } from "@/app/components/ui/live"
+import { formatUsdExact } from "@/app/lib/borrow-sim"
 
 function LongShortButtons({
   symbol,
@@ -118,13 +119,17 @@ export function MarketsTable({
                     <td className="px-3 py-3 text-right">
                       <div className="flex flex-col items-end gap-1">
                         <FlashValue value={m.price} goodDirection="up" className="font-data tabular-nums">
-                          ${m.price.toLocaleString("en-US")}
+                          {formatUsdExact(m.price)}
                         </FlashValue>
                         <DeltaPill value={m.change} format="percent" digits={2} />
                       </div>
                     </td>
                     <td className="px-3 py-3 text-right">
-                      <FlashValue value={m.volume} goodDirection="up" className="font-data tabular-nums text-foreground">
+                      <FlashValue
+                        value={m.volume}
+                        goodDirection="up"
+                        className="font-data tabular-nums text-foreground"
+                      >
                         {formatVolume(m.volume)}
                       </FlashValue>
                     </td>
@@ -178,7 +183,7 @@ export function MarketsTable({
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <FlashValue value={m.price} goodDirection="up" className="font-data text-sm tabular-nums">
-                      ${m.price.toLocaleString("en-US")}
+                      {formatUsdExact(m.price)}
                     </FlashValue>
                     <DeltaPill value={m.change} format="percent" digits={2} />
                   </div>

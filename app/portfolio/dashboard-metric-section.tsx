@@ -2,16 +2,10 @@
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { formatUsdExact } from "@/app/lib/borrow-sim"
 import type { DashboardOverviewMetrics, DashboardPerformanceMetrics } from "./dashboard-tab-metrics"
 
 const MASK = "••••"
-
-function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
-}
 
 function formatPct(value: number) {
   return `${value.toFixed(2)}%`
@@ -41,13 +35,7 @@ function MetricGrid({ metrics }: { metrics: MetricItem[] }) {
   )
 }
 
-export function DashboardOverviewSection({
-  title,
-  metrics,
-}: {
-  title: string
-  metrics: DashboardOverviewMetrics
-}) {
+export function DashboardOverviewSection({ title, metrics }: { title: string; metrics: DashboardOverviewMetrics }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
@@ -58,17 +46,17 @@ export function DashboardOverviewSection({
         metrics={[
           {
             label: "Net Value",
-            value: m(formatUsd(metrics.netValueUsd)),
+            value: m(formatUsdExact(metrics.netValueUsd)),
             description: "Total value of your positions minus outstanding loans",
           },
           {
             label: "Total Borrowed",
-            value: m(formatUsd(metrics.totalBorrowedUsd)),
+            value: m(formatUsdExact(metrics.totalBorrowedUsd)),
             description: "Current outstanding loan balance",
           },
           {
             label: "Liquidation Buffer",
-            value: m(formatUsd(metrics.liquidationBufferUsd)),
+            value: m(formatUsdExact(metrics.liquidationBufferUsd)),
             description: "Distance from liquidation based on current collateral value",
           },
           {
@@ -99,7 +87,7 @@ export function DashboardPerformanceSection({
         metrics={[
           {
             label: "Pool Collateral",
-            value: m(formatUsd(metrics.poolCollateralUsd)),
+            value: m(formatUsdExact(metrics.poolCollateralUsd)),
             description: "LP positions currently securing your loans",
           },
           {
@@ -109,12 +97,12 @@ export function DashboardPerformanceSection({
           },
           {
             label: "Interest Earned",
-            value: m(formatUsd(metrics.interestEarnedUsd)),
+            value: m(formatUsdExact(metrics.interestEarnedUsd)),
             description: "Total yield earned from trading fees activities",
           },
           {
             label: "Interest Owed",
-            value: m(formatUsd(metrics.interestOwedUsd)),
+            value: m(formatUsdExact(metrics.interestOwedUsd)),
             description: "Total interest accrued on outstanding loans",
           },
         ]}
@@ -147,7 +135,7 @@ export function DashboardLendPerformanceSection({
         metrics={[
           {
             label: "Total Supplied",
-            value: m(formatUsd(metrics.totalSuppliedUsd)),
+            value: m(formatUsdExact(metrics.totalSuppliedUsd)),
             description: "Total assets currently supplied and earning yield",
           },
           {
@@ -157,12 +145,12 @@ export function DashboardLendPerformanceSection({
           },
           {
             label: "Interest Earned",
-            value: m(formatUsd(metrics.interestEarnedUsd)),
+            value: m(formatUsdExact(metrics.interestEarnedUsd)),
             description: "Total yield accrued across your lending positions",
           },
           {
             label: "Claimable Rewards",
-            value: m(formatUsd(metrics.claimableRewardsUsd)),
+            value: m(formatUsdExact(metrics.claimableRewardsUsd)),
             description: "Rewards available to claim from your lending activity",
           },
         ]}

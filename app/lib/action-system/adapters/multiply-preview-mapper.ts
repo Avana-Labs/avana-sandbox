@@ -63,6 +63,7 @@ export function mapMultiplyPreviewToActionUi(
     borrowSymbol: string
     collateralAmount: number
     collateralPriceUsd: number
+    catalogCollateralPriceUsd?: number
     marketLabel: string
     collateralApy: number
     borrowApy: number
@@ -70,6 +71,11 @@ export function mapMultiplyPreviewToActionUi(
     maxLtv: number
   },
 ): ActionPreviewUi {
+  const priceScale =
+    options.catalogCollateralPriceUsd && options.catalogCollateralPriceUsd > 0
+      ? options.collateralPriceUsd / options.catalogCollateralPriceUsd
+      : 1
+  const scaleUsd = (value: number) => value * priceScale
   const healthAfter = hfNumber(preview.after.healthFactor)
   const liqPrice = preview.simulationSummary?.liquidationPrice
   const liquidationError = preview.validationErrors.find((entry) => entry.toLowerCase().includes("health factor"))
@@ -78,13 +84,13 @@ export function mapMultiplyPreviewToActionUi(
     preview.warnings[0] ??
     "This leverage reduces your safety buffer."
   const hasExistingPosition = preview.before.collateralValueUsd > 0 || preview.before.debtValueUsd > 0
-  const addedExposureUsd = addedValue(preview.after.collateralValueUsd, preview.before.collateralValueUsd)
-  const addedDebtUsd = addedValue(preview.after.debtValueUsd, preview.before.debtValueUsd)
+  const addedExposureUsd = scaleUsd(addedValue(preview.after.collateralValueUsd, preview.before.collateralValueUsd))
+  const addedDebtUsd = scaleUsd(addedValue(preview.after.debtValueUsd, preview.before.debtValueUsd))
   const borrowCapacityUsd = Math.max(
     0,
-    preview.after.collateralValueUsd * options.maxLtv - preview.after.debtValueUsd,
+    scaleUsd(preview.after.collateralValueUsd * options.maxLtv - preview.after.debtValueUsd),
   )
-  const maxBorrowUsd = preview.after.collateralValueUsd * options.maxLtv
+  const maxBorrowUsd = scaleUsd(preview.after.collateralValueUsd * options.maxLtv)
   const borrowCapacityRatio = maxBorrowUsd > 0 ? borrowCapacityUsd / maxBorrowUsd : 1
   const borrowCapacityTone =
     borrowCapacityRatio < 0.1 ? "danger" : borrowCapacityRatio < 0.25 ? "warning" : "positive"
@@ -127,7 +133,7 @@ export function mapMultiplyPreviewToActionUi(
     {
       id: "liq-price",
       label: "Liquidation price",
-      value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
+      value: liqPrice != null ? formatActionUsd(scaleUsd(liqPrice)) : "—",
     },
   ]
 
