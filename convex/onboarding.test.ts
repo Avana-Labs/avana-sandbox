@@ -151,6 +151,47 @@ describe("sandbox onboarding + economy caps", () => {
     ).rejects.toThrow(/WALLET_MISMATCH/)
   })
 
+  test("economy counters are sharded off the hot claim row; live counts stay exact", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      for (const market of STARTER_TEST_MARKETS) {
+        await ctx.db.insert("markets", { ...market, chainId: 1, createdAt: 0 })
+      }
+    })
+
+    const N = 12
+    for (let i = 0; i < N; i++) {
+      const w = `0x${(i + 1).toString(16).padStart(40, "0")}`
+      const asUser = t.withIdentity({ subject: w })
+      await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: w })
+      const res = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: w })
+      expect(res.status).toBe("done")
+    }
+
+    const { singletonUserCount, shardedUserCount, shardRows } = await t.run(async (ctx) => {
+      const economy = await ctx.db.query("sandboxEconomy").first()
+      const shards = await ctx.db.query("sandboxEconomyShards").collect()
+      return {
+        singletonUserCount: economy?.userCount ?? 0,
+        shardedUserCount: shards.reduce((sum, s) => sum + s.userCount, 0),
+        shardRows: shards.length,
+      }
+    })
+
+    // The hot singleton row is never incremented on the claim path — the count lives
+    // entirely in shards, so concurrent claims write disjoint rows (no OCC contention).
+    expect(singletonUserCount).toBe(0)
+    // Every claim landed on exactly one shard; the sum is exact.
+    expect(shardedUserCount).toBe(N)
+    // Claims are spread across multiple shard rows, not folded onto a single document.
+    expect(shardRows).toBeGreaterThan(1)
+
+    // getState surfaces the summed live count to the client.
+    const lastWallet = `0x${N.toString(16).padStart(40, "0")}`
+    const state = await t.withIdentity({ subject: lastWallet }).query(api.sandbox.onboarding.getState, { wallet: lastWallet })
+    expect(state.economy.userCount).toBe(N)
+  })
+
   test("enforces userCap server-side: claims past the cap are waitlisted", async () => {
     const t = convexTest(schema, modules)
     await t.run(async (ctx) => {
