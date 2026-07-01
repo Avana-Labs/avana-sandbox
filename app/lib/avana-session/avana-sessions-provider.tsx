@@ -20,6 +20,7 @@ import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { useAvanaSession } from "./use-avana-session"
+import { shouldApplyHydration } from "./wallet-hydration-guard"
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
 type MultiplySession = ReturnType<typeof useMultiplySession>
@@ -182,18 +183,38 @@ function MarketHydrator({
 
 function WalletHydrator({
   walletId,
+  borrow,
+  lend,
+  multiply,
   hydrateBorrow,
   hydrateLend,
   hydrateMultiply,
 }: {
   walletId: string
+  borrow: BorrowSession
+  lend: LendSession
+  multiply: MultiplySession
   hydrateBorrow: BorrowSession["hydrateWalletData"]
   hydrateLend: LendSession["hydrateWalletData"]
   hydrateMultiply: MultiplySession["hydrateWalletData"]
 }) {
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
+
+  // Read the client's current (incl. just-submitted optimistic) intent ids via a ref so
+  // the hydration effect doesn't re-run on every local history change — only on re-emit.
+  const localIntentIdsRef = useRef<Set<string>>(new Set())
+  localIntentIdsRef.current = new Set(
+    [...borrow.transactionHistory, ...lend.transactionHistory, ...multiply.transactionHistory].map(
+      (item) => item.intentId,
+    ),
+  )
+
   useEffect(() => {
     if (!session) return
+    // Skip a re-emit that predates an in-flight optimistic edit; applying it would clobber
+    // the just-submitted write until its own re-emit lands. The next emit (which includes
+    // the write) passes the guard and hydrates normally.
+    if (!shouldApplyHydration(session, localIntentIdsRef.current)) return
     hydrateBorrow(session)
     hydrateLend(session)
     hydrateMultiply(session)
@@ -302,6 +323,9 @@ export function AvanaSessionsProvider({
           {!persistLocalState ? (
             <WalletHydrator
               walletId={avana.walletId}
+              borrow={borrow}
+              lend={lend}
+              multiply={multiply}
               hydrateBorrow={borrow.hydrateWalletData}
               hydrateLend={lend.hydrateWalletData}
               hydrateMultiply={multiply.hydrateWalletData}
