@@ -154,6 +154,7 @@ function ReferenceGraph({
 
 function FeaturedCard({
   asset,
+  apyPct,
   cardKey,
   href,
   hover,
@@ -162,6 +163,7 @@ function FeaturedCard({
   interactive = true,
 }: {
   asset: FeaturedAsset
+  apyPct: number
   cardKey: string
   href: string
   hover: HoverState | null
@@ -197,7 +199,7 @@ function FeaturedCard({
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="text-[15px] font-medium tracking-[-0.03em]">{asset.apy.toFixed(2)}%</div>
+          <div className="text-[15px] font-medium tracking-[-0.03em]">{apyPct.toFixed(2)}%</div>
           <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">APY</div>
         </div>
       </div>
@@ -283,22 +285,23 @@ export function HotMarkets({
     x.set(nextX <= -sequenceWidth ? nextX + sequenceWidth : nextX)
   })
 
-  const hrefForAsset = (assetId: (typeof sequence)[number]) => {
+  const snapshotForAsset = (assetId: (typeof sequence)[number]) => {
     const asset = assets[assetId]
-    const snapshot = snapshots.find(
+    return snapshots.find(
       (entry) => entry.marketId === assetId || entry.symbol.toUpperCase() === asset.symbol.toUpperCase(),
     )
-    return snapshot?.href ?? `/lend/markets/${assetId}`
   }
 
   const renderSequence = (copy: "a" | "b", interactive = true) =>
     sequence.map((assetId, index) => {
       const cardKey = `${copy}-${assetId}-${index}`
+      const snapshot = snapshotForAsset(assetId)
       return (
         <FeaturedCard
           key={cardKey}
           asset={assets[assetId]}
-          href={hrefForAsset(assetId)}
+          apyPct={snapshot?.supplyApyPct ?? assets[assetId].apy}
+          href={snapshot?.href ?? `/lend/markets/${assetId}`}
           cardKey={cardKey}
           hover={hover}
           onHover={setHover}
