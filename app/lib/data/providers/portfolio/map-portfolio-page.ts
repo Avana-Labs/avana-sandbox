@@ -312,6 +312,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         return {
           id: debt.id,
           pool: resolvedCollateral.pool,
+          debtAssetSymbol: debt.debtAssetSymbol,
           borrowedUsd: debt.borrowedUsd,
           liquidationThresholdUsd: resolvedCollateral.pool.liquidationUsd,
           healthFactor,

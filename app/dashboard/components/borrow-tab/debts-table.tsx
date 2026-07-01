@@ -3,7 +3,6 @@
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import {
   BORROW_SUPPLY_META,
-  HOME_BORROW_TOKENS,
   LIQUIDATION_LTV,
   aprToneClass,
   formatHealthFactor,
@@ -37,10 +36,6 @@ type DebtsTableProps = {
 const MASK = "••••"
 const TICK_COUNT = 28
 
-function usdcVisual() {
-  return HOME_BORROW_TOKENS.find((token) => token.id === "usdc") ?? HOME_BORROW_TOKENS[0]
-}
-
 export function DebtsPanel({
   rows,
   totals,
@@ -61,7 +56,6 @@ export function DebtsPanel({
       </div>
     )
   }
-  const usdc = usdcVisual()
   return (
     <section className="mb-2">
       {showSummary ? (
@@ -117,6 +111,7 @@ export function DebtsPanel({
                   const meta = BORROW_SUPPLY_META[row.pool.id]
                   const hfTone = healthFactorToneClass(row.healthFactor)
                   const tokenCount = row.borrowedUsd.toFixed(0)
+                  const debtSymbol = row.debtAssetSymbol
                   const rowKey = row.id ?? `${row.pool.id}-${index}`
                   return (
                     <tr key={rowKey} className="group transition-colors">
@@ -129,7 +124,7 @@ export function DebtsPanel({
                       <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatCompactUsd(row.borrowedUsd))}</div>
                         <div className="text-[11px] text-muted-foreground">
-                          {showBalance ? `${tokenCount} ${usdc.symbol}` : MASK}
+                          {showBalance ? `${tokenCount} ${debtSymbol}` : MASK}
                         </div>
                       </td>
                       <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
@@ -178,7 +173,7 @@ export function DebtsPanel({
                   <span className="font-data text-[28px] font-medium leading-none tracking-tight text-rose-500">
                     {m(formatUsdExact(row.borrowedUsd))}
                   </span>
-                  <span className="text-[14px] font-medium text-muted-foreground">{usdc.symbol}</span>
+                  <span className="text-[14px] font-medium text-muted-foreground">{row.debtAssetSymbol}</span>
                 </div>
               </div>
 
