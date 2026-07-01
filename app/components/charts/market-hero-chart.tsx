@@ -7,6 +7,8 @@ import { formatChartAxis, formatChartValue } from "./format"
 import { HeroAreaChart } from "./hero-area-chart"
 import { HeroBalanceDisplay } from "./hero-balance-display"
 import type { ChartFeed, ChartRangeOption } from "./types"
+import { redenominateCompactUsd } from "@/app/lib/currency/format"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 
 type MarketHeroChartProps = {
   feed: ChartFeed
@@ -34,6 +36,9 @@ export function MarketHeroChart({
 }: MarketHeroChartProps) {
   const [activeRange, setActiveRange] = useState<ChartRangeOption>(defaultRange)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  // Subscribe to the active currency so the pre-formatted headline re-denominates
+  // in sync with the (live-converting) delta, tooltip, and axis — no mixed $/€.
+  const { ctx } = useCurrency()
 
   const points = feed.rangeData[activeRange]
 
@@ -56,12 +61,12 @@ export function MarketHeroChart({
     }
     const change = resolveSeriesChange(points)
     return {
-      value: feed.headlineValue,
+      value: redenominateCompactUsd(feed.headlineValue, ctx),
       delta: `${formatChartValue(feed.valueFormat, change.changeAbs)} (${Math.abs(change.pct).toFixed(2)}%)`,
       meta: feed.headlineMeta,
       tone: rangeTone,
     }
-  }, [feed, hoverPoint, points, rangeTone])
+  }, [ctx, feed, hoverPoint, points, rangeTone])
 
   return (
     <div className="space-y-3 sm:space-y-4">
