@@ -1,4 +1,5 @@
 export const IS_OPEN_GATE_TEST_MODE =
+  process.env.NODE_ENV === "development" ||
   process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1"
 
 export const TEST_MODE_WALLET_ADDRESS =
