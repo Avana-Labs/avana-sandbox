@@ -49,7 +49,7 @@ export function ActionReviewStage({
         </ActionCard>
       ) : (
         <ActionAmountCard
-          label="Amount"
+          label={preview.amountTitle ?? "Amount"}
           amount={amountDisplay.amount}
           onAmountChange={() => undefined}
           approxUsdLabel={preview.amountUsdLabel}

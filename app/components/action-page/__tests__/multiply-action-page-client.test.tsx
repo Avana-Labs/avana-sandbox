@@ -4,8 +4,38 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { MultiplyActionPageClient } from "@/app/components/action-page/multiply-action-page-client"
+import { buildMockMultiplySystemStateWithSeedPosition } from "@/app/lib/multiply-system/mock"
+import {
+  writeMultiplySessionMetadata,
+  writeMultiplySessionState,
+} from "@/app/lib/multiply-system/storage"
 
 const renderWithProviders = (ui: ReactNode) => render(<DisplayPreferencesProvider>{ui}</DisplayPreferencesProvider>)
+const DEMO_WALLET_ID = "demo-wallet"
+
+function seedExistingMultiplyPosition() {
+  const state = buildMockMultiplySystemStateWithSeedPosition(DEMO_WALLET_ID)
+  writeMultiplySessionState(DEMO_WALLET_ID, state)
+  writeMultiplySessionMetadata(DEMO_WALLET_ID, {
+    transactionHistory: [
+      {
+        id: "seeded-position-history",
+        intentId: "seeded-position-intent",
+        walletId: DEMO_WALLET_ID,
+        marketId: "eth-usdt",
+        kind: "multiply",
+        status: "success",
+        amountUsd: 3500,
+        multiplierBefore: 1,
+        multiplierAfter: 2,
+        simulated: true,
+        timestamp: state.now,
+        hash: "sim-seeded-position",
+      },
+    ],
+    receipts: [],
+  })
+}
 
 describe("MultiplyActionPageClient", () => {
   beforeEach(() => {
@@ -44,7 +74,41 @@ describe("MultiplyActionPageClient", () => {
     })
   })
 
+  it("previews a fresh-wallet multiply without merging a ghost position", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient
+          kind="multiply"
+          initialMarketId="eth-usdt"
+          initialMultiplier="2"
+        />
+      </AvanaSessionsProvider>,
+    )
+
+    fireEvent.change(screen.getByLabelText("Collateral supplied amount"), { target: { value: "0.01" } })
+
+    await waitFor(() => expect(screen.getByTestId("action-metrics-block")).toBeInTheDocument())
+    expect(screen.getByLabelText("Collateral supplied amount")).toHaveValue("0.01")
+    expect(screen.getByTestId("action-leverage-ruler")).toHaveTextContent("Target leverage")
+    expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Collateral supplied")
+    expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Target leverage")
+    expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Looped exposure")
+    expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("USDT borrowed")
+    expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Borrow capacity remaining")
+    expect(screen.getByTestId("action-metrics-block")).not.toHaveTextContent("Projected exposure")
+    expect(screen.queryByText(/0\.01.*2\.00x/)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Review" }))
+
+    await waitFor(() => expect(screen.getByTestId("action-review-stage")).toBeInTheDocument())
+    expect(screen.getByTestId("action-review-stage")).toHaveTextContent("Collateral supplied")
+    expect(screen.getByTestId("action-review-stage")).toHaveTextContent("0.01")
+    expect(screen.getByTestId("action-review-stage")).toHaveTextContent("Target leverage")
+    expect(screen.queryByText(/0\.01.*2\.00x/)).not.toBeInTheDocument()
+  })
+
   it("keeps deleverage preview blank until the target multiplier changes", async () => {
+    seedExistingMultiplyPosition()
     renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="deleverage" />
@@ -52,16 +116,17 @@ describe("MultiplyActionPageClient", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole("slider", { name: "Leverage multiplier" })).toBeInTheDocument()
+      expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
     })
 
-    expect(screen.getByRole("slider", { name: "Leverage multiplier" })).toBeInTheDocument()
+    expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Enter an amount" })).toBeDisabled()
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-risk-banner")).not.toBeInTheDocument()
   })
 
   it("keeps embedded deleverage preview blank while showing the default target multiplier", async () => {
+    seedExistingMultiplyPosition()
     renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="deleverage" embedded layout="home" initialMarketId="aave-gho" />
@@ -69,7 +134,7 @@ describe("MultiplyActionPageClient", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole("slider", { name: "Leverage multiplier" })).toBeInTheDocument()
+      expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
     })
 
     expect(screen.getByRole("button", { name: "Min" })).toBeInTheDocument()
@@ -80,6 +145,7 @@ describe("MultiplyActionPageClient", () => {
   })
 
   it("uses the ruler max to produce a valid deleverage preview", async () => {
+    seedExistingMultiplyPosition()
     renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="deleverage" />
