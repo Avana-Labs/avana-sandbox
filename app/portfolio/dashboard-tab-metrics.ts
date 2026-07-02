@@ -181,8 +181,11 @@ export function buildLendDashboardMetrics(data: PortfolioLendTabData) {
     totalSuppliedUsd > 0
       ? investments.reduce((sum, item) => sum + item.apyPct * item.suppliedUsd, 0) / totalSuppliedUsd
       : 0
-  const interestEarnedUsd =
-    data.rewardsSummary?.totalEarnedUsd ?? investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  // Interest earned is the sum of per-position earned interest — the same figure the
+  // portfolio hero's "Earned" stat sums (map-portfolio-page totalEarnedUsd). Don't
+  // prefer rewardsSummary.totalEarnedUsd here: it drifted a cent from the hero and
+  // conflated protocol rewards with supply interest.
+  const interestEarnedUsd = investments.reduce((sum, item) => sum + item.earnedUsd, 0)
   const claimableRewardsUsd = data.rewardsSummary?.claimableUsd ?? 0
 
   return {
