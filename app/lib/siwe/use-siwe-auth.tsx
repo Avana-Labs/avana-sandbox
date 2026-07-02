@@ -77,7 +77,7 @@ export function useSiweAuth() {
   // Live token: an expired JWT reads as signed-out, so the gate shows the sign-in
   // recovery path rather than crashing into the generic error boundary.
   const token = useLiveSiweToken()
-  const { address, chainId, isConnected } = useAccount()
+  const { address, chainId, isConnected, isConnecting, isReconnecting } = useAccount()
   const { signMessageAsync } = useSignMessage()
 
   const authedWallet = token?.wallet ?? (IS_OPEN_GATE_TEST_MODE ? TEST_MODE_WALLET_ADDRESS : null)
@@ -85,6 +85,11 @@ export function useSiweAuth() {
   const effectiveConnected = IS_OPEN_GATE_TEST_MODE || isConnected
   // "Signed in" only counts when the SIWE wallet matches the connected wallet.
   const isSignedIn = effectiveConnected && authedWallet != null && effectiveAddress?.toLowerCase() === authedWallet
+  // On reload wagmi restores the session asynchronously (status === "reconnecting"),
+  // so a persisted SIWE token is present before the wallet is. Treat that window as
+  // "restoring" so the gate can hold a neutral loading state instead of flashing the
+  // signed-out/onboarding screen. No token means genuinely signed out — nothing to wait for.
+  const isRestoring = !IS_OPEN_GATE_TEST_MODE && token != null && !isSignedIn && (isReconnecting || isConnecting)
 
   const signIn = useCallback(async (): Promise<string> => {
     if (!address) throw new Error("Connect a wallet first.")
@@ -124,6 +129,7 @@ export function useSiweAuth() {
   return {
     authedWallet,
     isSignedIn,
+    isRestoring,
     isConnected: effectiveConnected,
     address: effectiveAddress ?? null,
     signIn,

@@ -70,9 +70,18 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
-  const { authedWallet, isSignedIn } = useSiweAuth()
+  const { authedWallet, isSignedIn, isRestoring } = useSiweAuth()
   if (IS_OPEN_GATE_TEST_MODE) return <>{children}</>
   if (!hasConvexClient) return <GateUnavailable variant="offline" />
+  if (isRestoring) {
+    // A persisted session is being restored (wagmi reconnecting on reload). Hold a
+    // neutral loading state so authed users don't flash the signed-out/onboarding screen.
+    return (
+      <LockedShell>
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Restoring your session" />
+      </LockedShell>
+    )
+  }
   if (!isSignedIn || !authedWallet) {
     return (
       <LockedShell>
