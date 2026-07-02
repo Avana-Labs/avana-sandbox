@@ -16,10 +16,10 @@ type RiskLevelPillProps = {
 }
 
 const TONE: Record<RiskLevel, { bg: string; text: string; dot: string }> = {
-  low: { bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-400", dot: "bg-emerald-500" },
-  moderate: { bg: "bg-amber-500/10", text: "text-amber-700 dark:text-amber-400", dot: "bg-amber-500" },
-  elevated: { bg: "bg-orange-500/10", text: "text-orange-700 dark:text-orange-400", dot: "bg-orange-500" },
-  high: { bg: "bg-rose-500/10", text: "text-rose-700 dark:text-rose-400", dot: "bg-rose-500" },
+  low: { bg: "bg-success/10", text: "text-success", dot: "bg-success" },
+  moderate: { bg: "bg-warning/10", text: "text-warning", dot: "bg-warning" },
+  elevated: { bg: "bg-warning/10", text: "text-warning", dot: "bg-warning" },
+  high: { bg: "bg-danger/10", text: "text-danger", dot: "bg-danger" },
 }
 
 export function RiskLevelPill({ level, className, prefix, withDot = true, size = "sm" }: RiskLevelPillProps) {
