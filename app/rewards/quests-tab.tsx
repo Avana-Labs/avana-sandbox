@@ -22,6 +22,7 @@ import {
   type RewardsQuestIconId,
   type RewardsQuest,
 } from "@/app/lib/data/rewards/catalog"
+import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { Card } from "@/components/ui/card"
 
 const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {
@@ -38,32 +39,6 @@ const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {
   target: Target,
   trophy: Trophy,
   wallet: Wallet,
-}
-
-function PromoTabButton({
-  active,
-  children,
-  onClick,
-}: {
-  active: boolean
-  children: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      data-state={active ? "active" : "inactive"}
-      className={[
-        "h-auto shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[15px] after:inset-x-0 after:h-[3px] data-[state=active]:bg-transparent data-[state=active]:text-[16px] data-[state=active]:shadow-none sm:pb-4",
-        active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground/80",
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  )
 }
 
 function AvanaQuestCard({
@@ -151,19 +126,13 @@ function RewardsPromoPanel({
 
   return (
     <section className="space-y-6">
-      <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex h-auto w-max min-w-full gap-6 border-0 bg-transparent p-0 sm:gap-9" role="tablist" aria-label="Rewards quest categories">
-          {promoTabs.map((tab) => (
-            <PromoTabButton
-              key={tab.id}
-              active={activePromoTab === tab.id}
-              onClick={() => setActivePromoTab(tab.id)}
-            >
-              {tab.label}
-            </PromoTabButton>
-          ))}
-        </div>
-      </div>
+      <UnderlineTabStrip
+        items={promoTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+        value={activePromoTab}
+        onChange={setActivePromoTab}
+        ariaLabel="Rewards quest categories"
+        listClassName="w-max min-w-full gap-6 sm:gap-9"
+      />
 
       {activePromoTab === "new-users" ? (
         <div className="space-y-6">
