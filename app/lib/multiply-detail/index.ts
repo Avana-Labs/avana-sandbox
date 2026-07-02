@@ -123,7 +123,7 @@ function buildQuickStats(row: MultiplyMarketRow): QuickStat[] {
     { id: "available", label: "Available", value: available, delta: deltaUp(1.4) },
     { id: "collateralFactor", label: "Collateral factor", value: `${Math.round(row.collateralFactor * 100)}%` },
     { id: "supplyApy", label: "Supply APY", value: supplyApy },
-    { id: "borrowApy", label: "Borrow APR", value: borrowApy },
+    { id: "borrowApy", label: "Borrow APY", value: borrowApy },
     ...buildLiquidationRiskQuickStats(marketId, estimatedBorrowedUsd),
   ]
 }
