@@ -424,6 +424,18 @@
   }
 }
 
+/* Subtle "just refreshed" pulse for live values that update on a client refetch,
+   so numbers ease in instead of hard-popping. Honors reduced-motion (callers gate
+   the class on it). */
+@keyframes value-refresh {
+  0% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 /* Gentle breathing for skeleton bases — keeps the placeholder feeling alive
    between shimmer sweeps without the harsh strobe of a plain pulse. */
 @keyframes skeleton-pulse {

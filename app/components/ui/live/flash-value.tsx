@@ -118,7 +118,10 @@ export function FlashValue({
     <span
       className={cn(
         "relative inline-flex rounded-xs px-0.5",
+        // Ease the value in (subtle opacity pulse) plus the direction tint, so a
+        // client refetch reads as a refresh instead of a hard pop-in.
         reducedMotion ? "" : "transition-colors duration-200 ease-out",
+        flash && !reducedMotion ? "animate-[value-refresh_320ms_ease-out]" : "",
         tint,
         className,
       )}
