@@ -38,8 +38,17 @@ describe("RecentActivity txn links", () => {
     const view = within(container)
     const links = Array.from(container.querySelectorAll("a")) as HTMLAnchorElement[]
 
-    // No dead Etherscan links for simulated hashes.
-    expect(links.some((link) => link.href.includes("etherscan.io"))).toBe(false)
+    // No dead Etherscan links for simulated hashes. Check the resolved host exactly — a
+    // substring match on the full URL would also accept an unrelated host such as
+    // "etherscan.io.evil.com" or a path/query that merely contains the string.
+    const hostOf = (link: HTMLAnchorElement) => {
+      try {
+        return new URL(link.href).hostname
+      } catch {
+        return ""
+      }
+    }
+    expect(links.some((link) => hostOf(link) === "etherscan.io")).toBe(false)
     // Each simulated hash points to the sandbox receipt page.
     expect(hrefFor(container, "sim_lend_abc123")?.getAttribute("href")).toBe(
       "/sandbox/transactions/sim_lend_abc123",
