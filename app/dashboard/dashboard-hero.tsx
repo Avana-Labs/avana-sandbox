@@ -163,7 +163,7 @@ function buildActions({
     if (normalized.includes("withdraw") || normalized.includes("unwind")) {
       return "!border-border/70 !bg-background !text-[#E11D48] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-[#f38aa3] dark:hover:!bg-surface-hover"
     }
-    return "!border-border/70 !bg-background !text-[#01AACF] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
+    return "!border-border/70 !bg-background !text-brand hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
   }
 
   const resolveIcon = (label: string) => {
@@ -207,7 +207,7 @@ function StatCard({ label, value, helpText, hidden = false }: { label: string; v
       <div className="mb-0.5 flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
         {label} <InfoTip text={helpText} />
       </div>
-      <div className="font-data text-[17px] font-medium tabular-nums text-[#01AACF] dark:text-[#7DDCFF]">
+      <div className="font-data text-[17px] font-medium tabular-nums text-brand dark:text-[#7DDCFF]">
         {hidden ? MASKED_VALUE : value}
       </div>
     </div>

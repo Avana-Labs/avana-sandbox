@@ -13,7 +13,7 @@ import { useThemeOptional } from "./theme-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const triggerClassName =
-  "inline-flex size-10 items-center justify-center rounded-full bg-transparent text-[#01AACF] outline-none transition-transform duration-200 hover:-translate-y-px hover:text-[#01AACF]/80 focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+  "inline-flex size-10 items-center justify-center rounded-full bg-transparent text-brand outline-none transition-transform duration-200 hover:-translate-y-px hover:text-brand/80 focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
 
 export function DesktopPreferenceControls() {
   const { currency, language, setCurrency, setLanguage } = useDisplayPreferences()

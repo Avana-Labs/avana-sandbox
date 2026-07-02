@@ -352,7 +352,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   <span
                     className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-medium ${
                       isActive
-                        ? "border-[#01AACF] bg-[#01AACF] text-white"
+                        ? "border-brand bg-brand text-white"
                         : "border-border bg-background text-muted-foreground"
                     }`}
                   >
@@ -374,7 +374,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
             {sendStatus === "sent" ? (
               <div className="max-w-[560px]">
                 <div className="rounded-radius-md border border-border bg-card p-6 sm:p-8">
-                  <div className="flex size-11 items-center justify-center rounded-full bg-[#01AACF]/12 text-[#01AACF]">
+                  <div className="flex size-11 items-center justify-center rounded-full bg-brand/12 text-brand">
                     <svg viewBox="0 0 24 24" fill="none" className="size-6" aria-hidden>
                       <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -390,7 +390,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   <Button
                     type="button"
                     onClick={handleReset}
-                    className="mt-6 h-10 rounded-[4px] bg-[#01AACF] px-5 text-[14px] font-medium text-white hover:bg-[#009dbd]"
+                    className="mt-6 h-10 rounded-[4px] bg-brand px-5 text-[14px] font-medium text-white hover:bg-[#009dbd]"
                   >
                     Submit another request
                   </Button>
@@ -463,7 +463,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                           type="button"
                           className="block w-full py-3 text-left"
                         >
-                          <div className="text-[15px] font-medium text-[#01AACF]">
+                          <div className="text-[15px] font-medium text-brand">
                             {article.title}
                           </div>
                           <p className="mt-1 max-w-[56ch] text-[13px] leading-5 text-muted-foreground">
@@ -506,7 +506,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     id="support-message"
                     value={message}
                     onChange={(event) => setMessage(event.target.value)}
-                    className="h-[220px] w-full resize-none rounded-radius-sm border border-border bg-background px-3.5 py-3 text-[16px] leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-[#01AACF] focus:ring-2 focus:ring-[#01AACF]/15 sm:h-[260px] sm:text-[15px]"
+                    className="h-[220px] w-full resize-none rounded-radius-sm border border-border bg-background px-3.5 py-3 text-[16px] leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-brand focus:ring-2 focus:ring-brand/15 sm:h-[260px] sm:text-[15px]"
                     placeholder="Include what you were trying to do, what happened, and any transaction or market details that may help."
                   />
                 </div>
@@ -526,7 +526,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     variant="ghost"
                     onClick={handleBack}
                     disabled={sendStatus === "sending"}
-                    className="h-10 px-0 text-[14px] font-medium text-[#01AACF] hover:bg-transparent hover:text-[#009dbd] sm:h-9"
+                    className="h-10 px-0 text-[14px] font-medium text-brand hover:bg-transparent hover:text-[#009dbd] sm:h-9"
                   >
                     Back
                   </Button>
@@ -535,7 +535,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     type="button"
                     onClick={stage === 3 ? handleSend : handleContinue}
                     disabled={stage !== 3 ? !canContinue : !canSend}
-                    className="h-10 rounded-[4px] bg-[#01AACF] px-5 text-[14px] font-medium text-white hover:bg-[#009dbd] disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
+                    className="h-10 rounded-[4px] bg-brand px-5 text-[14px] font-medium text-white hover:bg-[#009dbd] disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
                   >
                     {footerLabel}
                   </Button>

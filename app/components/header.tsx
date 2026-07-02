@@ -65,7 +65,7 @@ function PreferencesMenu() {
           type="button"
           aria-label="Open preferences"
           title="Preferences"
-          className="inline-flex size-9 items-center justify-center rounded-full bg-surface-inset text-[#01AACF] transition-colors hover:text-[#01AACF]/80 dark:bg-surface-2"
+          className="inline-flex size-9 items-center justify-center rounded-full bg-surface-inset text-brand transition-colors hover:text-brand/80 dark:bg-surface-2"
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>
@@ -80,7 +80,7 @@ function PreferencesMenu() {
             <div className="px-2 pb-1.5">
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 text-[14px] font-normal text-muted-foreground">
-                  <SunMedium className="h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
+                  <SunMedium className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
                   <span>Theme</span>
                 </span>
                 <div className="flex items-center overflow-hidden rounded-full border border-border bg-background">
@@ -118,9 +118,9 @@ function PreferencesMenu() {
             <div className="flex items-center justify-between gap-3 px-2 py-2.5">
               <span className="flex items-center gap-2 text-[14px] font-normal text-muted-foreground">
                 {showDollarAmounts ? (
-                  <Eye className="h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
+                  <Eye className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
                 ) : (
-                  <EyeOff className="h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
+                  <EyeOff className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
                 )}
                 {t("Dollar amounts")}
               </span>
@@ -138,7 +138,7 @@ function PreferencesMenu() {
               }}
             >
               <span className="flex items-center gap-2 text-muted-foreground">
-                <Globe2 className="h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
+                <Globe2 className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
                 <span>{t("Language")}</span>
               </span>
               <span className="flex items-center gap-2">
@@ -154,7 +154,7 @@ function PreferencesMenu() {
               }}
             >
               <span className="flex items-center gap-2 text-muted-foreground">
-                <Coins className="h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
+                <Coins className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
                 <span>{t("Currency")}</span>
               </span>
               <span className="flex items-center gap-2">
@@ -165,13 +165,13 @@ function PreferencesMenu() {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild className="px-2 py-2.5 text-[14px] font-normal text-foreground">
               <Link href="/support-center" className="flex items-center">
-                <CircleHelp className="mr-2 h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
+                <CircleHelp className="mr-2 h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
                 {t("Support center")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="px-2 py-2.5 text-[14px] font-normal text-foreground">
               <a href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer" className="flex items-center">
-                <Shield className="mr-2 h-3.5 w-3.5 text-[#01AACF]" strokeWidth={1.9} />
+                <Shield className="mr-2 h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
                 Security & privacy
               </a>
             </DropdownMenuItem>
@@ -397,7 +397,7 @@ export function Header() {
                       }`}
                     >
                       {link.icon ? (
-                        <span className="inline-flex h-7 w-7 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
+                        <span className="inline-flex h-7 w-7 items-center justify-center text-brand transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
                           <link.icon className="h-6 w-6 shrink-0" />
                         </span>
                       ) : null}
@@ -430,7 +430,7 @@ export function Header() {
                       }`}
                     >
                       {link.icon ? (
-                        <span className="inline-flex size-6 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-px">
+                        <span className="inline-flex size-6 items-center justify-center text-brand transition-transform duration-200 ease-out group-hover:-translate-y-px">
                           <link.icon className="size-5 shrink-0" />
                         </span>
                       ) : null}
