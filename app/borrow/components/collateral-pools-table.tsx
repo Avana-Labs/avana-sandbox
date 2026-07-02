@@ -133,11 +133,13 @@ function CollateralDesktopTable({
   rows,
   pending,
   onViewMarket,
+  onUseAsCollateral,
   embedded = false,
 }: {
   rows: ReadonlyArray<BorrowPoolRow>
   pending: ReadonlyArray<PendingMarketRow>
   onViewMarket: (pool: BorrowPoolRow) => void
+  onUseAsCollateral?: (pool: BorrowPoolRow) => void
   embedded?: boolean
 }) {
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "risk" | "supplied">("asset")
@@ -175,7 +177,7 @@ function CollateralDesktopTable({
 
   const table = (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[920px] text-[12px]">
+      <table className="w-full min-w-[1020px] text-[12px]">
           <thead>
                 <tr className="bg-table-header text-left text-muted-foreground">
                   <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -246,6 +248,7 @@ function CollateralDesktopTable({
                   <SortIcon />
                 </button>
               </th>
+              <th className="pb-3 pt-4 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
             </tr>
           </thead>
           <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
@@ -271,16 +274,41 @@ function CollateralDesktopTable({
                 <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
                 </td>
-                <td className={`py-2.5 px-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+                <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                   <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
                     <span className="tabular-nums">{formatCompactUsd(pool.availableUsd)}</span>
+                  </div>
+                </td>
+                <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+                  <div className="inline-flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onViewMarket(pool)
+                      }}
+                      className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+                    >
+                      Details
+                    </button>
+                    {onUseAsCollateral ? (
+                      <PillButton
+                        variant="primary"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onUseAsCollateral(pool)
+                        }}
+                      >
+                        Supply
+                      </PillButton>
+                    ) : null}
                   </div>
                 </td>
               </tr>
             ))}
             {pending.map((row) => (
               <tr key={row.id}>
-                <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={6}>
+                <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={7}>
                   {row.label}
                   <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
                 </td>
@@ -332,6 +360,7 @@ function SpokeDesktopSection({
   borrowAssets,
   pending,
   onViewMarket,
+  onUseAsCollateral,
   onBorrowAsset,
 }: {
   spoke: BorrowSpoke
@@ -353,7 +382,7 @@ function SpokeDesktopSection({
         </div>
         <div className="bg-transparent">
           {activeTab === "collateral" ? (
-            <CollateralDesktopTable rows={rows} pending={pending} onViewMarket={onViewMarket} embedded />
+            <CollateralDesktopTable rows={rows} pending={pending} onViewMarket={onViewMarket} onUseAsCollateral={onUseAsCollateral} embedded />
           ) : (
             <BorrowableAssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
           )}

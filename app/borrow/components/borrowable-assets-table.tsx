@@ -168,6 +168,7 @@ function LoanAssetsSection({
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "borrows" | "liquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const priceFor = usePriceFor()
+  const router = useRouter()
 
   const toggleSort = (nextKey: typeof sortKey) => {
     if (sortKey === nextKey) {
@@ -199,7 +200,7 @@ function LoanAssetsSection({
 
   const table = (
     <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-[12px]">
+          <table className="w-full min-w-[980px] text-[12px]">
             <thead>
               <tr className="bg-table-header text-left text-muted-foreground">
                 <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -265,6 +266,7 @@ function LoanAssetsSection({
                     <SortIcon />
                   </button>
                 </th>
+                <th className="pb-3 pt-4 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
               </tr>
             </thead>
 
@@ -273,7 +275,7 @@ function LoanAssetsSection({
                 <tr
                   key={asset.id}
                   className="asset-swap group cursor-pointer transition-colors"
-                  onClick={() => onBorrow(asset)}
+                  onClick={() => router.push(borrowAssetDetailPath(asset.id))}
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <td className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
@@ -305,9 +307,29 @@ function LoanAssetsSection({
                       {formatCompactUsd(asset.totalBorrowedUsd)}
                     </div>
                   </td>
-                  <td className={`py-2.5 px-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+                  <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
                       {formatCompactUsd(asset.availableUsd)}
+                    </div>
+                  </td>
+                  <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+                    <div className="inline-flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                      <Link
+                        href={borrowAssetDetailPath(asset.id)}
+                        onClick={(event) => event.stopPropagation()}
+                        className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+                      >
+                        Details
+                      </Link>
+                      <PillButton
+                        variant="primary"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onBorrow(asset)
+                        }}
+                      >
+                        Borrow
+                      </PillButton>
                     </div>
                   </td>
                 </tr>
@@ -342,6 +364,7 @@ function AssetsSection({
   hideHeader?: boolean
 }) {
   const priceFor = usePriceFor()
+  const router = useRouter()
   return (
     <section className="mb-2">
       {!hideHeader ? (
@@ -355,7 +378,7 @@ function AssetsSection({
 
       <div className="overflow-hidden rounded-radius-md bg-transparent">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-[13px]">
+          <table className="w-full min-w-[980px] text-[13px]">
             <thead>
               <tr className="bg-table-header text-left text-muted-foreground">
                 <th className="pb-2 pt-3 pl-5 pr-3 text-[10.5px] font-medium uppercase tracking-[0.06em]">#</th>
@@ -370,7 +393,7 @@ function AssetsSection({
             </thead>
             <tbody>
               {assets.map((asset, index) => (
-                <tr key={asset.id} className="group transition-colors">
+                <tr key={asset.id} className="group cursor-pointer transition-colors" onClick={() => router.push(borrowAssetDetailPath(asset.id))}>
                   <td className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                     {index + 1}
                   </td>
@@ -407,14 +430,21 @@ function AssetsSection({
                     </div>
                   </td>
                   <td className={`py-2.5 pl-4 pr-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <div className="inline-flex items-center gap-1.5">
+                    <div className="inline-flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
                       <Link
                         href={borrowAssetDetailPath(asset.id)}
+                        onClick={(event) => event.stopPropagation()}
                         className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
                       >
                         Details
                       </Link>
-                      <PillButton variant="primary" onClick={() => onBorrow(asset)}>
+                      <PillButton
+                        variant="primary"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onBorrow(asset)
+                        }}
+                      >
                         Borrow
                       </PillButton>
                     </div>
