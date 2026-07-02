@@ -1,7 +1,7 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { MultiplyMarketRecord, MultiplySystemState } from "@/app/lib/multiply-engine"
 import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine"
-import { resolveMultiplyMarketMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
+import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { MULTIPLY_TOKEN_BORROW_APYS, MULTIPLY_TOKEN_LOGOS, MULTIPLY_TOKEN_SUPPLY_APYS } from "@/app/lib/multiply-sim"
@@ -39,11 +39,11 @@ export type MultiplyTrendingSnapshot = {
 export function buildMultiplyTrendingSnapshots(markets: MultiplyMarketRecord[]): MultiplyTrendingSnapshot[] {
   return [...markets]
     .map((market) => {
-      // The catalog table label intentionally inflates leverage for discovery, but
-      // the APY here is a real financial formula. Use the de-scaled multiplier the
-      // action page actually lets users select so the trending APY is achievable and
-      // the headline leverage label stays consistent with it.
-      const maxMultiplier = resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
+      // Single-source the max-leverage figure so the trending card, markets table,
+      // hero average and explore table all print the same number for a market. The
+      // APY is a real financial formula computed from that same multiplier so the
+      // headline leverage and its achievable APY stay consistent.
+      const maxMultiplier = resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier)
       const maxLeverageApy = calculateMaxLeverageApy({
         supplyApy: market.economics.supplyApy,
         borrowApy: market.economics.borrowApy,
@@ -80,6 +80,7 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
   const collateralSymbol = market.collateralAsset.symbol
   const borrowSymbol = market.borrowAsset.symbol
   const collateralLogo = resolveMultiplyTokenLogo(collateralSymbol)
+  const maxLeverage = resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier)
   return {
     href: `/multiply/markets/${market.id}`,
     protocol: collateralSymbol,
@@ -89,14 +90,18 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
     apy: formatPct(market.economics.estimatedMaxApy),
     apyLabel: "Estimated max APY at public max multiplier",
     points: formatCompactUsd(market.economics.availableLiquidityUsd),
+    // The explore table renders the primary reward row under its MAX LEVERAGE
+    // header, so that row must carry the single-sourced public max — the same
+    // number the trending card, hero average and markets table show — not the
+    // recommended cap (which lives in the secondary row for context).
     rewardRows: [
       {
         label: `CF ${Math.round(market.risk.collateralFactor * 100)}% · LT ${Math.round(market.risk.liquidationThreshold * 100)}%`,
-        value: formatFactor(market.risk.publicMaxMultiplier),
+        value: `Recommended max ${formatFactor(market.risk.recommendedMaxMultiplier)}`,
       },
       {
-        label: "Recommended max",
-        value: formatFactor(market.risk.recommendedMaxMultiplier),
+        label: `CF ${Math.round(market.risk.collateralFactor * 100)}% · LT ${Math.round(market.risk.liquidationThreshold * 100)}%`,
+        value: formatFactor(maxLeverage),
       },
     ],
     collateralFactor: market.risk.collateralFactor,
@@ -115,7 +120,10 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
   const marketCount = markets.length
   const averageMaxApy = marketCount > 0 ? markets.reduce((sum, market) => sum + market.economics.estimatedMaxApy, 0) / marketCount : 0
   const averageMaxLeverage =
-    marketCount > 0 ? markets.reduce((sum, market) => sum + market.risk.publicMaxMultiplier, 0) / marketCount : 0
+    marketCount > 0
+      ? markets.reduce((sum, market) => sum + resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier), 0) /
+        marketCount
+      : 0
 
   return {
     markets: [...markets].map((market) => ({
@@ -125,7 +133,7 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
       funding: market.economics.borrowApy,
       change: market.economics.estimatedMaxApy * 100,
       volume: market.economics.availableLiquidityUsd,
-      maxLeverage: market.risk.publicMaxMultiplier,
+      maxLeverage: resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier),
       longOi: 62,
       shortOi: 38,
     })),
