@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Coins, Globe2, MoonStar, SunMedium } from "lucide-react"
+import { Check, Coins, Eye, EyeOff, Globe2, MoonStar, SunMedium } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,12 +16,22 @@ const triggerClassName =
   "inline-flex size-10 items-center justify-center rounded-full bg-transparent text-brand outline-none transition-transform duration-200 hover:-translate-y-px hover:text-brand/80 focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
 
 export function DesktopPreferenceControls() {
-  const { currency, language, setCurrency, setLanguage } = useDisplayPreferences()
+  const { currency, language, setCurrency, setLanguage, showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
   const theme = useThemeOptional()
   const { t } = useTranslation()
 
   return (
     <div className="flex items-center gap-2">
+      <button
+        type="button"
+        aria-label={showDollarAmounts ? t("Hide dollar amounts") : t("Show dollar amounts")}
+        title={showDollarAmounts ? t("Hide dollar amounts") : t("Show dollar amounts")}
+        className={triggerClassName}
+        onClick={() => setShowDollarAmounts(!showDollarAmounts)}
+      >
+        {showDollarAmounts ? <Eye className="size-5" strokeWidth={1.9} /> : <EyeOff className="size-5" strokeWidth={1.9} />}
+      </button>
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button type="button" aria-label={t("Change language")} title={t("Language")} className={triggerClassName}>

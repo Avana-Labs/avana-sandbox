@@ -257,7 +257,9 @@ describe("useLendSession", () => {
       .map((i) => window.localStorage.key(i))
       .find((k): k is string => Boolean(k?.endsWith(`:${walletId}`)))
     act(() => {
-      window.dispatchEvent(new StorageEvent("storage", { key: stateKey }))
+      const storageEvent = new Event("storage")
+      Object.defineProperty(storageEvent, "key", { value: stateKey })
+      window.dispatchEvent(storageEvent)
     })
 
     // Because the incoming content matches, reloadFromStorage bails before setState — the
