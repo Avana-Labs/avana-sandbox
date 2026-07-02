@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Eye, EyeOff, Globe2, MoreHorizontal, MoonStar, Shield, SunMedium } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import {
@@ -12,240 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Switch } from "@/components/ui/switch"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { BrandIcon, BrandLogo } from "./brand-logo"
-import { CurrencyFlag } from "./currency-flag"
-import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
 import { LazyMobileMenu } from "./lazy-mobile-menu"
 import { LazySearchCommand, LazySearchCommandIconOnly, SearchCommandIconPlaceholder, SearchCommandPlaceholder } from "./lazy-search-command"
-import { useTheme } from "./theme-provider"
-import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-controls"
-
-type PreferencesView = "root" | "language" | "currency"
-
-function PreferencesMenu() {
-  const { theme, resolvedTheme, setTheme } = useTheme()
-  const { showDollarAmounts, setShowDollarAmounts, language, setLanguage, currency, setCurrency } = useDisplayPreferences()
-  const { t } = useTranslation()
-  const [mounted, setMounted] = useState(false)
-  const [open, setOpen] = useState(false)
-  const [view, setView] = useState<PreferencesView>("root")
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const currentLanguage = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0]
-  const currentCurrency = CURRENCY_OPTIONS.find((option) => option.code === currency) ?? CURRENCY_OPTIONS[0]
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen)
-    if (!nextOpen) {
-      setView("root")
-    }
-  }
-
-  return (
-    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="Open preferences"
-          title="Preferences"
-          className="inline-flex size-9 items-center justify-center rounded-full bg-surface-inset text-brand transition-colors hover:text-brand/80 dark:bg-surface-2"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="end" sideOffset={10} className="w-64 p-1.5">
-        {view === "root" ? (
-          <>
-            <DropdownMenuLabel className="px-2 py-2 text-[16px] font-medium normal-case tracking-normal text-foreground">
-              Global preferences
-            </DropdownMenuLabel>
-            <div className="px-2 pb-1.5">
-              <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2 text-[14px] font-normal text-muted-foreground">
-                  <SunMedium className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
-                  <span>Theme</span>
-                </span>
-                <div className="flex items-center overflow-hidden rounded-full border border-border bg-background">
-                  <button
-                    type="button"
-                    onClick={() => setTheme("system")}
-                    className={`px-3.5 py-1.5 text-[13px] font-medium ${
-                      mounted && theme === "system" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    Auto
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTheme("light")}
-                    className={`px-2.5 py-1.5 text-[13px] font-medium ${
-                      mounted && resolvedTheme === "light" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    <SunMedium className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTheme("dark")}
-                    className={`px-2.5 py-1.5 text-[13px] font-medium ${
-                      mounted && resolvedTheme === "dark" ? "bg-surface-inset text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    <MoonStar className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-            <DropdownMenuSeparator />
-            <div className="flex items-center justify-between gap-3 px-2 py-2.5">
-              <span className="flex items-center gap-2 text-[14px] font-normal text-muted-foreground">
-                {showDollarAmounts ? (
-                  <Eye className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
-                ) : (
-                  <EyeOff className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
-                )}
-                {t("Dollar amounts")}
-              </span>
-              <Switch
-                checked={showDollarAmounts}
-                onCheckedChange={setShowDollarAmounts}
-                aria-label="Toggle dollar amounts"
-              />
-            </div>
-            <DropdownMenuItem
-              className="flex cursor-pointer items-center justify-between px-2 py-2.5 text-[14px] font-normal text-foreground"
-              onSelect={(event) => {
-                event.preventDefault()
-                setView("language")
-              }}
-            >
-              <span className="flex items-center gap-2 text-muted-foreground">
-                <Globe2 className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
-                <span>{t("Language")}</span>
-              </span>
-              <span className="flex items-center gap-2">
-                {currentLanguage.label}
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="flex cursor-pointer items-center justify-between px-2 py-2.5 text-[14px] font-normal text-foreground"
-              onSelect={(event) => {
-                event.preventDefault()
-                setView("currency")
-              }}
-            >
-              <span className="flex items-center gap-2 text-muted-foreground">
-                <Coins className="h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
-                <span>{t("Currency")}</span>
-              </span>
-              <span className="flex items-center gap-2">
-                {currentCurrency.code}
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="px-2 py-2.5 text-[14px] font-normal text-foreground">
-              <Link href="/support-center" className="flex items-center">
-                <CircleHelp className="mr-2 h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
-                {t("Support center")}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="px-2 py-2.5 text-[14px] font-normal text-foreground">
-              <a href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer" className="flex items-center">
-                <Shield className="mr-2 h-3.5 w-3.5 text-brand" strokeWidth={1.9} />
-                Security & privacy
-              </a>
-            </DropdownMenuItem>
-          </>
-        ) : null}
-
-        {view === "language" ? (
-          <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-2 py-2 text-[16px] font-medium normal-case tracking-normal text-foreground">
-              <button
-                type="button"
-                onClick={() => setView("root")}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-foreground transition hover:bg-surface-inset"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span>Language</span>
-            </DropdownMenuLabel>
-            {LANGUAGE_OPTIONS.map((option) => (
-              <DropdownMenuItem
-                key={option.code}
-                className="flex cursor-pointer items-center justify-between px-2 py-2.5 text-[14px] font-normal text-foreground"
-                onSelect={(event) => {
-                  event.preventDefault()
-                  setLanguage(option.code)
-                  setView("root")
-                }}
-              >
-                <span>{option.label}</span>
-                {option.code === language ? <Check className="h-4 w-4 text-brand" /> : null}
-              </DropdownMenuItem>
-            ))}
-          </>
-        ) : null}
-
-        {view === "currency" ? (
-          <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-2 py-2 text-[16px] font-medium normal-case tracking-normal text-foreground">
-              <button
-                type="button"
-                onClick={() => setView("root")}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-foreground transition hover:bg-surface-inset"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span>Currency</span>
-            </DropdownMenuLabel>
-            {CURRENCY_OPTIONS.map((option) => (
-              <DropdownMenuItem
-                key={option.code}
-                className="flex cursor-pointer items-center justify-between px-2 py-2.5 text-[14px] font-normal text-foreground"
-                onSelect={(event) => {
-                  event.preventDefault()
-                  setCurrency(option.code)
-                  setView("root")
-                }}
-              >
-                <span className="flex items-center gap-2">
-                  <CurrencyFlag code={option.code} className="h-5 w-5" />
-                  <span>{option.label}</span>
-                </span>
-                {option.code === currency ? <Check className="h-4 w-4 text-brand" /> : null}
-              </DropdownMenuItem>
-            ))}
-          </>
-        ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-// Kept temporarily as the migration source for the mobile preferences surface.
-// Desktop renders the standalone controls below instead of this menu.
-void PreferencesMenu
 
 function SandboxWalletDialog({
   open,
@@ -375,78 +148,41 @@ export function Header() {
       }`}
     >
       <div className="hidden xl:block">
-          <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(240px,410px)_minmax(0,1fr)] items-center px-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
-            <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
+          <div className="flex h-[72px] w-full items-center justify-between gap-6 px-4 lg:px-5 xl:px-6 2xl:px-8">
+            <div className="flex min-w-0 items-center gap-7 overflow-hidden">
               <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
-                <BrandIcon className="size-9 min-[1800px]:hidden" />
-                <span className="hidden min-[1800px]:inline-flex">
-                  <BrandLogo />
-                </span>
+                <BrandLogo className="h-[48px] scale-100 md:h-[46px]" />
               </Link>
 
-              <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5">
-                {desktopLinks.slice(0, 4).map((link) => {
+              <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {desktopLinks.map((link) => {
                   const isActive = mounted && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href))
 
                   return (
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
-                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                      className={`inline-flex items-center rounded-full px-3 py-2 font-sans text-[15px] font-medium leading-[1.1] transition-colors ${
+                        isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      {link.icon ? (
-                        <span className="inline-flex h-7 w-7 items-center justify-center text-brand transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
-                          <link.icon className="h-6 w-6 shrink-0" />
-                        </span>
-                      ) : null}
-                      <span className="max-w-[112px] truncate">{t(link.label)}</span>
+                      <span>{t(link.label)}</span>
                     </Link>
                   )
                 })}
               </nav>
             </div>
 
-            {/* The fixed center grid track keeps search stable when translated nav
-                labels change the width of either outer column. */}
-            <div className="flex min-w-0 justify-center px-3">
-              <div className="w-full">
-                {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
-              </div>
-            </div>
-
             <div className="flex min-w-0 items-center justify-end gap-2">
-              <div className="flex items-center gap-2">
-                {desktopLinks.slice(4).map((link) => {
-                  const isActive = mounted && pathname.startsWith(link.href)
-
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className={`group inline-flex size-10 items-center justify-center rounded-full p-0 font-sans text-[16px] font-normal leading-[1.15] outline-none transition-colors focus:outline-none focus-visible:outline-none min-[1600px]:w-auto min-[1600px]:gap-1.5 min-[1600px]:px-2.5 [-webkit-tap-highlight-color:transparent] ${
-                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {link.icon ? (
-                        <span className="inline-flex size-6 items-center justify-center text-brand transition-transform duration-200 ease-out group-hover:-translate-y-px">
-                          <link.icon className="size-5 shrink-0" />
-                        </span>
-                      ) : null}
-                      <span className="sr-only min-[1600px]:not-sr-only">{t(link.label)}</span>
-                    </Link>
-                  )
-                })}
+              <div className="hidden min-[1600px]:flex min-w-[280px] max-w-[360px] flex-1">
+                <div className="w-full">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
               </div>
-
               <div className="flex shrink-0 items-center gap-2">
                 <DesktopPreferenceControls />
                 <div className="flex shrink-0">
                   <WalletControl size="desktop" />
                 </div>
               </div>
-
             </div>
           </div>
         </div>
