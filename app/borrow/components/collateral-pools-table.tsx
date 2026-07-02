@@ -1,6 +1,7 @@
 "use client"
 
 import { memo, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   aprToneClass,
   formatCompactUsd,
@@ -13,6 +14,7 @@ import {
   type DexGroup,
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
@@ -142,6 +144,7 @@ function CollateralDesktopTable({
   onUseAsCollateral?: (pool: BorrowPoolRow) => void
   embedded?: boolean
 }) {
+  const router = useRouter()
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "risk" | "supplied">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
@@ -281,27 +284,26 @@ function CollateralDesktopTable({
                 </td>
                 <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
                   <div className="inline-flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onViewMarket(pool)
-                      }}
-                      className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-                    >
-                      Details
-                    </button>
                     {onUseAsCollateral ? (
                       <PillButton
-                        variant="primary"
+                        variant="ghost"
                         onClick={(event) => {
                           event.stopPropagation()
                           onUseAsCollateral(pool)
                         }}
                       >
-                        Supply
+                        Pledge
                       </PillButton>
                     ) : null}
+                    <PillButton
+                      variant="primary"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        router.push(actionPagePath("borrow", "borrow", { market: pool.id, return: `/borrow/markets/${pool.id}` }))
+                      }}
+                    >
+                      Borrow
+                    </PillButton>
                   </div>
                 </td>
               </tr>
