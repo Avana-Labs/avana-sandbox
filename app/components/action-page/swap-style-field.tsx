@@ -18,7 +18,7 @@ export function SwapStyleField({
   return (
     <div
       className={cn(
-        "px-4 py-4 transition-[border-color,box-shadow,transform] duration-200 motion-safe:active:scale-[0.985]",
+        "px-4 py-3 transition-[border-color,box-shadow,transform] duration-200 motion-safe:active:scale-[0.985]",
         tone === "raised" &&
           "rounded-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] focus-within:border-brand/35 focus-within:shadow-[0_0_0_1px_hsl(var(--brand)/0.18),0_12px_32px_-20px_hsl(var(--brand)/0.22)] dark:shadow-none",
         tone === "inset" &&

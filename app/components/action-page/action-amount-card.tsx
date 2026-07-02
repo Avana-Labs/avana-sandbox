@@ -143,7 +143,7 @@ export function ActionAmountCard({
   )
 
   const amountRow = (
-    <div className="mt-3 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
+    <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
       {readOnly ? (
         <div className="min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
           {amount || "0"}
@@ -163,7 +163,7 @@ export function ActionAmountCard({
       {!hideAssetSelector ? (
         <div className="relative shrink-0 max-[360px]:self-end" ref={switchable ? menuRef : undefined}>
           {unitLabel ? (
-            <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground">
+            <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
               <span>{unitLabel}</span>
             </div>
           ) : switchable ? (
@@ -178,7 +178,7 @@ export function ActionAmountCard({
               aria-expanded={!useDialogPicker ? menuOpen : undefined}
               aria-label={`Change asset, current ${assetLabel}`}
               disabled={readOnly}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground cursor-pointer hover:bg-surface-hover"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground cursor-pointer hover:bg-surface-hover"
             >
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
@@ -192,7 +192,7 @@ export function ActionAmountCard({
             </button>
           ) : (
             <div
-              className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-medium text-foreground"
+              className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground"
             >
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
@@ -217,7 +217,7 @@ export function ActionAmountCard({
   )
 
   const usdRow = (
-    <div className="mt-2 text-[14px] text-foreground/60">
+    <div className="mt-1 text-[14px] text-foreground/60">
       <AnimatedTextValue text={approxUsdLabel} />
     </div>
   )
