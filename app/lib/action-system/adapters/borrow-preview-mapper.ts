@@ -2,6 +2,7 @@ import { formatFixed } from "@/app/lib/credit-engine"
 import type { TransactionPreview } from "@/app/lib/borrow-system/contracts"
 import type { BorrowSimulationResult } from "@/app/lib/credit-engine/simulation"
 import type { ActionPreviewUi, ActionSuccessUi } from "@/app/lib/action-system/contracts"
+import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import {
   formatActionApproxUsd,
   formatActionAmount,
@@ -173,7 +174,7 @@ export function mapBorrowTransactionPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, healthAfter),
-    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -232,7 +233,7 @@ export function mapBorrowRepayPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, healthAfter),
-    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -311,7 +312,7 @@ export function mapBorrowSupplyPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: null,
-    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -392,7 +393,7 @@ export function mapBorrowRemovePreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.removeUsd, 0.04),
     risk: riskFromPreview(preview, hfToNumber(preview.after.healthFactorWad)),
-    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }

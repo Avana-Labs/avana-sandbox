@@ -37,6 +37,7 @@ import { ActionReviewStage } from "@/app/components/action-page/action-review-st
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi, blockedUiForMissingWalletLp } from "@/app/lib/action-system/blocked-ui"
+import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { formatBorrowLpSymbolLabel, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
@@ -798,7 +799,7 @@ export function BorrowActionPageClient({
       }
 
       const preview = await session.previewTransaction(intent)
-      if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
+      if (!preview.allowed) throw new Error(humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable")
 
       const simulated = session.readAdapter.mode === "sandbox"
       const result = await runActionSubmitFlow({
@@ -808,7 +809,7 @@ export function BorrowActionPageClient({
         execute: async () => session.executeTransaction(preview.intent),
       })
 
-      if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? "Transaction failed")
+      if (result.receipt.status !== "success") throw new Error(humanizeBlockedReason(result.receipt.error) ?? "Transaction failed")
       const executedAmountUsd = Number.parseFloat(formatFixed(result.historyItem.executedAmountUsd6, 6))
 
       setSuccessUi(
