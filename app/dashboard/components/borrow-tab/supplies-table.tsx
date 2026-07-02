@@ -155,7 +155,9 @@ export function SuppliesPanel({
           const spoke = getSpokeById(homePoolSpoke(row.pool.category))
           const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
           const hf = row.healthFactor
-          const hfLabel = hf === null || Number.isNaN(hf) ? "—" : !Number.isFinite(hf) ? "∞" : hf.toFixed(1)
+          // Single-source the label through formatHealthFactor so the mobile card
+          // caps/formats health identically to the desktop table and the hero card.
+          const hfLabel = formatHealthFactor(hf)
           const hfTone = healthFactorBarTone(hf)
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`

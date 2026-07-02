@@ -157,15 +157,18 @@ export function buildPortfolioMultiplyData(
   const totalDebtUsd = positions.reduce((sum, position) => sum + position.debtValueUsd, 0)
   // Average only the leveraged (finite-HF) positions. A zero-debt position has an
   // infinite health factor, so folding it in as a synthetic "99" produced an
-  // obviously-fake average. If every position is debt-free there is no meaningful
-  // average, so report null (the UI renders "—"); buildMultiplyWalletSnapshot maps
-  // that back to "infinity" for the headline.
+  // obviously-fake average. When positions exist but every one is debt-free the
+  // aggregate is genuinely infinite — report ∞ so the hero/credit-health card
+  // agrees with the per-row table (which renders those rows as "∞") instead of
+  // showing "—". Only a wallet with no positions at all reports null.
   const finiteHealthFactors = positions
     .map((position) => (position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor))
     .filter((healthFactor) => Number.isFinite(healthFactor))
   const averageHealthFactor =
     finiteHealthFactors.length === 0
-      ? null
+      ? positions.length === 0
+        ? null
+        : Number.POSITIVE_INFINITY
       : finiteHealthFactors.reduce((sum, healthFactor) => sum + healthFactor, 0) / finiteHealthFactors.length
 
   return {
@@ -244,7 +247,11 @@ export function buildMultiplyWalletSnapshot(
           ? portfolio.positions.reduce((sum, position) => sum + position.leverage, 0) / portfolio.positions.length
           : 1,
       ltv: portfolio.creditLines.currentLtvPct / 100,
-      healthFactor: portfolio.creditLines.averageHealthFactor ?? "infinity",
+      // Collapse both "no positions" (null) and "positions but all debt-free" (∞)
+      // to the canonical "infinity" sentinel this field uses across the system.
+      healthFactor: Number.isFinite(portfolio.creditLines.averageHealthFactor)
+        ? (portfolio.creditLines.averageHealthFactor as number)
+        : "infinity",
       netApy:
         walletPositions.length > 0
           ? walletPositions.reduce((sum, position) => sum + position.netApy, 0) / walletPositions.length

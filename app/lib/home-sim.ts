@@ -398,12 +398,18 @@ export function formatCompactUsd(usdValue: number) {
   return `${symbol}${value.toLocaleString("en-US", { maximumFractionDigits: value >= 100 ? 0 : 2 })}`
 }
 
+// A position whose debt is a rounding-dust fraction of its collateral produces a
+// mathematically-finite but meaninglessly-large health factor (e.g. 18369.7).
+// Treat anything at or above this as effectively infinite so the display reads "∞"
+// consistently instead of an alarming raw number.
+const HEALTH_FACTOR_INFINITE_THRESHOLD = 1_000
+
 export function formatHealthFactor(value: number | null) {
   if (value === null || Number.isNaN(value)) {
     return "—"
   }
 
-  if (!Number.isFinite(value)) {
+  if (!Number.isFinite(value) || value >= HEALTH_FACTOR_INFINITE_THRESHOLD) {
     return "∞"
   }
 
