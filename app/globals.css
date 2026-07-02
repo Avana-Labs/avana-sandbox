@@ -12,10 +12,10 @@
   }
   :root {
     /* Light — bright neutral canvas */
-    --background: 0 0% 98.8%; /* #FCFCFC page */
+    --background: 0 0% 100%; /* #FFFFFF page — Uniswap-parity */
     --foreground: 0 0% 17.3%; /* #2C2C2C primary labels */
 
-    --card: 0 0% 94%; /* clearer step above #FCFCFC page */
+    --card: 0 0% 97.6%; /* #F9F9F9 — subtle card on white */
     --card-foreground: 0 0% 17.3%;
 
     --popover: 0 0% 98%; /* #FAFAFA dropdowns */
@@ -38,11 +38,11 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 86%; /* visible dividers on light canvas */
-    --input: 0 0% 87.1%; /* #DEDEDE recessed inputs */
+    --border: 0 0% 92%; /* #EBEBEB — soft Uniswap-style hairlines */
+    --input: 0 0% 96%; /* #F5F5F5 recessed inputs on white */
     --ring: 191 99% 41%;
 
-    --surface-1: 0 0% 98.8%;
+    --surface-1: 0 0% 100%;
     --surface-2: 0 0% 92.2%;
     --surface-hover: 0 0% 91.8%;
 
@@ -85,10 +85,10 @@
 
   .dark {
     /* Dark — sampled Cursor reference */
-    --background: 220 9% 6.5%; /* #0E0F11 page — deeper so cards lift off it */
+    --background: 0 0% 7%; /* #121212 page — neutral near-black (Uniswap-parity) */
     --foreground: 0 0% 96%; /* high-emphasis text */
 
-    --card: 0 0% 16%; /* #292929 — clearer step above the deeper page */
+    --card: 0 0% 11%; /* #1C1C1C — subtle layered surface */
     --card-foreground: 0 0% 96%;
 
     --popover: 0 0% 13%; /* #212121 dropdowns */
@@ -97,26 +97,26 @@
     --primary: 0 0% 82%;
     --primary-foreground: 0 0% 11%;
 
-    --secondary: 0 0% 16%;
+    --secondary: 0 0% 13%;
     --secondary-foreground: 0 0% 96%;
 
     --muted: 0 0% 13.5%;
     --muted-foreground: 0 0% 66%; /* legible secondary copy on dark */
     --section-foreground: 0 0% 92%;
-    --table-header: 214 18% 13%;
+    --table-header: 0 0% 10%;
 
-    --accent: 0 0% 16%;
+    --accent: 0 0% 13%;
     --accent-foreground: 0 0% 96%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 82%;
 
-    --border: 0 0% 27%; /* #454545 — crisp hairlines so cards don't merge */
-    --input: 0 0% 13.7%; /* #232323 recessed inputs */
+    --border: 0 0% 17%; /* #2B2B2B — subtle Uniswap-style hairlines */
+    --input: 0 0% 9%; /* #171717 recessed inputs (below card) */
     --ring: 191 99% 41%;
 
-    --surface-1: 220 9% 6.5%;
-    --surface-2: 0 0% 16%;
+    --surface-1: 0 0% 7%;
+    --surface-2: 0 0% 13%;
     --surface-hover: 0 0% 22%;
 
     --brand: 191 99% 41%;
@@ -138,8 +138,8 @@
     --accent-emphasis-foreground: 0 0% 11%;
     --accent-emphasis-soft: 214 40% 18%;
 
-    --surface-raised: 0 0% 16%; /* match card step */
-    --surface-inset: 0 0% 10.5%; /* recessed inputs */
+    --surface-raised: 0 0% 13%; /* #212121 — one step above card */
+    --surface-inset: 0 0% 8%; /* recessed steppers (below card) */
 
     --progress: 221 83% 53%;
     --progress-track: 0 0% 11%;
