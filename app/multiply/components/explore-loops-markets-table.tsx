@@ -789,23 +789,55 @@ export function ExploreLoopsMarketsTable({
                         </CellLink>
                       )}
                     </td>
-                    <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
-                      <div className="flex justify-end">
-                        <HoverActionGroup>
+                  <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
+                    <div className="flex justify-end">
+                      <HoverActionGroup>
                         <Button
                           type="button"
                           size="sm"
-                          className="h-7 rounded-xs px-2.5 text-[11px]"
+                          variant="brand-secondary"
+                          className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
                           onClick={(event) => {
                             event.stopPropagation()
-                            onOpenMultiply?.(row.href)
+                            router.push(row.href)
                           }}
                         >
-                          Multiply
+                          View
                         </Button>
-                        </HoverActionGroup>
-                      </div>
-                    </td>
+                        {row.waitlistHref ? (
+                          <Button
+                            asChild
+                            type="button"
+                            size="sm"
+                            variant="brand"
+                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                          >
+                            <a
+                              href={row.waitlistHref}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              Join waitlist
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="brand"
+                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onOpenMultiply?.(row.href)
+                            }}
+                          >
+                            Multiply
+                          </Button>
+                        )}
+                      </HoverActionGroup>
+                    </div>
+                  </td>
                   </tr>
                 ))
               ) : (
