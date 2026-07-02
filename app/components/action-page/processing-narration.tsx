@@ -52,6 +52,13 @@ const SCRIPTS: Record<string, string[]> = {
     "Balancing your health factor",
     "Locking in your leverage",
   ],
+  deleverage: [
+    "Connecting to Uniswap v3",
+    "Reading your leveraged position",
+    "Unwinding part of your loop",
+    "Repaying borrowed funds",
+    "Updating your leverage",
+  ],
   remove: [
     "Checking your health factor headroom",
     "Unlocking your collateral",
@@ -82,17 +89,23 @@ const SCRIPTS: Record<string, string[]> = {
   ],
 }
 
-/** Pick the narration script for an action from its verb. */
+/**
+ * Pick the narration script for an action from its verb. Order matters: "deleverage"
+ * must be tested before "leverage", and "supply" (pledge collateral) must not fall into
+ * the lend-deposit branch. Covers all descriptor verbs — Borrow, Repay, Supply, Remove,
+ * Claim, Deposit, Withdraw, Multiply, Deleverage — with a generic fallback for the rest.
+ */
 export function processingNarrationScript(verb: string): string[] {
   const v = (verb || "").trim().toLowerCase()
   if (v.includes("borrow")) return SCRIPTS.borrow
-  if (v.includes("withdraw")) return SCRIPTS.withdraw
-  if (v.includes("deposit") || v.includes("lend") || v.includes("supply")) return SCRIPTS.deposit
   if (v.includes("repay")) return SCRIPTS.repay
+  if (v.includes("withdraw")) return SCRIPTS.withdraw
+  if (v.includes("deleverage") || v.includes("reduce") || v.includes("close")) return SCRIPTS.deleverage
   if (v.includes("multiply") || v.includes("loop") || v.includes("leverage")) return SCRIPTS.multiply
-  if (v.includes("remove") || v.includes("reduce")) return SCRIPTS.remove
+  if (v.includes("remove")) return SCRIPTS.remove
+  if (v.includes("supply") || v.includes("pledge") || v.includes("collateral")) return SCRIPTS.pledge
+  if (v.includes("deposit") || v.includes("lend")) return SCRIPTS.deposit
   if (v.includes("claim")) return SCRIPTS.claim
-  if (v.includes("pledge") || v.includes("collateral")) return SCRIPTS.pledge
   return SCRIPTS.generic
 }
 
