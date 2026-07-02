@@ -8,6 +8,8 @@ import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = { detail: AssetDetail; className?: string; embedded?: boolean }
 
@@ -20,6 +22,8 @@ type Props = { detail: AssetDetail; className?: string; embedded?: boolean }
 export function AssetDepositSidebar({ detail, className, embedded = false }: Props) {
   const router = useRouter()
   const lendSession = useLendSessionContext()
+  const { exact } = useCurrency()
+  const { t } = useTranslation()
   const marketId = resolveLendMarketId(detail.hero.symbol)
   const returnHref = `/borrow/assets/${detail.row.id}`
 
@@ -32,9 +36,7 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
   )
 
   const apyLabel = `${parseFloat(String(detail.row.borrowApr)).toFixed(2)}%`
-  const suppliedLabel = position
-    ? `$${position.suppliedValueUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : "$0.00"
+  const suppliedLabel = position ? exact(position.suppliedValueUsd) : exact(0)
 
   return (
     <>
@@ -46,24 +48,24 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
             : "rounded-radius-md border border-border bg-surface-raised p-4 shadow-elev-1",
           className,
         )}
-        aria-label={`Deposit ${detail.hero.symbol}`}
+        aria-label={t("Deposit {symbol}").replace("{symbol}", detail.hero.symbol)}
       >
         <header className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Your deposits</div>
+            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{t("Your deposits")}</div>
             <div className="mt-1 font-data text-[22px] font-medium tabular-nums text-foreground">{suppliedLabel}</div>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-xs border border-emerald-200/70 bg-emerald-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400">
-            {apyLabel} APY
+            {apyLabel} {t("APY")}
           </span>
         </header>
 
         <dl className="grid grid-cols-2 gap-y-1.5 text-[12.5px]">
-          <dt className="text-muted-foreground">Asset</dt>
+          <dt className="text-muted-foreground">{t("Asset")}</dt>
           <dd className="text-right font-medium text-foreground">{detail.hero.symbol}</dd>
-          <dt className="text-muted-foreground">Supply APY</dt>
+          <dt className="text-muted-foreground">{t("Supply APY")}</dt>
           <dd className="text-right font-data tabular-nums text-foreground">{apyLabel}</dd>
-          <dt className="text-muted-foreground">Wallet balance</dt>
+          <dt className="text-muted-foreground">{t("Wallet balance")}</dt>
           <dd className="text-right font-data tabular-nums text-foreground">{detail.row.walletBalanceLabel}</dd>
         </dl>
 
@@ -73,7 +75,7 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
             onClick={() => router.push(actionPagePath("lend", "deposit", { market: marketId, return: returnHref }))}
             className="h-9 rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
           >
-            Deposit
+            {t("Deposit")}
           </button>
           <button
             type="button"
@@ -81,14 +83,14 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
             disabled={!position}
             className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Withdraw
+            {t("Withdraw")}
           </button>
         </div>
       </aside>
 
       <AboutNewsSection
         about={detail.about}
-        aboutTitle={`About ${detail.hero.name}`}
+        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
         compactAboutTitle
         newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
         newsImageLabel={detail.hero.symbol}

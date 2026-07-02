@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 type ParsedValue = {
@@ -8,9 +10,10 @@ type ParsedValue = {
   numeric: number
   suffix: string
   decimals: number
+  locale: string
 }
 
-function parseAnimatedValue(text: string): ParsedValue | null {
+function parseAnimatedValue(text: string, locale: string): ParsedValue | null {
   const trimmed = text.trim()
   if (!trimmed || trimmed === "—" || trimmed === "∞") return null
 
@@ -25,11 +28,11 @@ function parseAnimatedValue(text: string): ParsedValue | null {
 
   const decimals = numericText.includes(".") ? numericText.split(".")[1]?.length ?? 0 : 0
 
-  return { prefix, numeric, suffix, decimals }
+  return { prefix, numeric, suffix, decimals, locale }
 }
 
 function formatAnimatedValue(parsed: ParsedValue, value: number) {
-  const formatted = new Intl.NumberFormat("en-US", {
+  const formatted = new Intl.NumberFormat(parsed.locale, {
     minimumFractionDigits: parsed.decimals,
     maximumFractionDigits: parsed.decimals,
   }).format(value)
@@ -58,8 +61,10 @@ export function AnimatedTextValue({
   ariaLive?: "off" | "polite" | "assertive"
   ariaAtomic?: boolean
 }) {
+  const { language } = useTranslation()
+  const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const [displayText, setDisplayText] = useState(() => {
-    const parsed = parseAnimatedValue(text)
+    const parsed = parseAnimatedValue(text, locale)
     if (!animateOnMount || !parsed) return text
     return formatAnimatedValue(parsed, 0)
   })
@@ -103,14 +108,14 @@ export function AnimatedTextValue({
       return undefined
     }
 
-    const to = parseAnimatedValue(text)
+    const to = parseAnimatedValue(text, locale)
     if (!to) {
       setDisplayText(text)
       hasMountedRef.current = true
       return undefined
     }
 
-    const from = previous ? parseAnimatedValue(previous) : null
+    const from = previous ? parseAnimatedValue(previous, locale) : null
     if (from && (from.prefix !== to.prefix || from.suffix !== to.suffix)) {
       setDisplayText(text)
       hasMountedRef.current = true
@@ -164,7 +169,7 @@ export function AnimatedTextValue({
         frameRef.current = null
       }
     }
-  }, [animateOnMount, disabled, durationMs, text])
+  }, [animateOnMount, disabled, durationMs, locale, text])
 
   return (
     <span aria-live={ariaLive} aria-atomic={ariaAtomic} className={cn("inline-block", className)}>

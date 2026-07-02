@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 
 export type ActionSelectItem = {
@@ -29,6 +30,7 @@ export function ActionSelectStage({
   emptyTitle?: string
   emptyDescription?: string
 }) {
+  const { t } = useTranslation()
   const [query, setQuery] = useState("")
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -44,22 +46,22 @@ export function ActionSelectStage({
   return (
     <div data-testid="action-select-stage">
       <label className="block">
-        <span className="sr-only">{searchPlaceholder}</span>
+        <span className="sr-only">{t(searchPlaceholder)}</span>
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={searchPlaceholder}
+          placeholder={t(searchPlaceholder)}
           className="h-11 w-full rounded-radius-sm border border-border bg-surface-inset px-4 text-[14px] outline-none placeholder:text-muted-foreground"
         />
       </label>
 
-      <div className="mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{sectionLabel}</div>
+      <div className="mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{t(sectionLabel)}</div>
 
       <div className="mt-2 divide-y divide-border/80 overflow-hidden rounded-radius-md border border-border/80 bg-card">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center">
-            <div className="text-[14px] font-medium">{emptyTitle}</div>
-            <div className="mt-1 text-[13px] text-muted-foreground">{emptyDescription}</div>
+            <div className="text-[14px] font-medium">{t(emptyTitle)}</div>
+            <div className="mt-1 text-[13px] text-muted-foreground">{t(emptyDescription)}</div>
           </div>
         ) : (
           filtered.map((item) => (

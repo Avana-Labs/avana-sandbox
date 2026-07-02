@@ -3,6 +3,7 @@
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 type QuickStatLike = {
@@ -42,6 +43,7 @@ function splitQuickStats(stats: QuickStatLike[]) {
 
 function StatsGrid({ stats }: { stats: QuickStatLike[] }) {
   const { ctx } = useCurrency()
+  const { t } = useTranslation()
   if (stats.length === 0) return null
 
   return (
@@ -52,7 +54,7 @@ function StatsGrid({ stats }: { stats: QuickStatLike[] }) {
             {redenominateCompactUsd(stat.value, ctx)}
           </div>
           <div className="mt-2 flex items-center gap-1">
-            <span className="text-[13px] font-normal leading-snug text-muted-foreground">{stat.label}</span>
+            <span className="text-[13px] font-normal leading-snug text-muted-foreground">{t(stat.label)}</span>
             {stat.tooltip ? <ActionMetricHelp text={stat.tooltip} topic={stat.label} /> : null}
           </div>
         </article>
@@ -62,19 +64,20 @@ function StatsGrid({ stats }: { stats: QuickStatLike[] }) {
 }
 
 export function QuickStatsGrid({ detail, className }: Props) {
+  const { t } = useTranslation()
   const { market, risk } = splitQuickStats(detail.quickStats)
 
   return (
     <div className={cn("space-y-10", className)}>
       {market.length > 0 ? (
-        <section aria-label="Market overview">
-          <h3 className="mb-5 text-[15px] font-medium tracking-[-0.02em] text-foreground">Market overview</h3>
+        <section aria-label={t("Market overview")}>
+          <h3 className="mb-5 text-[15px] font-medium tracking-[-0.02em] text-foreground">{t("Market overview")}</h3>
           <StatsGrid stats={market} />
         </section>
       ) : null}
       {risk.length > 0 ? (
-        <section aria-label="Risk exposure">
-          <h3 className="mb-5 text-[15px] font-medium tracking-[-0.02em] text-foreground">Risk exposure</h3>
+        <section aria-label={t("Risk exposure")}>
+          <h3 className="mb-5 text-[15px] font-medium tracking-[-0.02em] text-foreground">{t("Risk exposure")}</h3>
           <StatsGrid stats={risk} />
         </section>
       ) : null}

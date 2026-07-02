@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { MarketHeroChart } from "@/app/components/charts"
 import { getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type MarketHeroProps = {
   detail: MultiplyMarketDetail
@@ -26,6 +27,7 @@ export function MarketHeroIdentity({
   actions?: React.ReactNode
   className?: string
 }) {
+  const { t } = useTranslation()
   const metaLabel = detail.hero.chain
 
   return (
@@ -58,7 +60,7 @@ export function MarketHeroIdentity({
                   await navigator.clipboard.writeText(metaLabel)
                 }}
                 className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2 py-1 text-[13px] font-normal leading-none text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-                aria-label="Copy chain"
+                aria-label={t("Copy chain")}
               >
                 <Copy className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
                 <span>{metaLabel}</span>
@@ -69,13 +71,13 @@ export function MarketHeroIdentity({
 
         <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
           <HeroIcon
-            label="Search"
+            label={t("Search")}
             onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")}
           >
             <Search className="h-3.5 w-3.5" />
           </HeroIcon>
           <HeroIcon
-            label="Website"
+            label={t("Website")}
             onClick={() =>
               window.open(
                 detail.hero.explorerUrl ?? `https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`,
@@ -88,7 +90,7 @@ export function MarketHeroIdentity({
           <HeroIcon label="X" onClick={() => window.open(`https://x.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")}>
             <XIcon />
           </HeroIcon>
-          <HeroIcon label="Share" onClick={() => navigator.clipboard.writeText(window.location.href)}>
+          <HeroIcon label={t("Share")} onClick={() => navigator.clipboard.writeText(window.location.href)}>
             <MessageSquare className="h-3.5 w-3.5" />
           </HeroIcon>
           {actions}
@@ -99,6 +101,7 @@ export function MarketHeroIdentity({
 }
 
 export function MarketHero({ detail, leading, actions, className, hideIdentity = false }: MarketHeroProps) {
+  const { t } = useTranslation()
   // Prefer the Convex-backed feed (set by the server detail builder); fall back to the
   // local deterministic feed only when Convex is unreachable.
   const feed = React.useMemo(() => detail.heroFeed ?? getMultiplyMarketHeroFeed(detail.id), [detail.heroFeed, detail.id])
@@ -112,7 +115,7 @@ export function MarketHero({ detail, leading, actions, className, hideIdentity =
           feed={feed}
           defaultRange={detail.heroFeed ? "All" : "1D"}
           gradientId={`multiplyHeroFill-${detail.id}`}
-          label="Total value locked"
+          label={t("Total value locked")}
         />
       </div>
     </section>

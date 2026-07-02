@@ -16,19 +16,21 @@ import type { HomeAssetVisual, HomeCollateralPool } from "@/app/lib/home-sim"
 import type { BorrowPoolRow } from "@/app/lib/data/borrow-domain"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = { detail: AssetDetail; className?: string }
 
 type SidebarTab = "deposit" | "withdraw" | "borrow" | "repay"
 
 export function AssetTokenSidebar({ detail, className }: Props) {
+  const { t } = useTranslation()
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
       <TokenRail detail={detail} className="mt-6" embedActions />
       <AboutNewsSection
         className="pt-4"
         about={detail.about}
-        aboutTitle={`About ${detail.hero.name}`}
+        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
         compactAboutTitle
         newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
         newsImageLabel={detail.hero.symbol}
@@ -43,6 +45,7 @@ export function AssetTokenActions({ detail, className }: Props) {
 }
 
 function TokenRail({ detail, className, embedActions = false }: { detail: AssetDetail; className?: string; embedActions?: boolean }) {
+  const { t } = useTranslation()
   const router = useRouter()
   // This is a Borrow-section asset detail page, so the primary action must be a
   // borrow flow — not the Lend deposit that the "deposit" tab launches.
@@ -73,14 +76,14 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
       <div className={cn("flex w-full flex-col", className)}>
         <ActionWorkspaceTabs
           items={[
-            { id: "deposit", label: "Deposit" },
-            { id: "withdraw", label: "Withdraw" },
-            { id: "borrow", label: "Borrow" },
-            { id: "repay", label: "Repay" },
+            { id: "deposit", label: t("Deposit") },
+            { id: "withdraw", label: t("Withdraw") },
+            { id: "borrow", label: t("Borrow") },
+            { id: "repay", label: t("Repay") },
           ]}
           value={tab}
           onChange={(value) => setTab(value as SidebarTab)}
-          ariaLabel="Asset actions"
+          ariaLabel={t("Asset actions")}
         />
 
         <div className="mt-3">
@@ -122,7 +125,9 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
               ) : (
                 <div className="rounded-radius-md border border-border bg-surface-raised px-5 py-4">
                   <p className="text-[15px] leading-6 text-muted-foreground">
-                    Deposit compatible collateral from {detail.row.spokeLabel} before borrowing {detail.hero.symbol}.
+                    {t("Deposit compatible collateral from {spoke} before borrowing {symbol}.")
+                      .replace("{spoke}", detail.row.spokeLabel)
+                      .replace("{symbol}", detail.hero.symbol)}
                   </p>
                   <Button
                     type="button"
@@ -130,7 +135,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
                     onClick={() => setDepositPromptOpen(true)}
                     disabled={!fallbackMarket}
                   >
-                    Deposit collateral
+                    {t("Deposit collateral")}
                   </Button>
                 </div>
               )
@@ -160,14 +165,16 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
 
       <Dialog open={depositPromptOpen} onOpenChange={setDepositPromptOpen}>
         <DialogContent className="max-w-sm rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3">
-          <DialogTitle className="sr-only">Deposit collateral first</DialogTitle>
+          <DialogTitle className="sr-only">{t("Deposit collateral first")}</DialogTitle>
           <div className="space-y-4 px-6 pb-6 pt-5">
             <div className="space-y-2">
               <h3 className="text-[22px] font-medium tracking-[-0.03em] text-foreground">
-                You need to deposit an asset before you can borrow.
+                {t("You need to deposit an asset before you can borrow.")}
               </h3>
               <p className="text-[14px] leading-6 text-muted-foreground">
-                To borrow {detail.hero.symbol}, deposit a compatible collateral market from {detail.row.spokeLabel} first.
+                {t("To borrow {symbol}, deposit a compatible collateral market from {spoke} first.")
+                  .replace("{symbol}", detail.hero.symbol)
+                  .replace("{spoke}", detail.row.spokeLabel)}
               </p>
             </div>
             <div className="flex flex-col gap-2">
@@ -182,10 +189,10 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
                 }}
                 disabled={!fallbackMarket}
               >
-                Deposit
+                {t("Deposit")}
               </Button>
               <Button type="button" variant="secondary" className="h-11 rounded-radius-lg" onClick={() => setDepositPromptOpen(false)}>
-                Got it
+                {t("Got it")}
               </Button>
             </div>
           </div>

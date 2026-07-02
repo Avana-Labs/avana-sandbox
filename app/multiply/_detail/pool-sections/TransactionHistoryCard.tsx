@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import type { MultiplyTxHistoryRow } from "@/app/lib/multiply-detail"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 const KIND_LABEL: Record<MultiplyTxHistoryRow["kind"], string> = {
@@ -42,6 +43,7 @@ const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-radius-lg`
 const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-radius-lg`
 
 export function TransactionHistoryCard({ transactions, collateralSymbol, borrowableSymbol }: Props) {
+  const { t } = useTranslation()
   const [activeFilter, setActiveFilter] = React.useState<(typeof FILTERS)[number]["id"]>("all")
   const visibleTransactions =
     activeFilter === "all" ? transactions : transactions.filter((tx) => tx.kind === activeFilter)
@@ -49,7 +51,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
   return (
     <section className="min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">Transactions</h2>
+        <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">{t("Transactions")}</h2>
         <div className="flex flex-wrap items-center gap-2">
           {FILTERS.map((filter) => {
             const active = filter.id === activeFilter
@@ -65,7 +67,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
                 )}
               >
-                {filter.label}
+                {t(filter.label)}
               </button>
             )
           })}
@@ -85,19 +87,19 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                   <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Time
+                    {t("Time")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Type
+                    {t("Type")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Amount
+                    {t("Amount")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    For
+                    {t("For")}
                   </th>
                   <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Wallet
+                    {t("Wallet")}
                   </th>
                 </tr>
               </thead>
@@ -109,7 +111,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                       <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
-                        {KIND_LABEL[tx.kind]}
+                        {t(KIND_LABEL[tx.kind])}
                       </span>
                     </td>
                     <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
@@ -154,19 +156,19 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                   <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Time
+                    {t("Time")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Type
+                    {t("Type")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Amount
+                    {t("Amount")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    For
+                    {t("For")}
                   </th>
                   <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Wallet
+                    {t("Wallet")}
                   </th>
                 </tr>
               </thead>
@@ -178,7 +180,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                       <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
-                        {KIND_LABEL[tx.kind]}
+                        {t(KIND_LABEL[tx.kind])}
                       </span>
                     </td>
                     <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>

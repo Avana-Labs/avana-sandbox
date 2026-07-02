@@ -1,6 +1,7 @@
 "use client"
 
 import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { cn } from "@/lib/utils"
 
@@ -21,6 +22,7 @@ export function ActionContextSelectorCard({
   onClick: () => void
   workspace?: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <button
       type="button"
@@ -36,7 +38,7 @@ export function ActionContextSelectorCard({
         )}
       >
         <div className={workspace ? undefined : "px-4 pb-4 pt-4"}>
-          <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
+          <div className="text-[13px] font-medium text-muted-foreground">{t(label)}</div>
           <div className="mt-3 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
             <div className="min-w-0 flex-1 break-words text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground min-[361px]:truncate">
               {value}

@@ -6,6 +6,7 @@ import { formatActionApproxUsd } from "@/app/lib/action-system/formatters"
 import { ActionContextSelectorCard } from "@/app/components/action-page/action-context-selector-card"
 import { ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function HomeActionContextBar({
   pool,
@@ -22,12 +23,13 @@ export function HomeActionContextBar({
   label?: string
   switchable?: boolean
 }) {
+  const { t } = useTranslation()
   const [collateralSymbol, borrowSymbol] = pool.visuals.map((visual) => visual.symbol)
   const approxUsdLabel = formatActionApproxUsd(pool.collateralUsd)
 
   if (variant === "inset") {
     return (
-      <SwapStyleField label={label} tone="raised">
+      <SwapStyleField label={t(label)} tone="raised">
         <button
           type="button"
           onClick={switchable ? onOpenPool : undefined}
@@ -56,7 +58,7 @@ export function HomeActionContextBar({
   return (
     <div className={workspace ? undefined : "mb-3"}>
       <ActionContextSelectorCard
-        label={label}
+        label={t(label)}
         value={pool.name}
         approxUsdLabel={approxUsdLabel}
         collateralSymbol={collateralSymbol ?? "LP"}
