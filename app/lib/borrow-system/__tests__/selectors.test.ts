@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import {
   selectAllAvailableCollateralPools,
@@ -30,6 +31,24 @@ describe("borrow system selectors", () => {
     expect(debts["uni-v3-bluechip-wbtc-weth"]).toBeUndefined()
     expect(snapshot.totalBorrowedUsd).toBe(2000)
     expect(snapshot.availableCreditUsd).toBeGreaterThan(0)
+  })
+
+  it("surfaces a real, per-market risk premium on the borrow list (not a uniform 0.00%)", () => {
+    // A browsing wallet has no positions, so the wallet-scoped premium is 0 for every spoke.
+    // The list must instead show the intrinsic per-market premium from the catalog.
+    const state = buildMockBorrowSystemState("browsing-wallet")
+    const markets = selectBorrowMarketSummaries(state, "browsing-wallet")
+    const catalogById = new Map(BORROW_POOL_CATALOG.map((row) => [row.id, row.riskPremiumBps]))
+
+    // Not all zero.
+    expect(markets.some((market) => market.riskPremiumBps > 0)).toBe(true)
+    // More than one distinct value across the list — the column is genuinely informative.
+    expect(new Set(markets.map((market) => market.riskPremiumBps)).size).toBeGreaterThan(1)
+    // Each row matches the catalog premium the pool detail renders.
+    for (const market of markets) {
+      const expected = catalogById.get(market.id)
+      if (expected !== undefined) expect(market.riskPremiumBps).toBe(expected)
+    }
   })
 
   it("exposes every market as an available collateral pool (pre-loaded picker)", () => {
