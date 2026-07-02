@@ -133,12 +133,12 @@ export function DebtsPanel({
                         <div className="text-[11px] text-muted-foreground">{t("collateral value")}</div>
                       </td>
                       <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
-                        <HoverActionGroup align="start">
+                        <HoverActionGroup align="start" className="gap-2">
                           <Button
                             type="button"
-                            size="sm"
+                            size="table"
                             variant="brand-secondary"
-                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                            className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               onRepay(row)
@@ -148,9 +148,9 @@ export function DebtsPanel({
                           </Button>
                           <Button
                             type="button"
-                            size="sm"
+                            size="table"
                             variant="brand"
-                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                            className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               onManage(row)

@@ -35,6 +35,7 @@ const buttonVariants = cva(
         // Full-height action-flow CTAs.
         cta: 'h-14 rounded-radius-xl px-4 text-[16px]',
         compact: 'h-12 rounded-radius-xl px-4 text-[15px]',
+        table: 'h-[2.625rem] rounded-radius-lg px-3.5 text-[13px]',
       },
     },
     defaultVariants: {

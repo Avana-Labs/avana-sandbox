@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
@@ -445,14 +444,7 @@ export function DashboardClient({
           <div className="mt-12 space-y-10">
             <DashboardOverviewSection title="Looping Overview" metrics={multiplyDashboardMetrics.overview} />
             <DashboardSection title="Looping Positions">
-              <MultiplyCollateralTable
-                rows={multiplyTabData.lpCollaterals}
-                onDeleverage={(positionId) => {
-                  const position = multiplySession.state.positions[positionId]
-                  if (!position) return
-                  router.push(actionPagePath("multiply", "deleverage", { market: position.marketId, return: dashboardReturnHref }))
-                }}
-              />
+              <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} />
             </DashboardSection>
           </div>
         )

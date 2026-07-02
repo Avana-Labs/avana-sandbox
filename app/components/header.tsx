@@ -162,7 +162,7 @@ export function Header() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[14px] font-medium leading-[1.1] transition-colors xl:px-3 xl:py-2 xl:text-[15px] ${
+                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-medium leading-[1.1] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
                       isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -181,15 +181,17 @@ export function Header() {
             <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {desktopLinks.slice(4).map((link) => {
                 const isActive = mounted && pathname.startsWith(link.href)
+                const Icon = link.icon
 
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[14px] font-medium leading-[1.1] transition-colors xl:px-3 xl:py-2 xl:text-[15px] ${
+                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-medium leading-[1.1] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
                       isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
+                    {Icon ? <Icon className="mr-2 h-[16px] w-[16px] shrink-0" strokeWidth={2} /> : null}
                     <span>{t(link.label)}</span>
                   </Link>
                 )

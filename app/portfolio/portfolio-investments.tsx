@@ -47,12 +47,14 @@ export function PortfolioInvestments({
   onClaimRewards,
   isClaimingRewards = false,
   showHeading = true,
+  showIndexColumn = false,
 }: {
   investments: PortfolioSupplyPosition[]
   rewardsSummary?: PortfolioLendTabData["rewardsSummary"]
   onClaimRewards?: () => void
   isClaimingRewards?: boolean
   showHeading?: boolean
+  showIndexColumn?: boolean
 }) {
   const router = useRouter()
   const { showDollarAmounts } = useDisplayPreferences()
@@ -91,28 +93,30 @@ export function PortfolioInvestments({
             <DesktopTableSurface>
               <table className="w-full min-w-[840px] table-fixed border-separate border-spacing-0 text-[13px]">
                 <colgroup>
-                  <col className="w-[4%]" />
-                  <col className="w-[30%]" />
+                  {showIndexColumn ? <col className="w-[6%]" /> : null}
+                  <col className={showIndexColumn ? "w-[28%]" : "w-[34%]"} />
                   <col className="w-[20%]" />
-                  <col className="w-[16%]" />
+                  <col className="w-[14%]" />
                   <col className="w-[18%]" />
-                  <col className="w-[12%]" />
+                  <col className={showIndexColumn ? "w-[14%]" : "w-[14%]"} />
                 </colgroup>
                 <thead>
                   <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                    <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                      #
-                    </th>
-                    <th className="bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    {showIndexColumn ? (
+                      <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                        #
+                      </th>
+                    ) : null}
+                    <th className={`${showIndexColumn ? "" : "rounded-l-radius-lg"} bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground`}>
                       Asset
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       Deposited
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       APY
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       Earnings
                     </th>
                     <SilentActionHeader className="pr-5" />
@@ -128,10 +132,12 @@ export function PortfolioInvestments({
                         className="group cursor-pointer transition-colors"
                         onClick={() => router.push(detailHref)}
                       >
-                        <td className={`py-3.5 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
-                          {index + 1}
-                        </td>
-                        <td className={`py-3.5 pl-5 ${TABLE_ROW_HOVER_BG}`}>
+                        {showIndexColumn ? (
+                          <td className={`py-3.5 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
+                            {index + 1}
+                          </td>
+                        ) : null}
+                        <td className={`py-3.5 pl-5 ${showIndexColumn ? TABLE_ROW_HOVER_BG : TABLE_ROW_HOVER_LEFT}`}>
                           <div className="flex items-center gap-2.5">
                             <TokenIcon symbol={token.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
@@ -165,9 +171,9 @@ export function PortfolioInvestments({
                         <HoverActionGroup className="gap-2">
                           <Button
                             type="button"
-                            size="sm"
+                            size="table"
                             variant="brand"
-                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                            className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               router.push(actionPagePath("lend", "deposit", { market: marketId, return: detailHref }))
@@ -177,9 +183,9 @@ export function PortfolioInvestments({
                           </Button>
                           <Button
                             type="button"
-                            size="sm"
+                            size="table"
                             variant="brand-secondary"
-                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                            className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailHref }))
