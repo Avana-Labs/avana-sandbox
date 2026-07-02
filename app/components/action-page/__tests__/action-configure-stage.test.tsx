@@ -69,6 +69,32 @@ describe("ActionConfigureStage", () => {
     expect(onMax).toHaveBeenCalledTimes(1)
   })
 
+  it("hides projected metrics for a blocked action and shows the block reason", () => {
+    render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Borrow"
+        amount="100000"
+        onAmountChange={() => undefined}
+        preview={{
+          ...preview,
+          allowed: false,
+          blockedReason: "This borrow exceeds your available credit.",
+          // Engine returns after === before when blocked — a stale SAFE transition.
+          metrics: [{ id: "hf", label: "Health factor", value: "2.40 → 2.40", before: "2.40", after: "2.40" }],
+        }}
+        assetSymbol="USDC"
+        onPrimary={() => undefined}
+      />,
+    )
+
+    // No misleading SAFE health-factor card / metrics block for a blocked action.
+    expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("action-health-factor-card")).not.toBeInTheDocument()
+    // The block reason is surfaced instead.
+    expect(screen.getByText("This borrow exceeds your available credit.")).toBeInTheDocument()
+  })
+
   it("shows receive WETH toggle when enabled", () => {
     render(
       <ActionConfigureStage
