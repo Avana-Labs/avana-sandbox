@@ -521,6 +521,30 @@ export function ExploreLoopsMarketsTable({
       </div>
 
       <div className="rounded-radius-md bg-transparent">
+        <div className="space-y-3 md:hidden">
+          {visibleRows.length ? (
+            visibleRows.map((row, index) => (
+              <MobileLoopCard
+                key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
+                row={row}
+                protocolLogo={getResolvedLogo(row.protocolLogo)}
+                assetLogo={getResolvedLogo(getAssetLogo(row.asset))}
+                supplyApy={getSupplyApy(row.protocol)}
+                borrowApy={getBorrowApy(row.asset)}
+                availableLabel={
+                  parseCompactUsdLabel(row.points) == null ? (row.points ?? "—") : compact(parseCompactUsdLabel(row.points) as number)
+                }
+                onOpenMultiply={onOpenMultiply}
+              />
+            ))
+          ) : (
+            <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground shadow-elev-1">
+              No loops in this category yet.
+            </div>
+          )}
+        </div>
+
+        <div className="hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
             <colgroup>
@@ -808,7 +832,90 @@ export function ExploreLoopsMarketsTable({
           </Button>
         </div>
       </div>
+      </div>
     </section>
+  )
+}
+
+function MobileLoopCard({
+  row,
+  protocolLogo,
+  assetLogo,
+  supplyApy,
+  borrowApy,
+  availableLabel,
+  onOpenMultiply,
+}: {
+  row: MultiplyPageData["lendRows"][number]
+  protocolLogo?: string | null
+  assetLogo?: string | null
+  supplyApy?: string
+  borrowApy?: string
+  availableLabel: string
+  onOpenMultiply?: (href: string) => void
+}) {
+  return (
+    <Link
+      href={row.href}
+      className="block rounded-radius-lg border border-border bg-card px-4 py-4 shadow-elev-1 transition-colors hover:border-brand/30"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-10 w-[62px] items-center">
+              {protocolLogo ? (
+                <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+                </div>
+              ) : null}
+              {assetLogo ? (
+                <div className="absolute left-5 top-0 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={assetLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+                </div>
+              ) : null}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.protocol}</div>
+              <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{row.asset}</div>
+            </div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div
+            className={cn(
+              "font-data text-[18px] font-medium tabular-nums",
+              row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-success") : "text-foreground",
+            )}
+          >
+            {row.apy || "—"}
+          </div>
+          <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Max APY</div>
+        </div>
+      </div>
+
+      <dl className="mt-4 divide-y divide-border text-[12.5px]">
+        <MobileStatLine label="Max Leverage" value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} />
+        <MobileStatLine label="Liquidity" value={availableLabel} />
+      </dl>
+
+      <div className="mt-3 grid grid-cols-2 divide-x divide-border overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
+        <MobileInsetStat label="Supply APY" value={supplyApy ?? "—"} tone="text-success" />
+        <MobileInsetStat label="Borrow APY" value={borrowApy ?? "—"} tone="text-rose-600 dark:text-rose-400" />
+      </div>
+
+      <Button
+        type="button"
+        className="mt-4 h-10 w-full rounded-full text-[14px]"
+        onClick={(event) => {
+          event.preventDefault()
+          onOpenMultiply?.(row.href)
+        }}
+      >
+        Multiply
+      </Button>
+    </Link>
   )
 }
 
@@ -896,4 +1003,26 @@ function CellLink({ href, className, children }: { href: string; className?: str
       {children}
     </Link>
   )
+}
+
+function MobileStatLine({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
+    </div>
+  )
+}
+
+function MobileInsetStat({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center px-2 py-2.5">
+      <span className={cn("font-data text-[14px] font-medium tabular-nums text-foreground", tone)}>{value}</span>
+      <span className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
+    </div>
+  )
+}
+
+function getResolvedLogo(value?: string | null) {
+  return value ? resolveImageSrc(value) : null
 }
