@@ -31,7 +31,7 @@ export function ActionContextSelectorCard({
       <div
         className={cn(
           workspace
-            ? "rounded-[20px] border border-border bg-background px-4 py-4 dark:bg-[hsl(220,7%,10%)]"
+            ? "rounded-radius-xl border border-border bg-background px-4 py-4 dark:bg-[hsl(220,7%,10%)]"
             : "rounded-radius-md border border-border bg-background",
         )}
       >

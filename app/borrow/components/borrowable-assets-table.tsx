@@ -321,7 +321,7 @@ function LoanAssetsSection({
 
   return (
     <section className="space-y-5">
-    <div className="overflow-hidden rounded-[20px] bg-transparent">{table}</div>
+    <div className="overflow-hidden rounded-radius-xl bg-transparent">{table}</div>
     </section>
   )
 }

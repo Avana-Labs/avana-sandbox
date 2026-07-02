@@ -21,7 +21,7 @@ type Props = {
 
 export function NewsCard({ items, title = "Parameter Changes", plain = false, mediaVariant = "card" }: Props) {
   return (
-    <section className={plain ? "space-y-4" : "overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-elev-1"}>
+    <section className={plain ? "space-y-4" : "overflow-hidden rounded-radius-lg border border-border bg-surface-raised shadow-elev-1"}>
       <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
         <h2 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">{title}</h2>
       </div>
@@ -30,7 +30,7 @@ export function NewsCard({ items, title = "Parameter Changes", plain = false, me
           const content = (
             <div className={plain ? "group flex items-stretch gap-3 focus-visible:outline-none" : "group flex items-stretch gap-3 px-4 py-3 focus-visible:outline-none"}>
               {mediaVariant === "card" ? (
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-inset ring-1 ring-border">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-radius-md bg-surface-inset ring-1 ring-border">
                   {item.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" src={item.imageUrl} />

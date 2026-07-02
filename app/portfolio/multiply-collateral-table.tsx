@@ -57,7 +57,7 @@ export function MultiplyCollateralTable({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   #
                 </th>
                 <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -87,7 +87,7 @@ export function MultiplyCollateralTable({
                 <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Status
                 </th>
-                <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Actions
                 </th>
               </tr>
@@ -167,7 +167,7 @@ export function MultiplyCollateralTable({
           {rows.map((row, index) => (
             <div
               key={row.id}
-              className="rounded-2xl border border-border bg-muted/80 p-3 dark:border-white/8 dark:bg-slate-900/70"
+              className="rounded-radius-lg border border-border bg-muted/80 p-3 dark:border-white/8 dark:bg-slate-900/70"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">

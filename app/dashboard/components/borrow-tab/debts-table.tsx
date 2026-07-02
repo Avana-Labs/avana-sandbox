@@ -67,7 +67,7 @@ export function DebtsPanel({
         </div>
       ) : null}
       <div className="hidden md:block">
-        <div className="rounded-[18px] bg-transparent">
+        <div className="rounded-radius-lg bg-transparent">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
@@ -81,7 +81,7 @@ export function DebtsPanel({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     #
                   </th>
                   <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -99,7 +99,7 @@ export function DebtsPanel({
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Liq. Threshold
                   </th>
-                  <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
+                  <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
                 </tr>
               </thead>
               <tbody>
@@ -298,7 +298,7 @@ export function CurrentLtvCard({
               <span
                 key={index}
                 className={cn(
-                  "flex-1 rounded-[2px] transition-all",
+                  "flex-1 rounded-xs transition-all",
                   isCurrent ? "h-full ring-2 ring-foreground ring-offset-1 ring-offset-surface-inset" : "h-[75%]",
                   cls,
                 )}

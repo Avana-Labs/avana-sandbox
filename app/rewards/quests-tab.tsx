@@ -84,7 +84,7 @@ function AvanaQuestCard({
     <Card className="flex h-full flex-col overflow-hidden rounded-radius-md border-0 bg-card shadow-none">
       <div className="flex h-full flex-col p-3.5">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-brand/10">
+          <div className="flex h-9 w-9 items-center justify-center rounded-radius-md bg-brand/10">
             <Icon className="h-4 w-4 text-brand" strokeWidth={1.9} />
           </div>
           <span className="rounded-full border border-border bg-surface-inset px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-foreground/70">

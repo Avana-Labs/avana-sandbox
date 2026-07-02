@@ -21,10 +21,10 @@ const SIZE_CLASS: Record<CtaSize, string> = {
 }
 
 const PRIMARY_BASE =
-  "flex w-full items-center justify-center rounded-[20px] px-4 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed"
+  "flex w-full items-center justify-center rounded-radius-xl px-4 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed"
 
 const SECONDARY_BASE =
-  "flex w-full items-center justify-center rounded-[20px] border border-border bg-surface-raised px-4 font-medium text-foreground transition-colors hover:bg-surface-hover"
+  "flex w-full items-center justify-center rounded-radius-xl border border-border bg-surface-raised px-4 font-medium text-foreground transition-colors hover:bg-surface-hover"
 
 export function primaryCtaClass(
   opts: { disabled?: boolean; pending?: boolean; size?: CtaSize; className?: string } = {},

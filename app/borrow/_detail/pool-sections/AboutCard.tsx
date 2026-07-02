@@ -9,7 +9,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
   return (
     <section
       className={
-        plain ? "space-y-4" : "overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-elev-1"
+        plain ? "space-y-4" : "overflow-hidden rounded-radius-lg border border-border bg-surface-raised shadow-elev-1"
       }
     >
       <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>

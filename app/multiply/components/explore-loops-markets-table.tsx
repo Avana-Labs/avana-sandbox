@@ -107,7 +107,7 @@ function ExpandableDesktopSearch({ value, onChange }: { value: string; onChange:
       <div
         className={cn(
           "flex h-10 items-center overflow-hidden border shadow-elev-1 transition-[width,border-radius,background-color,border-color] duration-200",
-          isExpanded ? "w-[240px] rounded-[12px] px-3" : "w-10 cursor-pointer justify-center rounded-[12px]",
+          isExpanded ? "w-[240px] rounded-radius-md px-3" : "w-10 cursor-pointer justify-center rounded-radius-md",
           "border-border bg-card text-foreground dark:border-border/60 dark:text-[#e6f8fb]",
         )}
         onClick={() => {
@@ -274,7 +274,7 @@ function SingleSelectDropdown({
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
+          "inline-flex h-9 items-center gap-1.5 rounded-radius-md px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
           "border border-border bg-card text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
         )}
       >
@@ -296,7 +296,7 @@ function SingleSelectDropdown({
           <div
             ref={panelRef}
             className={cn(
-              "fixed z-30 overflow-hidden rounded-[14px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
+              "fixed z-30 overflow-hidden rounded-radius-md border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
               "border-border bg-popover text-foreground dark:border-white/8 dark:bg-surface-inset dark:text-white",
             )}
             style={
@@ -534,7 +534,7 @@ export function ExploreLoopsMarketsTable({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   #
                 </th>
                 <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -612,7 +612,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   ACTION
                 </th>
               </tr>
@@ -820,10 +820,10 @@ function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSn
   return (
     <Link
       href={snapshot.href}
-      className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-surface-raised p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:border-border/80 hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)]"
+      className="group relative block w-full overflow-hidden rounded-radius-lg border border-border bg-surface-raised p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:border-border/80 hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)]"
     >
       <div className="pointer-events-none absolute inset-0 z-0 opacity-100 [background-image:radial-gradient(circle,rgba(148,163,184,0.28)_1px,transparent_1.15px)] [background-position:0_4px] [background-size:16px_16px] dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1.15px)]" />
-      <div className="pointer-events-none absolute inset-0 z-0 rounded-2xl bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
+      <div className="pointer-events-none absolute inset-0 z-0 rounded-radius-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
 
       {collateralSrc ? (
         <div className="pointer-events-none absolute -left-5 top-16 z-0 size-[274px] rounded-full opacity-10 blur-2xl saturate-150">

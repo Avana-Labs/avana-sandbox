@@ -346,7 +346,7 @@ export function DashboardHero({
               uiConfig.statTwoLabel &&
               statTwoValue &&
               uiConfig.statTwoHelpText ? (
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-card/10">
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-radius-md border border-border bg-border/80 dark:border-white/10 dark:bg-card/10">
                   <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} hidden={!showDollarAmounts} />
                   <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} hidden={!showDollarAmounts} />
                 </div>

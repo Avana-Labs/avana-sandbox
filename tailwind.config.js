@@ -119,6 +119,7 @@ module.exports = {
         "radius-sm": "var(--radius-sm)",
         "radius-md": "var(--radius-md)",
         "radius-lg": "var(--radius-lg)",
+        "radius-xl": "var(--radius-xl)",
       },
       boxShadow: {
         "elev-1": "var(--elev-1)",

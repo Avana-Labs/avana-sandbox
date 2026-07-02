@@ -298,7 +298,7 @@ function CollateralDesktopTable({
     return table
   }
 
-  return <div className="overflow-hidden rounded-[20px] bg-transparent">{table}</div>
+  return <div className="overflow-hidden rounded-radius-xl bg-transparent">{table}</div>
 }
 
 export const CollateralPoolsTable = memo(function CollateralPoolsTable({
@@ -349,8 +349,8 @@ function SpokeDesktopSection({
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   return (
     <section className="cv-section mb-2">
-      <div className="mt-4 overflow-hidden rounded-[20px] bg-transparent md:shadow-none">
-        <div className="flex items-center justify-between gap-3 rounded-t-[20px] bg-transparent px-1 py-2 md:px-4 md:py-3">
+      <div className="mt-4 overflow-hidden rounded-radius-xl bg-transparent md:shadow-none">
+        <div className="flex items-center justify-between gap-3 rounded-t-radius-xl bg-transparent px-1 py-2 md:px-4 md:py-3">
           <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
           <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
         </div>

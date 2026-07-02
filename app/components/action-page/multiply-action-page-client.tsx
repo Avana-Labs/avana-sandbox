@@ -629,7 +629,7 @@ export function MultiplyActionPageClient({
           type="button"
           onClick={() => void handleClose()}
           disabled={isPending}
-          className="mt-3 w-full rounded-[16px] border border-border/70 px-4 py-3 text-[15px] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-3 w-full rounded-radius-lg border border-border/70 px-4 py-3 text-[15px] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           data-testid="multiply-close-position"
         >
           Close position and withdraw collateral
