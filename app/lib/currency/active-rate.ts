@@ -31,3 +31,14 @@ export function getActiveCurrency(): ActiveCurrency {
 export function toActive(usdValue: number): number {
   return usdValue * active.rate
 }
+
+/**
+ * Compose an already-formatted numeric body with the active currency symbol,
+ * placing the minus sign OUTSIDE the symbol ("-$500", never "$-500") and never
+ * emitting a negative sign for a value that rounds to zero ("$0.00", never
+ * "$-0.00"). Shared by every USD formatter so negative handling is uniform.
+ */
+export function withCurrencySymbol(value: number, formattedAbs: string): string {
+  const negative = value < 0 && Number(formattedAbs) !== 0
+  return `${negative ? "-" : ""}${active.symbol}${formattedAbs}`
+}
