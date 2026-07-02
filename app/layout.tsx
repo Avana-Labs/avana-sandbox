@@ -5,6 +5,7 @@ import type React from "react"
 import { Suspense } from "react"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { AnalyticsErrorSuppressor } from "./components/analytics-error-boundary"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { Web3Provider } from "./lib/web3/web3-provider"
@@ -119,6 +120,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Web3Provider>
           </DisplayPreferencesProvider>
         </ThemeProvider>
+        {enableProductionAnalytics ? <AnalyticsErrorSuppressor /> : null}
         {enableProductionAnalytics ? <Analytics /> : null}
         {enableProductionAnalytics ? <SpeedInsights /> : null}
       </body>
