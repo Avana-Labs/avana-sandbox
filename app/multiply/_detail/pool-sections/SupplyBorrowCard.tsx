@@ -58,7 +58,7 @@ export function SupplyBorrowCard({ detail }: Props) {
         </div>
       </div>
 
-      <SectionCard bodyClassName="p-0">
+      <SectionCard chrome="plain" bodyClassName="p-0">
         <div className="w-full pt-4">
           <LightweightChart
             series={series}
