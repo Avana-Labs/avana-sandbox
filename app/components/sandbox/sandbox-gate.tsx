@@ -1,6 +1,6 @@
 "use client"
 
-import { Component, type ReactNode } from "react"
+import { Component, useEffect, useState, type ReactNode } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Header } from "@/app/components/header"
@@ -53,7 +53,19 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
 
 function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode }) {
   const state = useQuery(api.sandbox.onboarding.getState, { wallet }) as OnboardingGateState | undefined
+  // When Convex is configured but unreachable the query never resolves, leaving a
+  // forever "Verifying…" spinner. Time out into the offline state after 12s.
+  const [timedOut, setTimedOut] = useState(false)
+  useEffect(() => {
+    if (state !== undefined) {
+      setTimedOut(false)
+      return
+    }
+    const timer = setTimeout(() => setTimedOut(true), 12000)
+    return () => clearTimeout(timer)
+  }, [state])
   if (state === undefined) {
+    if (timedOut) return <GateUnavailable variant="offline" />
     return (
       <LockedShell>
         <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
