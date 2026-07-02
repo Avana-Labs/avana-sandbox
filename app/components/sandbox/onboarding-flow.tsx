@@ -199,6 +199,37 @@ export function OnboardingUnavailable({
   )
 }
 
+/**
+ * Persistent "you're all set" state for an ALREADY-onboarded wallet revisiting
+ * /onboarding (issue #140). This is distinct from OnboardingFlow's `done` branch, which
+ * is the one-time just-claimed celebration ("$1M is now in your wallet", spring
+ * checkmark). A returning user has no claim to make, so we show a calm completed state
+ * that points them to the dashboard — never the re-runnable welcome/claim flow.
+ */
+export function OnboardingComplete({ pct = 100 }: { pct?: number }) {
+  return (
+    <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8" data-onboarding-step="done">
+      <StatusRow wallet={null} pct={pct} />
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white">
+          <Check className="size-6" strokeWidth={3} />
+        </div>
+        <Headline muted="You're all set." active="Your Avana sandbox is ready." size="hero" />
+        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
+          You've already claimed your practice funds. Jump back into the dashboard to keep exploring.
+        </p>
+        <Link className={`${PRIMARY} mt-9`} href="/dashboard">
+          Open dashboard
+        </Link>
+      </motion.div>
+    </div>
+  )
+}
+
 const ANALYSIS_STEPS = [
   "Reading your wallet history",
   "Checking sandbox eligibility",
