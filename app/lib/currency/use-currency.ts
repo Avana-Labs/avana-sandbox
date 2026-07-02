@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useOptionalDisplayPreferences } from "@/app/components/display-preferences"
 import {
   convertFromUsd,
   currencyContext,
@@ -27,7 +27,8 @@ export type CurrencyFormatter = {
  * say, CNY re-renders amounts in ¥ using the active FX rate.
  */
 export function useCurrency(): CurrencyFormatter {
-  const { currency } = useDisplayPreferences()
+  const preferences = useOptionalDisplayPreferences()
+  const currency = preferences?.currency ?? "USD"
   return useMemo(() => {
     const ctx = currencyContext(currency)
     return {
