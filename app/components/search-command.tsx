@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { ArrowUpRight, BadgeDollarSign, Layers3, Search, Sparkles } from "lucide-react"
@@ -16,6 +16,7 @@ import type { BorrowAssetVisual } from "@/app/lib/borrow-sim"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { rankResults } from "@/app/lib/search-ranking"
 
 type SearchTab = "all" | "pools" | "borrow" | "lend"
 
@@ -178,6 +179,8 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
   const [activeTab, setActiveTab] = useState<SearchTab>("all")
   const [results, setResults] = useState<SearchResult[] | null>(null)
   const [loadingResults, setLoadingResults] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const activeItemRef = useRef<HTMLButtonElement | null>(null)
 
   const loadResults = useCallback(async () => {
     if (results || loadingResults) {
@@ -218,22 +221,61 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
 
   const normalizedQuery = query.trim().toLowerCase()
   const resolvedResults = results ?? []
-  const visibleResults = resolvedResults
-    .filter((result) => activeTab === "all" || result.tab === activeTab)
-    .filter((result) => {
-      if (!normalizedQuery) return true
-      return `${result.title} ${result.subtitle} ${result.eyebrow} ${result.keywords}`.toLowerCase().includes(normalizedQuery)
-    })
 
-  const groupedResults: Array<[SearchResult["tab"], SearchResult[]]> = (["pools", "borrow", "lend"] as const)
-    .map((tab) => [tab, visibleResults.filter((result) => result.tab === tab)] as [SearchResult["tab"], SearchResult[]])
-    .filter(([, group]) => group.length > 0)
+  const groupedResults = useMemo<Array<[SearchResult["tab"], SearchResult[]]>>(() => {
+    const tabScoped = resolvedResults.filter((result) => activeTab === "all" || result.tab === activeTab)
+    const ranked = rankResults(tabScoped, normalizedQuery)
+    const groupLimit = activeTab === "all" && !normalizedQuery ? 4 : 12
+    return (["pools", "borrow", "lend"] as const)
+      .map(
+        (tab) =>
+          [tab, ranked.filter((result) => result.tab === tab).slice(0, groupLimit)] as [
+            SearchResult["tab"],
+            SearchResult[],
+          ],
+      )
+      .filter(([, group]) => group.length > 0)
+  }, [resolvedResults, activeTab, normalizedQuery])
+
+  // Flat list in rendered order, used for keyboard navigation.
+  const flatResults = useMemo(() => groupedResults.flatMap(([, group]) => group), [groupedResults])
+
+  // Reset/clamp the active item whenever the visible list changes.
+  useEffect(() => {
+    setActiveIndex((current) => (flatResults.length === 0 ? 0 : Math.min(current, flatResults.length - 1)))
+  }, [flatResults])
+
+  useEffect(() => {
+    setActiveIndex(0)
+  }, [normalizedQuery, activeTab])
+
+  useEffect(() => {
+    activeItemRef.current?.scrollIntoView?.({ block: "nearest" })
+  }, [activeIndex])
 
   const goToResult = (href: string) => {
     setOpen(false)
     setQuery("")
+    setActiveIndex(0)
     triggerPageLoading()
     router.push(href)
+  }
+
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (flatResults.length === 0) return
+    if (event.key === "ArrowDown") {
+      event.preventDefault()
+      setActiveIndex((current) => (current + 1) % flatResults.length)
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault()
+      setActiveIndex((current) => (current - 1 + flatResults.length) % flatResults.length)
+    } else if (event.key === "Enter") {
+      const active = flatResults[activeIndex]
+      if (active) {
+        event.preventDefault()
+        goToResult(active.href)
+      }
+    }
   }
 
   return (
@@ -277,6 +319,11 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={handleInputKeyDown}
+              role="combobox"
+              aria-expanded={flatResults.length > 0}
+              aria-controls="search-command-results"
+              aria-activedescendant={flatResults[activeIndex] ? `search-result-${flatResults[activeIndex].id}` : undefined}
               placeholder={t("Search pools, borrow assets, lend assets")}
               className="h-8 min-w-0 flex-1 bg-transparent text-[16px] font-normal text-foreground outline-none placeholder:text-muted-foreground"
             />
@@ -301,7 +348,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
             })}
           </div>
 
-          <div className="max-h-[430px] overflow-y-auto px-2 py-2.5">
+          <div id="search-command-results" role="listbox" className="max-h-[430px] overflow-y-auto px-2 py-2.5">
             {loadingResults && results == null ? (
               <div className="px-5 py-12 text-center">
                 <p className="text-[15px] font-medium text-foreground">{t("Loading results")}</p>
@@ -315,12 +362,23 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
                     <span>{t(tab === "pools" ? "Pools to use as collateral" : tab === "borrow" ? "Assets to borrow" : "Assets to lend")}</span>
                   </div>
                   <div className="space-y-0.5">
-                    {group.slice(0, activeTab === "all" && !normalizedQuery ? 4 : 12).map((result) => (
+                    {group.map((result) => {
+                      const flatIndex = flatResults.indexOf(result)
+                      const isActive = flatIndex === activeIndex
+                      return (
                       <button
                         key={result.id}
+                        id={`search-result-${result.id}`}
+                        ref={isActive ? activeItemRef : undefined}
+                        role="option"
+                        aria-selected={isActive}
                         type="button"
                         onClick={() => goToResult(result.href)}
-                        className="group flex w-full items-center gap-3 rounded-[13px] px-3 py-2 text-left transition-colors hover:bg-surface-inset"
+                        onMouseMove={() => setActiveIndex(flatIndex)}
+                        className={cn(
+                          "group flex w-full items-center gap-3 rounded-[13px] px-3 py-2 text-left transition-colors hover:bg-surface-inset",
+                          isActive && "bg-surface-inset",
+                        )}
                       >
                         <ResultIcon result={result} />
                         <span className="min-w-0 flex-1">
@@ -341,7 +399,8 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
                           <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
                         </span>
                       </button>
-                    ))}
+                      )
+                    })}
                   </div>
                 </section>
               ))
