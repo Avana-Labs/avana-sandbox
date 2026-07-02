@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { actionPagePath, getActionDescriptor, type ActionKind, type ActionProduct } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function ActionPageLaunchCta({
   product,
@@ -25,6 +26,7 @@ export function ActionPageLaunchCta({
   className?: string
   label?: string
 }) {
+  const { t } = useTranslation()
   const descriptor = getActionDescriptor(product, kind)
   const params: Record<string, string> = {}
   if (market) params.market = market
@@ -38,7 +40,7 @@ export function ActionPageLaunchCta({
       href={actionPagePath(product, kind, params)}
       className={primaryCtaClass({ className })}
     >
-      {label ?? descriptor.primaryVerb}
+      {t(label ?? descriptor.primaryVerb)}
     </Link>
   )
 }

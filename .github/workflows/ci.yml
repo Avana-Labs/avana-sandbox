@@ -26,6 +26,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Ensure rolldown Linux binding
+        run: |
+          node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" \
+            || npm install --no-save @rolldown/binding-linux-x64-gnu@$(node -p "require('./package.json').optionalDependencies['@rolldown/binding-linux-x64-gnu'] || require('./package-lock.json').packages['node_modules/@rolldown/binding-linux-x64-gnu'].version")
+
       - name: Typecheck
         run: npx tsc --noEmit
 

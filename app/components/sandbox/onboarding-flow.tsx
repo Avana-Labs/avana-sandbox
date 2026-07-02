@@ -9,6 +9,7 @@ import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 
 type BasketSlot = { tokenId: string; weight: number }
 type BasketClaim = { tokenId: string; amount: number; priceUsdAtClaim: number }
@@ -45,8 +46,6 @@ const SECONDARY =
   "inline-flex min-h-12 items-center justify-center rounded-full bg-muted px-7 text-[15px] font-semibold text-foreground transition-colors hover:bg-muted/75 disabled:opacity-50"
 
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
-const fmtUsd = (value: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
 const shortWallet = (wallet: string) => `${wallet.slice(0, 6)}…${wallet.slice(-4)}`
 
 const SHARE_URL = "https://app.avana.cc"
@@ -95,11 +94,12 @@ const PROGRESS: Record<string, number> = {
 
 /** Full-width animated progress rail — it IS the divider (no extra border line). */
 function StatusRow({ wallet, pct }: { wallet: string | null; pct: number }) {
+  const { t } = useTranslation()
   return (
     <div className="mb-9 sm:mb-11">
       {wallet ? (
         <div className="mb-2.5 text-right text-xs text-muted-foreground">
-          Wallet <strong className="ml-1 font-medium text-foreground">{shortWallet(wallet)}</strong>
+          {t("Wallet")} <strong className="ml-1 font-medium text-foreground">{shortWallet(wallet)}</strong>
         </div>
       ) : null}
       <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
@@ -141,11 +141,12 @@ function Headline({
 }
 
 function ErrorMessage({ error }: { error: string | null }) {
+  const { t } = useTranslation()
   return error ? (
     <div className="mt-5 flex items-center gap-3 text-sm text-destructive">
       <span>{error}</span>
       <button className="underline underline-offset-4" onClick={() => window.location.reload()} type="button">
-        Retry
+        {t("Retry")}
       </button>
     </div>
   ) : null
@@ -157,6 +158,7 @@ function ErrorMessage({ error }: { error: string | null }) {
  * with no active task) is never a dead end even if auto-resume didn't fire.
  */
 function LoadingRecovery({ error, onResume }: { error: string | null; onResume: () => void }) {
+  const { t } = useTranslation()
   return error ? (
     <ErrorMessage error={error} />
   ) : (
@@ -165,7 +167,7 @@ function LoadingRecovery({ error, onResume }: { error: string | null; onResume: 
       onClick={onResume}
       type="button"
     >
-      Taking longer than expected? Continue
+      {t("Taking longer than expected? Continue")}
     </button>
   )
 }
@@ -181,6 +183,7 @@ export function OnboardingUnavailable({
   headlineActive?: string
   note?: string
 }) {
+  const { t } = useTranslation()
   return (
     <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8">
       <StatusRow wallet={null} pct={10} />
@@ -189,10 +192,10 @@ export function OnboardingUnavailable({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Headline muted={headlineMuted} active={headlineActive} size="hero" />
-        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">{note}</p>
+        <Headline muted={t(headlineMuted)} active={t(headlineActive)} size="hero" />
+        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">{t(note)}</p>
         <button className={`${PRIMARY} mt-9`} onClick={onRetry} type="button">
-          Retry
+          {t("Retry")}
         </button>
       </motion.div>
     </div>
@@ -207,6 +210,7 @@ export function OnboardingUnavailable({
  * that points them to the dashboard — never the re-runnable welcome/claim flow.
  */
 export function OnboardingComplete({ pct = 100 }: { pct?: number }) {
+  const { t } = useTranslation()
   return (
     <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8" data-onboarding-step="done">
       <StatusRow wallet={null} pct={pct} />
@@ -218,12 +222,12 @@ export function OnboardingComplete({ pct = 100 }: { pct?: number }) {
         <div className="mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white">
           <Check className="size-6" strokeWidth={3} />
         </div>
-        <Headline muted="You're all set." active="Your Avana sandbox is ready." size="hero" />
+        <Headline muted={t("You're all set.")} active={t("Your Avana sandbox is ready.")} size="hero" />
         <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-          You've already claimed your practice funds. Jump back into the dashboard to keep exploring.
+          {t("You've already claimed your practice funds. Jump back into the dashboard to keep exploring.")}
         </p>
         <Link className={`${PRIMARY} mt-9`} href="/dashboard">
-          Open dashboard
+          {t("Open dashboard")}
         </Link>
       </motion.div>
     </div>
@@ -247,6 +251,7 @@ const STEP_STAGGER_MS = 950
 /** Fake-but-believable staged "thinking" sequence: each check completes in turn so the
  *  moment feels earned. Timed to land just before the flow advances to the next step. */
 function ThinkingSteps({ muted, active, steps }: { muted?: string; active: string; steps: string[] }) {
+  const { t } = useTranslation()
   const [done, setDone] = useState(0)
   useEffect(() => {
     const timers = steps.map((_, i) => window.setTimeout(() => setDone(i + 1), STEP_STAGGER_MS * (i + 1)))
@@ -254,7 +259,7 @@ function ThinkingSteps({ muted, active, steps }: { muted?: string; active: strin
   }, [steps])
   return (
     <>
-      <Headline muted={muted} active={active} />
+      <Headline muted={muted ? t(muted) : undefined} active={t(active)} />
       <ul className="mt-8 max-w-[420px] space-y-3.5">
         {steps.map((label, i) => {
           const state = i < done ? "done" : i === done ? "active" : "pending"
@@ -273,7 +278,7 @@ function ThinkingSteps({ muted, active, steps }: { muted?: string; active: strin
               ) : (
                 <LoaderCircle className={`size-[18px] ${state === "active" ? "animate-spin text-brand" : "text-muted-foreground/40"}`} />
               )}
-              <span className={state === "pending" ? "text-muted-foreground" : "text-foreground"}>{label}</span>
+              <span className={state === "pending" ? "text-muted-foreground" : "text-foreground"}>{t(label)}</span>
             </motion.li>
           )
         })}
@@ -291,18 +296,20 @@ function BasketPanel({
   busy: boolean
   onClaim: () => void
 }) {
+  const { exact } = useCurrency()
+  const { t } = useTranslation()
   const buckets = [
-    { label: "Liquid assets", detail: "12 assets", amount: "$100K" },
-    { label: "LP collateral", detail: "8 pools", amount: "$350K" },
-    { label: "Lending", detail: "8 markets", amount: "$300K" },
-    { label: "Multiply", detail: "6 positions", amount: "$250K" },
+    { label: t("Liquid assets"), detail: t("12 assets"), amount: exact(100_000) },
+    { label: t("LP collateral"), detail: t("8 pools"), amount: exact(350_000) },
+    { label: t("Lending"), detail: t("8 markets"), amount: exact(300_000) },
+    { label: t("Multiply"), detail: t("6 positions"), amount: exact(250_000) },
   ]
   return (
     <div className="mt-8 w-full max-w-[460px]">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[13px] text-muted-foreground">You&apos;ll claim</p>
-          <div className="mt-1 text-4xl font-semibold tracking-[-0.03em] sm:text-[44px]">{fmtUsd(amount)}</div>
+          <p className="text-[13px] text-muted-foreground">{t("You'll claim")}</p>
+          <div className="mt-1 text-4xl font-semibold tracking-[-0.03em] sm:text-[44px]">{exact(amount)}</div>
         </div>
       </div>
       <ul className="mt-6 divide-y divide-border border-y border-border">
@@ -318,7 +325,7 @@ function BasketPanel({
       </ul>
       <button className={`${PRIMARY} mt-7 w-full`} disabled={busy} onClick={onClaim} type="button">
         {busy ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
-        {busy ? "Claiming allocation…" : "Claim your allocation"}
+        {busy ? t("Claiming allocation…") : t("Claim your allocation")}
       </button>
     </div>
   )
@@ -336,6 +343,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const [error, setError] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
   const { t } = useTranslation()
+  const { exact } = useCurrency()
 
   // Drive the X composer + done-state resources from the live Convex config so the
   // fetched config never drifts from what the UI shows (issue #139: config was fetched
@@ -411,7 +419,6 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
     if (resumedFor.current === persisted) return
     resumedFor.current = persisted
     resume()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet, busy, state?.onboardingStep])
 
   const step = busy === "analyzing" ? "analyzing" : busy === "claiming" ? "claimPending" : state?.onboardingStep
@@ -474,7 +481,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : !wallet || !state ? (
         <>
-          <Headline muted="Connect a wallet." active="We&apos;ll set up your sandbox and scope it to your address." />
+          <Headline muted={t("Connect a wallet.")} active={t("We'll set up your sandbox and scope it to your address.")} />
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             {/* One control: connect → sign in → account, all via the ConnectKit modal. */}
             <WalletControl size="desktop" />
@@ -482,25 +489,25 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           <p className="mt-8 max-w-[430px] text-[13px] leading-5 text-muted-foreground">
             By connecting your wallet, you agree to the{" "}
             <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.terms} target="_blank" rel="noreferrer">
-              Terms &amp; Conditions
+              {t("Terms & Conditions")}
             </a>{" "}
             and{" "}
             <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer">
-              Privacy Policy
+              {t("Privacy Policy")}
             </a>
             .
           </p>
         </>
       ) : economy.status === "closed" && step !== "done" ? (
         <>
-          <Headline muted="This allocation round is full." active="Your wallet is on the waitlist." />
-          <p className="mt-7 text-muted-foreground">{economy.userCount.toLocaleString()} wallets onboarded.</p>
+          <Headline muted={t("This allocation round is full.")} active={t("Your wallet is on the waitlist.")} />
+          <p className="mt-7 text-muted-foreground">{economy.userCount.toLocaleString()} {t("wallets onboarded.")}</p>
         </>
       ) : step === "wallet" ? (
         <>
-          <Headline muted="Wallet connected." active="Fund your sandbox to start exploring." />
+          <Headline muted={t("Wallet connected.")} active={t("Fund your sandbox to start exploring.")} />
           <p className="mt-6 max-w-lg text-[15px] leading-6 text-muted-foreground">
-            Every wallet gets $1M in practice funds, spread across markets so you can try every flow risk-free.
+            {t("Every wallet gets $1M in practice funds, spread across markets so you can try every flow risk-free.").replace("$1M", exact(previewUsd))}
           </p>
           <button className={`${PRIMARY} mt-7`} onClick={analyze} type="button">
             {t("Fund my sandbox")}
@@ -515,10 +522,10 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "eligible" ? (
         <>
           <Headline
-            muted="You're eligible."
-            active={`A ${fmtUsd(previewUsd)} practice portfolio is ready.`}
+            muted={t("You're eligible.")}
+            active={t("A {amount} practice portfolio is ready.").replace("{amount}", exact(previewUsd))}
           />
-          <p className="mt-6 text-sm text-muted-foreground">{seatsLeft.toLocaleString()} sandbox seats remain.</p>
+          <p className="mt-6 text-sm text-muted-foreground">{seatsLeft.toLocaleString()} {t("sandbox seats remain.")}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button
               className={PRIMARY}
@@ -541,7 +548,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "xPending" ? (
         <>
-          <Headline muted="Tell your network about Avana." active="Post the prepared message on X." />
+          <Headline muted={t("Tell your network about Avana.")} active={t("Post the prepared message on X.")} />
           <div className="mt-8 max-w-2xl whitespace-pre-line rounded-3xl border border-border p-5 text-[15px] leading-7 sm:p-7">
             {shareText}
           </div>
@@ -563,7 +570,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
               onClick={() => run("sharing", () => skipTweet({ wallet }))}
               type="button"
             >
-              Skip
+              {t("Skip")}
             </button>
           </div>
           <ErrorMessage error={error} />
@@ -571,8 +578,8 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "xConfirmed" ? (
         <>
           <Headline
-            muted="Here's what you'll get."
-            active="$1M across assets, LP collateral, lending, and multiply."
+            muted={t("Here's what you'll get.")}
+            active={t("$1M across assets, LP collateral, lending, and multiply.").replace("$1M", exact(previewUsd))}
           />
           <BasketPanel amount={previewUsd} busy={busy === "claiming"} onClaim={claimAllocation} />
           <ErrorMessage error={error} />
@@ -584,8 +591,8 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "waitlisted" ? (
         <>
-          <Headline muted="The allocation cap was reached." active="Your wallet is on the waitlist." />
-          <p className="mt-7 text-muted-foreground">{economy.userCount.toLocaleString()} wallets onboarded.</p>
+          <Headline muted={t("The allocation cap was reached.")} active={t("Your wallet is on the waitlist.")} />
+          <p className="mt-7 text-muted-foreground">{economy.userCount.toLocaleString()} {t("wallets onboarded.")}</p>
         </>
       ) : step === "done" ? (
         <>
@@ -597,9 +604,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           >
             <Check className="size-6" strokeWidth={3} />
           </motion.div>
-          <Headline muted="You're all set." active="Your Avana sandbox is ready to explore." />
+          <Headline muted={t("You're all set.")} active={t("Your Avana sandbox is ready to explore.")} />
           <p className="mt-4 max-w-md text-pretty text-[15px] leading-6 text-muted-foreground">
-            $1M in practice funds is now in your wallet. Jump into the dashboard to start exploring.
+            {t("$1M in practice funds is now in your wallet. Jump into the dashboard to start exploring.").replace("$1M", exact(previewUsd))}
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link className={PRIMARY} href="/dashboard">{t("Open dashboard")}</Link>

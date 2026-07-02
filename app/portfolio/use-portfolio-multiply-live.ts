@@ -10,13 +10,25 @@ export function usePortfolioMultiplyLive(walletId: string, multiplySession: Mult
   const [portfolioMultiply, setPortfolioMultiply] = useState<PortfolioMultiplyTabData | null>(null)
 
   useEffect(() => {
+    if (!walletId) {
+      setPortfolioMultiply(null)
+      return
+    }
+
     let cancelled = false
 
-    void multiplySession.readAdapter.readPortfolioMultiply(walletId).then((next) => {
-      if (!cancelled) {
-        setPortfolioMultiply(next)
-      }
-    })
+    void multiplySession.readAdapter
+      .readPortfolioMultiply(walletId)
+      .then((next) => {
+        if (!cancelled) {
+          setPortfolioMultiply(next)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPortfolioMultiply(null)
+        }
+      })
 
     return () => {
       cancelled = true

@@ -1,6 +1,7 @@
 "use client"
 
 import { AlertTriangle } from "lucide-react"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 import type { ActionRiskLevel } from "@/app/lib/action-system/contracts"
 
@@ -15,6 +16,7 @@ export function ActionRiskBanner({
   message: string
   className?: string
 }) {
+  const { t } = useTranslation()
   return (
     <div
       data-testid="action-risk-banner"
@@ -35,8 +37,8 @@ export function ActionRiskBanner({
         )}
       />
       <div>
-        <div className="text-[15px] font-semibold">{title}</div>
-        <div className="mt-1 text-[13px] leading-relaxed opacity-90">{message}</div>
+        <div className="text-[15px] font-semibold">{t(title)}</div>
+        <div className="mt-1 text-[13px] leading-relaxed opacity-90">{t(message)}</div>
       </div>
     </div>
   )
@@ -51,6 +53,7 @@ export function ActionOutcomeBanner({
   title: string
   message: string
 }) {
+  const { t } = useTranslation()
   return (
     <div
       data-testid="action-outcome-banner"
@@ -62,20 +65,21 @@ export function ActionOutcomeBanner({
     >
       <AlertTriangle className={cn("mt-0.5 size-4 shrink-0", tone === "error" ? "text-danger" : "text-success")} />
       <div>
-        <div className="text-[15px] font-semibold">{title}</div>
-        <div className="mt-1 text-[13px] text-muted-foreground">{message}</div>
+        <div className="text-[15px] font-semibold">{t(title)}</div>
+        <div className="mt-1 text-[13px] text-muted-foreground">{t(message)}</div>
       </div>
     </div>
   )
 }
 
 export function ActionWalletToast({ message }: { message: string }) {
+  const { t } = useTranslation()
   return (
     <div
       data-testid="action-wallet-toast"
       className="fixed bottom-6 left-1/2 z-[60] w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-full border border-border bg-surface-raised px-4 py-3 text-center text-[13px] shadow-elev-3"
     >
-      {message}
+      {t(message)}
     </div>
   )
 }

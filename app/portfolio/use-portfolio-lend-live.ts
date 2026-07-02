@@ -10,11 +10,21 @@ export function usePortfolioLendLive(walletId: string, lendSession: LendSession)
   const [portfolioLend, setPortfolioLend] = useState<PortfolioLendTabData | null>(null)
 
   useEffect(() => {
+    if (!walletId) {
+      setPortfolioLend(null)
+      return
+    }
+
     let cancelled = false
 
-    void lendSession.readAdapter.readPortfolioLend(walletId).then((next) => {
-      if (!cancelled) setPortfolioLend(next)
-    })
+    void lendSession.readAdapter
+      .readPortfolioLend(walletId)
+      .then((next) => {
+        if (!cancelled) setPortfolioLend(next)
+      })
+      .catch(() => {
+        if (!cancelled) setPortfolioLend(null)
+      })
 
     return () => {
       cancelled = true

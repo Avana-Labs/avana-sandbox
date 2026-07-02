@@ -22,7 +22,9 @@ import {
   type RewardsQuestIconId,
   type RewardsQuest,
 } from "@/app/lib/data/rewards/catalog"
+import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { Card } from "@/components/ui/card"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {
   droplets: Droplets,
@@ -40,32 +42,6 @@ const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {
   wallet: Wallet,
 }
 
-function PromoTabButton({
-  active,
-  children,
-  onClick,
-}: {
-  active: boolean
-  children: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      data-state={active ? "active" : "inactive"}
-      className={[
-        "h-auto shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[15px] after:inset-x-0 after:h-[3px] data-[state=active]:bg-transparent data-[state=active]:text-[16px] data-[state=active]:shadow-none sm:pb-4",
-        active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground/80",
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  )
-}
-
 function AvanaQuestCard({
   quest,
   accent = "default",
@@ -75,10 +51,11 @@ function AvanaQuestCard({
   accent?: "default" | "challenge"
   onTaskAction: (taskId: string) => Promise<unknown>
 }) {
+  const { t } = useTranslation()
   const Icon = QUEST_ICON_MAP[quest.iconId]
   const isClaimable = quest.status === "claimable"
-  const isDisabled = quest.status === "claimed" || quest.status === "expired" || quest.cta === "Waiting"
-  const canAct = isClaimable || (quest.status === "available" || quest.status === "in_progress") && quest.cta !== "Waiting"
+  const isDisabled = quest.status === "claimed" || quest.status === "expired" || quest.cta === t("Waiting")
+  const canAct = isClaimable || (quest.status === "available" || quest.status === "in_progress") && quest.cta !== t("Waiting")
 
   return (
     <Card className="flex h-full flex-col overflow-hidden rounded-radius-md border-0 bg-card shadow-none">
@@ -88,19 +65,19 @@ function AvanaQuestCard({
             <Icon className="h-4 w-4 text-brand" strokeWidth={1.9} />
           </div>
           <span className="rounded-full border border-border bg-surface-inset px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-            {quest.category}
+            {t(quest.category)}
           </span>
         </div>
 
         <div className="mt-3 min-h-0 space-y-2 sm:mt-3.5">
           <h3 className="line-clamp-3 text-[14px] leading-5 tracking-[-0.03em] text-foreground md:text-[15px]">
-            {quest.title}
+            {t(quest.title)}
           </h3>
           <p className={`line-clamp-2 text-[12px] font-normal leading-5 ${accent === "challenge" ? "text-foreground/75" : "text-muted-foreground"}`}>
-            {quest.description}
+            {t(quest.description)}
           </p>
           {"progressLabel" in quest && quest.progressLabel ? (
-            <div className="text-[11px] text-muted-foreground">{quest.progressLabel}</div>
+            <div className="text-[11px] text-muted-foreground">{t(quest.progressLabel)}</div>
           ) : null}
           <div className="pt-1 font-data text-[14px] tracking-tight text-foreground md:text-[15px]">{quest.reward}</div>
         </div>
@@ -108,7 +85,7 @@ function AvanaQuestCard({
         <div className="mt-auto pt-3.5">
           {quest.expiration ? (
             <div className="mb-3.5 flex items-center justify-between gap-3 border-t border-dashed border-border pt-3">
-              <span className="text-[10px] font-normal text-muted-foreground">Expiration</span>
+              <span className="text-[10px] font-normal text-muted-foreground">{t("Expiration")}</span>
               <span className="font-data text-[10px] font-normal tracking-tight text-foreground">{quest.expiration}</span>
             </div>
           ) : null}
@@ -129,7 +106,7 @@ function AvanaQuestCard({
                   : "border border-brand/20 bg-brand/5 text-foreground hover:bg-brand/10"
             }`}
           >
-            {quest.cta}
+            {t(quest.cta)}
             {!isDisabled ? <ArrowRight className="h-3.5 w-3.5" /> : null}
           </button>
         </div>
@@ -147,23 +124,18 @@ function RewardsPromoPanel({
   questsByTab: Record<RewardsPromoTabId, RewardsQuest[]>
   onTaskAction: (taskId: string) => Promise<unknown>
 }) {
+  const { t } = useTranslation()
   const [activePromoTab, setActivePromoTab] = useState<RewardsPromoTabId>("new-users")
 
   return (
     <section className="space-y-6">
-      <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex h-auto w-max min-w-full gap-6 border-0 bg-transparent p-0 sm:gap-9" role="tablist" aria-label="Rewards quest categories">
-          {promoTabs.map((tab) => (
-            <PromoTabButton
-              key={tab.id}
-              active={activePromoTab === tab.id}
-              onClick={() => setActivePromoTab(tab.id)}
-            >
-              {tab.label}
-            </PromoTabButton>
-          ))}
-        </div>
-      </div>
+      <UnderlineTabStrip
+        items={promoTabs.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
+        value={activePromoTab}
+        onChange={setActivePromoTab}
+        ariaLabel={t("Rewards quest categories")}
+        listClassName="w-max min-w-full gap-6 sm:gap-9"
+      />
 
       {activePromoTab === "new-users" ? (
         <div className="space-y-6">

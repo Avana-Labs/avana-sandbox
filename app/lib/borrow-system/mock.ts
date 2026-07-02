@@ -2,7 +2,7 @@ import type { BorrowAssetRecord, BorrowMarketRecord, BorrowSystemState, BorrowVi
 import { RAY, clampMax, clampMin, parseFixed } from "@/app/lib/credit-engine"
 import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
-import { HOME_COLLATERAL_POOLS, HOME_CLAIM_POSITIONS, HOME_INITIAL_DEBTS } from "@/app/lib/home-sim"
+import { HOME_COLLATERAL_POOLS, HOME_CLAIM_POSITIONS, HOME_INITIAL_DEBTS } from "@/app/lib/borrow-system/home-contracts"
 
 export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
   "eth-usdc": "uni-v3-bluechip-weth-usdc",
@@ -369,6 +369,10 @@ export function buildMockBorrowSystemCatalog() {
   void _transactions
   void _now
   return catalog
+}
+
+export function buildBorrowCatalogBaselineState(walletId = "catalog"): BorrowSystemState {
+  return buildMockBorrowSystemState(walletId)
 }
 
 export const MOCK_BORROW_SYSTEM_STATE = buildMockBorrowSystemState()

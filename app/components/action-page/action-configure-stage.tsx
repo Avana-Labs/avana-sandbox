@@ -10,6 +10,8 @@ import { ActionLeverageRuler } from "@/app/components/action-page/action-leverag
 import { ActionOutcomeBanner, ActionRiskBanner, ActionWalletToast } from "@/app/components/action-page/action-banners"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionHealthFactorBar } from "@/app/components/action-page/action-health-factor-bar"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { isHealthFactorMetric, parseHealthFactorValue } from "@/app/lib/action-system/health-factor-ui"
 import {
   isConfigureVisibleStage,
@@ -64,7 +66,7 @@ type ActionConfigureStageProps = {
   homeLayout?: boolean
   amountPlacement?: "inline" | "stacked"
   assetPickerVariant?: "menu" | "dialog"
-  pickerTokens?: import("@/app/lib/home-sim").HomeBorrowToken[]
+  pickerTokens?: import("@/app/lib/borrow-system/home-contracts").HomeBorrowToken[]
 }
 
 export function ActionConfigureAmountSection({
@@ -121,6 +123,7 @@ export function ActionConfigureAmountSection({
   | "assetLabel"
   | "amountUnitLabel"
 >) {
+  const { exact } = useCurrency()
   const pillLabel = assetLabel ?? assetSymbol ?? preview?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
 
   return (
@@ -128,7 +131,7 @@ export function ActionConfigureAmountSection({
       label={inputLabel ?? verb}
       amount={amount}
       onAmountChange={onAmountChange}
-      approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
+      approxUsdLabel={preview?.amountUsdLabel ?? `≈ ${exact(0)}`}
       assetLabel={pillLabel}
       unitLabel={amountUnitLabel}
       footer={amountFooter}
@@ -196,6 +199,7 @@ export function ActionConfigureStage({
   amountUnitLabel,
   inputLabel,
 }: ActionConfigureStageProps) {
+  const { t } = useTranslation()
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
   const primaryLabel = primaryCtaLabel({
@@ -276,7 +280,7 @@ export function ActionConfigureStage({
 
       {showStandaloneLeverage ? (
         <div>
-          {leverageHint ? <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{leverageHint}</p> : null}
+          {leverageHint ? <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{t(String(leverageHint))}</p> : null}
           <ActionLeverageRuler
             value={multiplier ?? "3"}
             onChange={onMultiplierChange!}
@@ -365,7 +369,7 @@ export function ActionConfigureStage({
             })}
             data-testid="action-footer-primary"
           >
-            {isPending || stage === "wallet_sign" || stage === "approve_allowance" ? "Processing…" : primaryLabel}
+            {isPending || stage === "wallet_sign" || stage === "approve_allowance" ? t("Processing…") : t(primaryLabel)}
           </button>
         ) : (
           <ActionFooter

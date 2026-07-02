@@ -559,3 +559,42 @@ export const claim = mutation({
     return { status: "done" as const, allocatedUsd, basketSnapshot, syntheticTxHash, allocation, receiptHashes }
   },
 })
+
+/** Persist wallet-scoped display preferences for signed-in users. */
+export const savePreferences = mutation({
+  args: {
+    wallet: v.string(),
+    preferences: v.object({
+      theme: v.optional(v.union(v.literal("light"), v.literal("dark"), v.literal("system"))),
+      language: v.optional(v.string()),
+      currency: v.optional(v.string()),
+      showDollarAmounts: v.optional(v.boolean()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const authSubject = (await getAuthSubject(ctx)) ?? undefined
+    const existing = await profileForWallet(ctx, wallet)
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        authSubject: existing.authSubject ?? authSubject,
+        preferences: {
+          ...existing.preferences,
+          ...args.preferences,
+        },
+      })
+      return "updated" as const
+    }
+
+    await ctx.db.insert("sandboxProfiles", {
+      wallet,
+      authSubject,
+      createdAt: Date.now(),
+      seedVersion: SEED_VERSION,
+      onboardingStep: "wallet",
+      preferences: args.preferences,
+    })
+    return "created" as const
+  },
+})

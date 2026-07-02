@@ -1,6 +1,7 @@
 "use client"
 
 import { ActionCard } from "@/app/components/action-page/action-metrics"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 function formatMultiplier(value: number) {
   return Number.isInteger(value) ? `${value}x` : `${value.toFixed(1)}x`
@@ -17,6 +18,7 @@ export function ActionLeverageSelector({
   options: number[]
   label?: string
 }) {
+  const { t } = useTranslation()
   if (options.length === 0) return null
 
   const parsed = Number.parseFloat(value)
@@ -25,12 +27,12 @@ export function ActionLeverageSelector({
   return (
     <ActionCard className="p-4">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
+        <span className="text-[13px] font-medium text-muted-foreground">{t(label)}</span>
         <span className="font-data text-[13px] tabular-nums text-foreground">
           {activeValue != null ? formatMultiplier(activeValue) : "—"}
         </span>
       </div>
-      <div role="group" aria-label="Leverage options" className="mt-3 flex flex-wrap gap-2">
+      <div role="group" aria-label={t("Leverage options")} className="mt-3 flex flex-wrap gap-2">
         {options.map((option) => {
           const isActive = activeValue != null && Math.abs(activeValue - option) < 1e-9
           return (

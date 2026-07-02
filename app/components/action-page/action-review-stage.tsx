@@ -6,6 +6,7 @@ import { ActionRiskBanner } from "@/app/components/action-page/action-banners"
 import { ActionAmountCard } from "@/app/components/action-page/action-amount-card"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function ActionReviewStage({
   title,
@@ -30,6 +31,7 @@ export function ActionReviewStage({
   hideHeader?: boolean
   primaryPending?: boolean
 }) {
+  const { t } = useTranslation()
   const amountDisplay = resolveActionAmountCardProps(preview)
   const isClaimReview = preview.rateLabel === "Claim total"
   const riskShown = !isClaimReview && Boolean(preview.risk?.title && preview.risk.message)
@@ -44,8 +46,8 @@ export function ActionReviewStage({
     <div className="space-y-4" data-testid="action-review-stage">
       {!hideHeader ? (
         <div className="pb-1">
-          <h2 className="text-ui-heading font-semibold tracking-[-0.03em] text-foreground">{title}</h2>
-          {subtitle ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{subtitle}</p> : null}
+          <h2 className="text-ui-heading font-semibold tracking-[-0.03em] text-foreground">{t(title)}</h2>
+          {subtitle ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{t(subtitle)}</p> : null}
         </div>
       ) : null}
 

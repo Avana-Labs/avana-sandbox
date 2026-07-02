@@ -5,7 +5,7 @@ import { ConnectKitButton, useSIWE } from "connectkit"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 import {
-  IS_OPEN_GATE_TEST_MODE,
+  IS_DEV_SHORTCUT_MODE,
   TEST_MODE_WALLET_ADDRESS,
 } from "@/app/lib/test-mode"
 import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
@@ -49,7 +49,7 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
   const brand = cn(base, "bg-brand text-brand-foreground hover:bg-brand/90")
   const pill = cn(base, "gap-2 border border-border bg-transparent text-foreground hover:bg-surface-inset")
 
-  if (IS_OPEN_GATE_TEST_MODE) {
+  if (IS_DEV_SHORTCUT_MODE) {
     // Size to content (no fixed width / truncate) so the label never clips to
     // "TEST WAL…"; test mode has no other wallet states to stay aligned with.
     return (

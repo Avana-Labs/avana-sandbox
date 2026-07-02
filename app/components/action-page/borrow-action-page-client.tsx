@@ -11,7 +11,7 @@ import {
   selectHomeRepayTokensForMarket,
 } from "@/app/lib/borrow-system/action-preview-runtime"
 import { buildRepayPreviewModel, buildWithdrawPreviewModel } from "@/app/lib/borrow-system/preview-builders"
-import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
+import { HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
 import { useAvanaSessions, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"

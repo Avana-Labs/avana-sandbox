@@ -13,6 +13,7 @@ import {
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 const MASK = "••••"
@@ -150,6 +151,7 @@ function matchesSearch(row: PortfolioActivityRow, query: string) {
 }
 
 function SearchPill({ value, onChange }: { value: string; onChange: (nextValue: string) => void }) {
+  const { t } = useTranslation()
   return (
     <label className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-full border border-border bg-card px-4 text-[13px] shadow-none">
       <Search className="h-4 w-4 shrink-0 text-brand" />
@@ -157,7 +159,7 @@ function SearchPill({ value, onChange }: { value: string; onChange: (nextValue: 
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Search transactions"
+        placeholder={t("Search transactions")}
         className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground/70 dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
       />
     </label>
@@ -231,6 +233,7 @@ function FilterMenu<T extends string>({
 
 export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
   const { showDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
   const amount = (value: number) => (showDollarAmounts ? formatSignedUsd(value) : MASK)
   const [search, setSearch] = React.useState("")
   const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])
@@ -269,11 +272,11 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                 : "bg-foreground text-background",
             )}
           >
-            All
+            {t("All")}
           </button>
-          <FilterMenu label="Product" options={PRODUCT_OPTIONS} values={products} onChange={setProducts} />
-          <FilterMenu label="Action" options={ACTION_OPTIONS} values={kinds} onChange={setKinds} />
-          <FilterMenu label="Status" options={STATUS_OPTIONS} values={statuses} onChange={setStatuses} />
+          <FilterMenu label={t("Product")} options={PRODUCT_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={products} onChange={setProducts} />
+          <FilterMenu label={t("Action")} options={ACTION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={kinds} onChange={setKinds} />
+          <FilterMenu label={t("Status")} options={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={statuses} onChange={setStatuses} />
         </div>
       </div>
 
@@ -284,9 +287,9 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             <div key={row.id} className="rounded-radius-lg border border-border bg-card p-3.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-baseline gap-1.5">
-                  <span className="text-[14px] font-medium text-foreground">{KIND_LABEL[row.kind]}</span>
+                  <span className="text-[14px] font-medium text-foreground">{t(KIND_LABEL[row.kind])}</span>
                   <span className="truncate text-[12px] text-muted-foreground">
-                    · {PRODUCT_OPTIONS.find((option) => option.id === row.product)?.label}
+                    · {t(PRODUCT_OPTIONS.find((option) => option.id === row.product)?.label ?? row.product)}
                   </span>
                 </div>
                 <span className="shrink-0 font-data text-[12.5px] tabular-nums text-muted-foreground">
@@ -308,7 +311,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                       STATUS_TONE[row.status],
                     )}
                   >
-                    {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
+                    {t(STATUS_OPTIONS.find((option) => option.id === row.status)?.label ?? row.status)}
                   </span>
                   <TxnLink
                     txHash={row.txHash}
@@ -320,7 +323,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
           ))
         ) : (
           <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
-            No activity matches the current filters.
+            {t("No activity matches the current filters.")}
           </div>
         )}
       </div>
@@ -340,13 +343,13 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5">Time</th>
-                <th className="bg-table-header px-5 py-3.5">Type</th>
-                <th className="bg-table-header px-5 py-3.5">Product</th>
-                <th className="bg-table-header px-5 py-3.5">For</th>
-                <th className="bg-table-header px-5 py-3.5">Amount</th>
-                <th className="bg-table-header px-5 py-3.5">Status</th>
-                <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right">Txn</th>
+                <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5">{t("Time")}</th>
+                <th className="bg-table-header px-5 py-3.5">{t("Type")}</th>
+                <th className="bg-table-header px-5 py-3.5">{t("Product")}</th>
+                <th className="bg-table-header px-5 py-3.5">{t("For")}</th>
+                <th className="bg-table-header px-5 py-3.5">{t("Amount")}</th>
+                <th className="bg-table-header px-5 py-3.5">{t("Status")}</th>
+                <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right">{t("Txn")}</th>
               </tr>
             </thead>
             <tbody>
@@ -358,12 +361,12 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                     </td>
                     <td className="px-5 py-4 align-middle">
                       <span className="inline-block whitespace-nowrap text-[15px] font-medium text-foreground">
-                        {KIND_LABEL[row.kind]}
+                        {t(KIND_LABEL[row.kind])}
                       </span>
                     </td>
                     <td className="px-5 py-4 align-middle">
                       <span className="text-[14px] text-muted-foreground">
-                        {PRODUCT_OPTIONS.find((option) => option.id === row.product)?.label}
+                        {t(PRODUCT_OPTIONS.find((option) => option.id === row.product)?.label ?? row.product)}
                       </span>
                     </td>
                     <td className="px-5 py-4 align-middle">
@@ -382,7 +385,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                           STATUS_TONE[row.status],
                         )}
                       >
-                        {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
+                          {t(STATUS_OPTIONS.find((option) => option.id === row.status)?.label ?? row.status)}
                       </span>
                     </td>
                     <td className="px-5 py-4 align-middle text-right font-data text-[13px] tabular-nums text-foreground">
@@ -396,7 +399,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
               ) : (
                 <tr>
                   <td colSpan={7} className="px-5 py-10 text-center text-[13px] text-muted-foreground">
-                    No activity matches the current filters.
+                    {t("No activity matches the current filters.")}
                   </td>
                 </tr>
               )}

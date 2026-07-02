@@ -1,6 +1,4 @@
-import type { ComponentType } from "react"
 import type { LucideIcon } from "lucide-react"
-import { Grid24Regular, Reward24Regular } from "@fluentui/react-icons"
 import {
   ChartCandlestick,
   ChartNoAxesColumnIncreasing,
@@ -26,7 +24,6 @@ export type SiteNavLink = {
 export type DesktopHeaderLink = {
   href: string
   label: string
-  icon?: ComponentType<{ className?: string }>
 }
 
 export const siteNavLinks: SiteNavLink[] = [
@@ -99,8 +96,8 @@ export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
   { href: "/lend", label: "Lend" },
   { href: "/borrow", label: "Borrow" },
   { href: "/multiply", label: "Multiply" },
-  { href: "/dashboard", label: "Dashboard", icon: Grid24Regular },
-  { href: "/rewards", label: "Rewards", icon: Reward24Regular },
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/rewards", label: "Rewards" },
 ]
 
 export function getActiveSiteNav(pathname: string): SiteNavLink {

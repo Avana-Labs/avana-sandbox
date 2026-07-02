@@ -20,11 +20,12 @@ import {
   getDexById,
   getSpokeById,
 } from "@/app/lib/borrow-sim"
-import { HOME_COLLATERAL_POOLS } from "@/app/lib/home-sim"
+import { HOME_COLLATERAL_POOLS } from "@/app/lib/borrow-system/home-contracts"
 import { buildSeriesFamily, prngFromString } from "./prng"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
 import { formatBpsAsPct, formatPct } from "./allocation"
+import { formatOraclePrice } from "./formatters"
 import { buildPoolRiskAssessment } from "./risk-model"
 import { buildPoolFaqs } from "./content-model"
 import type {
@@ -346,12 +347,6 @@ function pairReferencePrice(row: BorrowPoolRow): number {
   if (a.includes("BTC") && b.includes("ETH")) return 15.8
   if (b === "USDC" || b === "USDT" || b === "DAI") return 1_200
   return 1
-}
-
-export function formatOraclePrice(v: number): string {
-  if (v >= 100) return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  if (v >= 1) return `$${v.toFixed(4)}`
-  return `$${v.toFixed(6)}`
 }
 
 function buildKeyMetrics(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Record<KeyMetricId, Record<TimeRangeId, Series>> {

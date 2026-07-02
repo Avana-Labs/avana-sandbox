@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import type { RewardTask, UserRewardProgress } from "@/app/lib/rewards-engine"
 import type { RewardTaskActionKind } from "@/app/lib/rewards-engine/types"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import {
   Dialog,
   DialogContent,
@@ -31,19 +33,20 @@ export function RewardsEducationDialog({
   onOpenChange: (open: boolean) => void
   onComplete: () => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Sandbox risk primer</DialogTitle>
-          <DialogDescription>60-second briefing before you simulate LP positions.</DialogDescription>
+          <DialogTitle>{t("Sandbox risk primer")}</DialogTitle>
+          <DialogDescription>{t("60-second briefing before you simulate LP positions.")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm text-muted-foreground">
-          <p>LP collateral can lose value if the pool diverges, fees drop, or leverage gets too tight.</p>
-          <p>In this sandbox, every transaction is simulated — use previews to learn before sizing up.</p>
-          <p>Keep health factor headroom and treat rewards as practice, not production yield.</p>
+          <p>{t("LP collateral can lose value if the pool diverges, fees drop, or leverage gets too tight.")}</p>
+          <p>{t("In this sandbox, every transaction is simulated — use previews to learn before sizing up.")}</p>
+          <p>{t("Keep health factor headroom and treat rewards as practice, not production yield.")}</p>
         </div>
         <DialogFooter>
           <Button
@@ -57,7 +60,7 @@ export function RewardsEducationDialog({
               })
             }}
           >
-            I read it
+            {t("I read it")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -74,14 +77,15 @@ export function RewardsFavoriteDialog({
   onOpenChange: (open: boolean) => void
   onFavorite: (marketId: string) => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Pin a sandbox market</DialogTitle>
-          <DialogDescription>Choose one market to add to your watchlist.</DialogDescription>
+          <DialogTitle>{t("Pin a sandbox market")}</DialogTitle>
+          <DialogDescription>{t("Choose one market to add to your watchlist.")}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
           {FAVORITE_MARKET_OPTIONS.map((option) => (
@@ -115,14 +119,15 @@ export function RewardsSimulateDialog({
   onOpenChange: (open: boolean) => void
   onSimulate: (product: "borrow" | "lend" | "multiply") => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState<"borrow" | "lend" | "multiply" | null>(null)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Preview a sandbox trade</DialogTitle>
-          <DialogDescription>Run a real preview in the session — nothing executes on-chain.</DialogDescription>
+          <DialogTitle>{t("Preview a sandbox trade")}</DialogTitle>
+          <DialogDescription>{t("Run a real preview in the session — nothing executes on-chain.")}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
           {(["lend", "borrow", "multiply"] as const).map((product) => (
@@ -138,7 +143,7 @@ export function RewardsSimulateDialog({
                 })
               }}
             >
-              Preview {product}
+              {t("Preview {product}").replace("{product}", t(product[0].toUpperCase() + product.slice(1)))}
             </Button>
           ))}
         </div>
@@ -209,6 +214,8 @@ export function RewardsReferralDialog({
   onMarkFunded: () => Promise<void>
   onClaim: () => Promise<void>
 }) {
+  const { t } = useTranslation()
+  const { exact } = useCurrency()
   const [loadingAction, setLoadingAction] = useState<"profile" | "step" | "claim" | null>(null)
   const actionKind = task?.actionKind ?? "copy_referral"
   const copy = referralDialogCopy(actionKind)
@@ -238,28 +245,32 @@ export function RewardsReferralDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{task?.title ?? copy.title}</DialogTitle>
-          <DialogDescription>{task?.description ?? copy.description}</DialogDescription>
+          <DialogTitle>{t(task?.title ?? copy.title)}</DialogTitle>
+          <DialogDescription>{t(task?.description ?? copy.description)}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 text-sm">
           {actionKind === "copy_referral" ? (
             <div className="space-y-2 rounded-radius-md border border-border bg-surface-inset p-3">
-              <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Invite link</div>
-              <div className="break-all font-data text-[12px] text-foreground">{referralLink || "Generating link..."}</div>
-              <div className="text-[11px] text-muted-foreground">Code: {referralCode || "—"}</div>
+              <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{t("Invite link")}</div>
+              <div className="break-all font-data text-[12px] text-foreground">{referralLink || t("Generating link...")}</div>
+              <div className="text-[11px] text-muted-foreground">{t("Code")}: {referralCode || "—"}</div>
             </div>
           ) : null}
 
           {progress ? (
             <div className="text-[12px] text-muted-foreground">
               {progress.status === "claimed"
-                ? "Quest claimed."
+                ? t("Quest claimed.")
                 : progress.status === "claimable"
-                  ? "Quest complete — claim your AVA below."
+                  ? t("Quest complete — claim your AVA below.")
                   : task?.requirement.type === "aggregate_volume"
-                    ? `Progress: $${Math.round(progress.progress)} / $${progress.target}`
-                    : `Progress: ${Math.min(Math.round(progress.progress), progress.target)} / ${progress.target}`}
+                    ? t("Progress: {progress} / {target}")
+                        .replace("{progress}", exact(Math.round(progress.progress)))
+                        .replace("{target}", exact(progress.target))
+                    : t("Progress: {progress} / {target}")
+                        .replace("{progress}", String(Math.min(Math.round(progress.progress), progress.target)))
+                        .replace("{target}", String(progress.target))}
             </div>
           ) : null}
         </div>
@@ -274,7 +285,7 @@ export function RewardsReferralDialog({
                 void onCopyLink().finally(() => setLoadingAction(null))
               }}
             >
-              {loadingAction === "step" ? "Copying..." : copy.actionLabel}
+              {loadingAction === "step" ? t("Copying...") : t(copy.actionLabel)}
             </Button>
           ) : null}
 
@@ -293,7 +304,7 @@ export function RewardsReferralDialog({
                 void runStep().finally(() => setLoadingAction(null))
               }}
             >
-              {loadingAction === "step" ? "Working..." : copy.actionLabel}
+              {loadingAction === "step" ? t("Working...") : t(copy.actionLabel)}
             </Button>
           ) : null}
 
@@ -309,7 +320,9 @@ export function RewardsReferralDialog({
                 })
               }}
             >
-              {loadingAction === "claim" ? "Claiming..." : `Claim ${task?.rewardAmount ?? 0} AVA`}
+              {loadingAction === "claim"
+                ? t("Claiming...")
+                : t("Claim {amount} AVA").replace("{amount}", String(task?.rewardAmount ?? 0))}
             </Button>
           ) : null}
         </DialogFooter>

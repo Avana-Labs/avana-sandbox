@@ -157,7 +157,7 @@ function buildAllRangeFromSnapshots(snapshots: PortfolioSnapshotRecord[], select
       value,
       label:
         snapshot
-          ? new Date(snapshot.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+          ? new Date(snapshot.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })
           : CHART_RANGE_LABELS.All[CHART_RANGE_LABELS.All.length - 1],
     }
   })
@@ -180,8 +180,8 @@ function buildRangeDataFromSnapshots(
 
 function buildFallbackRangeData(chartBase: number, chartVariance: number) {
   return getPortfolioHeroFeed({
-    balance: "$0.00",
-    delta: "$0.00 (0.00%) today",
+    balance: formatUsd(0),
+    delta: `${formatUsd(0)} (0.00%) today`,
     chartBase,
     chartVariance,
   }).rangeData

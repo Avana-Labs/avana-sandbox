@@ -217,8 +217,8 @@ describe("RewardsPageClient", () => {
     renderRewardsPage()
 
     await clickQuestAction("Preview")
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Preview lend" }).length).toBeGreaterThan(0))
-    await clickQuestAction("Preview lend")
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Preview Lend" }).length).toBeGreaterThan(0))
+    await clickQuestAction("Preview Lend")
 
     expect(lendCreateIntent).toHaveBeenCalledTimes(1)
     expect(lendPreviewTransaction).toHaveBeenCalledTimes(1)

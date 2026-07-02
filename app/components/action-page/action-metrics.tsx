@@ -8,6 +8,7 @@ import { ActionMetricHelp } from "@/app/components/action-page/action-metric-hel
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import type { ActionMetricRow, ActionMetricTone } from "@/app/lib/action-system/contracts"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ACTION_INFO_TOOLTIPS, resolveMetricTooltip } from "@/app/lib/action-system/metric-tooltips"
 import { isHealthFactorMetric, parseHealthFactorValue, resolveMetricTone } from "@/app/lib/action-system/health-factor-ui"
 
@@ -37,11 +38,12 @@ export function ActionInfoRow({
   tooltip?: string
   className?: string
 }) {
+  const { t } = useTranslation()
   const tip = tooltip ? ACTION_INFO_TOOLTIPS[tooltip] ?? tooltip : undefined
   return (
     <div className={cn("flex items-center justify-between gap-4 px-4 py-3.5 text-[15px] max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5", className)}>
       <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
-        <span>{label}</span>
+        <span>{t(label)}</span>
         {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
       </div>
       <div className="font-medium tabular-nums text-foreground max-[360px]:w-full">
@@ -129,12 +131,13 @@ export function ActionMetricRow({
   id,
   tokenSymbols,
 }: ActionMetricRow) {
+  const { t } = useTranslation()
   const tip = resolveMetricTooltip(id, label, tooltip)
   return (
     <div data-testid={`metric-${label.toLowerCase().replace(/\s+/g, "-")}`}>
       <div className="flex items-center justify-between gap-4 px-4 py-3.5 text-[15px] max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5">
         <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
-          <span>{label}</span>
+          <span>{t(label)}</span>
           {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
         </div>
         <div className="max-[360px]:w-full">

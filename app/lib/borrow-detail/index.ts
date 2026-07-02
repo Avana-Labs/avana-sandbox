@@ -1,37 +1,24 @@
 /**
  * Public data seam for the borrow / lend detail pages.
  *
- * UI imports from this module only. The underlying mock implementations live
- * in sibling files (`pool.mock.ts`, `asset.mock.ts`, `allocation.ts`) and can
- * be swapped for real fetchers without changing the call sites.
+ * UI imports from this module only. The fallback implementations live in
+ * sibling files (`pool.mock.ts`, `asset.mock.ts`, `allocation.ts`) and remain
+ * intentionally deterministic for sandbox/demo flows and tests even though the
+ * main detail pages now overlay Convex-backed data section by section.
  *
  * Contract test lives in `./__tests__/contract.test.ts` — keep it green when
  * you swap mocks for real data and the UI will keep working.
  *
- * ─── Convex migration ────────────────────────────────────────────────────
- * When `convex/schema.ts` is populated and data is flowing, replace the
- * `build*Detail` calls below with Convex query invocations. The queries are
- * already defined and return the exact UI shapes — see:
+ * ─── Convex detail overlays ─────────────────────────────────────────────
+ * Convex already hydrates the server detail pages section-by-section. The
+ * deterministic builders below still matter for:
+ *   - sandbox/demo rendering when live data is absent
+ *   - tests and seeded content generation
+ *   - sections that still need curated fallback prose/history
  *
- *   convex/engagement.ts    EngagementTrend  (asset + pool)
- *   convex/cashflow.ts      CashflowTrend + CashflowCard
- *   convex/markets.ts       Series for hero + key metrics + supply/borrow
- *   convex/allocation.ts    AllocationRow[]
- *
- * Server component example once wired:
- *
- *   import { fetchQuery } from "convex/nextjs"
- *   import { api } from "@/convex/_generated/api"
- *   const [engagement, cashflow, utilization] = await Promise.all([
- *     fetchQuery(api.engagement.getForAsset, { slug }),
- *     fetchQuery(api.cashflow.getRevenueForAsset, { slug }),
- *     fetchQuery(api.markets.getHistoricalUtilization, { slug }),
- *   ])
- *   return { ...buildAssetDetail(row), engagement, cashflowTrend: cashflow, historicalUtilization: utilization }
- *
- * That pattern works card-by-card, so the mocks can be peeled off as each
- * Convex table is populated — no big-bang migration needed.
- * ─────────────────────────────────────────────────────────────────────────
+ * Continue peeling pieces off only when the live builder can provide the same
+ * stable UI contract and a reasonable fallback.
+ * ────────────────────────────────────────────────────────────────────────
  */
 
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"

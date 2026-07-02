@@ -2,6 +2,18 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileInsetStat,
+  MarketMobileInsetStats,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
@@ -381,6 +393,7 @@ export function ExploreLoopsMarketsTable({
   tokenSupplyApys,
   onOpenMultiply,
 }: ExploreLoopsMarketsTableProps) {
+  const router = useRouter()
   const { compact } = useCurrency()
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
   const [search, setSearch] = React.useState("")
@@ -520,7 +533,31 @@ export function ExploreLoopsMarketsTable({
         </div>
       </div>
 
-      <div className="rounded-radius-md bg-transparent">
+      <DesktopTableSurface className="rounded-radius-md">
+        <div className="space-y-3 md:hidden">
+          {visibleRows.length ? (
+            visibleRows.map((row, index) => (
+              <MobileLoopCard
+                key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
+                row={row}
+                protocolLogo={getResolvedLogo(row.protocolLogo)}
+                assetLogo={getResolvedLogo(getAssetLogo(row.asset))}
+                supplyApy={getSupplyApy(row.protocol)}
+                borrowApy={getBorrowApy(row.asset)}
+                availableLabel={
+                  parseCompactUsdLabel(row.points) == null ? (row.points ?? "—") : compact(parseCompactUsdLabel(row.points) as number)
+                }
+                onOpenMultiply={onOpenMultiply}
+              />
+            ))
+          ) : (
+            <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground shadow-elev-1">
+              No loops in this category yet.
+            </div>
+          )}
+        </div>
+
+        <div className="hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
             <colgroup>
@@ -612,9 +649,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  ACTION
-                </th>
+                <SilentActionHeader />
               </tr>
             </thead>
             <tbody
@@ -625,7 +660,8 @@ export function ExploreLoopsMarketsTable({
                 visibleRows.map((row, index) => (
                   <tr
                     key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
-                    className="group asset-swap transition-colors"
+                    className="group asset-swap cursor-pointer transition-colors"
+                    onClick={() => router.push(row.href)}
                     style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <td
@@ -754,17 +790,21 @@ export function ExploreLoopsMarketsTable({
                       )}
                     </td>
                     <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-7 rounded-xs px-2.5 text-[11px]"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onOpenMultiply?.(row.href)
-                        }}
-                      >
-                        Multiply
-                      </Button>
+                      <div className="flex justify-end">
+                        <HoverActionGroup>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-7 rounded-xs px-2.5 text-[11px]"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onOpenMultiply?.(row.href)
+                          }}
+                        >
+                          Multiply
+                        </Button>
+                        </HoverActionGroup>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -808,7 +848,85 @@ export function ExploreLoopsMarketsTable({
           </Button>
         </div>
       </div>
+      </DesktopTableSurface>
     </section>
+  )
+}
+
+function MobileLoopCard({
+  row,
+  protocolLogo,
+  assetLogo,
+  supplyApy,
+  borrowApy,
+  availableLabel,
+  onOpenMultiply,
+}: {
+  row: MultiplyPageData["lendRows"][number]
+  protocolLogo?: string | null
+  assetLogo?: string | null
+  supplyApy?: string
+  borrowApy?: string
+  availableLabel: string
+  onOpenMultiply?: (href: string) => void
+}) {
+  return (
+    <Link href={row.href}>
+      <MarketMobileCard clickable>
+        <MarketMobileCardHeader
+          identity={
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-10 w-[62px] items-center">
+                  {protocolLogo ? (
+                    <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+                    </div>
+                  ) : null}
+                  {assetLogo ? (
+                    <div className="absolute left-5 top-0 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={assetLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+                    </div>
+                  ) : null}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.protocol}</div>
+                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{row.asset}</div>
+                </div>
+              </div>
+            </div>
+          }
+          metric={
+            <MarketMobileMetric
+              value={row.apy || "—"}
+              label="Max APY"
+              valueClassName={row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-success") : undefined}
+            />
+          }
+        />
+
+        <MarketMobileStatList className="mt-4">
+          <MarketMobileStatRow label="Max Leverage" value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} />
+          <MarketMobileStatRow label="Liquidity" value={availableLabel} />
+        </MarketMobileStatList>
+
+        <MarketMobileInsetStats className="mt-3">
+          <MarketMobileInsetStat label="Supply APY" value={supplyApy ?? "—"} valueClassName="text-success" />
+          <MarketMobileInsetStat label="Borrow APY" value={borrowApy ?? "—"} valueClassName="text-rose-600 dark:text-rose-400" />
+        </MarketMobileInsetStats>
+
+        <MarketMobilePrimaryAction
+          onClick={(event) => {
+            event.preventDefault()
+            onOpenMultiply?.(row.href)
+          }}
+        >
+          Multiply
+        </MarketMobilePrimaryAction>
+      </MarketMobileCard>
+    </Link>
   )
 }
 
@@ -896,4 +1014,8 @@ function CellLink({ href, className, children }: { href: string; className?: str
       {children}
     </Link>
   )
+}
+
+function getResolvedLogo(value?: string | null) {
+  return value ? resolveImageSrc(value) : null
 }

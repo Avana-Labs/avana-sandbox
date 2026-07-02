@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ConnectKitProvider, SIWEProvider, getDefaultConfig } from "connectkit"
 import { siweConfig } from "@/app/lib/siwe/connectkit-siwe"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
-import { IS_OPEN_GATE_TEST_MODE } from "@/app/lib/test-mode"
+import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { TARGET_CHAIN } from "@/app/lib/web3/target-chain"
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
@@ -95,7 +95,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     // connected/signed-in wallet survives a refresh instead of appearing signed out.
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        {IS_OPEN_GATE_TEST_MODE ? (
+        {IS_DEV_SHORTCUT_MODE ? (
           connectKit
         ) : (
           <SIWEProvider {...siweConfig} signOutOnDisconnect signOutOnAccountChange>

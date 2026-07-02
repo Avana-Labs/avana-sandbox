@@ -1,10 +1,20 @@
 "use client"
 
 import { memo, useMemo, useState } from "react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
 import {
   aprToneClass,
-  formatCompactUsd,
   formatRiskPremium,
   getSpokeById,
   type BorrowPoolEvent,
@@ -14,14 +24,13 @@ import {
   type DexGroup,
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
-import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { pairExchangeRateLabel } from "@/app/lib/prices/format"
 import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
-import { FlashValue } from "@/app/components/ui/live"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
@@ -72,11 +81,12 @@ function SectionTabs({
   activeTab: SectionTabId
   onTabChange: (tab: SectionTabId) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-wrap gap-8 border-b border-border/50 md:border-b-0">
       {[
-        { id: "collateral", label: "Markets" },
-        { id: "borrow", label: "Assets" },
+        { id: "collateral", label: t("Markets") },
+        { id: "borrow", label: t("Assets") },
       ].map((tab) => (
         <button
           key={tab.id}
@@ -105,11 +115,13 @@ function SortIcon() {
 
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   const priceFor = usePriceFor()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   // Pair exchange rate (e.g. "1 ETH = 1,612 USDC") from the real price oracle;
   // falls back to TVL when either token is unpriced / the oracle is unavailable.
   const subtitle =
     pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
-    `${formatCompactUsd(pool.tvlUsd)} TVL`
+    `${compact(pool.tvlUsd)} ${t("TVL")}`
   return (
     <div className="flex min-w-0 items-center gap-4">
       <div className="flex items-center">
@@ -136,13 +148,18 @@ function CollateralDesktopTable({
   rows,
   pending,
   onViewMarket,
+  onUseAsCollateral,
   embedded = false,
 }: {
   rows: ReadonlyArray<BorrowPoolRow>
   pending: ReadonlyArray<PendingMarketRow>
   onViewMarket: (pool: BorrowPoolRow) => void
+  onUseAsCollateral?: (pool: BorrowPoolRow) => void
   embedded?: boolean
 }) {
+  const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "risk" | "supplied">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
@@ -178,7 +195,7 @@ function CollateralDesktopTable({
 
   const table = (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[920px] text-[12px]">
+      <table className="w-full min-w-[1020px] text-[12px]">
           <thead>
                 <tr className="bg-table-header text-left text-muted-foreground">
                   <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -193,7 +210,7 @@ function CollateralDesktopTable({
                     sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>ASSET</span>
+                  <span>{t("ASSET")}</span>
                   <SortIcon />
                 </button>
               </th>
@@ -206,7 +223,7 @@ function CollateralDesktopTable({
                     sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>FEES</span>
+                  <span>{t("FEES")}</span>
                   <SortIcon />
                 </button>
               </th>
@@ -219,7 +236,7 @@ function CollateralDesktopTable({
                     sortKey === "ltv" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>MAX LTV</span>
+                  <span>{t("MAX LTV")}</span>
                   <SortIcon />
                 </button>
               </th>
@@ -232,7 +249,7 @@ function CollateralDesktopTable({
                     sortKey === "risk" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>RISK PREMIUM</span>
+                  <span>{t("RISK PREMIUM")}</span>
                   <SortIcon />
                 </button>
               </th>
@@ -245,10 +262,11 @@ function CollateralDesktopTable({
                     sortKey === "supplied" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>AVAILABLE</span>
+                  <span>{t("AVAILABLE")}</span>
                   <SortIcon />
                 </button>
               </th>
+              <th className="pb-3 pt-4 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
             </tr>
           </thead>
           <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
@@ -274,16 +292,40 @@ function CollateralDesktopTable({
                 <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
                 </td>
-                <td className={`py-2.5 px-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+                <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                   <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
-                    <span className="tabular-nums">{formatCompactUsd(pool.availableUsd)}</span>
+                    <span className="tabular-nums">{compact(pool.availableUsd)}</span>
                   </div>
+                </td>
+                <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+                  <HoverActionGroup className="inline-flex items-center">
+                    {onUseAsCollateral ? (
+                      <PillButton
+                        variant="ghost"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onUseAsCollateral(pool)
+                        }}
+                      >
+                        {t("Pledge")}
+                      </PillButton>
+                    ) : null}
+                    <PillButton
+                      variant="primary"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        router.push(actionPagePath("borrow", "borrow", { market: pool.id, return: `/borrow/markets/${pool.id}` }))
+                      }}
+                    >
+                      {t("Borrow")}
+                    </PillButton>
+                  </HoverActionGroup>
                 </td>
               </tr>
             ))}
             {pending.map((row) => (
               <tr key={row.id}>
-                <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={6}>
+                <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={7}>
                   {row.label}
                   <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
                 </td>
@@ -298,7 +340,7 @@ function CollateralDesktopTable({
     return table
   }
 
-  return <div className="overflow-hidden rounded-radius-xl bg-transparent">{table}</div>
+  return <DesktopTableSurface>{table}</DesktopTableSurface>
 }
 
 export const CollateralPoolsTable = memo(function CollateralPoolsTable({
@@ -335,6 +377,7 @@ function SpokeDesktopSection({
   borrowAssets,
   pending,
   onViewMarket,
+  onUseAsCollateral,
   onBorrowAsset,
 }: {
   spoke: BorrowSpoke
@@ -356,7 +399,7 @@ function SpokeDesktopSection({
         </div>
         <div className="bg-transparent">
           {activeTab === "collateral" ? (
-            <CollateralDesktopTable rows={rows} pending={pending} onViewMarket={onViewMarket} embedded />
+            <CollateralDesktopTable rows={rows} pending={pending} onViewMarket={onViewMarket} onUseAsCollateral={onUseAsCollateral} embedded />
           ) : (
             <BorrowableAssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
           )}
@@ -415,6 +458,8 @@ function SpokeMobileSection({
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
   const priceFor = usePriceFor()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
@@ -427,75 +472,64 @@ function SpokeMobileSection({
 
       <div className="mt-4">
         {activeTab === "collateral" ? (
-          <div className="overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
-            <ul className="divide-y divide-border">
+          <div className="space-y-3">
+            <ul className="space-y-3">
               {visibleRows.map((pool) => (
-                <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onViewMarket(pool)}>
-                  <div className="flex items-center justify-between gap-3">
-                    <TokenPairCell
-                      visuals={pool.visuals}
-                      name={pool.name}
-                      subtitle={
-                        pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
-                        `${formatCompactUsd(pool.tvlUsd)} TVL`
+                <li key={pool.id}>
+                  <MarketMobileCard clickable onClick={() => onViewMarket(pool)}>
+                    <MarketMobileCardHeader
+                      identity={
+                        <TokenPairCell
+                          visuals={pool.visuals}
+                          name={pool.name}
+                          subtitle={
+                            pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
+                            `${compact(pool.tvlUsd)} ${t("TVL")}`
+                          }
+                          size="md"
+                        />
                       }
-                      size="md"
+                      metric={
+                        <MarketMobileMetric
+                          value={formatApy((pool.aprMin + pool.aprMax) / 2)}
+                          label={t("APY")}
+                          valueClassName={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
+                        />
+                      }
                     />
-                    <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
-                  </div>
-                  {pool.events && pool.events.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      <EventTagList events={pool.events} />
+                    {pool.events && pool.events.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        <EventTagList events={pool.events} />
+                      </div>
+                    ) : null}
+                    <div className="mt-3 flex items-center justify-between text-[12px] text-muted-foreground">
+                      <DexChipRow dexes={pool.dexes} />
+                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
                     </div>
-                  ) : null}
-                  <DexChipRow dexes={pool.dexes} />
-                  <div className="grid grid-cols-2 gap-y-2 text-xs">
-                    <MobileField label="Max LTV" value={`${pool.ltv}%`} />
-                    <MobileField
-                      label="APY"
-                      value={formatApy((pool.aprMin + pool.aprMax) / 2)}
-                      tone={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
-                      flashValue={(pool.aprMin + pool.aprMax) / 2}
-                      flashGoodDirection="down"
-                    />
-                    <MobileField
-                      label="Available"
-                      value={formatCompactUsd(pool.availableUsd)}
-                      flashValue={pool.availableUsd}
-                      flashGoodDirection="up"
-                    />
-                    <MobileField label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
-                  </div>
-                  <div className="flex gap-2">
-                    <Link
-                      href={borrowMarketDetailPath(pool.id)}
-                      onClick={(event) => event.stopPropagation()}
-                      className="flex h-9 flex-1 items-center justify-center rounded-xs border border-border bg-surface-raised text-[13px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-                    >
-                      Details
-                    </Link>
-                    <PillButton
-                      variant="primary"
-                      size="md"
-                      className="flex-1"
+                    <MarketMobileStatList className="mt-3">
+                      <MarketMobileStatRow label={t("Liquidity")} value={compact(pool.availableUsd)} />
+                      <MarketMobileStatRow label={t("Max LTV")} value={`${pool.ltv}%`} />
+                      <MarketMobileStatRow label={t("Risk Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
+                    </MarketMobileStatList>
+                    <MarketMobilePrimaryAction
                       onClick={(event) => {
                         event.stopPropagation()
                         onUseAsCollateral(pool)
                       }}
                     >
-                      Supply
-                    </PillButton>
-                  </div>
+                      {t("Supply")}
+                    </MarketMobilePrimaryAction>
+                  </MarketMobileCard>
                 </li>
               ))}
               {pending.map((row) => (
-                <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
+                <li key={row.id} className="flex items-center justify-between gap-3 rounded-radius-lg border border-border bg-card px-4 py-3 text-xs text-muted-foreground shadow-elev-1">
                   <span>
                     {row.label}
                     <span className="ml-1 text-xs">· {row.subLabel}</span>
                   </span>
                   <PillButton variant="ghost" disabled>
-                    Vote →
+                    {t("Vote →")}
                   </PillButton>
                 </li>
               ))}
@@ -504,9 +538,11 @@ function SpokeMobileSection({
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="flex h-11 w-full items-center justify-center border-t border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+                className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
               >
-                View {hiddenRowCount} more {spoke.label.replace(" Spoke", "").toLowerCase()} markets
+                {t("View {count} more {spoke} markets")
+                  .replace("{count}", String(hiddenRowCount))
+                  .replace("{spoke}", spoke.label.replace(" Spoke", "").toLowerCase())}
               </button>
             ) : null}
           </div>
@@ -515,37 +551,6 @@ function SpokeMobileSection({
         )}
       </div>
     </section>
-  )
-}
-
-function MobileField({
-  label,
-  value,
-  tone,
-  flashValue,
-  flashGoodDirection,
-}: {
-  label: string
-  value: string
-  tone?: string
-  flashValue?: number | string
-  flashGoodDirection?: "up" | "down"
-}) {
-  return (
-    <div>
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      {flashValue !== undefined ? (
-        <FlashValue
-          value={flashValue}
-          goodDirection={flashGoodDirection ?? "up"}
-          className={cn("mt-0.5 font-data text-[13px] font-medium tabular-nums text-foreground", tone)}
-        >
-          {value}
-        </FlashValue>
-      ) : (
-        <div className={cn("mt-0.5 font-data text-[13px] font-medium tabular-nums text-foreground", tone)}>{value}</div>
-      )}
-    </div>
   )
 }
 

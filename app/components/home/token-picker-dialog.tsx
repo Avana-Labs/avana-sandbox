@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const TOKEN_ADDRESS_BY_SYMBOL: Record<string, string> = {
   ETH: "Native",
@@ -68,6 +69,7 @@ export function TokenPickerDialog({
   onSelect: (tokenId: string) => void
   tokens?: HomeBorrowToken[]
 }) {
+  const { t } = useTranslation()
   const [query, setQuery] = useState("")
 
   const filteredTokens = useMemo(() => {
@@ -83,9 +85,9 @@ export function TokenPickerDialog({
   }, [query, tokens])
   const aaveFooterNote = (
     <>
-      Powered by Aave v4.{" "}
+      {t("Powered by Aave v4.")}{" "}
       <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
-        Learn More
+        {t("Learn More")}
       </a>
     </>
   )
@@ -102,7 +104,7 @@ export function TokenPickerDialog({
     >
       <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 sm:max-w-[420px]">
         <DialogHeader className="flex-row items-center justify-between border-b border-border px-5 pb-3 pt-4 text-left space-y-0">
-          <DialogTitle className="text-[13px] font-medium">Select a token</DialogTitle>
+          <DialogTitle className="text-[13px] font-medium">{t("Select a token")}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-1 flex-col overflow-hidden pb-3">
@@ -113,13 +115,13 @@ export function TokenPickerDialog({
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search tokens"
+                placeholder={t("Search tokens")}
                 className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
               />
               <button
                 type="button"
                 className="inline-flex items-center gap-1 rounded-xs border border-border bg-surface-raised px-1.5 py-0.5 transition-colors hover:bg-surface-hover"
-                aria-label="Filter networks"
+                aria-label={t("Filter networks")}
               >
                 <span className="relative inline-flex">
                   <span className="inline-block size-3.5 rounded-full bg-accent-emphasis" />
@@ -144,7 +146,7 @@ export function TokenPickerDialog({
 
           <div className="mt-2 flex items-center gap-1.5 border-t border-border px-5 pb-1 pt-3 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
             <TrendingUp className="h-3 w-3" />
-            <span>Tokens by 24H volume</span>
+            <span>{t("Tokens by 24H volume")}</span>
           </div>
 
           <div className="flex flex-1 flex-col overflow-y-auto">
@@ -177,7 +179,7 @@ export function TokenPickerDialog({
 
             {filteredTokens.length === 0 ? (
               <div className="mx-4 rounded-radius-sm border border-dashed border-border px-4 py-6 text-center text-[12px] text-muted-foreground">
-                No tokens match that search.
+                {t("No tokens match that search.")}
               </div>
             ) : null}
           </div>

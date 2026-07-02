@@ -82,4 +82,60 @@ describe("lend engine simulation and validation", () => {
 
     expect(validation.allowed).toBe(false)
   })
+
+  it("keeps earned interest from shrinking across repeated withdrawal previews", () => {
+    const accruedMarket = {
+      ...market,
+      liquidityIndex: 1.1,
+      lastAccrualTimestamp: market.lastAccrualTimestamp + 86_400_000,
+    }
+    const position = {
+      positionId: "pos-1",
+      walletId: "wallet-1",
+      marketId: market.marketId,
+      asset: market.asset.symbol,
+      principalAmount: 100,
+      scaledBalance: 100,
+      liquidityIndexAtLastAction: 1,
+      currentSuppliedAmount: 110,
+      interestEarned: 10,
+      rewardsEarnedUsd: 0,
+      suppliedValueUsd: 110 * market.assetPriceUsd,
+      openedAt: market.lastAccrualTimestamp,
+      updatedAt: market.lastAccrualTimestamp,
+      status: "active" as const,
+    }
+
+    const firstPreview = simulateWithdraw({
+      market: accruedMarket,
+      position,
+      withdrawAmount: 10,
+      now: accruedMarket.lastAccrualTimestamp,
+    })
+
+    const remainingPosition = {
+      ...position,
+      principalAmount: firstPreview.after.principalAmount,
+      scaledBalance: firstPreview.after.scaledBalance,
+      currentSuppliedAmount: firstPreview.after.suppliedAmount,
+      interestEarned: firstPreview.after.interestEarned,
+      suppliedValueUsd: firstPreview.after.suppliedValueUsd,
+      liquidityIndexAtLastAction: firstPreview.after.liquidityIndex,
+      updatedAt: accruedMarket.lastAccrualTimestamp,
+    }
+
+    const secondPreview = simulateWithdraw({
+      market: {
+        ...accruedMarket,
+        lastAccrualTimestamp: accruedMarket.lastAccrualTimestamp + 86_400_000,
+      },
+      position: remainingPosition,
+      withdrawAmount: 10,
+      now: accruedMarket.lastAccrualTimestamp + 86_400_000,
+    })
+
+    expect(firstPreview.after.interestEarned).toBeCloseTo(10, 10)
+    expect(secondPreview.before.interestEarned).toBeLessThan(10)
+    expect(secondPreview.after.interestEarned).toBeCloseTo(10, 10)
+  })
 })

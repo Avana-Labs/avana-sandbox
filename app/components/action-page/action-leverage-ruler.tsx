@@ -3,6 +3,7 @@
 import { useCallback } from "react"
 import { ActionCard } from "@/app/components/action-page/action-metrics"
 import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 
@@ -43,6 +44,7 @@ export function ActionLeverageRuler({
   label?: string
   variant?: "card" | "embedded"
 }) {
+  const { t } = useTranslation()
   const parsed = Number.parseFloat(value)
   const currentValue = Number.isFinite(parsed) ? snapToStep(parsed, min, max, step) : min
   const fillPct = max > min ? clamp(((currentValue - min) / (max - min)) * 100, 0, 100) : 0
@@ -56,7 +58,7 @@ export function ActionLeverageRuler({
 
   const ruler = (
     <div data-testid="action-leverage-ruler">
-      <div className="text-[14px] font-medium text-muted-foreground">{label}</div>
+      <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
 
       <div className={variant === "embedded" ? "mt-3 flex items-center justify-between gap-3" : "mt-4 flex items-center justify-between gap-3"}>
           <button
@@ -64,7 +66,7 @@ export function ActionLeverageRuler({
             className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-border hover:bg-surface-hover hover:text-foreground"
             onClick={() => publishValue(min)}
           >
-            Min
+            {t("Min")}
           </button>
           <div
             className="font-data text-[clamp(2rem,8vw,2.75rem)] font-semibold leading-none tracking-[-0.05em] text-foreground"
@@ -78,7 +80,7 @@ export function ActionLeverageRuler({
             className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-border hover:bg-surface-hover hover:text-foreground"
             onClick={() => publishValue(max)}
           >
-            Max
+            {t("Max")}
           </button>
         </div>
 
@@ -103,7 +105,7 @@ export function ActionLeverageRuler({
           step={step}
           value={[currentValue]}
           onValueChange={(values) => publishValue(values[0] ?? min)}
-          aria-label={`${label} multiplier`}
+          aria-label={t("{label} multiplier").replace("{label}", t(label))}
           className="relative z-20 h-7 w-full touch-none appearance-none bg-transparent accent-primary [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:-mt-2 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:shadow-elev-2 [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-background [&::-moz-range-thumb]:bg-brand [&::-moz-range-thumb]:shadow-elev-2"
         />
       </div>

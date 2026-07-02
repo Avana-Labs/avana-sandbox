@@ -4,6 +4,7 @@ function normalizeBorrowAccount(account: BorrowAccountState): BorrowAccountState
   return {
     ...account,
     walletLpBalancesUsd6: account.walletLpBalancesUsd6 ?? {},
+    walletReturnedLpBalancesUsd6: account.walletReturnedLpBalancesUsd6 ?? {},
     collateralPositions: account.collateralPositions ?? [],
     debtPositions: account.debtPositions ?? [],
     rewardPositions: account.rewardPositions ?? [],

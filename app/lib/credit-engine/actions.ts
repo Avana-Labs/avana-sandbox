@@ -15,6 +15,7 @@ function cloneState(state: BorrowSystemState): BorrowSystemState {
         {
           ...account,
           walletLpBalancesUsd6: { ...(account.walletLpBalancesUsd6 ?? {}) },
+          walletReturnedLpBalancesUsd6: { ...(account.walletReturnedLpBalancesUsd6 ?? {}) },
           collateralPositions: (account.collateralPositions ?? []).map((position) => ({ ...position })),
           debtPositions: (account.debtPositions ?? []).map((position) => ({ ...position })),
           rewardPositions: (account.rewardPositions ?? []).map((position) => ({ ...position })),
@@ -158,6 +159,14 @@ function applySupplyCollateralAction(state: BorrowSystemState, action: Extract<B
   market.snapshot.totalLiquidityUsd6 += action.amountUsd6
   market.snapshot.availableUsd6 += action.amountUsd6
   account.walletLpBalancesUsd6[action.marketId] = walletLpBalanceUsd6 - action.amountUsd6
+  const returnedLpBalanceUsd6 = account.walletReturnedLpBalancesUsd6?.[action.marketId] ?? 0n
+  if (returnedLpBalanceUsd6 > 0n) {
+    const consumedReturnedLpUsd6 = returnedLpBalanceUsd6 > action.amountUsd6 ? action.amountUsd6 : returnedLpBalanceUsd6
+    account.walletReturnedLpBalancesUsd6 = {
+      ...(account.walletReturnedLpBalancesUsd6 ?? {}),
+      [action.marketId]: returnedLpBalanceUsd6 - consumedReturnedLpUsd6,
+    }
+  }
   state.transactions.push({
     id: `tx-${state.transactions.length + 1}`,
     walletId: action.walletId,
@@ -258,6 +267,10 @@ function applyRemoveCollateralAction(state: BorrowSystemState, action: Extract<B
   market.snapshot.totalLiquidityUsd6 = market.snapshot.totalLiquidityUsd6 > removeUsd6 ? market.snapshot.totalLiquidityUsd6 - removeUsd6 : 0n
   market.snapshot.availableUsd6 = market.snapshot.availableUsd6 > removeUsd6 ? market.snapshot.availableUsd6 - removeUsd6 : 0n
   account.walletLpBalancesUsd6[position.marketId] = (account.walletLpBalancesUsd6[position.marketId] ?? 0n) + removeUsd6
+  account.walletReturnedLpBalancesUsd6 = {
+    ...(account.walletReturnedLpBalancesUsd6 ?? {}),
+    [position.marketId]: (account.walletReturnedLpBalancesUsd6?.[position.marketId] ?? 0n) + removeUsd6,
+  }
 
   if (position.collateralShares === 0n) {
     account.collateralPositions.splice(positionIndex, 1)
