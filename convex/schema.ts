@@ -461,7 +461,14 @@ export default defineSchema({
     tweetUrl: v.optional(v.string()),
     tweetedAt: v.optional(v.number()),
     claimTxSynthetic: v.optional(v.string()),
-    preferences: v.optional(v.object({ theme: v.optional(v.string()), currency: v.optional(v.string()) })),
+    preferences: v.optional(
+      v.object({
+        theme: v.optional(v.string()),
+        language: v.optional(v.string()),
+        currency: v.optional(v.string()),
+        showDollarAmounts: v.optional(v.boolean()),
+      }),
+    ),
   })
     .index("by_wallet", ["wallet"])
     .index("by_authSubject", ["authSubject"]),
