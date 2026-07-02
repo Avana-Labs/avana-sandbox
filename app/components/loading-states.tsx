@@ -622,3 +622,58 @@ export function RiskWarningPageSkeleton() {
     </Page>
   )
 }
+
+// -----------------------------------------------------------------------------
+// market detail (`/*/markets/[id]`, `/borrow/pool|asset/[id]`) — hero + stacked
+// analytics sections. Shared by every product's detail route boundary.
+// -----------------------------------------------------------------------------
+
+export function MarketDetailSkeleton() {
+  return (
+    <Page>
+      <MarketHeroSkeleton primaryWidth="w-40" />
+      <div className="mt-8 space-y-8">
+        <Skeleton className="h-5 w-40 rounded-xs" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Surface className="h-24 p-4" key={`detail-stat-${index}`}>
+              <Skeleton className="h-2.5 w-16 rounded-xs" />
+              <Skeleton className="mt-3 h-5 w-20 rounded-xs" />
+            </Surface>
+          ))}
+        </div>
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Surface className="h-56 p-5" key={`detail-section-${index}`}>
+            <Skeleton className="h-4 w-40 rounded-xs" />
+            <Skeleton className="mt-5 h-36 w-full rounded-radius-sm" />
+          </Surface>
+        ))}
+      </div>
+    </Page>
+  )
+}
+
+// -----------------------------------------------------------------------------
+// dashboard (`/dashboard`) — balance hero + tab bar + stacked position tables
+// -----------------------------------------------------------------------------
+
+export function DashboardPageSkeleton() {
+  return (
+    <Page>
+      <BalanceHeroSkeleton actionCount={4} />
+      <div className="mb-6 flex gap-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={`dashboard-tab-${index}`} className="h-9 w-28 rounded-radius-sm" />
+        ))}
+      </div>
+      <div className="space-y-4">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <Surface className="h-64 p-5" key={`dashboard-table-${index}`}>
+            <Skeleton className="h-4 w-40 rounded-xs" />
+            <Skeleton className="mt-5 h-44 w-full rounded-radius-sm" />
+          </Surface>
+        ))}
+      </div>
+    </Page>
+  )
+}
