@@ -366,10 +366,13 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
               </div>
             ) : groupedResults.length > 0 ? (
               groupedResults.map(([tab, group]) => (
-                <section key={tab} className="pb-2">
-                  <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium text-muted-foreground">
+                <section key={tab} className="pb-3.5">
+                  <div className="flex items-center gap-2 px-3 pb-1.5 pt-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     <SectionIcon tab={tab} />
                     <span>{t(tab === "pools" ? "Pools to use as collateral" : tab === "borrow" ? "Assets to borrow" : "Assets to lend")}</span>
+                    <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/80">
+                      {group.length}
+                    </span>
                   </div>
                   <div className="space-y-0.5">
                     {group.map((result) => {
