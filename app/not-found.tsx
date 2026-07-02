@@ -22,7 +22,7 @@ export default function NotFound() {
               href="/"
               className="inline-flex h-11 items-center justify-center rounded-full bg-[hsl(var(--brand))] px-5 text-sm font-medium text-white transition hover:bg-[hsl(var(--brand))]/90"
             >
-              Express
+              Home
             </Link>
 
             <nav aria-label="Helpful links" className="flex flex-wrap justify-center gap-x-5 gap-y-3">
@@ -31,6 +31,12 @@ export default function NotFound() {
               </Link>
               <Link href="/lend" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
                 Lend
+              </Link>
+              <Link href="/multiply" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
+                Multiply
+              </Link>
+              <Link href="/dashboard" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
+                Dashboard
               </Link>
             </nav>
           </div>
