@@ -638,9 +638,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  ACTION
-                </th>
+                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4" />
               </tr>
             </thead>
             <tbody
