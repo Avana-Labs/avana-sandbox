@@ -51,7 +51,7 @@ function normalizeGraphPath(path: string) {
   return { path: normalizedPath, points: normalized, width: GRAPH_WIDTH, height: GRAPH_HEIGHT }
 }
 
-function AssetIcon({ asset }: { asset: FeaturedAsset }) {
+export function AssetIcon({ asset }: { asset: FeaturedAsset }) {
   return (
     <span
       className="relative inline-flex size-[56px] shrink-0 items-center justify-center overflow-hidden rounded-full"
@@ -64,6 +64,9 @@ function AssetIcon({ asset }: { asset: FeaturedAsset }) {
         sizes="56px"
         className="object-contain"
         unoptimized
+        // Featured asset icons are the largest above-the-fold imagery on /lend, so
+        // eager-load them to improve LCP instead of lazy-loading below-hero.
+        priority
       />
     </span>
   )
