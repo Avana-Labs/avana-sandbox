@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
-import { ConvexProviderWithAuth, ConvexReactClient, useMutation, useQuery } from "convex/react"
+import { ConvexProviderWithAuth, ConvexReactClient, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useConvexSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
@@ -86,7 +86,6 @@ function MarketLiquidityBridge({
   children: ReactNode
 }) {
   const rows = useQuery(api.liquidity.listDeltas)
-  const mutate = useMutation(api.liquidity.recordDelta)
   const connected = rows !== undefined
 
   const value = useMemo<MarketLiquidityValue>(() => {
@@ -101,14 +100,12 @@ function MarketLiquidityBridge({
         suppliedDeltaUsd: row.suppliedDeltaUsd,
       })
     }
-    return {
-      deltas,
-      connected: true,
-      recordDelta: (input) => {
-        void Promise.resolve(mutate(input)).catch(() => undefined)
-      },
-    }
-  }, [connected, rows, mutate, localDeltas, recordLocal])
+    // In connected mode the shared ledger is written ONLY server-side inside the
+    // idempotent `recordTransaction` (there is no public client recorder), so `recordDelta`
+    // is a deliberate no-op here — a client can never fold an arbitrary delta into the
+    // cross-user numbers. The demo bridge already skips folding when `connected`.
+    return { deltas, connected: true, recordDelta: () => undefined }
+  }, [connected, rows, localDeltas, recordLocal])
 
   return <MarketLiquidityContext.Provider value={value}>{children}</MarketLiquidityContext.Provider>
 }

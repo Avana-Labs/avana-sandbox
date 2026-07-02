@@ -14,30 +14,23 @@
  */
 
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
-import { getAuthedWallet } from "./sandbox/auth"
+import { internalMutation, query } from "./_generated/server"
 
-// A single delta may not move a market by more than this in one write — a sane bound
-// so a tampered client cannot fold an astronomical value into the shared ledger.
-const MAX_DELTA_USD = 5_000_000_000
-
-export const recordDelta = mutation({
+// The shared ledger is written ONLY as a server-side side-effect of a validated
+// `recordTransaction` (which recomputes the delta from the wallet-owned position, see
+// `convex/sandbox/transactions.ts:applyLedgerDelta`). There is intentionally no public,
+// free-standing recorder: a public one let any signed-in wallet fold an arbitrary delta
+// into any market, corrupting every client's numbers. This internal function exists only
+// for tests/tooling that need to seed a delta; it is absent from the public `api`.
+export const recordDelta = internalMutation({
   args: {
     marketSlug: v.string(),
     borrowedDeltaUsd: v.optional(v.number()),
     suppliedDeltaUsd: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // The ledger is shared across ALL users, so an unauthenticated writer could corrupt
-    // every client's market numbers. Require a signed-in wallet (the whole app is gated
-    // behind SIWE anyway) and bound the magnitude.
-    const wallet = await getAuthedWallet(ctx)
-    if (!wallet) {
-      throw new Error("UNAUTHENTICATED: sign in to record market activity.")
-    }
-    const clamp = (n: number) => Math.max(-MAX_DELTA_USD, Math.min(MAX_DELTA_USD, n))
-    const borrowedDeltaUsd = Number.isFinite(args.borrowedDeltaUsd) ? clamp(args.borrowedDeltaUsd as number) : 0
-    const suppliedDeltaUsd = Number.isFinite(args.suppliedDeltaUsd) ? clamp(args.suppliedDeltaUsd as number) : 0
+    const borrowedDeltaUsd = Number.isFinite(args.borrowedDeltaUsd) ? (args.borrowedDeltaUsd as number) : 0
+    const suppliedDeltaUsd = Number.isFinite(args.suppliedDeltaUsd) ? (args.suppliedDeltaUsd as number) : 0
     if (borrowedDeltaUsd === 0 && suppliedDeltaUsd === 0) return
 
     // Append-only: a fresh row per action instead of patching one shared per-market row,
