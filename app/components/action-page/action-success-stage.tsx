@@ -7,7 +7,7 @@ import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { IS_OPEN_GATE_TEST_MODE } from "@/app/lib/test-mode"
+import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 
 export function ActionSuccessStage({
   success,
@@ -32,7 +32,7 @@ export function ActionSuccessStage({
   const receiptLine = success.receiptHash ? (
     <p className="mt-2 font-data text-[12px] text-muted-foreground">
       {t("Receipt")}:{" "}
-      {IS_OPEN_GATE_TEST_MODE ? (
+      {IS_DEV_SHORTCUT_MODE ? (
         <span className="text-foreground">{success.receiptHash}</span>
       ) : (
         <Link
