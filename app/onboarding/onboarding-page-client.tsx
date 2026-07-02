@@ -2,6 +2,7 @@
 
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import {
@@ -24,13 +25,14 @@ function OnboardingConnected() {
 }
 
 export function OnboardingPageClient() {
+  const { t } = useTranslation()
   return (
     <main className="min-h-[calc(100vh-4rem)] px-5 py-6 sm:px-8">
       {hasConvexClient ? (
         <OnboardingConnected />
       ) : (
         <div className="mx-auto w-full max-w-md rounded-radius-lg border border-border bg-surface p-7 text-center text-[14px] text-muted-foreground">
-          Sandbox onboarding requires a Convex connection. Set <code>NEXT_PUBLIC_CONVEX_URL</code> to continue.
+          {t("Sandbox onboarding requires a Convex connection. Set")} <code>NEXT_PUBLIC_CONVEX_URL</code> {t("to continue.")}
         </div>
       )}
     </main>
