@@ -1,7 +1,7 @@
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import { currentDebtValueUsd6, formatFixed } from "@/app/lib/credit-engine"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
-import { buildHomeBorrowPreview, selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
+import { selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
 import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
 import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
@@ -167,20 +167,17 @@ export function borrowSelectItemsForMarket(
 ) {
   const assets = marketId ? session.getBorrowableAssetsForMarket(marketId) : session.borrowableAssets
   return assets.map((asset) => {
-    const spokePowerUsd =
-      marketId != null
-        ? buildHomeBorrowPreview(session.state, walletId, marketId, asset.id, 0).remainingBorrowPowerUsd
-        : null
+    // Show the asset's OWN available liquidity — a genuinely per-asset figure.
+    // The account's borrowing power is a single global cap (identical across every
+    // asset) and is surfaced separately in the configure step, so pinning it here
+    // made every row read the same "$X available".
     const liquidityUsd = assetAvailableUsd(session.state, asset.id)
-    const availableUsd =
-      spokePowerUsd != null && liquidityUsd != null
-        ? Math.min(spokePowerUsd, liquidityUsd)
-        : spokePowerUsd
     return {
       id: asset.id,
       name: asset.name,
       symbol: asset.symbol,
-      trailingLabel: availableUsd != null ? `${formatActionUsd(availableUsd)} available` : `${asset.borrowApr.toFixed(2)}% APY`,
+      trailingLabel:
+        liquidityUsd != null ? `${formatActionUsd(liquidityUsd, { compact: true })} available` : `${asset.borrowApr.toFixed(2)}% APY`,
     }
   })
 }
