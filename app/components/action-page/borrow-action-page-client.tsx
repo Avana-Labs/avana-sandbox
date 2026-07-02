@@ -182,8 +182,14 @@ export function BorrowActionPageClient({
         null
       )
     }
-    return debtPositions.length === 1 ? (debtPositions[0] ?? null) : null
-  }, [debtPositionId, debtPositions, initialMarketId, kind, session.state.markets])
+    // No explicit debt/market (e.g. the home express Repay tab): resolve to a real
+    // debt — the one in the currently selected market, else the sole/first debt.
+    // Never leave it null, which defaulted the repay asset to the market's first
+    // collateral token (e.g. WETH) instead of the asset actually owed (e.g. USDC).
+    return (
+      debtPositions.find((position) => position.marketId === marketId) ?? debtPositions[0] ?? null
+    )
+  }, [debtPositionId, debtPositions, initialMarketId, kind, marketId, session.state.markets])
 
   const activeMarketId = hasInvalidInitialMarket ? "" : marketId || (isHomeBorrowZeroState ? "" : session.collateralPools[0]?.id || "")
   const selectMarketId = activeMarketId
