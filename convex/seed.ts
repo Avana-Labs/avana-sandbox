@@ -10,25 +10,30 @@
  */
 
 import { v } from "convex/values"
-import { internalMutation, query } from "./_generated/server"
+import { internalMutation, internalQuery } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
 
 const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 const riskLevel = v.union(v.literal("low"), v.literal("moderate"), v.literal("elevated"), v.literal("high"))
 
 /**
- * Lightweight seed-verification: exact counts for the small tables (markets, risk)
- * and a non-empty signal for the large daily tables (collecting 46k+ rows would
- * blow the per-query read limit). Use getBorrowEconomy in convex/markets.ts for
- * the calibrated aggregate totals.
+ * Lightweight seed-verification: exact counts for the small per-market tables (markets,
+ * risk) and a non-empty "seeded" signal for the LARGE tables — collecting the 46k+ daily
+ * allocation/stat rows would blow the per-query read limit. Internal-only (the seed CLI
+ * reaches it through the secret-gated `seedAdmin.getCounts` action); an anonymous caller
+ * can neither invoke it nor force an unbounded scan. Use getBorrowEconomy in
+ * convex/markets.ts for the calibrated aggregate totals.
  */
-export const getCounts = query({
+export const getCounts = internalQuery({
   args: {},
   handler: async (ctx) => {
+    // markets + risk are one row per market (~173), so exact counts are bounded reads.
     const markets = await ctx.db.query("markets").collect()
     const risk = await ctx.db.query("riskAssessments").collect()
-    const allocation = await ctx.db.query("assetPoolAllocationDaily").collect()
-    const content = await ctx.db.query("marketContent").collect()
+    // The remaining tables are large (daily rows) or heavy per-row (content blobs), so
+    // read only a single-row "seeded" signal instead of collecting the whole table.
+    const oneAllocation = await ctx.db.query("assetPoolAllocationDaily").take(1)
+    const oneContent = await ctx.db.query("marketContent").take(1)
     const oneStat = await ctx.db.query("marketDailyStats").take(1)
     const oneRevenue = await ctx.db.query("marketRevenueDaily").take(1)
     const oneRiskWithBreakdown = risk.find((r) => r.breakdown.length > 0)
@@ -38,8 +43,8 @@ export const getCounts = query({
       poolMarkets: markets.filter((m) => m.scope === "pool").length,
       riskAssessments: risk.length,
       riskBreakdownSeeded: oneRiskWithBreakdown !== undefined,
-      allocationRows: allocation.length,
-      contentRows: content.length,
+      allocationSeeded: oneAllocation.length > 0,
+      contentSeeded: oneContent.length > 0,
       dailyStatsSeeded: oneStat.length > 0,
       revenueSeeded: oneRevenue.length > 0,
     }

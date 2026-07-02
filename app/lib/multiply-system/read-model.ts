@@ -1,7 +1,7 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { MultiplyMarketRecord, MultiplySystemState } from "@/app/lib/multiply-engine"
 import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine"
-import { resolveMultiplyMarketMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
+import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { MULTIPLY_TOKEN_BORROW_APYS, MULTIPLY_TOKEN_LOGOS, MULTIPLY_TOKEN_SUPPLY_APYS } from "@/app/lib/multiply-sim"
@@ -39,11 +39,11 @@ export type MultiplyTrendingSnapshot = {
 export function buildMultiplyTrendingSnapshots(markets: MultiplyMarketRecord[]): MultiplyTrendingSnapshot[] {
   return [...markets]
     .map((market) => {
-      // The catalog table label intentionally inflates leverage for discovery, but
-      // the APY here is a real financial formula. Use the de-scaled multiplier the
-      // action page actually lets users select so the trending APY is achievable and
-      // the headline leverage label stays consistent with it.
-      const maxMultiplier = resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
+      // Single-source the max-leverage figure so the trending card, markets table,
+      // hero average and explore table all print the same number for a market. The
+      // APY is a real financial formula computed from that same multiplier so the
+      // headline leverage and its achievable APY stay consistent.
+      const maxMultiplier = resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier)
       const maxLeverageApy = calculateMaxLeverageApy({
         supplyApy: market.economics.supplyApy,
         borrowApy: market.economics.borrowApy,
@@ -80,6 +80,7 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
   const collateralSymbol = market.collateralAsset.symbol
   const borrowSymbol = market.borrowAsset.symbol
   const collateralLogo = resolveMultiplyTokenLogo(collateralSymbol)
+  const maxLeverage = resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier)
   return {
     href: `/multiply/markets/${market.id}`,
     protocol: collateralSymbol,
@@ -89,14 +90,18 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
     apy: formatPct(market.economics.estimatedMaxApy),
     apyLabel: "Estimated max APY at public max multiplier",
     points: formatCompactUsd(market.economics.availableLiquidityUsd),
+    // The explore table renders the primary reward row under its MAX LEVERAGE
+    // header, so that row must carry the single-sourced public max — the same
+    // number the trending card, hero average and markets table show — not the
+    // recommended cap (which lives in the secondary row for context).
     rewardRows: [
       {
         label: `CF ${Math.round(market.risk.collateralFactor * 100)}% · LT ${Math.round(market.risk.liquidationThreshold * 100)}%`,
-        value: formatFactor(market.risk.publicMaxMultiplier),
+        value: `Recommended max ${formatFactor(market.risk.recommendedMaxMultiplier)}`,
       },
       {
-        label: "Recommended max",
-        value: formatFactor(market.risk.recommendedMaxMultiplier),
+        label: `CF ${Math.round(market.risk.collateralFactor * 100)}% · LT ${Math.round(market.risk.liquidationThreshold * 100)}%`,
+        value: formatFactor(maxLeverage),
       },
     ],
     collateralFactor: market.risk.collateralFactor,
@@ -115,7 +120,10 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
   const marketCount = markets.length
   const averageMaxApy = marketCount > 0 ? markets.reduce((sum, market) => sum + market.economics.estimatedMaxApy, 0) / marketCount : 0
   const averageMaxLeverage =
-    marketCount > 0 ? markets.reduce((sum, market) => sum + market.risk.publicMaxMultiplier, 0) / marketCount : 0
+    marketCount > 0
+      ? markets.reduce((sum, market) => sum + resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier), 0) /
+        marketCount
+      : 0
 
   return {
     markets: [...markets].map((market) => ({
@@ -125,7 +133,7 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
       funding: market.economics.borrowApy,
       change: market.economics.estimatedMaxApy * 100,
       volume: market.economics.availableLiquidityUsd,
-      maxLeverage: market.risk.publicMaxMultiplier,
+      maxLeverage: resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier),
       longOi: 62,
       shortOi: 38,
     })),
@@ -149,15 +157,18 @@ export function buildPortfolioMultiplyData(
   const totalDebtUsd = positions.reduce((sum, position) => sum + position.debtValueUsd, 0)
   // Average only the leveraged (finite-HF) positions. A zero-debt position has an
   // infinite health factor, so folding it in as a synthetic "99" produced an
-  // obviously-fake average. If every position is debt-free there is no meaningful
-  // average, so report null (the UI renders "—"); buildMultiplyWalletSnapshot maps
-  // that back to "infinity" for the headline.
+  // obviously-fake average. When positions exist but every one is debt-free the
+  // aggregate is genuinely infinite — report ∞ so the hero/credit-health card
+  // agrees with the per-row table (which renders those rows as "∞") instead of
+  // showing "—". Only a wallet with no positions at all reports null.
   const finiteHealthFactors = positions
     .map((position) => (position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor))
     .filter((healthFactor) => Number.isFinite(healthFactor))
   const averageHealthFactor =
     finiteHealthFactors.length === 0
-      ? null
+      ? positions.length === 0
+        ? null
+        : Number.POSITIVE_INFINITY
       : finiteHealthFactors.reduce((sum, healthFactor) => sum + healthFactor, 0) / finiteHealthFactors.length
 
   return {
@@ -236,7 +247,11 @@ export function buildMultiplyWalletSnapshot(
           ? portfolio.positions.reduce((sum, position) => sum + position.leverage, 0) / portfolio.positions.length
           : 1,
       ltv: portfolio.creditLines.currentLtvPct / 100,
-      healthFactor: portfolio.creditLines.averageHealthFactor ?? "infinity",
+      // Collapse both "no positions" (null) and "positions but all debt-free" (∞)
+      // to the canonical "infinity" sentinel this field uses across the system.
+      healthFactor: Number.isFinite(portfolio.creditLines.averageHealthFactor)
+        ? (portfolio.creditLines.averageHealthFactor as number)
+        : "infinity",
       netApy:
         walletPositions.length > 0
           ? walletPositions.reduce((sum, position) => sum + position.netApy, 0) / walletPositions.length
@@ -269,10 +284,20 @@ export function buildMultiplyActivityHistory(
       id: item.id,
       at: new Date(item.timestamp).toISOString(),
       product: "multiply" as const,
-      kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
+      kind:
+        item.kind === "multiply"
+          ? ("open" as const)
+          : item.kind === "close"
+            ? ("close" as const)
+            : ("reduce" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
       amountUsd: item.amountUsd,
-      primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
+      primaryLabel:
+        item.kind === "multiply"
+          ? "Simulated multiply"
+          : item.kind === "close"
+            ? "Simulated close"
+            : "Simulated deleverage",
       secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
       txHash: item.hash,
     }))

@@ -3,8 +3,8 @@ import { actionPagePath } from "./contracts"
 
 export function blockedUiForMissingWalletAsset(symbol: string, verb = "deposit"): ActionBlockedUi {
   return {
-    title: `You don't have ${symbol} in your wallet`,
-    description: `To ${verb} ${symbol}, you need to hold it in your connected wallet first.`,
+    title: `That's more practice ${symbol} than you hold`,
+    description: `You've used all your sandbox ${symbol}. Lower the amount, or explore another asset — every market is available with your practice funds.`,
     primaryCtaLabel: null,
     primaryCtaHref: null,
     secondaryCtaLabel: "Got it",
@@ -13,8 +13,8 @@ export function blockedUiForMissingWalletAsset(symbol: string, verb = "deposit")
 
 export function blockedUiForMissingWalletLp(marketLabel: string): ActionBlockedUi {
   return {
-    title: "No LP tokens in your wallet",
-    description: `You don't hold LP tokens for ${marketLabel}. Add liquidity to this pool in your wallet before pledging.`,
+    title: "That's more practice LP than you hold here",
+    description: `You've used all your sandbox ${marketLabel} LP. Lower the amount, or open another pool — every market stays available with your practice funds.`,
     primaryCtaLabel: null,
     primaryCtaHref: null,
     secondaryCtaLabel: "Got it",
@@ -25,15 +25,25 @@ export function mapPreviewToBlockedUi(options: {
   product: ActionProduct
   kind: ActionKind
   blockedReason: string | null
+  /** Whether the wallet holds any of the target asset — distinguishes an
+   * over-balance amount ("exceeds balance") from a true zero-holding. */
+  hasWalletBalance?: boolean
 }): ActionBlockedUi | null {
   if (!options.blockedReason) return null
 
   const reason = options.blockedReason.toLowerCase()
 
   if (reason.includes("insufficient") && reason.includes("balance")) {
+    const lendOverBalance = options.product === "lend" && options.hasWalletBalance
     return {
-      title: options.product === "lend" ? "You don't have this asset in your wallet" : "No balance available",
-      description: options.blockedReason,
+      title: lendOverBalance
+        ? "Amount exceeds your balance"
+        : options.product === "lend"
+          ? "You don't have this asset in your wallet"
+          : "No balance available",
+      description: lendOverBalance
+        ? "You're trying to deposit more than you hold. Lower the amount or tap Max to deposit your full balance."
+        : options.blockedReason,
       primaryCtaLabel: options.product === "borrow" && options.kind === "borrow" ? "Deposit" : null,
       primaryCtaHref:
         options.product === "borrow" && options.kind === "borrow" ? actionPagePath("borrow", "supply") : null,

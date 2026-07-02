@@ -38,9 +38,9 @@ export function ActionWorkspaceTabs({
             whileHover={reduceMotion ? undefined : { y: -1 }}
             transition={{ type: "spring", stiffness: 500, damping: 28 }}
             className={cn(
-              "rounded-full px-3 py-1.5 text-[16px] font-medium leading-none transition-colors",
+              "rounded-full px-3 py-1.5 text-[15px] font-medium leading-none transition-colors",
               active
-                ? "bg-[hsl(0,0%,96%)] text-foreground shadow-[0_8px_20px_-14px_hsl(var(--foreground)/0.35)] dark:bg-surface-inset"
+                ? "bg-secondary text-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >

@@ -21,6 +21,19 @@ export function resolveMultiplyMarketMaxLeverage(publicMaxMultiplier: number | u
   return Math.min(MULTIPLY_ACTION_MAX_LEVERAGE, actionCap)
 }
 
+/**
+ * The single source of the per-market "max leverage" figure shown across the
+ * Multiply page (hero average, trending card, markets table, explore table).
+ * It is the public cap the market advertises — NOT the recommended/safe cap and
+ * NOT the action-slider clamp — so every surface prints the same number.
+ */
+export function resolveMultiplyMarketDisplayMaxLeverage(publicMaxMultiplier: number | undefined) {
+  if (!Number.isFinite(publicMaxMultiplier) || publicMaxMultiplier == null || publicMaxMultiplier < 1) {
+    return 1
+  }
+  return publicMaxMultiplier
+}
+
 export function getDefaultDeleverageMultiplier(currentMultiplier: number) {
   if (!Number.isFinite(currentMultiplier)) return String(MULTIPLY_ACTION_MIN_LEVERAGE)
   const lowered = Math.max(MULTIPLY_ACTION_MIN_LEVERAGE, currentMultiplier - 0.5)

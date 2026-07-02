@@ -5,21 +5,25 @@ import { Button } from "@/components/ui/button"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
+import { formatUsdExact } from "@/app/lib/borrow-sim"
+import { getActiveCurrency } from "@/app/lib/currency/active-rate"
 
 const MASK = "••••"
 
-function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+function formatClaimableUsd(value: number) {
+  const { rate, symbol, zeroDecimal } = getActiveCurrency()
+  const digits = zeroDecimal ? 0 : 2
+  return `${symbol}${(value * rate).toLocaleString("en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })}`
 }
 
 function formatTokenAmount(value: number, symbol: string) {
   return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${symbol}`
 }
 
-function resolveWalletBalance(
-  token: PortfolioSupplyPosition,
-  walletBalancesBySymbol?: Record<string, number>,
-) {
+function resolveWalletBalance(token: PortfolioSupplyPosition, walletBalancesBySymbol?: Record<string, number>) {
   if (token.walletBalance != null) return token.walletBalance
   return walletBalancesBySymbol?.[token.symbol.toUpperCase()] ?? 0
 }
@@ -49,20 +53,18 @@ export function PortfolioInvestments({
         <div className="mb-3 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">Positions</h2>
-            {claimableUsd > 0 ? (
-              <p className="mt-1 text-[12px] text-muted-foreground">Claimable rewards</p>
-            ) : null}
+            {claimableUsd > 0 ? <p className="mt-1 text-[12px] text-muted-foreground">Claimable rewards</p> : null}
           </div>
           {claimableUsd > 0 && onClaimRewards ? (
             <Button type="button" size="sm" disabled={isClaimingRewards} onClick={onClaimRewards}>
-              {isClaimingRewards ? "Claiming..." : `Claim ${formatUsd(claimableUsd)}`}
+              {isClaimingRewards ? "Claiming..." : `Claim ${formatClaimableUsd(claimableUsd)}`}
             </Button>
           ) : null}
         </div>
       ) : claimableUsd > 0 && onClaimRewards ? (
         <div className="mb-3 flex justify-end">
           <Button type="button" size="sm" disabled={isClaimingRewards} onClick={onClaimRewards}>
-            {isClaimingRewards ? "Claiming..." : `Claim ${formatUsd(claimableUsd)}`}
+            {isClaimingRewards ? "Claiming..." : `Claim ${formatClaimableUsd(claimableUsd)}`}
           </Button>
         </div>
       ) : null}
@@ -121,7 +123,7 @@ export function PortfolioInvestments({
                             {m(formatTokenAmount(walletBalance, token.symbol))}
                           </div>
                           <div className="font-data text-[11px] tabular-nums text-muted-foreground">
-                            {m(formatUsd(walletBalance * token.priceUsd))}
+                            {m(formatUsdExact(walletBalance * token.priceUsd))}
                           </div>
                         </td>
                         <td className="py-3.5 text-right">
@@ -129,7 +131,7 @@ export function PortfolioInvestments({
                             {m(formatTokenAmount(token.balance, token.symbol))}
                           </div>
                           <div className="font-data text-[11px] tabular-nums text-muted-foreground">
-                            {m(formatUsd(token.suppliedUsd))}
+                            {m(formatUsdExact(token.suppliedUsd))}
                           </div>
                         </td>
                         <td className="py-3.5 text-right">
@@ -139,10 +141,13 @@ export function PortfolioInvestments({
                         </td>
                         <td className="py-3.5 pr-5 text-right">
                           <div className="font-data text-[13px] font-medium tabular-nums text-foreground">
-                            {m(`+${formatUsd(token.earnedUsd)}`)}
+                            {m(`+${formatUsdExact(token.earnedUsd)}`)}
                           </div>
                           <div className="font-data text-[11px] tabular-nums text-muted-foreground">
-                            {m(`+${formatUsd(token.dailyEarnedUsd)} today`)}
+                            {/* Projected run-rate (APY/365), not realized-today earnings —
+                                label it as a per-day estimate so a seconds-old position
+                                doesn't appear to have already earned this amount. */}
+                            {m(`≈ ${formatUsdExact(token.dailyEarnedUsd)}/day`)}
                           </div>
                         </td>
                       </tr>
@@ -165,20 +170,28 @@ export function PortfolioInvestments({
                           <div className="text-[11px] text-muted-foreground">{token.symbol}</div>
                         </div>
                       </div>
-                      <span className="font-data text-[13px] tabular-nums text-foreground">{token.apyPct.toFixed(2)}% APY</span>
+                      <span className="font-data text-[13px] tabular-nums text-foreground">
+                        {token.apyPct.toFixed(2)}% APY
+                      </span>
                     </div>
                     <dl className="grid grid-cols-2 gap-2 text-[12px]">
                       <div>
                         <dt className="text-muted-foreground">Wallet</dt>
-                        <dd className="font-data tabular-nums text-foreground">{m(formatTokenAmount(walletBalance, token.symbol))}</dd>
+                        <dd className="font-data tabular-nums text-foreground">
+                          {m(formatTokenAmount(walletBalance, token.symbol))}
+                        </dd>
                       </div>
                       <div className="text-right">
                         <dt className="text-muted-foreground">Deposited</dt>
-                        <dd className="font-data tabular-nums text-foreground">{m(formatTokenAmount(token.balance, token.symbol))}</dd>
+                        <dd className="font-data tabular-nums text-foreground">
+                          {m(formatTokenAmount(token.balance, token.symbol))}
+                        </dd>
                       </div>
                       <div className="col-span-2 text-right">
                         <dt className="text-muted-foreground">Earnings</dt>
-                        <dd className="font-data tabular-nums text-foreground">{m(`+${formatUsd(token.earnedUsd)}`)}</dd>
+                        <dd className="font-data tabular-nums text-foreground">
+                          {m(`+${formatUsdExact(token.earnedUsd)}`)}
+                        </dd>
                       </div>
                     </dl>
                   </div>

@@ -241,7 +241,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     "flex w-full items-center justify-between gap-4 text-left text-[1.2rem] font-medium leading-[1.14] text-foreground/92"
   const rootSettingsLabelClass = "flex items-center gap-3"
   const rootSettingsIconClass = `h-[1.15rem] w-[1.15rem] stroke-[1.9] ${accentClass}`
-  const dividerClass = "border-[#01AACF]/25 dark:border-[#01AACF]/35"
+  const dividerClass = "border-brand/25 dark:border-brand/35"
   const introDelay = (index: number) => `${120 + index * 35}ms`
   const settingsIntroStyle = (index: number) =>
     settingsIntroActive
@@ -335,7 +335,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 checked={lightModeEnabled}
                 onCheckedChange={(checked) => setTheme(checked ? "light" : "dark")}
                 aria-label="Toggle light mode"
-                className="data-[state=checked]:bg-[#01AACF] data-[state=unchecked]:bg-[#01AACF]/35"
+                className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-brand/35"
               />
             </div>
           </li>
@@ -493,7 +493,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       <button
         ref={menuButtonRef}
         type="button"
-        className="inline-flex h-10 w-10 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] md:hidden"
+        className="inline-flex h-10 w-10 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
         aria-label="Toggle menu"
         aria-expanded={open}
         aria-controls="mobile-site-nav"
@@ -511,7 +511,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
       {renderMenu ? (
         <div
-          className={`fixed inset-0 z-[60] min-h-[100dvh] bg-background text-foreground transition-opacity duration-300 ease-out md:hidden ${
+          className={`fixed inset-0 z-[60] min-h-[100dvh] bg-background text-foreground transition-opacity duration-300 ease-out xl:hidden ${
             isVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
           role="dialog"

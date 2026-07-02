@@ -15,8 +15,11 @@
  */
 
 import { v } from "convex/values"
-import { query, type QueryCtx } from "./_generated/server"
+import { internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import type { Doc, Id } from "./_generated/dataModel"
+
+/** Single cache row discriminator (see `marketSnapshotsCache` in schema.ts). */
+const SNAPSHOTS_SINGLETON = "markets"
 
 const RANGE_DAYS = {
   "1D": 1,
@@ -210,51 +213,93 @@ export const getBorrowEconomy = query({
 })
 
 /**
- * Latest-day reference snapshot for every market (one indexed read per market).
- * Powers the borrow list/Explore cards and the session market-data hydration so
- * every surface reads the same Convex numbers. Keyed by the market `slug`
- * (pool id, or spoke-scoped asset id) for a direct lookup against the catalog.
+ * Recompute the latest-day reference snapshot for every market (one indexed read
+ * per market). This is the EXPENSIVE path (`markets.collect()` + ~173 reads); it
+ * runs in `rebuildMarketSnapshots` on write / on schedule, never on the hot
+ * subscribed query — and, defensively, as a cold-cache fallback below.
+ */
+async function computeMarketSnapshots(ctx: QueryCtx | MutationCtx) {
+  const markets = await ctx.db.query("markets").collect()
+  const out = await Promise.all(
+    markets.map(async (market) => {
+      const latest = await ctx.db
+        .query("marketDailyStats")
+        .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
+        .order("desc")
+        .first()
+      if (!latest) return null
+      return {
+        slug: market.slug,
+        scope: market.scope,
+        name: market.name,
+        symbol: market.symbol,
+        chainId: market.chainId,
+        venueLabel: market.venueLabel,
+        category: market.category,
+        description: market.description,
+        iconUrl: market.iconUrl,
+        spokeId: market.spokeId,
+        feeTier: market.feeTier,
+        maxLtvPct: market.maxLtvPct,
+        visuals: market.visuals,
+        resources: market.resources,
+        suppliedUsd: latest.suppliedUsd,
+        borrowedUsd: latest.borrowedUsd,
+        availableUsd: Math.max(0, latest.suppliedUsd - latest.borrowedUsd),
+        utilizationPct: latest.utilizationPct,
+        supplyApyPct: latest.supplyApyPct,
+        borrowAprPct: latest.borrowAprPct,
+        tvlUsd: latest.tvlUsd,
+        volumeUsd: latest.volumeUsd,
+        feesUsd: latest.feesUsd,
+      }
+    }),
+  )
+  return out.filter((row): row is NonNullable<typeof row> => row !== null)
+}
+
+/**
+ * Latest-day reference snapshot for every market. Subscribed app-wide, so it reads
+ * the single precomputed `marketSnapshotsCache` document (O(1) reads) instead of
+ * recomputing from ~173 per-market reads on every subscriber recompute. Powers the
+ * borrow list/Explore cards and the session market-data hydration so every surface
+ * reads the same Convex numbers. Keyed by the market `slug` (pool id, or
+ * spoke-scoped asset id) for a direct lookup against the catalog.
+ *
+ * Cold-cache fallback: if the cache has not been built yet (fresh deploy, before
+ * the first `rebuildMarketSnapshots`), fall back to the recompute so the app still
+ * hydrates. Steady state never hits that path.
  */
 export const listMarketSnapshots = query({
   args: {},
   handler: async (ctx) => {
-    const markets = await ctx.db.query("markets").collect()
-    const out = await Promise.all(
-      markets.map(async (market) => {
-        const latest = await ctx.db
-          .query("marketDailyStats")
-          .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
-          .order("desc")
-          .first()
-        if (!latest) return null
-        return {
-          slug: market.slug,
-          scope: market.scope,
-          name: market.name,
-          symbol: market.symbol,
-          chainId: market.chainId,
-          venueLabel: market.venueLabel,
-          category: market.category,
-          description: market.description,
-          iconUrl: market.iconUrl,
-          spokeId: market.spokeId,
-          feeTier: market.feeTier,
-          maxLtvPct: market.maxLtvPct,
-          visuals: market.visuals,
-          resources: market.resources,
-          suppliedUsd: latest.suppliedUsd,
-          borrowedUsd: latest.borrowedUsd,
-          availableUsd: Math.max(0, latest.suppliedUsd - latest.borrowedUsd),
-          utilizationPct: latest.utilizationPct,
-          supplyApyPct: latest.supplyApyPct,
-          borrowAprPct: latest.borrowAprPct,
-          tvlUsd: latest.tvlUsd,
-          volumeUsd: latest.volumeUsd,
-          feesUsd: latest.feesUsd,
-        }
-      }),
-    )
-    return out.filter((row): row is NonNullable<typeof row> => row !== null)
+    const cache = await ctx.db
+      .query("marketSnapshotsCache")
+      .withIndex("by_singleton", (q) => q.eq("singleton", SNAPSHOTS_SINGLETON))
+      .unique()
+    if (cache) return cache.rows
+    return computeMarketSnapshots(ctx)
+  },
+})
+
+/**
+ * Rebuild the `listMarketSnapshots` cache document. Runs the expensive recompute
+ * once and upserts the single cache row. Call this from the market-data write path
+ * (seed / aggregator) after landing daily stats, or from a schedule — never on the
+ * hot read path. Internal-only so anonymous callers can't trigger the full recompute.
+ */
+export const rebuildMarketSnapshots = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await computeMarketSnapshots(ctx)
+    const existing = await ctx.db
+      .query("marketSnapshotsCache")
+      .withIndex("by_singleton", (q) => q.eq("singleton", SNAPSHOTS_SINGLETON))
+      .unique()
+    const doc = { singleton: SNAPSHOTS_SINGLETON, rows, updatedAt: Date.now() }
+    if (existing) await ctx.db.replace(existing._id, doc)
+    else await ctx.db.insert("marketSnapshotsCache", doc)
+    return { markets: rows.length }
   },
 })
 

@@ -162,6 +162,57 @@ export default defineSchema({
     .index("by_market_day", ["marketId", "day"]),
 
   /**
+   * Precomputed reference-snapshot cache for `listMarketSnapshots`. That query is
+   * subscribed app-wide, so recomputing it from a full `markets` collect plus one
+   * indexed read per market (~173 reads) on every subscriber recompute does not
+   * scale. Instead the recompute runs once in `rebuildMarketSnapshots` (on write /
+   * on schedule) and writes the folded rows here; the hot query reads this single
+   * document (O(1)). One row total — `singleton: "markets"`.
+   */
+  marketSnapshotsCache: defineTable({
+    /** Constant discriminator so there is exactly one cache row (`"markets"`). */
+    singleton: v.string(),
+    rows: v.array(
+      v.object({
+        slug: v.string(),
+        scope: marketScope,
+        name: v.string(),
+        symbol: v.string(),
+        chainId: v.number(),
+        venueLabel: v.optional(v.string()),
+        category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+        description: v.optional(v.string()),
+        iconUrl: v.optional(v.string()),
+        spokeId: v.optional(v.string()),
+        feeTier: v.optional(v.string()),
+        maxLtvPct: v.optional(v.number()),
+        visuals: v.optional(
+          v.array(
+            v.object({
+              symbol: v.string(),
+              shortLabel: v.string(),
+              bgClassName: v.string(),
+              textClassName: v.string(),
+              iconUrl: v.optional(v.string()),
+            }),
+          ),
+        ),
+        resources: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
+        suppliedUsd: v.number(),
+        borrowedUsd: v.number(),
+        availableUsd: v.number(),
+        utilizationPct: v.number(),
+        supplyApyPct: v.number(),
+        borrowAprPct: v.number(),
+        tvlUsd: v.number(),
+        volumeUsd: v.number(),
+        feesUsd: v.number(),
+      }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_singleton", ["singleton"]),
+
+  /**
    * Daily revenue per market. Feeds the monthly Cash Flow card. The UI
    * aggregates daily rows into monthly buckets client-side, so any writer
    * can land data at whatever cadence makes sense.
@@ -242,10 +293,14 @@ export default defineSchema({
 
   /**
    * Shared, multi-user market liquidity ledger. Every borrow / repay / supply /
-   * withdraw from ANY client increments one aggregate row per market, and every
-   * client subscribes (see `convex/liquidity.ts`) and layers these deltas onto the
-   * base catalog so liquidity stats move with aggregate activity across all users
-   * instead of staying frozen. One row per market keeps reads O(#markets).
+   * withdraw from ANY client APPENDS a delta event here (never patches a shared
+   * row), and every client subscribes (see `convex/liquidity.ts`), which folds the
+   * events per market and layers the net onto the base catalog so liquidity stats
+   * move with aggregate activity across all users instead of staying frozen.
+   *
+   * Append-only by design: patching a single per-market row put every writer on the
+   * same document and made concurrent actions contend under Convex OCC. Appending a
+   * fresh row per action removes that hot-write contention; reads fold O(#events).
    */
   marketLiquidityDeltas: defineTable({
     /** Catalog market id — a pool id ("uni-v3-bluechip-weth-usdc") or borrowable asset id ("uni-v2:usdc"). */
@@ -256,6 +311,43 @@ export default defineSchema({
     suppliedDeltaUsd: v.number(),
     updatedAt: v.number(),
   }).index("by_slug", ["marketSlug"]),
+
+  /**
+   * Precomputed fold of `marketLiquidityDeltas` into one net aggregate per market.
+   * The app-wide liquidity subscription (`liquidity.listDeltaSnapshot`) reads this
+   * single document (O(1)) instead of the append-only event table — so ONE user's
+   * borrow/repay/supply/withdraw no longer invalidates every other subscriber. A
+   * schedule (`crons.ts`) rebuilds it periodically from the raw events, bounding
+   * cross-user staleness to the refresh interval.
+   */
+  liquidityDeltasCache: defineTable({
+    /** Constant discriminator so there is exactly one cache row (`"deltas"`). */
+    singleton: v.string(),
+    rows: v.array(
+      v.object({
+        marketSlug: v.string(),
+        borrowedDeltaUsd: v.number(),
+        suppliedDeltaUsd: v.number(),
+        updatedAt: v.number(),
+      }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_singleton", ["singleton"]),
+
+  /**
+   * Sharded economy counters. The single `sandboxEconomy` row is read-and-patched
+   * by every claim, so concurrent claims all contend on it under Convex OCC (the
+   * load sweep saw ~53% of concurrent claims fail there). Each claim instead adds
+   * its grant to ONE randomly-chosen shard row; the live count/total is the sum of
+   * all shards. Distinct shards never collide, so the hot counter comes off the
+   * write path while the aggregate stays exact.
+   */
+  sandboxEconomyShards: defineTable({
+    /** 0..N-1 shard bucket; a claim picks one at random to increment. */
+    shard: v.number(),
+    userCount: v.number(),
+    grantedUsd: v.number(),
+  }).index("by_shard", ["shard"]),
 
   /**
    * Real token spot prices (the ONE place the sandbox reads live market data). A
@@ -308,6 +400,7 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_wallet", ["wallet"])
+    .index("by_wallet_created", ["wallet", "createdAt"])
     .index("by_status", ["status"])
     .index("by_created_at", ["createdAt"]),
 

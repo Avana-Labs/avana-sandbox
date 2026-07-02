@@ -1,5 +1,5 @@
 import type { LendSystemState } from "@/app/lib/lend-engine"
-import { formatActionApproxUsd } from "@/app/lib/action-system/formatters"
+import { formatActionApproxUsd, formatActionRatioPercent } from "@/app/lib/action-system/formatters"
 import { formatLendMarketDropdownSublabel } from "@/app/lib/lend-system/market-labels"
 import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 
@@ -18,7 +18,7 @@ export function lendDepositSelectItems(session: LendContextSession, walletId: st
         symbol: market.asset.symbol,
         sublabel: formatLendMarketDropdownSublabel(market.asset.symbol),
         trailingLabel: formatActionApproxUsd(balanceUsd),
-        trailingSublabel: `${market.supplyApy.toFixed(2)}% APY`,
+        trailingSublabel: `${formatActionRatioPercent(market.supplyApy)} APY`,
         walletBalance,
       }
     })

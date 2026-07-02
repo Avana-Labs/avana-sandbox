@@ -185,9 +185,58 @@ describe("SandboxLendTransactionAdapter", () => {
       },
     }
 
-    await expect(adapter.executeTransaction(intent)).rejects.toThrow("Insufficient wallet balance")
+    // A blocked-at-execution lend is recorded as a failed result (like
+    // borrow/multiply), not thrown, so it appears in activity.
+    const result = await adapter.executeTransaction(intent)
+    expect(result.receipt.status).toBe("failed")
+    expect(result.receipt.error).toContain("Insufficient wallet balance")
+    expect(result.historyItem.status).toBe("failed")
+    // No phantom position and no committed state from a failure.
+    expect(Object.keys(result.state.positions)).toHaveLength(0)
+    expect(result.state.transactions).toHaveLength(0)
     expect(Object.keys(state.positions)).toHaveLength(0)
     expect(state.transactions).toHaveLength(0)
+  })
+
+  it("persists a failed lend receipt through the backend before returning", async () => {
+    let state = buildMockLendSystemState("wallet-1")
+    state.walletBalances["wallet-1"] = { ...(state.walletBalances["wallet-1"] ?? {}), eth: 0 }
+    const persisted: unknown[] = []
+
+    const adapter = new SandboxLendTransactionAdapter({
+      readState: () => state,
+      writeState: (next) => {
+        state = next
+      },
+      now: () => state.now,
+      generateId: (prefix) => `${prefix}-fail`,
+      persistResult: async (result) => {
+        persisted.push(result)
+        return {
+          id: "persisted-fail",
+          hash: "persisted-hash",
+          status: "failed" as const,
+          actionType: result.receipt.actionType,
+          simulated: true,
+          timestamp: result.receipt.timestamp,
+        }
+      },
+    })
+
+    const intent = adapter.createIntent({
+      type: "deposit",
+      walletId: "wallet-1",
+      marketId: "eth",
+      depositAmount: 1,
+      walletBalance: 1,
+    })
+
+    const result = await adapter.executeTransaction(intent)
+
+    expect(persisted).toHaveLength(1)
+    expect(result.receipt.status).toBe("failed")
+    expect(result.receipt.id).toBe("persisted-fail")
+    expect(result.historyItem.status).toBe("failed")
   })
 
   it("does not commit local state when Convex persistence rejects", async () => {

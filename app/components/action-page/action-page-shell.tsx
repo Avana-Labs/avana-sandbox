@@ -1,10 +1,13 @@
 "use client"
 
-import { X } from "lucide-react"
+import { Eye, EyeOff, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import type { ActionPageMode } from "@/app/lib/action-system/contracts"
+import { DesktopPreferenceControls } from "@/app/components/desktop-preference-controls"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type ActionPageShellProps = {
   mode?: ActionPageMode
@@ -35,6 +38,8 @@ export function ActionPageShell({
   className,
 }: ActionPageShellProps) {
   const router = useRouter()
+  const { t } = useTranslation()
+  const { showDollarAmounts, toggleShowDollarAmounts } = useDisplayPreferences()
   const showChrome = true
   const showTitleBlock = showChrome && !hideTitle
 
@@ -62,16 +67,36 @@ export function ActionPageShell({
       data-testid="action-page-shell"
       data-mode={mode}
     >
-      {showChrome && !hideClose ? (
-        <div className="flex items-center justify-end px-4 pb-1 pt-3 sm:px-6">
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={handleClose}
-            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <X className="size-4" />
-          </button>
+      {showChrome && (!hideClose || mode !== "embedded") ? (
+        <div className="flex items-center justify-end gap-1.5 px-4 pb-1 pt-3 sm:px-6">
+          {mode !== "embedded" ? (
+            <>
+              <button
+                type="button"
+                aria-label={showDollarAmounts ? t("Hide dollar amounts") : t("Show dollar amounts")}
+                title={t("Dollar amounts")}
+                onClick={toggleShowDollarAmounts}
+                className="inline-flex size-10 items-center justify-center rounded-full bg-transparent text-brand outline-none transition-transform duration-200 hover:-translate-y-px hover:text-brand/80 focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+              >
+                {showDollarAmounts ? (
+                  <Eye className="size-5" strokeWidth={1.9} />
+                ) : (
+                  <EyeOff className="size-5" strokeWidth={1.9} />
+                )}
+              </button>
+              <DesktopPreferenceControls />
+            </>
+          ) : null}
+          {!hideClose ? (
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={handleClose}
+              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -84,8 +109,8 @@ export function ActionPageShell({
       >
         {showTitleBlock ? (
           <div className="pb-5">
-            <h1 className="text-[1.5rem] font-semibold tracking-[-0.03em] text-foreground sm:text-[1.625rem]">{title}</h1>
-            {subtitle ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{subtitle}</p> : null}
+            <h1 className="text-[1.5rem] font-semibold tracking-[-0.03em] text-foreground sm:text-[1.625rem]">{t(title)}</h1>
+            {subtitle ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{t(subtitle)}</p> : null}
           </div>
         ) : null}
 

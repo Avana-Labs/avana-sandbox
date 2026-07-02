@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
+import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 
 // jsdom does not advance performance.now() inside its rAF loop, so mount
 // animations (AnimatedTextValue) never settle. Drive rAF with a far-future
@@ -14,6 +15,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  cleanup()
   vi.unstubAllGlobals()
 })
 
@@ -44,30 +46,89 @@ describe("ActionMetricsBlock", () => {
 describe("ActionSuccessStage", () => {
   it("renders receipt card when receipt context is provided", async () => {
     render(
-      <ActionSuccessStage
-        closeHref="/borrow"
-        success={{
-          title: "Borrow successful",
-          description: "$1,000 processed.",
-          receiptHash: "sim-123",
-          metrics: [],
-          primaryCtaLabel: "View borrow dashboard",
-          primaryCtaHref: "/borrow",
-          secondaryCtaLabel: "Done",
-          receiptContext: {
-            verb: "Borrow",
-            amountLabel: "1000.00 USDC",
-            rateLabel: "Borrow APY",
-            rateValue: "7.04%",
-            marketValue: "USDC · Core",
-          },
-        }}
-      />,
+      <DisplayPreferencesProvider>
+        <ActionSuccessStage
+          closeHref="/borrow"
+          success={{
+            title: "Borrow successful",
+            description: "$1,000 processed.",
+            receiptHash: "sim-123",
+            metrics: [],
+            primaryCtaLabel: "View borrow dashboard",
+            primaryCtaHref: "/borrow",
+            secondaryCtaLabel: "Done",
+            receiptContext: {
+              verb: "Borrow",
+              amountLabel: "1000.00 USDC",
+              rateLabel: "Borrow APY",
+              rateValue: "7.04%",
+              marketValue: "USDC · Core",
+            },
+          }}
+        />
+      </DisplayPreferencesProvider>,
     )
 
     expect(screen.getByTestId("action-success-stage")).toBeInTheDocument()
     expect(screen.getByText("Confirmed")).toBeInTheDocument()
     // amountLabel animates on mount; wait for the final value to settle.
     await waitFor(() => expect(screen.getByText("1000.00 USDC")).toBeInTheDocument())
+  })
+
+  it("omits the rate receipt row when the action has no rate (multiply)", async () => {
+    render(
+      <DisplayPreferencesProvider>
+        <ActionSuccessStage
+          closeHref="/multiply"
+          success={{
+            title: "Multiply successful",
+            description: "3.00x on ETH processed.",
+            receiptHash: "sim-456",
+            metrics: [],
+            primaryCtaLabel: "View multiply dashboard",
+            primaryCtaHref: "/multiply",
+            secondaryCtaLabel: "Done",
+            receiptContext: {
+              verb: "Multiply",
+              amountLabel: "1.000000 ETH",
+              rateLabel: "",
+              rateValue: "",
+              marketValue: "ETH · USDT",
+            },
+          }}
+        />
+      </DisplayPreferencesProvider>,
+    )
+
+    // The verb and market rows render; the empty rate row (no label/value, stray
+    // info icon) must not.
+    await waitFor(() => expect(screen.getByText("1.000000 ETH")).toBeInTheDocument())
+    expect(screen.getByText("Multiply")).toBeInTheDocument()
+    expect(screen.getByText("Market")).toBeInTheDocument()
+    // Only two info-row tooltips (amount + market) — no orphan "rate" tooltip row.
+    expect(screen.getAllByRole("button", { name: /more info/i })).toHaveLength(2)
+  })
+
+  it("links the receipt hash to its sandbox receipt page", () => {
+    render(
+      <DisplayPreferencesProvider>
+        <ActionSuccessStage
+          closeHref="/lend"
+          success={{
+            title: "Deposit successful",
+            description: "$1,000 processed.",
+            receiptHash: "sim-abc/1",
+            metrics: [],
+            primaryCtaLabel: "View lend dashboard",
+            primaryCtaHref: "/lend",
+            secondaryCtaLabel: "Done",
+          }}
+        />
+      </DisplayPreferencesProvider>,
+    )
+
+    const link = screen.getByRole("link", { name: "sim-abc/1" })
+    // Hash is URL-encoded so slashes don't break the receipt route.
+    expect(link).toHaveAttribute("href", "/sandbox/transactions/sim-abc%2F1")
   })
 })

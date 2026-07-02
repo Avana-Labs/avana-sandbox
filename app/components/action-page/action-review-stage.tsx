@@ -32,6 +32,13 @@ export function ActionReviewStage({
 }) {
   const amountDisplay = resolveActionAmountCardProps(preview)
   const isClaimReview = preview.rateLabel === "Claim total"
+  const riskShown = !isClaimReview && Boolean(preview.risk?.title && preview.risk.message)
+  // The risk banner already surfaces warnings[0] for leveraged actions, so suppress the
+  // duplicate "Note" row when it repeats the message the banner is showing.
+  const noteWarning =
+    preview.warnings[0] && !(riskShown && preview.warnings[0] === preview.risk?.message)
+      ? preview.warnings[0]
+      : null
 
   return (
     <div className="space-y-4" data-testid="action-review-stage">
@@ -49,7 +56,7 @@ export function ActionReviewStage({
         </ActionCard>
       ) : (
         <ActionAmountCard
-          label="Amount"
+          label={preview.amountTitle ?? "Amount"}
           amount={amountDisplay.amount}
           onAmountChange={() => undefined}
           approxUsdLabel={preview.amountUsdLabel}
@@ -86,13 +93,13 @@ export function ActionReviewStage({
 
       {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
 
-      {!isClaimReview && preview.risk?.title && preview.risk.message ? (
-        <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
+      {riskShown ? (
+        <ActionRiskBanner level={preview.risk!.level} title={preview.risk!.title!} message={preview.risk!.message!} />
       ) : null}
 
-      {preview.warnings[0] ? (
+      {noteWarning ? (
         <ActionCard>
-          <ActionInfoRow label="Note" value={preview.warnings[0]} />
+          <ActionInfoRow label="Note" value={noteWarning} />
         </ActionCard>
       ) : null}
 

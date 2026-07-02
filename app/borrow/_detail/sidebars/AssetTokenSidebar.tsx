@@ -44,7 +44,9 @@ export function AssetTokenActions({ detail, className }: Props) {
 
 function TokenRail({ detail, className, embedActions = false }: { detail: AssetDetail; className?: string; embedActions?: boolean }) {
   const router = useRouter()
-  const [tab, setTab] = React.useState<SidebarTab>("deposit")
+  // This is a Borrow-section asset detail page, so the primary action must be a
+  // borrow flow — not the Lend deposit that the "deposit" tab launches.
+  const [tab, setTab] = React.useState<SidebarTab>("borrow")
   const [depositPromptOpen, setDepositPromptOpen] = React.useState(false)
   const lendMarketId = React.useMemo(() => resolveLendMarketId(detail.hero.symbol), [detail.hero.symbol])
   const closeHref = `/borrow/assets/${detail.row.id}`
@@ -63,7 +65,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
   )
 
   React.useEffect(() => {
-    setTab("deposit")
+    setTab("borrow")
   }, [detail.id])
 
   return (

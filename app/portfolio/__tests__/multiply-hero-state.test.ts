@@ -56,7 +56,9 @@ describe("multiply hero state", () => {
     expect(snapshot.rangeData["1D"].at(-1)?.value).toBeGreaterThan(0)
 
     const hero = buildMultiplyHeroData({}, snapshot)
-    expect(hero.headlineValue).toBe("$12,000.00")
+    // formatUsdExact drops cents for values >= $100 (app-wide convention shared by the
+    // borrow/lend heroes), so a round $12,000 exposure renders without a trailing ".00".
+    expect(hero.headlineValue).toBe("$12,000")
     expect(hero.headlineDelta).toBe("2.48 health factor")
     expect(hero.statOneValue).toBe("1")
     expect(hero.statTwoValue).toBe("8.75%")

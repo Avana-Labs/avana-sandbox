@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
@@ -24,6 +24,10 @@ const preview: ActionPreviewUi = {
   validationErrors: [],
   warnings: [],
 }
+
+afterEach(() => {
+  cleanup()
+})
 
 describe("action stage flow UI", () => {
   it("configure stage offers Review then review stage offers confirm verb", async () => {
@@ -65,6 +69,50 @@ describe("action stage flow UI", () => {
     expect(screen.getByRole("button", { name: "Borrow" })).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Back" }))
     expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows the risk message once on review when the Note warning duplicates it", () => {
+    const message = "This leverage reduces your safety buffer."
+    render(
+      <ActionReviewStage
+        title="Review multiply"
+        preview={{
+          ...preview,
+          rateLabel: "",
+          rateValue: "",
+          risk: { level: "warning", title: "Review leverage carefully", message },
+          warnings: [message],
+        }}
+        primaryLabel="Multiply"
+        onPrimary={() => undefined}
+        onSecondary={() => undefined}
+      />,
+    )
+
+    // The risk banner shows the message; the duplicate "Note" row is suppressed.
+    expect(screen.getByTestId("action-risk-banner")).toHaveTextContent(message)
+    expect(screen.queryByText("Note")).not.toBeInTheDocument()
+    expect(screen.getAllByText(message)).toHaveLength(1)
+  })
+
+  it("still shows a distinct Note warning alongside the risk banner", () => {
+    render(
+      <ActionReviewStage
+        title="Review multiply"
+        preview={{
+          ...preview,
+          risk: { level: "warning", title: "Review leverage carefully", message: "Watch your health factor." },
+          warnings: ["Liquidity is thin in this market."],
+        }}
+        primaryLabel="Multiply"
+        onPrimary={() => undefined}
+        onSecondary={() => undefined}
+      />,
+    )
+
+    expect(screen.getByTestId("action-risk-banner")).toHaveTextContent("Watch your health factor.")
+    expect(screen.getByText("Note")).toBeInTheDocument()
+    expect(screen.getByText("Liquidity is thin in this market.")).toBeInTheDocument()
   })
 
   it("processing stage shows pending badge", () => {

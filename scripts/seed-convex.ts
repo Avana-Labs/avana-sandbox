@@ -81,6 +81,11 @@ async function main() {
   }
   console.log(`[seed] upserted ${n} daily stats`)
 
+  // 2b) Rebuild the listMarketSnapshots cache once from the freshly-landed markets +
+  // daily stats (the subscribed hot query reads this single doc, not ~173 rows).
+  await client.action(api.seedAdmin.rebuildMarketSnapshots, { seedSecret })
+  console.log("[seed] rebuilt market snapshots cache")
+
   // 3) Revenue
   n = 0
   for (const batch of chunk(withMarketId(seed.revenue), BATCH)) {
@@ -138,7 +143,7 @@ async function main() {
   }
   console.log(`[seed] upserted ${cont} content rows`)
 
-  const counts = await client.query(api.seed.getCounts, {})
+  const counts = await client.action(api.seedAdmin.getCounts, { seedSecret })
   console.log("[seed] done. Convex counts:", JSON.stringify(counts))
 }
 

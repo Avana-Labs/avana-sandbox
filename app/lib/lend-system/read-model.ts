@@ -4,7 +4,7 @@ import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { calculateMaxWithdrawable, calculateTotalApy } from "@/app/lib/lend-engine/formulas"
 import type { LendMarket, LendSystemState } from "@/app/lib/lend-engine"
 import type { LendPageData } from "@/app/lib/data/providers/lend/types"
-import type { PortfolioLendTabData } from "@/app/lib/data/providers/portfolio/types"
+import type { PortfolioLendTabData, PortfolioStrategyBucket } from "@/app/lib/data/providers/portfolio/types"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend/asset-groups"
 import { LEND_FEATURED_ASSETS, LEND_FEATURED_SEQUENCE } from "@/app/lib/data/catalog/lend/featured-assets"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
@@ -22,6 +22,8 @@ export type LendFeaturedSnapshot = {
   eyebrow: string
   apyLabel: string
   apyPct: number
+  /** Supply APY as a percent — matches the list-row "Supply APY" column so the card and table agree. */
+  supplyApyPct: number
   tone: "green" | "blue"
   iconUrl: string
   href: string
@@ -56,6 +58,7 @@ export function buildLendFeaturedSnapshots(markets: LendMarket[]): LendFeaturedS
     const featured = LEND_FEATURED_ASSETS[featuredId]
     const market = markets.find((entry) => entry.asset.symbol.toUpperCase() === featured.symbol.toUpperCase())
     const apy = market?.totalApy ?? featured.apy / 100
+    const supplyApy = market?.supplyApy ?? featured.apy / 100
     return {
       marketId: market?.marketId ?? featuredId,
       symbol: featured.symbol,
@@ -63,6 +66,7 @@ export function buildLendFeaturedSnapshots(markets: LendMarket[]): LendFeaturedS
       eyebrow: featured.eyebrow,
       apyLabel: formatPct(apy),
       apyPct: apy * 100,
+      supplyApyPct: supplyApy * 100,
       tone: featured.tone,
       iconUrl: featured.iconUrl,
       href: `/lend/markets/${market?.marketId ?? featuredId}`,
@@ -151,6 +155,63 @@ export function buildLendPageData(_walletId: string, state?: LendSystemState): L
   }
 }
 
+const STRATEGY_TIERS = [
+  {
+    riskTier: "low" as const,
+    tone: "conservative" as const,
+    title: "Conservative Strategy",
+    description: "Stable assets with lower risk",
+  },
+  {
+    riskTier: "medium" as const,
+    tone: "moderate" as const,
+    title: "Moderate Strategy",
+    description: "Balanced risk-reward ratio",
+  },
+  {
+    riskTier: "high" as const,
+    tone: "aggressive" as const,
+    title: "Aggressive Strategy",
+    description: "High risk, high potential returns",
+  },
+]
+
+/**
+ * Group the live lend markets into risk-tiered opportunity buckets so the
+ * dashboard "Lending Opportunities" reflect real market APYs/TVL rather than a
+ * hardcoded catalog. Empty tiers are dropped.
+ */
+export function buildLendStrategyBuckets(markets: LendMarket[]): PortfolioStrategyBucket[] {
+  return STRATEGY_TIERS.flatMap((tier) => {
+    const tierMarkets = markets
+      .filter((market) => market.riskTier === tier.riskTier && market.status !== "paused")
+      .sort((a, b) => b.totalApy - a.totalApy)
+    if (tierMarkets.length === 0) return []
+
+    const apys = tierMarkets.map((market) => market.totalApy * 100)
+    const minApy = Math.min(...apys)
+    const maxApy = Math.max(...apys)
+    const apyRangeLabel =
+      minApy === maxApy ? `${maxApy.toFixed(1)}% APY` : `${minApy.toFixed(1)}-${maxApy.toFixed(1)}% APY range`
+
+    return [
+      {
+        title: tier.title,
+        description: tier.description,
+        apyRangeLabel,
+        tone: tier.tone,
+        pools: tierMarkets.map((market) => ({
+          name: `Aave ${market.asset.symbol}`,
+          apyPct: market.totalApy * 100,
+          tvlUsd: market.totalSupplied * market.assetPriceUsd,
+          isUp: market.rewardsApy > 0,
+          allocationUsd: 0,
+        })),
+      },
+    ]
+  })
+}
+
 export function buildPortfolioLendData(
   walletId: string,
   state: LendSystemState,
@@ -192,7 +253,7 @@ export function buildPortfolioLendData(
   return {
     investments,
     positions: investments,
-    strategyBuckets: [],
+    strategyBuckets: buildLendStrategyBuckets(Object.values(state.markets)),
     history: buildLendActivityHistory(walletId, history, state),
     rewardsSummary: {
       claimableUsd: claimableRewardsUsd,
@@ -260,9 +321,9 @@ export function buildLendActivityHistory(
       product: "lend" as const,
       kind:
         item.kind === "deposit"
-          ? ("open" as const)
+          ? ("supply" as const)
           : item.kind === "withdraw"
-            ? ("reduce" as const)
+            ? ("withdraw" as const)
             : ("claim" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
       amountUsd: item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
@@ -289,7 +350,7 @@ function buildLendRangeData(data: PortfolioLendTabData): ChartRangeData {
   }
 
   const netFlowUsd = confirmedHistory.reduce((sum, item) => {
-    return sum + (item.kind === "open" ? item.amountUsd : -item.amountUsd)
+    return sum + (item.kind === "supply" ? item.amountUsd : -item.amountUsd)
   }, 0)
   const baseSuppliedUsd = Math.max(0, totalSuppliedUsd - netFlowUsd)
   const rangeStartValue = Math.max(0, baseSuppliedUsd)
@@ -327,7 +388,7 @@ function buildRangePoints(params: {
   const historyCount = params.history.length
   for (const [index, item] of params.history.entries()) {
     const pointIndex = historyCount === 1 ? Math.floor(pointCount * 0.6) : Math.round((index / Math.max(1, historyCount - 1)) * (pointCount - 2))
-    const delta = item.kind === "open" ? item.amountUsd : -item.amountUsd
+    const delta = item.kind === "supply" ? item.amountUsd : -item.amountUsd
     for (let cursor = pointIndex; cursor < points.length; cursor += 1) {
       points[cursor]!.value = Math.max(0, points[cursor]!.value + delta)
     }

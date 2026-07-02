@@ -44,6 +44,31 @@ export function buildMockMultiplySystemStateWithSeedPosition(walletId = "demo-wa
   return state
 }
 
+/**
+ * Detect the old demo-only ETH/USDT position that used to be inserted into every
+ * fresh local wallet. It has no matching transaction because the user never opened
+ * it. Removing only this exact state preserves real persisted multiply positions.
+ */
+export function isLegacySeedOnlyMultiplyState(state: MultiplySystemState, walletId: string) {
+  const positions = Object.values(state.positions)
+  if (positions.length !== 1 || state.transactions.length !== 0) return false
+
+  const position = positions[0]
+  const market = state.markets["eth-usdt"]
+  if (!position || !market) return false
+
+  const inputCollateralUsd = market.collateralAsset.priceUsd
+  return (
+    position.id === `${walletId}:eth-usdt` &&
+    position.walletId === walletId &&
+    position.marketId === "eth-usdt" &&
+    position.multiplier === 2 &&
+    Math.abs(position.collateralAmount - 2) < 1e-9 &&
+    Math.abs(position.collateralValueUsd - inputCollateralUsd * 2) < 1e-6 &&
+    Math.abs(position.debtValueUsd - inputCollateralUsd) < 1e-6
+  )
+}
+
 export function buildMockMultiplyRiskSnapshots(state: MultiplySystemState): MultiplyRiskSnapshot[] {
   return Object.values(state.positions).map((position) => ({
     marketId: position.marketId,

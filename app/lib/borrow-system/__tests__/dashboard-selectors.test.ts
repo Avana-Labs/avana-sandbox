@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { calculateHealthFactorWad, formatFixed, parseFixed } from "@/app/lib/credit-engine"
 import { applyBorrowAction } from "@/app/lib/credit-engine/actions"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+import { selectBorrowableAssets } from "@/app/lib/borrow-system/selectors"
 import { selectBorrowSnapshot, selectPortfolioDebtRows, selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
 
 describe("borrow dashboard selectors", () => {
@@ -19,6 +20,41 @@ describe("borrow dashboard selectors", () => {
     expect(snapshot.spokeBreakdown.reduce((sum, row) => sum + row.totalBorrowedUsd, 0)).toBe(snapshot.totalBorrowedUsd)
     expect(supplies.find((row) => row.pool.id === "uni-v3-bluechip-wbtc-weth")?.borrowedUsd).toBe(0)
     expect(supplies.find((row) => row.pool.id === "uni-v3-bluechip-weth-usdc")?.borrowedUsd).toBe(1200)
+  })
+
+  it("carries each debt position's real debt-asset symbol, not a hardcoded USDC", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const debts = selectPortfolioDebtRows(state, "demo-wallet")
+
+    // Every row exposes the symbol the repay flow resolves from state.assets.
+    for (const row of debts) {
+      const position = state.accounts["demo-wallet"]!.debtPositions.find((entry) => entry.id === row.id)!
+      expect(row.debtAssetSymbol).toBe(state.assets[position.assetId]?.symbol)
+    }
+
+    // The mock seeds a genuine USDT debt (usdc-usdt spoke) alongside a USDC debt.
+    const symbols = debts.map((row) => row.debtAssetSymbol)
+    expect(symbols).toContain("USDT")
+    expect(symbols).toContain("USDC")
+  })
+
+  it("single-sources debt-row borrow APR to the current market rate shown on the action page", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const debts = selectPortfolioDebtRows(state, "demo-wallet")
+
+    expect(debts.length).toBeGreaterThan(0)
+
+    for (const row of debts) {
+      const position = state.accounts["demo-wallet"]!.debtPositions.find((entry) => entry.id === row.id)!
+      const marketAssets = selectBorrowableAssets(state, "demo-wallet", position.marketId)
+      const marketAsset = marketAssets.find((asset) => asset.id === position.assetId)!
+      // Dashboard debt APR must equal the borrowable-asset (action page) APR for the same asset/market.
+      expect(row.borrowApr).toBeCloseTo(marketAsset.borrowApr, 6)
+      // Seeded positions store only the base rate; the displayed APR includes the risk premium.
+      expect(row.borrowApr).toBeGreaterThanOrEqual(
+        Number.parseFloat(formatFixed(position.borrowRateWad, 18)) * 100,
+      )
+    }
   })
 
   it("reflects shared-session borrow activity in debt and collateral rows", () => {

@@ -28,9 +28,9 @@ export function resolveMetricTone(
 }
 
 export const HF_ZONES = [
-  { id: "safe", label: "Safe", min: 1.5, max: Infinity, widthPct: 50, color: "bg-emerald-500" },
-  { id: "warn", label: "Caution", min: 1.15, max: 1.5, widthPct: 30, color: "bg-amber-500" },
-  { id: "danger", label: "Liquidation", min: 0, max: 1.15, widthPct: 20, color: "bg-rose-500" },
+  { id: "safe", label: "Safe", min: 1.5, max: Infinity, widthPct: 50, color: "bg-success" },
+  { id: "warn", label: "Caution", min: 1.15, max: 1.5, widthPct: 30, color: "bg-warning" },
+  { id: "danger", label: "Liquidation", min: 0, max: 1.15, widthPct: 20, color: "bg-danger" },
 ] as const
 
 export function parseHealthFactorValue(value: string | undefined): number | null {
@@ -83,13 +83,13 @@ export function healthFactorBarPositionPct(value: number | null): number {
 export function healthFactorBarTone(value: number | null): { text: string; fill: string; border: string } {
   const status = healthFactorStatusLabel(value)
   if (status.tone === "positive") {
-    return { text: "text-emerald-600", fill: "bg-emerald-500", border: "border-emerald-500" }
+    return { text: "text-success", fill: "bg-success", border: "border-success" }
   }
   if (status.tone === "warning") {
-    return { text: "text-amber-600", fill: "bg-amber-500", border: "border-amber-500" }
+    return { text: "text-warning", fill: "bg-warning", border: "border-warning" }
   }
   if (status.tone === "danger") {
-    return { text: "text-rose-600", fill: "bg-rose-500", border: "border-rose-500" }
+    return { text: "text-danger", fill: "bg-danger", border: "border-danger" }
   }
-  return { text: "text-muted-foreground", fill: "bg-slate-300", border: "border-slate-300" }
+  return { text: "text-muted-foreground", fill: "bg-muted", border: "border-border" }
 }

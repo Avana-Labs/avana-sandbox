@@ -2,6 +2,7 @@ import { formatFixed } from "@/app/lib/credit-engine"
 import type { TransactionPreview } from "@/app/lib/borrow-system/contracts"
 import type { BorrowSimulationResult } from "@/app/lib/credit-engine/simulation"
 import type { ActionPreviewUi, ActionSuccessUi } from "@/app/lib/action-system/contracts"
+import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import {
   formatActionApproxUsd,
   formatActionAmount,
@@ -89,6 +90,8 @@ export function mapBorrowTransactionPreviewToActionUi(
     balanceUsd: number
     rateLabel?: string
     creditScopeLabel?: string
+    liquidationThresholdPct?: number
+    maxBorrowUsd?: number
   },
 ): ActionPreviewUi {
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
@@ -97,6 +100,11 @@ export function mapBorrowTransactionPreviewToActionUi(
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
   const beforeApy = options.ratePct
   const afterApy = options.ratePct
+  const beforeLtvPct = fixedToNumber(preview.before.currentLtvWad, 18) * 100
+  const afterLtvPct = fixedToNumber(preview.after.currentLtvWad, 18) * 100
+  // Max borrow is capped by the COLLATERAL FACTOR (available credit), never the
+  // liquidation threshold — mirror the credit engine so Max lands at the safe cap.
+  const maxBorrowUsd = options.maxBorrowUsd ?? borrowingPowerUsd(preview, "before")
 
   return {
     allowed: preview.allowed,
@@ -108,7 +116,7 @@ export function mapBorrowTransactionPreviewToActionUi(
     marketValue: options.marketLabel,
     balanceLabel: options.balanceLabel,
     balanceValue: formatActionUsd(options.balanceUsd),
-    maxAmount: options.balanceUsd,
+    maxAmount: maxBorrowUsd,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
       {
@@ -118,6 +126,22 @@ export function mapBorrowTransactionPreviewToActionUi(
         before: formatActionPercent(beforeApy),
         after: formatActionPercent(afterApy),
       },
+      {
+        id: "ltv",
+        label: scopedMetricLabel("LTV", options.creditScopeLabel),
+        value: formatActionPercentBeforeAfter(beforeLtvPct, afterLtvPct),
+        before: formatActionPercent(beforeLtvPct),
+        after: formatActionPercent(afterLtvPct),
+      },
+      ...(options.liquidationThresholdPct != null
+        ? [
+            {
+              id: "liquidation-threshold",
+              label: "Liquidation threshold",
+              value: formatActionPercent(options.liquidationThresholdPct),
+            },
+          ]
+        : []),
       {
         id: "borrowing-power",
         label: scopedMetricLabel("Borrowing power", options.creditScopeLabel),
@@ -150,7 +174,7 @@ export function mapBorrowTransactionPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, healthAfter),
-    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -209,7 +233,7 @@ export function mapBorrowRepayPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, healthAfter),
-    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -288,7 +312,7 @@ export function mapBorrowSupplyPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: null,
-    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -369,7 +393,7 @@ export function mapBorrowRemovePreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.removeUsd, 0.04),
     risk: riskFromPreview(preview, hfToNumber(preview.after.healthFactorWad)),
-    blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
+    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }

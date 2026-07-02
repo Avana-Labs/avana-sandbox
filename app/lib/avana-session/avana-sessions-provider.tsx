@@ -20,6 +20,7 @@ import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { useAvanaSession } from "./use-avana-session"
+import { shouldApplyHydration } from "./wallet-hydration-guard"
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
 type MultiplySession = ReturnType<typeof useMultiplySession>
@@ -117,17 +118,23 @@ function useRewardsEventBridge({
 }
 
 /**
- * Fold every NEW successful borrow-system action into the shared multi-user
- * liquidity ledger (Convex). Existing/persisted history is snapshotted as
- * already-seen on mount so it isn't re-imported on every page load — the ledger
- * only accumulates genuine session actions, across all users, over time.
+ * Fold every NEW successful borrow-system action into the LOCAL in-session liquidity
+ * ledger (the demo fallback used when the shared Convex ledger is unreachable). Existing/
+ * persisted history is snapshotted as already-seen on mount so it isn't re-imported on
+ * every page load.
+ *
+ * When the shared Convex ledger IS connected, this bridge stays out of the way: the
+ * shared ledger is written server-side inside the idempotent recordTransaction (keyed by
+ * intent), so folding here as well would double-count a single action (H20). The client
+ * `recordDelta` is a no-op in connected mode, but we also skip early so the demo bridge
+ * can never contribute to the shared cross-user numbers.
  */
 function useLiquidityLedgerBridge({ borrow, enabled }: { borrow: BorrowSession; enabled: boolean }) {
-  const { recordDelta } = useMarketLiquidity()
+  const { recordDelta, connected } = useMarketLiquidity()
   const seenIdsRef = useRef<Set<string> | null>(null)
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || connected) return
     if (seenIdsRef.current === null) {
       seenIdsRef.current = new Set(borrow.transactionHistory.map((item) => item.id))
       return
@@ -150,7 +157,7 @@ function useLiquidityLedgerBridge({ borrow, enabled }: { borrow: BorrowSession; 
         recordDelta({ marketSlug: item.marketId, suppliedDeltaUsd: -amountUsd })
       }
     }
-  }, [borrow.transactionHistory, enabled, recordDelta])
+  }, [borrow.transactionHistory, enabled, connected, recordDelta])
 }
 
 /**
@@ -182,18 +189,38 @@ function MarketHydrator({
 
 function WalletHydrator({
   walletId,
+  borrow,
+  lend,
+  multiply,
   hydrateBorrow,
   hydrateLend,
   hydrateMultiply,
 }: {
   walletId: string
+  borrow: BorrowSession
+  lend: LendSession
+  multiply: MultiplySession
   hydrateBorrow: BorrowSession["hydrateWalletData"]
   hydrateLend: LendSession["hydrateWalletData"]
   hydrateMultiply: MultiplySession["hydrateWalletData"]
 }) {
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
+
+  // Read the client's current (incl. just-submitted optimistic) intent ids via a ref so
+  // the hydration effect doesn't re-run on every local history change — only on re-emit.
+  const localIntentIdsRef = useRef<Set<string>>(new Set())
+  localIntentIdsRef.current = new Set(
+    [...borrow.transactionHistory, ...lend.transactionHistory, ...multiply.transactionHistory].map(
+      (item) => item.intentId,
+    ),
+  )
+
   useEffect(() => {
     if (!session) return
+    // Skip a re-emit that predates an in-flight optimistic edit; applying it would clobber
+    // the just-submitted write until its own re-emit lands. The next emit (which includes
+    // the write) passes the guard and hydrates normally.
+    if (!shouldApplyHydration(session, localIntentIdsRef.current)) return
     hydrateBorrow(session)
     hydrateLend(session)
     hydrateMultiply(session)
@@ -302,6 +329,9 @@ export function AvanaSessionsProvider({
           {!persistLocalState ? (
             <WalletHydrator
               walletId={avana.walletId}
+              borrow={borrow}
+              lend={lend}
+              multiply={multiply}
               hydrateBorrow={borrow.hydrateWalletData}
               hydrateLend={lend.hydrateWalletData}
               hydrateMultiply={multiply.hydrateWalletData}

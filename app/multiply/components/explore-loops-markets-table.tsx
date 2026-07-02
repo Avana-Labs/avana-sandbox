@@ -7,20 +7,34 @@ import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { CategoryChips } from "@/app/lib/ui/category-chips"
+import { CATEGORY_CHIPS, type CategoryChip } from "@/app/lib/markets/category"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
-const FOREX_SYMBOLS = new Set(["USDC", "USDT", "DAI", "CRVUSD", "GHO", "EURC", "USD+", "SDAI", "FRAX", "USDE", "USDS", "USDP", "LUSD", "TUSD", "MIM", "PYUSD", "EURS"])
+const FOREX_SYMBOLS = new Set([
+  "USDC",
+  "USDT",
+  "DAI",
+  "CRVUSD",
+  "GHO",
+  "EURC",
+  "USD+",
+  "SDAI",
+  "FRAX",
+  "USDE",
+  "USDS",
+  "USDP",
+  "LUSD",
+  "TUSD",
+  "MIM",
+  "PYUSD",
+  "EURS",
+])
 const UTILITY_SYMBOLS = new Set(["AAVE", "UNI", "CRV", "LDO", "BAL", "AURA", "GNO", "ARB", "OP", "LINK", "MKR"])
 
-const CATEGORY_TABS = [
-  { id: "all-markets", label: "All" },
-  { id: "btc", label: "BTC Based" },
-  { id: "eth", label: "ETH Based" },
-  { id: "forex", label: "Forex Based" },
-  { id: "governance", label: "Utility Based" },
-  { id: "smart-loops", label: "Smart Loops" },
-] as const
+const CATEGORY_TABS = CATEGORY_CHIPS.multiply
 
 const SORT_PRESETS = [
   { label: "Highest Leverage", value: "rewards:desc" },
@@ -31,24 +45,28 @@ const SORT_PRESETS = [
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
-type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
+type MultiplyCategoryTabId = CategoryChip["id"]
+
+function parseCompactUsdLabel(value?: string) {
+  if (!value) return null
+  const match = value.trim().match(/^\$?([\d,.]+)([KMB])?$/i)
+  if (!match) return null
+  const amount = Number.parseFloat(match[1].replace(/,/g, ""))
+  if (!Number.isFinite(amount)) return null
+  const suffix = match[2]?.toUpperCase()
+  return amount * (suffix === "B" ? 1e9 : suffix === "M" ? 1e6 : suffix === "K" ? 1e3 : 1)
+}
 
 function SearchIcon({ className }: { className?: string } = {}) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-[#01AACF]", className)}>
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-brand", className)}>
       <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
     </svg>
   )
 }
 
-function ExpandableDesktopSearch({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (nextValue: string) => void
-}) {
+function ExpandableDesktopSearch({ value, onChange }: { value: string; onChange: (nextValue: string) => void }) {
   const [open, setOpen] = React.useState(false)
   const rootRef = React.useRef<HTMLDivElement | null>(null)
   const inputRef = React.useRef<HTMLInputElement | null>(null)
@@ -99,10 +117,13 @@ function ExpandableDesktopSearch({
         <button
           type="button"
           aria-label="Search loops"
-          className={cn("flex shrink-0 items-center justify-center", isExpanded ? "pointer-events-none mr-2 size-5" : "size-10")}
+          className={cn(
+            "flex shrink-0 items-center justify-center",
+            isExpanded ? "pointer-events-none mr-2 size-5" : "size-10",
+          )}
           onClick={() => setOpen(true)}
         >
-          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6", "dark:text-[#01AACF]")} />
+          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6", "dark:text-brand")} />
         </button>
 
         {isExpanded ? (
@@ -125,11 +146,19 @@ function FilterCheckIcon({ checked }: { checked: boolean }) {
     <span
       className={cn(
         "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-        checked ? "border-[#01AACF] bg-[#01AACF] text-white" : "border-black/35 bg-transparent text-transparent dark:border-white/55",
+        checked
+          ? "border-brand bg-brand text-white"
+          : "border-black/35 bg-transparent text-transparent dark:border-white/55",
       )}
     >
       <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" className="size-3">
-        <path d="M2.5 6.2 4.8 8.5 9.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M2.5 6.2 4.8 8.5 9.5 3.5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </span>
   )
@@ -172,8 +201,19 @@ function SingleSelectDropdown({
       setOpen(false)
     }
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation()
+        setOpen(false)
+      }
+    }
+
     document.addEventListener("pointerdown", handlePointerDown, true)
-    return () => document.removeEventListener("pointerdown", handlePointerDown, true)
+    document.addEventListener("keydown", handleKeyDown, true)
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true)
+      document.removeEventListener("keydown", handleKeyDown, true)
+    }
   }, [open])
 
   React.useEffect(() => {
@@ -287,7 +327,10 @@ function SingleSelectDropdown({
 
             <div className="w-full border-t border-black/12 dark:border-white/20" />
 
-            <div className="overflow-y-auto py-1 pb-3" style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}>
+            <div
+              className="overflow-y-auto py-1 pb-3"
+              style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}
+            >
               {options.map((option) => {
                 const checked = value === option.value
 
@@ -338,7 +381,8 @@ export function ExploreLoopsMarketsTable({
   tokenSupplyApys,
   onOpenMultiply,
 }: ExploreLoopsMarketsTableProps) {
-  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all-markets")
+  const { compact } = useCurrency()
+  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
   const [search, setSearch] = React.useState("")
   const [page, setPage] = React.useState(0)
   const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
@@ -359,28 +403,30 @@ export function ExploreLoopsMarketsTable({
       .toLowerCase()
 
   const filteredRows = React.useMemo(() => {
-    const hasAnySymbol = (symbols: Set<string>, ...values: string[]) => values.some((value) => symbols.has(value.toUpperCase()))
+    const hasAnySymbol = (symbols: Set<string>, ...values: string[]) =>
+      values.some((value) => symbols.has(value.toUpperCase()))
 
-    return rows.filter((row) => {
-      const protocol = row.protocol.toUpperCase()
-      const asset = row.asset.toUpperCase()
-      const matchesBtc = hasAnySymbol(BTC_SYMBOLS, protocol, asset)
-      const matchesEth = hasAnySymbol(ETH_SYMBOLS, protocol, asset)
-      const matchesForex = hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)
-      const matchesUtility = hasAnySymbol(UTILITY_SYMBOLS, protocol, asset)
-      const matchesSmartLoop =
-        (hasAnySymbol(ETH_SYMBOLS, protocol) && hasAnySymbol(ETH_SYMBOLS, asset)) ||
-        (hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)) ||
-        (hasAnySymbol(BTC_SYMBOLS, protocol) && hasAnySymbol(BTC_SYMBOLS, asset))
+    return rows
+      .filter((row) => {
+        const protocol = row.protocol.toUpperCase()
+        const asset = row.asset.toUpperCase()
+        const matchesBtc = hasAnySymbol(BTC_SYMBOLS, protocol, asset)
+        const matchesEth = hasAnySymbol(ETH_SYMBOLS, protocol, asset)
+        const matchesForex = hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)
+        const matchesUtility = hasAnySymbol(UTILITY_SYMBOLS, protocol, asset)
+        const matchesSmartLoop =
+          (hasAnySymbol(ETH_SYMBOLS, protocol) && hasAnySymbol(ETH_SYMBOLS, asset)) ||
+          (hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)) ||
+          (hasAnySymbol(BTC_SYMBOLS, protocol) && hasAnySymbol(BTC_SYMBOLS, asset))
 
-      if (currentTab === "all-markets") return true
-      if (currentTab === "btc") return matchesBtc
-      if (currentTab === "eth") return matchesEth
-      if (currentTab === "forex") return matchesForex
-      if (currentTab === "governance") return matchesUtility
-      if (currentTab === "smart-loops") return matchesSmartLoop
-      return true
-    })
+        if (currentTab === "all") return true
+        if (currentTab === "btc") return matchesBtc
+        if (currentTab === "eth") return matchesEth
+        if (currentTab === "forex") return matchesForex
+        if (currentTab === "utility") return matchesUtility
+        if (currentTab === "smart") return matchesSmartLoop
+        return true
+      })
       .filter((row) => searchQuery.length === 0 || buildSearchText(row).includes(searchQuery))
   }, [currentTab, searchQuery])
 
@@ -400,9 +446,10 @@ export function ExploreLoopsMarketsTable({
           return (parseValue(a.apy) - parseValue(b.apy)) * direction
         case "rewards":
           return (
-            parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
-            parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)
-          ) * direction
+            (parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
+              parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)) *
+            direction
+          )
         case "points":
           return (parseValue(a.points) - parseValue(b.points)) * direction
         case "protocol":
@@ -434,7 +481,9 @@ export function ExploreLoopsMarketsTable({
       <div>
         <div>
           <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">Trending</h2>
-          <p className="mt-1 text-[13px] text-muted-foreground">Highest max-leverage APY markets in the sandbox catalog.</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Highest max-leverage APY markets in the sandbox catalog.
+          </p>
         </div>
       </div>
 
@@ -447,22 +496,8 @@ export function ExploreLoopsMarketsTable({
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex min-w-max items-center gap-6 py-1">
-            {CATEGORY_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setCurrentTab(tab.id)}
-                className={cn(
-                  "whitespace-nowrap text-[20px] font-normal tracking-[-0.03em] transition-colors md:text-[22px]",
-                  currentTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <div className="min-w-0 flex-1">
+          <CategoryChips chips={CATEGORY_TABS} value={currentTab} onChange={setCurrentTab} />
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -508,7 +543,9 @@ export function ExploreLoopsMarketsTable({
                     onClick={() => toggleSort("protocol")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "protocol" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
+                      sortKey === "protocol"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>COLLATERAL</span>
@@ -521,7 +558,9 @@ export function ExploreLoopsMarketsTable({
                     onClick={() => toggleSort("asset")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
+                      sortKey === "asset"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>BORROWABLE</span>
@@ -534,7 +573,9 @@ export function ExploreLoopsMarketsTable({
                     onClick={() => toggleSort("apy")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
+                      sortKey === "apy"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>MAX APY</span>
@@ -547,7 +588,9 @@ export function ExploreLoopsMarketsTable({
                     onClick={() => toggleSort("rewards")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "rewards" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
+                      sortKey === "rewards"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>MAX LEVERAGE</span>
@@ -560,7 +603,9 @@ export function ExploreLoopsMarketsTable({
                     onClick={() => toggleSort("points")}
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "points" ? "text-foreground dark:text-white/90" : "text-foreground/70 dark:text-white/70",
+                      sortKey === "points"
+                        ? "text-foreground dark:text-white/90"
+                        : "text-foreground/70 dark:text-white/70",
                     )}
                   >
                     <span>AVAILABLE</span>
@@ -572,122 +617,163 @@ export function ExploreLoopsMarketsTable({
                 </th>
               </tr>
             </thead>
-            <tbody key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`} className="divide-y divide-border dark:divide-white/6">
-              {visibleRows.length ? visibleRows.map((row, index) => (
-                <tr key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`} className="group asset-swap transition-colors" style={{ animationDelay: `${index * 40}ms` }}>
-                  <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
-                    {page * pageSize + index + 1}
-                  </td>
-                  <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <CellLink href={row.href} className="flex items-center gap-2.5">
-                      {hasImageSrc(row.protocolLogo) ? (
-                        <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={row.protocolLogo}
-                            alt=""
-                            aria-hidden="true"
-                            className="size-10 shrink-0 rounded-full bg-card object-cover"
-                          />
-                        </>
-                      ) : null}
-                      <span className="min-w-0">
-                        <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.protocol}</span>
-                        <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
-                          <span className="text-muted-foreground dark:text-white/38">APY</span>
-                          <span className="font-data tabular-nums text-emerald-600 dark:text-emerald-400">
-                            {getSupplyApy(row.protocol) ?? "—"}
-                          </span>
-                        </span>
-                      </span>
-                    </CellLink>
-                  </td>
-                  <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <CellLink href={row.href} className="flex min-w-0 items-center gap-2.5">
-                      {getAssetLogo(row.asset) ? (
-                        <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={getAssetLogo(row.asset)}
-                            alt=""
-                            aria-hidden="true"
-                            className="size-10 shrink-0 rounded-full bg-card object-cover"
-                          />
-                        </>
-                      ) : null}
-                      <span className="min-w-0">
-                        <span className="block text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.asset}</span>
-                        <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
-                          <span className="text-muted-foreground dark:text-white/38">APY</span>
-                          <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">
-                            {getBorrowApy(row.asset) ?? "—"}
-                          </span>
-                        </span>
-                      </span>
-                    </CellLink>
-                  </td>
-                  <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <CellLink
-                      href={row.href}
-                      className={cn(
-                        "font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums",
-                        row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400") : "text-muted-foreground",
-                      )}
+            <tbody
+              key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`}
+              className="divide-y divide-border dark:divide-white/6"
+            >
+              {visibleRows.length ? (
+                visibleRows.map((row, index) => (
+                  <tr
+                    key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
+                    className="group asset-swap transition-colors"
+                    style={{ animationDelay: `${index * 40}ms` }}
+                  >
+                    <td
+                      className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
                     >
-                      {row.apy || "—"}
-                    </CellLink>
-                  </td>
-                  <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <CellLink href={row.href} className="text-foreground">
-                      {row.rewardRows?.[1] ? (
-                        <span className="block">
-                          <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.rewardRows[1].value}</span>
-                          <span className="mt-0.5 block text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.rewardRows[1].label}</span>
+                      {page * pageSize + index + 1}
+                    </td>
+                    <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
+                      <CellLink href={row.href} className="flex items-center gap-2.5">
+                        {hasImageSrc(row.protocolLogo) ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={row.protocolLogo}
+                              alt=""
+                              aria-hidden="true"
+                              className="size-10 shrink-0 rounded-full bg-card object-cover"
+                            />
+                          </>
+                        ) : null}
+                        <span className="min-w-0">
+                          <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
+                            {row.protocol}
+                          </span>
+                          <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
+                            <span className="text-muted-foreground dark:text-white/38">APY</span>
+                            <span className="font-data tabular-nums text-emerald-600 dark:text-emerald-400">
+                              {getSupplyApy(row.protocol) ?? "—"}
+                            </span>
+                          </span>
                         </span>
-                      ) : row.rewardRows?.[0] ? (
-                        <span className="block">
-                          <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.rewardRows[0].value}</span>
-                          <span className="mt-0.5 block text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">{row.rewardRows[0].label}</span>
-                        </span>
-                      ) : row.partnerRewards ? (
-                        <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">{row.partnerRewards}</span>
-                      ) : (
-                        <span className="block text-[14px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">—</span>
-                      )}
-                    </CellLink>
-                  </td>
-                  <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
-                    {row.waitlistHref ? (
-                      <div className="inline-flex items-center">
-                        <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
-                          <a href={row.waitlistHref} target="_blank" rel="noreferrer">
-                            Join waitlist
-                          </a>
-                        </Button>
-                      </div>
-                    ) : (
-                      <CellLink href={row.href} className="inline-flex items-center text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
-                        <span>{row.points ?? "—"}</span>
                       </CellLink>
-                    )}
-                  </td>
-                  <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-7 rounded-xs px-2.5 text-[11px]"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onOpenMultiply?.(row.href)
-                      }}
-                    >
-                      Multiply
-                    </Button>
-                  </td>
-                </tr>
-              )) : (
+                    </td>
+                    <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+                      <CellLink href={row.href} className="flex min-w-0 items-center gap-2.5">
+                        {getAssetLogo(row.asset) ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getAssetLogo(row.asset)}
+                              alt=""
+                              aria-hidden="true"
+                              className="size-10 shrink-0 rounded-full bg-card object-cover"
+                            />
+                          </>
+                        ) : null}
+                        <span className="min-w-0">
+                          <span className="block text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
+                            {row.asset}
+                          </span>
+                          <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
+                            <span className="text-muted-foreground dark:text-white/38">APY</span>
+                            <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">
+                              {getBorrowApy(row.asset) ?? "—"}
+                            </span>
+                          </span>
+                        </span>
+                      </CellLink>
+                    </td>
+                    <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+                      <CellLink
+                        href={row.href}
+                        className={cn(
+                          "font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums",
+                          row.apy
+                            ? row.apy.startsWith("-")
+                              ? "text-rose-600 dark:text-rose-400"
+                              : "text-emerald-600 dark:text-emerald-400"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {row.apy || "—"}
+                      </CellLink>
+                    </td>
+                    <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+                      <CellLink href={row.href} className="text-foreground">
+                        {row.rewardRows?.[1] ? (
+                          <span className="block">
+                            <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                              {row.rewardRows[1].value}
+                            </span>
+                            <span className="mt-0.5 block text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+                              {row.rewardRows[1].label}
+                            </span>
+                          </span>
+                        ) : row.rewardRows?.[0] ? (
+                          <span className="block">
+                            <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                              {row.rewardRows[0].value}
+                            </span>
+                            <span className="mt-0.5 block text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+                              {row.rewardRows[0].label}
+                            </span>
+                          </span>
+                        ) : row.partnerRewards ? (
+                          <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                            {row.partnerRewards}
+                          </span>
+                        ) : (
+                          <span className="block text-[14px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+                            —
+                          </span>
+                        )}
+                      </CellLink>
+                    </td>
+                    <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+                      {row.waitlistHref ? (
+                        <div className="inline-flex items-center">
+                          <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
+                            <a href={row.waitlistHref} target="_blank" rel="noreferrer">
+                              Join waitlist
+                            </a>
+                          </Button>
+                        </div>
+                      ) : (
+                        <CellLink
+                          href={row.href}
+                          className="inline-flex items-center text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84"
+                        >
+                          <span>
+                            {parseCompactUsdLabel(row.points) == null
+                              ? (row.points ?? "—")
+                              : compact(parseCompactUsdLabel(row.points) as number)}
+                          </span>
+                        </CellLink>
+                      )}
+                    </td>
+                    <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-7 rounded-xs px-2.5 text-[11px]"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onOpenMultiply?.(row.href)
+                        }}
+                      >
+                        Multiply
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-10 text-center text-[14px] text-muted-foreground dark:text-white/38">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-10 text-center text-[14px] text-muted-foreground dark:text-white/38"
+                  >
                     No loops in this category yet.
                   </td>
                 </tr>
@@ -727,6 +813,7 @@ export function ExploreLoopsMarketsTable({
 }
 
 function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSnapshots"][number] }) {
+  const { compact } = useCurrency()
   const collateralSrc = resolveImageSrc(snapshot.collateralLogo)
   const borrowSrc = resolveImageSrc(snapshot.borrowLogo, snapshot.collateralLogo)
 
@@ -780,7 +867,7 @@ function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSn
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[12px] leading-none text-muted-foreground">Available</span>
             <span className="font-data text-[14px] font-medium tabular-nums leading-none text-foreground dark:text-white/88">
-              {snapshot.availableLabel}
+              {compact(snapshot.availableUsd)}
             </span>
           </div>
         </div>
@@ -791,7 +878,12 @@ function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSn
 
 function SortIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 12 16" fill="none" className="size-[14px] text-muted-foreground/70 dark:text-white/60">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 12 16"
+      fill="none"
+      className="size-[14px] text-muted-foreground/70 dark:text-white/60"
+    >
       <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
