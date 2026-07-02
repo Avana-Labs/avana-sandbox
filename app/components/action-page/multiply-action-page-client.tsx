@@ -27,6 +27,12 @@ import {
   resolveMultiplyMarketMaxLeverage,
 } from "@/app/lib/multiply-system/leverage-limits"
 import { clampMultiplierToOptions, buildMultiplierOptions } from "@/app/components/action-page/multiplier-options"
+import {
+  buildMultiplyOverCapPreviewUi,
+  exceedsMultiplyCollateralCap,
+  maxMultiplyCollateralAmount,
+} from "@/app/lib/multiply-system/collateral-limits"
+import { formatActionAmount } from "@/app/lib/action-system/formatters"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 
 export function MultiplyActionPageClient({
@@ -85,6 +91,13 @@ export function MultiplyActionPageClient({
   const collateralPriceUsd = market
     ? (priceFor(market.collateralAsset.symbol) ?? market.collateralAsset.priceUsd)
     : 0
+  // Cap a multiply position at what the market can actually absorb (no per-wallet
+  // balance exists here). This also rejects absurd inputs before they reach the
+  // simulation engine.
+  const maxCollateralAmount =
+    kind === "multiply" && market
+      ? maxMultiplyCollateralAmount(market.economics.availableLiquidityUsd, collateralPriceUsd)
+      : null
 
   const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
   const position = useMemo(() => {
@@ -183,6 +196,21 @@ export function MultiplyActionPageClient({
         return
       }
 
+      if (exceedsMultiplyCollateralCap(multiplyCollateralAmount, maxCollateralAmount)) {
+        setPreviewUi(
+          buildMultiplyOverCapPreviewUi({
+            collateralSymbol: market.collateralAsset.symbol,
+            borrowSymbol: market.borrowAsset.symbol,
+            collateralAmount: multiplyCollateralAmount,
+            collateralPriceUsd,
+            marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+            multiplier: parsedMultiplier,
+            maxCollateralAmount: maxCollateralAmount!,
+          }),
+        )
+        return
+      }
+
       const action = {
         type: "multiply" as const,
         walletId,
@@ -255,7 +283,7 @@ export function MultiplyActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [amount, collateralPriceUsd, kind, market, multiplier, position, session, walletId])
+  }, [amount, collateralPriceUsd, kind, market, maxCollateralAmount, multiplier, position, session, walletId])
 
   useEffect(() => {
     if (kind === "multiply") return
@@ -281,6 +309,13 @@ export function MultiplyActionPageClient({
     }
     router.push(closeHref)
   }, [closeHref, router, stage])
+
+  // Fill the collateral input with the market's maximum absorbable amount.
+  const handleMaxCollateral = useCallback(() => {
+    if (maxCollateralAmount == null || maxCollateralAmount <= 0) return
+    setHasUserInput(true)
+    setAmount(String(Number(maxCollateralAmount.toFixed(6))))
+  }, [maxCollateralAmount])
 
   const handlePrimary = useCallback(async () => {
     if (stage === "success") {
@@ -447,6 +482,12 @@ export function MultiplyActionPageClient({
       : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
   const useWorkspaceFields =
     embedded && isHomeLayout && market != null && isConfigureVisibleStage(stage) && !showInlineBlocked
+  // Surface the market-liquidity cap as the collateral input balance, with a Max button.
+  const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
+  const collateralBalanceLabel = showCollateralBalance ? "Available liquidity" : undefined
+  const collateralBalanceValue = showCollateralBalance
+    ? formatActionAmount(maxCollateralAmount!, market.collateralAsset.symbol, 6)
+    : undefined
   const stackedAmountField = useWorkspaceFields ? (
     <ActionConfigureAmountSection
       verb={descriptor.primaryVerb}
@@ -466,6 +507,10 @@ export function MultiplyActionPageClient({
         setSelectedMarketId(id)
         setAmount("")
       }}
+      showBalance={showCollateralBalance}
+      onMax={handleMaxCollateral}
+      balanceLabel={collateralBalanceLabel}
+      balanceValue={collateralBalanceValue}
       amountVariant="raised"
       amountFooter={
         <>
@@ -564,6 +609,10 @@ export function MultiplyActionPageClient({
           secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
+          showBalance={showCollateralBalance}
+          onMax={handleMaxCollateral}
+          balanceLabel={collateralBalanceLabel}
+          balanceValue={collateralBalanceValue}
           hideAmountInput={useWorkspaceFields}
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           homeLayout={isHomeLayout}

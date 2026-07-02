@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
@@ -107,6 +107,49 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.getByTestId("action-review-stage")).toHaveTextContent("0.01")
     expect(screen.getByTestId("action-review-stage")).toHaveTextContent("Target leverage")
     expect(screen.queryByText(/0\.01.*2\.00x/)).not.toBeInTheDocument()
+  })
+
+  it("rejects an absurd collateral amount and blocks Review", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="multiply" initialMarketId="eth-usdt" initialMultiplier="2" />
+      </AvanaSessionsProvider>,
+    )
+
+    const input = await screen.findByLabelText("Collateral supplied amount")
+    fireEvent.change(input, { target: { value: "999999999" } })
+
+    // No crash, no projected metrics, and a clear over-liquidity rejection message.
+    // The primary CTA is disabled (labelled "Adjust amount" when blocked).
+    await waitFor(() => expect(screen.getByText(/exceeds available market liquidity/i)).toBeInTheDocument())
+    expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Adjust amount" })).toBeDisabled()
+
+    // A within-cap amount is accepted and produces a live preview.
+    fireEvent.change(input, { target: { value: "0.01" } })
+    await waitFor(() => expect(screen.getByTestId("action-metrics-block")).toBeInTheDocument())
+    expect(screen.queryByText(/exceeds available market liquidity/i)).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Review" })).not.toBeDisabled()
+  })
+
+  it("fills the collateral input with the market liquidity cap via Max", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="multiply" initialMarketId="eth-usdt" initialMultiplier="2" />
+      </AvanaSessionsProvider>,
+    )
+
+    const input = (await screen.findByLabelText("Collateral supplied amount")) as HTMLInputElement
+    // Scope to the amount card's Max button (the leverage ruler also has a "Max").
+    const amountCard = within(screen.getByTestId("action-amount-card"))
+    fireEvent.click(amountCard.getByRole("button", { name: "Max" }))
+
+    // 7,200,000 liquidity / 3,500 ETH price ≈ 2057.142857 ETH cap; the filled value
+    // must be within the cap so it is not itself rejected.
+    await waitFor(() => expect(input.value).not.toBe(""))
+    expect(Number(input.value)).toBeGreaterThan(0)
+    expect(screen.queryByText(/exceeds available market liquidity/i)).not.toBeInTheDocument()
   })
 
   it("keeps deleverage preview blank until the target multiplier changes", async () => {

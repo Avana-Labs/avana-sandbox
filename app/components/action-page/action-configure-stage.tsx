@@ -54,6 +54,9 @@ type ActionConfigureStageProps = {
   amountFooter?: ReactNode
   showBalance?: boolean
   onMax?: () => void
+  /** Explicit balance line; falls back to the preview's balance when omitted. */
+  balanceLabel?: string
+  balanceValue?: string
   assetLabel?: string
   amountUnitLabel?: string
   hideAssetSelector?: boolean
@@ -84,6 +87,8 @@ export function ActionConfigureAmountSection({
   amountFooter,
   showBalance = false,
   onMax,
+  balanceLabel,
+  balanceValue,
   assetLabel,
   amountUnitLabel,
   inputLabel,
@@ -110,6 +115,8 @@ export function ActionConfigureAmountSection({
   | "amountFooter"
   | "showBalance"
   | "onMax"
+  | "balanceLabel"
+  | "balanceValue"
   | "assetLabel"
   | "amountUnitLabel"
 >) {
@@ -124,8 +131,8 @@ export function ActionConfigureAmountSection({
       assetLabel={pillLabel}
       unitLabel={amountUnitLabel}
       footer={amountFooter}
-      balanceLabel={showBalance ? preview?.balanceLabel : undefined}
-      balanceValue={showBalance ? preview?.balanceValue : undefined}
+      balanceLabel={showBalance ? balanceLabel ?? preview?.balanceLabel : undefined}
+      balanceValue={showBalance ? balanceValue ?? preview?.balanceValue : undefined}
       onMax={showBalance ? onMax : undefined}
       assetSymbol={assetSymbol ?? pillLabel}
       borrowSymbol={borrowSymbol}
@@ -182,6 +189,8 @@ export function ActionConfigureStage({
   amountFooter,
   showBalance = false,
   onMax,
+  balanceLabel,
+  balanceValue,
   assetLabel,
   amountUnitLabel,
   inputLabel,
@@ -256,6 +265,8 @@ export function ActionConfigureStage({
           amountFooter={amountFooter}
           showBalance={showBalance}
           onMax={onMax}
+          balanceLabel={balanceLabel}
+          balanceValue={balanceValue}
           assetLabel={assetLabel}
           amountUnitLabel={amountUnitLabel}
           inputLabel={inputLabel}
