@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 // Keep test mode off so detection is exercised (test mode disables it by design).
 vi.mock("@/app/lib/test-mode", () => ({
+  IS_DEV_SHORTCUT_MODE: false,
   IS_OPEN_GATE_TEST_MODE: false,
   TEST_MODE_WALLET_ADDRESS: "0x0000000000000000000000000000000000000a11",
 }))

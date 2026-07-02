@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react"
 import { useAccount, useSwitchChain } from "wagmi"
-import { IS_OPEN_GATE_TEST_MODE } from "@/app/lib/test-mode"
+import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { TARGET_CHAIN_ID, TARGET_CHAIN_NAME } from "@/app/lib/web3/target-chain"
 
 export type WrongNetworkState = {
@@ -31,7 +31,7 @@ export function useWrongNetwork(): WrongNetworkState {
   const [switchError, setSwitchError] = useState<string | null>(null)
 
   const isWrongNetwork =
-    !IS_OPEN_GATE_TEST_MODE && isConnected && chainId != null && chainId !== TARGET_CHAIN_ID
+    !IS_DEV_SHORTCUT_MODE && isConnected && chainId != null && chainId !== TARGET_CHAIN_ID
 
   const switchToTargetChain = useCallback(async (): Promise<boolean> => {
     setSwitchError(null)

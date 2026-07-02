@@ -5,7 +5,7 @@ import { useAccount, useSignMessage } from "wagmi"
 import { buildSiweMessage } from "./message"
 import { clearSiweToken, getSiweToken, setSiweToken, subscribeSiwe, type SiweToken } from "./auth-store"
 import { getJwtExpirySeconds, isJwtExpired } from "./token-expiry"
-import { IS_OPEN_GATE_TEST_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
+import { IS_DEV_SHORTCUT_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
 /** Reactively read the current SIWE token (null when signed out). */
 export function useSiweToken(): SiweToken | null {
@@ -80,16 +80,16 @@ export function useSiweAuth() {
   const { address, chainId, isConnected, isConnecting, isReconnecting } = useAccount()
   const { signMessageAsync } = useSignMessage()
 
-  const authedWallet = token?.wallet ?? (IS_OPEN_GATE_TEST_MODE ? TEST_MODE_WALLET_ADDRESS : null)
-  const effectiveAddress = IS_OPEN_GATE_TEST_MODE ? TEST_MODE_WALLET_ADDRESS : address
-  const effectiveConnected = IS_OPEN_GATE_TEST_MODE || isConnected
+  const authedWallet = token?.wallet ?? (IS_DEV_SHORTCUT_MODE ? TEST_MODE_WALLET_ADDRESS : null)
+  const effectiveAddress = IS_DEV_SHORTCUT_MODE ? TEST_MODE_WALLET_ADDRESS : address
+  const effectiveConnected = IS_DEV_SHORTCUT_MODE || isConnected
   // "Signed in" only counts when the SIWE wallet matches the connected wallet.
   const isSignedIn = effectiveConnected && authedWallet != null && effectiveAddress?.toLowerCase() === authedWallet
   // On reload wagmi restores the session asynchronously (status === "reconnecting"),
   // so a persisted SIWE token is present before the wallet is. Treat that window as
   // "restoring" so the gate can hold a neutral loading state instead of flashing the
   // signed-out/onboarding screen. No token means genuinely signed out — nothing to wait for.
-  const isRestoring = !IS_OPEN_GATE_TEST_MODE && token != null && !isSignedIn && (isReconnecting || isConnecting)
+  const isRestoring = !IS_DEV_SHORTCUT_MODE && token != null && !isSignedIn && (isReconnecting || isConnecting)
 
   const signIn = useCallback(async (): Promise<string> => {
     if (!address) throw new Error("Connect a wallet first.")

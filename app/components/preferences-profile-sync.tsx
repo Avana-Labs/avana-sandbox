@@ -13,7 +13,7 @@ import {
 import { useTheme, type Theme } from "@/app/components/theme-provider"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-import { IS_OPEN_GATE_TEST_MODE } from "@/app/lib/test-mode"
+import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 
 type StoredPreferences = {
   theme?: Theme
@@ -109,6 +109,6 @@ function PreferencesProfileSyncConnected() {
 }
 
 export function PreferencesProfileSync() {
-  if (!hasConvexClient || IS_OPEN_GATE_TEST_MODE) return null
+  if (!hasConvexClient || IS_DEV_SHORTCUT_MODE) return null
   return <PreferencesProfileSyncConnected />
 }
