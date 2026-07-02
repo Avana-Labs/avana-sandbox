@@ -5,6 +5,7 @@ import type { HomeCollateralPool } from "@/app/lib/home-sim"
 import { HomeActionContextBar } from "@/app/components/home/home-action-context-bar"
 import { PoolPickerDialog } from "@/app/components/home/pool-picker-dialog"
 import { SwapStyleFieldStack } from "@/app/components/action-page/swap-style-field"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function ActionSupplyContextBar({
   pool,
@@ -21,13 +22,14 @@ export function ActionSupplyContextBar({
   amountField?: ReactNode
   switchable?: boolean
 }) {
+  const { t } = useTranslation()
   const [poolDialogOpen, setPoolDialogOpen] = useState(false)
 
   return (
     <>
       <SwapStyleFieldStack>
         <HomeActionContextBar
-          label="Supply"
+          label={t("Supply")}
           pool={pool}
           onOpenPool={() => setPoolDialogOpen(true)}
           variant="inset"

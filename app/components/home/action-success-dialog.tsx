@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { HomeSuccessState } from "./types"
 
 export function ActionSuccessDialog({
@@ -20,6 +21,7 @@ export function ActionSuccessDialog({
   state: HomeSuccessState | null
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <Dialog open={Boolean(state)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 sm:max-w-[420px]">
@@ -44,7 +46,7 @@ export function ActionSuccessDialog({
             <div className="flex flex-col gap-3 px-5 py-4">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  Amount
+                  {t("Amount")}
                 </span>
                 <span className="font-data text-[22px] font-medium tracking-tight text-foreground">
                   {state.amount}
@@ -82,13 +84,13 @@ export function ActionSuccessDialog({
                 className="h-10 w-full rounded-radius-sm bg-accent-primary text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
                 onClick={onClose}
               >
-                Done
+                {t("Done")}
               </Button>
               <button
                 type="button"
                 className="inline-flex items-center justify-center gap-1 text-[11.5px] text-muted-foreground transition-colors hover:text-foreground"
               >
-                View transaction
+                {t("View transaction")}
                 <ArrowUpRight className="h-3 w-3" />
               </button>
             </DialogFooter>

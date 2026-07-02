@@ -2,10 +2,12 @@
 
 import { ArrowUpRight } from "lucide-react"
 import type { AboutCard as AboutCardData } from "@/app/lib/borrow-detail"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = { about: AboutCardData; title?: string; compact?: boolean; plain?: boolean }
 
 export function AboutCard({ about, title = "About", compact = false, plain = false }: Props) {
+  const { t } = useTranslation()
   return (
     <section
       className={
@@ -20,7 +22,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
               : "truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable"
           }
         >
-          {title}
+          {t(title)}
         </h2>
       </div>
       <div
@@ -43,7 +45,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         <dl className={plain ? "space-y-1.5 text-[12.5px]" : "mt-4 space-y-1.5 text-[12.5px]"}>
           {about.stats.map((s) => (
             <div key={s.label} className="flex items-center justify-between gap-4 border-b border-border/70 py-2 last:border-b-0">
-              <dt className={s.href ? "min-w-0 flex-1 text-text-low" : "shrink-0 text-text-low"}>{s.label}</dt>
+              <dt className={s.href ? "min-w-0 flex-1 text-text-low" : "shrink-0 text-text-low"}>{t(s.label)}</dt>
               <dd className={s.href ? "min-w-0" : "min-w-0 truncate text-right font-data font-medium tabular-nums text-text-extra-high"}>
                 {s.href ? (
                   <a

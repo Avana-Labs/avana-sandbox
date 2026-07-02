@@ -1,12 +1,12 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   BORROW_SUPPLY_META,
   HOME_COLLATERAL_POOLS,
-  formatCompactUsd,
   formatHealthFactor,
-  formatUsdExact,
   getSpokeById,
   healthFactorToneClass,
   homePoolSpoke,
@@ -50,14 +50,16 @@ export function SuppliesPanel({
   showSummary = true,
   showHeading = true,
 }: SuppliesTableProps) {
+  const { t } = useTranslation()
+  const { compact, exact } = useCurrency()
   const m = (value: string) => (showBalance ? value : MASK)
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
         <div className="text-[20px] font-medium leading-snug tracking-tight text-brand">
-          Nothing supplied yet
+          {t("Nothing supplied yet")}
         </div>
-        <div className="mt-1 text-[15px] leading-snug">To borrow you need to supply any LPs to be used as collateral</div>
+        <div className="mt-1 text-[15px] leading-snug">{t("To borrow you need to supply any LPs to be used as collateral")}</div>
       </div>
     )
   }
@@ -66,7 +68,7 @@ export function SuppliesPanel({
       {showSummary ? <SuppliesHealthFactorCard averageHealthFactor={totals.averageHf} showBalance={showBalance} /> : null}
       {showHeading ? (
         <div className="mb-3">
-          <h3 className="text-[14px] font-medium tracking-tight">My LP Collaterals</h3>
+          <h3 className="text-[14px] font-medium tracking-tight">{t("My LP Collaterals")}</h3>
         </div>
       ) : null}
       <div className="hidden md:block">
@@ -88,19 +90,19 @@ export function SuppliesPanel({
                     #
                   </th>
                   <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    LP Position
+                    {t("LP Position")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Collateral
+                    {t("Collateral")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Scope Max Borrow
+                    {t("Scope Max Borrow")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Scope Health Factor
+                    {t("Scope Health Factor")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Fees Earned
+                    {t("Fees Earned")}
                   </th>
                   <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 pr-6 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
                 </tr>
@@ -119,10 +121,10 @@ export function SuppliesPanel({
                       <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
                     </td>
                     <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
-                      {m(formatCompactUsd(row.pool.collateralUsd))}
+                      {m(compact(row.pool.collateralUsd))}
                     </td>
                     <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
-                      {m(formatCompactUsd(row.remainingBorrowPowerUsd))}
+                      {m(compact(row.remainingBorrowPowerUsd))}
                     </td>
                     <td className={`py-3 text-right ${TABLE_ROW_HOVER_BG}`}>
                       <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
@@ -130,16 +132,16 @@ export function SuppliesPanel({
                     <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                       <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
                       <div className="font-data text-[11px] font-medium tabular-nums text-success">
-                        {formatApy(row.pairApr)} APR
+                        {formatApy(row.pairApr)} {t("APR")}
                       </div>
                     </td>
                     <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
                       <HoverActionGroup align="start">
                         <PillButton variant="ghost" onClick={() => onRemove(row)}>
-                          Remove
+                          {t("Remove")}
                         </PillButton>
                         <PillButton variant="primary" onClick={() => onBorrowMore(row)}>
-                          Borrow
+                          {t("Borrow")}
                         </PillButton>
                       </HoverActionGroup>
                     </td>
@@ -186,15 +188,15 @@ export function SuppliesPanel({
                 </div>
                 <div className="text-right">
                   <div className="font-data text-[17px] font-medium tabular-nums text-foreground">
-                    {m(formatUsdExact(row.pool.collateralUsd))}
+                    {m(exact(row.pool.collateralUsd))}
                   </div>
-                  <div className="text-[11px] text-muted-foreground">Collateral</div>
+                  <div className="text-[11px] text-muted-foreground">{t("Collateral")}</div>
                 </div>
               </div>
 
               <div className="space-y-2.5 rounded-radius-sm border border-border bg-surface-inset px-3 py-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12.5px] font-medium text-foreground">Scope Health Factor</span>
+                  <span className="text-[12.5px] font-medium text-foreground">{t("Scope Health Factor")}</span>
                   <span className={cn("font-data text-[22px] font-medium leading-none tabular-nums", hfTone.text)}>{m(hfLabel)}</span>
                 </div>
                 <HealthFactorPositionBar
@@ -204,32 +206,32 @@ export function SuppliesPanel({
                   className="mt-0"
                 />
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Safe</span>
-                  <span>Caution</span>
-                  <span>Liquidation</span>
+                  <span>{t("Safe")}</span>
+                  <span>{t("Caution")}</span>
+                  <span>{t("Liquidation")}</span>
                 </div>
                 <div className="flex items-center justify-between border-t border-border pt-2 text-[12.5px]">
-                  <span className="text-muted-foreground">Liquidation at</span>
+                  <span className="text-muted-foreground">{t("Liquidation at")}</span>
                   <span className={cn("font-data font-medium tabular-nums", hfTone.text)}>
-                    {m(formatUsdExact(row.liquidationThresholdUsd))} collateral
+                    {m(exact(row.liquidationThresholdUsd))} {t("collateral")}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
                 <SupplyStatCell
-                  value={m(formatUsdExact(row.borrowedUsd))}
-                  label="Borrowed"
+                  value={m(exact(row.borrowedUsd))}
+                  label={t("Borrowed")}
                   valueTone="text-rose-500"
                 />
                 <SupplyStatCell
                   value={m(row.feesLabel)}
-                  label="Fees Earned"
+                  label={t("Fees Earned")}
                   valueTone="text-success"
                 />
                 <SupplyStatCell
                   value={formatApy(row.pairApr)}
-                  label="LP APR"
+                  label={t("LP APR")}
                 />
               </div>
 
@@ -239,14 +241,14 @@ export function SuppliesPanel({
                   onClick={() => onRemove(row)}
                   className="flex-1 rounded-radius-sm border border-border bg-surface-raised px-4 py-2.5 text-center text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
                 >
-                  Remove LP
+                  {t("Remove LP")}
                 </button>
                 <button
                   type="button"
                   onClick={() => onAddCollateral(row)}
                   className="flex-[2] rounded-radius-sm bg-accent-primary px-4 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
                 >
-                  Add Collateral
+                  {t("Add Collateral")}
                 </button>
               </div>
             </li>
@@ -274,6 +276,7 @@ export function SuppliesHealthFactorCard({
   averageHealthFactor: number | null
   showBalance: boolean
 }) {
+  const { t } = useTranslation()
   const status = healthFactorStatusLabel(averageHealthFactor)
   const hfLabel = formatHealthFactor(averageHealthFactor)
   const masked = !showBalance
@@ -286,10 +289,10 @@ export function SuppliesHealthFactorCard({
           <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
             {masked ? "••" : hfLabel}
           </span>
-          <span className="text-[13px] font-semibold text-foreground">Credit Health</span>
+          <span className="text-[13px] font-semibold text-foreground">{t("Credit Health")}</span>
           <ActionMetricHelp
             topic="Credit Health"
-            text="Wallet-wide health factor from total liquidation value divided by total borrowed. Above 1.5 is generally healthy."
+            text={t("Wallet-wide health factor from total liquidation value divided by total borrowed. Above 1.5 is generally healthy.")}
           />
         </div>
         <span
@@ -310,7 +313,7 @@ export function SuppliesHealthFactorCard({
               status.tone === "default" && "bg-muted-foreground",
             )}
           />
-          {masked ? "••" : status.label}
+          {masked ? "••" : t(status.label)}
         </span>
       </div>
 
@@ -323,7 +326,7 @@ export function SuppliesHealthFactorCard({
             return (
               <span key={zone.id} className={cn("inline-flex items-center gap-1.5", isActive && "text-foreground")}>
                 <span className={cn("size-1.5 rounded-full", isActive ? zone.color : "bg-muted-foreground/40")} />
-                {zone.label}
+                {t(zone.label)}
               </span>
             )
           })}

@@ -5,6 +5,7 @@ import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import { ResponsiveLendAction } from "@/app/components/action-page/responsive-lend-action"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 type Props = { detail: LendMarketDetail; className?: string }
@@ -17,12 +18,13 @@ const LEND_TAB_ITEMS = [
 ] as const
 
 export function LendSidebar({ detail, className }: Props) {
+  const { t } = useTranslation()
   return (
-    <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={`Lend ${detail.hero.name}`}>
+    <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={t("Lend {name}").replace("{name}", detail.hero.name)}>
       <LendActionRail detail={detail} className="mt-6" />
       <AboutNewsSection
         about={detail.about}
-        aboutTitle={`About ${detail.hero.name}`}
+        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
         compactAboutTitle
         newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
         newsImageLabel={detail.hero.symbol}
@@ -37,6 +39,7 @@ export function LendMarketActions({ detail, className }: Props) {
 }
 
 function LendActionRail({ detail, className }: Props) {
+  const { t } = useTranslation()
   const marketId = detail.row.marketId
   const closeHref = `/lend/markets/${marketId}`
   const [tab, setTab] = React.useState<SidebarTab>("deposit")
@@ -51,7 +54,7 @@ function LendActionRail({ detail, className }: Props) {
         items={[...LEND_TAB_ITEMS]}
         value={tab}
         onChange={(value) => setTab(value as SidebarTab)}
-        ariaLabel="Lend actions"
+        ariaLabel={t("Lend actions")}
       />
 
       <div className="mt-3">

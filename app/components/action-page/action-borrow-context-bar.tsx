@@ -7,6 +7,7 @@ import { PoolPickerDialog } from "@/app/components/home/pool-picker-dialog"
 import { SwapStyleFieldStack } from "@/app/components/action-page/swap-style-field"
 import { ActionContextSelectorCard } from "@/app/components/action-page/action-context-selector-card"
 import type { PoolDialogMode } from "@/app/components/home/types"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 function poolDialogModeForKind(kind: "borrow" | "repay" | "remove" | "claim"): PoolDialogMode {
   if (kind === "repay") return "repay"
@@ -33,6 +34,7 @@ export function ActionBorrowContextBar({
   workspace?: boolean
   amountField?: React.ReactNode
 }) {
+  const { t } = useTranslation()
   const [poolDialogOpen, setPoolDialogOpen] = useState(false)
   const poolDialogMode = poolDialogModeForKind(kind)
 
@@ -43,12 +45,13 @@ export function ActionBorrowContextBar({
         onOpenPool={() => setPoolDialogOpen(true)}
         variant={variant}
         workspace={workspace}
+        label={t("Collateral")}
       />
     ) : (
       <ActionContextSelectorCard
         label="Collateral"
         value="0"
-        approxUsdLabel="≈ $0"
+        approxUsdLabel={t("≈ $0")}
         collateralSymbol="LP"
         onClick={() => setPoolDialogOpen(true)}
         workspace={workspace}

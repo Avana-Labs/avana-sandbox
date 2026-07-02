@@ -17,6 +17,7 @@ import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { rankResults } from "@/app/lib/search-ranking"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 
 type SearchTab = "all" | "pools" | "borrow" | "lend"
 
@@ -39,16 +40,7 @@ const TABS: Array<{ id: SearchTab; label: string }> = [
   { id: "lend", label: "Lend" },
 ]
 
-const formatCompactUsd = (value: number) => {
-  return Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-    style: "currency",
-    currency: "USD",
-  }).format(value)
-}
-
-async function getSearchResults(): Promise<SearchResult[]> {
+async function getSearchResults(formatCompactCurrency: (usd: number) => string): Promise<SearchResult[]> {
   const [{ BORROWABLE_ASSETS, BORROW_POOL_CATALOG }, { MARKETS, TOKENS }] = await Promise.all([
     import("@/app/lib/borrow-sim"),
     import("@/app/lend/components/data"),
@@ -61,7 +53,7 @@ async function getSearchResults(): Promise<SearchResult[]> {
     id: `pool-${pool.id}`,
     tab: "pools" as const,
     title: pool.name,
-    subtitle: `${pool.venue} / ${pool.feeTier} / ${formatCompactUsd(pool.availableUsd)} available`,
+    subtitle: `${pool.venue} / ${pool.feeTier} / ${formatCompactCurrency(pool.availableUsd)} available`,
     eyebrow: "Collateral pool",
     metric: `${pool.ltv}% LTV`,
     href: `/borrow/markets/${pool.id}`,
@@ -75,7 +67,7 @@ async function getSearchResults(): Promise<SearchResult[]> {
     id: `borrow-${asset.id}`,
     tab: "borrow" as const,
     title: asset.name,
-    subtitle: `${asset.symbol} / ${asset.subtitle} / ${formatCompactUsd(asset.availableUsd)} available`,
+    subtitle: `${asset.symbol} / ${asset.subtitle} / ${formatCompactCurrency(asset.availableUsd)} available`,
     eyebrow: "Borrow asset",
     metric: `${asset.borrowApr.toFixed(1)}% APR`,
     href: borrowAssetDetailPath(asset.id),
@@ -174,6 +166,7 @@ function isTypingTarget(target: EventTarget | null) {
 export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {}) {
   const router = useRouter()
   const { t } = useTranslation()
+  const { compact } = useCurrency()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [activeTab, setActiveTab] = useState<SearchTab>("all")
@@ -190,11 +183,15 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
     setLoadingResults(true)
 
     try {
-      setResults(await getSearchResults())
+      setResults(await getSearchResults(compact))
     } finally {
       setLoadingResults(false)
     }
-  }, [loadingResults, results])
+  }, [compact, loadingResults, results])
+
+  useEffect(() => {
+    setResults(null)
+  }, [compact])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
