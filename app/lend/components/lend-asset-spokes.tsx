@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
+import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
@@ -371,8 +372,8 @@ function AssetRowView({
 
       <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
         {onDeposit ? (
-          <div className="flex justify-end">
-            <div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-150 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+            <div className="flex justify-end">
+            <HoverActionGroup>
               <Button
                 type="button"
                 size="sm"
@@ -396,7 +397,7 @@ function AssetRowView({
               >
                 Deposit
               </Button>
-            </div>
+            </HoverActionGroup>
           </div>
         ) : null}
       </td>
@@ -545,7 +546,7 @@ function AssetSection({
         </div>
       </div>
 
-      <div className="rounded-radius-md bg-transparent">
+      <DesktopTableSurface className="rounded-radius-md">
         <div className="space-y-2 md:hidden">
           {sortedRows.length > 0 ? (
             sortedRows.map((row, index) => (
@@ -644,7 +645,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4" />
+                <SilentActionHeader />
               </tr>
             </thead>
             <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
@@ -662,7 +663,7 @@ function AssetSection({
             </tbody>
           </table>
         </div>
-      </div>
+      </DesktopTableSurface>
     </section>
   )
 }
