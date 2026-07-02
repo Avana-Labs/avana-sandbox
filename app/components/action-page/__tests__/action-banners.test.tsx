@@ -15,8 +15,8 @@ describe("ActionRiskBanner", () => {
     )
 
     const banner = screen.getByTestId("action-risk-banner")
-    expect(banner).toHaveClass("text-amber-900")
-    expect(banner).toHaveClass("dark:text-amber-100")
+    // Banners use theme-aware semantic status tokens (not hardcoded amber/rose/emerald).
+    expect(banner).toHaveClass("text-warning")
     expect(screen.getByText("Review leverage carefully")).toBeInTheDocument()
     expect(screen.getByText("This leverage reduces your safety buffer.")).toBeInTheDocument()
   })
@@ -25,15 +25,13 @@ describe("ActionRiskBanner", () => {
     render(<ActionRiskBanner level="danger" title="Risk of liquidation" message="Health factor is too low." />)
 
     const banner = screen.getByTestId("action-risk-banner")
-    expect(banner).toHaveClass("text-rose-900")
-    expect(banner).toHaveClass("dark:text-rose-100")
+    expect(banner).toHaveClass("text-danger")
   })
 
   it("renders safe variant with theme-aware text classes", () => {
     render(<ActionRiskBanner level="safe" title="Healthy position" message="Your buffer looks comfortable." />)
 
     const banner = screen.getByTestId("action-risk-banner")
-    expect(banner).toHaveClass("text-emerald-900")
-    expect(banner).toHaveClass("dark:text-emerald-100")
+    expect(banner).toHaveClass("text-success")
   })
 })
