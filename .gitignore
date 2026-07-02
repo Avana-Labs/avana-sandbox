@@ -50,3 +50,6 @@ next-env.d.ts
 /playwright/.cache/
 stress-report.json
 tests/e2e/results.json
+
+# local QA helpers (may read the private SIWE JWK to mint sandbox tokens) — never commit
+_qa-*.mjs
