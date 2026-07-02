@@ -3,10 +3,7 @@
 import Link from "next/link"
 import type { PortfolioStrategyBucket } from "@/app/lib/data/providers/portfolio"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-
-function formatApy(value: number) {
-  return `${value.toFixed(1)}%`
-}
+import { formatApy } from "@/app/lib/format"
 
 export function PortfolioLendingOpportunities({
   buckets,
