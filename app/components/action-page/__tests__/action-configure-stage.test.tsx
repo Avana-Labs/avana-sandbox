@@ -49,6 +49,26 @@ describe("ActionConfigureStage", () => {
     expect(screen.queryByRole("button", { name: "Max" })).not.toBeInTheDocument()
   })
 
+  it("shows the balance and a Max button that fills the balance when showBalance is set", async () => {
+    const onMax = vi.fn()
+    render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Deposit"
+        amount=""
+        onAmountChange={() => undefined}
+        preview={{ ...preview, balanceLabel: "Balance", balanceValue: "1.28 ETH" }}
+        assetSymbol="ETH"
+        showBalance
+        onMax={onMax}
+      />,
+    )
+
+    expect(screen.getByText(/1\.28 ETH/)).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole("button", { name: "Max" }))
+    expect(onMax).toHaveBeenCalledTimes(1)
+  })
+
   it("shows receive WETH toggle when enabled", () => {
     render(
       <ActionConfigureStage
