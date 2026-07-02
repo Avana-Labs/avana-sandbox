@@ -1,11 +1,12 @@
 "use client"
 
-import { X } from "lucide-react"
+import { Eye, EyeOff, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import type { ActionPageMode } from "@/app/lib/action-system/contracts"
-import { LanguageSwitcher } from "@/app/components/language-switcher"
+import { DesktopPreferenceControls } from "@/app/components/desktop-preference-controls"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type ActionPageShellProps = {
@@ -38,6 +39,7 @@ export function ActionPageShell({
 }: ActionPageShellProps) {
   const router = useRouter()
   const { t } = useTranslation()
+  const { showDollarAmounts, toggleShowDollarAmounts } = useDisplayPreferences()
   const showChrome = true
   const showTitleBlock = showChrome && !hideTitle
 
@@ -67,7 +69,24 @@ export function ActionPageShell({
     >
       {showChrome && (!hideClose || mode !== "embedded") ? (
         <div className="flex items-center justify-end gap-1.5 px-4 pb-1 pt-3 sm:px-6">
-          {mode !== "embedded" ? <LanguageSwitcher /> : null}
+          {mode !== "embedded" ? (
+            <>
+              <button
+                type="button"
+                aria-label={showDollarAmounts ? t("Hide dollar amounts") : t("Show dollar amounts")}
+                title={t("Dollar amounts")}
+                onClick={toggleShowDollarAmounts}
+                className="inline-flex size-10 items-center justify-center rounded-full bg-transparent text-[#01AACF] outline-none transition-transform duration-200 hover:-translate-y-px hover:text-[#01AACF]/80 focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+              >
+                {showDollarAmounts ? (
+                  <Eye className="size-5" strokeWidth={1.9} />
+                ) : (
+                  <EyeOff className="size-5" strokeWidth={1.9} />
+                )}
+              </button>
+              <DesktopPreferenceControls />
+            </>
+          ) : null}
           {!hideClose ? (
             <button
               type="button"

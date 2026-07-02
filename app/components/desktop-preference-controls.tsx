@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
-import { useTheme } from "./theme-provider"
+import { useThemeOptional } from "./theme-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const triggerClassName =
@@ -17,7 +17,7 @@ const triggerClassName =
 
 export function DesktopPreferenceControls() {
   const { currency, language, setCurrency, setLanguage } = useDisplayPreferences()
-  const { resolvedTheme, setTheme } = useTheme()
+  const theme = useThemeOptional()
   const { t } = useTranslation()
 
   return (
@@ -65,15 +65,17 @@ export function DesktopPreferenceControls() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <button
-        type="button"
-        aria-label={resolvedTheme === "dark" ? t("Switch to light mode") : t("Switch to dark mode")}
-        title={resolvedTheme === "dark" ? t("Light mode") : t("Dark mode")}
-        className={triggerClassName}
-        onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      >
-        {resolvedTheme === "dark" ? <MoonStar className="size-5" strokeWidth={1.9} /> : <SunMedium className="size-5" strokeWidth={1.9} />}
-      </button>
+      {theme ? (
+        <button
+          type="button"
+          aria-label={theme.resolvedTheme === "dark" ? t("Switch to light mode") : t("Switch to dark mode")}
+          title={theme.resolvedTheme === "dark" ? t("Light mode") : t("Dark mode")}
+          className={triggerClassName}
+          onClick={() => theme.setTheme(theme.resolvedTheme === "dark" ? "light" : "dark")}
+        >
+          {theme.resolvedTheme === "dark" ? <MoonStar className="size-5" strokeWidth={1.9} /> : <SunMedium className="size-5" strokeWidth={1.9} />}
+        </button>
+      ) : null}
     </div>
   )
 }
