@@ -25,6 +25,7 @@ import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 
 function isHardBlock(reason: string | null) {
   if (!reason) return false
@@ -335,10 +336,13 @@ export function LendActionPageClient({
       )
       setStage("success")
     } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : "Unable to sign the transaction"
+      // Raw backend codes stay in logs; users see plain-language copy (issue #143).
+      if (process.env.NODE_ENV !== "production") console.error(rawMessage)
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: error instanceof Error ? error.message : "Unable to sign the transaction",
+        message: humanizeBlockedReason(rawMessage) ?? "Unable to sign the transaction",
       })
       setStage("error")
     } finally {
