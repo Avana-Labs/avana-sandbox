@@ -16,4 +16,15 @@ describe("borrow market labels", () => {
     expect(formatBorrowLpSymbolLabel({ display: { name: "WETH / USDC" } })).toBe("WETH / USDC")
     expect(formatBorrowLpSymbolLabel(null)).toBe("LP")
   })
+
+  it("keeps all tokens for a tri-token pool instead of truncating to two visuals", () => {
+    expect(
+      formatBorrowLpSymbolLabel({
+        display: {
+          name: "USDC / WBTC / ETH",
+          visuals: [{ symbol: "WBTC" }, { symbol: "ETH" }],
+        },
+      }),
+    ).toBe("USDC / WBTC / ETH")
+  })
 })

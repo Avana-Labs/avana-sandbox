@@ -10,9 +10,16 @@ export function formatBorrowLpSymbolLabel(
   market?: { display?: { visuals?: Array<{ symbol: string }>; name?: string } } | null,
   fallback = "LP",
 ) {
+  const name = market?.display?.name
   const visuals = market?.display?.visuals
   if (!visuals || visuals.length === 0) {
-    return market?.display?.name ?? fallback
+    return name ?? fallback
+  }
+  // Tri-token pools only carry two visuals, so the visual-derived label would
+  // truncate (e.g. "WBTC / ETH" for "USDC / WBTC / ETH") and produce duplicate-
+  // looking rows. Prefer the catalog name when it encodes more tokens.
+  if (name && name.split(" / ").length > visuals.length) {
+    return name
   }
   return visuals.map((visual) => visual.symbol).join(" / ")
 }
