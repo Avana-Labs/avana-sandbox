@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Area, AreaChart, Bar, BarChart, Line, LineChart, ReferenceDot, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/app/components/theme-provider"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { Series, TimeRangeId } from "@/app/lib/borrow-detail"
