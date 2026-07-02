@@ -4,7 +4,11 @@ import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-import { OnboardingFlow, type OnboardingGateState } from "@/app/components/sandbox/onboarding-flow"
+import {
+  OnboardingComplete,
+  OnboardingFlow,
+  type OnboardingGateState,
+} from "@/app/components/sandbox/onboarding-flow"
 
 /** Drives OnboardingFlow with a live getState subscription (rendered only with Convex). */
 function OnboardingConnected() {
@@ -13,6 +17,9 @@ function OnboardingConnected() {
   const state = useQuery(api.sandbox.onboarding.getState, wallet ? { wallet } : "skip") as
     | OnboardingGateState
     | undefined
+  // An already-onboarded wallet has no claim to run: show the persistent completed state
+  // instead of the re-runnable welcome/claim flow (issue #140).
+  if (wallet && state?.onboardingStep === "done") return <OnboardingComplete />
   return <OnboardingFlow wallet={wallet} state={state ?? null} />
 }
 
