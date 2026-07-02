@@ -58,14 +58,13 @@ const wagmiConfig = createConfig(
 )
 
 /**
- * A frosted scrim: the darkened overlay does the work, with a light blur on top. The blur
- * is deliberately kept small (3px, no saturate) — a heavy backdrop-filter recomputes every
- * frame and lags the modal's open/screen-switch animation. Mirrors the global :root vars in
- * globals.css (which is what actually reaches ConnectKit's out-of-root portal).
+ * Keep the wallet overlay compositor-cheap. ConnectKit 1.9.x still animates the modal with
+ * older framer-motion transitions, and any live backdrop blur behind those transitions causes
+ * visible ghosting / frame drops while switching wallet screens.
  */
 const connectKitTheme = {
-  "--ck-overlay-background": "rgba(7, 9, 12, 0.64)",
-  "--ck-overlay-backdrop-filter": "blur(3px)",
+  "--ck-overlay-background": "rgba(7, 9, 12, 0.72)",
+  "--ck-overlay-backdrop-filter": "none",
 } as const
 
 export function Web3Provider({ children }: { children: ReactNode }) {
@@ -80,6 +79,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       customTheme={connectKitTheme}
       options={{
         enforceSupportedChains: false,
+        reducedMotion: true,
+        overlayBlur: 0,
         disclaimer: (
           <>
             By connecting your wallet you agree to the{" "}
