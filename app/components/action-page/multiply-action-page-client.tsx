@@ -31,6 +31,7 @@ import {
   buildMultiplyOverCapPreviewUi,
   exceedsMultiplyCollateralCap,
   maxMultiplyCollateralAmount,
+  MULTIPLY_WALLET_COLLATERAL_BUDGET_USD,
 } from "@/app/lib/multiply-system/collateral-limits"
 import { formatActionAmount } from "@/app/lib/action-system/formatters"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
@@ -92,12 +93,16 @@ export function MultiplyActionPageClient({
   const collateralPriceUsd = market
     ? (priceFor(market.collateralAsset.symbol) ?? market.collateralAsset.priceUsd)
     : 0
-  // Cap a multiply position at what the market can actually absorb (no per-wallet
-  // balance exists here). This also rejects absurd inputs before they reach the
-  // simulation engine.
+  // Cap a multiply position at the wallet's spendable balance (not the pool's
+  // multi-million liquidity), still bounded by what the market can absorb. This
+  // keeps Max affordable and rejects absurd inputs before the simulation engine.
   const maxCollateralAmount =
     kind === "multiply" && market
-      ? maxMultiplyCollateralAmount(market.economics.availableLiquidityUsd, collateralPriceUsd)
+      ? maxMultiplyCollateralAmount(
+          market.economics.availableLiquidityUsd,
+          collateralPriceUsd,
+          MULTIPLY_WALLET_COLLATERAL_BUDGET_USD,
+        )
       : null
 
   const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
@@ -488,7 +493,7 @@ export function MultiplyActionPageClient({
     embedded && isHomeLayout && market != null && isConfigureVisibleStage(stage) && !showInlineBlocked
   // Surface the market-liquidity cap as the collateral input balance, with a Max button.
   const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
-  const collateralBalanceLabel = showCollateralBalance ? "Available liquidity" : undefined
+  const collateralBalanceLabel = showCollateralBalance ? "Balance" : undefined
   const collateralBalanceValue = showCollateralBalance
     ? formatActionAmount(maxCollateralAmount!, market.collateralAsset.symbol, 6)
     : undefined
