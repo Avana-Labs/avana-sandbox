@@ -2,6 +2,7 @@
 
 import { memo, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   aprToneClass,
   formatCompactUsd,
@@ -283,7 +284,7 @@ function CollateralDesktopTable({
                   </div>
                 </td>
                 <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                  <div className="inline-flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                  <HoverActionGroup className="inline-flex items-center">
                     {onUseAsCollateral ? (
                       <PillButton
                         variant="ghost"
@@ -304,7 +305,7 @@ function CollateralDesktopTable({
                     >
                       Borrow
                     </PillButton>
-                  </div>
+                  </HoverActionGroup>
                 </td>
               </tr>
             ))}
@@ -325,7 +326,7 @@ function CollateralDesktopTable({
     return table
   }
 
-  return <div className="overflow-hidden rounded-radius-xl bg-transparent">{table}</div>
+  return <DesktopTableSurface>{table}</DesktopTableSurface>
 }
 
 export const CollateralPoolsTable = memo(function CollateralPoolsTable({

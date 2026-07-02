@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { TokenIcon } from "@/app/components/token-icon"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -88,7 +89,7 @@ export function MultiplyCollateralTable({
                 <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Status
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-6" />
+                <SilentActionHeader className="pr-6" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border dark:divide-white/6">
@@ -142,7 +143,7 @@ export function MultiplyCollateralTable({
                     </span>
                   </td>
                   <td className={`px-4 py-3 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <div className="flex justify-end gap-2 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                    <HoverActionGroup className="gap-2">
                       <Button asChild variant="secondary" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]">
                         <Link href={`/multiply/markets/${row.marketId}`}>Manage</Link>
                       </Button>
@@ -154,7 +155,7 @@ export function MultiplyCollateralTable({
                       >
                         Deleverage
                       </Button>
-                    </div>
+                    </HoverActionGroup>
                   </td>
                 </tr>
               ))}

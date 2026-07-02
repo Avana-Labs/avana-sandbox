@@ -21,6 +21,7 @@ import {
 } from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
+import { HoverActionGroup } from "@/app/components/market-table-primitives"
 import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -133,14 +134,14 @@ export function SuppliesPanel({
                       </div>
                     </td>
                     <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
-                      <div className="flex justify-start gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                      <HoverActionGroup align="start">
                         <PillButton variant="ghost" onClick={() => onRemove(row)}>
                           Remove
                         </PillButton>
                         <PillButton variant="primary" onClick={() => onBorrowMore(row)}>
                           Borrow
                         </PillButton>
-                      </div>
+                      </HoverActionGroup>
                     </td>
                   </tr>
                 )

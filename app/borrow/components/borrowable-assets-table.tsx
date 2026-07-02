@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   BORROWABLE_CATEGORIES,
   aprToneClass,
@@ -314,7 +315,7 @@ function LoanAssetsSection({
                     </div>
                   </td>
                   <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <div className="inline-flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                    <HoverActionGroup className="inline-flex items-center">
                       <PillButton
                         variant="ghost"
                         onClick={(event) => {
@@ -335,7 +336,7 @@ function LoanAssetsSection({
                       >
                         Borrow
                       </PillButton>
-                    </div>
+                    </HoverActionGroup>
                   </td>
                 </tr>
               ))}
@@ -350,7 +351,7 @@ function LoanAssetsSection({
 
   return (
     <section className="space-y-5">
-    <div className="overflow-hidden rounded-radius-xl bg-transparent">{table}</div>
+    <DesktopTableSurface>{table}</DesktopTableSurface>
     </section>
   )
 }
@@ -381,7 +382,7 @@ function AssetsSection({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-radius-md bg-transparent">
+      <DesktopTableSurface className="rounded-radius-md">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-[13px]">
             <thead>
@@ -435,7 +436,7 @@ function AssetsSection({
                     </div>
                   </td>
                   <td className={`py-2.5 pl-4 pr-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <div className="inline-flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                    <HoverActionGroup className="inline-flex items-center">
                       <PillButton
                         variant="ghost"
                         onClick={(event) => {
@@ -456,14 +457,14 @@ function AssetsSection({
                       >
                         Borrow
                       </PillButton>
-                    </div>
+                    </HoverActionGroup>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </DesktopTableSurface>
     </section>
   )
 }

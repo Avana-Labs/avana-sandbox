@@ -13,6 +13,7 @@ import {
 } from "@/app/lib/data/borrow-domain"
 import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
+import { HoverActionGroup } from "@/app/components/market-table-primitives"
 import { cn } from "@/lib/utils"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
@@ -141,14 +142,14 @@ export function DebtsPanel({
                         <div className="text-[11px] text-muted-foreground">collateral value</div>
                       </td>
                       <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
-                        <div className="flex justify-start gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                        <HoverActionGroup align="start">
                           <PillButton variant="ghost" onClick={() => onManage(row)}>
                             Manage
                           </PillButton>
                           <PillButton variant="success" onClick={() => onRepay(row)}>
                             Repay
                           </PillButton>
-                        </div>
+                        </HoverActionGroup>
                       </td>
                     </tr>
                   )

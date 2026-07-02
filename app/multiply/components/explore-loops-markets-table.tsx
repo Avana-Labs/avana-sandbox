@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
@@ -522,7 +523,7 @@ export function ExploreLoopsMarketsTable({
         </div>
       </div>
 
-      <div className="rounded-radius-md bg-transparent">
+      <DesktopTableSurface className="rounded-radius-md">
         <div className="space-y-3 md:hidden">
           {visibleRows.length ? (
             visibleRows.map((row, index) => (
@@ -638,7 +639,7 @@ export function ExploreLoopsMarketsTable({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4" />
+                <SilentActionHeader />
               </tr>
             </thead>
             <tbody
@@ -780,10 +781,11 @@ export function ExploreLoopsMarketsTable({
                     </td>
                     <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
                       <div className="flex justify-end">
+                        <HoverActionGroup>
                         <Button
                           type="button"
                           size="sm"
-                          className="h-7 rounded-xs px-2.5 text-[11px] opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+                          className="h-7 rounded-xs px-2.5 text-[11px]"
                           onClick={(event) => {
                             event.stopPropagation()
                             onOpenMultiply?.(row.href)
@@ -791,6 +793,7 @@ export function ExploreLoopsMarketsTable({
                         >
                           Multiply
                         </Button>
+                        </HoverActionGroup>
                       </div>
                     </td>
                   </tr>
@@ -835,7 +838,7 @@ export function ExploreLoopsMarketsTable({
           </Button>
         </div>
       </div>
-      </div>
+      </DesktopTableSurface>
     </section>
   )
 }
