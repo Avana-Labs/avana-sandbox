@@ -49,11 +49,14 @@ vi.mock("@/app/components/wallet-control", () => ({
 
 const WALLET = "0xabc0000000000000000000000000000000000001"
 
-function stateWithStep(step: OnboardingGateState["onboardingStep"]): OnboardingGateState {
+function stateWithStep(
+  step: OnboardingGateState["onboardingStep"],
+  config?: Partial<OnboardingGateState["config"]>,
+): OnboardingGateState {
   return {
     onboardingStep: step,
     profile: { eligibilityTier: 1 },
-    config: { basket: [], tweetTemplate: "", xHandle: "", resourcesLinks: [] },
+    config: { basket: [], tweetTemplate: "", xHandle: "", resourcesLinks: [], ...config },
     economy: { status: "open", userCount: 1, userCap: 10, perUserTargetUsd: 1_000_000 },
   }
 }
@@ -88,5 +91,43 @@ describe("OnboardingFlow — stranded loading recovery (issue #83)", () => {
     render(<OnboardingFlow wallet={WALLET} state={stateWithStep("eligible")} />)
     expect(screen.queryByText(/Taking longer than expected/i)).not.toBeInTheDocument()
     expect(startAnalysis).not.toHaveBeenCalled()
+  })
+})
+
+describe("OnboardingFlow — Convex config drives the UI (issue #139)", () => {
+  it("renders the Convex tweetTemplate in the share sub-flow and its X intent href", () => {
+    render(
+      <OnboardingFlow
+        wallet={WALLET}
+        state={stateWithStep("xPending", { tweetTemplate: "Practicing DeFi on Avana", xHandle: "AvanaFinance" })}
+      />,
+    )
+    // The fetched template (not the hardcoded launch copy) is what the user sees + posts.
+    expect(screen.getByText(/Practicing DeFi on Avana/)).toBeInTheDocument()
+    expect(screen.getByText(/@AvanaFinance/)).toBeInTheDocument()
+    const openX = screen.getByRole("link", { name: /Open X/i }) as HTMLAnchorElement
+    expect(decodeURIComponent(openX.href)).toContain("Practicing DeFi on Avana")
+    expect(decodeURIComponent(openX.href)).toContain("@AvanaFinance")
+  })
+
+  it("falls back to the launch copy when the config carries no tweetTemplate", () => {
+    render(<OnboardingFlow wallet={WALLET} state={stateWithStep("xPending")} />)
+    expect(screen.getByText(/Just claimed my sandbox spot at Avana/)).toBeInTheDocument()
+  })
+
+  it("renders the Convex resourcesLinks on the completed state", () => {
+    render(
+      <OnboardingFlow
+        wallet={WALLET}
+        state={stateWithStep("done", {
+          resourcesLinks: [
+            { label: "Read the docs", href: "/docs" },
+            { label: "Explore markets", href: "/borrow" },
+          ],
+        })}
+      />,
+    )
+    expect(screen.getByRole("link", { name: /Read the docs/i })).toHaveAttribute("href", "/docs")
+    expect(screen.getByRole("link", { name: /Explore markets/i })).toHaveAttribute("href", "/borrow")
   })
 })
