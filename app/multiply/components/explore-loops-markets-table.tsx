@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
@@ -381,6 +382,7 @@ export function ExploreLoopsMarketsTable({
   tokenSupplyApys,
   onOpenMultiply,
 }: ExploreLoopsMarketsTableProps) {
+  const router = useRouter()
   const { compact } = useCurrency()
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
   const [search, setSearch] = React.useState("")
@@ -649,7 +651,8 @@ export function ExploreLoopsMarketsTable({
                 visibleRows.map((row, index) => (
                   <tr
                     key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
-                    className="group asset-swap transition-colors"
+                    className="group asset-swap cursor-pointer transition-colors"
+                    onClick={() => router.push(row.href)}
                     style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <td
@@ -778,17 +781,19 @@ export function ExploreLoopsMarketsTable({
                       )}
                     </td>
                     <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-7 rounded-xs px-2.5 text-[11px]"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onOpenMultiply?.(row.href)
-                        }}
-                      >
-                        Multiply
-                      </Button>
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-7 rounded-xs px-2.5 text-[11px] opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onOpenMultiply?.(row.href)
+                          }}
+                        >
+                          Multiply
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
