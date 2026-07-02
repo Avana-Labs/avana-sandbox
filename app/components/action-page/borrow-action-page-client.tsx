@@ -479,7 +479,7 @@ export function BorrowActionPageClient({
               amountUsd: safeAmount,
               marketLabel,
               ratePct: token?.borrowApr ?? 0,
-              balanceLabel: creditScopeLabel ? `Available in ${creditScopeLabel}` : "Available to Borrow",
+              balanceLabel: "Available to borrow",
               balanceUsd: maxBorrowUsd,
               liquidationThresholdPct,
               maxBorrowUsd,
