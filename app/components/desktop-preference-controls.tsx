@@ -56,11 +56,11 @@ export function DesktopPreferenceControls() {
         {view === "root" ? (
           <>
             <DropdownMenuLabel className="px-4 py-3 text-[18px] font-medium normal-case tracking-normal text-white">
-              Global preferences
+              {t("Global preferences")}
             </DropdownMenuLabel>
             <div className="space-y-3 px-4 pb-2">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-[15px] text-white/64">Theme</span>
+                <span className="text-[15px] text-white/64">{t("Theme")}</span>
                 <div className="flex items-center overflow-hidden rounded-full border border-white/12 bg-[#1a1a1a] p-1">
                   <button
                     type="button"
@@ -69,7 +69,7 @@ export function DesktopPreferenceControls() {
                       mounted && theme === "system" ? "bg-[#2a2a2a] text-white" : "text-white/64"
                     }`}
                   >
-                    Auto
+                    {t("Auto")}
                   </button>
                   <button
                     type="button"
@@ -138,7 +138,7 @@ export function DesktopPreferenceControls() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span>Language</span>
+              <span>{t("Language")}</span>
             </DropdownMenuLabel>
             <div className="max-h-[min(420px,60dvh)] overflow-y-auto">
               {LANGUAGE_OPTIONS.map((option) => (
@@ -169,7 +169,7 @@ export function DesktopPreferenceControls() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span>Currency</span>
+              <span>{t("Currency")}</span>
             </DropdownMenuLabel>
             <div className="max-h-[min(420px,60dvh)] overflow-y-auto">
               {CURRENCY_OPTIONS.map((option) => (

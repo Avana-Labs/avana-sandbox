@@ -147,9 +147,9 @@ export function Header() {
         mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
       }`}
     >
-      <div className="hidden xl:block">
-        <div className="grid h-[72px] w-full grid-cols-[minmax(0,1fr)_minmax(280px,420px)_minmax(0,1fr)] items-center gap-4 px-4 lg:px-5 xl:px-6 2xl:px-8">
-          <div className="flex min-w-0 items-center gap-5 overflow-hidden">
+      <div className="hidden lg:block">
+        <div className="grid h-[72px] w-full grid-cols-[minmax(0,1fr)_minmax(220px,320px)_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 lg:px-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,420px)_minmax(0,1fr)] xl:gap-4 xl:px-6 2xl:px-8">
+          <div className="flex min-w-0 items-center gap-4 overflow-hidden xl:gap-5">
             <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
               <BrandLogo className="h-[50px] md:h-[50px]" />
             </Link>
@@ -162,7 +162,7 @@ export function Header() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center rounded-full px-3 py-2 font-sans text-[15px] font-medium leading-[1.1] transition-colors ${
+                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[14px] font-medium leading-[1.1] transition-colors xl:px-3 xl:py-2 xl:text-[15px] ${
                       isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -173,11 +173,11 @@ export function Header() {
             </nav>
           </div>
 
-          <div className="flex min-w-0 justify-center px-2">
+          <div className="flex min-w-0 justify-center px-1 xl:px-2">
             <div className="w-full">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
           </div>
 
-          <div className="flex min-w-0 items-center justify-end gap-2.5">
+          <div className="flex min-w-0 items-center justify-end gap-2 xl:gap-2.5">
             <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {desktopLinks.slice(4).map((link) => {
                 const isActive = mounted && pathname.startsWith(link.href)
@@ -186,7 +186,7 @@ export function Header() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center rounded-full px-3 py-2 font-sans text-[15px] font-medium leading-[1.1] transition-colors ${
+                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[14px] font-medium leading-[1.1] transition-colors xl:px-3 xl:py-2 xl:text-[15px] ${
                       isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -206,7 +206,7 @@ export function Header() {
         </div>
       </div>
 
-      <div className="xl:hidden">
+      <div className="lg:hidden">
         <div className="relative flex h-16 w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" aria-label="Home" title="Home" className="inline-flex items-center">
