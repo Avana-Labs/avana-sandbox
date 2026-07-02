@@ -2,6 +2,8 @@
 
 import { memo, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
@@ -13,7 +15,6 @@ import {
 } from "@/app/components/market-card-primitives"
 import {
   aprToneClass,
-  formatCompactUsd,
   formatRiskPremium,
   getSpokeById,
   type BorrowPoolEvent,
@@ -80,11 +81,12 @@ function SectionTabs({
   activeTab: SectionTabId
   onTabChange: (tab: SectionTabId) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-wrap gap-8 border-b border-border/50 md:border-b-0">
       {[
-        { id: "collateral", label: "Markets" },
-        { id: "borrow", label: "Assets" },
+        { id: "collateral", label: t("Markets") },
+        { id: "borrow", label: t("Assets") },
       ].map((tab) => (
         <button
           key={tab.id}
@@ -113,11 +115,13 @@ function SortIcon() {
 
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   const priceFor = usePriceFor()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   // Pair exchange rate (e.g. "1 ETH = 1,612 USDC") from the real price oracle;
   // falls back to TVL when either token is unpriced / the oracle is unavailable.
   const subtitle =
     pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
-    `${formatCompactUsd(pool.tvlUsd)} TVL`
+    `${compact(pool.tvlUsd)} ${t("TVL")}`
   return (
     <div className="flex min-w-0 items-center gap-4">
       <div className="flex items-center">
@@ -154,6 +158,8 @@ function CollateralDesktopTable({
   embedded?: boolean
 }) {
   const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "risk" | "supplied">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
@@ -204,7 +210,7 @@ function CollateralDesktopTable({
                     sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>ASSET</span>
+                  <span>{t("ASSET")}</span>
                   <SortIcon />
                 </button>
               </th>
@@ -217,7 +223,7 @@ function CollateralDesktopTable({
                     sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>FEES</span>
+                  <span>{t("FEES")}</span>
                   <SortIcon />
                 </button>
               </th>
@@ -230,7 +236,7 @@ function CollateralDesktopTable({
                     sortKey === "ltv" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>MAX LTV</span>
+                  <span>{t("MAX LTV")}</span>
                   <SortIcon />
                 </button>
               </th>
@@ -243,7 +249,7 @@ function CollateralDesktopTable({
                     sortKey === "risk" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>RISK PREMIUM</span>
+                  <span>{t("RISK PREMIUM")}</span>
                   <SortIcon />
                 </button>
               </th>
@@ -256,7 +262,7 @@ function CollateralDesktopTable({
                     sortKey === "supplied" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
-                  <span>AVAILABLE</span>
+                  <span>{t("AVAILABLE")}</span>
                   <SortIcon />
                 </button>
               </th>
@@ -288,7 +294,7 @@ function CollateralDesktopTable({
                 </td>
                 <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                   <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
-                    <span className="tabular-nums">{formatCompactUsd(pool.availableUsd)}</span>
+                    <span className="tabular-nums">{compact(pool.availableUsd)}</span>
                   </div>
                 </td>
                 <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -301,7 +307,7 @@ function CollateralDesktopTable({
                           onUseAsCollateral(pool)
                         }}
                       >
-                        Pledge
+                        {t("Pledge")}
                       </PillButton>
                     ) : null}
                     <PillButton
@@ -311,7 +317,7 @@ function CollateralDesktopTable({
                         router.push(actionPagePath("borrow", "borrow", { market: pool.id, return: `/borrow/markets/${pool.id}` }))
                       }}
                     >
-                      Borrow
+                      {t("Borrow")}
                     </PillButton>
                   </HoverActionGroup>
                 </td>
@@ -452,6 +458,8 @@ function SpokeMobileSection({
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
   const priceFor = usePriceFor()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
@@ -476,7 +484,7 @@ function SpokeMobileSection({
                           name={pool.name}
                           subtitle={
                             pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
-                            `${formatCompactUsd(pool.tvlUsd)} TVL`
+                            `${compact(pool.tvlUsd)} ${t("TVL")}`
                           }
                           size="md"
                         />
@@ -484,7 +492,7 @@ function SpokeMobileSection({
                       metric={
                         <MarketMobileMetric
                           value={formatApy((pool.aprMin + pool.aprMax) / 2)}
-                          label="APY"
+                          label={t("APY")}
                           valueClassName={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
                         />
                       }
@@ -499,9 +507,9 @@ function SpokeMobileSection({
                       <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
                     </div>
                     <MarketMobileStatList className="mt-3">
-                      <MarketMobileStatRow label="Liquidity" value={formatCompactUsd(pool.availableUsd)} />
-                      <MarketMobileStatRow label="Max LTV" value={`${pool.ltv}%`} />
-                      <MarketMobileStatRow label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
+                      <MarketMobileStatRow label={t("Liquidity")} value={compact(pool.availableUsd)} />
+                      <MarketMobileStatRow label={t("Max LTV")} value={`${pool.ltv}%`} />
+                      <MarketMobileStatRow label={t("Risk Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
                     </MarketMobileStatList>
                     <MarketMobilePrimaryAction
                       onClick={(event) => {
@@ -509,7 +517,7 @@ function SpokeMobileSection({
                         onUseAsCollateral(pool)
                       }}
                     >
-                      Supply
+                      {t("Supply")}
                     </MarketMobilePrimaryAction>
                   </MarketMobileCard>
                 </li>
@@ -521,7 +529,7 @@ function SpokeMobileSection({
                     <span className="ml-1 text-xs">· {row.subLabel}</span>
                   </span>
                   <PillButton variant="ghost" disabled>
-                    Vote →
+                    {t("Vote →")}
                   </PillButton>
                 </li>
               ))}
@@ -532,7 +540,9 @@ function SpokeMobileSection({
                 onClick={() => setExpanded(true)}
                 className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
               >
-                View {hiddenRowCount} more {spoke.label.replace(" Spoke", "").toLowerCase()} markets
+                {t("View {count} more {spoke} markets")
+                  .replace("{count}", String(hiddenRowCount))
+                  .replace("{spoke}", spoke.label.replace(" Spoke", "").toLowerCase())}
               </button>
             ) : null}
           </div>

@@ -570,7 +570,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
               onClick={() => run("sharing", () => skipTweet({ wallet }))}
               type="button"
             >
-              Skip
+              {t("Skip")}
             </button>
           </div>
           <ErrorMessage error={error} />

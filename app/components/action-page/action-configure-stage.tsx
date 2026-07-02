@@ -10,6 +10,7 @@ import { ActionLeverageRuler } from "@/app/components/action-page/action-leverag
 import { ActionOutcomeBanner, ActionRiskBanner, ActionWalletToast } from "@/app/components/action-page/action-banners"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionHealthFactorBar } from "@/app/components/action-page/action-health-factor-bar"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { isHealthFactorMetric, parseHealthFactorValue } from "@/app/lib/action-system/health-factor-ui"
 import {
@@ -122,7 +123,7 @@ export function ActionConfigureAmountSection({
   | "assetLabel"
   | "amountUnitLabel"
 >) {
-  const { t } = useTranslation()
+  const { exact } = useCurrency()
   const pillLabel = assetLabel ?? assetSymbol ?? preview?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
 
   return (
@@ -130,7 +131,7 @@ export function ActionConfigureAmountSection({
       label={inputLabel ?? verb}
       amount={amount}
       onAmountChange={onAmountChange}
-      approxUsdLabel={preview?.amountUsdLabel ?? t("≈ $0.00")}
+      approxUsdLabel={preview?.amountUsdLabel ?? `≈ ${exact(0)}`}
       assetLabel={pillLabel}
       unitLabel={amountUnitLabel}
       footer={amountFooter}

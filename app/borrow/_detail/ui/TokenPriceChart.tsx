@@ -1,6 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 import type { Series } from "@/app/lib/borrow-detail"
 
@@ -32,13 +36,29 @@ export function TokenPriceChart({
   formatValue = defaultFormatValue,
   onHoverChange,
 }: TokenPriceChartProps) {
+  const { language } = useDisplayPreferences()
+  const { ctx, convert } = useCurrency()
+  const { t } = useTranslation()
+  const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const width = 900
   const plotW = width - CHART_RIGHT
   const plotH = height - CHART_BOTTOM - CHART_TOP
   const containerRef = React.useRef<HTMLDivElement>(null)
   const [hoverIndex, setHoverIndex] = React.useState<number | null>(null)
 
-  const layout = React.useMemo(() => buildLayout(series.points, plotW, plotH), [series.points, plotW, plotH])
+  const layout = React.useMemo(() => buildLayout(series.points, plotW, plotH, locale), [locale, series.points, plotW, plotH])
+  const resolvedFormatValue = React.useCallback(
+    (value: number) =>
+      formatValue === defaultFormatValue
+        ? new Intl.NumberFormat(locale, {
+            style: "currency",
+            currency: ctx.currency,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(convert(value))
+        : formatValue(value),
+    [convert, ctx.currency, formatValue, locale],
+  )
 
   const activeIndex = hoverIndex ?? layout.points.length - 1
   React.useEffect(() => {
@@ -73,7 +93,7 @@ export function TokenPriceChart({
         className={cn("flex items-center justify-center text-sm text-[#A3A3A3]", className)}
         style={{ height }}
         role="img"
-        aria-label={ariaLabel ?? "Price chart"}
+        aria-label={ariaLabel ?? t("Price chart")}
       />
     )
   }
@@ -89,7 +109,7 @@ export function TokenPriceChart({
       className={cn("relative w-full touch-none select-none", className)}
       style={{ height }}
       role="img"
-      aria-label={ariaLabel ?? "Price chart"}
+      aria-label={ariaLabel ?? t("Price chart")}
       onPointerMove={(e) => handlePointer(e.clientX)}
       onPointerDown={(e) => handlePointer(e.clientX)}
       onPointerLeave={() => setHoverIndex(null)}
@@ -144,7 +164,7 @@ export function TokenPriceChart({
               fontSize={10}
               fontFamily="ui-sans-serif, system-ui, -apple-system, sans-serif"
             >
-              {formatValue(tick.value)}
+              {resolvedFormatValue(tick.value)}
             </text>
           ))}
         </g>
@@ -174,7 +194,7 @@ type LayoutPoint = { t: string; v: number }
 type YTick = { value: number; y: number }
 type XTick = { x: number; label: string }
 
-function buildLayout(points: LayoutPoint[], plotW: number, plotH: number) {
+function buildLayout(points: LayoutPoint[], plotW: number, plotH: number, locale: string) {
   const sorted = [...points]
     .filter((p) => Number.isFinite(p.v))
     .sort((a, b) => (a.t > b.t ? 1 : a.t < b.t ? -1 : 0))
@@ -199,23 +219,23 @@ function buildLayout(points: LayoutPoint[], plotW: number, plotH: number) {
     yTicks.push({ value: v, y: toY(v) })
   }
 
-  return { points: sorted, coords, yTicks, xTicks: pickXLabels(sorted, stepX) }
+  return { points: sorted, coords, yTicks, xTicks: pickXLabels(sorted, stepX, locale) }
 }
 
-function pickXLabels(points: LayoutPoint[], stepX: number): XTick[] {
+function pickXLabels(points: LayoutPoint[], stepX: number, locale: string): XTick[] {
   const maxLabels = 7
   const count = points.length
   if (count <= maxLabels) {
-    return points.map((p, i) => ({ x: i * stepX, label: formatAxisDate(p.t) }))
+    return points.map((p, i) => ({ x: i * stepX, label: formatAxisDate(p.t, locale) }))
   }
   const stride = Math.ceil((count - 1) / (maxLabels - 1))
   const ticks: XTick[] = []
   for (let i = 0; i < count; i += stride) {
-    ticks.push({ x: i * stepX, label: formatAxisDate(points[i].t) })
+    ticks.push({ x: i * stepX, label: formatAxisDate(points[i].t, locale) })
   }
   const last = count - 1
   if (ticks[ticks.length - 1]?.x !== last * stepX) {
-    ticks.push({ x: last * stepX, label: formatAxisDate(points[last].t) })
+    ticks.push({ x: last * stepX, label: formatAxisDate(points[last].t, locale) })
   }
   return ticks
 }
@@ -233,10 +253,10 @@ function nearestIndex(x: number, coords: Array<[number, number]>) {
   return best
 }
 
-function formatAxisDate(raw: string) {
+function formatAxisDate(raw: string, locale: string) {
   const d = new Date(raw.includes("T") ? raw : `${raw}T12:00:00`)
   if (Number.isNaN(d.getTime())) return raw
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric" })
 }
 
 function defaultFormatValue(v: number) {

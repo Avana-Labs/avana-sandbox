@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useLendSessionContext, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { getLendMarketById } from "@/app/lib/lend-system/catalog"
@@ -52,6 +54,8 @@ export function LendActionPageClient({
 }) {
   const descriptor = getActionDescriptor("lend", kind)
   const router = useRouter()
+  const { exact } = useCurrency()
+  const { t } = useTranslation()
   const { walletId } = useAvanaSessions()
   const session = useLendSessionContext()
   const priceFor = usePriceFor()
@@ -159,19 +163,19 @@ export function LendActionPageClient({
       setPreviewUi({
         allowed: false,
         amountLabel: `${parsed} ${market.asset.symbol}`,
-        amountUsdLabel: "≈ $0.00",
-        rateLabel: "Withdrawal",
+        amountUsdLabel: `≈ ${exact(0)}`,
+        rateLabel: t("Withdrawal"),
         rateValue: "—",
-        marketLabel: "Market",
+        marketLabel: t("Market"),
         marketValue: formatLendMarketValueLabel(market.asset.symbol),
-        balanceLabel: "Deposited",
+        balanceLabel: t("Deposited"),
         balanceValue: "0",
         maxAmount: 0,
         metrics: [],
         networkFeeLabel: formatActionFeeSummary(0, 0.03),
         risk: null,
-        blockedReason: "No deposited position found for this market.",
-        validationErrors: ["No deposited position found for this market."],
+        blockedReason: t("No deposited position found for this market."),
+        validationErrors: [t("No deposited position found for this market.")],
         warnings: [],
       })
       return
@@ -292,7 +296,7 @@ export function LendActionPageClient({
 
     try {
       const parsed = parsePositiveActionAmount(amount)
-      if (parsed == null) throw new Error("Enter a valid amount")
+      if (parsed == null) throw new Error(t("Enter a valid amount"))
       const action =
         kind === "deposit"
           ? {
@@ -311,7 +315,7 @@ export function LendActionPageClient({
             }
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
-      if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
+      if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? t("Action unavailable"))
 
       const simulated = session.readAdapter.mode === "sandbox"
       const result = await runActionSubmitFlow({
@@ -321,7 +325,7 @@ export function LendActionPageClient({
         execute: async () => session.executeTransaction(preview.intent),
       })
 
-      if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? "Transaction failed")
+      if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? t("Transaction failed"))
       setSuccessUi(
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
@@ -336,19 +340,19 @@ export function LendActionPageClient({
       )
       setStage("success")
     } catch (error) {
-      const rawMessage = error instanceof Error ? error.message : "Unable to sign the transaction"
+      const rawMessage = error instanceof Error ? error.message : t("Unable to sign the transaction")
       // Raw backend codes stay in logs; users see plain-language copy (issue #143).
       if (process.env.NODE_ENV !== "production") console.error(rawMessage)
       setOutcome({
         tone: "error",
-        title: "Something went wrong",
-        message: humanizeBlockedReason(rawMessage) ?? "Unable to sign the transaction",
+        title: t("Something went wrong"),
+        message: humanizeBlockedReason(rawMessage) ?? t("Unable to sign the transaction"),
       })
       setStage("error")
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, isPending, kind, market, position, previewUi, router, session, stage, successUi, walletId])
+  }, [amount, closeHref, descriptor.primaryVerb, exact, isPending, kind, market, position, previewUi, router, session, stage, successUi, t, walletId])
 
   // Never dead-end on "Market unavailable": an unknown id routes to the picker
   // (stage "select") above. This only guards the impossible no-market/non-select
@@ -360,9 +364,9 @@ export function LendActionPageClient({
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
-      ? "Choose the market to withdraw from."
+      ? t("Choose the market to withdraw from.")
       : stage === "select" && kind === "deposit"
-        ? "Choose the asset to deposit."
+        ? t("Choose the asset to deposit.")
         : stage === "success" || stage === "processing" || stage === "review"
           ? undefined
           : descriptor.subtitle
@@ -381,13 +385,13 @@ export function LendActionPageClient({
       {stage === "select" && !embedded ? (
         <ActionSelectStage
           items={kind === "withdraw" ? withdrawItems : depositItems}
-          sectionLabel={kind === "withdraw" ? "Your positions" : "Supported assets"}
-          searchPlaceholder={kind === "withdraw" ? "Find an asset" : "Search assets"}
-          emptyTitle={kind === "withdraw" ? "No deposits found" : "No assets in your wallet"}
+          sectionLabel={kind === "withdraw" ? t("Your positions") : t("Supported assets")}
+          searchPlaceholder={kind === "withdraw" ? t("Find an asset") : t("Search assets")}
+          emptyTitle={kind === "withdraw" ? t("No deposits found") : t("No assets in your wallet")}
           emptyDescription={
             kind === "withdraw"
-              ? "Deposit first, then withdraw from here."
-              : "You need to hold a supported asset in your wallet before you can deposit."
+              ? t("Deposit first, then withdraw from here.")
+              : t("You need to hold a supported asset in your wallet before you can deposit.")
           }
           onSelect={(id) => {
             router.replace(actionPagePath("lend", kind, { market: id }))
@@ -402,7 +406,7 @@ export function LendActionPageClient({
       {stage === "review" && previewUi ? (
         <ActionReviewStage
           title={reviewStageTitle(descriptor.primaryVerb)}
-          subtitle="Confirm the details below before signing."
+          subtitle={t("Confirm the details below before signing.")}
           preview={previewUi}
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}

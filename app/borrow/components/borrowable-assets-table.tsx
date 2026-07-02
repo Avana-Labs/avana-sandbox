@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
@@ -14,7 +16,6 @@ import {
 import {
   BORROWABLE_CATEGORIES,
   aprToneClass,
-  formatCompactUsd,
   utilizationToneClass,
   type BorrowableAsset,
 } from "@/app/lib/data/borrow-domain"
@@ -52,10 +53,12 @@ export function BorrowableAssetsPanel({
   variant = "default",
 }: BorrowableAssetsTableProps) {
   const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
-        No assets match your filter.
+        {t("No assets match your filter.")}
       </div>
     )
   }
@@ -118,14 +121,14 @@ export function BorrowableAssetsPanel({
                             </div>
                           </div>
                         }
-                        metric={<MarketMobileMetric value={`${asset.borrowApr.toFixed(2)}%`} label="Borrow APR" valueClassName={aprTone} />}
+                        metric={<MarketMobileMetric value={`${asset.borrowApr.toFixed(2)}%`} label={t("Borrow APR")} valueClassName={aprTone} />}
                       />
 
                       <MarketMobileStatList className="mt-4">
-                        <MarketMobileStatRow label="Total Borrows" value={formatCompactUsd(asset.totalBorrowedUsd)} />
-                        <MarketMobileStatRow label="Liquidity" value={formatCompactUsd(asset.availableUsd)} />
+                        <MarketMobileStatRow label={t("Total Borrows")} value={compact(asset.totalBorrowedUsd)} />
+                        <MarketMobileStatRow label={t("Liquidity")} value={compact(asset.availableUsd)} />
                         <MarketMobileStatRow
-                          label="Utilization"
+                          label={t("Utilization")}
                           value={formatUtilizationPct(asset.utilization)}
                           valueClassName={utilizationToneClass(asset.utilization)}
                         />
@@ -137,7 +140,7 @@ export function BorrowableAssetsPanel({
                           onBorrow(asset)
                         }}
                       >
-                        Borrow
+                        {t("Borrow")}
                       </MarketMobilePrimaryAction>
                     </MarketMobileCard>
                   </li>
@@ -173,6 +176,8 @@ function LoanAssetsSection({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const priceFor = usePriceFor()
   const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
 
   const toggleSort = (nextKey: typeof sortKey) => {
     if (sortKey === nextKey) {
@@ -221,7 +226,7 @@ function LoanAssetsSection({
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>ASSET</span>
+                    <span>{t("ASSET")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -236,7 +241,7 @@ function LoanAssetsSection({
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>BASE APY</span>
+                    <span>{t("BASE APY")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -251,7 +256,7 @@ function LoanAssetsSection({
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>TOTAL BORROWS</span>
+                    <span>{t("TOTAL BORROWS")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -266,7 +271,7 @@ function LoanAssetsSection({
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>LIQUIDITY</span>
+                    <span>{t("LIQUIDITY")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -308,12 +313,12 @@ function LoanAssetsSection({
                   </td>
                   <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
-                      {formatCompactUsd(asset.totalBorrowedUsd)}
+                      {compact(asset.totalBorrowedUsd)}
                     </div>
                   </td>
                   <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
-                      {formatCompactUsd(asset.availableUsd)}
+                      {compact(asset.availableUsd)}
                     </div>
                   </td>
                   <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -327,7 +332,7 @@ function LoanAssetsSection({
                           router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
                         }}
                       >
-                        Deposit
+                        {t("Deposit")}
                       </PillButton>
                       <PillButton
                         variant="primary"
@@ -336,7 +341,7 @@ function LoanAssetsSection({
                           onBorrow(asset)
                         }}
                       >
-                        Borrow
+                        {t("Borrow")}
                       </PillButton>
                     </HoverActionGroup>
                   </td>
@@ -373,6 +378,8 @@ function AssetsSection({
 }) {
   const priceFor = usePriceFor()
   const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   return (
     <section className="mb-2">
       {!hideHeader ? (
@@ -390,11 +397,11 @@ function AssetsSection({
             <thead>
               <tr className="bg-table-header text-left text-muted-foreground">
                 <th className="pb-2 pt-3 pl-5 pr-3 text-[10.5px] font-medium uppercase tracking-[0.06em]">#</th>
-                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">Asset</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Borrow APR</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Utilization</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Available</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Wallet Balance</th>
+                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Asset")}</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Borrow APR")}</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Utilization")}</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Available")}</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Wallet Balance")}</th>
                 <th className="w-20 pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">7D</th>
                 <th className="w-44 pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]" />
               </tr>
@@ -427,7 +434,7 @@ function AssetsSection({
                     </span>
                   </td>
                   <td className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
-                    {formatCompactUsd(asset.availableUsd)}
+                    {compact(asset.availableUsd)}
                   </td>
                   <td className={cn("py-2.5 pl-4 text-right font-data text-[13px] tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground", TABLE_ROW_HOVER_BG)}>
                     {asset.walletBalanceLabel}
@@ -448,7 +455,7 @@ function AssetsSection({
                           router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
                         }}
                       >
-                        Deposit
+                        {t("Deposit")}
                       </PillButton>
                       <PillButton
                         variant="primary"
@@ -457,7 +464,7 @@ function AssetsSection({
                           onBorrow(asset)
                         }}
                       >
-                        Borrow
+                        {t("Borrow")}
                       </PillButton>
                     </HoverActionGroup>
                   </td>

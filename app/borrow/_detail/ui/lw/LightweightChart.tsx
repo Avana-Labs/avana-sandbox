@@ -3,9 +3,13 @@
 import * as React from "react"
 import { Area, AreaChart, Bar, BarChart, Line, LineChart, ReferenceDot, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
 import { useTheme } from "next-themes"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { Series, TimeRangeId } from "@/app/lib/borrow-detail"
 import type { TokenChartHover } from "../TokenPriceChart"
 import { makeChartPalette, type ThemeMode } from "@/app/lib/chart-colors"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 
 export type LwChartType = "area" | "line" | "bar"
@@ -63,6 +67,10 @@ export function LightweightChart({
 }: LightweightChartProps) {
   const isMobile = useMediaQuery("(max-width: 639px)")
   const { resolvedTheme } = useTheme()
+  const { language } = useDisplayPreferences()
+  const { ctx, convert } = useCurrency()
+  const { t } = useTranslation()
+  const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const theme: ThemeMode = resolvedTheme === "dark" ? "dark" : "light"
 
   const accentKey = Array.isArray(accentClassName) ? accentClassName.join("|") : accentClassName ?? ""
@@ -71,10 +79,21 @@ export function LightweightChart({
   void timeRange
   void priceRange
 
-  const data = React.useMemo(() => toChartRows(series.points), [series.points])
+  const data = React.useMemo(() => toChartRows(series.points, locale), [locale, series.points])
   const xTickIndexes = React.useMemo(() => pickTickIndexes(data.length, isMobile), [data.length, isMobile])
   const resolvedTone = tone === "neutral" ? resolveSeriesTone(data) : tone
   const palette = variant === "token" ? makeTokenChartPalette(theme) : makeChartPalette({ theme, tone: resolvedTone })
+  const resolvedFormatValue = React.useCallback(
+    (value: number) =>
+      formatValue === defaultFormat
+        ? formatCompactCurrencyValue(convert(value), ctx.currency, locale)
+        : formatValue(value),
+    [convert, ctx.currency, formatValue, locale],
+  )
+  const resolvedFormatTime = React.useCallback(
+    (iso: string) => (formatTime === defaultFormatTime ? defaultFormatTime(iso, locale) : formatTime(iso)),
+    [formatTime, locale],
+  )
 
   const yTickValues = React.useMemo(() => {
     if (isMobile || data.length === 0) return []
@@ -97,7 +116,7 @@ export function LightweightChart({
   const lastPoint = data[data.length - 1]
 
   return (
-    <div className={chartShellClassName} style={height !== 220 ? { height } : undefined} role="img" aria-label={ariaLabel}>
+    <div className={chartShellClassName} style={height !== 220 ? { height } : undefined} role="img" aria-label={ariaLabel ?? t("Price chart")}>
       <ResponsiveContainer width="100%" height="100%">
         <ChartComponent
           data={data}
@@ -157,7 +176,7 @@ export function LightweightChart({
             tickLine={false}
             width={isMobile ? 0 : 52}
             tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-            tickFormatter={formatValue}
+            tickFormatter={resolvedFormatValue}
             ticks={yTickValues}
             domain={[(dataMin: number) => dataMin - 4, (dataMax: number) => dataMax + 4]}
           />
@@ -169,8 +188,8 @@ export function LightweightChart({
                 return (
                   <div className="rounded-xs border border-border bg-popover px-2.5 py-1.5 shadow-elev-2">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-medium text-muted-foreground">{formatTime(point.iso)}</span>
-                      <span className="font-data text-[12.5px] font-medium text-foreground">{formatValue(point.value)}</span>
+                      <span className="text-[10px] font-medium text-muted-foreground">{resolvedFormatTime(point.iso)}</span>
+                      <span className="font-data text-[12.5px] font-medium text-foreground">{resolvedFormatValue(point.value)}</span>
                     </div>
                   </div>
                 )
@@ -248,7 +267,7 @@ export function LightweightChart({
 
 type ChartRow = { idx: number; t: string; iso: string; label: string; value: number }
 
-function toChartRows(points: Series["points"]): ChartRow[] {
+function toChartRows(points: Series["points"], locale: string): ChartRow[] {
   return [...points]
     .filter((point) => Number.isFinite(point.v))
     .sort((a, b) => (a.t > b.t ? 1 : a.t < b.t ? -1 : 0))
@@ -256,7 +275,7 @@ function toChartRows(points: Series["points"]): ChartRow[] {
       idx,
       t: point.t,
       iso: point.t,
-      label: formatTick(point.t),
+      label: formatTick(point.t, locale),
       value: point.v,
     }))
 }
@@ -276,10 +295,10 @@ function resolveSeriesTone(points: ChartRow[]): "positive" | "negative" {
   return points[points.length - 1].value >= points[0].value ? "positive" : "negative"
 }
 
-function formatTick(raw: string) {
+function formatTick(raw: string, locale: string) {
   const d = new Date(raw.includes("T") ? raw : `${raw}T12:00:00`)
   if (Number.isNaN(d.getTime())) return raw
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric" })
 }
 
 function defaultFormat(v: number): string {
@@ -289,10 +308,29 @@ function defaultFormat(v: number): string {
   return `$${v.toFixed(2)}`
 }
 
-function defaultFormatTime(iso: string): string {
+function defaultFormatTime(iso: string, locale?: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" })
+}
+
+function formatCompactCurrencyValue(value: number, currency: string, locale: string): string {
+  const abs = Math.abs(value)
+  if (abs >= 1_000) {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      notation: "compact",
+      maximumFractionDigits: 2,
+    }).format(value)
+  }
+
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
 }
 
 function makeTokenChartPalette(theme: ThemeMode) {
