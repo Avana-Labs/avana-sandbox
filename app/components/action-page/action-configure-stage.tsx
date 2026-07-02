@@ -201,7 +201,13 @@ export function ActionConfigureStage({
   const showInlineAmount = !hideAmountInput && !showStackedAmount
   const showHomeDetails = !homeLayout
   const showStandaloneLeverage = Boolean(onMultiplierChange) && !(homeLayout && showStackedAmount)
-  const healthFactorRow = preview?.metrics.find((row) => isHealthFactorMetric(row.label, row.id))
+  // A blocked/invalid action has no valid projection — the engine returns
+  // after === before, so showing the metrics would misrepresent a SAFE, unchanged
+  // position. Hide the projected metrics and let the block reason speak instead.
+  const previewBlocked = Boolean(preview && !preview.allowed && preview.blockedReason)
+  const healthFactorRow = previewBlocked
+    ? undefined
+    : preview?.metrics.find((row) => isHealthFactorMetric(row.label, row.id))
   const healthFactorValue = parseHealthFactorValue(healthFactorRow?.after ?? healthFactorRow?.value)
   const showConfigureHealthFactor =
     homeLayout && isConfigureVisibleStage(configureStage) && healthFactorRow != null
@@ -304,7 +310,7 @@ export function ActionConfigureStage({
             </ActionCard>
           ) : null}
 
-          {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
+          {!previewBlocked && preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
 
           {preview?.risk?.title && preview.risk.message ? (
             <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
