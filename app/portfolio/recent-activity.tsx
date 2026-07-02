@@ -152,7 +152,7 @@ function matchesSearch(row: PortfolioActivityRow, query: string) {
 function SearchPill({ value, onChange }: { value: string; onChange: (nextValue: string) => void }) {
   return (
     <label className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-full border border-border bg-card px-4 text-[13px] shadow-none">
-      <Search className="h-4 w-4 shrink-0 text-[#01AACF]" />
+      <Search className="h-4 w-4 shrink-0 text-brand" />
       <input
         type="search"
         value={value}

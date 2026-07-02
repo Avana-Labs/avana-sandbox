@@ -34,7 +34,7 @@ const CATEGORY_TABS: readonly CategoryChip[] = CATEGORY_CHIPS.borrow
 
 function SearchIcon({ className }: { className?: string } = {}) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-[#01AACF]", className)}>
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-brand", className)}>
       <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
     </svg>
@@ -112,7 +112,7 @@ function ExpandableDesktopSearch({
           )}
           onClick={() => setOpen(true)}
         >
-          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6", "dark:text-[#01AACF]")} />
+          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6", "dark:text-brand")} />
         </button>
 
         {isExpanded ? (
@@ -136,7 +136,7 @@ function FilterCheckIcon({ checked, dark }: { checked: boolean; dark: boolean })
       className={cn(
         "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
         checked
-          ? "border-[#01AACF] bg-[#01AACF] text-white"
+          ? "border-brand bg-brand text-white"
           : dark
             ? "border-white/55 bg-transparent text-transparent"
             : "border-black/35 bg-transparent text-transparent",
@@ -393,8 +393,8 @@ export function TabsBar({
 
       <div className="py-2.5 md:hidden">
         <div className="flex items-center gap-2">
-          <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
-            <SearchIcon className="dark:text-[#01AACF]" />
+          <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-brand/30">
+            <SearchIcon className="dark:text-brand" />
             <input
               aria-label="Filter assets"
               value={search}

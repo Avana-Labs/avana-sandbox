@@ -52,7 +52,7 @@ export function SuppliesPanel({
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
-        <div className="text-[20px] font-medium leading-snug tracking-tight text-[#01AACF]">
+        <div className="text-[20px] font-medium leading-snug tracking-tight text-brand">
           Nothing supplied yet
         </div>
         <div className="mt-1 text-[15px] leading-snug">To borrow you need to supply any LPs to be used as collateral</div>

@@ -59,7 +59,7 @@ function parseCompactUsdLabel(value?: string) {
 
 function SearchIcon({ className }: { className?: string } = {}) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-[#01AACF]", className)}>
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-brand", className)}>
       <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
     </svg>
@@ -123,7 +123,7 @@ function ExpandableDesktopSearch({ value, onChange }: { value: string; onChange:
           )}
           onClick={() => setOpen(true)}
         >
-          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6", "dark:text-[#01AACF]")} />
+          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6", "dark:text-brand")} />
         </button>
 
         {isExpanded ? (
@@ -147,7 +147,7 @@ function FilterCheckIcon({ checked }: { checked: boolean }) {
       className={cn(
         "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
         checked
-          ? "border-[#01AACF] bg-[#01AACF] text-white"
+          ? "border-brand bg-brand text-white"
           : "border-black/35 bg-transparent text-transparent dark:border-white/55",
       )}
     >

@@ -47,7 +47,7 @@ function getHubBucket(row: AssetRow) {
 
 function SearchIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-6 text-[#01AACF]">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-6 text-brand">
       <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
     </svg>
@@ -78,7 +78,7 @@ function FilterCheckIcon({ checked }: { checked: boolean }) {
       className={cn(
         "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
         checked
-          ? "border-[#01AACF] bg-[#01AACF] text-white"
+          ? "border-brand bg-brand text-white"
           : "border-black/35 bg-transparent text-transparent dark:border-white/55",
       )}
     >
@@ -706,7 +706,7 @@ export function LendAssetSpokes({
   return (
     <section className="mt-16 space-y-8" style={{ overflowAnchor: "none" }}>
       <div className="hidden items-center gap-2 py-2.5 md:flex">
-        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30 md:flex-none md:w-[280px]">
+        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-brand/30 md:flex-none md:w-[280px]">
           <SearchIcon />
           <input
             aria-label="Filter assets"
@@ -739,7 +739,7 @@ export function LendAssetSpokes({
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto py-2.5 md:hidden">
-        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
+        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-brand/30">
           <SearchIcon />
           <input
             aria-label="Filter assets"

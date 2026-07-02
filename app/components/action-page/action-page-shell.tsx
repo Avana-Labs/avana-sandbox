@@ -76,7 +76,7 @@ export function ActionPageShell({
                 aria-label={showDollarAmounts ? t("Hide dollar amounts") : t("Show dollar amounts")}
                 title={t("Dollar amounts")}
                 onClick={toggleShowDollarAmounts}
-                className="inline-flex size-10 items-center justify-center rounded-full bg-transparent text-[#01AACF] outline-none transition-transform duration-200 hover:-translate-y-px hover:text-[#01AACF]/80 focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+                className="inline-flex size-10 items-center justify-center rounded-full bg-transparent text-brand outline-none transition-transform duration-200 hover:-translate-y-px hover:text-brand/80 focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
               >
                 {showDollarAmounts ? (
                   <Eye className="size-5" strokeWidth={1.9} />
