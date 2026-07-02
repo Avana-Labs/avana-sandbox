@@ -290,7 +290,7 @@ function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
     { id: "utilization", label: "Utilization", value: formatPct(spoke.maxLtv * 0.82, 1) },
     { id: "apr", label: "Supply APY", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
     { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
-    { id: "maxLtv", label: "Max LTV", value: formatPct(spoke.maxLtv, 1) },
+    { id: "maxLtv", label: "Max LTV", value: formatPct(row.ltv, 1) },
     { id: "available", label: "Available to borrow", value: formatCompactUsd(row.availableUsd) },
     ...buildLiquidationRiskQuickStats(row.id, totalBorrowed),
   ]
@@ -344,7 +344,7 @@ function pairReferencePrice(row: BorrowPoolRow): number {
   return 1
 }
 
-function formatOraclePrice(v: number): string {
+export function formatOraclePrice(v: number): string {
   if (v >= 100) return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   if (v >= 1) return `$${v.toFixed(4)}`
   return `$${v.toFixed(6)}`

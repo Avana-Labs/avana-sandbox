@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
+import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { cn } from "@/lib/utils"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
@@ -24,6 +25,7 @@ type ActionConfigureStageProps = {
   verb: string
   amount: string
   onAmountChange: (value: string) => void
+  inputLabel?: string
   preview: ActionPreviewUi | null
   assetSymbol?: string
   borrowSymbol?: string
@@ -43,6 +45,7 @@ type ActionConfigureStageProps = {
   multiplierMin?: number
   multiplierMax?: number
   multiplierStep?: number
+  multiplierLabel?: string
   /** Short explanation rendered above the standalone leverage ruler. */
   leverageHint?: ReactNode
   canGoBack?: boolean
@@ -50,6 +53,11 @@ type ActionConfigureStageProps = {
   amountReadOnly?: boolean
   amountVariant?: "card" | "inset" | "raised"
   amountFooter?: ReactNode
+  showBalance?: boolean
+  onMax?: () => void
+  /** Explicit balance line; falls back to the preview's balance when omitted. */
+  balanceLabel?: string
+  balanceValue?: string
   assetLabel?: string
   amountUnitLabel?: string
   hideAssetSelector?: boolean
@@ -78,13 +86,19 @@ export function ActionConfigureAmountSection({
   assetPickerVariant = "menu",
   pickerTokens,
   amountFooter,
+  showBalance = false,
+  onMax,
+  balanceLabel,
+  balanceValue,
   assetLabel,
   amountUnitLabel,
+  inputLabel,
 }: Pick<
   ActionConfigureStageProps,
   | "verb"
   | "amount"
   | "onAmountChange"
+  | "inputLabel"
   | "preview"
   | "assetSymbol"
   | "borrowSymbol"
@@ -100,6 +114,10 @@ export function ActionConfigureAmountSection({
   | "assetPickerVariant"
   | "pickerTokens"
   | "amountFooter"
+  | "showBalance"
+  | "onMax"
+  | "balanceLabel"
+  | "balanceValue"
   | "assetLabel"
   | "amountUnitLabel"
 >) {
@@ -107,13 +125,16 @@ export function ActionConfigureAmountSection({
 
   return (
     <ActionAmountCard
-      label={verb}
+      label={inputLabel ?? verb}
       amount={amount}
       onAmountChange={onAmountChange}
       approxUsdLabel={preview?.amountUsdLabel ?? "≈ $0.00"}
       assetLabel={pillLabel}
       unitLabel={amountUnitLabel}
       footer={amountFooter}
+      balanceLabel={showBalance ? balanceLabel ?? preview?.balanceLabel : undefined}
+      balanceValue={showBalance ? balanceValue ?? preview?.balanceValue : undefined}
+      onMax={showBalance ? onMax : undefined}
       assetSymbol={assetSymbol ?? pillLabel}
       borrowSymbol={borrowSymbol}
       readOnly={amountReadOnly}
@@ -155,6 +176,7 @@ export function ActionConfigureStage({
   multiplierMin = 1,
   multiplierMax = 20,
   multiplierStep = 0.1,
+  multiplierLabel = "Leverage",
   leverageHint,
   canGoBack = false,
   hideAmountInput = false,
@@ -166,8 +188,13 @@ export function ActionConfigureStage({
   assetPickerVariant = "menu",
   pickerTokens,
   amountFooter,
+  showBalance = false,
+  onMax,
+  balanceLabel,
+  balanceValue,
   assetLabel,
   amountUnitLabel,
+  inputLabel,
 }: ActionConfigureStageProps) {
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
@@ -184,7 +211,13 @@ export function ActionConfigureStage({
   const showInlineAmount = !hideAmountInput && !showStackedAmount
   const showHomeDetails = !homeLayout
   const showStandaloneLeverage = Boolean(onMultiplierChange) && !(homeLayout && showStackedAmount)
-  const healthFactorRow = preview?.metrics.find((row) => isHealthFactorMetric(row.label, row.id))
+  // A blocked/invalid action has no valid projection — the engine returns
+  // after === before, so showing the metrics would misrepresent a SAFE, unchanged
+  // position. Hide the projected metrics and let the block reason speak instead.
+  const previewBlocked = Boolean(preview && !preview.allowed && preview.blockedReason)
+  const healthFactorRow = previewBlocked
+    ? undefined
+    : preview?.metrics.find((row) => isHealthFactorMetric(row.label, row.id))
   const healthFactorValue = parseHealthFactorValue(healthFactorRow?.after ?? healthFactorRow?.value)
   const showConfigureHealthFactor =
     homeLayout && isConfigureVisibleStage(configureStage) && healthFactorRow != null
@@ -231,8 +264,13 @@ export function ActionConfigureStage({
           assetPickerVariant={assetPickerVariant}
           pickerTokens={pickerTokens}
           amountFooter={amountFooter}
+          showBalance={showBalance}
+          onMax={onMax}
+          balanceLabel={balanceLabel}
+          balanceValue={balanceValue}
           assetLabel={assetLabel}
           amountUnitLabel={amountUnitLabel}
+          inputLabel={inputLabel}
         />
       ) : null}
 
@@ -245,6 +283,7 @@ export function ActionConfigureStage({
             min={multiplierMin}
             max={multiplierMax}
             step={multiplierStep}
+            label={multiplierLabel}
           />
         </div>
       ) : null}
@@ -258,7 +297,7 @@ export function ActionConfigureStage({
       ) : null}
 
       {preview && showHomeDetails ? (
-        <div className={previewMotionClassName}>
+        <div className={cn(previewMotionClassName, "space-y-3")}>
           {preview.rateLabel || preview.marketValue || preview.marketBreakdown ? (
             <ActionCard>
               {preview.rateLabel ? (
@@ -283,7 +322,7 @@ export function ActionConfigureStage({
             </ActionCard>
           ) : null}
 
-          {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
+          {!previewBlocked && preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
 
           {preview?.risk?.title && preview.risk.message ? (
             <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
@@ -314,18 +353,16 @@ export function ActionConfigureStage({
               isPending,
               blockedReason: preview?.blockedReason ?? null,
             })}
-            className={cn(
-              "mt-1 flex h-14 w-full items-center justify-center rounded-[20px] text-[17px] font-semibold transition-opacity disabled:cursor-not-allowed",
-              shouldDisablePrimaryCta({
+            className={primaryCtaClass({
+              disabled: shouldDisablePrimaryCta({
                 stage: configureStage,
                 isValid,
                 isPending,
                 blockedReason: preview?.blockedReason ?? null,
-              })
-                ? "border border-brand/25 bg-brand/20 text-brand-readable"
-                : "bg-brand text-brand-foreground hover:opacity-90",
-              (isPending || stage === "wallet_sign" || stage === "approve_allowance") && "opacity-70",
-            )}
+              }),
+              pending: isPending || stage === "wallet_sign" || stage === "approve_allowance",
+              className: "mt-1",
+            })}
             data-testid="action-footer-primary"
           >
             {isPending || stage === "wallet_sign" || stage === "approve_allowance" ? "Processing…" : primaryLabel}

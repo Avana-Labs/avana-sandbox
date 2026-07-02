@@ -60,6 +60,8 @@ type DashboardHeroProps = {
   statTwoValue?: string
   borrowSnapshot?: BorrowSnapshot
   multiplySnapshot?: BorrowSnapshot
+  /** The user's primary open multiply position, used to pre-load "Increase loop". */
+  multiplyPositionTarget?: { marketId: string; multiplier: number } | null
 }
 
 type HeroUiConfig = {
@@ -109,12 +111,14 @@ function buildActions({
   secondaryActionLabel,
   returnHref,
   onNavigate,
+  multiplyPositionTarget,
 }: {
   actionLabels?: string[]
   primaryActionLabel: string
   secondaryActionLabel: string
   returnHref?: string
   onNavigate?: (href: string) => void
+  multiplyPositionTarget?: { marketId: string; multiplier: number } | null
 }): PortfolioHeroAction[] {
   const labels = actionLabels?.length ? actionLabels : [primaryActionLabel, secondaryActionLabel]
 
@@ -124,8 +128,24 @@ function buildActions({
     if (normalized.includes("repay")) return actionPagePath("borrow", "repay")
     if (normalized.includes("deposit")) return actionPagePath("lend", "deposit")
     if (normalized.includes("withdraw")) return actionPagePath("lend", "withdraw")
-    if (normalized.includes("increase")) return actionPagePath("multiply", "multiply")
-    if (normalized.includes("unwind") || normalized.includes("deleverage")) return actionPagePath("multiply", "deleverage")
+    if (normalized.includes("increase")) {
+      // Pre-load the user's actual position (market + current leverage baseline)
+      // so "Increase loop" grows the existing loop instead of a blank form.
+      return actionPagePath(
+        "multiply",
+        "multiply",
+        multiplyPositionTarget
+          ? { market: multiplyPositionTarget.marketId, multiplier: String(multiplyPositionTarget.multiplier) }
+          : undefined,
+      )
+    }
+    if (normalized.includes("unwind") || normalized.includes("deleverage")) {
+      return actionPagePath(
+        "multiply",
+        "deleverage",
+        multiplyPositionTarget ? { market: multiplyPositionTarget.marketId } : undefined,
+      )
+    }
     return null
   }
 
@@ -143,7 +163,7 @@ function buildActions({
     if (normalized.includes("withdraw") || normalized.includes("unwind")) {
       return "!border-border/70 !bg-background !text-[#E11D48] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-[#f38aa3] dark:hover:!bg-surface-hover"
     }
-    return "!border-border/70 !bg-background !text-[#01AACF] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
+    return "!border-border/70 !bg-background !text-brand hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
   }
 
   const resolveIcon = (label: string) => {
@@ -179,13 +199,17 @@ function InfoTip({ text }: { text: string }) {
   )
 }
 
-function StatCard({ label, value, helpText }: { label: string; value: string; helpText: string }) {
+const MASKED_VALUE = "••••••••"
+
+function StatCard({ label, value, helpText, hidden = false }: { label: string; value: string; helpText: string; hidden?: boolean }) {
   return (
     <div className="bg-background p-3.5 dark:bg-card">
       <div className="mb-0.5 flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
         {label} <InfoTip text={helpText} />
       </div>
-      <div className="font-data text-[17px] font-medium tabular-nums text-[#01AACF] dark:text-[#7DDCFF]">{value}</div>
+      <div className="font-data text-[17px] font-medium tabular-nums text-brand dark:text-[#7DDCFF]">
+        {hidden ? MASKED_VALUE : value}
+      </div>
     </div>
   )
 }
@@ -200,6 +224,7 @@ export function DashboardHero({
   statTwoValue = "+$12.46",
   borrowSnapshot,
   multiplySnapshot,
+  multiplyPositionTarget,
 }: DashboardHeroProps) {
   const router = useRouter()
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
@@ -253,6 +278,7 @@ export function DashboardHero({
         secondaryActionLabel: uiConfig.actionLabels?.[1] ?? "Withdraw",
         returnHref: dashboardHrefForTab(tab),
         onNavigate: (href) => router.push(href),
+        multiplyPositionTarget,
       })
     : []
 
@@ -303,6 +329,9 @@ export function DashboardHero({
                 onActiveIndexChange={setHoverIndex}
                 gradientId="portfolioHeroFill"
                 tone={trendTone}
+                // Mask keeps the trend shape but hides every dollar value: axis ticks and tooltip.
+                formatYAxis={showDollarAmounts ? undefined : () => "••"}
+                formatValue={showDollarAmounts ? undefined : () => MASKED_VALUE}
               />
             ) : null}
           </div>
@@ -318,8 +347,8 @@ export function DashboardHero({
               statTwoValue &&
               uiConfig.statTwoHelpText ? (
                 <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-card/10">
-                  <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} />
-                  <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} />
+                  <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} hidden={!showDollarAmounts} />
+                  <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} hidden={!showDollarAmounts} />
                 </div>
               ) : null}
             </div>
@@ -327,7 +356,9 @@ export function DashboardHero({
         </div>
       ) : null}
 
-      {isLoopingOverview && multiplySnapshot ? (
+      {/* Only surface credit-health / borrowing-power once real positions exist —
+          computing them over $0 data fabricated a "Safe"/"RISK" state. */}
+      {isLoopingOverview && multiplySnapshot && multiplyPositionTarget ? (
         <div className="mt-4 grid gap-4 xl:grid-cols-2">
           <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
           <CurrentLtvCard

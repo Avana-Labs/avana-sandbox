@@ -147,3 +147,10 @@ export function useTheme() {
 
   return context
 }
+
+// Same as useTheme but returns null instead of throwing when no provider is
+// mounted, so components that offer a theme toggle can render (without it) in
+// contexts that don't wrap ThemeProvider.
+export function useThemeOptional() {
+  return useContext(ThemeContext)
+}

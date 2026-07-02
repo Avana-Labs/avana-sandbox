@@ -25,6 +25,29 @@ describe("mapPreviewToBlockedUi", () => {
     expect(blocked?.primaryCtaHref).toBe(actionPagePath("borrow", "supply"))
   })
 
+  it("shows an exceeds-balance message when the wallet holds the asset", () => {
+    const blocked = mapPreviewToBlockedUi({
+      product: "lend",
+      kind: "deposit",
+      blockedReason: "Insufficient wallet balance.",
+      hasWalletBalance: true,
+    })
+
+    expect(blocked?.title).toBe("Amount exceeds your balance")
+    expect(blocked?.description).toContain("more than you hold")
+  })
+
+  it("shows the no-asset message when the wallet holds none of the asset", () => {
+    const blocked = mapPreviewToBlockedUi({
+      product: "lend",
+      kind: "deposit",
+      blockedReason: "Insufficient wallet balance.",
+      hasWalletBalance: false,
+    })
+
+    expect(blocked?.title).toBe("You don't have this asset in your wallet")
+  })
+
   it("returns null when there is no blocked reason", () => {
     expect(mapPreviewToBlockedUi({ product: "lend", kind: "deposit", blockedReason: null })).toBeNull()
   })

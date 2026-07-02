@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { LendAction, LendSystemState } from "@/app/lib/lend-engine"
 import { accrueLendSystemState } from "@/app/lib/lend-engine/simulation"
-import { deserializeLendSystemState } from "./codec"
+import { deserializeLendSystemState, serializeLendSystemState } from "./codec"
 import type {
   LendReadAdapter,
   LendSandboxActionResult,
@@ -85,6 +85,14 @@ export function useLendSession({
   const stateRef = useRef(state)
   stateRef.current = state
   const isPersistingRef = useRef(false)
+  // Track the exact serialized state/metadata this tab last wrote, so a cross-tab
+  // `storage` event that merely echoes our own write is ignored. Without this, the 30s
+  // accrual tick in one tab writes storage → other tab reloads + re-persists → first tab
+  // reloads + re-persists … a reload ping-pong across every open tab (issue #142).
+  const lastPersistedStateRef = useRef<string | null>(null)
+  const lastPersistedMetadataRef = useRef<string | null>(null)
+  const inFlightRef = useRef(0)
+  const [isPending, setIsPending] = useState(false)
 
   useEffect(() => {
     if (!shouldPersistState) {
@@ -95,6 +103,11 @@ export function useLendSession({
     }
     const nextState = readLendSessionState(walletId, sessionSeed)
     const metadata = readLendSessionMetadata(walletId)
+    lastPersistedStateRef.current = serializeLendSystemState(nextState)
+    lastPersistedMetadataRef.current = JSON.stringify({
+      transactionHistory: metadata.transactionHistory,
+      receipts: metadata.receipts,
+    })
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory)
     setTransactionReceipts(metadata.receipts)
@@ -105,7 +118,12 @@ export function useLendSession({
     // Skip while state is still the SSR seed (pre-hydration); persisting it here
     // would clobber richer data already in storage before the restore effect runs.
     if (state === seededState) return
+    const serializedState = serializeLendSystemState(state)
+    // Nothing changed since our last write (e.g. an accrual tick that produced an
+    // equivalent state) — don't re-write, so we don't emit a redundant storage event.
+    if (serializedState === lastPersistedStateRef.current) return
     isPersistingRef.current = true
+    lastPersistedStateRef.current = serializedState
     writeLendSessionState(walletId, state)
     queueMicrotask(() => {
       isPersistingRef.current = false
@@ -114,7 +132,13 @@ export function useLendSession({
 
   useEffect(() => {
     if (!shouldPersistState) return
+    const serializedMetadata = JSON.stringify({
+      transactionHistory,
+      receipts: transactionReceipts,
+    })
+    if (serializedMetadata === lastPersistedMetadataRef.current) return
     isPersistingRef.current = true
+    lastPersistedMetadataRef.current = serializedMetadata
     writeLendSessionMetadata(walletId, {
       transactionHistory,
       receipts: transactionReceipts,
@@ -131,6 +155,22 @@ export function useLendSession({
     const reloadFromStorage = () => {
       const nextState = readLendSessionState(walletId, sessionSeed)
       const metadata = readLendSessionMetadata(walletId)
+      const serializedState = serializeLendSystemState(nextState)
+      const serializedMetadata = JSON.stringify({
+        transactionHistory: metadata.transactionHistory,
+        receipts: metadata.receipts,
+      })
+      // The storage already matches what this tab holds/last wrote — a cross-tab echo of
+      // our own accrual write. Re-applying it would re-persist and bounce back to the
+      // other tab, so bail before touching state (breaks the 30s ping-pong).
+      if (
+        serializedState === lastPersistedStateRef.current &&
+        serializedMetadata === lastPersistedMetadataRef.current
+      ) {
+        return
+      }
+      lastPersistedStateRef.current = serializedState
+      lastPersistedMetadataRef.current = serializedMetadata
       setState(nextState)
       setTransactionHistory(metadata.transactionHistory)
       setTransactionReceipts(metadata.receipts)
@@ -272,12 +312,19 @@ export function useLendSession({
 
   const executeTransaction = useCallback(
     async (intent: LendTransactionIntent): Promise<LendSandboxActionResult> => {
-      const result = await transactionAdapter.executeTransaction(intent)
-      stateRef.current = result.state
-      setState(result.state)
-      setTransactionHistory((current) => mergeHistory(result.historyItem, current))
-      setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
-      return result
+      inFlightRef.current += 1
+      setIsPending(true)
+      try {
+        const result = await transactionAdapter.executeTransaction(intent)
+        stateRef.current = result.state
+        setState(result.state)
+        setTransactionHistory((current) => mergeHistory(result.historyItem, current))
+        setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
+        return result
+      } finally {
+        inFlightRef.current -= 1
+        setIsPending(inFlightRef.current > 0)
+      }
     },
     [transactionAdapter],
   )
@@ -312,6 +359,6 @@ export function useLendSession({
     executeTransaction,
     claimRewards,
     reset,
-    isPending: false,
+    isPending,
   }
 }

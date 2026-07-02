@@ -159,7 +159,7 @@ export function buildPoolRiskAssessment(row: BorrowPoolRow): RiskAssessment {
     metrics: [
       { id: "dex", label: "Source dex", value: getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue },
       { id: "spoke", label: "Spoke", value: getSpokeById(row.spoke).label },
-      { id: "maxLtv", label: "Max LTV", value: formatPct(getSpokeById(row.spoke).maxLtv, 0) },
+      { id: "maxLtv", label: "Max LTV", value: formatPct(row.ltv, 0) },
       { id: "apr", label: "Supply APY range", value: aprRangeLabel(row) },
     ],
   }

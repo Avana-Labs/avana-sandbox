@@ -20,15 +20,20 @@ function ActionTokenIconBase({
 }) {
   const icon = getTokenIconMeta(symbol)
   const { box, text } = ICON_SIZES[size]
-  const fallbackLabel = symbol.includes("/")
-    ? symbol
-        .split("/")
-        .map((part) => part.trim().slice(0, 1))
-        .join("")
-        .slice(0, 2)
-    : symbol.slice(0, 3)
+  // No asset picked yet: the default label is the literal word "Asset". Render a neutral
+  // placeholder glyph instead of slicing it to the first three letters ("Ass").
+  const isPlaceholder = !symbol || /^asset$/i.test(symbol.trim())
+  const fallbackLabel = isPlaceholder
+    ? "?"
+    : symbol.includes("/")
+      ? symbol
+          .split("/")
+          .map((part) => part.trim().slice(0, 1))
+          .join("")
+          .slice(0, 2)
+      : symbol.slice(0, 3)
 
-  if (icon.iconUrl) {
+  if (icon.iconUrl && !isPlaceholder) {
     return <img src={icon.iconUrl} alt="" className={cn(box, "rounded-full object-cover", className)} />
   }
 
@@ -38,10 +43,11 @@ function ActionTokenIconBase({
         "inline-flex items-center justify-center rounded-full font-semibold",
         box,
         text,
-        icon.bgClass,
-        icon.textClass,
+        isPlaceholder ? "bg-muted text-muted-foreground" : icon.bgClass,
+        isPlaceholder ? undefined : icon.textClass,
         className,
       )}
+      aria-hidden={isPlaceholder ? true : undefined}
     >
       {fallbackLabel}
     </span>

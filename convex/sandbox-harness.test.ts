@@ -69,10 +69,19 @@ describe("multi-user harness — capRush", () => {
     expect(done).toBe(USER_CAP)
     expect(waitlisted).toBe(N - USER_CAP)
 
-    const economy = await t.run((ctx) => ctx.db.query("sandboxEconomy").first())
-    expect(economy?.userCount).toBe(USER_CAP)
-    expect(economy?.userCount).toBeLessThanOrEqual(USER_CAP)
-    expect(economy?.totalGrantedUsd ?? 0).toBeLessThanOrEqual(economy?.totalGrantedUsdCap ?? 0)
+    // Counts are sharded off the hot claim row, so the live total = baseline + Σ shards.
+    const { economy, userCount, totalGrantedUsd } = await t.run(async (ctx) => {
+      const economy = await ctx.db.query("sandboxEconomy").first()
+      const shards = await ctx.db.query("sandboxEconomyShards").collect()
+      return {
+        economy,
+        userCount: (economy?.userCount ?? 0) + shards.reduce((sum, s) => sum + s.userCount, 0),
+        totalGrantedUsd: (economy?.totalGrantedUsd ?? 0) + shards.reduce((sum, s) => sum + s.grantedUsd, 0),
+      }
+    })
+    expect(userCount).toBe(USER_CAP)
+    expect(userCount).toBeLessThanOrEqual(USER_CAP)
+    expect(totalGrantedUsd).toBeLessThanOrEqual(economy?.totalGrantedUsdCap ?? 0)
     expect(economy?.status).toBe("closed")
   })
 })

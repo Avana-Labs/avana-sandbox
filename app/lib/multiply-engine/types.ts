@@ -54,7 +54,7 @@ export type MultiplyPosition = {
   lastUpdatedAt: number
 }
 
-export type MultiplyTransactionKind = "multiply" | "deleverage"
+export type MultiplyTransactionKind = "multiply" | "deleverage" | "close"
 
 export type MultiplyTransaction = {
   id: string
@@ -82,6 +82,10 @@ export type MultiplyAction =
       marketId: string
       collateralAmount: number
       selectedMultiplier: number
+      // Live oracle price for the collateral asset. When provided it overrides the
+      // catalog seed price so the persisted position is valued at exactly the price
+      // shown in the confirm preview (single source of truth for the dollar figures).
+      collateralPriceUsd?: number
       at?: number
     }
   | {
@@ -90,6 +94,14 @@ export type MultiplyAction =
       positionId: string
       targetMultiplier: number
       repayAmountUsd?: number
+      at?: number
+    }
+  | {
+      // Fully exit a position: repay any remaining debt, withdraw the collateral,
+      // and remove the position from state so no 1.0x/$0 "zombie" is left behind.
+      type: "close"
+      walletId: string
+      positionId: string
       at?: number
     }
 

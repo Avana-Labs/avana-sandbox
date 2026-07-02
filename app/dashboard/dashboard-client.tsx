@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
@@ -37,6 +37,11 @@ import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
+import { Eye, EyeOff } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { RouteErrorFallback } from "@/app/components/route-error-fallback"
 
 export function mergeLendTabData(
   staticData: PortfolioLendTabData,
@@ -47,7 +52,9 @@ export function mergeLendTabData(
   return {
     investments: liveData.investments,
     positions: liveData.positions,
-    strategyBuckets: staticData.strategyBuckets,
+    // Prefer opportunities derived from the live markets; fall back to the static
+    // catalog only if the live read model surfaced none.
+    strategyBuckets: liveData.strategyBuckets.length > 0 ? liveData.strategyBuckets : staticData.strategyBuckets,
     history: liveData.history,
     rewardsSummary: liveData.rewardsSummary ?? staticData.rewardsSummary,
   }
@@ -110,23 +117,6 @@ function DashboardLoadingState() {
   )
 }
 
-/** Shown when the authenticated portfolio fails to load (error was previously swallowed). */
-function DashboardLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="mx-auto max-w-lg space-y-4 py-16 text-center">
-      <h2 className="text-2xl font-medium tracking-tight">We couldn&apos;t load your portfolio.</h2>
-      <p className="text-sm text-muted-foreground">{message}</p>
-      <button
-        className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-85"
-        onClick={onRetry}
-        type="button"
-      >
-        Try again
-      </button>
-    </div>
-  )
-}
-
 export function DashboardClient({
   initialData,
   walletProfileId,
@@ -135,10 +125,12 @@ export function DashboardClient({
   walletProfileId?: string
 }) {
   const router = useRouter()
+  const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
   const hasMounted = useHasMounted()
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
-  const { data, error: portfolioError, isLoading: portfolioLoading } = usePortfolioPage(
+  const { data, error: portfolioError, isLoading: portfolioLoading, retry: retryPortfolioPage } = usePortfolioPage(
     { walletProfileId: resolvedWalletProfileId ?? "" },
     initialData,
   )
@@ -248,10 +240,10 @@ export function DashboardClient({
         secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
         txHash: item.hash,
       })),
-      ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory),
+      ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory, lendSession.state),
       ...(pageData?.activity.rows ?? []),
     ],
-    [borrowSession.transactionHistory, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows],
+    [borrowSession.transactionHistory, lendSession.state, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows],
   )
 
   const lendTabData = useMemo(() => {
@@ -343,12 +335,36 @@ export function DashboardClient({
     return buildMultiplyHeroData(template, buildMultiplySnapshotFromTabData(multiplyTabData))
   }, [pageData, multiplyTabData])
 
+  // The user's primary open multiply position, so "Increase loop" grows that
+  // position (preselected market + current leverage) instead of a blank form.
+  const multiplyPositionTarget = useMemo(() => {
+    const primary =
+      multiplyTabData.lpCollaterals.find((row) => row.status === "open") ?? multiplyTabData.lpCollaterals[0]
+    return primary ? { marketId: primary.marketId, multiplier: primary.multiplier } : null
+  }, [multiplyTabData])
+
   useEffect(() => {
     setActiveTab(readTabFromLocation())
     const onPopState = () => setActiveTab(readTabFromLocation())
     window.addEventListener("popstate", onPopState)
     return () => window.removeEventListener("popstate", onPopState)
   }, [readTabFromLocation])
+
+  // While the authenticated portfolio is still empty, retry transient client fetch
+  // failures directly through the hook instead of refreshing the whole route.
+  const portfolioRetriesRef = useRef(0)
+  useEffect(() => {
+    if (pageData) {
+      portfolioRetriesRef.current = 0
+      return
+    }
+    if (!portfolioError || portfolioLoading || portfolioRetriesRef.current >= 8) return
+    const id = window.setTimeout(() => {
+      portfolioRetriesRef.current += 1
+      retryPortfolioPage()
+    }, 1000)
+    return () => window.clearTimeout(id)
+  }, [pageData, portfolioError, portfolioLoading, retryPortfolioPage])
 
   const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab)
@@ -361,14 +377,35 @@ export function DashboardClient({
   }
 
   if (!pageData) {
-    if (portfolioError && !portfolioLoading) {
-      return <DashboardLoadError message={portfolioError} onRetry={() => router.refresh()} />
+    if (portfolioError && !portfolioLoading && portfolioRetriesRef.current >= 8) {
+      return (
+        <RouteErrorFallback
+          error={new Error(portfolioError)}
+          onRetry={() => {
+            portfolioRetriesRef.current = 0
+            retryPortfolioPage()
+          }}
+          title="We couldn't load your portfolio"
+          message="The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard."
+        />
+      )
     }
     return <DashboardLoadingState />
   }
 
   return (
     <>
+      <div className="mb-5 flex justify-end">
+        <label className="inline-flex items-center gap-2.5 text-[13px] font-medium text-muted-foreground">
+          {showDollarAmounts ? <Eye className="size-4 text-brand-readable" /> : <EyeOff className="size-4 text-brand-readable" />}
+          <span>{t("Dollar amounts")}</span>
+          <Switch
+            checked={showDollarAmounts}
+            onCheckedChange={setShowDollarAmounts}
+            aria-label={t("Dollar amounts")}
+          />
+        </label>
+      </div>
       <DashboardTabs
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -377,6 +414,7 @@ export function DashboardClient({
         multiplySnapshot={multiplySnapshot}
         lendSnapshot={lendSnapshot}
         multiplyHero={multiplyHero}
+        multiplyPositionTarget={multiplyPositionTarget}
       />
 
       {activeTab === "overview" ? (
@@ -411,19 +449,28 @@ export function DashboardClient({
         </div>
       ) : null}
       {activeTab === "looping" ? (
-        <div className="mt-12 space-y-10">
-          <DashboardOverviewSection title="Looping Overview" metrics={multiplyDashboardMetrics.overview} />
-          <DashboardSection title="Looping Positions">
-            <MultiplyCollateralTable
-              rows={multiplyTabData.lpCollaterals}
-              onDeleverage={(positionId) => {
-                const position = multiplySession.state.positions[positionId]
-                if (!position) return
-                router.push(actionPagePath("multiply", "deleverage", { market: position.marketId, return: dashboardReturnHref }))
-              }}
-            />
-          </DashboardSection>
-        </div>
+        multiplyTabData.lpCollaterals.length === 0 ? (
+          // Real empty state — no fabricated health/risk metrics computed over $0.
+          <div className="mt-12">
+            <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+              {t("No multiply positions yet. Open a loop to leverage your collateral.")}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-12 space-y-10">
+            <DashboardOverviewSection title="Looping Overview" metrics={multiplyDashboardMetrics.overview} />
+            <DashboardSection title="Looping Positions">
+              <MultiplyCollateralTable
+                rows={multiplyTabData.lpCollaterals}
+                onDeleverage={(positionId) => {
+                  const position = multiplySession.state.positions[positionId]
+                  if (!position) return
+                  router.push(actionPagePath("multiply", "deleverage", { market: position.marketId, return: dashboardReturnHref }))
+                }}
+              />
+            </DashboardSection>
+          </div>
+        )
       ) : null}
       {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
     </>

@@ -16,6 +16,45 @@ describe("multiply engine simulation", () => {
     expect(simulation.validation.allowed).toBe(true)
   })
 
+  it("keeps token input and leverage on Aave-style scales", () => {
+    const collateralAmount = 0.01
+    const selectedMultiplier = 2
+    const inputEquityUsd = collateralAmount * EXAMPLE_ETH_USDT_MARKET.collateralAsset.priceUsd
+    const simulation = simulateMultiply({
+      market: EXAMPLE_ETH_USDT_MARKET,
+      collateralAmount,
+      selectedMultiplier,
+    })
+
+    expect(inputEquityUsd).toBe(35)
+    expect(simulation.after.collateralValueUsd).toBeGreaterThan(69)
+    expect(simulation.after.collateralValueUsd).toBeLessThanOrEqual(inputEquityUsd * selectedMultiplier)
+    expect(simulation.after.debtValueUsd).toBeGreaterThan(34)
+    expect(simulation.after.debtValueUsd).toBeLessThan(inputEquityUsd)
+    expect(simulation.after.multiplier).toBeCloseTo(selectedMultiplier, 6)
+  })
+
+  it("reduces health and remaining borrow capacity as leverage rises", () => {
+    const low = simulateMultiply({
+      market: EXAMPLE_ETH_USDT_MARKET,
+      collateralAmount: 0.01,
+      selectedMultiplier: 1.5,
+    })
+    const high = simulateMultiply({
+      market: EXAMPLE_ETH_USDT_MARKET,
+      collateralAmount: 0.01,
+      selectedMultiplier: 2.2,
+    })
+    const capacity = (simulation: typeof low) =>
+      simulation.after.collateralValueUsd * EXAMPLE_ETH_USDT_MARKET.risk.maxLtv -
+      simulation.after.debtValueUsd
+
+    expect(high.after.healthFactor).not.toBe("infinity")
+    expect(low.after.healthFactor).not.toBe("infinity")
+    expect(high.after.healthFactor as number).toBeLessThan(low.after.healthFactor as number)
+    expect(capacity(high)).toBeLessThan(capacity(low))
+  })
+
   it("adds new multiply exposure to an existing same-market position", () => {
     const state = makeExampleMultiplySystemState()
     const position = Object.values(state.positions).find((item) => item.marketId === EXAMPLE_ETH_USDT_MARKET.id)!

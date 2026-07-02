@@ -9,7 +9,7 @@ import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { cn } from "@/lib/utils"
 
-type Props = { detail: MultiplyMarketDetail; className?: string }
+type Props = { detail: MultiplyMarketDetail; className?: string; hideActions?: boolean }
 
 type SidebarTab = "multiply" | "deleverage"
 
@@ -22,10 +22,10 @@ function normalizeMarketId(id: string) {
   return id.toLowerCase().replaceAll("_", "-")
 }
 
-export function MarketSidebar({ detail, className }: Props) {
+export function MarketSidebar({ detail, className, hideActions = false }: Props) {
   return (
     <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={`Multiply ${detail.hero.name}`}>
-      <MarketActionRail detail={detail} className="mt-6" embedActions />
+      {hideActions ? null : <MarketActionRail detail={detail} className="mt-6" embedActions />}
       <AboutNewsSection
         about={detail.about}
         aboutTitle={`About ${detail.hero.name}`}

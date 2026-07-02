@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronDown } from "lucide-react"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
 import {
@@ -14,7 +15,8 @@ import {
   CollateralHistoryCard,
   RelatedPoolsRow,
 } from "@/app/borrow/_detail/pool-sections"
-import { PoolBorrowActions, PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
+import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 type Props = { detail: PoolDetail }
@@ -29,14 +31,14 @@ const PAGE_MAX_W = "max-w-[1152px]"
  * the sidebar collapses into a bottom sheet triggered by a fixed button.
  */
 export function PoolDetailClient({ detail }: Props) {
-  const [mobileOpen, setMobileOpen] = React.useState(false)
+  const { t } = useTranslation()
 
   return (
     <div className="bg-background">
       <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
         <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
           <Link href="/borrow" className="transition-colors hover:text-foreground">
-            Borrow
+            {t("Borrow")}
           </Link>
           <span aria-hidden className="text-border">›</span>
           <span className="font-normal text-foreground">{detail.hero.name}</span>
@@ -86,56 +88,21 @@ export function PoolDetailClient({ detail }: Props) {
         </div>
       </main>
 
-      <MobileSupplyDock open={mobileOpen} onToggle={() => setMobileOpen((v) => !v)}>
-        <PoolBorrowActions detail={detail} />
-      </MobileSupplyDock>
-    </div>
-  )
-}
-
-function MobileSupplyDock({
-  open,
-  onToggle,
-  children,
-}: {
-  open: boolean
-  onToggle: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <div className="lg:hidden">
-      <div
-        aria-hidden={!open}
-        className={cn(
-          "fixed inset-0 z-40 bg-black/40 transition-opacity",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-        onClick={onToggle}
-      />
-      <div
-        role="dialog"
-        aria-label="Borrow"
-        className={cn(
-          "fixed inset-x-0 bottom-0 z-50 rounded-t-radius-md border-t border-border bg-surface-raised p-4 shadow-elev-3 transition-transform duration-200",
-          open ? "translate-y-0" : "translate-y-full",
-        )}
-      >
-        <button
-          type="button"
-          onClick={onToggle}
-          className="mb-3 flex w-full items-center justify-center gap-1.5 text-[11.5px] font-medium text-muted-foreground"
+      {/* Mobile: direct-action sticky bar — routes straight into the action (no intermediate dock) */}
+      <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+        <Link
+          href={actionPagePath("borrow", "supply", { market: detail.id, return: `/borrow/markets/${detail.id}` })}
+          className={primaryCtaClass({ size: "compact" })}
         >
-          Hide <ChevronDown className="h-3 w-3" />
-        </button>
-        {children}
+          {t("Pledge")}
+        </Link>
+        <Link
+          href={actionPagePath("borrow", "borrow", { market: detail.id, return: `/borrow/markets/${detail.id}` })}
+          className={secondaryCtaClass({ size: "compact" })}
+        >
+          {t("Borrow")}
+        </Link>
       </div>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="fixed inset-x-4 bottom-4 z-30 h-10 rounded-radius-sm bg-[hsl(var(--brand))] text-[13px] font-medium text-white shadow-elev-3 hover:bg-[hsl(var(--brand))]/90"
-      >
-        Borrow against this pool
-      </button>
     </div>
   )
 }

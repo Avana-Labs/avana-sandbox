@@ -37,6 +37,7 @@ import { ActionReviewStage } from "@/app/components/action-page/action-review-st
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { mapPreviewToBlockedUi, blockedUiForMissingWalletLp } from "@/app/lib/action-system/blocked-ui"
+import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { formatBorrowLpSymbolLabel, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
@@ -465,14 +466,23 @@ export function BorrowActionPageClient({
         .then((preview) => {
           if (cancelled) return
           const token = session.getBorrowableAssetsForMarket(activeMarketId).find((entry) => entry.id === resolvedAssetId)
+          const borrowMarket = session.state.markets[activeMarketId]
+          const liquidationThresholdPct = borrowMarket
+            ? Math.round(Number.parseFloat(formatFixed(borrowMarket.riskConfig.liquidationThresholdWad, 18)) * 1000) / 10
+            : undefined
+          // Max borrow respects the collateral factor: pre-borrow available credit
+          // is the safe cap the credit engine will allow.
+          const maxBorrowUsd = Number.parseFloat(formatFixed(preview.before.availableBorrowCapacityUsd6, 6))
           setPreviewUi(
             mapBorrowTransactionPreviewToActionUi(preview, {
               symbol: token?.symbol ?? "Asset",
               amountUsd: safeAmount,
               marketLabel,
               ratePct: token?.borrowApr ?? 0,
-              balanceLabel: creditScopeLabel ? `Available in ${creditScopeLabel}` : "Available to Borrow",
-              balanceUsd: Number.parseFloat(formatFixed(preview.after.availableBorrowCapacityUsd6, 6)),
+              balanceLabel: "Available to borrow",
+              balanceUsd: maxBorrowUsd,
+              liquidationThresholdPct,
+              maxBorrowUsd,
               creditScopeLabel: creditScopeLabel ?? undefined,
             }),
           )
@@ -789,7 +799,7 @@ export function BorrowActionPageClient({
       }
 
       const preview = await session.previewTransaction(intent)
-      if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
+      if (!preview.allowed) throw new Error(humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable")
 
       const simulated = session.readAdapter.mode === "sandbox"
       const result = await runActionSubmitFlow({
@@ -799,7 +809,7 @@ export function BorrowActionPageClient({
         execute: async () => session.executeTransaction(preview.intent),
       })
 
-      if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? "Transaction failed")
+      if (result.receipt.status !== "success") throw new Error(humanizeBlockedReason(result.receipt.error) ?? "Transaction failed")
       const executedAmountUsd = Number.parseFloat(formatFixed(result.historyItem.executedAmountUsd6, 6))
 
       setSuccessUi(
@@ -816,16 +826,27 @@ export function BorrowActionPageClient({
       )
       setStage("success")
     } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : "Transaction was cancelled"
+      // Keep the raw backend code (UNAUTHENTICATED / WALLET_MISMATCH / RATE_LIMITED / …)
+      // in logs only; users see plain-language copy.
+      if (process.env.NODE_ENV !== "production") console.error(rawMessage)
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: error instanceof Error ? error.message : "Transaction was cancelled",
+        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
       })
       setStage("error")
     } finally {
       setIsPending(false)
     }
   }, [activeMarketId, amount, closeHref, debtPosition, descriptor.primaryVerb, isPending, kind, marketId, percent, previewUi, resolvedBorrowAssetId, router, session, stage, successUi, walletId])
+
+  // Borrow surfaces a Max that fills the safe borrow cap (collateral-factor bound).
+  const showBorrowMax = kind === "borrow"
+  const handleBorrowMax = useCallback(() => {
+    if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
+    setAmount(String(Number(previewUi.maxAmount.toFixed(2))))
+  }, [previewUi?.maxAmount])
 
   const shellSubtitle =
     stage === "select"
@@ -897,6 +918,8 @@ export function BorrowActionPageClient({
         hideAssetSelector={kind === "supply"}
         assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
         pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
+        showBalance={showBorrowMax}
+        onMax={showBorrowMax ? handleBorrowMax : undefined}
       />
     ) : null
 
@@ -947,7 +970,7 @@ export function BorrowActionPageClient({
               : kind === "claim"
                 ? "Nothing to claim"
                 : kind === "supply"
-                  ? "No LP tokens in your wallet"
+                  ? "No pools found"
                   : "No assets found"
           }
           emptyDescription={
@@ -956,7 +979,7 @@ export function BorrowActionPageClient({
               : kind === "claim"
                 ? "You have no claimable rewards right now. Supply collateral and earn fees before claiming."
                 : kind === "supply"
-                  ? "Add liquidity to a supported pool in your wallet before pledging collateral."
+                  ? "Try adjusting your search — every market is available to pledge in the sandbox."
                   : "Try adjusting your search"
           }
           onSelect={(id) => {
@@ -1095,6 +1118,8 @@ export function BorrowActionPageClient({
           hideAmountInput={kind === "claim" || Boolean(useWorkspaceFields)}
           amountVariant="card"
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
+          showBalance={showBorrowMax}
+          onMax={showBorrowMax ? handleBorrowMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}
           homeLayout={isHomeLayout}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}

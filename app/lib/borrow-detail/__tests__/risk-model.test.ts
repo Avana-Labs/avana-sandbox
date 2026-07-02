@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
+import { BORROW_POOL_CATALOG, getSpokeById } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
-import { riskLevelFromBps } from "@/app/lib/borrow-detail/allocation"
+import { formatPct, riskLevelFromBps } from "@/app/lib/borrow-detail/allocation"
 import {
   assetRiskPremiumBps,
   buildAssetRiskAssessment,
@@ -29,6 +29,19 @@ describe("shared risk-model (single source for mock + Convex seed)", () => {
     expect(r.level).toBe(riskLevelFromBps(pool.riskPremiumBps))
     expect(r.breakdown.length).toBe(5)
     expect(r.metrics.length).toBe(4)
+  })
+
+  it("anchors the risk-assessment Max LTV to the pool collateral factor (row.ltv), not the spoke max", () => {
+    // There must be at least one pool whose collateral factor differs from its spoke max,
+    // otherwise the divergence this test guards against could never surface.
+    const divergent = BORROW_POOL_CATALOG.find((row) => row.ltv !== getSpokeById(row.spoke).maxLtv)
+    expect(divergent).toBeDefined()
+
+    for (const pool of BORROW_POOL_CATALOG) {
+      const r = buildPoolRiskAssessment(pool)
+      const maxLtvMetric = r.metrics.find((metric) => metric.id === "maxLtv")!
+      expect(maxLtvMetric.value).toBe(formatPct(pool.ltv, 0))
+    }
   })
 
   it("gives every asset + pool a distinct, finite premium", () => {

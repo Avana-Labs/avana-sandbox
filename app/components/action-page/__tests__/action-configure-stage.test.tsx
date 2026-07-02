@@ -49,6 +49,52 @@ describe("ActionConfigureStage", () => {
     expect(screen.queryByRole("button", { name: "Max" })).not.toBeInTheDocument()
   })
 
+  it("shows the balance and a Max button that fills the balance when showBalance is set", async () => {
+    const onMax = vi.fn()
+    render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Deposit"
+        amount=""
+        onAmountChange={() => undefined}
+        preview={{ ...preview, balanceLabel: "Balance", balanceValue: "1.28 ETH" }}
+        assetSymbol="ETH"
+        showBalance
+        onMax={onMax}
+      />,
+    )
+
+    expect(screen.getByText(/1\.28 ETH/)).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole("button", { name: "Max" }))
+    expect(onMax).toHaveBeenCalledTimes(1)
+  })
+
+  it("hides projected metrics for a blocked action and shows the block reason", () => {
+    render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Borrow"
+        amount="100000"
+        onAmountChange={() => undefined}
+        preview={{
+          ...preview,
+          allowed: false,
+          blockedReason: "This borrow exceeds your available credit.",
+          // Engine returns after === before when blocked — a stale SAFE transition.
+          metrics: [{ id: "hf", label: "Health factor", value: "2.40 → 2.40", before: "2.40", after: "2.40" }],
+        }}
+        assetSymbol="USDC"
+        onPrimary={() => undefined}
+      />,
+    )
+
+    // No misleading SAFE health-factor card / metrics block for a blocked action.
+    expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("action-health-factor-card")).not.toBeInTheDocument()
+    // The block reason is surfaced instead.
+    expect(screen.getByText("This borrow exceeds your available credit.")).toBeInTheDocument()
+  })
+
   it("shows receive WETH toggle when enabled", () => {
     render(
       <ActionConfigureStage

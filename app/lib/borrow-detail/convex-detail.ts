@@ -16,9 +16,11 @@ import {
   fetchTokenPrices,
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
+import { formatOraclePrice } from "@/app/lib/borrow-detail/pool.mock"
+import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
-import type { QuickStat } from "./types"
+import type { QuickStat, RelatedPoolSummary } from "./types"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
@@ -87,6 +89,58 @@ function injectRealPrice(
 }
 
 /**
+ * Overlay the pool "Oracle price" quick stat with the real pair rate derived from the
+ * DefiLlama token oracle (price0 / price1), so an asset shows one consistent oracle price
+ * across borrow-detail, the lend list, and the multiply catalog. When either leg is
+ * unpriced or the oracle is unavailable, the stat is DROPPED rather than left showing the
+ * fabricated mock fallback — the display path never surfaces a hardcoded oracle price.
+ */
+export function injectPoolOraclePrice(
+  quickStats: QuickStat[],
+  prices: Record<string, number> | null,
+  symbol0: string,
+  symbol1: string,
+): QuickStat[] {
+  const p0 = prices?.[priceKey(symbol0)]
+  const p1 = prices?.[priceKey(symbol1)]
+  if (p0 === undefined || p1 === undefined || p1 === 0) {
+    return quickStats.filter((s) => s.id !== "oraclePrice")
+  }
+  const value = formatOraclePrice(p0 / p1)
+  return quickStats.map((s) => (s.id === "oraclePrice" ? { ...s, value } : s))
+}
+
+/**
+ * Restate the "Risk premium" quick stat (Market data > Risk exposure) from the SAME
+ * premium the Risk assessment card renders (detail.risk.premiumBps), so a page never
+ * shows two different values for the one metric. The mock quick stat comes from the
+ * catalog row while risk is overlaid from Convex; without this they can disagree.
+ */
+export function syncQuickStatsRiskPremium(quickStats: QuickStat[], premiumBps: number): QuickStat[] {
+  const value = formatBpsAsPct(premiumBps)
+  return quickStats.map((s) => (s.id === "riskPremium" ? { ...s, value } : s))
+}
+
+/**
+ * Restate each Related-pools card's "Available" from the calibrated Convex pool snapshot
+ * for that sibling — the SAME value the sibling shows as "Available to borrow" on its own
+ * detail page (both derive from snap.availableUsd via the hydrated market state). Without
+ * this the card reuses the raw catalog availableUsd, which diverges 3–7× from the sibling's
+ * hydrated figure. Falls back to the existing label when a sibling has no snapshot.
+ */
+export function syncRelatedAvailable(
+  related: RelatedPoolSummary[],
+  snapshots: ConvexMarketSnapshot[],
+): RelatedPoolSummary[] {
+  const poolAvailable = new Map(snapshots.filter((s) => s.scope === "pool").map((s) => [s.slug, s.availableUsd]))
+  if (poolAvailable.size === 0) return related
+  return related.map((card) => {
+    const available = poolAvailable.get(card.id)
+    return available === undefined ? card : { ...card, availableLabel: formatCompactUsd(available) }
+  })
+}
+
+/**
  * Overlay "Dex Liquidity" (Σ available liquidity across the asset's pools) from the
  * calibrated Convex pool snapshots, so it matches the rest of the page instead of the
  * inflated catalog sum. No-op if no pool snapshots are present.
@@ -117,23 +171,31 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
   const detail = resolvePoolDetailFromState(hydrated, detailWalletId, normalizeBorrowMarketRouteId(id))
   if (!detail) return null
 
-  const [tvlPoints, engagement, cashflow, transactions, risk, quickStats, content] = await Promise.all([
+  const [tvlPoints, engagement, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
     fetchPoolTvlSeries(detail.row.id),
     fetchEngagement("pool", detail.row.id),
     fetchCashflowBreakdown("pool", detail.row.id),
     fetchRecentTransactions("pool", detail.row.id),
     fetchRisk("pool", detail.row.id),
     fetchQuickStats("pool", detail.row.id),
+    fetchTokenPrices(),
     fetchContent("pool", detail.row.id),
   ])
+  const effectiveRisk = (risk as typeof detail.risk) ?? detail.risk
   return {
     ...detail,
-    quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
+    quickStats: injectPoolOraclePrice(
+      syncQuickStatsRiskPremium(mergeConvexQuickStats(detail.quickStats, quickStats), effectiveRisk.premiumBps),
+      prices,
+      detail.row.visuals[0].symbol,
+      detail.row.visuals[1].symbol,
+    ),
+    related: syncRelatedAvailable(detail.related, snapshots),
     heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? detail.heroFeed,
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
-    risk: (risk as typeof detail.risk) ?? detail.risk,
+    risk: effectiveRisk,
     about: content ? { ...detail.about, description: content.description, stats: content.stats, history: content.history } : detail.about,
     faqs: content?.faqs ?? detail.faqs,
   }

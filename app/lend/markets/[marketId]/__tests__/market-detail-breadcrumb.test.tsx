@@ -1,0 +1,48 @@
+import { cleanup, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { LendMarketDetailClient } from "@/app/lend/markets/[marketId]/market-detail-client"
+import { getLendMarketDetail } from "@/app/lib/lend-detail"
+
+// Force French so the breadcrumb label must come from the translator, not a
+// hardcoded English string — this is exactly the nav/breadcrumb mismatch (#129).
+vi.mock("@/app/lib/i18n/use-translation", () => ({
+  useTranslation: () => ({ t: (key: string) => (key === "Lend" ? "Prêter" : key), language: "FR" }),
+}))
+
+vi.mock("@/app/lend/_detail", () => ({
+  LendHero: () => <div data-testid="lend-hero" />,
+  LendHeroIdentity: () => <div data-testid="lend-hero-identity" />,
+  SupplyCard: () => <div data-testid="supply-card" />,
+  RelatedMarketsRow: () => <div data-testid="related" />,
+  LendSidebar: () => <div data-testid="lend-sidebar" />,
+}))
+vi.mock("@/app/borrow/_detail/ui", () => ({
+  AboutNewsSection: () => <div data-testid="about" />,
+  EngagementTrendsCard: () => <div data-testid="engagement" />,
+  DetailFaqSection: () => <div data-testid="faqs" />,
+}))
+vi.mock("@/app/borrow/_detail/pool-sections", () => ({
+  CashflowCard: () => <div data-testid="cashflow" />,
+  QuickStatsGrid: () => <div data-testid="quickstats" />,
+  RiskSection: () => <div data-testid="risk" />,
+}))
+vi.mock("@/app/borrow/_detail/asset-sections", () => ({
+  TransactionHistoryCard: () => <div data-testid="transactions" />,
+}))
+vi.mock("@/app/lib/lend-system/lend-session-context", () => ({
+  useLendSessionContext: () => ({ walletId: "demo-wallet", transactionHistory: [] }),
+}))
+
+describe("LendMarketDetailClient breadcrumb", () => {
+  afterEach(cleanup)
+
+  it("localizes the breadcrumb root label so it matches the translated nav", () => {
+    const detail = getLendMarketDetail("usdc")!
+    render(<LendMarketDetailClient detail={detail} />)
+
+    // The breadcrumb link uses the translated label, not the English "Lend".
+    const crumb = screen.getByRole("link", { name: "Prêter" })
+    expect(crumb).toHaveAttribute("href", "/lend")
+    expect(screen.queryByRole("link", { name: "Lend" })).toBeNull()
+  })
+})

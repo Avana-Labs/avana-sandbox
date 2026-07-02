@@ -29,7 +29,7 @@ export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 md:ml-auto md:text-right">
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
           {stats.map((metric) => (
             <div key={metric.label}>
               <div

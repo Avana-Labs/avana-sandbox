@@ -27,12 +27,34 @@ function convexConnectOrigins() {
   return [...origins]
 }
 
+// Explicit third-party origins the client actually connects to, instead of a
+// blanket https:/wss: which would let a compromised bundle exfiltrate anywhere.
+// Keep this in sync with the wallet stack:
+//   - eth.merkle.io: the mainnet RPC wagmi's http() transport talks to.
+//   - *.walletconnect.{com,org} + relay wss: WalletConnect relay / verify / echo /
+//     pulse / explorer endpoints.
+//   - api.web3modal.org + *.reown.com: ConnectKit/Reown wallet explorer API.
+//   - *.coinbase.com (+ wss): Coinbase Smart Wallet keys/RPC/analytics.
+// Vercel Analytics/Speed Insights beacon posts to same-origin /_vercel (covers 'self').
+const thirdPartyConnectOrigins = [
+  "https://eth.merkle.io",
+  "https://*.walletconnect.com",
+  "https://*.walletconnect.org",
+  "wss://relay.walletconnect.com",
+  "wss://relay.walletconnect.org",
+  "https://api.web3modal.org",
+  "https://*.reown.com",
+  "https://*.coinbase.com",
+  "wss://*.coinbase.com",
+]
+
 const connectSrc = [
   "'self'",
-  "https:",
-  "wss:", // Convex realtime in production (was missing — broke client subscriptions)
-  ...(isDev ? ["ws:", "http:", "blob:"] : []),
   ...convexConnectOrigins(),
+  ...thirdPartyConnectOrigins,
+  // Dev only: local Convex (http/ws on 127.0.0.1), the Next dev/HMR websocket, and
+  // blob: workers. Production relies solely on the explicit origins above.
+  ...(isDev ? ["ws:", "http:", "blob:"] : []),
 ].join(" ")
 
 const contentSecurityPolicy = [

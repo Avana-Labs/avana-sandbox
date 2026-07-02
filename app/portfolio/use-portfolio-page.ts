@@ -9,12 +9,22 @@ type State = {
   isLoading: boolean
 }
 
-export function usePortfolioPage(input: FetchPortfolioPageInput, initialData?: PortfolioPageData | null) {
+type UsePortfolioPageResult = State & {
+  retry: () => void
+}
+
+export function usePortfolioPage(input: FetchPortfolioPageInput, initialData?: PortfolioPageData | null): UsePortfolioPageResult {
   const [state, setState] = React.useState<State>({
     data: initialData ?? null,
     error: null,
     isLoading: initialData ? false : true,
   })
+  const [retryNonce, setRetryNonce] = React.useState(0)
+  const requestInput = React.useMemo(() => ({ ...input }), [input.walletProfileId])
+
+  const retry = React.useCallback(() => {
+    setRetryNonce((current) => current + 1)
+  }, [])
 
   React.useEffect(() => {
     if (initialData?.walletProfile.id === input.walletProfileId) {
@@ -34,7 +44,7 @@ export function usePortfolioPage(input: FetchPortfolioPageInput, initialData?: P
       isLoading: current.data ? false : true,
     }))
 
-    fetchPortfolioPage(input, { signal: controller.signal })
+    fetchPortfolioPage(requestInput, { signal: controller.signal })
       .then((data) => {
         setState({
           data,
@@ -53,7 +63,10 @@ export function usePortfolioPage(input: FetchPortfolioPageInput, initialData?: P
       })
 
     return () => controller.abort()
-  }, [input.walletProfileId])
+  }, [initialData, input.walletProfileId, requestInput, retryNonce])
 
-  return state
+  return {
+    ...state,
+    retry,
+  }
 }

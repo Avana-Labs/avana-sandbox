@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Check, LoaderCircle, MoveUpRight } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
@@ -40,7 +40,7 @@ export type OnboardingGateState = {
 }
 
 const PRIMARY =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-7 text-[15px] font-semibold text-background transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
+  "inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-semibold text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
 const SECONDARY =
   "inline-flex min-h-12 items-center justify-center rounded-full bg-muted px-7 text-[15px] font-semibold text-foreground transition-colors hover:bg-muted/75 disabled:opacity-50"
 
@@ -53,14 +53,30 @@ const SHARE_URL = "https://app.avana.cc"
 /**
  * Launch-style tweet auto-populated into the X composer. (X Web Intents can't attach an
  * image — the preview card comes from SHARE_URL's twitter:image meta, served by /og.)
+ * Used only as the fallback when Convex config carries no tweetTemplate.
  */
-const SHARE_TEXT = [
+const DEFAULT_SHARE_TEXT = [
   "Just claimed my sandbox spot at Avana.",
   "A new Aave v4 lending market built for AMM markets.",
   "Borrow against AMM LP positions, lend, and loop — all risk-free before mainnet.",
   `Try it 👉 ${SHARE_URL}`,
 ].join("\n")
-const X_INTENT_HREF = `https://x.com/intent/post?text=${encodeURIComponent(SHARE_TEXT)}`
+
+/**
+ * Build the X composer text/href from the live Convex config so the share sub-flow
+ * stays in sync with server config (no drift). Falls back to the launch copy when the
+ * config carries no template. The template is appended with the app URL (and @handle
+ * when configured) so the shared tweet always links back and credits the account.
+ */
+function buildShareText(config: OnboardingGateState["config"] | null | undefined) {
+  const template = config?.tweetTemplate?.trim()
+  if (!template) return DEFAULT_SHARE_TEXT
+  const handle = config?.xHandle?.trim()
+  const mention = handle ? `\n@${handle.replace(/^@/, "")}` : ""
+  return `${template}${mention}\nTry it 👉 ${SHARE_URL}`
+}
+const xIntentHref = (shareText: string) =>
+  `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`
 
 // Onboarding progress (%) per phase — drives the animated rail + AnimatePresence key.
 const PROGRESS: Record<string, number> = {
@@ -135,7 +151,36 @@ function ErrorMessage({ error }: { error: string | null }) {
   ) : null
 }
 
-export function OnboardingUnavailable({ onRetry }: { onRetry: () => void }) {
+/**
+ * Recovery footer for the loading screens. Surfaces any error, and ALWAYS offers a
+ * manual continue that is not gated on a live error — so a stranded reload (spinner
+ * with no active task) is never a dead end even if auto-resume didn't fire.
+ */
+function LoadingRecovery({ error, onResume }: { error: string | null; onResume: () => void }) {
+  return error ? (
+    <ErrorMessage error={error} />
+  ) : (
+    <button
+      className="mt-6 text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+      onClick={onResume}
+      type="button"
+    >
+      Taking longer than expected? Continue
+    </button>
+  )
+}
+
+export function OnboardingUnavailable({
+  onRetry,
+  headlineMuted = "We couldn't verify your onboarding status.",
+  headlineActive = "Reconnect your wallet and try again.",
+  note = "Authenticated sessions stay locked until Convex confirms access.",
+}: {
+  onRetry: () => void
+  headlineMuted?: string
+  headlineActive?: string
+  note?: string
+}) {
   return (
     <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8">
       <StatusRow wallet={null} pct={10} />
@@ -144,17 +189,42 @@ export function OnboardingUnavailable({ onRetry }: { onRetry: () => void }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Headline
-          muted="We couldn't verify your onboarding status."
-          active="Reconnect your wallet and try again."
-          size="hero"
-        />
-        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-          Authenticated sessions stay locked until Convex confirms access.
-        </p>
+        <Headline muted={headlineMuted} active={headlineActive} size="hero" />
+        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">{note}</p>
         <button className={`${PRIMARY} mt-9`} onClick={onRetry} type="button">
           Retry
         </button>
+      </motion.div>
+    </div>
+  )
+}
+
+/**
+ * Persistent "you're all set" state for an ALREADY-onboarded wallet revisiting
+ * /onboarding (issue #140). This is distinct from OnboardingFlow's `done` branch, which
+ * is the one-time just-claimed celebration ("$1M is now in your wallet", spring
+ * checkmark). A returning user has no claim to make, so we show a calm completed state
+ * that points them to the dashboard — never the re-runnable welcome/claim flow.
+ */
+export function OnboardingComplete({ pct = 100 }: { pct?: number }) {
+  return (
+    <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8" data-onboarding-step="done">
+      <StatusRow wallet={null} pct={pct} />
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white">
+          <Check className="size-6" strokeWidth={3} />
+        </div>
+        <Headline muted="You're all set." active="Your Avana sandbox is ready." size="hero" />
+        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
+          You've already claimed your practice funds. Jump back into the dashboard to keep exploring.
+        </p>
+        <Link className={`${PRIMARY} mt-9`} href="/dashboard">
+          Open dashboard
+        </Link>
       </motion.div>
     </div>
   )
@@ -267,6 +337,13 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const [hasStarted, setHasStarted] = useState(false)
   const { t } = useTranslation()
 
+  // Drive the X composer + done-state resources from the live Convex config so the
+  // fetched config never drifts from what the UI shows (issue #139: config was fetched
+  // but never rendered).
+  const shareText = buildShareText(state?.config)
+  const intentHref = xIntentHref(shareText)
+  const resourcesLinks = state?.config?.resourcesLinks ?? []
+
   const run = async (label: NonNullable<typeof busy>, task: () => Promise<unknown>, minimumMs = 0) => {
     setBusy(label)
     setError(null)
@@ -309,6 +386,34 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           0,
         )
       : undefined
+
+  // Resume a loading step that persisted server-side but has no client task driving it —
+  // i.e. the user reloaded (or dropped the network) mid-analysis/claim. Without this the
+  // gate would render a forever spinner: `step` falls back to the persisted
+  // "analyzing"/"claimPending" while `busy` is null, so no mutation ever advances it.
+  const resume = () => {
+    if (!wallet) return
+    const persisted = state?.onboardingStep
+    if (persisted === "analyzing") void run("analyzing", () => completeAnalysis({ wallet }), 4200)
+    else if (persisted === "claimPending") void claimAllocation()
+  }
+
+  // Auto-resume once when we land on a stranded loading step (busy null but the persisted
+  // step is a loading state). Guarded by a ref so a resume that errors doesn't hot-loop.
+  const resumedFor = useRef<string | null>(null)
+  useEffect(() => {
+    const persisted = state?.onboardingStep
+    const stranded = busy === null && (persisted === "analyzing" || persisted === "claimPending")
+    if (!wallet || !stranded) {
+      if (!stranded) resumedFor.current = null
+      return
+    }
+    if (resumedFor.current === persisted) return
+    resumedFor.current = persisted
+    resume()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet, busy, state?.onboardingStep])
+
   const step = busy === "analyzing" ? "analyzing" : busy === "claiming" ? "claimPending" : state?.onboardingStep
   const economy = state?.economy ?? {
     status: "open" as const,
@@ -348,19 +453,18 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       {!wallet && !hasStarted ? (
         <>
           <Headline
-            muted="Welcome to the Avana Sandbox."
-            active="A risk-free space to test the app and learn how it works."
+            muted={t("Welcome to the Avana Sandbox.")}
+            active={t("A risk-free space to test the app and learn how it works.")}
             size="hero"
           />
           <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-            Borrow against LP, lend, and loop positions with practice funds. When you&apos;re ready, switch to the real
-            world. Have fun exploring.
+            {t("Borrow against LP, lend, and loop positions with practice funds. When you're ready, switch to the real world. Have fun exploring.")}
           </p>
           <ul className="mt-7 space-y-2.5">
             {["Unlimited practice funds", "Risk-free exploration", "No real assets involved", "Fast — no transactions to sign"].map((perk) => (
               <li className="flex items-center gap-2.5 text-[15px] font-medium" key={perk}>
                 <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
-                {perk}
+                {t(perk)}
               </li>
             ))}
           </ul>
@@ -406,7 +510,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "analyzing" ? (
         <>
           <ThinkingSteps muted="One moment." active="Analyzing your wallet…" steps={ANALYSIS_STEPS} />
-          <ErrorMessage error={error} />
+          <LoadingRecovery error={error} onResume={resume} />
         </>
       ) : step === "eligible" ? (
         <>
@@ -439,10 +543,10 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         <>
           <Headline muted="Tell your network about Avana." active="Post the prepared message on X." />
           <div className="mt-8 max-w-2xl whitespace-pre-line rounded-3xl border border-border p-5 text-[15px] leading-7 sm:p-7">
-            {SHARE_TEXT}
+            {shareText}
           </div>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <a className={PRIMARY} href={X_INTENT_HREF} rel="noreferrer" target="_blank">
+            <a className={PRIMARY} href={intentHref} rel="noreferrer" target="_blank">
               Open X <MoveUpRight className="ml-2 size-4" />
             </a>
             <button
@@ -476,7 +580,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "claimPending" ? (
         <>
           <ThinkingSteps muted="Hang tight." active="Funding your sandbox…" steps={CLAIM_STEPS} />
-          <ErrorMessage error={error} />
+          <LoadingRecovery error={error} onResume={resume} />
         </>
       ) : step === "waitlisted" ? (
         <>
@@ -499,10 +603,24 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link className={PRIMARY} href="/dashboard">{t("Open dashboard")}</Link>
-            <a className={SECONDARY} href={X_INTENT_HREF} rel="noreferrer" target="_blank">
+            <a className={SECONDARY} href={intentHref} rel="noreferrer" target="_blank">
               Share on X <MoveUpRight className="ml-2 size-4" />
             </a>
           </div>
+          {resourcesLinks.length > 0 ? (
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              {resourcesLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    className="inline-flex items-center text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+                    href={link.href}
+                  >
+                    {link.label} <MoveUpRight className="ml-1 size-3.5" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </>
       ) : null}
         </motion.div>

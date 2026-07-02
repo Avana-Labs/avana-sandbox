@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api"
 import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+import { IS_OPEN_GATE_TEST_MODE } from "@/app/lib/test-mode"
 import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
 
 class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
@@ -14,7 +15,7 @@ class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: bo
     return { errored: true }
   }
   render() {
-    return this.state.errored ? <GateUnavailable /> : <>{this.props.children}</>
+    return this.state.errored ? <GateUnavailable variant="error" /> : <>{this.props.children}</>
   }
 }
 
@@ -27,10 +28,25 @@ function LockedShell({ children }: { children: ReactNode }) {
   )
 }
 
-function GateUnavailable() {
+function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" }) {
+  // A crash inside the gated app is OUR bug, not an auth problem — don't tell the
+  // user to "reconnect their wallet" for a render error. Only the genuine
+  // Convex-unreachable case talks about connectivity.
+  const copy =
+    variant === "offline"
+      ? {
+          headlineMuted: "We can't reach the sandbox right now.",
+          headlineActive: "Please try again in a moment.",
+          note: "Your session is safe — this is a temporary connection issue, not your wallet.",
+        }
+      : {
+          headlineMuted: "Something went wrong.",
+          headlineActive: "We couldn't load this page.",
+          note: "This is on our side, not your wallet. Try again, and let us know if it keeps happening.",
+        }
   return (
     <LockedShell>
-      <OnboardingUnavailable onRetry={() => window.location.reload()} />
+      <OnboardingUnavailable onRetry={() => window.location.reload()} {...copy} />
     </LockedShell>
   )
 }
@@ -54,8 +70,18 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
-  const { authedWallet, isSignedIn } = useSiweAuth()
-  if (!hasConvexClient) return <GateUnavailable />
+  const { authedWallet, isSignedIn, isRestoring } = useSiweAuth()
+  if (IS_OPEN_GATE_TEST_MODE) return <>{children}</>
+  if (!hasConvexClient) return <GateUnavailable variant="offline" />
+  if (isRestoring) {
+    // A persisted session is being restored (wagmi reconnecting on reload). Hold a
+    // neutral loading state so authed users don't flash the signed-out/onboarding screen.
+    return (
+      <LockedShell>
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Restoring your session" />
+      </LockedShell>
+    )
+  }
   if (!isSignedIn || !authedWallet) {
     return (
       <LockedShell>

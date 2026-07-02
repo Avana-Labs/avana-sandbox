@@ -1,13 +1,13 @@
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { serializeMultiplySystemState } from "./codec"
-import { buildMockMultiplySystemState, buildMockMultiplySystemStateWithSeedPosition } from "./mock"
+import { buildMockMultiplySystemState } from "./mock"
 
 export function getMultiplySessionWalletId() {
   return getDefaultWalletProfileId()
 }
 
 export function buildMultiplySessionSeed(walletId = getMultiplySessionWalletId()) {
-  return serializeMultiplySystemState(buildMockMultiplySystemStateWithSeedPosition(walletId))
+  return serializeMultiplySystemState(buildMockMultiplySystemState(walletId))
 }
 
 export function buildConvexMultiplySessionSeed(walletId: string) {

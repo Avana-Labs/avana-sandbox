@@ -1,0 +1,50 @@
+import { render, cleanup } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { BorrowableAssetsPanel } from "../borrowable-assets-table"
+import type { BorrowableAsset } from "@/app/lib/data/borrow-domain"
+
+const wbtc: BorrowableAsset = {
+  id: "uni-v3-bluechip:wbtc",
+  symbol: "WBTC",
+  name: "Wrapped Bitcoin",
+  subtitle: "BTC",
+  borrowApr: 3.4,
+  totalBorrowedUsd: 9_600_000,
+  utilization: 62,
+  availableUsd: 4_200_000,
+  walletBalanceLabel: "0.00",
+  hasWalletBalance: false,
+  visual: { symbol: "WBTC", shortLabel: "W", bgClass: "bg-amber-100", textClass: "text-amber-700" },
+  trendUp: true,
+  category: "btc",
+}
+
+describe("BorrowableAssetsPanel loan variant", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it("labels TOTAL BORROWS and LIQUIDITY as USD, never as a token quantity", () => {
+    const { container, getAllByText } = render(
+      <BorrowableAssetsPanel rows={[wbtc]} onBorrow={vi.fn()} groupByCategory={false} variant="loan" />,
+    )
+
+    // USD figures render as currency, not as a bare number with a token symbol.
+    expect(getAllByText("$9.6M").length).toBeGreaterThan(0)
+    expect(getAllByText("$4.2M").length).toBeGreaterThan(0)
+
+    // No cell mixes a USD magnitude with a token symbol (e.g. "9.6M WBTC").
+    expect(container.textContent).not.toMatch(/9\.6M\s+WBTC/)
+    expect(container.textContent).not.toMatch(/4\.2M\s+WBTC/)
+  })
+
+  it("rounds a raw unrounded utilization float to 2dp on the mobile card", () => {
+    const raw: BorrowableAsset = { ...wbtc, utilization: 69.68000215736105 }
+    const { container } = render(
+      <BorrowableAssetsPanel rows={[raw]} onBorrow={vi.fn()} groupByCategory={false} variant="loan" />,
+    )
+
+    expect(container.textContent).toContain("69.68%")
+    expect(container.textContent).not.toContain("69.68000215736105%")
+  })
+})

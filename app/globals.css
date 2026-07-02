@@ -12,10 +12,10 @@
   }
   :root {
     /* Light — bright neutral canvas */
-    --background: 0 0% 98.8%; /* #FCFCFC page */
+    --background: 0 0% 100%; /* #FFFFFF page — Uniswap-parity */
     --foreground: 0 0% 17.3%; /* #2C2C2C primary labels */
 
-    --card: 0 0% 94%; /* clearer step above #FCFCFC page */
+    --card: 0 0% 97.6%; /* #F9F9F9 — subtle card on white */
     --card-foreground: 0 0% 17.3%;
 
     --popover: 0 0% 98%; /* #FAFAFA dropdowns */
@@ -38,11 +38,19 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 86%; /* visible dividers on light canvas */
-    --input: 0 0% 87.1%; /* #DEDEDE recessed inputs */
+    /* Semantic status colors (light) — matched to Tailwind emerald/amber/rose-600 */
+    --success: 160 84% 30%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+    --danger: 347 77% 50%;
+    --danger-foreground: 0 0% 100%;
+
+    --border: 0 0% 92%; /* #EBEBEB — soft Uniswap-style hairlines */
+    --input: 0 0% 96%; /* #F5F5F5 recessed inputs on white */
     --ring: 191 99% 41%;
 
-    --surface-1: 0 0% 98.8%;
+    --surface-1: 0 0% 100%;
     --surface-2: 0 0% 92.2%;
     --surface-hover: 0 0% 91.8%;
 
@@ -85,49 +93,58 @@
 
   .dark {
     /* Dark — sampled Cursor reference */
-    --background: 220 7% 8.4%; /* #141517 page */
-    --foreground: 0 0% 78%; /* #C7C7C7 primary labels */
+    --background: 0 0% 7%; /* #121212 page — neutral near-black (Uniswap-parity) */
+    --foreground: 0 0% 96%; /* high-emphasis text */
 
-    --card: 0 0% 14.5%; /* #252525 — visible step above page */
-    --card-foreground: 0 0% 82%;
+    --card: 0 0% 11%; /* #1C1C1C — subtle layered surface */
+    --card-foreground: 0 0% 96%;
 
-    --popover: 0 0% 11%; /* #1C1C1C dropdowns */
-    --popover-foreground: 0 0% 82%;
+    --popover: 0 0% 13%; /* #212121 dropdowns */
+    --popover-foreground: 0 0% 96%;
 
     --primary: 0 0% 82%;
     --primary-foreground: 0 0% 11%;
 
-    --secondary: 0 0% 14.5%;
-    --secondary-foreground: 0 0% 82%;
+    --secondary: 0 0% 13%;
+    --secondary-foreground: 0 0% 96%;
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 58%; /* brighter secondary copy */
-    --section-foreground: 0 0% 68%;
-    --table-header: 214 18% 13%;
+    --muted: 0 0% 13.5%;
+    --muted-foreground: 0 0% 66%; /* legible secondary copy on dark */
+    --section-foreground: 0 0% 92%;
+    --table-header: 0 0% 10%;
 
-    --accent: 0 0% 14.5%;
-    --accent-foreground: 0 0% 82%;
+    --accent: 0 0% 13%;
+    --accent-foreground: 0 0% 96%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 82%;
 
-    --border: 0 0% 22%; /* #383838 — visible dividers */
-    --input: 0 0% 13.7%; /* #232323 recessed inputs */
+    /* Semantic status colors (dark) — matched to Tailwind emerald/amber/rose-400 */
+    --success: 160 64% 52%;
+    --success-foreground: 0 0% 10%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 10%;
+    --danger: 351 95% 71%;
+    --danger-foreground: 0 0% 10%;
+
+    --border: 0 0% 17%; /* #2B2B2B — subtle Uniswap-style hairlines */
+    --input: 0 0% 9%; /* #171717 recessed inputs (below card) */
     --ring: 191 99% 41%;
 
-    --surface-1: 220 7% 8.4%;
-    --surface-2: 0 0% 14.5%;
-    --surface-hover: 0 0% 18%;
+    --surface-1: 0 0% 7%;
+    --surface-2: 0 0% 13%;
+    --surface-hover: 0 0% 22%;
 
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 191 55% 18%;
     --brand-soft-foreground: 191 92% 70%;
 
-    /* Dark elevation leans on deeper shadows since the surface step is small. */
-    --elev-1: 0 1px 2px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.28);
-    --elev-2: 0 2px 8px rgba(0, 0, 0, 0.42), 0 8px 20px rgba(0, 0, 0, 0.36);
-    --elev-3: 0 12px 32px rgba(0, 0, 0, 0.55);
+    /* Dark elevation: a faint inset top-light hairline gives every raised card a
+       crisp edge (so stacked cards stop merging) plus a deeper drop shadow. */
+    --elev-1: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+    --elev-2: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 8px rgba(0, 0, 0, 0.5), 0 10px 24px rgba(0, 0, 0, 0.4);
+    --elev-3: 0 12px 32px rgba(0, 0, 0, 0.6);
 
     --accent-primary: 0 0% 82%;
     --accent-primary-foreground: 0 0% 11%;
@@ -137,8 +154,8 @@
     --accent-emphasis-foreground: 0 0% 11%;
     --accent-emphasis-soft: 214 40% 18%;
 
-    --surface-raised: 0 0% 14.5%; /* match card step */
-    --surface-inset: 0 0% 10.5%; /* recessed inputs */
+    --surface-raised: 0 0% 13%; /* #212121 — one step above card */
+    --surface-inset: 0 0% 8%; /* recessed steppers (below card) */
 
     --progress: 221 83% 53%;
     --progress-track: 0 0% 11%;
@@ -148,6 +165,14 @@
     --scrollbar-thumb-hover: 191 100% 48%;
     --scrollbar-thumb-active: 191 100% 54%;
   }
+}
+
+/* ConnectKit renders its overlay in a portal outside the modal root, so these theme
+   vars must be set globally to take effect. A blur with no scrim is invisible on an
+   already-dark page; this is the shared frosted-scrim treatment for the connect modal. */
+:root {
+  --ck-overlay-background: rgba(7, 9, 12, 0.64);
+  --ck-overlay-backdrop-filter: blur(10px) saturate(118%);
 }
 
 @layer base {
@@ -424,6 +449,18 @@
   .skeleton-enter {
     animation: none;
   }
+}
+
+/* Prevent mouse/touch clicks from leaving browser tap/focus artifacts. Keyboard
+   navigation still receives the existing :focus-visible treatment. */
+a,
+button,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 @keyframes loading-progress-head {

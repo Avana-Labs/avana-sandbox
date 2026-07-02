@@ -4,6 +4,11 @@ import { useEffect, useState } from "react"
 import { ConnectKitButton, useSIWE } from "connectkit"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
+import {
+  IS_OPEN_GATE_TEST_MODE,
+  TEST_MODE_WALLET_ADDRESS,
+} from "@/app/lib/test-mode"
+import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
 
 /** Deterministic two-stop gradient identicon derived from the wallet address. */
 function walletGradient(address: string): string {
@@ -33,15 +38,31 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
   const siwe = useSIWE()
   const isSignedIn = Boolean(siwe?.isSignedIn)
   const signingIn = Boolean(siwe?.isLoading)
+  const { isWrongNetwork, targetChainName, isSwitching, switchToTargetChain } = useWrongNetwork()
 
   const base =
-    // A fixed min-width keeps every state (Connect / Connecting… / Sign in / the
-    // address pill) the same footprint, so the header never shifts as the state changes.
+    // A fixed width keeps every state and translated label in the same footprint,
+    // so the header never shifts as wallet or locale state changes.
     size === "mobile"
-      ? "inline-flex h-9 min-w-[136px] items-center justify-center rounded-full px-4 text-[14px] font-medium transition-colors"
-      : "inline-flex h-10 min-w-[152px] items-center justify-center rounded-full px-4 font-sans text-[15px] font-medium transition-colors"
+      ? "inline-flex h-9 w-[124px] items-center justify-center truncate rounded-full px-3 text-[14px] font-medium transition-colors sm:w-[136px] sm:px-4"
+      : "inline-flex h-10 w-[152px] items-center justify-center truncate rounded-full px-4 font-sans text-[15px] font-medium transition-colors"
   const brand = cn(base, "bg-brand text-brand-foreground hover:bg-brand/90")
   const pill = cn(base, "gap-2 border border-border bg-transparent text-foreground hover:bg-surface-inset")
+
+  if (IS_OPEN_GATE_TEST_MODE) {
+    return (
+      <div className={pill} title={TEST_MODE_WALLET_ADDRESS} data-testid="test-mode-wallet">
+        <span
+          aria-hidden
+          className="size-5 shrink-0 rounded-full ring-1 ring-border"
+          style={{ background: walletGradient(TEST_MODE_WALLET_ADDRESS) }}
+        />
+        <span className="truncate font-data text-[12px] font-semibold uppercase tracking-wide text-amber-500">
+          Test wallet
+        </span>
+      </div>
+    )
+  }
 
   if (!mounted) {
     return (
@@ -58,6 +79,25 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
           return (
             <button type="button" onClick={show} className={brand} aria-label={t("Connect")}>
               {isConnecting ? t("Connecting…") : t("Connect")}
+            </button>
+          )
+        }
+        if (isWrongNetwork) {
+          // Block the sign-in gate (and thus every authed action) until the wallet is
+          // on the target chain. The switch prompt replaces the normal wallet states.
+          const switchLabel = t("Switch to {chain}").replace("{chain}", targetChainName)
+          return (
+            <button
+              type="button"
+              onClick={() => void switchToTargetChain()}
+              disabled={isSwitching}
+              className={cn(
+                base,
+                "border border-amber-500/40 bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 disabled:opacity-70 dark:text-amber-200",
+              )}
+              aria-label={switchLabel}
+            >
+              {isSwitching ? t("Switching…") : t("Wrong network")}
             </button>
           )
         }

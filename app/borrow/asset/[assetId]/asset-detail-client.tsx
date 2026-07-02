@@ -1,16 +1,17 @@
 "use client"
 
-import * as React from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { ChevronDown } from "lucide-react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
+import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import {
   AssetHero,
   AssetHeroIdentity,
 } from "@/app/borrow/_detail/asset-sections"
 import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
-import { AssetTokenActions } from "@/app/borrow/_detail/sidebars"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 const AboutNewsSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.AboutNewsSection), {
@@ -68,14 +69,16 @@ type Props = { detail: AssetDetail }
 const PAGE_MAX_W = "max-w-[1152px]"
 
 export function AssetDetailClient({ detail }: Props) {
-  const [mobileOpen, setMobileOpen] = React.useState(false)
+  const { t } = useTranslation()
+  const lendMarketId = resolveLendMarketId(detail.hero.symbol)
+  const closeHref = `/borrow/assets/${detail.row.id}`
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
         <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
           <Link href="/borrow" className="transition-colors hover:text-foreground">
-            Borrow
+            {t("Borrow")}
           </Link>
           <span aria-hidden className="text-border">›</span>
           <span className="font-normal text-foreground">{detail.hero.name}</span>
@@ -130,56 +133,21 @@ export function AssetDetailClient({ detail }: Props) {
         </div>
       </main>
 
-      <MobileDepositDock
-        open={mobileOpen}
-        onToggle={() => setMobileOpen((v) => !v)}
-        label={`Manage ${detail.hero.symbol}`}
-      >
-        <AssetTokenActions detail={detail} />
-      </MobileDepositDock>
-    </div>
-  )
-}
-
-function MobileDepositDock({
-  open,
-  onToggle,
-  children,
-  label,
-}: {
-  open: boolean
-  onToggle: () => void
-  children: React.ReactNode
-  label: string
-}) {
-  return (
-    <div className="lg:hidden">
-      {open ? (
-        <>
-          <div className="fixed inset-0 z-40 bg-black/40 transition-opacity" onClick={onToggle} />
-          <div
-            role="dialog"
-            aria-label={label}
-            className="fixed inset-x-0 bottom-0 z-50 rounded-t-radius-md border-t border-border bg-surface-raised p-4 shadow-elev-3 transition-transform duration-200"
-          >
-            <button
-              type="button"
-              onClick={onToggle}
-              className="mb-3 flex w-full items-center justify-center gap-1.5 text-[11.5px] font-medium text-muted-foreground"
-            >
-              Hide <ChevronDown className="h-3 w-3" />
-            </button>
-            {children}
-          </div>
-        </>
-      ) : null}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="fixed inset-x-4 bottom-4 z-30 h-10 rounded-radius-sm bg-[#007a99] text-[13px] font-medium text-white shadow-elev-3 hover:bg-[#00627a]"
-      >
-        {label}
-      </button>
+      {/* Mobile: direct-action sticky bar — routes straight into the action (no intermediate dock) */}
+      <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+        <Link
+          href={actionPagePath("borrow", "borrow", { asset: detail.row.id, return: closeHref })}
+          className={primaryCtaClass({ size: "compact" })}
+        >
+          {t("Borrow")}
+        </Link>
+        <Link
+          href={actionPagePath("lend", "deposit", { market: lendMarketId, return: closeHref })}
+          className={secondaryCtaClass({ size: "compact" })}
+        >
+          {t("Deposit")}
+        </Link>
+      </div>
     </div>
   )
 }

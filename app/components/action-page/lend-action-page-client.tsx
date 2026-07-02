@@ -24,6 +24,8 @@ import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/
 import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 
 function isHardBlock(reason: string | null) {
   if (!reason) return false
@@ -52,6 +54,7 @@ export function LendActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useLendSessionContext()
+  const priceFor = usePriceFor()
   const depositItems = useMemo(
     () => (kind === "deposit" ? lendDepositSelectItems(session, walletId) : []),
     [kind, session, walletId],
@@ -89,6 +92,7 @@ export function LendActionPageClient({
     () => (marketId ? (session.state.markets[marketId] ?? getLendMarketById(marketId)) : null),
     [marketId, session.state.markets],
   )
+  const assetPriceUsd = market ? (priceFor(market.asset.symbol) ?? market.assetPriceUsd) : 0
 
   const depositAssetOptions = useMemo(() => {
     if (kind !== "deposit") return undefined
@@ -202,6 +206,7 @@ export function LendActionPageClient({
               marketLabel: formatLendMarketValueLabel(market.asset.symbol),
               balanceAmount: getWalletBalanceForLendMarket(session.state, walletId, market),
               rewardsApy: market.rewardsApy,
+              assetPriceUsd,
             }),
           )
           return
@@ -212,6 +217,7 @@ export function LendActionPageClient({
             amount: parsed,
             marketLabel: formatLendMarketValueLabel(market.asset.symbol),
             balanceAmount: position?.currentSuppliedAmount ?? 0,
+            assetPriceUsd,
           }),
         )
       })
@@ -221,18 +227,20 @@ export function LendActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [amount, kind, market, position, session, walletId])
+  }, [amount, assetPriceUsd, kind, market, position, session, walletId])
 
   useEffect(() => {
     if (!previewUi || previewUi.allowed || stage !== "configure") return
     if (!isHardBlock(previewUi.blockedReason)) return
     if (previewUi.blockedReason === dismissedBlockedReason) return
-    const blocked = mapPreviewToBlockedUi({ product: "lend", kind, blockedReason: previewUi.blockedReason })
+    const hasWalletBalance =
+      kind === "deposit" && market ? getWalletBalanceForLendMarket(session.state, walletId, market) > 0 : false
+    const blocked = mapPreviewToBlockedUi({ product: "lend", kind, blockedReason: previewUi.blockedReason, hasWalletBalance })
     if (blocked) {
       setBlockedUi(blocked)
       if (!embedded) setStage("blocked")
     }
-  }, [dismissedBlockedReason, embedded, kind, previewUi, stage])
+  }, [dismissedBlockedReason, embedded, kind, market, previewUi, session.state, stage, walletId])
 
   useEffect(() => {
     setDismissedBlockedReason(null)
@@ -245,6 +253,13 @@ export function LendActionPageClient({
     if (kind === "deposit") return depositItems.length > 1
     return false
   }, [depositItems.length, embedded, initialMarketId, kind, withdrawItems.length])
+  // Max fills the relevant balance: wallet balance for deposit, max withdrawable
+  // for withdraw. Both are already surfaced as preview.maxAmount by the mapper.
+  const handleMax = useCallback(() => {
+    if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
+    setAmount(String(Number(previewUi.maxAmount.toFixed(6))))
+  }, [previewUi?.maxAmount])
+
   const handleBack = useCallback(() => {
     if (stage === "review") {
       setStage("configure")
@@ -321,10 +336,13 @@ export function LendActionPageClient({
       )
       setStage("success")
     } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : "Unable to sign the transaction"
+      // Raw backend codes stay in logs; users see plain-language copy (issue #143).
+      if (process.env.NODE_ENV !== "production") console.error(rawMessage)
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: error instanceof Error ? error.message : "Unable to sign the transaction",
+        message: humanizeBlockedReason(rawMessage) ?? "Unable to sign the transaction",
       })
       setStage("error")
     } finally {
@@ -430,6 +448,8 @@ export function LendActionPageClient({
           outcome={outcome}
           homeLayout={isHomeLayout}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
+          showBalance
+          onMax={handleMax}
         />
       ) : null}
 

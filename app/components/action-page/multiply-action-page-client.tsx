@@ -27,6 +27,14 @@ import {
   resolveMultiplyMarketMaxLeverage,
 } from "@/app/lib/multiply-system/leverage-limits"
 import { clampMultiplierToOptions, buildMultiplierOptions } from "@/app/components/action-page/multiplier-options"
+import {
+  buildMultiplyOverCapPreviewUi,
+  exceedsMultiplyCollateralCap,
+  maxMultiplyCollateralAmount,
+} from "@/app/lib/multiply-system/collateral-limits"
+import { formatActionAmount } from "@/app/lib/action-system/formatters"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 
 export function MultiplyActionPageClient({
   kind,
@@ -51,6 +59,7 @@ export function MultiplyActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useMultiplySessionContext()
+  const priceFor = usePriceFor()
   const walletPositions = useMemo(
     () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
     [session.state.positions, walletId],
@@ -80,6 +89,16 @@ export function MultiplyActionPageClient({
     }))
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
+  const collateralPriceUsd = market
+    ? (priceFor(market.collateralAsset.symbol) ?? market.collateralAsset.priceUsd)
+    : 0
+  // Cap a multiply position at what the market can actually absorb (no per-wallet
+  // balance exists here). This also rejects absurd inputs before they reach the
+  // simulation engine.
+  const maxCollateralAmount =
+    kind === "multiply" && market
+      ? maxMultiplyCollateralAmount(market.economics.availableLiquidityUsd, collateralPriceUsd)
+      : null
 
   const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
   const position = useMemo(() => {
@@ -119,11 +138,13 @@ export function MultiplyActionPageClient({
 
   useEffect(() => {
     if (kind !== "deleverage" || !position) return
-    const parsed = parsePositiveActionAmount(multiplier)
-    if (initialMultiplier && parsed != null) return
-    const next = getDefaultDeleverageMultiplier(position.multiplier)
-    if (multiplier !== next) setMultiplier(next)
-  }, [initialMultiplier, kind, multiplier, position])
+    // Seed the default target ONCE per position (deps deliberately exclude `multiplier`).
+    // Bail if a value already exists — an explicit initial value or one the user has
+    // dragged to wins, so the slider stays user-controlled across [min, current] instead
+    // of snapping back to the default on every change.
+    if (parsePositiveActionAmount(multiplier) != null) return
+    setMultiplier(initialMultiplier ?? getDefaultDeleverageMultiplier(position.multiplier))
+  }, [initialMultiplier, kind, position?.id])
 
   useEffect(() => {
     setHasUserInput(Boolean(initialAmount || initialMultiplier))
@@ -176,12 +197,28 @@ export function MultiplyActionPageClient({
         return
       }
 
+      if (exceedsMultiplyCollateralCap(multiplyCollateralAmount, maxCollateralAmount)) {
+        setPreviewUi(
+          buildMultiplyOverCapPreviewUi({
+            collateralSymbol: market.collateralAsset.symbol,
+            borrowSymbol: market.borrowAsset.symbol,
+            collateralAmount: multiplyCollateralAmount,
+            collateralPriceUsd,
+            marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+            multiplier: parsedMultiplier,
+            maxCollateralAmount: maxCollateralAmount!,
+          }),
+        )
+        return
+      }
+
       const action = {
         type: "multiply" as const,
         walletId,
         marketId: market.id,
         collateralAmount: multiplyCollateralAmount,
         selectedMultiplier: parsedMultiplier,
+        collateralPriceUsd,
       }
 
       setPreviewUi(null)
@@ -194,11 +231,17 @@ export function MultiplyActionPageClient({
               collateralSymbol: market.collateralAsset.symbol,
               borrowSymbol: market.borrowAsset.symbol,
               collateralAmount: multiplyCollateralAmount,
-              collateralPriceUsd: market.collateralAsset.priceUsd,
+              collateralPriceUsd,
+              // The engine now values the position at the same live price (threaded via
+              // action.collateralPriceUsd), so the simulation figures are already live-
+              // priced — no further display rescale (scale === 1). This keeps the preview
+              // exactly equal to the persisted/dashboard position.
+              catalogCollateralPriceUsd: collateralPriceUsd,
               marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
               collateralApy: market.collateralAsset.apy,
               borrowApy: market.borrowAsset.borrowApy,
               multiplier: parsedMultiplier,
+              maxLtv: market.risk.maxLtv,
             }),
           )
         })
@@ -241,7 +284,7 @@ export function MultiplyActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [amount, kind, market, multiplier, position, session, walletId])
+  }, [amount, collateralPriceUsd, kind, market, maxCollateralAmount, multiplier, position, session, walletId])
 
   useEffect(() => {
     if (kind === "multiply") return
@@ -267,6 +310,13 @@ export function MultiplyActionPageClient({
     }
     router.push(closeHref)
   }, [closeHref, router, stage])
+
+  // Fill the collateral input with the market's maximum absorbable amount.
+  const handleMaxCollateral = useCallback(() => {
+    if (maxCollateralAmount == null || maxCollateralAmount <= 0) return
+    setHasUserInput(true)
+    setAmount(String(Number(maxCollateralAmount.toFixed(6))))
+  }, [maxCollateralAmount])
 
   const handlePrimary = useCallback(async () => {
     if (stage === "success") {
@@ -302,6 +352,7 @@ export function MultiplyActionPageClient({
               marketId: market.id,
               collateralAmount: parsedAmount!,
               selectedMultiplier: parsedMultiplier,
+              collateralPriceUsd,
             }
           : {
               type: "deleverage" as const,
@@ -339,41 +390,112 @@ export function MultiplyActionPageClient({
       )
       setStage("success")
     } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : "Transaction was cancelled"
+      // Raw backend codes stay in logs; users see plain-language copy (issue #143).
+      if (process.env.NODE_ENV !== "production") console.error(rawMessage)
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: error instanceof Error ? error.message : "Transaction was cancelled",
+        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
       })
       setStage("error")
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, hasUserInput, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
+  }, [amount, closeHref, collateralPriceUsd, descriptor.primaryVerb, hasUserInput, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
+
+  const handleClose = useCallback(async () => {
+    if (!market || isPending) return
+    const closingPosition =
+      session.state.positions[`${walletId}:${market.id}`] ??
+      Object.values(session.state.positions).find(
+        (entry) => entry.walletId === walletId && entry.marketId === market.id,
+      )
+    if (!closingPosition) return
+
+    setIsPending(true)
+    setOutcome(null)
+
+    try {
+      const action = {
+        type: "close" as const,
+        walletId,
+        positionId: closingPosition.id,
+      }
+      const intent = session.createIntent(action)
+      const preview = await session.previewTransaction(intent)
+      if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
+
+      const simulated = session.readAdapter.mode === "sandbox"
+      const result = await runActionSubmitFlow({
+        simulated,
+        needsAllowance: false,
+        onStage: setStage,
+        execute: async () => session.executeTransaction(preview.intent),
+      })
+
+      if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? "Transaction failed")
+
+      setSuccessUi(
+        mapBorrowSuccessToActionUi({
+          title: "Position closed",
+          description: `Your ${market.collateralAsset.symbol} position was fully unwound and collateral withdrawn.`,
+          receiptHash: result.receipt.hash ?? null,
+          metrics: previewUi?.metrics ?? [],
+          href: dashboardHrefForProduct("multiply"),
+          primaryCtaLabel: successDashboardCtaLabel("multiply"),
+          preview: previewUi ?? undefined,
+          verb: "Close",
+        }),
+      )
+      setStage("success")
+    } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : "Transaction was cancelled"
+      // Raw backend codes stay in logs; users see plain-language copy (issue #143).
+      if (process.env.NODE_ENV !== "production") console.error(rawMessage)
+      setOutcome({
+        tone: "error",
+        title: "Something went wrong",
+        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
+      })
+      setStage("error")
+    } finally {
+      setIsPending(false)
+    }
+  }, [isPending, market, previewUi, session, walletId])
 
   // The catalog always has markets, so `market` is non-null in practice; this only
   // guards the impossible empty-catalog case (and never shows a dead-end card).
   if (!market) return null
 
+  // Deleverage is the exit surface: whenever the wallet holds a position in this
+  // market, offer a full Close/Withdraw so collateral can always be reclaimed —
+  // including a fully-unwound 1.0x/$0 position that deleverage itself can no longer act on.
+  const canClosePosition = kind === "deleverage" && position != null
+
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = isHomeLayout ? "home" : "default"
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
-  const marketLabel = formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol)
-  // The only input is the collateral asset. Spell out the loop so the single-token
-  // input reads clearly (no second token icon implying a dual input).
-  const loopHint =
-    kind === "multiply"
-      ? `You supply ${market.collateralAsset.symbol}. We borrow ${market.borrowAsset.symbol} against it, swap back to ${market.collateralAsset.symbol}, and repeat to your target leverage.`
-      : null
+  // The loop mechanics are documented in the market's "About" section — no inline
+  // explainer filler in the action widget.
+  const loopHint = null
   const effectiveMultiplierMax =
     kind === "deleverage"
       ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
       : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
   const useWorkspaceFields =
     embedded && isHomeLayout && market != null && isConfigureVisibleStage(stage) && !showInlineBlocked
+  // Surface the market-liquidity cap as the collateral input balance, with a Max button.
+  const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
+  const collateralBalanceLabel = showCollateralBalance ? "Available liquidity" : undefined
+  const collateralBalanceValue = showCollateralBalance
+    ? formatActionAmount(maxCollateralAmount!, market.collateralAsset.symbol, 6)
+    : undefined
   const stackedAmountField = useWorkspaceFields ? (
     <ActionConfigureAmountSection
       verb={descriptor.primaryVerb}
+      inputLabel={kind === "multiply" ? "Collateral supplied" : undefined}
       amount={amount}
       onAmountChange={(value) => {
         setHasUserInput(true)
@@ -381,7 +503,7 @@ export function MultiplyActionPageClient({
       }}
       preview={previewUi}
       assetSymbol={market.collateralAsset.symbol}
-      assetLabel={marketLabel}
+      assetLabel={market.collateralAsset.symbol}
       assetOptions={!validInitialMarketId ? marketOptions : undefined}
       selectedAssetId={market.id}
       onAssetSelect={(id) => {
@@ -389,6 +511,10 @@ export function MultiplyActionPageClient({
         setSelectedMarketId(id)
         setAmount("")
       }}
+      showBalance={showCollateralBalance}
+      onMax={handleMaxCollateral}
+      balanceLabel={collateralBalanceLabel}
+      balanceValue={collateralBalanceValue}
       amountVariant="raised"
       amountFooter={
         <>
@@ -403,6 +529,7 @@ export function MultiplyActionPageClient({
             min={multiplierMin}
             max={effectiveMultiplierMax}
             step={0.1}
+            label="Target leverage"
           />
         </>
       }
@@ -457,6 +584,7 @@ export function MultiplyActionPageClient({
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
+          inputLabel={kind === "multiply" ? "Collateral supplied" : undefined}
           amount={amount}
           onAmountChange={(value) => {
             setHasUserInput(true)
@@ -479,16 +607,33 @@ export function MultiplyActionPageClient({
           }}
           multiplierMin={multiplierMin}
           multiplierMax={effectiveMultiplierMax}
+          multiplierLabel="Target leverage"
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
+          showBalance={showCollateralBalance}
+          onMax={handleMaxCollateral}
+          balanceLabel={collateralBalanceLabel}
+          balanceValue={collateralBalanceValue}
           hideAmountInput={useWorkspaceFields}
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           homeLayout={isHomeLayout}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
         />
+      ) : null}
+
+      {canClosePosition && isConfigureVisibleStage(stage) && !showInlineBlocked ? (
+        <button
+          type="button"
+          onClick={() => void handleClose()}
+          disabled={isPending}
+          className="mt-3 w-full rounded-[16px] border border-border/70 px-4 py-3 text-[15px] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          data-testid="multiply-close-position"
+        >
+          Close position and withdraw collateral
+        </button>
       ) : null}
 
       {blockedUi && !embedded ? (

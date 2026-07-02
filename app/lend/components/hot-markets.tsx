@@ -51,7 +51,7 @@ function normalizeGraphPath(path: string) {
   return { path: normalizedPath, points: normalized, width: GRAPH_WIDTH, height: GRAPH_HEIGHT }
 }
 
-function AssetIcon({ asset }: { asset: FeaturedAsset }) {
+export function AssetIcon({ asset }: { asset: FeaturedAsset }) {
   return (
     <span
       className="relative inline-flex size-[56px] shrink-0 items-center justify-center overflow-hidden rounded-full"
@@ -64,6 +64,9 @@ function AssetIcon({ asset }: { asset: FeaturedAsset }) {
         sizes="56px"
         className="object-contain"
         unoptimized
+        // Featured asset icons are the largest above-the-fold imagery on /lend, so
+        // eager-load them to improve LCP instead of lazy-loading below-hero.
+        priority
       />
     </span>
   )
@@ -154,6 +157,7 @@ function ReferenceGraph({
 
 function FeaturedCard({
   asset,
+  apyPct,
   cardKey,
   href,
   hover,
@@ -162,6 +166,7 @@ function FeaturedCard({
   interactive = true,
 }: {
   asset: FeaturedAsset
+  apyPct: number
   cardKey: string
   href: string
   hover: HoverState | null
@@ -197,7 +202,7 @@ function FeaturedCard({
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="text-[15px] font-medium tracking-[-0.03em]">{asset.apy.toFixed(2)}%</div>
+          <div className="text-[15px] font-medium tracking-[-0.03em]">{apyPct.toFixed(2)}%</div>
           <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">APY</div>
         </div>
       </div>
@@ -283,22 +288,23 @@ export function HotMarkets({
     x.set(nextX <= -sequenceWidth ? nextX + sequenceWidth : nextX)
   })
 
-  const hrefForAsset = (assetId: (typeof sequence)[number]) => {
+  const snapshotForAsset = (assetId: (typeof sequence)[number]) => {
     const asset = assets[assetId]
-    const snapshot = snapshots.find(
+    return snapshots.find(
       (entry) => entry.marketId === assetId || entry.symbol.toUpperCase() === asset.symbol.toUpperCase(),
     )
-    return snapshot?.href ?? `/lend/markets/${assetId}`
   }
 
   const renderSequence = (copy: "a" | "b", interactive = true) =>
     sequence.map((assetId, index) => {
       const cardKey = `${copy}-${assetId}-${index}`
+      const snapshot = snapshotForAsset(assetId)
       return (
         <FeaturedCard
           key={cardKey}
           asset={assets[assetId]}
-          href={hrefForAsset(assetId)}
+          apyPct={snapshot?.supplyApyPct ?? assets[assetId].apy}
+          href={snapshot?.href ?? `/lend/markets/${assetId}`}
           cardKey={cardKey}
           hover={hover}
           onHover={setHover}
@@ -317,7 +323,7 @@ export function HotMarkets({
 
         <div
           data-featured-carousel
-          className="relative h-[176px] w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)]"
+          className="relative h-[176px] w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_1rem,black_calc(100%-1rem),transparent_100%)]"
           onMouseEnter={() => setCarouselHovered(true)}
           onMouseLeave={() => {
             setCarouselHovered(false)
@@ -329,7 +335,10 @@ export function HotMarkets({
             setHover(null)
           }}
         >
-          <motion.div style={{ x }} className="flex w-max items-start">
+          {/* Left padding offsets the mask's left fade zone so the leading card is
+              fully visible at rest; it sits outside the measured sequence so the
+              marquee loop width (sequenceRef) is unaffected. */}
+          <motion.div style={{ x }} className="flex w-max items-start pl-4 sm:pl-6">
             <div ref={sequenceRef} className="flex shrink-0 items-start gap-3 pr-3">
               {renderSequence("a")}
             </div>

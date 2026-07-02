@@ -33,9 +33,13 @@ export function simulateMultiply(params: {
   collateralAmount: number
   selectedMultiplier: number
   existingPosition?: MultiplyPosition | null
+  collateralPriceOverrideUsd?: number
 }): MultiplySimulation {
-  const { market, collateralAmount, selectedMultiplier, existingPosition } = params
-  const collateralPriceUsd = market.collateralAsset.priceUsd
+  const { market, collateralAmount, selectedMultiplier, existingPosition, collateralPriceOverrideUsd } = params
+  const collateralPriceUsd =
+    collateralPriceOverrideUsd != null && Number.isFinite(collateralPriceOverrideUsd) && collateralPriceOverrideUsd > 0
+      ? collateralPriceOverrideUsd
+      : market.collateralAsset.priceUsd
   const initialCollateralValueUsd = collateralAmount * collateralPriceUsd
   const priceImpactPct = calculatePriceImpact({
     baseImpact: DEFAULT_BASE_IMPACT,

@@ -1,5 +1,5 @@
 import { getTokenIconMeta } from "@/app/lib/token-icons"
-import { getActiveCurrency } from "@/app/lib/currency/active-rate"
+import { getActiveCurrency, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 
 export type BorrowDexId = "uniswap" | "curve" | "balancer" | "aerodrome"
 
@@ -1226,20 +1226,23 @@ export function formatRiskPremium(bps: number): string {
 
 export function formatCompactUsd(usdValue: number): string {
   if (!Number.isFinite(usdValue)) return "—"
-  const { symbol, rate } = getActiveCurrency()
+  const { rate } = getActiveCurrency()
   const value = usdValue * rate
-  if (value >= 1_000_000_000) return `${symbol}${(value / 1_000_000_000).toFixed(1)}B`
-  if (value >= 1_000_000) return `${symbol}${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `${symbol}${(value / 1_000).toFixed(1)}K`
-  if (value === 0) return `${symbol}0`
-  return `${symbol}${value.toLocaleString("en-US", { maximumFractionDigits: value >= 100 ? 0 : 2 })}`
+  // Compact on magnitude; the sign is reattached (outside the symbol) by withCurrencySymbol.
+  const abs = Math.abs(value)
+  if (abs >= 1_000_000_000) return withCurrencySymbol(value, `${(abs / 1_000_000_000).toFixed(1)}B`)
+  if (abs >= 1_000_000) return withCurrencySymbol(value, `${(abs / 1_000_000).toFixed(1)}M`)
+  if (abs >= 1_000) return withCurrencySymbol(value, `${(abs / 1_000).toFixed(1)}K`)
+  if (abs === 0) return withCurrencySymbol(0, "0")
+  return withCurrencySymbol(value, abs.toLocaleString("en-US", { maximumFractionDigits: abs >= 100 ? 0 : 2 }))
 }
 
 export function formatUsdExact(usdValue: number): string {
-  const { symbol, rate, zeroDecimal } = getActiveCurrency()
+  const { rate, zeroDecimal } = getActiveCurrency()
   const value = usdValue * rate
-  const maximumFractionDigits = zeroDecimal ? 0 : value >= 100 ? 0 : 2
-  return `${symbol}${value.toLocaleString("en-US", { maximumFractionDigits })}`
+  const abs = Math.abs(value)
+  const maximumFractionDigits = zeroDecimal ? 0 : abs >= 100 ? 0 : 2
+  return withCurrencySymbol(value, abs.toLocaleString("en-US", { maximumFractionDigits }))
 }
 
 // ----- Filtering / grouping / sorting --------------------------------------

@@ -30,7 +30,7 @@ export function LendClient({ pageData }: { pageData: LendPageData }) {
       <div className="bg-background">
         <main className="py-8">
           <div className="container mx-auto px-4">
-            <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
+            <div className="mx-auto max-w-[1152px]">
               <LendHero markets={markets} />
 
               <div className="mt-12 space-y-8">

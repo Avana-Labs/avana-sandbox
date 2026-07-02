@@ -63,12 +63,19 @@ export function mapMultiplyPreviewToActionUi(
     borrowSymbol: string
     collateralAmount: number
     collateralPriceUsd: number
+    catalogCollateralPriceUsd?: number
     marketLabel: string
     collateralApy: number
     borrowApy: number
     multiplier: number
+    maxLtv: number
   },
 ): ActionPreviewUi {
+  const priceScale =
+    options.catalogCollateralPriceUsd && options.catalogCollateralPriceUsd > 0
+      ? options.collateralPriceUsd / options.catalogCollateralPriceUsd
+      : 1
+  const scaleUsd = (value: number) => value * priceScale
   const healthAfter = hfNumber(preview.after.healthFactor)
   const liqPrice = preview.simulationSummary?.liquidationPrice
   const liquidationError = preview.validationErrors.find((entry) => entry.toLowerCase().includes("health factor"))
@@ -77,44 +84,66 @@ export function mapMultiplyPreviewToActionUi(
     preview.warnings[0] ??
     "This leverage reduces your safety buffer."
   const hasExistingPosition = preview.before.collateralValueUsd > 0 || preview.before.debtValueUsd > 0
-  const addedExposureUsd = addedValue(preview.after.collateralValueUsd, preview.before.collateralValueUsd)
-  const addedDebtUsd = addedValue(preview.after.debtValueUsd, preview.before.debtValueUsd)
-  const metrics = hasExistingPosition
-    ? [
-        metricValue("new-exposure", "New exposure", formatActionUsd(addedExposureUsd)),
-        metricValue("new-debt", "New debt", formatActionUsd(addedDebtUsd)),
-        metricValue("projected-exposure", "Projected exposure", formatActionUsd(preview.after.collateralValueUsd)),
-        metricValue("projected-debt", "Projected total debt", formatActionUsd(preview.after.debtValueUsd)),
-        metricValue("ltv", "Projected LTV", formatActionRatioPercent(preview.after.ltv)),
-        metricValue(
-          "hf",
-          "Projected health factor",
-          formatActionHealthFactor(healthAfter),
-          hfTone(healthAfter),
-        ),
-        metricValue("net-apy", "Projected net APY", formatActionRatioPercent(preview.after.netApy)),
-        {
-          id: "liq-price",
-          label: "Liquidation price",
-          value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
-        },
-      ]
-    : [
-        metricValue("exposure", "Exposure", formatActionUsd(preview.after.collateralValueUsd)),
-        metricValue("debt", "Estimated debt", formatActionUsd(preview.after.debtValueUsd)),
-        metricValue("ltv", "LTV", formatActionRatioPercent(preview.after.ltv)),
-        metricValue("hf", "Health factor", formatActionHealthFactor(healthAfter), hfTone(healthAfter)),
-        metricValue("net-apy", "Net APY", formatActionRatioPercent(preview.after.netApy)),
-        {
-          id: "liq-price",
-          label: "Liquidation price",
-          value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
-        },
-      ]
+  const addedExposureUsd = scaleUsd(addedValue(preview.after.collateralValueUsd, preview.before.collateralValueUsd))
+  const addedDebtUsd = scaleUsd(addedValue(preview.after.debtValueUsd, preview.before.debtValueUsd))
+  const borrowCapacityUsd = Math.max(
+    0,
+    scaleUsd(preview.after.collateralValueUsd * options.maxLtv - preview.after.debtValueUsd),
+  )
+  const maxBorrowUsd = scaleUsd(preview.after.collateralValueUsd * options.maxLtv)
+  const borrowCapacityRatio = maxBorrowUsd > 0 ? borrowCapacityUsd / maxBorrowUsd : 1
+  const borrowCapacityTone =
+    borrowCapacityRatio < 0.1 ? "danger" : borrowCapacityRatio < 0.25 ? "warning" : "positive"
+  const metrics = [
+    metricValue(
+      "collateral-supplied",
+      "Collateral supplied",
+      formatActionAmount(options.collateralAmount, options.collateralSymbol, 6),
+    ),
+    metricValue(
+      "collateral-value",
+      "Collateral value",
+      formatActionUsd(options.collateralAmount * options.collateralPriceUsd),
+    ),
+    metricValue("target-leverage", "Target leverage", `${options.multiplier.toFixed(2)}x`),
+    metricValue("looped-exposure", "Looped exposure", formatActionUsd(addedExposureUsd)),
+    metricValue("borrowed-amount", `${options.borrowSymbol} borrowed`, formatActionUsd(addedDebtUsd)),
+    metricValue(
+      "borrow-capacity",
+      "Borrow capacity remaining",
+      formatActionUsd(borrowCapacityUsd),
+      borrowCapacityTone,
+    ),
+    metricValue(
+      "ltv",
+      hasExistingPosition ? "Projected LTV" : "LTV",
+      formatActionRatioPercent(preview.after.ltv),
+    ),
+    metricValue(
+      "hf",
+      hasExistingPosition ? "Projected health factor" : "Health factor",
+      formatActionHealthFactor(healthAfter),
+      hfTone(healthAfter),
+    ),
+    metricValue(
+      "net-apy",
+      hasExistingPosition ? "Projected net APY" : "Net APY",
+      formatActionRatioPercent(preview.after.netApy),
+    ),
+    {
+      id: "liq-price",
+      label: "Liquidation price",
+      value: liqPrice != null ? formatActionUsd(scaleUsd(liqPrice)) : "—",
+    },
+  ]
 
   return {
     allowed: preview.allowed,
-    amountLabel: `${options.multiplier.toFixed(2)}x · ${formatActionAmount(options.collateralAmount, options.collateralSymbol, 4)}`,
+    amountTitle: "Collateral supplied",
+    amountLabel: formatActionAmount(options.collateralAmount, options.collateralSymbol, 6),
+    amountValue: String(options.collateralAmount),
+    assetLabel: options.collateralSymbol,
+    assetSymbol: options.collateralSymbol,
     amountUsdLabel: formatActionApproxUsd(options.collateralAmount * options.collateralPriceUsd),
     rateLabel: "",
     rateValue: "",

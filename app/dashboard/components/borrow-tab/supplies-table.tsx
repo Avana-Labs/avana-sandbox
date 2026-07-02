@@ -52,7 +52,7 @@ export function SuppliesPanel({
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
-        <div className="text-[20px] font-medium leading-snug tracking-tight text-[#01AACF]">
+        <div className="text-[20px] font-medium leading-snug tracking-tight text-brand">
           Nothing supplied yet
         </div>
         <div className="mt-1 text-[15px] leading-snug">To borrow you need to supply any LPs to be used as collateral</div>
@@ -92,10 +92,10 @@ export function SuppliesPanel({
                     Collateral
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Max Borrow
+                    Scope Max Borrow
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Health Factor
+                    Scope Health Factor
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Fees Earned
@@ -155,7 +155,9 @@ export function SuppliesPanel({
           const spoke = getSpokeById(homePoolSpoke(row.pool.category))
           const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
           const hf = row.healthFactor
-          const hfLabel = hf === null || Number.isNaN(hf) ? "—" : !Number.isFinite(hf) ? "∞" : hf.toFixed(1)
+          // Single-source the label through formatHealthFactor so the mobile card
+          // caps/formats health identically to the desktop table and the hero card.
+          const hfLabel = formatHealthFactor(hf)
           const hfTone = healthFactorBarTone(hf)
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`
@@ -190,7 +192,7 @@ export function SuppliesPanel({
 
               <div className="space-y-2.5 rounded-radius-sm border border-border bg-surface-inset px-3 py-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12.5px] font-medium text-foreground">Health Factor</span>
+                  <span className="text-[12.5px] font-medium text-foreground">Scope Health Factor</span>
                   <span className={cn("font-data text-[22px] font-medium leading-none tabular-nums", hfTone.text)}>{m(hfLabel)}</span>
                 </div>
                 <HealthFactorPositionBar

@@ -38,7 +38,7 @@ const HELP_LINKS: HelpLink[] = [
   },
   {
     href: "/support-center",
-    label: "Help Center",
+    label: "Support center",
     icon: LifeBuoy,
   },
   {
@@ -175,7 +175,7 @@ export function DesktopHelpBubble() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.92 }}
         transition={{ duration: 0.16 }}
-        className="inline-flex size-10 items-center justify-center rounded-none bg-transparent text-[#01AACF] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25 dark:text-white"
+        className="inline-flex size-10 items-center justify-center rounded-none bg-transparent text-brand transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25 dark:text-white"
       >
         <CircleHelp className="h-6 w-6" strokeWidth={2.3} />
       </motion.button>

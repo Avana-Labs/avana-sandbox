@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { currencyContext, convertFromUsd, formatCompactCurrency, formatExactCurrency } from "@/app/lib/currency/format"
+import {
+  currencyContext,
+  convertFromUsd,
+  formatCompactCurrency,
+  formatExactCurrency,
+  redenominateCompactUsd,
+} from "@/app/lib/currency/format"
 
 describe("currency formatting", () => {
   it("USD is identity", () => {
@@ -29,5 +35,37 @@ describe("currency formatting", () => {
 
   it("handles negative values with a leading sign", () => {
     expect(formatCompactCurrency(-2_000_000, currencyContext("USD"))).toBe("-$2.0M")
+  })
+})
+
+describe("redenominateCompactUsd", () => {
+  it("returns the string unchanged when the active currency is USD", () => {
+    expect(redenominateCompactUsd("$312.4M", currencyContext("USD"))).toBe("$312.4M")
+  })
+
+  it("re-denominates a compact USD magnitude into the active currency", () => {
+    // $312.4M * 0.92 ≈ €287.4M
+    expect(redenominateCompactUsd("$312.4M", currencyContext("EUR"))).toBe("€287.4M")
+  })
+
+  it("handles B / K suffixes and thousands separators", () => {
+    expect(redenominateCompactUsd("$1.6B", currencyContext("CNY"))).toBe("¥11.5B")
+    expect(redenominateCompactUsd("$4,050", currencyContext("EUR"))).toBe("€3,726.00")
+  })
+
+  it("preserves decimals for sub-thousand token prices", () => {
+    // A token price ($883.74) keeps cents so it matches the live tooltip.
+    expect(redenominateCompactUsd("$100.00", currencyContext("EUR"))).toBe("€92.00")
+  })
+
+  it("re-signs negative magnitudes", () => {
+    expect(redenominateCompactUsd("-$2.0M", currencyContext("EUR"))).toBe("-€1.8M")
+  })
+
+  it("leaves non-money strings (percentages, plain text) untouched", () => {
+    expect(redenominateCompactUsd("62.1%", currencyContext("EUR"))).toBe("62.1%")
+    expect(redenominateCompactUsd("Uniswap v3, Chainlink ETH", currencyContext("EUR"))).toBe(
+      "Uniswap v3, Chainlink ETH",
+    )
   })
 })

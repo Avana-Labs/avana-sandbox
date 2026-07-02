@@ -2,6 +2,11 @@ import { calculateAvailableLiquidity, calculateCurrentSuppliedBalance, calculate
 import { simulateDeposit, simulateWithdraw } from "./simulation"
 import type { LendAction, LendClaimRewardsIntent, LendDepositIntent, LendPosition, LendSystemState, LendWithdrawIntent } from "./types"
 
+// A remainder worth less than this after a withdraw is dust (ongoing accrual
+// between quote and execution): sweep it out and close the position rather than
+// leaving a zombie ~$0 "active" row on the dashboard.
+const DUST_REMAINDER_USD = 0.01
+
 function findWalletPosition(state: LendSystemState, walletId: string, marketId: string): LendPosition | undefined {
   return Object.values(state.positions).find(
     (position) => position.walletId === walletId && position.marketId === marketId && position.status === "active",
@@ -134,27 +139,50 @@ function applyWithdraw(
   })
   if (!simulation.validation.allowed) return state
 
+  // A "withdraw max" quote can leave a tiny remainder because the position keeps
+  // accruing between quote and execution. If what's left is dust (sub-cent),
+  // close the position and sweep the remainder into this withdraw so no zombie
+  // $0 "active" row lingers and the accrued interest is fully paid out.
+  const remainderIsDust =
+    simulation.after.suppliedAmount <= 1e-12 || simulation.after.suppliedValueUsd < DUST_REMAINDER_USD
+  const withdrawnAmount = remainderIsDust
+    ? action.withdrawAmount + simulation.after.suppliedAmount
+    : action.withdrawAmount
+
   const updatedMarket = updateMarketTotals(
     {
       ...market,
       liquidityIndex: simulation.after.liquidityIndex,
       lastAccrualTimestamp: now,
     },
-    -action.withdrawAmount,
+    -withdrawnAmount,
   )
 
-  const updatedPosition: LendPosition = {
-    ...position,
-    principalAmount: simulation.after.principalAmount,
-    scaledBalance: simulation.after.scaledBalance,
-    liquidityIndexAtLastAction: simulation.after.liquidityIndex,
-    currentSuppliedAmount: simulation.after.suppliedAmount,
-    interestEarned: simulation.after.interestEarned,
-    rewardsEarnedUsd: simulation.after.rewardsEarnedUsd,
-    suppliedValueUsd: simulation.after.suppliedValueUsd,
-    updatedAt: now,
-    status: simulation.after.suppliedAmount <= 1e-12 ? "closed" : "active",
-  }
+  const updatedPosition: LendPosition = remainderIsDust
+    ? {
+        ...position,
+        principalAmount: 0,
+        scaledBalance: 0,
+        liquidityIndexAtLastAction: simulation.after.liquidityIndex,
+        currentSuppliedAmount: 0,
+        interestEarned: 0,
+        rewardsEarnedUsd: simulation.after.rewardsEarnedUsd,
+        suppliedValueUsd: 0,
+        updatedAt: now,
+        status: "closed",
+      }
+    : {
+        ...position,
+        principalAmount: simulation.after.principalAmount,
+        scaledBalance: simulation.after.scaledBalance,
+        liquidityIndexAtLastAction: simulation.after.liquidityIndex,
+        currentSuppliedAmount: simulation.after.suppliedAmount,
+        interestEarned: simulation.after.interestEarned,
+        rewardsEarnedUsd: simulation.after.rewardsEarnedUsd,
+        suppliedValueUsd: simulation.after.suppliedValueUsd,
+        updatedAt: now,
+        status: "active",
+      }
 
   return {
     now,
@@ -164,7 +192,7 @@ function applyWithdraw(
       state,
       action.walletId,
       action.marketId,
-      readWalletBalance(state, action.walletId, action.marketId) + action.withdrawAmount,
+      readWalletBalance(state, action.walletId, action.marketId) + withdrawnAmount,
     ),
     transactions: [
       ...state.transactions,
@@ -174,7 +202,7 @@ function applyWithdraw(
         marketId: action.marketId,
         kind: "withdraw",
         asset: market.asset.symbol,
-        amount: action.withdrawAmount,
+        amount: withdrawnAmount,
         at: now,
       },
     ],

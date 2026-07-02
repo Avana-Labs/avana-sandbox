@@ -131,10 +131,6 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   )
 }
 
-function formatPairAmount(value: number, pool: BorrowPoolRow) {
-  return `${formatCompactUsd(value).replace(/^\$/, "")} ${pool.visuals[0].symbol} / ${pool.visuals[1].symbol}`
-}
-
 function CollateralDesktopTable({
   rows,
   pending,
@@ -279,10 +275,7 @@ function CollateralDesktopTable({
                 </td>
                 <td className={`py-2.5 px-6 ${TABLE_ROW_HOVER_RIGHT}`}>
                   <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
-                    <span className="tabular-nums">{formatPairAmount(pool.availableUsd, pool)}</span>
-                  </div>
-                  <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-                    {formatCompactUsd(pool.availableUsd)}
+                    <span className="tabular-nums">{formatCompactUsd(pool.availableUsd)}</span>
                   </div>
                 </td>
               </tr>

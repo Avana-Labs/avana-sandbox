@@ -80,4 +80,22 @@ describe("ActionAmountCard", () => {
     expect(screen.getByText("%")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /change asset/i })).toBeNull()
   })
+
+  it("shows the balance and a Max button that fills the balance", () => {
+    const onMax = vi.fn()
+    render(<ActionAmountCard {...baseProps} balanceLabel="Balance" balanceValue="1.28 ETH" onMax={onMax} />)
+
+    expect(screen.getByText(/1\.28 ETH/)).toBeInTheDocument()
+    const maxButton = screen.getByRole("button", { name: "Max" })
+    // min-h-10 keeps the Max shortcut at the >=40px mobile tap-target floor.
+    expect(maxButton.className).toContain("min-h-10")
+    fireEvent.click(maxButton)
+    expect(onMax).toHaveBeenCalledTimes(1)
+  })
+
+  it("hides the Max button in read-only review mode", () => {
+    render(<ActionAmountCard {...baseProps} balanceLabel="Balance" balanceValue="1.28 ETH" onMax={() => {}} readOnly />)
+
+    expect(screen.queryByRole("button", { name: "Max" })).toBeNull()
+  })
 })
