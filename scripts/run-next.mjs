@@ -12,6 +12,18 @@ if (!supportedModes.has(mode)) {
   process.exit(1)
 }
 
+// Deploy hygiene: never bake the open-gate test mode into a production build.
+// A `build` with NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 inlines IS_OPEN_GATE_TEST_MODE=true
+// — a full SIWE/onboarding bypass authenticating every visitor as the test wallet.
+// Refuse it so a poisoned artifact can never be produced or shipped.
+if (mode === "build" && process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1") {
+  process.stderr.write(
+    "Refusing to build with NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1: that bakes the open auth gate\n" +
+      "(and the test wallet) into the production artifact. Unset it for production builds.\n",
+  )
+  process.exit(1)
+}
+
 const isCI = !!(process.env.VERCEL || process.env.CI)
 
 const modeConfig = isCI
