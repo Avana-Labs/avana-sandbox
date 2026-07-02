@@ -47,8 +47,6 @@ describe("SuppliesPanel column scope", () => {
         rows={[tinyRow]}
         totals={{ collateral: 2, borrowed: 0, available: 3_700, fees: 0, averageHf: 4.57 }}
         onBorrowMore={vi.fn()}
-        onAddCollateral={vi.fn()}
-        onRemove={vi.fn()}
         showSummary={false}
         showHeading={false}
       />,
