@@ -1,25 +1,38 @@
 import { cn } from "@/lib/utils"
 
 /**
- * Canonical primary action CTA — one Uniswap-style treatment used by every
- * lend / borrow / multiply / express action surface.
+ * Canonical action CTAs — one Uniswap-style treatment shared by every
+ * lend / borrow / multiply / express surface. Change the look in ONE place.
  *
- * Enabled  : solid brand (cyan) fill + white text.
- * Disabled : soft brand tint + legible brand text (the designed `brand-soft`
- *            pair), matching Uniswap's tinted "Connect" state. No low-contrast
- *            teal-on-teal, no ad-hoc border.
+ * Primary  enabled : solid brand (cyan) fill + white text.
+ * Primary  disabled: soft brand tint + legible brand text (Uniswap's tinted
+ *                    "Connect" state) — no low-contrast teal-on-teal.
+ * Secondary        : outlined surface button, matched height/radius.
  *
- * Change the button look in ONE place here — never re-hardcode CTA classes.
+ * Sizes:
+ *   "default" (h-14) — the final confirm/submit button inside an action flow.
+ *   "compact" (h-12) — slimmer, for sticky detail-page action bars.
  */
-const PRIMARY_CTA_BASE =
-  "flex h-14 w-full items-center justify-center rounded-[20px] px-4 text-[16px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed"
+type CtaSize = "default" | "compact"
+
+const SIZE_CLASS: Record<CtaSize, string> = {
+  default: "h-14 text-[16px]",
+  compact: "h-12 text-[15px]",
+}
+
+const PRIMARY_BASE =
+  "flex w-full items-center justify-center rounded-[20px] px-4 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed"
+
+const SECONDARY_BASE =
+  "flex w-full items-center justify-center rounded-[20px] border border-border bg-surface-raised px-4 font-medium text-foreground transition-colors hover:bg-surface-hover"
 
 export function primaryCtaClass(
-  opts: { disabled?: boolean; pending?: boolean; className?: string } = {},
+  opts: { disabled?: boolean; pending?: boolean; size?: CtaSize; className?: string } = {},
 ): string {
-  const { disabled, pending, className } = opts
+  const { disabled, pending, size = "default", className } = opts
   return cn(
-    PRIMARY_CTA_BASE,
+    PRIMARY_BASE,
+    SIZE_CLASS[size],
     disabled
       ? "bg-brand-soft text-brand-soft-foreground"
       : "bg-brand text-brand-foreground hover:bg-brand/90 active:bg-brand/80",
@@ -28,6 +41,10 @@ export function primaryCtaClass(
   )
 }
 
-/** Canonical secondary action CTA (e.g. Cancel / Back), matched to the primary height & radius. */
-export const SECONDARY_CTA_CLASS =
-  "flex h-14 items-center justify-center rounded-[20px] border border-border bg-surface-raised px-4 text-[16px] font-medium text-foreground transition-colors hover:bg-surface-hover"
+export function secondaryCtaClass(opts: { size?: CtaSize; className?: string } = {}): string {
+  const { size = "default", className } = opts
+  return cn(SECONDARY_BASE, SIZE_CLASS[size], className)
+}
+
+/** Default-size secondary CTA class string (used by the in-flow ActionFooter). */
+export const SECONDARY_CTA_CLASS = secondaryCtaClass()
