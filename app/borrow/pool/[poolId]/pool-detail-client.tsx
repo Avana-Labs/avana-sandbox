@@ -15,6 +15,7 @@ import {
   RelatedPoolsRow,
 } from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowActions, PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 type Props = { detail: PoolDetail }
@@ -30,13 +31,14 @@ const PAGE_MAX_W = "max-w-[1152px]"
  */
 export function PoolDetailClient({ detail }: Props) {
   const [mobileOpen, setMobileOpen] = React.useState(false)
+  const { t } = useTranslation()
 
   return (
     <div className="bg-background">
       <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
         <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
           <Link href="/borrow" className="transition-colors hover:text-foreground">
-            Borrow
+            {t("Borrow")}
           </Link>
           <span aria-hidden className="text-border">›</span>
           <span className="font-normal text-foreground">{detail.hero.name}</span>
