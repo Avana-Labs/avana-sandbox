@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { CheckCircle2 } from "lucide-react"
 import type { ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
@@ -24,6 +25,19 @@ export function ActionSuccessStage({
   const symbol = success.receiptContext?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
   const receipt = success.receiptContext
 
+  // Link the receipt hash to its sandbox receipt page so the flow can reach it.
+  const receiptLine = success.receiptHash ? (
+    <p className="mt-2 font-data text-[12px] text-muted-foreground">
+      {t("Receipt")}:{" "}
+      <Link
+        href={`/sandbox/transactions/${encodeURIComponent(success.receiptHash)}`}
+        className="text-foreground underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-readable"
+      >
+        {success.receiptHash}
+      </Link>
+    </p>
+  ) : null
+
   return (
     <div data-testid="action-success-stage" className="space-y-4">
       {receipt ? (
@@ -38,11 +52,7 @@ export function ActionSuccessStage({
               <ActionTokenIcon symbol={symbol} className="size-14" />
               <h2 className="mt-4 text-[1.25rem] font-medium tracking-[-0.03em]">{t(success.title)}</h2>
               <p className="mt-1.5 max-w-sm text-[14px] text-muted-foreground">{t(success.description)}</p>
-              {success.receiptHash ? (
-                <p className="mt-2 font-data text-[12px] text-muted-foreground">
-                  {t("Receipt")}: <span className="text-foreground">{success.receiptHash}</span>
-                </p>
-              ) : null}
+              {receiptLine}
             </div>
 
             <div className="divide-y divide-border border-t border-border">
@@ -59,11 +69,7 @@ export function ActionSuccessStage({
           </div>
           <h2 className="mt-3 text-[18px] font-medium tracking-[-0.02em]">{t(success.title)}</h2>
           <p className="mt-1.5 max-w-sm text-[14px] text-muted-foreground">{t(success.description)}</p>
-          {success.receiptHash ? (
-            <p className="mt-2 font-data text-[12px] text-muted-foreground">
-              {t("Receipt")}: <span className="text-foreground">{success.receiptHash}</span>
-            </p>
-          ) : null}
+          {receiptLine}
         </div>
       )}
 
