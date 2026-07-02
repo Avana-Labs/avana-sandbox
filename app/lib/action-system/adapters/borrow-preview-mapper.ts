@@ -89,6 +89,8 @@ export function mapBorrowTransactionPreviewToActionUi(
     balanceUsd: number
     rateLabel?: string
     creditScopeLabel?: string
+    liquidationThresholdPct?: number
+    maxBorrowUsd?: number
   },
 ): ActionPreviewUi {
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
@@ -97,6 +99,11 @@ export function mapBorrowTransactionPreviewToActionUi(
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
   const beforeApy = options.ratePct
   const afterApy = options.ratePct
+  const beforeLtvPct = fixedToNumber(preview.before.currentLtvWad, 18) * 100
+  const afterLtvPct = fixedToNumber(preview.after.currentLtvWad, 18) * 100
+  // Max borrow is capped by the COLLATERAL FACTOR (available credit), never the
+  // liquidation threshold — mirror the credit engine so Max lands at the safe cap.
+  const maxBorrowUsd = options.maxBorrowUsd ?? borrowingPowerUsd(preview, "before")
 
   return {
     allowed: preview.allowed,
@@ -108,7 +115,7 @@ export function mapBorrowTransactionPreviewToActionUi(
     marketValue: options.marketLabel,
     balanceLabel: options.balanceLabel,
     balanceValue: formatActionUsd(options.balanceUsd),
-    maxAmount: options.balanceUsd,
+    maxAmount: maxBorrowUsd,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
       {
@@ -118,6 +125,22 @@ export function mapBorrowTransactionPreviewToActionUi(
         before: formatActionPercent(beforeApy),
         after: formatActionPercent(afterApy),
       },
+      {
+        id: "ltv",
+        label: scopedMetricLabel("LTV", options.creditScopeLabel),
+        value: formatActionPercentBeforeAfter(beforeLtvPct, afterLtvPct),
+        before: formatActionPercent(beforeLtvPct),
+        after: formatActionPercent(afterLtvPct),
+      },
+      ...(options.liquidationThresholdPct != null
+        ? [
+            {
+              id: "liquidation-threshold",
+              label: "Liquidation threshold",
+              value: formatActionPercent(options.liquidationThresholdPct),
+            },
+          ]
+        : []),
       {
         id: "borrowing-power",
         label: scopedMetricLabel("Borrowing power", options.creditScopeLabel),

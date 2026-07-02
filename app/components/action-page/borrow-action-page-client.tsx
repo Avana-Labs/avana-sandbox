@@ -465,6 +465,13 @@ export function BorrowActionPageClient({
         .then((preview) => {
           if (cancelled) return
           const token = session.getBorrowableAssetsForMarket(activeMarketId).find((entry) => entry.id === resolvedAssetId)
+          const borrowMarket = session.state.markets[activeMarketId]
+          const liquidationThresholdPct = borrowMarket
+            ? Math.round(Number.parseFloat(formatFixed(borrowMarket.riskConfig.liquidationThresholdWad, 18)) * 1000) / 10
+            : undefined
+          // Max borrow respects the collateral factor: pre-borrow available credit
+          // is the safe cap the credit engine will allow.
+          const maxBorrowUsd = Number.parseFloat(formatFixed(preview.before.availableBorrowCapacityUsd6, 6))
           setPreviewUi(
             mapBorrowTransactionPreviewToActionUi(preview, {
               symbol: token?.symbol ?? "Asset",
@@ -472,7 +479,9 @@ export function BorrowActionPageClient({
               marketLabel,
               ratePct: token?.borrowApr ?? 0,
               balanceLabel: creditScopeLabel ? `Available in ${creditScopeLabel}` : "Available to Borrow",
-              balanceUsd: Number.parseFloat(formatFixed(preview.after.availableBorrowCapacityUsd6, 6)),
+              balanceUsd: maxBorrowUsd,
+              liquidationThresholdPct,
+              maxBorrowUsd,
               creditScopeLabel: creditScopeLabel ?? undefined,
             }),
           )
@@ -827,6 +836,13 @@ export function BorrowActionPageClient({
     }
   }, [activeMarketId, amount, closeHref, debtPosition, descriptor.primaryVerb, isPending, kind, marketId, percent, previewUi, resolvedBorrowAssetId, router, session, stage, successUi, walletId])
 
+  // Borrow surfaces a Max that fills the safe borrow cap (collateral-factor bound).
+  const showBorrowMax = kind === "borrow"
+  const handleBorrowMax = useCallback(() => {
+    if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
+    setAmount(String(Number(previewUi.maxAmount.toFixed(2))))
+  }, [previewUi?.maxAmount])
+
   const shellSubtitle =
     stage === "select"
       ? kind === "repay"
@@ -897,6 +913,8 @@ export function BorrowActionPageClient({
         hideAssetSelector={kind === "supply"}
         assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
         pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
+        showBalance={showBorrowMax}
+        onMax={showBorrowMax ? handleBorrowMax : undefined}
       />
     ) : null
 
@@ -1095,6 +1113,8 @@ export function BorrowActionPageClient({
           hideAmountInput={kind === "claim" || Boolean(useWorkspaceFields)}
           amountVariant="card"
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
+          showBalance={showBorrowMax}
+          onMax={showBorrowMax ? handleBorrowMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}
           homeLayout={isHomeLayout}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}

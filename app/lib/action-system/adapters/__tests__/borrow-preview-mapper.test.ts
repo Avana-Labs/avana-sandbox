@@ -10,7 +10,7 @@ import { borrowPreviewFixture } from "@/app/lib/action-system/__tests__/fixtures
 describe("borrow preview mappers", () => {
   const preview = borrowPreviewFixture()
 
-  it("maps borrow metrics from spec", () => {
+  it("maps borrow metrics from spec including LTV and liquidation threshold", () => {
     const ui = mapBorrowTransactionPreviewToActionUi(preview, {
       symbol: "USDC",
       amountUsd: 1000,
@@ -18,17 +18,42 @@ describe("borrow preview mappers", () => {
       ratePct: 5.2,
       balanceLabel: "Available to Borrow",
       balanceUsd: 5000,
+      liquidationThresholdPct: 82.5,
+      maxBorrowUsd: 5000,
       creditScopeLabel: "Uniswap Bluechip",
     })
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Credit scope",
       "Position APY",
+      "LTV in scope",
+      "Liquidation threshold",
       "Borrowing power in scope",
       "Net balance in scope",
       "Net collateral in scope",
       "Health factor in scope",
     ])
+    // LTV live-updates from before → after (0.25 → 0.35 in the fixture).
+    expect(ui.metrics.find((row) => row.id === "ltv")?.value).toBe("25% → 35%")
+    expect(ui.metrics.find((row) => row.id === "liquidation-threshold")?.value).toBe("82.5%")
+    // Max borrow respects the collateral factor (pre-borrow available credit).
+    expect(ui.maxAmount).toBe(5000)
+  })
+
+  it("omits the liquidation-threshold row when not provided", () => {
+    const ui = mapBorrowTransactionPreviewToActionUi(preview, {
+      symbol: "USDC",
+      amountUsd: 1000,
+      marketLabel: "USDC · Core",
+      ratePct: 5.2,
+      balanceLabel: "Available to Borrow",
+      balanceUsd: 5000,
+    })
+
+    expect(ui.metrics.some((row) => row.id === "liquidation-threshold")).toBe(false)
+    expect(ui.metrics.some((row) => row.id === "ltv")).toBe(true)
+    // Falls back to the pre-borrow borrowing power (5000 in the fixture).
+    expect(ui.maxAmount).toBe(5000)
   })
 
   it("maps repay-specific metrics", () => {
