@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { primaryCtaClass, SECONDARY_CTA_CLASS } from "@/app/components/action-page/action-cta"
+import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
 import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
@@ -104,13 +104,13 @@ export function MarketDetailClient({ detail }: Props) {
       <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
         <Link
           href={actionPagePath("multiply", "multiply", { market: marketId, return: `/multiply/markets/${marketId}` })}
-          className={primaryCtaClass()}
+          className={primaryCtaClass({ size: "compact" })}
         >
           {t("Multiply")}
         </Link>
         <Link
           href={actionPagePath("multiply", "deleverage", { market: marketId, return: `/multiply/markets/${marketId}` })}
-          className={cn(SECONDARY_CTA_CLASS, "w-full")}
+          className={secondaryCtaClass({ size: "compact" })}
         >
           {t("Deleverage")}
         </Link>
