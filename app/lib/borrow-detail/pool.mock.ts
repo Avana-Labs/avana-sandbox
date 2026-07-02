@@ -326,7 +326,10 @@ function buildHeroMetricSeries(
   const baseFees = fixture?.baseFeesUsd ?? Math.round(baseVol * 0.003)
   const basePrice = pairReferencePrice(row)
   return {
-    tvl: buildSeriesFamily(`${row.id}:tvl`, "TVL", { base: baseTvl, driftMultiplier: 1.08, noise: 0.04, wave: 0.08, nonNegative: true, roundTo: 0 }),
+    // TVL is a level, not a trending flow — keep the series close to the stated base
+    // (no systematic +8% drift) so the hero headline reconciles with the overview
+    // "Total Supplied" stat instead of ending materially higher/lower.
+    tvl: buildSeriesFamily(`${row.id}:tvl`, "TVL", { base: baseTvl, driftMultiplier: 1.0, noise: 0.02, wave: 0.04, nonNegative: true, roundTo: 0 }),
     volume: buildSeriesFamily(`${row.id}:volume`, "Volume", { base: baseVol, driftMultiplier: 1.12, noise: 0.15, wave: 0.22, nonNegative: true, roundTo: 0 }),
     fees: buildSeriesFamily(`${row.id}:fees`, "Fees", { base: baseFees, driftMultiplier: 1.1, noise: 0.18, wave: 0.22, nonNegative: true, roundTo: 0 }),
     price: buildSeriesFamily(`${row.id}:price`, "Price", { base: basePrice, driftMultiplier: 1.04, noise: 0.02, wave: 0.06, nonNegative: true, roundTo: 4 }),
@@ -357,7 +360,7 @@ function buildKeyMetrics(row: BorrowPoolRow, fixture: FixtureOverride | undefine
   const vol = fixture?.baseVolumeUsd ?? Math.round(tvl * 0.12)
   const fees = fixture?.baseFeesUsd ?? Math.round(vol * 0.003)
   const shapes: Record<KeyMetricId, Parameters<typeof buildSeriesFamily>[2]> = {
-    tvl: { base: tvl, driftMultiplier: 1.08, noise: 0.04, nonNegative: true, roundTo: 0 },
+    tvl: { base: tvl, driftMultiplier: 1.0, noise: 0.02, nonNegative: true, roundTo: 0 },
     volume: { base: vol, driftMultiplier: 1.12, noise: 0.15, nonNegative: true, roundTo: 0 },
     fees: { base: fees, driftMultiplier: 1.1, noise: 0.18, nonNegative: true, roundTo: 0 },
     feesApr: { base: row.aprMin + 0.5, driftMultiplier: 1.05, noise: 0.08, nonNegative: true, roundTo: 2 },
