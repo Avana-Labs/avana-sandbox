@@ -104,6 +104,26 @@ describe("borrow preview mappers", () => {
     expect(ui.metrics.find((row) => row.id === "borrowable-assets")?.tokenSymbols).toEqual(["USDC", "GHO"])
   })
 
+  it("humanizes a leaky blocked reason so no internal ids reach the banner", () => {
+    const blocked = borrowPreviewFixture({
+      allowed: false,
+      validationErrors: ["Wallet wallet-1 does not have enough available credit in spoke uni-v3-bluechip"],
+    })
+    const ui = mapBorrowTransactionPreviewToActionUi(blocked, {
+      symbol: "USDC",
+      amountUsd: 999999,
+      marketLabel: "USDC · Core",
+      ratePct: 5.2,
+      balanceLabel: "Available to Borrow",
+      balanceUsd: 5000,
+    })
+
+    expect(ui.blockedReason).toBe(
+      "You don't have enough borrowing power for this amount. Lower the amount or add collateral.",
+    )
+    expect(ui.blockedReason).not.toMatch(/spoke|wallet-1|insolvent/i)
+  })
+
   it("maps remove metrics", () => {
     const ui = mapBorrowRemovePreviewToActionUi(preview, {
       percent: 25,
