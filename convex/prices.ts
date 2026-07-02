@@ -36,6 +36,14 @@ export const TOKEN_LLAMA_IDS: Record<string, string> = {
   crv: "coingecko:curve-dao-token",
 }
 
+/**
+ * Prices are considered stale after this age. The refresh cron runs hourly (see
+ * crons.ts), so 3h tolerates one or two missed runs (network blip / DefiLlama outage)
+ * before the UI flags staleness — long enough to avoid false positives, short enough
+ * that a genuinely wedged cron surfaces within a few hours.
+ */
+export const PRICE_STALE_AFTER_MS = 3 * 60 * 60 * 1000
+
 /** All token prices (one row per base symbol). Small table — safe to collect. */
 export const getPrices = query({
   args: {},
@@ -48,6 +56,26 @@ export const getPrices = query({
       source: r.source,
       updatedAt: r.updatedAt,
     }))
+  },
+})
+
+/**
+ * Price freshness signal for the UI. If the refresh cron fails, `getPrices` keeps
+ * serving the last-known values silently; this exposes how old they are so the UI can
+ * warn ("prices may be stale") instead of presenting stale numbers as live. Freshness is
+ * the OLDEST row's age (a partially-failed refresh is only as fresh as its stalest token).
+ */
+export const getPriceStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query("tokenPrices").collect()
+    if (rows.length === 0) {
+      // Never refreshed yet (fresh deploy, or the cron has never succeeded).
+      return { updatedAt: null, ageMs: null, stale: true, staleAfterMs: PRICE_STALE_AFTER_MS, count: 0 }
+    }
+    const updatedAt = Math.min(...rows.map((r) => r.updatedAt))
+    const ageMs = Math.max(0, Date.now() - updatedAt)
+    return { updatedAt, ageMs, stale: ageMs > PRICE_STALE_AFTER_MS, staleAfterMs: PRICE_STALE_AFTER_MS, count: rows.length }
   },
 })
 
@@ -87,32 +115,46 @@ type LlamaResponse = {
  * Fetch current prices from DefiLlama and upsert them. Internal-only: invoked by the
  * cron (or the CLI via `npx convex run`); never publicly callable, so anonymous
  * callers can't trigger outbound fetches or price-table writes.
+ *
+ * Failures are logged with a greppable `[prices]` prefix and re-thrown so the scheduled
+ * run is recorded as FAILED (observable/alertable in the Convex dashboard) rather than
+ * silently leaving the UI on last-known values. `getPriceStatus` then surfaces staleness.
  */
 export const refreshPrices = internalAction({
   args: {},
   handler: async (ctx): Promise<{ written: number; fetched: number }> => {
     const entries = Object.entries(TOKEN_LLAMA_IDS)
     const ids = entries.map(([, id]) => id).join(",")
-    const res = await fetch(`https://coins.llama.fi/prices/current/${encodeURIComponent(ids)}`)
-    if (!res.ok) throw new Error(`DefiLlama request failed: ${res.status}`)
-    const json = (await res.json()) as LlamaResponse
-    const now = Date.now()
-    const rows = entries
-      .map(([symbol, llamaId]) => {
-        const coin = json.coins[llamaId]
-        if (!coin || typeof coin.price !== "number") return null
-        return {
-          symbol,
-          llamaId,
-          priceUsd: coin.price,
-          decimals: coin.decimals,
-          confidence: coin.confidence,
-          source: "defillama",
-          updatedAt: now,
-        }
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null)
-    await ctx.runMutation(internal.prices.upsertPrices, { rows })
-    return { written: rows.length, fetched: Object.keys(json.coins).length }
+    try {
+      const res = await fetch(`https://coins.llama.fi/prices/current/${encodeURIComponent(ids)}`)
+      if (!res.ok) throw new Error(`DefiLlama request failed: ${res.status}`)
+      const json = (await res.json()) as LlamaResponse
+      const now = Date.now()
+      const rows = entries
+        .map(([symbol, llamaId]) => {
+          const coin = json.coins[llamaId]
+          if (!coin || typeof coin.price !== "number") return null
+          return {
+            symbol,
+            llamaId,
+            priceUsd: coin.price,
+            decimals: coin.decimals,
+            confidence: coin.confidence,
+            source: "defillama",
+            updatedAt: now,
+          }
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+      if (rows.length === 0) {
+        // Fetch succeeded but yielded no usable prices — treat as a failure so the run is
+        // flagged and the UI doesn't keep serving stale values as if the refresh worked.
+        throw new Error("DefiLlama returned no usable prices")
+      }
+      await ctx.runMutation(internal.prices.upsertPrices, { rows })
+      return { written: rows.length, fetched: Object.keys(json.coins).length }
+    } catch (err) {
+      console.error("[prices] refreshPrices failed; UI will surface staleness via getPriceStatus:", err)
+      throw err
+    }
   },
 })
