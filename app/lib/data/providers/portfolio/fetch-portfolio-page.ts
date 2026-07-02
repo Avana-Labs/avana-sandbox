@@ -5,6 +5,7 @@ import {
   type DataSourceRequestContext,
 } from "@/app/lib/data/core/source-runtime"
 import { mockPortfolioPageSource } from "@/app/lib/data/mock/wallet/portfolio/source"
+import { loadWithAuthFallback, resolveDefaultWithAuthFallback } from "@/app/lib/data/providers/live-auth-fallback"
 import { resolveDataSourceMode } from "../source-mode"
 import { mapPortfolioPage } from "./map-portfolio-page"
 import { livePortfolioPageSource, type PortfolioPageSource } from "./source"
@@ -38,30 +39,26 @@ export async function fetchPortfolioPage(
 ): Promise<PortfolioPageData> {
   if (options?.source) return loadFromSource(options.source, input, options)
   if (resolveDataSourceMode() === "mock") return loadFromSource(mockPortfolioPageSource, input, options)
-
-  try {
-    return await loadFromSource(livePortfolioPageSource, input, options)
-  } catch (error) {
-    // Unauthenticated visitor (no SIWE token): degrade to the demo portfolio so the
-    // dashboard still renders its tabs/positions instead of erroring. An authenticated
-    // wallet's genuine load failure still surfaces (only the "auth" code falls back).
-    if (error instanceof DataSourceError && error.code === "auth") {
-      return loadFromSource(mockPortfolioPageSource, input, options)
-    }
-    throw error
-  }
+  return loadWithAuthFallback({
+    allowFallback: true,
+    loadPrimary: () => loadFromSource(livePortfolioPageSource, input, options),
+    loadFallback: () => loadFromSource(mockPortfolioPageSource, input, options),
+  })
 }
 
 export function resolvePortfolioWalletProfileId(source?: PortfolioPageSource) {
   const primarySource = source ?? (resolveDataSourceMode() === "mock" ? mockPortfolioPageSource : livePortfolioPageSource)
-  try {
-    return primarySource.getDefaultWalletProfileId()
-  } catch (error) {
-    if (!source && error instanceof DataSourceError && error.code === "auth") {
-      return mockPortfolioPageSource.getDefaultWalletProfileId()
-    }
-    throw normalizeDataSourceError(error, primarySource.adapter, "getDefaultWalletProfileId")
-  }
+  return resolveDefaultWithAuthFallback({
+    allowFallback: !source,
+    loadPrimary: () => {
+      try {
+        return primarySource.getDefaultWalletProfileId()
+      } catch (error) {
+        throw normalizeDataSourceError(error, primarySource.adapter, "getDefaultWalletProfileId")
+      }
+    },
+    loadFallback: () => mockPortfolioPageSource.getDefaultWalletProfileId(),
+  })
 }
 
 export type { FetchPortfolioPageInput, PortfolioPageData, PortfolioTabKey } from "./types"
