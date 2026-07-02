@@ -12,11 +12,9 @@ import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-contex
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
-import { cn } from "@/lib/utils"
+import { DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 
 type Props = { detail: LendMarketDetail }
-
-const PAGE_MAX_W = "max-w-[1152px]"
 
 /** Map a wallet's own sandbox lend actions into the shared TxHistoryRow shape. */
 function mapSessionRows(
@@ -62,7 +60,7 @@ export function LendMarketDetailClient({ detail }: Props) {
     <div className="bg-background">
       <main className="pb-24 pt-8 md:pb-12">
         <div className="container mx-auto px-4">
-          <div className={cn("mx-auto", PAGE_MAX_W)}>
+          <DetailPageWidth>
             <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
               <Link href="/lend" className="transition-colors hover:text-foreground">
                 {t("Lend")}
@@ -112,12 +110,11 @@ export function LendMarketDetailClient({ detail }: Props) {
                 <LendSidebar detail={detail} />
               </aside>
             </div>
-          </div>
+          </DetailPageWidth>
         </div>
       </main>
 
-      {/* Mobile: direct-action sticky bar — routes straight into the action (no intermediate dock) */}
-      <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+      <MobileDetailActionBar className="grid grid-cols-2 gap-3">
         <Link
           href={actionPagePath("lend", "deposit", { market: marketId, return: `/lend/markets/${marketId}` })}
           className={primaryCtaClass({ size: "compact" })}
@@ -130,7 +127,7 @@ export function LendMarketDetailClient({ detail }: Props) {
         >
           {t("Withdraw")}
         </Link>
-      </div>
+      </MobileDetailActionBar>
     </div>
   )
 }

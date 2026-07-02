@@ -9,7 +9,7 @@ import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { cn } from "@/lib/utils"
+import { DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import {
   MarketHero,
   MarketHeroIdentity,
@@ -21,8 +21,6 @@ import {
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 
 type Props = { detail: MultiplyMarketDetail }
-
-const PAGE_MAX_W = "max-w-[1152px]"
 
 export function MarketDetailClient({ detail }: Props) {
   const session = useMultiplySessionContext()
@@ -42,7 +40,7 @@ export function MarketDetailClient({ detail }: Props) {
     <div className="bg-background">
       <main className="pb-24 pt-8 md:pb-12">
         <div className="container mx-auto px-4">
-          <div className={cn("mx-auto", PAGE_MAX_W)}>
+          <DetailPageWidth>
             <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
               <Link href="/multiply" className="transition-colors hover:text-foreground">
                 {t("Multiply")}
@@ -95,19 +93,11 @@ export function MarketDetailClient({ detail }: Props) {
                 <MarketSidebar detail={detail} />
               </aside>
             </div>
-          </div>
+          </DetailPageWidth>
         </div>
       </main>
 
-      {/* Mobile: About/news inline (desktop shows it in the sidebar) */}
-      <div className="container mx-auto px-4 lg:hidden">
-        <div className={cn("mx-auto pb-28", PAGE_MAX_W)}>
-          <MarketSidebar detail={detail} hideActions />
-        </div>
-      </div>
-
-      {/* Mobile: direct-action sticky bar — routes straight into the action (no intermediate dock) */}
-      <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+      <MobileDetailActionBar className="grid grid-cols-2 gap-3">
         <Link
           href={actionPagePath("multiply", "multiply", { market: marketId, return: `/multiply/markets/${marketId}` })}
           className={primaryCtaClass({ size: "compact" })}
@@ -120,7 +110,7 @@ export function MarketDetailClient({ detail }: Props) {
         >
           {t("Deleverage")}
         </Link>
-      </div>
+      </MobileDetailActionBar>
     </div>
   )
 }
