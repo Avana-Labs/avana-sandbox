@@ -68,29 +68,18 @@ export function buildBorrowDashboardMetricsFromSnapshot(
 export function buildBorrowDashboardMetrics(state: BorrowSystemState, walletId: string): DashboardTabMetrics {
   const metrics = calculateCreditMetrics(state, walletId)
 
-  // The engine's net account value counts pooled collateral + cash, but NOT the
-  // LP tokens the wallet holds outside a position. Removing collateral moves value
-  // from collateral into that LP balance, so omitting it made Net Value drift down
-  // on an economically net-neutral action. Fold the held LP balances back in so a
-  // supply/remove of fairly-valued collateral keeps Net Value flat.
-  //
-  // Only count LP balances for markets the wallet actually has a position in. The
-  // sandbox pre-seeds a pledgeable idle LP balance in *every* catalog market (~$1.5M
-  // total) purely so any market can be supplied; folding all of that into Net Value
-  // inflated it ~140× (e.g. $1.58M against $14.4K collateral). Position-adjacent
-  // inventory is still counted, which is what keeps the net-neutral actions flat.
+  // The engine's net account value excludes LP that has been returned to the wallet
+  // after a collateral withdrawal. Count only the tracked returned LP bucket here:
+  // the sandbox still pre-seeds pledgeable LP across the catalog, and that idle seed
+  // balance should not inflate Net Value.
   const account = state.accounts[walletId]
-  const positionMarketIds = new Set(account?.collateralPositions.map((position) => position.marketId) ?? [])
-  const walletLpBalancesUsd6 = account
-    ? Object.entries(account.walletLpBalancesUsd6 ?? {}).reduce(
-        (sum, [marketId, value]) => (positionMarketIds.has(marketId) ? sum + value : sum),
-        0n,
-      )
+  const returnedLpBalancesUsd6 = account
+    ? Object.values(account.walletReturnedLpBalancesUsd6 ?? {}).reduce((sum, value) => sum + value, 0n)
     : 0n
 
   return {
     overview: {
-      netValueUsd: usd6ToNumber(metrics.netAccountValueUsd6 + walletLpBalancesUsd6),
+      netValueUsd: usd6ToNumber(metrics.netAccountValueUsd6 + returnedLpBalancesUsd6),
       totalBorrowedUsd: usd6ToNumber(metrics.totalBorrowedUsd6),
       liquidationBufferUsd: usd6ToNumber(metrics.liquidationBufferUsd6 > 0n ? metrics.liquidationBufferUsd6 : 0n),
       riskPremiumPct: wadToPct(metrics.riskPremiumWad),

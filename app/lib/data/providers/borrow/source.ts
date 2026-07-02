@@ -1,79 +1,42 @@
-import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+import { buildBorrowCatalogBaselineState } from "@/app/lib/borrow-system/mock"
 import { mergeConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration"
 import { fetchConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration-server"
 import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
 import {
-  createDataSourceAdapter,
-  DataSourceError,
   type DataSourceAdapter,
   type DataSourceRequestContext,
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
+import { createCatalogPageSources } from "@/app/lib/data/providers/catalog-page-source"
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
-import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import type { BorrowPageData } from "./types"
-
-/**
- * Hydrate the catalog state with Convex market reference data so the
- * server-rendered borrow page (hero, Explore cards, initial list) matches the
- * client session and the single source of truth. Falls back to the catalog state
- * when Convex is unreachable, so the page always renders.
- */
-async function hydrateBorrowStateFromConvex(state: BorrowSystemState): Promise<BorrowSystemState> {
-  const snapshots = await fetchConvexMarketSnapshots()
-  return snapshots.length > 0 ? mergeConvexMarketSnapshots(state, snapshots) : state
-}
 
 export type BorrowPageSource = {
   adapter: DataSourceAdapter
   getBorrowPageData(context?: DataSourceRequestContext): Promise<DataSourceResponse<BorrowPageData>>
 }
 
-export const mockBorrowPageAdapter = createDataSourceAdapter({
-  id: "borrow-mock",
-  label: "Borrow page mock source",
-  mode: "mock",
+const catalogSources = createCatalogPageSources({
+  product: "borrow",
+  buildBaselineState: buildBorrowCatalogBaselineState,
+  fetchSnapshots: fetchConvexMarketSnapshots,
+  mergeSnapshots: mergeConvexMarketSnapshots,
+  readPageData: async (state, walletId) => {
+    const readAdapter = new SandboxBorrowReadAdapter({ state })
+    return readAdapter.readBorrowPage(walletId)
+  },
+  mockWalletId: getDefaultWalletProfileId(),
 })
 
-export const liveBorrowPageAdapter = createDataSourceAdapter({
-  id: "borrow-live",
-  label: "Borrow page live source",
-  mode: "live",
-})
+export const mockBorrowPageAdapter = catalogSources.mockAdapter
+export const liveBorrowPageAdapter = catalogSources.liveAdapter
 
 export const mockBorrowPageSource: BorrowPageSource = {
   adapter: mockBorrowPageAdapter,
-  async getBorrowPageData() {
-    const walletId = getDefaultWalletProfileId()
-    const systemState = await hydrateBorrowStateFromConvex(buildMockBorrowSystemState(walletId))
-    const readAdapter = new SandboxBorrowReadAdapter({ state: systemState })
-
-    return {
-      fetchedAt: new Date().toISOString(),
-      data: await readAdapter.readBorrowPage(walletId),
-    }
-  },
+  getBorrowPageData: (context) => catalogSources.mockSource.getPageData(context),
 }
 
 export const liveBorrowPageSource: BorrowPageSource = {
   adapter: liveBorrowPageAdapter,
-  async getBorrowPageData() {
-    const walletId = "catalog"
-    const snapshots = await fetchConvexMarketSnapshots()
-    if (snapshots.length === 0) {
-      throw new DataSourceError({
-        code: "unavailable",
-        sourceId: liveBorrowPageAdapter.id,
-        operation: "getBorrowPageData",
-        message: "Convex returned no Borrow market snapshots. Seed the market catalog before enabling live mode.",
-        retryable: true,
-      })
-    }
-    const state = mergeConvexMarketSnapshots(buildMockBorrowSystemState(walletId), snapshots)
-    const readAdapter = new SandboxBorrowReadAdapter({ state })
-    return {
-      fetchedAt: new Date().toISOString(),
-      data: await readAdapter.readBorrowPage(walletId),
-    }
-  },
+  getBorrowPageData: (context) => catalogSources.liveSource.getPageData(context),
 }

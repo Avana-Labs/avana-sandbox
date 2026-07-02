@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { executeSourceLoad, type DataSourceRequestContext } from "@/app/lib/data/core/source-runtime"
+import { loadWithAuthFallback } from "@/app/lib/data/providers/live-auth-fallback"
 import { resolveDataSourceMode } from "../source-mode"
 import { liveRewardsPageSource, mockRewardsPageSource, type FetchRewardsPageInput, type RewardsPageSource } from "./source"
 import type { RewardsPageData } from "./types"
@@ -44,13 +45,22 @@ export async function fetchRewardsPage(
   source?: RewardsPageSource,
   context?: DataSourceRequestContext,
 ): Promise<RewardsPageData> {
-  const response = await executeSourceLoad<RewardsPageSource, unknown>({
-    primary: getRewardsPageSource(source),
-    fallback: getRewardsPageFallback(source),
-    operation: "getRewardsPageData",
-    context,
-    schema: rewardsPageSchema,
-    load: (pageSource, requestContext) => pageSource.getRewardsPageData(input, requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
+  const loadFromSource = (pageSource: RewardsPageSource) =>
+    executeSourceLoad<RewardsPageSource, unknown>({
+      primary: pageSource,
+      fallback: getRewardsPageFallback(source),
+      operation: "getRewardsPageData",
+      context,
+      schema: rewardsPageSchema,
+      load: (resolvedSource, requestContext) =>
+        resolvedSource.getRewardsPageData(input, requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
+    })
+
+  const primarySource = getRewardsPageSource(source)
+  const response = await loadWithAuthFallback({
+    allowFallback: !source && resolveDataSourceMode() !== "mock",
+    loadPrimary: () => loadFromSource(primarySource),
+    loadFallback: () => loadFromSource(mockRewardsPageSource),
   })
 
   return response.data as unknown as RewardsPageData

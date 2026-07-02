@@ -9,7 +9,7 @@ import {
 } from "@/app/lib/credit-engine"
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import type { BorrowAssetVisual, BorrowPoolRow, BorrowableAsset } from "@/app/lib/borrow-sim"
-import type { HomeCollateralPool } from "@/app/lib/home-sim"
+import type { HomeCollateralPool } from "@/app/lib/borrow-system/home-contracts"
 
 /** Intrinsic per-market risk premium (bps) from the catalog — the same value the pool detail renders. */
 const CATALOG_RISK_PREMIUM_BPS = new Map(BORROW_POOL_CATALOG.map((row) => [row.id, row.riskPremiumBps]))

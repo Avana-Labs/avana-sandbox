@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Check, TrendingUp } from "lucide-react"
 import {
-  formatCompactUsd,
   getHealthStatus,
   healthGaugePercent,
   type HomeCollateralPool,
@@ -19,6 +18,8 @@ import {
 import { cn } from "@/lib/utils"
 import { computeHealthFactor } from "./shared"
 import type { PoolDialogMode } from "./types"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function PoolPickerDialog({
   open,
@@ -38,12 +39,14 @@ export function PoolPickerDialog({
   debts: Record<string, number>
 }) {
   const [focusedPoolId, setFocusedPoolId] = useState(selectedPoolId)
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (open) setFocusedPoolId(selectedPoolId)
   }, [open, selectedPoolId])
 
-  const title = mode === "borrow" ? "Select LP pool" : mode === "repay" ? "Select debt position" : "Select collateral position"
+  const title = mode === "borrow" ? t("Select LP pool") : mode === "repay" ? t("Select debt position") : t("Select collateral position")
 
   const focusedPool = useMemo(() => pools.find((pool) => pool.id === focusedPoolId) ?? pools[0], [focusedPoolId, pools])
   if (!focusedPool) return null
@@ -56,9 +59,9 @@ export function PoolPickerDialog({
     : 0
   const aaveFooterNote = (
     <>
-      Powered by Aave v4.{" "}
+      {t("Powered by Aave v4.")}{" "}
       <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
-        Learn More
+        {t("Learn More")}
       </a>
     </>
   )
@@ -72,7 +75,7 @@ export function PoolPickerDialog({
 
         <div className="flex items-center gap-1.5 px-5 pb-1 pt-3 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
           <TrendingUp className="h-3 w-3" />
-          <span>Positions</span>
+          <span>{t("Positions")}</span>
         </div>
 
         <div className="max-h-[240px] overflow-y-auto">
@@ -96,16 +99,16 @@ export function PoolPickerDialog({
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[13px] font-medium text-foreground">{pool.name}</span>
                   <span className="text-[11.5px] text-muted-foreground">
-                    {pool.venue} · Max LTV {pool.maxLtv}%
+                    {pool.venue} · {t("Max LTV")} {pool.maxLtv}%
                   </span>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="font-data text-[13px] font-medium">
-                    {mode === "repay" ? (debtUsd > 0 ? formatCompactUsd(debtUsd) : "No debt") : formatCompactUsd(pool.collateralUsd)}
+                    {mode === "repay" ? (debtUsd > 0 ? compact(debtUsd) : t("No debt")) : compact(pool.collateralUsd)}
                   </span>
                   <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", status.textClass)}>
                     <span className={cn("inline-block size-1.5 rounded-full", status.dotClass)} />
-                    HF {Number.isFinite(hf) ? hf.toFixed(2) : "∞"}
+                    {t("HF")} {Number.isFinite(hf) ? hf.toFixed(2) : "∞"}
                   </span>
                 </div>
                 {isFocused ? <Check className="ml-1 h-3.5 w-3.5 text-foreground" /> : null}
@@ -124,13 +127,13 @@ export function PoolPickerDialog({
                   {Number.isFinite(focusedHf) ? focusedHf.toFixed(2) : "∞"}
                 </div>
                 <div className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  Health factor
+                  {t("Health factor")}
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] text-muted-foreground">
                   <span className={cn("inline-block size-1.5 rounded-full", focusedStatus.dotClass)} />
-                  <span className={focusedStatus.textClass}>{focusedStatus.label}</span>
+                  <span className={focusedStatus.textClass}>{t(focusedStatus.label)}</span>
                 </span>
                 <span className="text-[11px] text-muted-foreground">{focusedPool.name}</span>
               </div>
@@ -151,12 +154,12 @@ export function PoolPickerDialog({
                 <span className="font-data text-[13px] font-medium tracking-tight text-foreground">
                   {ltvUsedPercent.toFixed(0)}%
                 </span>
-                <span className="text-[11px] text-muted-foreground">borrow power used</span>
+                <span className="text-[11px] text-muted-foreground">{t("borrow power used")}</span>
               </div>
               <span className="text-[11px] text-muted-foreground">
-                <span className="font-medium text-foreground">{formatCompactUsd(focusedDebt)}</span>
+                <span className="font-medium text-foreground">{compact(focusedDebt)}</span>
                 <span className="mx-1">/</span>
-                <span>{formatCompactUsd(focusedPool.borrowPowerUsd)}</span>
+                <span>{compact(focusedPool.borrowPowerUsd)}</span>
               </span>
             </div>
           </div>
@@ -168,7 +171,7 @@ export function PoolPickerDialog({
             onClick={() => onSelect(focusedPool.id)}
             className="h-11 w-full rounded-radius-sm bg-[hsl(var(--brand))] text-[13px] font-medium text-white shadow-elev-1 transition-colors hover:bg-[hsl(var(--brand))]/90"
           >
-            Use {focusedPool.name}
+            {t("Use {pool}").replace("{pool}", focusedPool.name)}
           </Button>
           <div className="mt-3 text-center text-[12px] text-muted-foreground">
             {aaveFooterNote}

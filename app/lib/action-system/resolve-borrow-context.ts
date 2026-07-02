@@ -4,7 +4,7 @@ import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
 import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
-import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
+import { HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 
 function normalizeBorrowAssetKey(value: string) {

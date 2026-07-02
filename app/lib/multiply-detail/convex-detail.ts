@@ -8,6 +8,7 @@ import {
   fetchMultiplyRisk,
   fetchMultiplySupplySeries,
 } from "@/app/lib/multiply-system/market-hydration-server"
+import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
 import { getMultiplyMarketDetail } from "./index"
 import type { MultiplyMarketDetail } from "./index"
 import type { QuickStat } from "@/app/lib/borrow-detail"
@@ -36,15 +37,7 @@ function mergeConvexQuickStats(
   base: QuickStat[],
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
-  if (!convex || convex.length === 0) return base
-  const byMockId = new Map<string, { value: string; delta?: QuickStat["delta"] }>()
-  for (const c of convex) {
-    for (const mockId of QUICK_STAT_ALIASES[c.id] ?? [c.id]) byMockId.set(mockId, c)
-  }
-  return base.map((s) => {
-    const c = byMockId.get(s.id)
-    return c ? { ...s, value: c.value, delta: c.delta ?? s.delta } : s
-  })
+  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES)
 }
 
 export async function getMultiplyMarketDetailFromConvex(id: string): Promise<MultiplyMarketDetail | null> {
@@ -61,16 +54,12 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
     fetchMultiplyContent(slug),
   ])
 
-  return {
+  return applyDetailContentOverlay({
     ...detail,
     quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
     heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     risk: (risk as typeof detail.risk) ?? detail.risk,
-    about: content
-      ? { ...detail.about, description: content.description, stats: content.stats, history: content.history }
-      : detail.about,
-    faqs: content?.faqs ?? detail.faqs,
-  }
+  }, content)
 }

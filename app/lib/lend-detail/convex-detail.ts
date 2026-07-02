@@ -12,6 +12,7 @@ import {
   fetchLendSupplySeries,
   fetchTokenPrices,
 } from "@/app/lib/lend-system/market-hydration-server"
+import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
 import { buildLendMarketDetail, resolveLendMarket } from "./mock"
 import type { LendMarketDetail } from "./types"
 import type { QuickStat } from "@/app/lib/borrow-detail"
@@ -41,15 +42,7 @@ function mergeConvexQuickStats(
   base: QuickStat[],
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
-  if (!convex || convex.length === 0) return base
-  const byMockId = new Map<string, { value: string; delta?: QuickStat["delta"] }>()
-  for (const c of convex) {
-    for (const mockId of QUICK_STAT_ALIASES[c.id] ?? [c.id]) byMockId.set(mockId, c)
-  }
-  return base.map((s) => {
-    const c = byMockId.get(s.id)
-    return c ? { ...s, value: c.value, delta: c.delta ?? s.delta } : s
-  })
+  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES)
 }
 
 /** Overlay the real DefiLlama price onto the "price" quick stat for a base symbol. */
@@ -95,7 +88,7 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     fetchLendContent(slug),
   ])
 
-  return {
+  return applyDetailContentOverlay({
     ...detail,
     quickStats: injectRealPrice(
       mergeConvexQuickStats(detail.quickStats, quickStats),
@@ -107,9 +100,5 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
     risk: (risk as typeof detail.risk) ?? detail.risk,
-    about: content
-      ? { ...detail.about, description: content.description, stats: content.stats, history: content.history }
-      : detail.about,
-    faqs: content?.faqs ?? detail.faqs,
-  }
+  }, content)
 }

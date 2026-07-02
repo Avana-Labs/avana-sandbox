@@ -6,15 +6,17 @@ import { Info } from "lucide-react"
 import { HeroMarketCard } from "@/app/borrow/borrow-hero-market-card"
 import { Progress } from "@/components/ui/progress"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
 import { cn } from "@/lib/utils"
 
-function formatBalanceAmount(value: number) {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 0 })
+function formatBalanceAmount(value: number, locale: string) {
+  return value.toLocaleString(locale, { maximumFractionDigits: 0 })
 }
 
-function formatClaimAmount(value: number) {
-  return value.toLocaleString("en-US", {
+function formatClaimAmount(value: number, locale: string) {
+  return value.toLocaleString(locale, {
     maximumFractionDigits: 0,
   })
 }
@@ -38,13 +40,15 @@ export function RewardsBalanceHero({
   progressPercentage: number
   claimHref?: string
 }) {
+  const { t, language } = useTranslation()
+  const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const { showDollarAmounts } = useDisplayPreferences()
   const claimLabel =
     claimableCount > 0
       ? showDollarAmounts
-        ? `Claim ${formatClaimAmount(claimableAmount)} AVA`
-        : "Claim rewards"
-      : "No rewards ready"
+        ? t("Claim {amount} AVA").replace("{amount}", formatClaimAmount(claimableAmount, locale))
+        : t("Claim rewards")
+      : t("No rewards ready")
   const claimButtonClass = cn(
     "inline-flex h-10 w-full items-center justify-center rounded-radius-sm px-4 text-[12px] transition-colors sm:h-9 sm:w-auto",
     claimableCount > 0
@@ -72,7 +76,7 @@ export function RewardsBalanceHero({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
-                  {showDollarAmounts ? formatBalanceAmount(balanceTotal) : "••••••••"}
+                  {showDollarAmounts ? formatBalanceAmount(balanceTotal, locale) : "••••••••"}
                   <span className="ml-2 align-middle text-[0.78em]">AVA</span>
                 </span>
 
@@ -90,12 +94,12 @@ export function RewardsBalanceHero({
 
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-normal tracking-[0.14em] text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
-                  AVA balance
+                  {t("AVA balance")}
                   <Info className="h-3 w-3" />
                 </span>
                 {claimableAmount > 0 ? (
                   <span className="text-foreground/80">
-                    +{showDollarAmounts ? formatClaimAmount(claimableAmount) : "••••"} AVA ready to claim
+                    +{showDollarAmounts ? formatClaimAmount(claimableAmount, locale) : "••••"} {t("AVA ready to claim")}
                   </span>
                 ) : null}
               </div>
@@ -115,19 +119,21 @@ export function RewardsBalanceHero({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] font-normal uppercase tracking-[0.14em] text-muted-foreground">
-                Your progress
+                {t("Your progress")}
               </span>
               <span className="text-[11px] font-normal text-muted-foreground">
-                {completedCount}/{totalCount} completed
+                {t("{completed}/{total} completed")
+                  .replace("{completed}", String(completedCount))
+                  .replace("{total}", String(totalCount))}
               </span>
             </div>
-            <Progress value={progressPercentage} className="h-1.5" aria-label="Overall quest completion progress" />
+            <Progress value={progressPercentage} className="h-1.5" aria-label={t("Overall quest completion progress")} />
           </div>
         </div>
       </section>
 
       <section className="hidden min-w-0 md:block">
-        <HeroMarketCard title="Rewards Pools" rows={rewardPools} />
+        <HeroMarketCard title={t("Rewards Pools")} rows={rewardPools} />
       </section>
     </div>
   )

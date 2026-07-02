@@ -23,6 +23,8 @@ import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { RewardsBalanceHero } from "./rewards-balance-hero"
 import { RewardsTabs } from "./rewards-tabs"
 import { RewardsEducationDialog, RewardsFavoriteDialog, RewardsReferralDialog, RewardsSimulateDialog } from "./rewards-task-dialogs"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 
 type RewardsSnapshot = {
   summary: {
@@ -88,29 +90,35 @@ function formatDuration(ms: number) {
   return `${seconds}s`
 }
 
-function isReferralClaimCta(task: RewardTask) {
+function isReferralClaimCta(task: RewardTask, t: (key: string) => string) {
   const actionKind = getTaskActionKind(task)
-  if (actionKind === "copy_referral") return "View link & claim"
-  if (actionKind === "sandbox_referral_invite") return "View invite & claim"
-  if (isReferralTaskAction(actionKind)) return "View crew & claim"
-  return `Claim ${task.rewardAmount} AVA`
+  if (actionKind === "copy_referral") return t("View link & claim")
+  if (actionKind === "sandbox_referral_invite") return t("View invite & claim")
+  if (isReferralTaskAction(actionKind)) return t("View crew & claim")
+  return t("Claim {amount} AVA").replace("{amount}", String(task.rewardAmount))
 }
 
-function buildProgressLabel(task: RewardTask, progress: UserRewardProgress, firstLoginAt: number, now: number) {
-  if (progress.status === "claimed") return "Claimed"
-  if (progress.status === "claimable") return "Ready to claim"
-  if (progress.status === "expired") return "Expired"
+function buildProgressLabel(task: RewardTask, progress: UserRewardProgress, firstLoginAt: number, now: number, t: (key: string) => string, exact: (usd: number) => string) {
+  if (progress.status === "claimed") return t("Claimed")
+  if (progress.status === "claimable") return t("Ready to claim")
+  if (progress.status === "expired") return t("Expired")
 
   if (task.requirement.type === "wait_since_login" && firstLoginAt > 0) {
     const remaining = task.requirement.waitMs - (now - firstLoginAt)
-    if (remaining > 0) return `Unlocks in ${formatDuration(remaining)}`
+    if (remaining > 0) return t("Unlocks in {duration}").replace("{duration}", formatDuration(remaining))
   }
 
   if (task.requirement.type === "aggregate_volume") {
-    return `${Math.round(progress.progress)}/${progress.target} USD`
+    return t("{progress}/{target} {currency}")
+      .replace("{progress}", exact(Math.round(progress.progress)))
+      .replace("{target}", exact(progress.target))
+      .replace("{currency}", "")
+      .trim()
   }
 
-  return `${Math.min(Math.round(progress.progress), progress.target)}/${progress.target} complete`
+  return t("{progress}/{target} complete")
+    .replace("{progress}", String(Math.min(Math.round(progress.progress), progress.target)))
+    .replace("{target}", String(progress.target))
 }
 
 function buildRewardsSnapshot(
@@ -148,6 +156,8 @@ function mapTaskToQuest(
   progress: UserRewardProgress,
   firstLoginAt: number,
   now: number,
+  t: (key: string) => string,
+  exact: (usd: number) => string,
 ): RewardCardViewModel {
   return {
     id: task.id,
@@ -156,21 +166,23 @@ function mapTaskToQuest(
     reward: `${task.rewardAmount} ${task.rewardSymbol}`,
     cta:
       progress.status === "claimable"
-        ? isReferralClaimCta(task)
+        ? isReferralClaimCta(task, t)
         : progress.status === "claimed"
-          ? "Claimed"
+          ? t("Claimed")
           : task.actionKind === "wait_timer"
-            ? "Waiting"
+            ? t("Waiting")
             : task.actionLabel,
     category: titleCase(task.tag),
     iconId: tagToIconId(task.tag),
     status: progress.status,
-    progressLabel: buildProgressLabel(task, progress, firstLoginAt, now),
+    progressLabel: buildProgressLabel(task, progress, firstLoginAt, now, t, exact),
   }
 }
 
 export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) {
   const router = useRouter()
+  const { t } = useTranslation()
+  const { exact } = useCurrency()
   const avana = useAvanaSessions()
   const {
     walletId,
@@ -245,7 +257,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
         const progress = progressByTaskId.get(task.id)
         if (!progress) return accumulator
         accumulator[toPromoTabId(task.category)].push(
-          mapTaskToQuest(task, progress, state.firstLoginAt, now),
+          mapTaskToQuest(task, progress, state.firstLoginAt, now, t, exact),
         )
         return accumulator
       },
@@ -255,7 +267,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
         "refer-a-friend": [],
       },
     )
-  }, [tasks, snapshot, state.firstLoginAt, now])
+  }, [tasks, snapshot, state.firstLoginAt, now, t, exact])
 
   const runReferralActivations = useCallback(
     async () => {

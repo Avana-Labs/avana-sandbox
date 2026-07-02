@@ -2,10 +2,30 @@
 
 import { ArrowUpRight } from "lucide-react"
 import type { AboutCard as AboutCardData } from "@/app/lib/borrow-detail"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = { about: AboutCardData; title?: string; compact?: boolean; plain?: boolean }
 
+function translateAboutDescription(description: string, t: (key: string) => string) {
+  const lendMatch = description.match(
+    /^(.*?) \((.*?)\) is a single-asset supply market on Avana\. Suppliers earn the supply APY( plus active rewards)? from borrower interest, net of the reserve factor\. Yield tracks utilization, so the page focuses on the live supply rate, the supply\/utilization mix, and the latest risk posture for this (stablecoin|tier-[a-z]+) market\.$/,
+  )
+  if (lendMatch) {
+    const [, name, symbol, rewardsClause = "", marketType] = lendMatch
+    return t(
+      "{name} ({symbol}) is a single-asset supply market on Avana. Suppliers earn the supply APY{rewardsClause} from borrower interest, net of the reserve factor. Yield tracks utilization, so the page focuses on the live supply rate, the supply/utilization mix, and the latest risk posture for this {marketType} market.",
+    )
+      .replace("{name}", name)
+      .replace("{symbol}", symbol)
+      .replace("{rewardsClause}", rewardsClause)
+      .replace("{marketType}", marketType)
+  }
+
+  return t(description)
+}
+
 export function AboutCard({ about, title = "About", compact = false, plain = false }: Props) {
+  const { t } = useTranslation()
   return (
     <section
       className={
@@ -20,7 +40,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
               : "truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable"
           }
         >
-          {title}
+          {t(title)}
         </h2>
       </div>
       <div
@@ -37,13 +57,13 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
           [&_li]:mb-1
         "
       >
-        {about.description}
+        {translateAboutDescription(about.description, t)}
       </div>
       {about.stats.length > 0 ? (
         <dl className={plain ? "space-y-1.5 text-[12.5px]" : "mt-4 space-y-1.5 text-[12.5px]"}>
           {about.stats.map((s) => (
             <div key={s.label} className="flex items-center justify-between gap-4 border-b border-border/70 py-2 last:border-b-0">
-              <dt className={s.href ? "min-w-0 flex-1 text-text-low" : "shrink-0 text-text-low"}>{s.label}</dt>
+              <dt className={s.href ? "min-w-0 flex-1 text-text-low" : "shrink-0 text-text-low"}>{t(s.label)}</dt>
               <dd className={s.href ? "min-w-0" : "min-w-0 truncate text-right font-data font-medium tabular-nums text-text-extra-high"}>
                 {s.href ? (
                   <a
@@ -52,11 +72,11 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
                     rel="noreferrer"
                     className="group flex items-center justify-end gap-2 text-text-extra-high transition-colors hover:text-text-high"
                   >
-                    <span className="truncate font-data font-medium tabular-nums">{s.value}</span>
+                    <span className="truncate font-data font-medium tabular-nums">{t(s.value)}</span>
                     <ArrowUpRight className="size-4 shrink-0 text-text-low transition-colors group-hover:text-text-high" aria-hidden />
                   </a>
                 ) : (
-                  s.value
+                  t(s.value)
                 )}
               </dd>
             </div>

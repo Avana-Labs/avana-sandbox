@@ -1,4 +1,5 @@
 export { SectionCard } from "./SectionCard"
+export { MetricTrendCard, type MetricTrendView } from "./MetricTrendCard"
 export { RangeTabs } from "./RangeTabs"
 export { MetricChipRow } from "./MetricChipRow"
 export type { MetricChip } from "./MetricChipRow"

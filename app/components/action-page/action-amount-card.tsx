@@ -11,8 +11,9 @@ import { AnimatedTextValue } from "@/app/components/action-page/action-live-valu
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { sanitizeDecimalInput } from "@/app/lib/action-system/amount-input"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useMediaQuery } from "@/app/lib/use-media-query"
-import type { HomeBorrowToken } from "@/app/lib/home-sim"
+import type { HomeBorrowToken } from "@/app/lib/borrow-system/home-contracts"
 
 export type ActionAssetOption = {
   id: string
@@ -73,6 +74,7 @@ export function ActionAmountCard({
   assetPickerVariant = "menu",
   pickerTokens,
 }: ActionAmountCardProps) {
+  const { t } = useTranslation()
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(
@@ -150,7 +152,7 @@ export function ActionAmountCard({
         </div>
       ) : (
         <label className="min-w-0 flex-1 max-[360px]:w-full">
-          <span className="sr-only">{label} amount</span>
+          <span className="sr-only">{t("{label} amount").replace("{label}", t(label))}</span>
           <input
             inputMode="decimal"
             value={amount}
@@ -179,7 +181,7 @@ export function ActionAmountCard({
               // off the client-only viewport query (that caused a hydration mismatch).
               aria-haspopup={useDialogPicker ? undefined : "listbox"}
               aria-expanded={!useDialogPicker ? menuOpen : undefined}
-              aria-label={`Change asset, current ${assetLabel}`}
+              aria-label={t("Change asset, current {asset}").replace("{asset}", assetLabel)}
               disabled={readOnly}
               className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground cursor-pointer hover:bg-surface-hover"
             >
@@ -261,9 +263,9 @@ export function ActionAmountCard({
     <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
       <DialogContent className="max-w-lg gap-0 p-0 pt-2 sm:max-w-[420px]">
         <DialogHeader className="px-4 pb-2 pt-3 text-left space-y-0">
-          <DialogTitle className="text-[13px] font-medium">Select asset</DialogTitle>
+          <DialogTitle className="text-[13px] font-medium">{t("Select asset")}</DialogTitle>
         </DialogHeader>
-        <div role="listbox" aria-label="Select asset" className="max-h-[60dvh] overflow-y-auto px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div role="listbox" aria-label={t("Select asset")} className="max-h-[60dvh] overflow-y-auto px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           {assetOptions?.map((option) => renderAssetOption(option))}
         </div>
       </DialogContent>
@@ -285,13 +287,13 @@ export function ActionAmountCard({
         {showReceiveWethToggle ? (
           <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <span>Receive WETH</span>
+              <span>{t("Receive WETH")}</span>
               <ActionMetricHelp topic="Receive WETH" text="Get wrapped ETH (WETH) instead of native ETH." />
             </div>
             <button
               type="button"
               role="switch"
-              aria-label="Receive WETH"
+              aria-label={t("Receive WETH")}
               aria-checked={receiveWeth}
               onClick={() => onReceiveWethChange?.(!receiveWeth)}
               className={cn(
@@ -318,7 +320,7 @@ export function ActionAmountCard({
         data-testid="action-amount-card"
       >
       <div className="px-4 pb-4 pt-4">
-        <div className="text-[14px] font-medium text-muted-foreground">{label}</div>
+        <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
         {amountRow}
         {usdRow}
         {balanceRow}
@@ -327,7 +329,7 @@ export function ActionAmountCard({
       {showReceiveWethToggle ? (
         <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[14px]">
           <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span>Receive WETH</span>
+            <span>{t("Receive WETH")}</span>
             <ActionMetricHelp
               topic="Receive WETH"
               text="Receive borrowed ETH as WETH instead of native ETH when repaying or withdrawing."
@@ -336,7 +338,7 @@ export function ActionAmountCard({
           <button
             type="button"
             role="switch"
-            aria-label="Receive WETH"
+            aria-label={t("Receive WETH")}
             aria-checked={receiveWeth}
             onClick={() => onReceiveWethChange?.(!receiveWeth)}
             className={cn(
@@ -382,6 +384,7 @@ export function ActionFooter({
   sticky?: boolean
   className?: string
 }) {
+  const { t } = useTranslation()
   const primaryClassName = primaryCtaClass({ disabled: primaryDisabled, pending: primaryPending })
   const secondaryClassName = SECONDARY_CTA_CLASS
 
@@ -397,20 +400,20 @@ export function ActionFooter({
     >
       {secondaryHref && !onSecondary ? (
         <Link href={secondaryHref} className={secondaryClassName}>
-          {secondaryLabel}
+          {t(secondaryLabel)}
         </Link>
       ) : (
         <button type="button" onClick={onSecondary} className={secondaryClassName}>
-          {secondaryLabel}
+          {t(secondaryLabel)}
         </button>
       )}
       {primaryHref && !onPrimary ? (
         <Link href={primaryHref} className={primaryClassName}>
-          {primaryPending ? "Processing…" : primaryLabel}
+          {primaryPending ? t("Processing…") : t(primaryLabel)}
         </Link>
       ) : (
         <button type="button" onClick={onPrimary} disabled={primaryDisabled || primaryPending} className={primaryClassName}>
-          {primaryPending ? "Processing…" : primaryLabel}
+          {primaryPending ? t("Processing…") : t(primaryLabel)}
         </button>
       )}
     </div>

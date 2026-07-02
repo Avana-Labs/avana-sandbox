@@ -13,6 +13,10 @@ export function buildMockMultiplySystemState(_walletId = "demo-wallet"): Multipl
   }
 }
 
+export function buildMultiplyCatalogBaselineState(walletId = "catalog"): MultiplySystemState {
+  return buildMockMultiplySystemState(walletId)
+}
+
 export function buildMockMultiplySystemStateWithSeedPosition(walletId = "demo-wallet"): MultiplySystemState {
   const state = buildMockMultiplySystemState(walletId)
   const market = state.markets["eth-usdt"]

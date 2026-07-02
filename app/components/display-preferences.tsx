@@ -162,3 +162,7 @@ export function useDisplayPreferences() {
 
   return context
 }
+
+export function useOptionalDisplayPreferences() {
+  return useContext(DisplayPreferencesContext)
+}

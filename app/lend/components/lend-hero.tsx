@@ -5,11 +5,12 @@ import { cn } from "@/lib/utils"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const LEND_METRICS = [
-  { label: "Average APY", tone: "emerald" },
-  { label: "Avg Utilization", tone: "violet" },
-  { label: "Active Markets", tone: "amber" },
+  { key: "averageApy", label: "Average APY", tone: "emerald" },
+  { key: "avgUtilization", label: "Avg Utilization", tone: "violet" },
+  { key: "activeMarkets", label: "Active Markets", tone: "amber" },
 ] as const
 
 function parseMarketUsd(value: string) {
@@ -28,6 +29,7 @@ function parseMarketUsd(value: string) {
 export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["markets"][number]> }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const fc = useCurrency()
+  const { t } = useTranslation()
 
   const metrics = useMemo(() => {
     const activeMarkets = markets.filter((market) => !market.soon)
@@ -65,7 +67,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
       <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total TVL</p>
+            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">{t("Total TVL")}</p>
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
               {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
             </p>
@@ -73,14 +75,14 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
               <span aria-hidden className="text-[10px] leading-none">
                 {metrics.weightedChange24h >= 0 ? "▲" : "▼"}
               </span>
-              {showDollarAmounts ? `${metrics.weightedChange24h >= 0 ? "+" : ""}${metrics.weightedChange24h.toFixed(2)}% Today` : "••••••"}
+              {showDollarAmounts ? `${metrics.weightedChange24h >= 0 ? "+" : ""}${metrics.weightedChange24h.toFixed(2)}% ${t("Today")}` : "••••••"}
             </span>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
           {LEND_METRICS.map((metric) => (
-            <div key={metric.label}>
+            <div key={metric.key}>
               <div
                 className={cn(
                   "mb-1 flex items-center gap-1.5 text-[11px] font-medium md:justify-end",
@@ -97,13 +99,13 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
                     metric.tone === "amber" && "bg-[#c29f78]",
                   )}
                 />
-                {metric.label}
+                {t(metric.label)}
               </div>
               <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
                 {showDollarAmounts
-                  ? metric.label === "Average APY"
+                  ? metric.key === "averageApy"
                     ? `${metrics.weightedApy.toFixed(2)}%`
-                    : metric.label === "Avg Utilization"
+                    : metric.key === "avgUtilization"
                       ? `${metrics.weightedUtilization.toFixed(2)}%`
                       : metrics.activeMarkets.toString()
                   : "••••••••"}

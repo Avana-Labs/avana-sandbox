@@ -3,12 +3,13 @@ import { cn } from "@/lib/utils"
 
 type BrandLogoProps = {
   mobileOnly?: boolean
+  className?: string
 }
 
 const HEADER_WORDMARK_PATH = "/avana-wordmark.svg"
 const SITE_NAME = "Avana"
 
-export function BrandLogo({ mobileOnly = false }: BrandLogoProps) {
+export function BrandLogo({ mobileOnly = false, className }: BrandLogoProps) {
   return (
     <span className="inline-flex items-center overflow-hidden">
       {/* Plain img avoids next/image SSR markup drift in the site header. */}
@@ -18,9 +19,12 @@ export function BrandLogo({ mobileOnly = false }: BrandLogoProps) {
         width={252}
         height={56}
         className={
-          mobileOnly
-            ? "h-[56px] w-auto scale-[1.08] origin-left"
-            : "h-[56px] w-auto scale-[1.08] origin-left md:h-[52px]"
+          cn(
+            mobileOnly
+              ? "h-[56px] w-auto scale-[1.08] origin-left"
+              : "h-[56px] w-auto scale-[1.08] origin-left md:h-[52px]",
+            className,
+          )
         }
       />
     </span>

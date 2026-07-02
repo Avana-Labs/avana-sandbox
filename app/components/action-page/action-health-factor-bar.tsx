@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Heart } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import {
@@ -84,6 +85,7 @@ export function ActionHealthFactorBar({
   label?: string
   className?: string
 }) {
+  const { t } = useTranslation()
   const status = healthFactorStatusLabel(value)
   const activeZoneIdx = activeHealthFactorZoneIndex(value)
   const valueLabel = value == null ? "—" : formatActionHealthFactor(value)
@@ -101,7 +103,7 @@ export function ActionHealthFactorBar({
             )}
             aria-hidden
           />
-          <span>{label}</span>
+          <span>{t(label)}</span>
           <ActionMetricHelp
             topic={label}
             text="Health factor estimates how far your position is from liquidation. Above 1.0 is solvent; below 1.0 can be liquidated."
@@ -115,7 +117,7 @@ export function ActionHealthFactorBar({
             status.tone === "danger" && "text-rose-600 dark:text-rose-400",
           )}
         >
-          {status.label}
+          {t(status.label)}
         </span>
       </div>
 
@@ -129,7 +131,7 @@ export function ActionHealthFactorBar({
         {HF_ZONES.map((zone, index) => (
           <span key={zone.id} className={cn("inline-flex items-center gap-1.5", index === activeZoneIdx && "text-foreground")}>
             <span className={cn("size-2 rounded-full", index === activeZoneIdx ? zone.color : "bg-muted-foreground/50")} />
-            {zone.label}
+            {t(zone.label)}
           </span>
         ))}
       </div>

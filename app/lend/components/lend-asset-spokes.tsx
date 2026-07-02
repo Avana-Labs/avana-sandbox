@@ -3,7 +3,17 @@
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
+import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
@@ -11,6 +21,7 @@ import { cn } from "@/lib/utils"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
 function AssetSubLabel({ symbol }: { symbol: string }) {
@@ -27,11 +38,14 @@ type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
   totalApyLabel?: string
   supplyApyValue?: number
   rewardsApyValue?: number
+  totalDepositsLabel?: string
+  totalDepositsSecondaryLabel?: string
+  totalDepositsSortValue?: number
   utilizationLabel?: string
   utilizationValue?: number
-  reserveFactorLabel?: string
-  reserveFactorValue?: number
-  status?: string
+  availableLiquidityLabel?: string
+  availableLiquiditySecondaryLabel?: string
+  availableLiquiditySortValue?: number
 }
 type AssetGroup = LendPageData["assetGroups"][number]
 const DEFAULT_ASSET_GROUPS: AssetGroup[] = LEND_ASSET_GROUPS
@@ -306,46 +320,27 @@ function AssetIcon({ row }: { row: AssetRow }) {
   return <TokenIcon symbol={row.symbol} size="table" ring className="bg-card dark:bg-card" />
 }
 
-function StatusBadge({ status }: { status?: string }) {
-  const normalized = (status ?? "active").toLowerCase()
-  const tone =
-    normalized === "active"
-      ? "border-emerald-200/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400"
-      : normalized === "capped"
-        ? "border-amber-200/70 bg-amber-500/10 text-amber-800 dark:border-amber-900/50 dark:text-amber-300"
-        : "border-border bg-surface-inset text-muted-foreground"
-
-  return (
-    <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize", tone)}>
-      {normalized}
-    </span>
-  )
-}
-
 function AssetRowView({
   row,
   delay,
-  index,
   onDeposit,
 }: {
   row: AssetRow
   delay: number
-  index: number
   onDeposit?: (marketId: string) => void
 }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
+  const detailReturn = detailHref
   return (
     <tr
       className="asset-swap group cursor-pointer transition-colors"
       style={{ animationDelay: `${delay}ms` }}
       onClick={() => router.push(detailHref)}
     >
-      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
-        {index + 1}
-      </td>
-      <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
+      <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_LEFT}`}>
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} />
           <div className="min-w-0">
@@ -363,35 +358,57 @@ function AssetRowView({
         <span className="tabular-nums">{row.supplyApyLabel ?? row.apy}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
-        <span className="tabular-nums">{row.rewardsApyLabel ?? "0.00%"}</span>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
+          <span className="tabular-nums">{row.totalDepositsLabel ?? row.totalDepositsPrimary}</span>
+        </div>
+        <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+          {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
+        </div>
       </td>
 
       <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
-        <span className="tabular-nums">{row.reserveFactorLabel ?? "—"}</span>
-      </td>
-
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <StatusBadge status={row.status} />
+        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
+          <span className="tabular-nums">{row.availableLiquidityLabel ?? row.availableLiquidityPrimary}</span>
+        </div>
+        <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+          {row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary}
+        </div>
       </td>
 
       <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
         {onDeposit ? (
-          <Button
-            type="button"
-            size="sm"
-            className="h-7 rounded-xs px-2.5 text-[11px]"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDeposit(marketId)
-            }}
-          >
-            Deposit
-          </Button>
+            <div className="flex justify-end">
+            <HoverActionGroup>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 rounded-xs px-2.5 text-[11px]"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailReturn }))
+                }}
+              >
+                {t("Withdraw")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="h-7 rounded-xs px-2.5 text-[11px]"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDeposit(marketId)
+                }}
+              >
+                {t("Deposit")}
+              </Button>
+            </HoverActionGroup>
+          </div>
         ) : null}
       </td>
     </tr>
@@ -407,59 +424,62 @@ function AssetCardView({
   index: number
   onDeposit?: (marketId: string) => void
 }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
   return (
-    <div
-      className="cursor-pointer rounded-radius-lg border border-border bg-card p-4 transition-colors hover:border-brand/40"
-      style={{ animationDelay: `${index * 40}ms` }}
-      onClick={() => router.push(detailHref)}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <AssetIcon row={row} />
-          <div className="min-w-0">
-            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.name}</div>
-            <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
-              <AssetSubLabel symbol={row.symbol} />
+    <MarketMobileCard clickable style={{ animationDelay: `${index * 40}ms` }} onClick={() => router.push(detailHref)}>
+      <MarketMobileCardHeader
+        identity={
+          <div className="flex min-w-0 items-center gap-3">
+            <AssetIcon row={row} />
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.name}</div>
+              <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                <AssetSubLabel symbol={row.symbol} />
+              </div>
             </div>
           </div>
-        </div>
-        <StatusBadge status={row.status} />
-      </div>
-      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
-        <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Supply APY</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.supplyApyLabel ?? row.apy}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Rewards APY</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.rewardsApyLabel ?? "0.00%"}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Utilization</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.utilizationLabel ?? "—"}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Reserve factor</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.reserveFactorLabel ?? "—"}</dd>
-        </div>
-      </dl>
+        }
+        metric={<MarketMobileMetric value={row.supplyApyLabel ?? row.apy} label={t("APY")} />}
+      />
+      <MarketMobileStatList className="mt-4">
+        <MarketMobileStatRow
+          label={t("Total Deposits")}
+          value={
+            <span>
+              {row.totalDepositsLabel ?? row.totalDepositsPrimary}
+              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
+              </span>
+            </span>
+          }
+        />
+        <MarketMobileStatRow label={t("Utilization")} value={row.utilizationLabel ?? "—"} />
+        <MarketMobileStatRow
+          label={t("Available Liquidity")}
+          value={
+            <span>
+              {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
+              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                {row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary}
+              </span>
+            </span>
+          }
+        />
+      </MarketMobileStatList>
       {onDeposit ? (
-        <Button
-          type="button"
-          size="sm"
-          className="mt-4 h-10 w-full rounded-full text-[14px]"
+        <MarketMobilePrimaryAction
           onClick={(e) => {
             e.stopPropagation()
             onDeposit(marketId)
           }}
         >
-          Deposit
-        </Button>
+          {t("Deposit")}
+        </MarketMobilePrimaryAction>
       ) : null}
-    </div>
+    </MarketMobileCard>
   )
 }
 
@@ -474,9 +494,8 @@ function AssetSection({
   rows: AssetRow[]
   onDeposit?: (marketId: string) => void
 }) {
-  const [sortKey, setSortKey] = useState<
-    "asset" | "supplyApy" | "rewardsApy" | "utilization" | "reserveFactor" | "status"
-  >("asset")
+  const { t } = useTranslation()
+  const [sortKey, setSortKey] = useState<"asset" | "supplyApy" | "totalDeposits" | "utilization" | "availableLiquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -496,14 +515,15 @@ function AssetSection({
       switch (sortKey) {
         case "supplyApy":
           return ((a.supplyApyValue ?? a.apyValue / 100) - (b.supplyApyValue ?? b.apyValue / 100)) * direction
-        case "rewardsApy":
-          return ((a.rewardsApyValue ?? 0) - (b.rewardsApyValue ?? 0)) * direction
+        case "totalDeposits":
+          return ((a.totalDepositsSortValue ?? a.totalDepositsValue ?? 0) - (b.totalDepositsSortValue ?? b.totalDepositsValue ?? 0)) * direction
         case "utilization":
           return ((a.utilizationValue ?? 0) - (b.utilizationValue ?? 0)) * direction
-        case "reserveFactor":
-          return ((a.reserveFactorValue ?? 0) - (b.reserveFactorValue ?? 0)) * direction
-        case "status":
-          return (a.status ?? "active").localeCompare(b.status ?? "active") * direction
+        case "availableLiquidity":
+          return (
+            (a.availableLiquiditySortValue ?? a.availableLiquidityValue ?? 0) -
+            (b.availableLiquiditySortValue ?? b.availableLiquidityValue ?? 0)
+          ) * direction
         case "asset":
         default:
           return a.name.localeCompare(b.name) * direction
@@ -521,15 +541,15 @@ function AssetSection({
               title === "Ethereum-Based" ? "md:text-[23px]" : "",
             )}
           >
-            {title}
+            {t(title)}
           </h2>
           {subtitle ? (
-            <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">{subtitle}</p>
+            <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">{t(subtitle)}</p>
           ) : null}
         </div>
       </div>
 
-      <div className="rounded-radius-md bg-transparent">
+      <DesktopTableSurface className="rounded-radius-md">
         <div className="space-y-2 md:hidden">
           {sortedRows.length > 0 ? (
             sortedRows.map((row, index) => (
@@ -537,28 +557,23 @@ function AssetSection({
             ))
           ) : (
             <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
-              No assets match these filters.
+              {t("No assets match these filters.")}
             </div>
           )}
         </div>
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[12px]">
+          <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-0 text-[12px]">
             <colgroup>
-              <col className="w-[4%]" />
-              <col className="w-[22%]" />
-              <col className="w-[11%]" />
-              <col className="w-[11%]" />
+              <col className="w-[26%]" />
               <col className="w-[12%]" />
+              <col className="w-[20%]" />
               <col className="w-[12%]" />
-              <col className="w-[12%]" />
+              <col className="w-[20%]" />
               <col className="w-[10%]" />
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  #
-                </th>
-                <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <th className="rounded-l-radius-lg bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -569,7 +584,7 @@ function AssetSection({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>ASSET</span>
+                    <span>{t("ASSET")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -584,22 +599,22 @@ function AssetSection({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>SUPPLY APY</span>
+                    <span>{t("SUPPLY APY")}</span>
                     <SortIcon />
                   </button>
                 </th>
                 <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
-                    onClick={() => toggleSort("rewardsApy")}
+                    onClick={() => toggleSort("totalDeposits")}
                     className={cn(
                       "flex items-center gap-2 transition-colors",
-                      sortKey === "rewardsApy"
+                      sortKey === "totalDeposits"
                         ? "text-foreground dark:text-white/90"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>REWARDS APY</span>
+                    <span>{t("TOTAL DEPOSITS")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -614,61 +629,44 @@ function AssetSection({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>UTILIZATION</span>
+                    <span>{t("UTILIZATION")}</span>
                     <SortIcon />
                   </button>
                 </th>
                 <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
-                    onClick={() => toggleSort("reserveFactor")}
+                    onClick={() => toggleSort("availableLiquidity")}
                     className={cn(
                       "flex items-center gap-2 transition-colors",
-                      sortKey === "reserveFactor"
+                      sortKey === "availableLiquidity"
                         ? "text-foreground dark:text-white/90"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>RESERVE FACTOR</span>
+                    <span>{t("AVAILABLE LIQUIDITY")}</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("status")}
-                    className={cn(
-                      "flex items-center gap-2 transition-colors",
-                      sortKey === "status"
-                        ? "text-foreground dark:text-white/90"
-                        : "text-foreground/70 dark:text-white/70",
-                    )}
-                  >
-                    <span>STATUS</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  ACTION
-                </th>
+                <SilentActionHeader />
               </tr>
             </thead>
             <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
-                  <AssetRowView key={row.symbol} row={row} delay={index * 40} index={index} onDeposit={onDeposit} />
+                  <AssetRowView key={row.symbol} row={row} delay={index * 40} onDeposit={onDeposit} />
                 ))
               ) : (
                 <tr>
-                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={8}>
-                    No assets match these filters.
+                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={6}>
+                    {t("No assets match these filters.")}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </DesktopTableSurface>
     </section>
   )
 }
@@ -680,6 +678,7 @@ export function LendAssetSpokes({
   groups?: LendPageData["assetGroups"]
   onDeposit?: (marketId: string) => void
 }) {
+  const { t } = useTranslation()
   const [search, setSearch] = useState("")
   const [selectedHubs, setSelectedHubs] = useState<string[]>([])
   const [selectedMarkets, setSelectedMarkets] = useState<string[]>([])
@@ -709,10 +708,10 @@ export function LendAssetSpokes({
         <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-brand/30 md:flex-none md:w-[280px]">
           <SearchIcon />
           <input
-            aria-label="Filter assets"
+            aria-label={t("Filter assets")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search assets"
+            placeholder={t("Search assets")}
             className="lend-filter-input w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground/45 md:text-[15px] md:font-normal"
           />
         </label>
@@ -720,20 +719,20 @@ export function LendAssetSpokes({
         <div className="ml-auto flex min-w-0 flex-nowrap gap-2">
           <MultiSelectDropdown
             allLabel={ALL_HUBS_LABEL}
-            countLabel="Hubs"
+            countLabel={t("Hubs")}
             options={HUB_OPTIONS}
             selectedValues={selectedHubs}
             onChange={setSelectedHubs}
-            ariaLabel="Filter hubs"
+            ariaLabel={t("Filter hubs")}
           />
 
           <MultiSelectDropdown
             allLabel={ALL_MARKETS_LABEL}
-            countLabel="Markets"
+            countLabel={t("Markets")}
             options={MARKET_OPTIONS}
             selectedValues={selectedMarkets}
             onChange={setSelectedMarkets}
-            ariaLabel="Filter markets"
+            ariaLabel={t("Filter markets")}
           />
         </div>
       </div>
@@ -742,10 +741,10 @@ export function LendAssetSpokes({
         <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-brand/30">
           <SearchIcon />
           <input
-            aria-label="Filter assets"
+            aria-label={t("Filter assets")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search assets"
+            placeholder={t("Search assets")}
             className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground/45"
           />
         </label>
@@ -753,20 +752,20 @@ export function LendAssetSpokes({
         <div className="flex shrink-0 items-center gap-2">
           <MultiSelectDropdown
             allLabel={ALL_HUBS_LABEL}
-            countLabel="Hubs"
+            countLabel={t("Hubs")}
             options={HUB_OPTIONS}
             selectedValues={selectedHubs}
             onChange={setSelectedHubs}
-            ariaLabel="Filter hubs"
+            ariaLabel={t("Filter hubs")}
           />
 
           <MultiSelectDropdown
             allLabel={ALL_MARKETS_LABEL}
-            countLabel="Markets"
+            countLabel={t("Markets")}
             options={MARKET_OPTIONS}
             selectedValues={selectedMarkets}
             onChange={setSelectedMarkets}
-            ariaLabel="Filter markets"
+            ariaLabel={t("Filter markets")}
           />
         </div>
       </div>
@@ -790,7 +789,7 @@ export function LendAssetSpokes({
           ))
         ) : (
           <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-[13px] text-muted-foreground shadow-none">
-            No assets match these filters.
+            {t("No assets match these filters.")}
           </div>
         )}
       </div>

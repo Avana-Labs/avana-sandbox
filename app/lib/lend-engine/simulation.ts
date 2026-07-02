@@ -182,10 +182,11 @@ export function simulateWithdraw(params: {
   const afterScaledBalance = Math.max(0, before.scaledBalance - scaledWithdrawAmount)
   const afterSuppliedAmount = calculateCurrentSuppliedBalance(afterScaledBalance, liquidityIndex)
   const afterPrincipal = split.remainingPrincipal
-  // Interest already earned is realized — withdrawing principal (or the interest
-  // itself, as cash) must never make the "Total earned" figure shrink. Clamp the
-  // projected earned interest so it never drops below what was earned before.
-  const afterInterest = Math.max(before.interestEarned, calculateInterestEarned(afterSuppliedAmount, afterPrincipal))
+  // Interest already earned is realized. On repeated withdrawals, accruePosition()
+  // recomputes earned interest from the remaining principal/balance, so clamp
+  // against the larger stored earned amount as well.
+  const realizedEarnedFloor = Math.max(params.position.interestEarned, before.interestEarned)
+  const afterInterest = Math.max(realizedEarnedFloor, calculateInterestEarned(afterSuppliedAmount, afterPrincipal))
 
   const marketBefore = {
     totalSupplied: market.totalSupplied,

@@ -16,7 +16,7 @@ import {
   fetchTokenPrices,
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
-import { formatOraclePrice } from "@/app/lib/borrow-detail/pool.mock"
+import { formatOraclePrice } from "@/app/lib/borrow-detail/formatters"
 import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
@@ -26,6 +26,7 @@ import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import { normalizeBorrowAssetRouteId, normalizeBorrowMarketRouteId } from "@/app/lib/borrow-routes"
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
+import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
 import type { AssetDetail, PoolDetail } from "./types"
 
 /**
@@ -34,8 +35,9 @@ import type { AssetDetail, PoolDetail } from "./types"
  *   - reference values (TVL, available, utilization, APY, quick stats) ← Convex snapshot
  *   - HERO chart (pool = TVL / total supplied, asset = total borrows) ← Convex daily series
  *   - engagement (active wallets/sessions) ← Convex walletEvents
- * Each Convex read falls back to the catalog/mock value when unreachable, so the
- * page always renders.
+ * Each Convex read falls back to the deterministic catalog fixture when
+ * unreachable, so the page always renders and the sandbox/demo routes stay
+ * stable without pretending the fallback is the live source of truth.
  *
  * Kept OUT of `./index.ts` because that module is also imported by client
  * components, and `market-hydration-server.ts` is `server-only`.
@@ -65,15 +67,7 @@ function mergeConvexQuickStats(
   base: QuickStat[],
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
-  if (!convex || convex.length === 0) return base
-  const byMockId = new Map<string, { value: string; delta?: QuickStat["delta"] }>()
-  for (const c of convex) {
-    for (const mockId of QUICK_STAT_ALIASES[c.id] ?? [c.id]) byMockId.set(mockId, c)
-  }
-  return base.map((s) => {
-    const c = byMockId.get(s.id)
-    return c ? { ...s, value: c.value, delta: c.delta ?? s.delta } : s
-  })
+  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES)
 }
 
 /** Overlay the real DefiLlama price onto the "price" quick stat for a base symbol. */
@@ -182,7 +176,7 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     fetchContent("pool", detail.row.id),
   ])
   const effectiveRisk = (risk as typeof detail.risk) ?? detail.risk
-  return {
+  return applyDetailContentOverlay({
     ...detail,
     quickStats: injectPoolOraclePrice(
       syncQuickStatsRiskPremium(mergeConvexQuickStats(detail.quickStats, quickStats), effectiveRisk.premiumBps),
@@ -196,9 +190,7 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
     risk: effectiveRisk,
-    about: content ? { ...detail.about, description: content.description, stats: content.stats, history: content.history } : detail.about,
-    faqs: content?.faqs ?? detail.faqs,
-  }
+  }, content)
 }
 
 export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail | null> {
@@ -238,7 +230,7 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     fetchTokenPrices(),
     fetchContent("asset", slug),
   ])
-  return {
+  return applyDetailContentOverlay({
     ...detail,
     quickStats: injectDexLiquidity(
       injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
@@ -252,7 +244,5 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
     allocation: allocation ?? detail.allocation,
     risk: (risk as typeof detail.risk) ?? detail.risk,
-    about: content ? { ...detail.about, description: content.description, stats: content.stats, history: content.history } : detail.about,
-    faqs: content?.faqs ?? detail.faqs,
-  }
+  }, content)
 }

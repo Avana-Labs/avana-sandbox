@@ -6,7 +6,7 @@ import { api } from "@/convex/_generated/api"
 import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-import { IS_OPEN_GATE_TEST_MODE } from "@/app/lib/test-mode"
+import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
 
 class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
@@ -83,7 +83,7 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
   const { authedWallet, isSignedIn, isRestoring } = useSiweAuth()
-  if (IS_OPEN_GATE_TEST_MODE) return <>{children}</>
+  if (IS_DEV_SHORTCUT_MODE) return <>{children}</>
   if (!hasConvexClient) return <GateUnavailable variant="offline" />
   if (isRestoring) {
     // A persisted session is being restored (wagmi reconnecting on reload). Hold a

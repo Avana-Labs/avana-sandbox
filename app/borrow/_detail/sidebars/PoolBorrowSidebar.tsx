@@ -6,9 +6,10 @@ import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
-import { getPoolById, type HomeAssetVisual, type HomeCollateralPool } from "@/app/lib/home-sim"
+import { getPoolById, type HomeAssetVisual, type HomeCollateralPool } from "@/app/lib/borrow-system/home-contracts"
 import { cn } from "@/lib/utils"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = {
   detail: PoolDetail
@@ -18,13 +19,14 @@ type Props = {
 type SidebarTab = "pledge" | "remove" | "claim"
 
 export function PoolBorrowSidebar({ detail, className }: Props) {
+  const { t } = useTranslation()
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
       <PoolActionRail detail={detail} className="mt-6" embedActions />
       <AboutNewsSection
         className="pt-4"
         about={detail.about}
-        aboutTitle={`About ${detail.hero.name}`}
+        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
         compactAboutTitle
         newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
         newsImageLabel={detail.hero.name}
@@ -35,14 +37,16 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
 }
 
 export function PoolBorrowActions({ detail, className }: Props) {
+  const { t } = useTranslation()
   return (
-    <div className={cn("flex w-full flex-col gap-4", className)} aria-label={`Manage ${detail.hero.name}`}>
+    <div className={cn("flex w-full flex-col gap-4", className)} aria-label={t("Manage {name}").replace("{name}", detail.hero.name)}>
       <PoolActionRail detail={detail} />
     </div>
   )
 }
 
 function PoolActionRail({ detail, className, embedActions = false }: Props & { embedActions?: boolean }) {
+  const { t } = useTranslation()
   const [tab, setTab] = React.useState<SidebarTab>("pledge")
   const session = useBorrowSessionContext()
   const closeHref = `/borrow/markets/${detail.id}`
@@ -58,15 +62,15 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
 
   return (
     <div className={cn("flex w-full flex-col", className)}>
-      <ActionWorkspaceTabs
+        <ActionWorkspaceTabs
         items={[
-          { id: "pledge", label: "Pledge" },
-          { id: "remove", label: "Remove" },
-          { id: "claim", label: "Claim" },
+          { id: "pledge", label: t("Pledge") },
+          { id: "remove", label: t("Remove") },
+          { id: "claim", label: t("Claim") },
         ]}
         value={tab}
         onChange={(value) => setTab(value as SidebarTab)}
-        ariaLabel="Pool actions"
+        ariaLabel={t("Pool actions")}
       />
 
       <div className="mt-3">

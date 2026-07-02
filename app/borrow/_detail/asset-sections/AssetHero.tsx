@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts"
 import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = {
   detail: AssetDetail
@@ -26,6 +27,7 @@ export function AssetHeroIdentity({
   actions?: React.ReactNode
   className?: string
 }) {
+  const { t } = useTranslation()
   const metaLabel = detail.hero.contractLabel ?? detail.hero.chain
 
   return (
@@ -81,11 +83,11 @@ export function AssetHeroIdentity({
         </div>
 
         <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
-          <HeroIcon label="Search" onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(`${detail.hero.name} ${detail.hero.symbol}`)}`, "_blank")}>
+          <HeroIcon label={t("Search")} onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(`${detail.hero.name} ${detail.hero.symbol}`)}`, "_blank")}>
             <Search className="h-3.5 w-3.5" />
           </HeroIcon>
           <HeroIcon
-            label="Website"
+            label={t("Website")}
             onClick={() =>
               window.open(detail.hero.websiteUrl ?? `https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")
             }
@@ -98,7 +100,7 @@ export function AssetHeroIdentity({
           >
             <XIcon />
           </HeroIcon>
-          <HeroIcon label="Share" onClick={() => navigator.clipboard.writeText(window.location.href)}>
+          <HeroIcon label={t("Share")} onClick={() => navigator.clipboard.writeText(window.location.href)}>
             <MessageSquare className="h-3.5 w-3.5" />
           </HeroIcon>
           {actions}
@@ -109,6 +111,7 @@ export function AssetHeroIdentity({
 }
 
 export function AssetHero({ detail, leading, actions, className, hideIdentity = false }: Props) {
+  const { t } = useTranslation()
   // Prefer the Convex-backed feed (total borrows); fall back to the local feed.
   const feed = React.useMemo(() => detail.heroFeed ?? getAssetHeroFeed(detail.id), [detail.heroFeed, detail.id])
 
@@ -118,7 +121,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
 
       <div className="pt-4" data-testid="asset-hero-chart-card">
         {/* Convex feed carries the full daily history — open on it so the chart is rich. */}
-        <MarketHeroChart feed={feed} defaultRange={detail.heroFeed ? "All" : "1D"} gradientId={`assetHeroFill-${detail.id}`} label="Total borrows" />
+        <MarketHeroChart feed={feed} defaultRange={detail.heroFeed ? "All" : "1D"} gradientId={`assetHeroFill-${detail.id}`} label={t("Total borrows")} />
       </div>
     </section>
   )

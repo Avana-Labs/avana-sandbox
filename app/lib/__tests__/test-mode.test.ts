@@ -11,11 +11,15 @@ describe("open gate test mode", () => {
     vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
     const locked = await import("@/app/lib/test-mode")
     expect(locked.IS_OPEN_GATE_TEST_MODE).toBe(false)
+    expect(locked.shouldUseOpenGateSession()).toBe(false)
+    expect(locked.shouldUseMockDataSource()).toBe(false)
 
     vi.resetModules()
     vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "1")
     const open = await import("@/app/lib/test-mode")
     expect(open.IS_OPEN_GATE_TEST_MODE).toBe(true)
+    expect(open.shouldUseOpenGateSession()).toBe(true)
+    expect(open.shouldUseMockDataSource()).toBe(true)
     expect(open.TEST_MODE_WALLET_ADDRESS).toMatch(/^0x[0-9a-f]{40}$/)
   })
 
@@ -25,5 +29,18 @@ describe("open gate test mode", () => {
 
     const local = await import("@/app/lib/test-mode")
     expect(local.IS_OPEN_GATE_TEST_MODE).toBe(true)
+    expect(local.shouldUseOpenGateSession()).toBe(true)
+    expect(local.shouldUseMockDataSource()).toBe(true)
+  })
+
+  it("keeps the data source mock override explicit outside open-gate mode", async () => {
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
+    vi.stubEnv("AVANA_DATA_SOURCE", "mock")
+
+    const local = await import("@/app/lib/test-mode")
+    expect(local.IS_OPEN_GATE_TEST_MODE).toBe(false)
+    expect(local.shouldUseOpenGateSession()).toBe(false)
+    expect(local.shouldUseMockDataSource()).toBe(true)
   })
 })

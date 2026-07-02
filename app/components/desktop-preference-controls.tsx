@@ -1,91 +1,198 @@
 "use client"
 
-import { Check, Coins, Eye, EyeOff, Globe2, MoonStar, SunMedium } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, Coins, Globe2, MoonStar, MoreHorizontal, SunMedium } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
-import { useThemeOptional } from "./theme-provider"
+import { useTheme } from "./theme-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useEffect, useState } from "react"
 
 const triggerClassName =
-  "inline-flex size-10 items-center justify-center rounded-full bg-transparent text-brand outline-none transition-transform duration-200 hover:-translate-y-px hover:text-brand/80 focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+  "inline-flex size-11 items-center justify-center rounded-full border border-border/60 bg-[#181818] text-white/72 outline-none transition-colors hover:bg-[#222222] hover:text-white focus:outline-none focus-visible:outline-none dark:border-white/5 dark:bg-[#181818] dark:hover:bg-[#222222] [-webkit-tap-highlight-color:transparent]"
+
+type PreferencesView = "root" | "language" | "currency"
 
 export function DesktopPreferenceControls() {
-  const { currency, language, setCurrency, setLanguage, showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
-  const theme = useThemeOptional()
+  const { currency, language, setCurrency, setLanguage } = useDisplayPreferences()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   const { t } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [view, setView] = useState<PreferencesView>("root")
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const currentLanguage = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0]
+  const currentCurrency = CURRENCY_OPTIONS.find((option) => option.code === currency) ?? CURRENCY_OPTIONS[0]
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        aria-label={showDollarAmounts ? t("Hide dollar amounts") : t("Show dollar amounts")}
-        title={showDollarAmounts ? t("Hide dollar amounts") : t("Show dollar amounts")}
-        className={triggerClassName}
-        onClick={() => setShowDollarAmounts(!showDollarAmounts)}
-      >
-        {showDollarAmounts ? <Eye className="size-5" strokeWidth={1.9} /> : <EyeOff className="size-5" strokeWidth={1.9} />}
-      </button>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button type="button" aria-label={t("Change language")} title={t("Language")} className={triggerClassName}>
-            <Globe2 className="size-5" strokeWidth={1.9} />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" sideOffset={10} className="max-h-[min(480px,70dvh)] w-60 overflow-y-auto p-1.5">
-          {LANGUAGE_OPTIONS.map((option) => (
-            <DropdownMenuItem
-              key={option.code}
-              className="flex cursor-pointer items-center justify-between px-2 py-2.5 text-[14px] font-normal"
-              onSelect={() => setLanguage(option.code)}
-            >
-              <span>{option.label}</span>
-              {option.code === language ? <Check className="size-4 text-brand" /> : null}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button type="button" aria-label={t("Change currency")} title={t("Currency")} className={triggerClassName}>
-            <Coins className="size-5" strokeWidth={1.9} />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" sideOffset={10} className="max-h-[min(480px,70dvh)] w-52 overflow-y-auto p-1.5">
-          {CURRENCY_OPTIONS.map((option) => (
-            <DropdownMenuItem
-              key={option.code}
-              className="flex cursor-pointer items-center justify-between px-2 py-2.5 text-[14px] font-normal"
-              onSelect={() => setCurrency(option.code)}
-            >
-              <span className="flex items-center gap-2">
-                <CurrencyFlag code={option.code} className="size-5" />
-                {option.label}
-              </span>
-              {option.code === currency ? <Check className="size-4 text-brand" /> : null}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {theme ? (
-        <button
-          type="button"
-          aria-label={theme.resolvedTheme === "dark" ? t("Switch to light mode") : t("Switch to dark mode")}
-          title={theme.resolvedTheme === "dark" ? t("Light mode") : t("Dark mode")}
-          className={triggerClassName}
-          onClick={() => theme.setTheme(theme.resolvedTheme === "dark" ? "light" : "dark")}
-        >
-          {theme.resolvedTheme === "dark" ? <MoonStar className="size-5" strokeWidth={1.9} /> : <SunMedium className="size-5" strokeWidth={1.9} />}
+    <DropdownMenu
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (!nextOpen) setView("root")
+      }}
+    >
+      <DropdownMenuTrigger asChild>
+        <button type="button" aria-label={t("Open preferences")} title={t("Preferences")} className={triggerClassName}>
+          <MoreHorizontal className="size-5" strokeWidth={2.35} />
         </button>
-      ) : null}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={12}
+        className="w-[360px] rounded-[30px] border border-white/10 bg-[#121212]/98 p-3 text-white shadow-2xl backdrop-blur"
+      >
+        {view === "root" ? (
+          <>
+            <DropdownMenuLabel className="px-4 py-3 text-[18px] font-medium normal-case tracking-normal text-white">
+              {t("Global preferences")}
+            </DropdownMenuLabel>
+            <div className="space-y-3 px-4 pb-2">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[15px] text-white/64">{t("Theme")}</span>
+                <div className="flex items-center overflow-hidden rounded-full border border-white/12 bg-[#1a1a1a] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setTheme("system")}
+                    className={`rounded-full px-4 py-2 text-[13px] font-medium ${
+                      mounted && theme === "system" ? "bg-[#2a2a2a] text-white" : "text-white/64"
+                    }`}
+                  >
+                    {t("Auto")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTheme("light")}
+                    className={`rounded-full px-3 py-2 text-[13px] font-medium ${
+                      mounted && resolvedTheme === "light" ? "bg-[#2a2a2a] text-white" : "text-white/64"
+                    }`}
+                  >
+                    <SunMedium className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTheme("dark")}
+                    className={`rounded-full px-3 py-2 text-[13px] font-medium ${
+                      mounted && resolvedTheme === "dark" ? "bg-[#2a2a2a] text-white" : "text-white/64"
+                    }`}
+                  >
+                    <MoonStar className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center justify-between rounded-[20px] px-4 py-3.5 text-[15px] text-white outline-none hover:bg-[#1d1d1d] focus:bg-[#1d1d1d]"
+              onSelect={(event) => {
+                event.preventDefault()
+                setView("language")
+              }}
+            >
+              <span className="flex items-center gap-2 text-white/64">
+                <Globe2 className="h-4 w-4" />
+                <span>{t("Language")}</span>
+              </span>
+              <span className="flex items-center gap-2 font-medium text-white">
+                {currentLanguage.label}
+                <ChevronRight className="h-4 w-4 text-white/52" />
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center justify-between rounded-[20px] px-4 py-3.5 text-[15px] text-white outline-none hover:bg-[#1d1d1d] focus:bg-[#1d1d1d]"
+              onSelect={(event) => {
+                event.preventDefault()
+                setView("currency")
+              }}
+            >
+              <span className="flex items-center gap-2 text-white/64">
+                <Coins className="h-4 w-4" />
+                <span>{t("Currency")}</span>
+              </span>
+              <span className="flex items-center gap-2 font-medium text-white">
+                {currentCurrency.code}
+                <ChevronRight className="h-4 w-4 text-white/52" />
+              </span>
+            </DropdownMenuItem>
+          </>
+        ) : null}
+
+        {view === "language" ? (
+          <>
+            <DropdownMenuLabel className="flex items-center gap-1 px-2 py-2 text-[15px] font-medium normal-case tracking-normal text-white">
+              <button
+                type="button"
+                onClick={() => setView("root")}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white transition hover:bg-[#1d1d1d]"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span>{t("Language")}</span>
+            </DropdownMenuLabel>
+            <div className="max-h-[min(420px,60dvh)] overflow-y-auto">
+              {LANGUAGE_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.code}
+                  className="flex cursor-pointer items-center justify-between rounded-[20px] px-4 py-3 text-[14px] text-white outline-none hover:bg-[#1d1d1d] focus:bg-[#1d1d1d]"
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    setLanguage(option.code)
+                    setView("root")
+                  }}
+                >
+                  <span>{option.label}</span>
+                  {option.code === language ? <Check className="h-4 w-4 text-brand" /> : null}
+                </DropdownMenuItem>
+              ))}
+            </div>
+          </>
+        ) : null}
+
+        {view === "currency" ? (
+          <>
+            <DropdownMenuLabel className="flex items-center gap-1 px-2 py-2 text-[15px] font-medium normal-case tracking-normal text-white">
+              <button
+                type="button"
+                onClick={() => setView("root")}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white transition hover:bg-[#1d1d1d]"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span>{t("Currency")}</span>
+            </DropdownMenuLabel>
+            <div className="max-h-[min(420px,60dvh)] overflow-y-auto">
+              {CURRENCY_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.code}
+                  className="flex cursor-pointer items-center justify-between rounded-[20px] px-4 py-3 text-[14px] text-white outline-none hover:bg-[#1d1d1d] focus:bg-[#1d1d1d]"
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    setCurrency(option.code)
+                    setView("root")
+                  }}
+                >
+                  <span className="flex items-center gap-2">
+                    <CurrencyFlag code={option.code} className="size-5" />
+                    {option.label}
+                  </span>
+                  {option.code === currency ? <Check className="h-4 w-4 text-brand" /> : null}
+                </DropdownMenuItem>
+              ))}
+            </div>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

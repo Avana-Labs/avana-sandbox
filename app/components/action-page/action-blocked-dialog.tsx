@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { X } from "lucide-react"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { Button } from "@/components/ui/button"
 import type { ActionBlockedUi } from "@/app/lib/action-system/contracts"
 
@@ -18,6 +19,7 @@ export function ActionBlockedDialog({
   onPrimary?: () => void
   variant?: "modal" | "inline"
 }) {
+  const { t } = useTranslation()
   if (!open) return null
 
   // One shared pill treatment (full-width Button) for both the inline and modal
@@ -29,7 +31,7 @@ export function ActionBlockedDialog({
       {blocked.primaryCtaLabel && blocked.primaryCtaHref ? (
         <Button asChild className={pill}>
           <Link href={blocked.primaryCtaHref} onClick={onPrimary}>
-            {blocked.primaryCtaLabel}
+            {t(blocked.primaryCtaLabel)}
           </Link>
         </Button>
       ) : null}
@@ -39,7 +41,7 @@ export function ActionBlockedDialog({
         onClick={onClose}
         className={pill}
       >
-        {blocked.secondaryCtaLabel}
+        {t(blocked.secondaryCtaLabel)}
       </Button>
     </>
   )
@@ -52,8 +54,8 @@ export function ActionBlockedDialog({
         data-variant="inline"
       >
         <div className="space-y-2">
-          <h2 className="text-[17px] font-medium tracking-[-0.02em]">{blocked.title}</h2>
-          <p className="text-[14px] leading-6 text-muted-foreground">{blocked.description}</p>
+          <h2 className="text-[17px] font-medium tracking-[-0.02em]">{t(blocked.title)}</h2>
+          <p className="text-[14px] leading-6 text-muted-foreground">{t(blocked.description)}</p>
         </div>
 
         <div className="mt-5 space-y-2.5">{actions}</div>
@@ -66,7 +68,7 @@ export function ActionBlockedDialog({
       <div className="relative w-full max-w-[420px] rounded-radius-lg border-0 bg-card p-6 shadow-elev-2">
         <button
           type="button"
-          aria-label="Close"
+          aria-label={t("Close")}
           onClick={onClose}
           className="absolute right-4 top-4 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
@@ -74,8 +76,8 @@ export function ActionBlockedDialog({
         </button>
 
         <div className="space-y-3 pt-2">
-          <h2 className="pr-8 text-[20px] font-medium tracking-[-0.02em]">{blocked.title}</h2>
-          <p className="text-[14px] leading-6 text-muted-foreground">{blocked.description}</p>
+          <h2 className="pr-8 text-[20px] font-medium tracking-[-0.02em]">{t(blocked.title)}</h2>
+          <p className="text-[14px] leading-6 text-muted-foreground">{t(blocked.description)}</p>
         </div>
 
         <div className="mt-6 space-y-3">{actions}</div>

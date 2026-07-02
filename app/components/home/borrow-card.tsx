@@ -3,7 +3,6 @@
 import { ChevronDown } from "lucide-react"
 import {
   calculateBorrowPreview,
-  formatCompactUsd,
   type HomeBorrowToken,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
@@ -12,6 +11,8 @@ import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primiti
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
 import { PickerSurface, PrimaryCardButton } from "./shared"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function CompactBorrowCard({
   pool,
@@ -41,15 +42,17 @@ export function CompactBorrowCard({
   onSubmit: () => void
 }) {
   const hasAmount = Number.parseFloat(amount) > 0
+  const { compact, exact } = useCurrency()
+  const { t } = useTranslation()
   void onQuickTokenSelect
 
   return (
     <div className="flex flex-col gap-3">
       <div className="relative flex flex-col divide-y divide-border rounded-radius-md border border-border bg-surface-raised shadow-elev-1 overflow-hidden">
-        <PickerSurface label="Collateral" tier="top" seamless>
+        <PickerSurface label={t("Collateral")} tier="top" seamless>
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="font-data text-[20px] font-medium tracking-tight text-foreground">{formatCompactUsd(pool.collateralUsd)}</div>
+              <div className="font-data text-[20px] font-medium tracking-tight text-foreground">{compact(pool.collateralUsd)}</div>
               <div className="mt-0.5 text-[11.5px] text-muted-foreground">{pool.name}</div>
             </div>
             {poolReadOnly ? (
@@ -70,32 +73,32 @@ export function CompactBorrowCard({
         </PickerSurface>
 
         <PickerSurface
-          label="Borrow"
+          label={t("Borrow")}
           tier="bottom"
           seamless
           footer={
             <div className="flex items-center justify-between gap-3">
               <span>
                 <FlashValue value={preview.remainingBorrowPowerUsd} goodDirection="up">
-                  {formatCompactUsd(preview.remainingBorrowPowerUsd)}
+                  {compact(preview.remainingBorrowPowerUsd)}
                 </FlashValue>{" "}
-                available to borrow
+                {t("available to borrow")}
               </span>
               <button
                 type="button"
                 onClick={onSetMax}
                 className="inline-flex min-h-10 items-center rounded-full px-2 text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:bg-surface-inset hover:text-foreground hover:underline"
               >
-                Max
+                {t("Max")}
               </button>
             </div>
           }
         >
           <div className="flex items-center justify-between gap-4">
             <label className="flex min-w-0 flex-1 flex-col">
-              <span className="sr-only">Borrow amount</span>
+              <span className="sr-only">{t("Borrow amount")}</span>
               <input
-                aria-label="Borrow amount"
+                aria-label={t("Borrow amount")}
                 type="text"
                 inputMode="decimal"
                 value={amount}
@@ -103,7 +106,7 @@ export function CompactBorrowCard({
                 placeholder="0"
                 className="no-number-spinner w-full bg-transparent font-data text-[28px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
               />
-              <span className="text-[11px] text-muted-foreground">{amount ? `$${amount}` : "$0"}</span>
+              <span className="text-[11px] text-muted-foreground">{amount ? exact(Number.parseFloat(amount) || 0) : exact(0)}</span>
             </label>
             {token ? (
               <button
@@ -121,7 +124,7 @@ export function CompactBorrowCard({
                 onClick={onOpenTokenDialog}
                 className="inline-flex min-h-10 items-center gap-1 rounded-xs bg-accent-primary px-3 text-[12px] font-medium text-accent-primary-foreground transition-colors hover:bg-accent-primary-hover md:min-h-7 md:px-2.5"
               >
-                Select token
+                {t("Select token")}
                 <ChevronDown className="h-3.5 w-3.5 opacity-80" />
               </button>
             )}
@@ -159,7 +162,7 @@ export function CompactBorrowCard({
       {hasAmount ? (
         <div className="mt-1 grid grid-cols-3 gap-2 text-center md:hidden">
           <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
-            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">HF</div>
+            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">{t("HF")}</div>
             <FlashValue
               value={preview.healthFactor ?? 99}
               goodDirection="up"
@@ -169,18 +172,18 @@ export function CompactBorrowCard({
             </FlashValue>
           </div>
           <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
-            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">Remaining</div>
+            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">{t("Remaining")}</div>
             <FlashValue
               value={preview.remainingBorrowPowerUsd}
               goodDirection="up"
               className="mt-0.5 font-data text-[12.5px] font-medium text-success"
             >
-              {formatCompactUsd(preview.remainingBorrowPowerUsd)}
+              {compact(preview.remainingBorrowPowerUsd)}
             </FlashValue>
           </div>
           <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
-            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">Liq. at</div>
-            <div className="mt-0.5 font-data text-[12.5px] font-medium text-amber-700 dark:text-amber-400">{formatCompactUsd(pool.liquidationUsd)}</div>
+            <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">{t("Liq. at")}</div>
+            <div className="mt-0.5 font-data text-[12.5px] font-medium text-amber-700 dark:text-amber-400">{compact(pool.liquidationUsd)}</div>
           </div>
         </div>
       ) : null}

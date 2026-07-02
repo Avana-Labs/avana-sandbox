@@ -7,6 +7,7 @@ import { ResponsiveMultiplyAction } from "@/app/components/action-page/responsiv
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 type Props = { detail: MultiplyMarketDetail; className?: string; hideActions?: boolean }
@@ -23,13 +24,14 @@ function normalizeMarketId(id: string) {
 }
 
 export function MarketSidebar({ detail, className, hideActions = false }: Props) {
+  const { t } = useTranslation()
   return (
-    <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={`Multiply ${detail.hero.name}`}>
+    <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={t("Multiply {name}").replace("{name}", detail.hero.name)}>
       {hideActions ? null : <MarketActionRail detail={detail} className="mt-6" embedActions />}
       {hideActions ? null : (
         <AboutNewsSection
           about={detail.about}
-          aboutTitle={`About ${detail.hero.name}`}
+          aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
           compactAboutTitle
           newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
           newsImageLabel={detail.hero.name}
@@ -49,6 +51,7 @@ function MarketActionRail({
   className,
   embedActions = false,
 }: Props & { embedActions?: boolean }) {
+  const { t } = useTranslation()
   const marketId = normalizeMarketId(detail.id)
   const market = getMultiplyMarketById(marketId)
   const closeHref = `/multiply/markets/${marketId}`
@@ -66,7 +69,7 @@ function MarketActionRail({
     return (
       <div className={cn("rounded-radius-xl border border-border bg-background px-4 py-5", className)}>
         <p className="text-[15px] leading-6 text-muted-foreground">
-          Open a looped position in {detail.hero.name}.
+          {t("Open a looped position in {name}.").replace("{name}", detail.hero.name)}
         </p>
         <ActionPageLaunchCta product="multiply" kind="multiply" market={marketId} className="mt-3 w-full" label="Multiply" />
       </div>
@@ -79,7 +82,7 @@ function MarketActionRail({
         items={[...MULTIPLY_TAB_ITEMS]}
         value={tab}
         onChange={(value) => setTab(value as SidebarTab)}
-        ariaLabel="Multiply actions"
+        ariaLabel={t("Multiply actions")}
       />
 
       <div className="mt-3">

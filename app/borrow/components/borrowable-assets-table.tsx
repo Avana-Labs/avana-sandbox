@@ -1,20 +1,32 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
 import {
   BORROWABLE_CATEGORIES,
   aprToneClass,
-  formatCompactUsd,
   utilizationToneClass,
   type BorrowableAsset,
 } from "@/app/lib/data/borrow-domain"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { formatApy } from "@/app/lib/format"
-import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
+import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
@@ -40,10 +52,13 @@ export function BorrowableAssetsPanel({
   groupByCategory = true,
   variant = "default",
 }: BorrowableAssetsTableProps) {
+  const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
-        No assets match your filter.
+        {t("No assets match your filter.")}
       </div>
     )
   }
@@ -88,52 +103,46 @@ export function BorrowableAssetsPanel({
               {group.assets.map((asset) => {
                 const aprTone = aprToneClass(asset.borrowApr)
                 return (
-                  <li
-                    key={asset.id}
-                    className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <TokenBubble visual={asset.visual} size="table" />
-                        <div className="min-w-0">
-                          <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
-                          <div className="text-[12px] text-muted-foreground">{asset.name}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={cn("flex items-center justify-end gap-1 font-data text-[18px] font-medium tabular-nums", aprTone)}>
-                          {asset.borrowApr.toFixed(2)}%
-                        </div>
-                        <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Borrow APR</div>
-                      </div>
-                    </div>
-
-                    <dl className="divide-y divide-border text-[12.5px]">
-                      <AssetStatLine label="Available to Borrow" value={formatCompactUsd(asset.availableUsd)} />
-                      <AssetStatLine label="Total Borrowed" value={formatCompactUsd(asset.totalBorrowedUsd)} />
-                      <AssetStatLine
-                        label="Utilization"
-                        value={formatUtilizationPct(asset.utilization)}
-                        tone={utilizationToneClass(asset.utilization)}
+                  <li key={asset.id}>
+                    <MarketMobileCard
+                      clickable
+                      onClick={() => {
+                        onViewMarket?.(asset)
+                        router.push(borrowAssetDetailPath(asset.id))
+                      }}
+                    >
+                      <MarketMobileCardHeader
+                        identity={
+                          <div className="flex items-center gap-2.5">
+                            <TokenBubble visual={asset.visual} size="table" />
+                            <div className="min-w-0">
+                              <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
+                              <div className="text-[12px] text-muted-foreground">{asset.name}</div>
+                            </div>
+                          </div>
+                        }
+                        metric={<MarketMobileMetric value={`${asset.borrowApr.toFixed(2)}%`} label={t("Borrow APR")} valueClassName={aprTone} />}
                       />
-                    </dl>
 
-                    <div className="flex items-stretch gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onBorrow(asset)}
-                        className="flex-[2] rounded-radius-sm bg-accent-primary px-4 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
+                      <MarketMobileStatList className="mt-4">
+                        <MarketMobileStatRow label={t("Total Borrows")} value={compact(asset.totalBorrowedUsd)} />
+                        <MarketMobileStatRow label={t("Liquidity")} value={compact(asset.availableUsd)} />
+                        <MarketMobileStatRow
+                          label={t("Utilization")}
+                          value={formatUtilizationPct(asset.utilization)}
+                          valueClassName={utilizationToneClass(asset.utilization)}
+                        />
+                      </MarketMobileStatList>
+
+                      <MarketMobilePrimaryAction
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onBorrow(asset)
+                        }}
                       >
-                        Borrow
-                      </button>
-                      <Link
-                        href={borrowAssetDetailPath(asset.id)}
-                        onClick={() => onViewMarket?.(asset)}
-                        className="flex flex-1 items-center justify-center rounded-radius-sm border border-border bg-surface-raised px-4 py-2.5 text-center text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
-                      >
-                        Details
-                      </Link>
-                    </div>
+                        {t("Borrow")}
+                      </MarketMobilePrimaryAction>
+                    </MarketMobileCard>
                   </li>
                 )
               })}
@@ -166,6 +175,9 @@ function LoanAssetsSection({
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "borrows" | "liquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const priceFor = usePriceFor()
+  const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
 
   const toggleSort = (nextKey: typeof sortKey) => {
     if (sortKey === nextKey) {
@@ -197,7 +209,7 @@ function LoanAssetsSection({
 
   const table = (
     <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-[12px]">
+          <table className="w-full min-w-[980px] text-[12px]">
             <thead>
               <tr className="bg-table-header text-left text-muted-foreground">
                 <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -214,7 +226,7 @@ function LoanAssetsSection({
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>ASSET</span>
+                    <span>{t("ASSET")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -229,7 +241,7 @@ function LoanAssetsSection({
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>BASE APY</span>
+                    <span>{t("BASE APY")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -244,7 +256,7 @@ function LoanAssetsSection({
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>TOTAL BORROWS</span>
+                    <span>{t("TOTAL BORROWS")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -259,10 +271,11 @@ function LoanAssetsSection({
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
-                    <span>LIQUIDITY</span>
+                    <span>{t("LIQUIDITY")}</span>
                     <SortIcon />
                   </button>
                 </th>
+                <th className="pb-3 pt-4 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
               </tr>
             </thead>
 
@@ -271,7 +284,7 @@ function LoanAssetsSection({
                 <tr
                   key={asset.id}
                   className="asset-swap group cursor-pointer transition-colors"
-                  onClick={() => onBorrow(asset)}
+                  onClick={() => router.push(borrowAssetDetailPath(asset.id))}
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <td className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
@@ -300,13 +313,37 @@ function LoanAssetsSection({
                   </td>
                   <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
-                      {formatCompactUsd(asset.totalBorrowedUsd)}
+                      {compact(asset.totalBorrowedUsd)}
                     </div>
                   </td>
-                  <td className={`py-2.5 px-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+                  <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                     <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
-                      {formatCompactUsd(asset.availableUsd)}
+                      {compact(asset.availableUsd)}
                     </div>
+                  </td>
+                  <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+                    <HoverActionGroup className="inline-flex items-center">
+                      <PillButton
+                        variant="ghost"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          const lendMarketId = resolveLendMarketId(asset.symbol)
+                          if (!lendMarketId) return
+                          router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
+                        }}
+                      >
+                        {t("Deposit")}
+                      </PillButton>
+                      <PillButton
+                        variant="primary"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onBorrow(asset)
+                        }}
+                      >
+                        {t("Borrow")}
+                      </PillButton>
+                    </HoverActionGroup>
                   </td>
                 </tr>
               ))}
@@ -321,7 +358,7 @@ function LoanAssetsSection({
 
   return (
     <section className="space-y-5">
-    <div className="overflow-hidden rounded-radius-xl bg-transparent">{table}</div>
+    <DesktopTableSurface>{table}</DesktopTableSurface>
     </section>
   )
 }
@@ -340,6 +377,9 @@ function AssetsSection({
   hideHeader?: boolean
 }) {
   const priceFor = usePriceFor()
+  const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
   return (
     <section className="mb-2">
       {!hideHeader ? (
@@ -351,24 +391,24 @@ function AssetsSection({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-radius-md bg-transparent">
+      <DesktopTableSurface className="rounded-radius-md">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-[13px]">
+          <table className="w-full min-w-[980px] text-[13px]">
             <thead>
               <tr className="bg-table-header text-left text-muted-foreground">
                 <th className="pb-2 pt-3 pl-5 pr-3 text-[10.5px] font-medium uppercase tracking-[0.06em]">#</th>
-                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">Asset</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Borrow APR</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Utilization</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Available</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Wallet Balance</th>
+                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Asset")}</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Borrow APR")}</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Utilization")}</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Available")}</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Wallet Balance")}</th>
                 <th className="w-20 pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">7D</th>
-                <th className="w-44 pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">Action</th>
+                <th className="w-44 pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]" />
               </tr>
             </thead>
             <tbody>
               {assets.map((asset, index) => (
-                <tr key={asset.id} className="group transition-colors">
+                <tr key={asset.id} className="group cursor-pointer transition-colors" onClick={() => router.push(borrowAssetDetailPath(asset.id))}>
                   <td className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                     {index + 1}
                   </td>
@@ -394,7 +434,7 @@ function AssetsSection({
                     </span>
                   </td>
                   <td className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
-                    {formatCompactUsd(asset.availableUsd)}
+                    {compact(asset.availableUsd)}
                   </td>
                   <td className={cn("py-2.5 pl-4 text-right font-data text-[13px] tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground", TABLE_ROW_HOVER_BG)}>
                     {asset.walletBalanceLabel}
@@ -405,33 +445,35 @@ function AssetsSection({
                     </div>
                   </td>
                   <td className={`py-2.5 pl-4 pr-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <div className="inline-flex items-center gap-1.5">
-                      <Link
-                        href={borrowAssetDetailPath(asset.id)}
-                        className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+                    <HoverActionGroup className="inline-flex items-center">
+                      <PillButton
+                        variant="ghost"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          const lendMarketId = resolveLendMarketId(asset.symbol)
+                          if (!lendMarketId) return
+                          router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
+                        }}
                       >
-                        Details
-                      </Link>
-                      <PillButton variant="primary" onClick={() => onBorrow(asset)}>
-                        Borrow
+                        {t("Deposit")}
                       </PillButton>
-                    </div>
+                      <PillButton
+                        variant="primary"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onBorrow(asset)
+                        }}
+                      >
+                        {t("Borrow")}
+                      </PillButton>
+                    </HoverActionGroup>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </DesktopTableSurface>
     </section>
-  )
-}
-
-function AssetStatLine({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="flex items-center justify-between py-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
-    </div>
   )
 }

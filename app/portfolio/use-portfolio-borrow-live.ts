@@ -10,13 +10,25 @@ export function usePortfolioBorrowLive(walletId: string, borrowSession: BorrowSe
   const [portfolioBorrow, setPortfolioBorrow] = useState<PortfolioBorrowTabData | null>(null)
 
   useEffect(() => {
+    if (!walletId) {
+      setPortfolioBorrow(null)
+      return
+    }
+
     let cancelled = false
 
-    void borrowSession.readAdapter.readPortfolioBorrow(walletId).then((next) => {
-      if (!cancelled) {
-        setPortfolioBorrow(next)
-      }
-    })
+    void borrowSession.readAdapter
+      .readPortfolioBorrow(walletId)
+      .then((next) => {
+        if (!cancelled) {
+          setPortfolioBorrow(next)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPortfolioBorrow(null)
+        }
+      })
 
     return () => {
       cancelled = true

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts"
 import { getPoolHeroFeed } from "@/app/lib/chart-feeds"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type PoolHeroProps = {
   detail: PoolDetail
@@ -26,6 +27,7 @@ export function PoolHeroIdentity({
   actions?: React.ReactNode
   className?: string
 }) {
+  const { t } = useTranslation()
   const metaLabel = detail.hero.chain
 
   return (
@@ -60,7 +62,7 @@ export function PoolHeroIdentity({
                   await navigator.clipboard.writeText(metaLabel)
                 }}
                 className="inline-flex items-center gap-1.5 text-[13px] font-normal leading-none text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Copy chain"
+                aria-label={t("Copy chain")}
               >
                 <Copy className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
                 <span>{metaLabel}</span>
@@ -71,13 +73,13 @@ export function PoolHeroIdentity({
 
         <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
           <HeroIcon
-            label="Search"
+            label={t("Search")}
             onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")}
           >
             <Search className="h-3.5 w-3.5" />
           </HeroIcon>
           <HeroIcon
-            label="Website"
+            label={t("Website")}
             onClick={() =>
               window.open(
                 detail.hero.explorerUrl ?? `https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`,
@@ -88,12 +90,12 @@ export function PoolHeroIdentity({
             <Globe className="h-3.5 w-3.5" />
           </HeroIcon>
           <HeroIcon
-            label="X"
+            label={t("X")}
             onClick={() => window.open(`https://x.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")}
           >
             <XIcon />
           </HeroIcon>
-          <HeroIcon label="Share" onClick={() => navigator.clipboard.writeText(window.location.href)}>
+          <HeroIcon label={t("Share")} onClick={() => navigator.clipboard.writeText(window.location.href)}>
             <MessageSquare className="h-3.5 w-3.5" />
           </HeroIcon>
           {actions}
@@ -104,6 +106,7 @@ export function PoolHeroIdentity({
 }
 
 export function PoolHero({ detail, leading, actions, className, hideIdentity = false }: PoolHeroProps) {
+  const { t } = useTranslation()
   // Prefer the Convex-backed feed (TVL / total supplied); fall back to the local feed.
   const feed = React.useMemo(() => detail.heroFeed ?? getPoolHeroFeed(detail.id), [detail.heroFeed, detail.id])
 
@@ -113,7 +116,7 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
 
       <div className="pt-4" data-testid="pool-hero-chart-card">
         {/* Convex feed carries the full daily history — open on it so the chart is rich. */}
-        <MarketHeroChart feed={feed} defaultRange={detail.heroFeed ? "All" : "1D"} gradientId={`poolHeroFill-${detail.id}`} label="Total supplied" />
+        <MarketHeroChart feed={feed} defaultRange={detail.heroFeed ? "All" : "1D"} gradientId={`poolHeroFill-${detail.id}`} label={t("Total supplied")} />
       </div>
     </section>
   )

@@ -4,10 +4,12 @@ import * as React from "react"
 import Link from "next/link"
 import { TokenIcon } from "@/app/components/token-icon"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 const MASK = "••••"
 
@@ -87,18 +89,16 @@ export function MultiplyCollateralTable({
                 <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Status
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                  Actions
-                </th>
+                <SilentActionHeader className="pr-6" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border dark:divide-white/6">
               {rows.map((row, index) => (
-                <tr key={row.id} className="transition-colors hover:bg-slate-100 dark:hover:bg-card/5">
-                  <td className="py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52">
+                <tr key={row.id} className="group transition-colors">
+                  <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                     {index + 1}
                   </td>
-                  <td className="py-3 pl-4 pr-4">
+                  <td className={`py-3 pl-4 pr-4 ${TABLE_ROW_HOVER_BG}`}>
                     <div className="flex items-center gap-2.5">
                       <TokenIcon symbol={row.collateralToken} size="table" />
                       <span className="min-w-0">
@@ -111,28 +111,28 @@ export function MultiplyCollateralTable({
                       </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
+                  <td className={`px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                     {usd(row.collateralUsd)}
                   </td>
-                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
+                  <td className={`px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                     {row.multiplier.toFixed(2)}x
                   </td>
-                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
+                  <td className={`px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                     {usd(row.debtUsd)}
                   </td>
-                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
+                  <td className={`px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                     {formatPct(row.ltvPct)}
                   </td>
-                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-success">
+                  <td className={`px-4 py-3 font-data tabular-nums text-[14px] text-success ${TABLE_ROW_HOVER_BG}`}>
                     {formatHealthFactor(row.healthFactor)}
                   </td>
-                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
+                  <td className={`px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                     {row.liquidationPriceUsd ? usd(row.liquidationPriceUsd) : "—"}
                   </td>
-                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
+                  <td className={`px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                     {formatPct(row.netApyPct)}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className={`px-4 py-3 ${TABLE_ROW_HOVER_BG}`}>
                     <span
                       className={cn(
                         "inline-flex rounded-full border px-2 py-0.5 text-[10.5px] font-medium capitalize",
@@ -142,8 +142,8 @@ export function MultiplyCollateralTable({
                       {row.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 pr-6">
-                    <div className="flex justify-end gap-2">
+                  <td className={`px-4 py-3 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+                    <HoverActionGroup className="gap-2">
                       <Button asChild variant="secondary" size="sm" className="h-7 rounded-xs px-2.5 text-[11px]">
                         <Link href={`/multiply/markets/${row.marketId}`}>Manage</Link>
                       </Button>
@@ -155,7 +155,7 @@ export function MultiplyCollateralTable({
                       >
                         Deleverage
                       </Button>
-                    </div>
+                    </HoverActionGroup>
                   </td>
                 </tr>
               ))}

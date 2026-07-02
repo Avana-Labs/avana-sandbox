@@ -3,16 +3,18 @@
 import Link from "next/link"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { resolveImageSrc } from "@/lib/image-src"
 
 type Props = { detail: PoolDetail }
 
 export function RelatedPoolsRow({ detail }: Props) {
+  const { t } = useTranslation()
   if (detail.related.length === 0) return null
   return (
     <section id="related-pools" className="min-w-0">
       <div className="mb-3">
-        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Related pools</h2>
+        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{t("Related pools")}</h2>
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {detail.related.map((rel) => {
@@ -65,11 +67,11 @@ export function RelatedPoolsRow({ detail }: Props) {
                 </div>
                 <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
                   <div>
-                  <div className="text-[12px] text-muted-foreground">Supply APY</div>
+                  <div className="text-[12px] text-muted-foreground">{t("Supply APY")}</div>
                   <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.aprLabel}</div>
                 </div>
                 <div>
-                  <div className="text-[12px] text-muted-foreground">Available</div>
+                  <div className="text-[12px] text-muted-foreground">{t("Available")}</div>
                   <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.availableLabel}</div>
                 </div>
               </div>

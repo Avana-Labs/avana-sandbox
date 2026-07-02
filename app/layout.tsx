@@ -15,6 +15,7 @@ import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 import { SandboxGate } from "./components/sandbox/sandbox-gate"
 import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
+import { PreferencesProfileSync } from "./components/preferences-profile-sync"
 import { TokenPricesProvider } from "./lib/prices/token-prices-context"
 const enableProductionAnalytics = process.env.NODE_ENV === "production"
 
@@ -109,6 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <DisplayPreferencesProvider>
             <Web3Provider>
               <AvanaSessionProviders>
+                <PreferencesProfileSync />
                 <TokenPricesProvider>
                   <CurrencyDisplayBoundary>
                     <SandboxGate>

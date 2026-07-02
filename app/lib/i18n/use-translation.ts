@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback } from "react"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useOptionalDisplayPreferences } from "@/app/components/display-preferences"
 import { translate } from "@/app/lib/i18n/translations"
 
 /**
@@ -10,7 +10,8 @@ import { translate } from "@/app/lib/i18n/translations"
  * always safe to wrap a label even before its translation exists.
  */
 export function useTranslation() {
-  const { language } = useDisplayPreferences()
+  const preferences = useOptionalDisplayPreferences()
+  const language = preferences?.language ?? "EN"
   const t = useCallback((key: string) => translate(language, key), [language])
   return { t, language }
 }
