@@ -30,7 +30,7 @@ export function PortfolioLendingOpportunities({
           {buckets.map((bucket) => (
             <article
               key={bucket.title}
-              className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-elev-1 transition-colors hover:border-foreground/20"
+              className="flex flex-col rounded-radius-lg border border-border bg-card p-4 shadow-elev-1 transition-colors hover:border-foreground/20"
             >
               <div className="flex items-start justify-between gap-3">
                 <h3 className="text-[15px] font-medium tracking-[-0.02em] text-foreground">{bucket.title}</h3>

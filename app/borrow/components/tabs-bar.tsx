@@ -96,7 +96,7 @@ function ExpandableDesktopSearch({
       <div
         className={cn(
           "flex h-10 items-center overflow-hidden border shadow-elev-1 transition-[width,border-radius,background-color,border-color] duration-200",
-          isExpanded ? "w-[240px] rounded-[12px] px-3" : "w-10 cursor-pointer justify-center rounded-[12px]",
+          isExpanded ? "w-[240px] rounded-radius-md px-3" : "w-10 cursor-pointer justify-center rounded-radius-md",
           "border-border bg-card text-foreground dark:border-border/60 dark:text-[#e6f8fb]",
         )}
         onClick={() => {
@@ -266,7 +266,7 @@ function SingleSelectDropdown({
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
+          "inline-flex h-9 items-center gap-1.5 rounded-radius-md px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
           isDark
             ? "border border-white/8 bg-surface-inset text-white hover:bg-[#262626] focus-visible:ring-white/10"
             : "border border-border bg-card text-foreground hover:bg-neutral-50 focus-visible:ring-black/10",
@@ -290,7 +290,7 @@ function SingleSelectDropdown({
           <div
             ref={panelRef}
             className={cn(
-              "fixed z-50 overflow-hidden rounded-[14px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
+              "fixed z-50 overflow-hidden rounded-radius-md border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
               isDark ? "border-white/8 bg-surface-inset text-white" : "border-border bg-popover text-foreground",
             )}
             style={

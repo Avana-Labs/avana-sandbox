@@ -29,7 +29,7 @@ export function OnboardingPageClient() {
       {hasConvexClient ? (
         <OnboardingConnected />
       ) : (
-        <div className="mx-auto w-full max-w-md rounded-2xl border border-border bg-surface p-7 text-center text-[14px] text-muted-foreground">
+        <div className="mx-auto w-full max-w-md rounded-radius-lg border border-border bg-surface p-7 text-center text-[14px] text-muted-foreground">
           Sandbox onboarding requires a Convex connection. Set <code>NEXT_PUBLIC_CONVEX_URL</code> to continue.
         </div>
       )}

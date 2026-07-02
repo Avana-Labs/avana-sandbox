@@ -222,7 +222,7 @@ function MultiSelectDropdown({
           <div
             ref={panelRef}
             className={cn(
-              "fixed z-30 overflow-hidden rounded-[18px] border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
+              "fixed z-30 overflow-hidden rounded-radius-lg border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
               "border-border bg-popover text-foreground dark:border-white/8 dark:bg-surface-inset dark:text-white",
             )}
             style={
@@ -412,7 +412,7 @@ function AssetCardView({
   const detailHref = row.href ?? `/lend/markets/${marketId}`
   return (
     <div
-      className="cursor-pointer rounded-2xl border border-border bg-card p-4 transition-colors hover:border-brand/40"
+      className="cursor-pointer rounded-radius-lg border border-border bg-card p-4 transition-colors hover:border-brand/40"
       style={{ animationDelay: `${index * 40}ms` }}
       onClick={() => router.push(detailHref)}
     >
@@ -536,7 +536,7 @@ function AssetSection({
               <AssetCardView key={row.symbol} row={row} index={index} onDeposit={onDeposit} />
             ))
           ) : (
-            <div className="rounded-2xl border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
+            <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
               No assets match these filters.
             </div>
           )}
@@ -555,7 +555,7 @@ function AssetSection({
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   #
                 </th>
                 <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -648,7 +648,7 @@ function AssetSection({
                     <SortIcon />
                   </button>
                 </th>
-                <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   ACTION
                 </th>
               </tr>

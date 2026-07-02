@@ -128,7 +128,7 @@ export function ActionAmountCard({
         setMenuOpen(false)
       }}
       className={cn(
-        "flex w-full items-start gap-2 rounded-xl px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-surface-hover",
+        "flex w-full items-start gap-2 rounded-radius-md px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-surface-hover",
         option.id === selectedAssetId && "bg-surface-hover",
       )}
     >
@@ -206,7 +206,7 @@ export function ActionAmountCard({
             <div
               role="listbox"
               aria-label="Select asset"
-              className="absolute right-0 top-full z-50 mt-2 max-h-56 w-[min(20rem,calc(100vw-2rem))] overflow-auto rounded-2xl border border-border bg-popover p-1 shadow-elev-3"
+              className="absolute right-0 top-full z-50 mt-2 max-h-56 w-[min(20rem,calc(100vw-2rem))] overflow-auto rounded-radius-lg border border-border bg-popover p-1 shadow-elev-3"
             >
               {assetOptions!.map((option) => renderAssetOption(option))}
             </div>
@@ -311,7 +311,7 @@ export function ActionAmountCard({
   return (
     <>
       <div
-        className="rounded-[20px] border border-border/80 bg-card text-card-foreground"
+        className="rounded-radius-xl border border-border/80 bg-card text-card-foreground"
         data-testid="action-amount-card"
       >
       <div className="px-4 pb-4 pt-4">

@@ -48,8 +48,8 @@ export function SupplyCard({ detail }: Props) {
               onClick={() => setView(v)}
               className={
                 view === v
-                  ? "h-6 rounded-[3px] bg-surface-raised px-2 text-[11px] font-medium tabular-nums text-foreground shadow-elev-1"
-                  : "h-6 rounded-[3px] px-2 text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
+                  ? "h-6 rounded-xs bg-surface-raised px-2 text-[11px] font-medium tabular-nums text-foreground shadow-elev-1"
+                  : "h-6 rounded-xs px-2 text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
               }
             >
               {VIEW_LABEL[v]}

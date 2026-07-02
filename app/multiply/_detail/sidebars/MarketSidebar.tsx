@@ -62,7 +62,7 @@ function MarketActionRail({
   // rather than dead-ending on an "unavailable" message.
   if (!market) {
     return (
-      <div className={cn("rounded-[20px] border border-border bg-background px-4 py-5", className)}>
+      <div className={cn("rounded-radius-xl border border-border bg-background px-4 py-5", className)}>
         <p className="text-[15px] leading-6 text-muted-foreground">
           Open a looped position in {detail.hero.name}.
         </p>

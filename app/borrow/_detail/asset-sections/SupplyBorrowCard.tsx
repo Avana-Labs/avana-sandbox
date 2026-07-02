@@ -51,7 +51,7 @@ export function SupplyBorrowCard({ detail, id }: Props) {
               type="button"
               onClick={() => setView(v)}
               className={cn(
-                "h-6 rounded-[3px] px-2 text-[11px] font-medium tabular-nums transition-colors",
+                "h-6 rounded-xs px-2 text-[11px] font-medium tabular-nums transition-colors",
                 view === v ? "bg-surface-raised text-foreground shadow-elev-1" : "text-muted-foreground hover:text-foreground",
               )}
             >
