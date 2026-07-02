@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { buildRangeData } from "@/app/components/charts"
 import { DashboardHero } from "@/app/dashboard/dashboard-hero"
@@ -40,6 +40,7 @@ describe("DashboardHero", () => {
         statOneValue="1"
         statTwoValue="8.75%"
         rangeData={buildRangeData(12_000, 240)}
+        multiplyPositionTarget={{ marketId: "weeth-weth", multiplier: 2.5 }}
         multiplySnapshot={{
           approvedUsd: 12_000,
           liquidationThresholdUsd: 10_200,
@@ -58,6 +59,37 @@ describe("DashboardHero", () => {
     expect(screen.getByText("8.75%")).toBeInTheDocument()
     expect(screen.getAllByText("2.48").length).toBeGreaterThan(0)
     expect(screen.queryByText("99.00")).not.toBeInTheDocument()
+  })
+
+  it("hides fabricated credit-health / borrowing-power when there are no positions", () => {
+    // Scope queries to this render's container — the suite has no global
+    // afterEach(cleanup), so prior renders' DOM would otherwise leak in.
+    const { container } = render(
+      <DashboardHero
+        tab="looping"
+        headlineValue="$0.00"
+        headlineDelta="— health factor"
+        statOneValue="0"
+        statTwoValue="0.00%"
+        rangeData={buildRangeData(0, 0)}
+        multiplyPositionTarget={null}
+        multiplySnapshot={{
+          approvedUsd: 0,
+          liquidationThresholdUsd: 0,
+          totalBorrowedUsd: 0,
+          totalCollateralUsd: 0,
+          averageHealthFactor: 2.45,
+          currentLtvPct: 0,
+        }}
+      />,
+    )
+    const view = within(container)
+
+    // No positions → no Credit Health / Borrowing Power cards, no fake "Safe"/"RISK".
+    expect(view.queryByText("Credit Health")).not.toBeInTheDocument()
+    expect(view.queryByText("Borrowing Power")).not.toBeInTheDocument()
+    expect(view.queryByText("Safe")).not.toBeInTheDocument()
+    expect(view.queryByText("RISK")).not.toBeInTheDocument()
   })
 
   it("threads the current dashboard tab into quick action return urls", () => {

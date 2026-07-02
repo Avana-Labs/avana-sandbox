@@ -349,7 +349,9 @@ export function DashboardHero({
         </div>
       ) : null}
 
-      {isLoopingOverview && multiplySnapshot ? (
+      {/* Only surface credit-health / borrowing-power once real positions exist —
+          computing them over $0 data fabricated a "Safe"/"RISK" state. */}
+      {isLoopingOverview && multiplySnapshot && multiplyPositionTarget ? (
         <div className="mt-4 grid gap-4 xl:grid-cols-2">
           <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
           <CurrentLtvCard
