@@ -194,7 +194,7 @@ export function ActionAmountCard({
                   ) : (
                     <ActionTokenIcon symbol={option.symbol} />
                   )}
-                  <span className="min-w-0 flex-1 leading-snug text-foreground">{option.label}</span>
+                  <span className="min-w-0 flex-1 break-words leading-snug text-foreground">{option.label}</span>
                   {option.sublabel ? <span className="shrink-0 text-[13px] text-muted-foreground">{option.sublabel}</span> : null}
                 </button>
               ))}
@@ -221,7 +221,7 @@ export function ActionAmountCard({
           <button
             type="button"
             onClick={onMax}
-            className="shrink-0 rounded-full border border-border bg-surface-raised px-2.5 py-1 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover"
+            className="inline-flex min-h-10 shrink-0 items-center rounded-full border border-border bg-surface-raised px-3 py-1 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover"
           >
             Max
           </button>

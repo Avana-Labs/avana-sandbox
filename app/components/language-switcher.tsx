@@ -23,7 +23,7 @@ export function LanguageSwitcher({ compact = false, className }: { compact?: boo
           aria-label={t("Change language")}
           title={t("Language")}
           className={cn(
-            "inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-surface-inset px-2.5 text-[13px] font-medium text-foreground transition-colors hover:bg-muted dark:bg-surface-2",
+            "inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-surface-inset px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-muted dark:bg-surface-2",
             compact && "size-10 px-0",
             className,
           )}

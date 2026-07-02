@@ -323,7 +323,7 @@ export function HotMarkets({
 
         <div
           data-featured-carousel
-          className="relative h-[176px] w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)]"
+          className="relative h-[176px] w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_1rem,black_calc(100%-1rem),transparent_100%)]"
           onMouseEnter={() => setCarouselHovered(true)}
           onMouseLeave={() => {
             setCarouselHovered(false)
@@ -335,7 +335,10 @@ export function HotMarkets({
             setHover(null)
           }}
         >
-          <motion.div style={{ x }} className="flex w-max items-start">
+          {/* Left padding offsets the mask's left fade zone so the leading card is
+              fully visible at rest; it sits outside the measured sequence so the
+              marquee loop width (sequenceRef) is unaffected. */}
+          <motion.div style={{ x }} className="flex w-max items-start pl-4 sm:pl-6">
             <div ref={sequenceRef} className="flex shrink-0 items-start gap-3 pr-3">
               {renderSequence("a")}
             </div>
