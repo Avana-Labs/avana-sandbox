@@ -31,6 +31,7 @@ import { PortfolioHeroHeader } from "@/app/portfolio/hero/portfolio-hero-header"
 import type { PortfolioHeroAction } from "@/app/portfolio/hero/types"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { dashboardHrefForTab } from "@/app/lib/action-system/dashboard-routing"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const HeroChartSection = dynamic(
   () => import("@/app/components/charts/hero-chart-section").then((mod) => mod.HeroChartSection),
@@ -227,6 +228,7 @@ export function DashboardHero({
   multiplyPositionTarget,
 }: DashboardHeroProps) {
   const router = useRouter()
+  const { t } = useTranslation()
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const { showDollarAmounts } = useDisplayPreferences()
@@ -253,19 +255,16 @@ export function DashboardHero({
       ? "positive"
       : "negative"
     : trendTone
-  const resolvedHeadlineValue = headlineValue ?? (displayPoint ? formatChartValue("usd", displayPoint.value) : "$0.00")
+  const resolvedHeadlineValue = headlineValue ?? (displayPoint ? formatChartValue("usd", displayPoint.value) : formatChartValue("usd", 0))
   const displayDelta = showChart && trendChange
     ? hoverPoint
       ? (() => {
           const baseValue = firstPoint?.value ?? hoverPoint.value
           const changeAbs = Math.abs(hoverPoint.value - baseValue)
           const pct = baseValue ? ((hoverPoint.value - baseValue) / baseValue) * 100 : 0
-          return `${formatChartValue("usd", changeAbs)} (${Math.abs(pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
+          return `${formatChartValue("usd", changeAbs)} (${Math.abs(pct).toFixed(2)}%) ${t(RANGE_PERIOD_WORD[activeRange])}`
         })()
-      : `$${trendChange.changeAbs.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })} (${Math.abs(trendChange.pct).toFixed(2)}%) ${RANGE_PERIOD_WORD[activeRange]}`
+      : `${formatChartValue("usd", trendChange.changeAbs)} (${Math.abs(trendChange.pct).toFixed(2)}%) ${t(RANGE_PERIOD_WORD[activeRange])}`
     : undefined
   const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
   const resolvedHeadlineDelta = headlineDelta ?? displayDelta

@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
 function AssetSubLabel({ symbol }: { symbol: string }) {
@@ -328,6 +329,7 @@ function AssetRowView({
   delay: number
   onDeposit?: (marketId: string) => void
 }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
@@ -392,7 +394,7 @@ function AssetRowView({
                   router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailReturn }))
                 }}
               >
-                Withdraw
+                {t("Withdraw")}
               </Button>
               <Button
                 type="button"
@@ -403,7 +405,7 @@ function AssetRowView({
                   onDeposit(marketId)
                 }}
               >
-                Deposit
+                {t("Deposit")}
               </Button>
             </HoverActionGroup>
           </div>
@@ -422,6 +424,7 @@ function AssetCardView({
   index: number
   onDeposit?: (marketId: string) => void
 }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
@@ -439,11 +442,11 @@ function AssetCardView({
             </div>
           </div>
         }
-        metric={<MarketMobileMetric value={row.supplyApyLabel ?? row.apy} label="APY" />}
+        metric={<MarketMobileMetric value={row.supplyApyLabel ?? row.apy} label={t("APY")} />}
       />
       <MarketMobileStatList className="mt-4">
         <MarketMobileStatRow
-          label="Total Deposits"
+          label={t("Total Deposits")}
           value={
             <span>
               {row.totalDepositsLabel ?? row.totalDepositsPrimary}
@@ -453,9 +456,9 @@ function AssetCardView({
             </span>
           }
         />
-        <MarketMobileStatRow label="Utilization" value={row.utilizationLabel ?? "—"} />
+        <MarketMobileStatRow label={t("Utilization")} value={row.utilizationLabel ?? "—"} />
         <MarketMobileStatRow
-          label="Available Liquidity"
+          label={t("Available Liquidity")}
           value={
             <span>
               {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
@@ -473,7 +476,7 @@ function AssetCardView({
             onDeposit(marketId)
           }}
         >
-          Deposit
+          {t("Deposit")}
         </MarketMobilePrimaryAction>
       ) : null}
     </MarketMobileCard>
@@ -491,6 +494,7 @@ function AssetSection({
   rows: AssetRow[]
   onDeposit?: (marketId: string) => void
 }) {
+  const { t } = useTranslation()
   const [sortKey, setSortKey] = useState<"asset" | "supplyApy" | "totalDeposits" | "utilization" | "availableLiquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
@@ -537,10 +541,10 @@ function AssetSection({
               title === "Ethereum-Based" ? "md:text-[23px]" : "",
             )}
           >
-            {title}
+            {t(title)}
           </h2>
           {subtitle ? (
-            <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">{subtitle}</p>
+            <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">{t(subtitle)}</p>
           ) : null}
         </div>
       </div>
@@ -553,7 +557,7 @@ function AssetSection({
             ))
           ) : (
             <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
-              No assets match these filters.
+              {t("No assets match these filters.")}
             </div>
           )}
         </div>
@@ -580,7 +584,7 @@ function AssetSection({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>ASSET</span>
+                    <span>{t("ASSET")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -595,7 +599,7 @@ function AssetSection({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>SUPPLY APY</span>
+                    <span>{t("SUPPLY APY")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -610,7 +614,7 @@ function AssetSection({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>TOTAL DEPOSITS</span>
+                    <span>{t("TOTAL DEPOSITS")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -625,7 +629,7 @@ function AssetSection({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>UTILIZATION</span>
+                    <span>{t("UTILIZATION")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -640,7 +644,7 @@ function AssetSection({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>AVAILABLE LIQUIDITY</span>
+                    <span>{t("AVAILABLE LIQUIDITY")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -655,7 +659,7 @@ function AssetSection({
               ) : (
                 <tr>
                   <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={6}>
-                    No assets match these filters.
+                    {t("No assets match these filters.")}
                   </td>
                 </tr>
               )}
@@ -674,6 +678,7 @@ export function LendAssetSpokes({
   groups?: LendPageData["assetGroups"]
   onDeposit?: (marketId: string) => void
 }) {
+  const { t } = useTranslation()
   const [search, setSearch] = useState("")
   const [selectedHubs, setSelectedHubs] = useState<string[]>([])
   const [selectedMarkets, setSelectedMarkets] = useState<string[]>([])
@@ -703,10 +708,10 @@ export function LendAssetSpokes({
         <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-brand/30 md:flex-none md:w-[280px]">
           <SearchIcon />
           <input
-            aria-label="Filter assets"
+            aria-label={t("Filter assets")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search assets"
+            placeholder={t("Search assets")}
             className="lend-filter-input w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground/45 md:text-[15px] md:font-normal"
           />
         </label>
@@ -714,20 +719,20 @@ export function LendAssetSpokes({
         <div className="ml-auto flex min-w-0 flex-nowrap gap-2">
           <MultiSelectDropdown
             allLabel={ALL_HUBS_LABEL}
-            countLabel="Hubs"
+            countLabel={t("Hubs")}
             options={HUB_OPTIONS}
             selectedValues={selectedHubs}
             onChange={setSelectedHubs}
-            ariaLabel="Filter hubs"
+            ariaLabel={t("Filter hubs")}
           />
 
           <MultiSelectDropdown
             allLabel={ALL_MARKETS_LABEL}
-            countLabel="Markets"
+            countLabel={t("Markets")}
             options={MARKET_OPTIONS}
             selectedValues={selectedMarkets}
             onChange={setSelectedMarkets}
-            ariaLabel="Filter markets"
+            ariaLabel={t("Filter markets")}
           />
         </div>
       </div>
@@ -736,10 +741,10 @@ export function LendAssetSpokes({
         <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-brand/30">
           <SearchIcon />
           <input
-            aria-label="Filter assets"
+            aria-label={t("Filter assets")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search assets"
+            placeholder={t("Search assets")}
             className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground/45"
           />
         </label>
@@ -747,20 +752,20 @@ export function LendAssetSpokes({
         <div className="flex shrink-0 items-center gap-2">
           <MultiSelectDropdown
             allLabel={ALL_HUBS_LABEL}
-            countLabel="Hubs"
+            countLabel={t("Hubs")}
             options={HUB_OPTIONS}
             selectedValues={selectedHubs}
             onChange={setSelectedHubs}
-            ariaLabel="Filter hubs"
+            ariaLabel={t("Filter hubs")}
           />
 
           <MultiSelectDropdown
             allLabel={ALL_MARKETS_LABEL}
-            countLabel="Markets"
+            countLabel={t("Markets")}
             options={MARKET_OPTIONS}
             selectedValues={selectedMarkets}
             onChange={setSelectedMarkets}
-            ariaLabel="Filter markets"
+            ariaLabel={t("Filter markets")}
           />
         </div>
       </div>
@@ -784,7 +789,7 @@ export function LendAssetSpokes({
           ))
         ) : (
           <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-[13px] text-muted-foreground shadow-none">
-            No assets match these filters.
+            {t("No assets match these filters.")}
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ import { MARKETS } from "../data"
 
 vi.mock("@/app/components/display-preferences", () => ({
   useDisplayPreferences: () => ({ showDollarAmounts: true }),
+  useOptionalDisplayPreferences: () => ({ showDollarAmounts: true, currency: "USD", language: "EN" }),
 }))
 
 describe("LendHero", () => {
