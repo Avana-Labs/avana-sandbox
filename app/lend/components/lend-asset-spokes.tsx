@@ -382,23 +382,12 @@ function AssetRowView({
 
       <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
         {onDeposit ? (
-            <div className="flex justify-end">
+          <div className="flex justify-end">
             <HoverActionGroup>
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
-                className="h-7 rounded-xs px-2.5 text-[11px]"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailReturn }))
-                }}
-              >
-                {t("Withdraw")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
+                variant="brand"
                 className="h-7 rounded-xs px-2.5 text-[11px]"
                 onClick={(e) => {
                   e.stopPropagation()
@@ -406,6 +395,18 @@ function AssetRowView({
                 }}
               >
                 {t("Deposit")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="brand-secondary"
+                className="h-7 rounded-xs px-2.5 text-[11px]"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailReturn }))
+                }}
+              >
+                {t("Withdraw")}
               </Button>
             </HoverActionGroup>
           </div>
