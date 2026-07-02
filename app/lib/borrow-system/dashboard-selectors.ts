@@ -56,16 +56,23 @@ export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: stri
     const pool = position.marketId ? poolById.get(position.marketId) : null
     if (!pool) continue
     const borrowedUsd = fixedToNumber(currentDebtValueUsd6(position), 6)
+    // Single-source the borrow APR to the current market rate (base + risk premium),
+    // matching the action page and borrow list, instead of the stored position rate.
+    const asset = state.assets[position.assetId]
+    const borrowRateWad =
+      asset != null
+        ? asset.borrowConfig.baseBorrowAprWad + calculateSpokeCreditMetrics(state, walletId, position.spokeId).riskPremiumWad
+        : position.borrowRateWad
     rows.push({
       id: position.id,
       pool,
-      debtAssetSymbol: state.assets[position.assetId]?.symbol ?? "",
+      debtAssetSymbol: asset?.symbol ?? "",
       borrowedUsd,
       liquidationThresholdUsd: pool.liquidationUsd,
       healthFactor: spokeHealthFactor(state, walletId, pool.id),
-      borrowApr: fixedToNumber(position.borrowRateWad, 18) * 100,
+      borrowApr: fixedToNumber(borrowRateWad, 18) * 100,
       accruedInterestUsd: fixedToNumber(debtInterestOwedUsd6(position), 6),
-      dailyInterestUsd: (borrowedUsd * fixedToNumber(position.borrowRateWad, 18)) / 365,
+      dailyInterestUsd: (borrowedUsd * fixedToNumber(borrowRateWad, 18)) / 365,
     })
   }
 
