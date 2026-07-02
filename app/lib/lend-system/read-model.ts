@@ -181,10 +181,19 @@ const STRATEGY_TIERS = [
  * dashboard "Lending Opportunities" reflect real market APYs/TVL rather than a
  * hardcoded catalog. Empty tiers are dropped.
  */
+// Which strategy a market belongs to is driven by its *yield*, not its collateral
+// risk tier. A "stable" asset paying 30% APY is not conservative — a high yield
+// implies risk — so bucket by APY to keep the risk-reward narrative honest.
+function strategyTierForApyPct(apyPct: number): "low" | "medium" | "high" {
+  if (apyPct < 8) return "low"
+  if (apyPct < 18) return "medium"
+  return "high"
+}
+
 export function buildLendStrategyBuckets(markets: LendMarket[]): PortfolioStrategyBucket[] {
   return STRATEGY_TIERS.flatMap((tier) => {
     const tierMarkets = markets
-      .filter((market) => market.riskTier === tier.riskTier && market.status !== "paused")
+      .filter((market) => market.status !== "paused" && strategyTierForApyPct(market.totalApy * 100) === tier.riskTier)
       .sort((a, b) => b.totalApy - a.totalApy)
     if (tierMarkets.length === 0) return []
 
