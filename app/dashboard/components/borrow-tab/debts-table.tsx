@@ -133,7 +133,7 @@ export function DebtsPanel({
                       <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(formatUsdExact(row.accruedInterestUsd))}</div>
                         <div className={cn("font-data text-[11px] font-medium tabular-nums", aprToneClass(row.borrowApr))}>
-                          {row.borrowApr.toFixed(1)}% APR
+                          {row.borrowApr.toFixed(2)}% APR
                         </div>
                       </td>
                       <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
