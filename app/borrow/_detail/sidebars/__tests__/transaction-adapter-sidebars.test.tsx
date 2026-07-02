@@ -224,12 +224,15 @@ describe("detail sidebars", () => {
   it("links asset sidebar tabs to action pages", () => {
     render(<AssetTokenActions detail={assetDetail} />)
 
+    // On a Borrow-section asset detail page the primary (default) CTA must open a
+    // borrow flow, not the Lend deposit flow.
+    expect(screen.getByTestId("action-launch-borrow")).toBeInTheDocument()
+    expect(screen.queryByTestId("action-launch-deposit")).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("tab", { name: "Deposit" }))
     expect(screen.getByTestId("action-launch-deposit")).toBeInTheDocument()
 
-    fireEvent.click(screen.getByText("Borrow"))
-    expect(screen.getByTestId("action-launch-borrow")).toBeInTheDocument()
-
-    fireEvent.click(screen.getByText("Repay"))
+    fireEvent.click(screen.getByRole("tab", { name: "Repay" }))
     expect(screen.getByTestId("action-launch-repay")).toBeInTheDocument()
   })
 
