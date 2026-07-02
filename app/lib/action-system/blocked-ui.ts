@@ -25,15 +25,25 @@ export function mapPreviewToBlockedUi(options: {
   product: ActionProduct
   kind: ActionKind
   blockedReason: string | null
+  /** Whether the wallet holds any of the target asset — distinguishes an
+   * over-balance amount ("exceeds balance") from a true zero-holding. */
+  hasWalletBalance?: boolean
 }): ActionBlockedUi | null {
   if (!options.blockedReason) return null
 
   const reason = options.blockedReason.toLowerCase()
 
   if (reason.includes("insufficient") && reason.includes("balance")) {
+    const lendOverBalance = options.product === "lend" && options.hasWalletBalance
     return {
-      title: options.product === "lend" ? "You don't have this asset in your wallet" : "No balance available",
-      description: options.blockedReason,
+      title: lendOverBalance
+        ? "Amount exceeds your balance"
+        : options.product === "lend"
+          ? "You don't have this asset in your wallet"
+          : "No balance available",
+      description: lendOverBalance
+        ? "You're trying to deposit more than you hold. Lower the amount or tap Max to deposit your full balance."
+        : options.blockedReason,
       primaryCtaLabel: options.product === "borrow" && options.kind === "borrow" ? "Deposit" : null,
       primaryCtaHref:
         options.product === "borrow" && options.kind === "borrow" ? actionPagePath("borrow", "supply") : null,

@@ -232,12 +232,14 @@ export function LendActionPageClient({
     if (!previewUi || previewUi.allowed || stage !== "configure") return
     if (!isHardBlock(previewUi.blockedReason)) return
     if (previewUi.blockedReason === dismissedBlockedReason) return
-    const blocked = mapPreviewToBlockedUi({ product: "lend", kind, blockedReason: previewUi.blockedReason })
+    const hasWalletBalance =
+      kind === "deposit" && market ? getWalletBalanceForLendMarket(session.state, walletId, market) > 0 : false
+    const blocked = mapPreviewToBlockedUi({ product: "lend", kind, blockedReason: previewUi.blockedReason, hasWalletBalance })
     if (blocked) {
       setBlockedUi(blocked)
       if (!embedded) setStage("blocked")
     }
-  }, [dismissedBlockedReason, embedded, kind, previewUi, stage])
+  }, [dismissedBlockedReason, embedded, kind, market, previewUi, session.state, stage, walletId])
 
   useEffect(() => {
     setDismissedBlockedReason(null)
