@@ -92,10 +92,10 @@ export function SuppliesPanel({
                     Collateral
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Max Borrow
+                    Scope Max Borrow
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Health Factor
+                    Scope Health Factor
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Fees Earned
@@ -192,7 +192,7 @@ export function SuppliesPanel({
 
               <div className="space-y-2.5 rounded-radius-sm border border-border bg-surface-inset px-3 py-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12.5px] font-medium text-foreground">Health Factor</span>
+                  <span className="text-[12.5px] font-medium text-foreground">Scope Health Factor</span>
                   <span className={cn("font-data text-[22px] font-medium leading-none tabular-nums", hfTone.text)}>{m(hfLabel)}</span>
                 </div>
                 <HealthFactorPositionBar
