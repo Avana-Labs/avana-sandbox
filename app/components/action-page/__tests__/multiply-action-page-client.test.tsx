@@ -262,11 +262,16 @@ describe("MultiplyActionPageClient", () => {
     )
 
     // The closed position is gone from the persisted session state (no zombie left).
-    const persisted = readMultiplySessionState(
-      DEMO_WALLET_ID,
-      serializeMultiplySystemState({ now: 0, markets: {}, positions: {}, transactions: [] }),
-    )
-    expect(persisted.positions[`${DEMO_WALLET_ID}:eth-usdt`]).toBeUndefined()
+    // The write to localStorage flushes shortly AFTER the "Position closed" stage renders,
+    // so poll until it lands instead of reading once — a single synchronous read races the
+    // async persist and flakes under load.
+    await waitFor(() => {
+      const persisted = readMultiplySessionState(
+        DEMO_WALLET_ID,
+        serializeMultiplySystemState({ now: 0, markets: {}, positions: {}, transactions: [] }),
+      )
+      expect(persisted.positions[`${DEMO_WALLET_ID}:eth-usdt`]).toBeUndefined()
+    })
   })
 
   it("falls back to a usable market instead of dead-ending on an unknown id", async () => {
