@@ -64,6 +64,7 @@
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
+    --radius-xl: 20px; /* card standard */
 
     /* Subtle, layered elevation so cards read as distinct surfaces on the bright
        canvas instead of merging into gray-on-gray blocks. */
@@ -294,6 +295,13 @@
 }
 
 /* Cursor-like text hierarchy — size and color only */
+.text-ui-heading {
+  /* Canonical detail/action section heading (was ad-hoc text-[21px]/[1.375rem]). */
+  font-size: 21px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
 .text-ui-section {
   font-size: 12px;
   line-height: 1.25rem;
@@ -329,7 +337,7 @@
 }
 
 .text-apy-positive {
-  color: #047857;
+  color: hsl(var(--success));
 }
 
 .no-number-spinner {
@@ -413,6 +421,18 @@
 @keyframes loading-shimmer {
   100% {
     transform: translateX(100%);
+  }
+}
+
+/* Subtle "just refreshed" pulse for live values that update on a client refetch,
+   so numbers ease in instead of hard-popping. Honors reduced-motion (callers gate
+   the class on it). */
+@keyframes value-refresh {
+  0% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 1;
   }
 }
 

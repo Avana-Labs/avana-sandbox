@@ -70,7 +70,7 @@ function HelpLinkItem({ href, label, icon: Icon, external, onActivate }: HelpLin
         whileTap={{ scale: 0.98 }}
         transition={{ duration: 0.15 }}
         onClick={onActivate}
-        className="flex items-center justify-between gap-3 rounded-[10px] px-2.5 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+        className="flex items-center justify-between gap-3 rounded-radius-sm px-2.5 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
       >
         {content}
       </motion.a>
@@ -82,7 +82,7 @@ function HelpLinkItem({ href, label, icon: Icon, external, onActivate }: HelpLin
       <Link
         href={href}
         onClick={onActivate}
-        className="flex items-center justify-between gap-3 rounded-[10px] px-2.5 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+        className="flex items-center justify-between gap-3 rounded-radius-sm px-2.5 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
       >
         {content}
       </Link>
@@ -133,7 +133,7 @@ export function DesktopHelpBubble() {
             transition={{ type: "spring", stiffness: 520, damping: 34, mass: 0.75 }}
             className="pointer-events-none absolute bottom-full left-0 mb-3 w-full origin-bottom-left"
           >
-            <div className="pointer-events-auto rounded-[14px] border border-border bg-background p-2 shadow-[0_18px_48px_rgba(15,23,42,0.16)]">
+            <div className="pointer-events-auto rounded-radius-md border border-border bg-background p-2 shadow-[0_18px_48px_rgba(15,23,42,0.16)]">
               <motion.div
                 initial="hidden"
                 animate="show"

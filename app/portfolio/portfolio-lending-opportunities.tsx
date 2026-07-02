@@ -3,10 +3,7 @@
 import Link from "next/link"
 import type { PortfolioStrategyBucket } from "@/app/lib/data/providers/portfolio"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-
-function formatApy(value: number) {
-  return `${value.toFixed(1)}%`
-}
+import { formatApy } from "@/app/lib/format"
 
 export function PortfolioLendingOpportunities({
   buckets,
@@ -33,11 +30,11 @@ export function PortfolioLendingOpportunities({
           {buckets.map((bucket) => (
             <article
               key={bucket.title}
-              className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-elev-1 transition-colors hover:border-foreground/20"
+              className="flex flex-col rounded-radius-lg border border-border bg-card p-4 shadow-elev-1 transition-colors hover:border-foreground/20"
             >
               <div className="flex items-start justify-between gap-3">
                 <h3 className="text-[15px] font-medium tracking-[-0.02em] text-foreground">{bucket.title}</h3>
-                <span className="shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-data text-[12px] font-medium tabular-nums text-emerald-700 dark:text-emerald-300">
+                <span className="shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-data text-[12px] font-medium tabular-nums text-success">
                   {bucket.apyRangeLabel}
                 </span>
               </div>
@@ -46,7 +43,7 @@ export function PortfolioLendingOpportunities({
                 {bucket.pools.map((pool) => (
                   <li key={pool.name} className="flex items-center justify-between gap-3 text-[13.5px]">
                     <span className="min-w-0 truncate text-foreground">{pool.name}</span>
-                    <span className="shrink-0 font-data tabular-nums text-emerald-600 dark:text-emerald-400">{formatApy(pool.apyPct)}</span>
+                    <span className="shrink-0 font-data tabular-nums text-success">{formatApy(pool.apyPct)}</span>
                   </li>
                 ))}
               </ul>

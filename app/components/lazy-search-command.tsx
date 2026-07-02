@@ -18,7 +18,7 @@ export function SearchCommandPlaceholder() {
     >
       <Search className="h-4 w-4 shrink-0 text-brand-readable lg:h-[17px] lg:w-[17px]" />
       <span className="min-w-0 flex-1 truncate">{t("Search pools, borrow, lend, and more")}</span>
-      <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-[7px] border border-border bg-muted px-1 text-[10px] font-normal text-brand-readable lg:h-[22px] lg:min-w-[22px] lg:text-[11px]">
+      <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-radius-sm border border-border bg-muted px-1 text-[10px] font-normal text-brand-readable lg:h-[22px] lg:min-w-[22px] lg:text-[11px]">
         /
       </span>
     </button>

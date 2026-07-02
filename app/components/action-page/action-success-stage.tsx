@@ -7,6 +7,7 @@ import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { IS_OPEN_GATE_TEST_MODE } from "@/app/lib/test-mode"
 
 export function ActionSuccessStage({
   success,
@@ -25,16 +26,22 @@ export function ActionSuccessStage({
   const symbol = success.receiptContext?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
   const receipt = success.receiptContext
 
-  // Link the receipt hash to its sandbox receipt page so the flow can reach it.
+  // Link the receipt hash to its sandbox receipt page — but only when that page can
+  // actually resolve it (live Convex). In test mode the synthetic hash isn't
+  // persisted, so a link would dead-end on an empty page; render it as plain text.
   const receiptLine = success.receiptHash ? (
     <p className="mt-2 font-data text-[12px] text-muted-foreground">
       {t("Receipt")}:{" "}
-      <Link
-        href={`/sandbox/transactions/${encodeURIComponent(success.receiptHash)}`}
-        className="text-foreground underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-readable"
-      >
-        {success.receiptHash}
-      </Link>
+      {IS_OPEN_GATE_TEST_MODE ? (
+        <span className="text-foreground">{success.receiptHash}</span>
+      ) : (
+        <Link
+          href={`/sandbox/transactions/${encodeURIComponent(success.receiptHash)}`}
+          className="text-foreground underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-readable"
+        >
+          {success.receiptHash}
+        </Link>
+      )}
     </p>
   ) : null
 

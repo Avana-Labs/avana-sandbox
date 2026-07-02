@@ -15,6 +15,7 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { formatPct } from "@/app/lib/borrow-detail"
 import { buildSeries, prngFromString } from "@/app/lib/borrow-detail/prng"
+import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildLendRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
 import { buildLendFaqs } from "@/app/lib/borrow-detail/content-model"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
@@ -50,7 +51,7 @@ export type LendDetailOverrides = {
   borrowAprPct?: number
 }
 
-const HERO_ANCHOR = Date.UTC(2026, 3, 22)
+const HERO_ANCHOR = SANDBOX_NOW
 
 function deltaFromPct(pct: number): DeltaStat {
   if (pct === 0) return { value: 0, direction: "flat", label: "0.0%" }

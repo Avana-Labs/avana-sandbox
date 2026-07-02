@@ -9,6 +9,7 @@ import {
   type BorrowableAsset,
 } from "@/app/lib/data/borrow-domain"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
+import { formatApy } from "@/app/lib/format"
 import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
@@ -89,7 +90,7 @@ export function BorrowableAssetsPanel({
                 return (
                   <li
                     key={asset.id}
-                    className="space-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1"
+                    className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5">
@@ -320,7 +321,7 @@ function LoanAssetsSection({
 
   return (
     <section className="space-y-5">
-    <div className="overflow-hidden rounded-[20px] bg-transparent">{table}</div>
+    <div className="overflow-hidden rounded-radius-xl bg-transparent">{table}</div>
     </section>
   )
 }
@@ -384,7 +385,7 @@ function AssetsSection({
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                     <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>
-                      {asset.borrowApr.toFixed(1)}%
+                      {formatApy(asset.borrowApr)}
                     </span>
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>

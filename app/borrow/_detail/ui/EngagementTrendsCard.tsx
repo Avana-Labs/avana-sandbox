@@ -17,7 +17,7 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
   return (
     <section className={cn("min-w-0", className)}>
       <div className="flex items-center justify-between gap-4">
-        <h2 className="min-w-0 text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">
+        <h2 className="min-w-0 text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
           {title ?? engagement.title}
         </h2>
       </div>
@@ -52,7 +52,7 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
 function EngagementKpi({ kpi }: { kpi: EngagementTrend["primary"] }) {
   const tone =
     kpi.delta.direction === "up"
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "text-success"
       : kpi.delta.direction === "down"
         ? "text-rose-600 dark:text-rose-400"
         : "text-muted-foreground"

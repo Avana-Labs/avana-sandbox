@@ -63,7 +63,7 @@ export function ActionSuccessDialog({
                         className={cn(
                           "font-data text-[12.5px] font-medium tabular-nums",
                           (!row.tone || row.tone === "default") && "text-foreground",
-                          row.tone === "positive" && "text-emerald-700 dark:text-emerald-400",
+                          row.tone === "positive" && "text-success",
                           row.tone === "warning" && "text-amber-700 dark:text-amber-400",
                           row.tone === "danger" && "text-rose-700 dark:text-rose-400",
                         )}

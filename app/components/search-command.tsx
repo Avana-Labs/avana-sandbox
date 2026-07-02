@@ -309,7 +309,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
           <>
             <Search className="h-4 w-4 shrink-0 text-brand-readable lg:h-[17px] lg:w-[17px]" />
             <span className="min-w-0 flex-1 truncate">{t("Search pools, borrow, lend, and more")}</span>
-            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-[7px] border border-border bg-muted px-1 text-[10px] font-normal text-brand-readable lg:h-[22px] lg:min-w-[22px] lg:text-[11px]">
+            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-radius-sm border border-border bg-muted px-1 text-[10px] font-normal text-brand-readable lg:h-[22px] lg:min-w-[22px] lg:text-[11px]">
               /
             </span>
           </>
@@ -317,7 +317,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-[20px] border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-[20px] [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
+        <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
           <DialogTitle className="sr-only">{t("Search Avana")}</DialogTitle>
           <DialogDescription className="sr-only">
             {t("Search collateral pools, assets to borrow, and assets to lend.")}
@@ -366,10 +366,13 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
               </div>
             ) : groupedResults.length > 0 ? (
               groupedResults.map(([tab, group]) => (
-                <section key={tab} className="pb-2">
-                  <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium text-muted-foreground">
+                <section key={tab} className="pb-3.5">
+                  <div className="flex items-center gap-2 px-3 pb-1.5 pt-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     <SectionIcon tab={tab} />
                     <span>{t(tab === "pools" ? "Pools to use as collateral" : tab === "borrow" ? "Assets to borrow" : "Assets to lend")}</span>
+                    <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/80">
+                      {group.length}
+                    </span>
                   </div>
                   <div className="space-y-0.5">
                     {group.map((result) => {
@@ -386,7 +389,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
                         onClick={() => goToResult(result.href)}
                         onMouseMove={() => setActiveIndex(flatIndex)}
                         className={cn(
-                          "group flex w-full items-center gap-3 rounded-[13px] px-3 py-2 text-left transition-colors hover:bg-surface-inset",
+                          "group flex w-full items-center gap-3 rounded-radius-md px-3 py-2 text-left transition-colors hover:bg-surface-inset",
                           isActive && "bg-surface-inset",
                         )}
                       >

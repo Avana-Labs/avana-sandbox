@@ -34,7 +34,9 @@ function convexConnectOrigins() {
 //   - *.walletconnect.{com,org} + relay wss: WalletConnect relay / verify / echo /
 //     pulse / explorer endpoints.
 //   - api.web3modal.org + *.reown.com: ConnectKit/Reown wallet explorer API.
-//   - *.coinbase.com (+ wss): Coinbase Smart Wallet keys/RPC/analytics.
+//   - *.coinbase.com (+ wss): Coinbase Smart Wallet keys/RPC. The legacy Coinbase
+//     Wallet SDK analytics beacon (cca-lite.coinbase.com/metrics) is no longer
+//     initialized on our pages — coinbaseWalletPreference is "smartWalletOnly".
 // Vercel Analytics/Speed Insights beacon posts to same-origin /_vercel (covers 'self').
 const thirdPartyConnectOrigins = [
   "https://eth.merkle.io",

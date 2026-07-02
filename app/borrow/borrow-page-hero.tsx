@@ -3,6 +3,7 @@
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
+import { formatApy } from "@/app/lib/format"
 import { HeroMarketCard } from "./borrow-hero-market-card"
 import { BorrowHeroLiveMetrics } from "./borrow-hero-live-metrics"
 
@@ -16,8 +17,8 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
         pool,
         title: pool.name,
         subtitle: `${compact(pool.tvlUsd)} TVL`,
-        value: compact(pool.availableUsd),
-        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
+        value: `Avail. ${compact(pool.availableUsd)}`,
+        delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
         deltaClassName: "text-apy-positive",
       })),
     },
@@ -29,8 +30,8 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
         pool,
         title: pool.name,
         subtitle: `${compact(pool.tvlUsd)} TVL`,
-        value: compact(pool.tvlUsd),
-        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
+        value: `Avail. ${compact(pool.availableUsd)}`,
+        delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
         deltaClassName: "text-apy-positive",
       })),
     },
@@ -42,8 +43,8 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
         pool,
         title: pool.name,
         subtitle: `${compact(pool.tvlUsd)} TVL`,
-        value: compact(pool.tvlUsd),
-        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
+        value: `Avail. ${compact(pool.availableUsd)}`,
+        delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
         deltaClassName: "text-apy-positive",
       })),
     },
@@ -56,7 +57,7 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
 
   return (
     <section className="mb-4 px-1 md:px-2">
-      <BorrowHeroLiveMetrics fallback={pageData.heroMetrics} />
+      <BorrowHeroLiveMetrics metrics={pageData.heroMetrics} />
 
       <div className="mt-6 space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">

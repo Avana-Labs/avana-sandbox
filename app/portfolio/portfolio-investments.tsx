@@ -87,7 +87,7 @@ export function PortfolioInvestments({
                 </colgroup>
                 <thead>
                   <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                    <th className="rounded-l-2xl bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       Markets
                     </th>
                     <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -99,7 +99,7 @@ export function PortfolioInvestments({
                     <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       Deposit APY
                     </th>
-                    <th className="rounded-r-2xl bg-table-header px-4 py-3.5 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       Earnings
                     </th>
                   </tr>

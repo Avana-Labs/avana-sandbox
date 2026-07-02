@@ -50,14 +50,23 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
   const pill = cn(base, "gap-2 border border-border bg-transparent text-foreground hover:bg-surface-inset")
 
   if (IS_OPEN_GATE_TEST_MODE) {
+    // Size to content (no fixed width / truncate) so the label never clips to
+    // "TEST WAL…"; test mode has no other wallet states to stay aligned with.
     return (
-      <div className={pill} title={TEST_MODE_WALLET_ADDRESS} data-testid="test-mode-wallet">
+      <div
+        className={cn(
+          "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-border bg-transparent px-3 text-foreground",
+          size === "mobile" ? "sm:h-10 sm:px-4" : "h-10 px-4",
+        )}
+        title={TEST_MODE_WALLET_ADDRESS}
+        data-testid="test-mode-wallet"
+      >
         <span
           aria-hidden
           className="size-5 shrink-0 rounded-full ring-1 ring-border"
           style={{ background: walletGradient(TEST_MODE_WALLET_ADDRESS) }}
         />
-        <span className="truncate font-data text-[12px] font-semibold uppercase tracking-wide text-amber-500">
+        <span className="whitespace-nowrap font-data text-[12px] font-semibold uppercase tracking-wide text-amber-500">
           Test wallet
         </span>
       </div>

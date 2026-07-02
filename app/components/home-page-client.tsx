@@ -43,7 +43,7 @@ function HomePageWorkspace() {
       <div className="bg-background">
         <section className="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-8">
           <Skeleton
-            className="skeleton-enter h-[360px] w-full max-w-[480px] rounded-[20px]"
+            className="skeleton-enter h-[360px] w-full max-w-[480px] rounded-radius-xl"
             data-testid="home-workspace-loading"
           />
         </section>

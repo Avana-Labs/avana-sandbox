@@ -126,7 +126,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
                   </p>
                   <Button
                     type="button"
-                    className="mt-4 h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90"
+                    className="mt-4 h-11 rounded-radius-lg bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90"
                     onClick={() => setDepositPromptOpen(true)}
                     disabled={!fallbackMarket}
                   >
@@ -173,7 +173,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
             <div className="flex flex-col gap-2">
               <Button
                 type="button"
-                className="h-11 rounded-2xl bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90"
+                className="h-11 rounded-radius-lg bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90"
                 onClick={() => {
                   setDepositPromptOpen(false)
                   if (fallbackMarket) {
@@ -184,7 +184,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
               >
                 Deposit
               </Button>
-              <Button type="button" variant="secondary" className="h-11 rounded-2xl" onClick={() => setDepositPromptOpen(false)}>
+              <Button type="button" variant="secondary" className="h-11 rounded-radius-lg" onClick={() => setDepositPromptOpen(false)}>
                 Got it
               </Button>
             </div>

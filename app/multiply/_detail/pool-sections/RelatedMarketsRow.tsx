@@ -12,7 +12,7 @@ export function RelatedMarketsRow({ detail }: Props) {
   return (
     <section id="related-markets" className="min-w-0">
       <div className="mb-3">
-        <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">Related markets</h2>
+        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Related markets</h2>
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {detail.related.map((rel) => {
@@ -21,7 +21,7 @@ export function RelatedMarketsRow({ detail }: Props) {
           <li key={rel.id} className="shrink-0">
             <Link
               href={`/multiply/markets/${rel.id}`}
-              className="group relative flex h-[120px] w-60 flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
+              className="group relative flex h-[120px] w-60 flex-col overflow-hidden rounded-radius-lg border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
             >
               {backgroundSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element

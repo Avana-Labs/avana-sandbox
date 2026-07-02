@@ -381,6 +381,7 @@ export function ActionConfigureStage({
               blockedReason: preview?.blockedReason ?? null,
             })}
             primaryPending={isPending || stage === "wallet_sign" || stage === "approve_allowance"}
+            sticky
           />
         )
       ) : null}

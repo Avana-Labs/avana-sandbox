@@ -42,7 +42,7 @@ export function MarketHeroIdentity({
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">{detail.hero.name}</h1>
+              <h1 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-foreground">{detail.hero.name}</h1>
               <BadgeCheck
                 className="h-[24px] w-[24px] shrink-0 -translate-y-[3px] fill-muted-foreground text-background"
                 aria-hidden="true"

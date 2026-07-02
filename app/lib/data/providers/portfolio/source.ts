@@ -279,6 +279,7 @@ export const livePortfolioPageSource: PortfolioPageSource = {
             0,
           )
           const maxLtv = pool?.maxLtvPct ?? 0
+          const liquidationUsd = collateralUsd * ((pool?.liquidationThresholdPct ?? maxLtv) / 100)
           const visuals = pool?.visuals?.slice(0, 2) ?? []
           const fallbackVisual = { symbol: "AVA", shortLabel: "A", bgClassName: "bg-brand", textClassName: "text-brand-foreground" }
           return {
@@ -291,13 +292,18 @@ export const livePortfolioPageSource: PortfolioPageSource = {
               category: pool?.category ?? "sandbox",
               collateralUsd,
               maxLtv,
-              borrowPowerUsd: collateralUsd * (maxLtv / 100),
-              liquidationUsd: collateralUsd * ((pool?.liquidationThresholdPct ?? maxLtv) / 100),
+              // Borrow power is collateral × maxLTV and can never exceed the
+              // collateral value; clamp defensively so a bad maxLtvPct (>100)
+              // can't surface a Max-Borrow larger than the collateral.
+              borrowPowerUsd: collateralUsd * (Math.min(maxLtv, 100) / 100),
+              liquidationUsd,
               pairApr: pool?.pairAprPct ?? 0,
               visuals: [visuals[0] ?? fallbackVisual, visuals[1] ?? fallbackVisual],
             },
             borrowedUsd,
-            healthFactor: borrowedUsd > 0 ? (collateralUsd * (maxLtv / 100)) / borrowedUsd : null,
+            // Health factor uses the liquidation threshold (LT > maxLTV), matching the
+            // canonical credit engine (metrics.ts). maxLTV only sizes borrow power.
+            healthFactor: borrowedUsd > 0 ? liquidationUsd / borrowedUsd : null,
             pairApr: pool?.pairAprPct ?? 0,
             feesUsd: 0,
           }

@@ -21,6 +21,7 @@ import {
 } from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
+import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
@@ -68,7 +69,7 @@ export function SuppliesPanel({
         </div>
       ) : null}
       <div className="hidden md:block">
-        <div className="rounded-[18px] bg-transparent">
+        <div className="rounded-radius-lg bg-transparent">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
@@ -82,7 +83,7 @@ export function SuppliesPanel({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-2xl bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     #
                   </th>
                   <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -100,7 +101,7 @@ export function SuppliesPanel({
                   <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Fees Earned
                   </th>
-                  <th className="rounded-r-2xl bg-table-header px-5 py-3.5 pr-6 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
+                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 pr-6 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
                 </tr>
               </thead>
               <tbody>
@@ -127,8 +128,8 @@ export function SuppliesPanel({
                     </td>
                     <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                       <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
-                      <div className="font-data text-[11px] font-medium tabular-nums text-emerald-600">
-                        {row.pairApr.toFixed(1)}% APR
+                      <div className="font-data text-[11px] font-medium tabular-nums text-success">
+                        {formatApy(row.pairApr)} APR
                       </div>
                     </td>
                     <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -162,7 +163,7 @@ export function SuppliesPanel({
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`
           return (
-            <li key={row.pool.id} className="space-y-3 rounded-radius-md border-0 bg-card px-4 py-4 shadow-none">
+            <li key={row.pool.id} className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="flex items-center">
@@ -223,10 +224,10 @@ export function SuppliesPanel({
                 <SupplyStatCell
                   value={m(row.feesLabel)}
                   label="Fees Earned"
-                  valueTone="text-emerald-600"
+                  valueTone="text-success"
                 />
                 <SupplyStatCell
-                  value={`${row.pairApr.toFixed(1)}%`}
+                  value={formatApy(row.pairApr)}
                   label="LP APR"
                 />
               </div>
@@ -293,7 +294,7 @@ export function SuppliesHealthFactorCard({
         <span
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full bg-table-header px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
-            status.tone === "positive" && "text-emerald-600",
+            status.tone === "positive" && "text-success",
             status.tone === "warning" && "text-amber-600",
             status.tone === "danger" && "text-rose-600",
             status.tone === "default" && "text-muted-foreground",

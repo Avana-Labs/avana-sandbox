@@ -450,7 +450,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                   setLanguage(option.code)
                   closeSelectorSheet()
                 }}
-                className="flex w-full items-center justify-between gap-4 rounded-2xl px-3 py-4 text-left"
+                className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
               >
                 <span className="text-[1.15rem] font-medium leading-tight text-foreground">{option.label}</span>
                 {option.code === language ? <Check className="h-6 w-6 text-brand" /> : null}
@@ -474,7 +474,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                   setCurrency(option.code)
                   closeSelectorSheet()
                 }}
-                className="flex w-full items-center justify-between gap-4 rounded-2xl px-3 py-4 text-left"
+                className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
               >
                 <span className="flex items-center gap-4">
                   <CurrencyFlag code={option.code} className="h-6 w-6" />

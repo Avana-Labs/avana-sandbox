@@ -280,27 +280,25 @@ export function buildMultiplyActivityHistory(
 ): PortfolioMultiplyTabData["history"] {
   return history
     .filter((item) => item.walletId === walletId)
-    .map((item) => ({
-      id: item.id,
-      at: new Date(item.timestamp).toISOString(),
-      product: "multiply" as const,
-      kind:
-        item.kind === "multiply"
-          ? ("open" as const)
-          : item.kind === "close"
-            ? ("close" as const)
-            : ("reduce" as const),
-      status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
-      amountUsd: item.amountUsd,
-      primaryLabel:
-        item.kind === "multiply"
-          ? "Simulated multiply"
-          : item.kind === "close"
-            ? "Simulated close"
-            : "Simulated deleverage",
-      secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
-      txHash: item.hash,
-    }))
+    .map((item) => {
+      // A deleverage that unwinds all the way to 1.00x is a close, not a "Reduce".
+      // Treat it as one so the activity log reads "Close · Position closed".
+      const isClose = item.kind === "close" || (item.kind === "deleverage" && item.multiplierAfter <= 1.0001)
+      return {
+        id: item.id,
+        at: new Date(item.timestamp).toISOString(),
+        product: "multiply" as const,
+        kind: item.kind === "multiply" ? ("open" as const) : isClose ? ("close" as const) : ("reduce" as const),
+        status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
+        amountUsd: item.amountUsd,
+        primaryLabel:
+          item.kind === "multiply" ? "Simulated multiply" : isClose ? "Simulated close" : "Simulated deleverage",
+        secondaryLabel: isClose
+          ? "Position closed"
+          : `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
+        txHash: item.hash,
+      }
+    })
 }
 
 function formatRelativeAge(elapsedMs: number) {

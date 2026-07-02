@@ -82,6 +82,9 @@ const HERO_UI_CONFIG: Record<DashboardHeroProps["tab"], HeroUiConfig> = {
     headlineMeta: "Approved credit",
   },
   lending: {
+    // Label the headline so the per-tab figure reads as its own scope
+    // ("Total supplied") instead of a single portfolio total that flip-flops.
+    headlineMeta: "Total supplied",
     actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
     statOneLabel: "Average APY",
     statOneHelpText: "Weighted average APY across supplied assets in the wallet.",
@@ -89,6 +92,7 @@ const HERO_UI_CONFIG: Record<DashboardHeroProps["tab"], HeroUiConfig> = {
     statTwoHelpText: "Total yield already accrued by the portfolio.",
   },
   looping: {
+    headlineMeta: "Multiply value",
     actionLabels: ["Increase loop", "Unwind loop"],
     hideChart: true,
     statOneLabel: "Open positions",
@@ -150,20 +154,16 @@ function buildActions({
   }
 
   const resolveClasses = (label: string) => {
+    // One consistent button chrome for every quick action, with a deliberate,
+    // theme-aware money-flow semantic on top: inflows (deposit) read success,
+    // outflows (withdraw/unwind) read danger, everything else stays neutral.
+    // (Replaces the ad-hoc mix of hardcoded blue/green/red/black hexes.)
     const normalized = label.toLowerCase()
-    if (normalized.includes("borrow")) {
-      return "!border-border/70 !bg-background !text-[#0B9BC9] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
-    }
-    if (normalized.includes("repay")) {
-      return "!border-border/70 !bg-background !text-black hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-white dark:hover:!bg-surface-hover"
-    }
-    if (normalized.includes("deposit") || normalized.includes("supply")) {
-      return "!border-border/70 !bg-background !text-[#16A34A] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-[#74d79c] dark:hover:!bg-surface-hover"
-    }
-    if (normalized.includes("withdraw") || normalized.includes("unwind")) {
-      return "!border-border/70 !bg-background !text-[#E11D48] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-[#f38aa3] dark:hover:!bg-surface-hover"
-    }
-    return "!border-border/70 !bg-background !text-brand hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
+    const chrome =
+      "!border-border/70 !bg-background hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
+    if (normalized.includes("deposit") || normalized.includes("supply")) return `${chrome} !text-success`
+    if (normalized.includes("withdraw") || normalized.includes("unwind")) return `${chrome} !text-danger`
+    return `${chrome} !text-foreground`
   }
 
   const resolveIcon = (label: string) => {
@@ -346,7 +346,7 @@ export function DashboardHero({
               uiConfig.statTwoLabel &&
               statTwoValue &&
               uiConfig.statTwoHelpText ? (
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-card/10">
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-radius-md border border-border bg-border/80 dark:border-white/10 dark:bg-card/10">
                   <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} hidden={!showDollarAmounts} />
                   <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} hidden={!showDollarAmounts} />
                 </div>

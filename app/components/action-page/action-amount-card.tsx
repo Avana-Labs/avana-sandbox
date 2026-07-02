@@ -128,7 +128,7 @@ export function ActionAmountCard({
         setMenuOpen(false)
       }}
       className={cn(
-        "flex w-full items-start gap-2 rounded-xl px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-surface-hover",
+        "flex w-full items-start gap-2 rounded-radius-md px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-surface-hover",
         option.id === selectedAssetId && "bg-surface-hover",
       )}
     >
@@ -174,7 +174,10 @@ export function ActionAmountCard({
                 if (useDialogPicker) setDialogOpen(true)
                 else setMenuOpen((open) => !open)
               }}
-              aria-haspopup={useDialogPicker ? undefined : useMenuSheet ? "dialog" : "listbox"}
+              // Deterministic across SSR/client: the options are a role="listbox"
+              // in both the desktop popover and the mobile sheet, so don't key this
+              // off the client-only viewport query (that caused a hydration mismatch).
+              aria-haspopup={useDialogPicker ? undefined : "listbox"}
               aria-expanded={!useDialogPicker ? menuOpen : undefined}
               aria-label={`Change asset, current ${assetLabel}`}
               disabled={readOnly}
@@ -206,7 +209,7 @@ export function ActionAmountCard({
             <div
               role="listbox"
               aria-label="Select asset"
-              className="absolute right-0 top-full z-50 mt-2 max-h-56 w-[min(20rem,calc(100vw-2rem))] overflow-auto rounded-2xl border border-border bg-popover p-1 shadow-elev-3"
+              className="absolute right-0 top-full z-50 mt-2 max-h-56 w-[min(20rem,calc(100vw-2rem))] overflow-auto rounded-radius-lg border border-border bg-popover p-1 shadow-elev-3"
             >
               {assetOptions!.map((option) => renderAssetOption(option))}
             </div>
@@ -311,7 +314,7 @@ export function ActionAmountCard({
   return (
     <>
       <div
-        className="rounded-[20px] border border-border/80 bg-card text-card-foreground"
+        className="rounded-radius-xl border border-border/80 bg-card text-card-foreground"
         data-testid="action-amount-card"
       >
       <div className="px-4 pb-4 pt-4">
@@ -363,6 +366,7 @@ export function ActionFooter({
   secondaryHref,
   primaryDisabled,
   primaryPending,
+  sticky = false,
   className,
 }: {
   primaryLabel: string
@@ -373,13 +377,24 @@ export function ActionFooter({
   secondaryHref?: string
   primaryDisabled?: boolean
   primaryPending?: boolean
+  /** Pin the CTA row to a sticky bottom bar on mobile so it isn't buried below
+   *  full-width metric cards. Resets to a normal in-flow row at md+. */
+  sticky?: boolean
   className?: string
 }) {
   const primaryClassName = primaryCtaClass({ disabled: primaryDisabled, pending: primaryPending })
   const secondaryClassName = SECONDARY_CTA_CLASS
 
   return (
-    <div className={cn("grid grid-cols-2 gap-3", className)} data-testid="action-footer">
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-3",
+        sticky &&
+          "sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none",
+        className,
+      )}
+      data-testid="action-footer"
+    >
       {secondaryHref && !onSecondary ? (
         <Link href={secondaryHref} className={secondaryClassName}>
           {secondaryLabel}

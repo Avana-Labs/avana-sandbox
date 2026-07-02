@@ -18,6 +18,7 @@ import {
   type SpokeBorrowableRecord,
 } from "@/app/lib/borrow-system/registry"
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
+import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
 import { buildCuratedPriceFamily } from "./token-price-series"
 import { computeAssetAllocation, formatPct } from "./allocation"
@@ -358,7 +359,7 @@ function buildCashflowTrend(asset: SpokeBorrowableRecord, _supplied: number, bor
   const annualInterest = borrowed * (asset.borrowApr / 100)
   const monthlyGross = annualInterest / 12
   const rand = prngFromString(`${asset.id}:cf:trend`)
-  const now = Date.UTC(2026, 3, 22)
+  const now = SANDBOX_NOW
 
   const points: Series["points"] = []
   for (let i = 11; i >= 0; i--) {
@@ -387,7 +388,7 @@ function buildCashflowTrend(asset: SpokeBorrowableRecord, _supplied: number, bor
 function buildAssetEngagement(asset: SpokeBorrowableRecord, supplied: number): EngagementTrend {
   const rand = prngFromString(`${asset.id}:engagement`)
   const base = Math.max(800, Math.round(Math.sqrt(supplied) * 1.6))
-  const now = Date.UTC(2026, 3, 22)
+  const now = SANDBOX_NOW
   const samples = 12
   const points: Series["points"] = []
   for (let i = samples - 1; i >= 0; i--) {
