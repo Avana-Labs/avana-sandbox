@@ -7,8 +7,12 @@ import {
   totalDebtValueUsd6,
   type BorrowSystemState,
 } from "@/app/lib/credit-engine"
+import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import type { BorrowAssetVisual, BorrowPoolRow, BorrowableAsset } from "@/app/lib/borrow-sim"
 import type { HomeCollateralPool } from "@/app/lib/home-sim"
+
+/** Intrinsic per-market risk premium (bps) from the catalog — the same value the pool detail renders. */
+const CATALOG_RISK_PREMIUM_BPS = new Map(BORROW_POOL_CATALOG.map((row) => [row.id, row.riskPremiumBps]))
 
 function fixedToNumber(value: bigint, decimals: number) {
   return Number.parseFloat(formatFixed(value, decimals))
@@ -49,9 +53,11 @@ export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: 
     const position = account?.collateralPositions.find((row) => row.marketId === market.id)
     const positionUsd = position ? fixedToNumber(currentCollateralValueUsd6(position, market), 6) : fixedToNumber(market.snapshot.lpTokenPriceUsd6, 6) * 1.75
     const feeApyPct = fixedToNumber(market.snapshot.feeApyWad, 18) * 100
-    const riskPremiumBps = Math.round(
-      fixedToNumber(calculateSpokeCreditMetrics(state, walletId, market.spokeId).riskPremiumWad, 18) * 10_000,
-    )
+    // Show the intrinsic per-market risk premium (matches the pool detail) rather than the
+    // wallet-scoped premium, which is 0 for a browsing wallet with no position in the spoke.
+    const riskPremiumBps =
+      CATALOG_RISK_PREMIUM_BPS.get(market.id) ??
+      Math.round(fixedToNumber(calculateSpokeCreditMetrics(state, walletId, market.spokeId).riskPremiumWad, 18) * 10_000)
 
     return {
       id: market.id,
