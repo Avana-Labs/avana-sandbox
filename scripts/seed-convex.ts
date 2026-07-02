@@ -143,7 +143,7 @@ async function main() {
   }
   console.log(`[seed] upserted ${cont} content rows`)
 
-  const counts = await client.query(api.seed.getCounts, {})
+  const counts = await client.action(api.seedAdmin.getCounts, { seedSecret })
   console.log("[seed] done. Convex counts:", JSON.stringify(counts))
 }
 
