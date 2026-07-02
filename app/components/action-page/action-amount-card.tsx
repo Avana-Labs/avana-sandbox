@@ -8,7 +8,9 @@ import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-pa
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
 import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { sanitizeDecimalInput } from "@/app/lib/action-system/amount-input"
+import { useMediaQuery } from "@/app/lib/use-media-query"
 import type { HomeBorrowToken } from "@/app/lib/home-sim"
 
 export type ActionAssetOption = {
@@ -82,9 +84,15 @@ export function ActionAmountCard({
   const [menuOpen, setMenuOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  // On mobile the inline "menu" selector opens as a bottom-sheet (matching the
+  // dialog picker and the search sheet); the anchored popover stays on desktop.
+  const isDesktop = useMediaQuery("(min-width: 640px)", true)
+  const useMenuSheet = switchable && !useDialogPicker && !isDesktop
 
   useEffect(() => {
-    if (!menuOpen) return undefined
+    // The mobile sheet is a Radix Dialog and manages its own dismissal; only the
+    // anchored desktop popover needs the manual outside-click/escape handling.
+    if (!menuOpen || useMenuSheet) return undefined
 
     const handlePointer = (event: PointerEvent) => {
       if (menuRef.current?.contains(event.target as Node)) return
@@ -105,7 +113,33 @@ export function ActionAmountCard({
       document.removeEventListener("pointerdown", handlePointer)
       document.removeEventListener("keydown", handleKey)
     }
-  }, [menuOpen])
+  }, [menuOpen, useMenuSheet])
+
+  const renderAssetOption = (option: ActionAssetOption) => (
+    <button
+      key={option.id}
+      type="button"
+      role="option"
+      aria-selected={option.id === selectedAssetId}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => {
+        onAssetSelect!(option.id)
+        setMenuOpen(false)
+      }}
+      className={cn(
+        "flex w-full items-start gap-2 rounded-xl px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-surface-hover",
+        option.id === selectedAssetId && "bg-surface-hover",
+      )}
+    >
+      {option.borrowSymbol ? (
+        <ActionTokenPairIcon collateralSymbol={option.symbol} borrowSymbol={option.borrowSymbol} size="md" />
+      ) : (
+        <ActionTokenIcon symbol={option.symbol} />
+      )}
+      <span className="min-w-0 flex-1 break-words leading-snug text-foreground">{option.label}</span>
+      {option.sublabel ? <span className="shrink-0 text-[13px] text-muted-foreground">{option.sublabel}</span> : null}
+    </button>
+  )
 
   const amountRow = (
     <div className="mt-3 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
@@ -139,7 +173,7 @@ export function ActionAmountCard({
                 if (useDialogPicker) setDialogOpen(true)
                 else setMenuOpen((open) => !open)
               }}
-              aria-haspopup={!useDialogPicker ? "listbox" : undefined}
+              aria-haspopup={useDialogPicker ? undefined : useMenuSheet ? "dialog" : "listbox"}
               aria-expanded={!useDialogPicker ? menuOpen : undefined}
               aria-label={`Change asset, current ${assetLabel}`}
               disabled={readOnly}
@@ -167,37 +201,13 @@ export function ActionAmountCard({
               {showAssetLabel ? <span>{assetLabel}</span> : null}
             </div>
           )}
-          {switchable && !useDialogPicker && menuOpen ? (
+          {switchable && !useDialogPicker && menuOpen && !useMenuSheet ? (
             <div
               role="listbox"
               aria-label="Select asset"
               className="absolute right-0 top-full z-50 mt-2 max-h-56 w-[min(20rem,calc(100vw-2rem))] overflow-auto rounded-2xl border border-border bg-popover p-1 shadow-elev-3"
             >
-              {assetOptions!.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  role="option"
-                  aria-selected={option.id === selectedAssetId}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => {
-                    onAssetSelect!(option.id)
-                    setMenuOpen(false)
-                  }}
-                  className={cn(
-                    "flex w-full items-start gap-2 rounded-xl px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-surface-hover",
-                    option.id === selectedAssetId && "bg-surface-hover",
-                  )}
-                >
-                  {option.borrowSymbol ? (
-                    <ActionTokenPairIcon collateralSymbol={option.symbol} borrowSymbol={option.borrowSymbol} size="md" />
-                  ) : (
-                    <ActionTokenIcon symbol={option.symbol} />
-                  )}
-                  <span className="min-w-0 flex-1 break-words leading-snug text-foreground">{option.label}</span>
-                  {option.sublabel ? <span className="shrink-0 text-[13px] text-muted-foreground">{option.sublabel}</span> : null}
-                </button>
-              ))}
+              {assetOptions!.map((option) => renderAssetOption(option))}
             </div>
           ) : null}
         </div>
@@ -243,6 +253,19 @@ export function ActionAmountCard({
       />
     ) : null
 
+  const menuSheet = useMenuSheet ? (
+    <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+      <DialogContent className="max-w-lg gap-0 p-0 pt-2 sm:max-w-[420px]">
+        <DialogHeader className="px-4 pb-2 pt-3 text-left space-y-0">
+          <DialogTitle className="text-[13px] font-medium">Select asset</DialogTitle>
+        </DialogHeader>
+        <div role="listbox" aria-label="Select asset" className="max-h-[60dvh] overflow-y-auto px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          {assetOptions?.map((option) => renderAssetOption(option))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  ) : null
+
   if (variant === "inset" || variant === "raised") {
     return (
       <>
@@ -279,6 +302,7 @@ export function ActionAmountCard({
         {footer ? <div className="mt-3 border-t border-border/60 pt-3">{footer}</div> : null}
         </SwapStyleField>
         {assetPickerDialog}
+        {menuSheet}
       </>
     )
   }
@@ -324,6 +348,7 @@ export function ActionAmountCard({
       {footer ? <div className="border-t border-border">{footer}</div> : null}
       </div>
       {assetPickerDialog}
+      {menuSheet}
     </>
   )
 }
