@@ -169,13 +169,12 @@
 }
 
 /* ConnectKit renders its overlay in a portal outside the modal root, so these theme
-   vars must be set globally to take effect. The dark scrim does the darkening; the blur
-   is kept light (3px, no saturate) because a heavier backdrop-filter must recompute the
-   blurred backdrop every frame, which visibly lags the modal's open / screen-switch
-   animation on ConnectKit's older framer-motion transitions. */
+   vars must be set globally to take effect. Keep the overlay blur disabled entirely:
+   the modal already animates between screens, and live backdrop filtering behind those
+   transitions causes visible ghosting on this app shell. */
 :root {
-  --ck-overlay-background: rgba(7, 9, 12, 0.64);
-  --ck-overlay-backdrop-filter: blur(3px);
+  --ck-overlay-background: rgba(7, 9, 12, 0.72);
+  --ck-overlay-backdrop-filter: none;
 }
 
 @layer base {

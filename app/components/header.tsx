@@ -19,6 +19,7 @@ import { personalDesktopHeaderLinks } from "./site-nav"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-controls"
+import { useModal } from "connectkit"
 
 function SandboxWalletDialog({
   open,
@@ -92,6 +93,7 @@ function SandboxWalletDialog({
 export function Header() {
   const pathname = usePathname()
   const { t } = useTranslation()
+  const { open: walletModalOpen } = useModal()
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)
@@ -143,7 +145,9 @@ export function Header() {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-40 bg-background/95 text-foreground backdrop-blur transition-[box-shadow] duration-200 ${
+      className={`sticky top-0 z-40 bg-background/95 text-foreground transition-[box-shadow] duration-200 ${
+        walletModalOpen ? "" : "backdrop-blur"
+      } ${
         mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
       }`}
     >
