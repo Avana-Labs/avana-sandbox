@@ -57,6 +57,7 @@ export type ConvexMultiplyWalletData = {
     kind: string
     status: "success" | "failed" | "pending"
     marketSlug?: string
+    positionId?: string | null
     amountUsd: number
     syntheticTxHash: string
     simulated: boolean
@@ -95,6 +96,8 @@ export function useMultiplySession({
   const isPersistingRef = useRef(false)
   const lastPersistedStateRef = useRef<string | null>(null)
   const lastPersistedMetadataRef = useRef<string | null>(null)
+  const inFlightRef = useRef(0)
+  const [isPending, setIsPending] = useState(false)
 
   useEffect(() => {
     if (!shouldPersistState) {
@@ -244,22 +247,35 @@ export function useMultiplySession({
             ]
           }),
       )
+      // Resolve a transaction's resulting multiplier by its POSITION, not its own tx id
+      // (they never match — the prior code looked positions up by `transaction._id`, so
+      // multiplierAfter was always the fallback of 1). Prefer the linked positionId; fall
+      // back to the still-open position for the same market.
+      const positionByMarket = new Map(
+        Object.values(positions).map((position) => [position.marketId, position]),
+      )
       const history: MultiplyTransactionHistoryItem[] = data.transactions
         .filter((transaction) => transaction.product === "multiply")
-        .map((transaction) => ({
-          id: String(transaction._id),
-          intentId: transaction.intentId ?? String(transaction._id),
-          walletId,
-          marketId: transaction.marketSlug,
-          kind: transaction.kind as MultiplyTransactionHistoryItem["kind"],
-          status: transaction.status,
-          amountUsd: transaction.amountUsd,
-          multiplierBefore: 1,
-          multiplierAfter: positions[String(transaction._id)]?.multiplier ?? 1,
-          simulated: transaction.simulated,
-          timestamp: transaction.at,
-          hash: transaction.syntheticTxHash,
-        }))
+        .map((transaction) => {
+          const position =
+            (transaction.positionId ? positions[String(transaction.positionId)] : undefined) ??
+            (transaction.marketSlug ? positionByMarket.get(transaction.marketSlug) : undefined)
+          return {
+            id: String(transaction._id),
+            intentId: transaction.intentId ?? String(transaction._id),
+            walletId,
+            marketId: transaction.marketSlug,
+            positionId: position?.id,
+            kind: transaction.kind as MultiplyTransactionHistoryItem["kind"],
+            status: transaction.status,
+            amountUsd: transaction.amountUsd,
+            multiplierBefore: 1,
+            multiplierAfter: position?.multiplier ?? 1,
+            simulated: transaction.simulated,
+            timestamp: transaction.at,
+            hash: transaction.syntheticTxHash,
+          }
+        })
       setState((current) => ({ ...current, positions }))
       setTransactionHistory(history)
       setTransactionReceipts(buildSyntheticReceipts(history))
@@ -279,12 +295,19 @@ export function useMultiplySession({
 
   const executeTransaction = useCallback(
     async (intent: MultiplyTransactionIntent): Promise<MultiplySandboxActionResult> => {
-      const result = await transactionAdapter.executeTransaction(intent)
-      stateRef.current = result.state
-      setState(result.state)
-      setTransactionHistory((current) => mergeHistory(result.historyItem, current))
-      setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
-      return result
+      inFlightRef.current += 1
+      setIsPending(true)
+      try {
+        const result = await transactionAdapter.executeTransaction(intent)
+        stateRef.current = result.state
+        setState(result.state)
+        setTransactionHistory((current) => mergeHistory(result.historyItem, current))
+        setTransactionReceipts((current) => mergeReceipts(result.receipt, current))
+        return result
+      } finally {
+        inFlightRef.current -= 1
+        setIsPending(inFlightRef.current > 0)
+      }
     },
     [transactionAdapter],
   )
@@ -308,6 +331,6 @@ export function useMultiplySession({
     previewTransaction,
     executeTransaction,
     reset,
-    isPending: false,
+    isPending,
   }
 }
