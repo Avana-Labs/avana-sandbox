@@ -1,4 +1,4 @@
-import { getActiveCurrency } from "@/app/lib/currency/active-rate"
+import { getActiveCurrency, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 
 export function formatActionInputAmount(value: number, maxDecimals = 6) {
   if (!Number.isFinite(value)) return "0"
@@ -8,18 +8,21 @@ export function formatActionInputAmount(value: number, maxDecimals = 6) {
 export function formatActionUsd(usdValue: number, options?: { compact?: boolean }) {
   if (!Number.isFinite(usdValue)) return "—"
   // Action amounts are computed in USD; convert into the active display currency.
-  const { symbol, rate, zeroDecimal } = getActiveCurrency()
+  const { rate, zeroDecimal } = getActiveCurrency()
   const value = usdValue * rate
+  // Compact thresholds/negatives are handled on the magnitude; the sign is
+  // reattached (outside the symbol) by withCurrencySymbol.
+  const abs = Math.abs(value)
   if (options?.compact) {
-    if (value >= 1_000_000_000) return `${symbol}${(value / 1_000_000_000).toFixed(1)}B`
-    if (value >= 1_000_000) return `${symbol}${(value / 1_000_000).toFixed(1)}M`
-    if (value >= 1_000) return `${symbol}${(value / 1_000).toFixed(1)}K`
+    if (abs >= 1_000_000_000) return withCurrencySymbol(value, `${(abs / 1_000_000_000).toFixed(1)}B`)
+    if (abs >= 1_000_000) return withCurrencySymbol(value, `${(abs / 1_000_000).toFixed(1)}M`)
+    if (abs >= 1_000) return withCurrencySymbol(value, `${(abs / 1_000).toFixed(1)}K`)
   }
-  const fractionDigits = zeroDecimal ? 0 : value >= 100 ? 0 : 2
-  return `${symbol}${value.toLocaleString("en-US", {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-  })}`
+  const fractionDigits = zeroDecimal ? 0 : abs >= 100 ? 0 : 2
+  return withCurrencySymbol(
+    value,
+    abs.toLocaleString("en-US", { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }),
+  )
 }
 
 export function formatActionApproxUsd(value: number) {
