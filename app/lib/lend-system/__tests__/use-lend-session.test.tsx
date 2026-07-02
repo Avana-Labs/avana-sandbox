@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react"
+import { act, renderHook, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import { buildLendSessionSeed } from "@/app/lib/lend-system/demo-session"
 import { writeLendSessionState } from "@/app/lib/lend-system/storage"
@@ -7,6 +7,11 @@ import { ProductionLendReadAdapter } from "@/app/lib/lend-system/production-read
 import { ProductionLendTransactionAdapter } from "@/app/lib/lend-system/production-transaction-adapter"
 import { deserializeLendSystemState } from "@/app/lib/lend-system/codec"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
+import type {
+  LendSandboxActionResult,
+  LendTransactionAdapter,
+  LendTransactionIntent,
+} from "@/app/lib/lend-system/contracts"
 
 describe("useLendSession", () => {
   beforeEach(() => {
@@ -197,6 +202,68 @@ describe("useLendSession", () => {
     expect(result.current.transactionHistory[0]?.kind).toBe("claim")
     expect(result.current.state.now).toBe(456)
     expect(window.localStorage.length).toBe(0)
+  })
+
+  it("exposes a real isPending signal during execution (issue #142)", async () => {
+    const walletId = "demo-wallet"
+    const sessionSeed = buildLendSessionSeed(walletId)
+
+    // Deferred adapter so the pending render is observable before execute resolves.
+    let resolveExecute: (result: LendSandboxActionResult) => void = () => {}
+    const executeResult = {
+      preview: { allowed: true } as LendSandboxActionResult["preview"],
+      receipt: {} as LendSandboxActionResult["receipt"],
+      historyItem: {} as LendSandboxActionResult["historyItem"],
+      state: deserializeLendSystemState(sessionSeed),
+    } as LendSandboxActionResult
+    const transactionAdapter: LendTransactionAdapter = {
+      mode: "sandbox",
+      createIntent: () => ({ id: "intent-pending" }) as unknown as LendTransactionIntent,
+      previewTransaction: async () => ({ allowed: true }) as never,
+      executeTransaction: () => new Promise((resolve) => (resolveExecute = resolve)),
+    }
+
+    const { result } = renderHook(() => useLendSession({ walletId, sessionSeed, transactionAdapter }))
+    expect(result.current.isPending).toBe(false)
+
+    act(() => {
+      void result.current.executeTransaction(result.current.createIntent({ type: "claim", walletId }))
+    })
+
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+
+    await act(async () => {
+      resolveExecute(executeResult)
+    })
+
+    await waitFor(() => expect(result.current.isPending).toBe(false))
+  })
+
+  it("ignores a cross-tab storage echo of its own state (no reload ping-pong, issue #142)", async () => {
+    const walletId = "demo-wallet"
+    const seededState = buildMockLendSystemStateWithSeedPosition(walletId)
+    const sessionSeed = buildLendSessionSeed(walletId)
+    writeLendSessionState(walletId, seededState)
+
+    const { result } = renderHook(() => useLendSession({ walletId, sessionSeed }))
+    // Let the restore + persist effects settle.
+    await waitFor(() => expect(Object.keys(result.current.state.positions).length).toBeGreaterThan(0))
+
+    const stateBefore = result.current.state
+    // A "storage" event fires cross-tab whenever ANOTHER tab writes. Simulate another tab
+    // echoing back the identical state this tab already holds. The handler re-reads from
+    // localStorage (which is unchanged), so only the key on the event matters here.
+    const stateKey = [...Array(window.localStorage.length).keys()]
+      .map((i) => window.localStorage.key(i))
+      .find((k): k is string => Boolean(k?.endsWith(`:${walletId}`)))
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", { key: stateKey }))
+    })
+
+    // Because the incoming content matches, reloadFromStorage bails before setState — the
+    // state reference is preserved, so no re-render → no re-persist → no bounce to the
+    // other tab. (A regression would replace the reference on every 30s echo.)
+    expect(result.current.state).toBe(stateBefore)
   })
 
   it("hydrates legacy lend state that is missing wallet balances", () => {
