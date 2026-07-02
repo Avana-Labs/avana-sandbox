@@ -23,7 +23,10 @@ export function ResponsiveMultiplyAction({
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)", true)
 
-  if (isDesktop || sidebar) {
+  // On mobile, fall through to a launch CTA that navigates to the full-screen
+  // /actions/multiply page (parity with lend/borrow) instead of force-embedding
+  // the full widget inline — which overflowed the mobile dock and clipped the CTA.
+  if (isDesktop) {
     const action = (
       <MultiplyActionPageClient
         kind={kind}
