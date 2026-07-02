@@ -57,7 +57,9 @@ export function ActionSuccessStage({
 
             <div className="divide-y divide-border border-t border-border">
               <ActionInfoRow label={receipt.verb} value={receipt.amountLabel} tooltip="amount" />
-              <ActionInfoRow label={receipt.rateLabel} value={receipt.rateValue} tooltip="rate" />
+              {receipt.rateLabel && receipt.rateValue ? (
+                <ActionInfoRow label={receipt.rateLabel} value={receipt.rateValue} tooltip="rate" />
+              ) : null}
               <ActionInfoRow label={t("Market")} value={receipt.marketValue} tooltip="market" />
             </div>
           </div>
