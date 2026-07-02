@@ -174,7 +174,10 @@ export function ActionAmountCard({
                 if (useDialogPicker) setDialogOpen(true)
                 else setMenuOpen((open) => !open)
               }}
-              aria-haspopup={useDialogPicker ? undefined : useMenuSheet ? "dialog" : "listbox"}
+              // Deterministic across SSR/client: the options are a role="listbox"
+              // in both the desktop popover and the mobile sheet, so don't key this
+              // off the client-only viewport query (that caused a hydration mismatch).
+              aria-haspopup={useDialogPicker ? undefined : "listbox"}
               aria-expanded={!useDialogPicker ? menuOpen : undefined}
               aria-label={`Change asset, current ${assetLabel}`}
               disabled={readOnly}

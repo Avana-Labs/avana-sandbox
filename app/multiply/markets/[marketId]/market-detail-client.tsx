@@ -66,13 +66,13 @@ export function MarketDetailClient({ detail }: Props) {
               <CashflowCard detail={detail} />
               <EngagementTrendsCard
                 engagement={detail.engagement}
-                accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
+                accentClassName={[detail.hero.visuals[0]?.textClass ?? "", detail.hero.visuals[1]?.textClass ?? ""]}
               />
               <RiskSection detail={detail} />
               <AboutNewsSection
                 className="lg:hidden"
                 about={detail.about}
-                newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
+                newsImageUrl={detail.hero.visuals[0]?.iconUrl ?? detail.hero.visuals[1]?.iconUrl ?? undefined}
                 newsImageLabel={detail.hero.name}
                 mediaVariant="icon"
               />
