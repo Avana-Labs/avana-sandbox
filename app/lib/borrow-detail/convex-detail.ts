@@ -17,6 +17,7 @@ import {
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import { formatOraclePrice } from "@/app/lib/borrow-detail/pool.mock"
+import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { QuickStat, RelatedPoolSummary } from "./types"
@@ -110,6 +111,17 @@ export function injectPoolOraclePrice(
 }
 
 /**
+ * Restate the "Risk premium" quick stat (Market data > Risk exposure) from the SAME
+ * premium the Risk assessment card renders (detail.risk.premiumBps), so a page never
+ * shows two different values for the one metric. The mock quick stat comes from the
+ * catalog row while risk is overlaid from Convex; without this they can disagree.
+ */
+export function syncQuickStatsRiskPremium(quickStats: QuickStat[], premiumBps: number): QuickStat[] {
+  const value = formatBpsAsPct(premiumBps)
+  return quickStats.map((s) => (s.id === "riskPremium" ? { ...s, value } : s))
+}
+
+/**
  * Restate each Related-pools card's "Available" from the calibrated Convex pool snapshot
  * for that sibling — the SAME value the sibling shows as "Available to borrow" on its own
  * detail page (both derive from snap.availableUsd via the hydrated market state). Without
@@ -169,10 +181,11 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     fetchTokenPrices(),
     fetchContent("pool", detail.row.id),
   ])
+  const effectiveRisk = (risk as typeof detail.risk) ?? detail.risk
   return {
     ...detail,
     quickStats: injectPoolOraclePrice(
-      mergeConvexQuickStats(detail.quickStats, quickStats),
+      syncQuickStatsRiskPremium(mergeConvexQuickStats(detail.quickStats, quickStats), effectiveRisk.premiumBps),
       prices,
       detail.row.visuals[0].symbol,
       detail.row.visuals[1].symbol,
@@ -182,7 +195,7 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
-    risk: (risk as typeof detail.risk) ?? detail.risk,
+    risk: effectiveRisk,
     about: content ? { ...detail.about, description: content.description, stats: content.stats, history: content.history } : detail.about,
     faqs: content?.faqs ?? detail.faqs,
   }
