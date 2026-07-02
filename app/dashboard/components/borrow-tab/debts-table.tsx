@@ -1,6 +1,8 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
@@ -12,8 +14,8 @@ import {
   homeVisualToBorrowVisual,
 } from "@/app/lib/data/borrow-domain"
 import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
-import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
-import { HoverActionGroup } from "@/app/components/market-table-primitives"
+import { HfNumber, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import { cn } from "@/lib/utils"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
@@ -47,6 +49,7 @@ export function DebtsPanel({
   showHeading = true,
 }: DebtsTableProps) {
   const { t } = useTranslation()
+  const router = useRouter()
   const { compact, exact } = useCurrency()
   const m = (value: string) => (showBalance ? value : MASK)
   if (rows.length === 0) {
@@ -70,87 +73,91 @@ export function DebtsPanel({
         </div>
       ) : null}
       <div className="hidden md:block">
-        <div className="rounded-radius-lg bg-transparent">
+        <DesktopTableSurface className="rounded-radius-md">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[860px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[4%]" />
-                <col className="w-[28%]" />
-                <col className="w-[13%]" />
-                <col className="w-[13%]" />
-                <col className="w-[15%]" />
-                <col className="w-[15%]" />
+                <col className="w-[32%]" />
+                <col className="w-[20%]" />
+                <col className="w-[18%]" />
+                <col className="w-[18%]" />
                 <col className="w-[12%]" />
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    #
-                  </th>
-                  <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Collateral Position")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Borrowed")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Health Factor")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Accrued Interest")}
-                  </th>
-                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Liq. Threshold")}
                   </th>
                   <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, index) => {
+                {rows.map((row) => {
                   const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
                     ReturnType<typeof homeVisualToBorrowVisual>,
                     ReturnType<typeof homeVisualToBorrowVisual>,
                   ]
                   const meta = BORROW_SUPPLY_META[row.pool.id]
                   const hfTone = healthFactorToneClass(row.healthFactor)
-                  const tokenCount = row.borrowedUsd.toFixed(0)
+                  const detailHref = `/borrow/markets/${row.pool.id}`
                   const debtSymbol = row.debtAssetSymbol
-                  const rowKey = row.id ?? `${row.pool.id}-${index}`
                   return (
-                    <tr key={rowKey} className="group cursor-pointer transition-colors">
-                      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
-                        {index + 1}
-                      </td>
-                      <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_BG}`}>
+                    <tr
+                      key={row.id ?? row.pool.id}
+                      className="group cursor-pointer transition-colors"
+                      onClick={() => router.push(detailHref)}
+                    >
+                      <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
                         <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
                       </td>
-                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(compact(row.borrowedUsd))}</div>
                         <div className="text-[11px] text-muted-foreground">
-                          {showBalance ? `${tokenCount} ${debtSymbol}` : MASK}
+                          {showBalance ? `${row.borrowedUsd.toFixed(0)} ${debtSymbol}` : MASK}
                         </div>
                       </td>
-                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                         <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                       </td>
-                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
-                        <div className="font-data text-[13px] tabular-nums text-foreground">{m(exact(row.accruedInterestUsd))}</div>
-                        <div className={cn("font-data text-[11px] font-medium tabular-nums", aprToneClass(row.borrowApr))}>
-                          {row.borrowApr.toFixed(2)}% {t("APR")}
-                        </div>
-                      </td>
-                      <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
+                      <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">{m(exact(row.liquidationThresholdUsd))}</div>
                         <div className="text-[11px] text-muted-foreground">{t("collateral value")}</div>
                       </td>
                       <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
                         <HoverActionGroup align="start">
-                          <PillButton variant="ghost" onClick={() => onManage(row)}>
-                            {t("Manage")}
-                          </PillButton>
-                          <PillButton variant="success" onClick={() => onRepay(row)}>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="brand-secondary"
+                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onRepay(row)
+                            }}
+                          >
                             {t("Repay")}
-                          </PillButton>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="brand"
+                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onManage(row)
+                            }}
+                          >
+                            {t("Borrow")}
+                          </Button>
                         </HoverActionGroup>
                       </td>
                     </tr>
@@ -159,7 +166,7 @@ export function DebtsPanel({
               </tbody>
             </table>
           </div>
-        </div>
+        </DesktopTableSurface>
       </div>
 
       <ul className="space-y-5 md:hidden">
@@ -200,11 +207,6 @@ export function DebtsPanel({
                   tone={aprToneClass(row.borrowApr)}
                 />
                 <DebtStatLine
-                  label={t("Accrued Interest")}
-                  value={showBalance ? `+${exact(row.accruedInterestUsd)}` : MASK}
-                  tone="text-rose-500"
-                />
-                <DebtStatLine
                   label={t("Daily Interest")}
                   value={showBalance ? `+${exact(row.dailyInterestUsd)}/${t("day")}` : MASK}
                   tone="text-rose-500"
@@ -213,20 +215,28 @@ export function DebtsPanel({
               </dl>
 
               <div className="flex items-stretch gap-2">
-                <button
+                <Button
                   type="button"
-                  onClick={() => onRepay(row)}
-                  className="flex-[2] rounded-radius-sm bg-accent-primary px-4 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
+                  variant="brand-secondary"
+                  className="h-10 flex-1 rounded-radius-sm px-4 text-[13px]"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onRepay(row)
+                  }}
                 >
-                  {t("Repay Loan")}
-                </button>
-                <button
+                  {t("Repay")}
+                </Button>
+                <Button
                   type="button"
-                  onClick={() => onManage(row)}
-                  className="flex-1 rounded-radius-sm border border-border bg-surface-raised px-4 py-2.5 text-center text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+                  variant="brand"
+                  className="h-10 flex-[2] rounded-radius-sm px-4 text-[13px]"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onManage(row)
+                  }}
                 >
-                  {t("Manage")}
-                </button>
+                  {t("Borrow")}
+                </Button>
               </div>
             </li>
           )
