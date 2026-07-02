@@ -53,14 +53,30 @@ const SHARE_URL = "https://app.avana.cc"
 /**
  * Launch-style tweet auto-populated into the X composer. (X Web Intents can't attach an
  * image — the preview card comes from SHARE_URL's twitter:image meta, served by /og.)
+ * Used only as the fallback when Convex config carries no tweetTemplate.
  */
-const SHARE_TEXT = [
+const DEFAULT_SHARE_TEXT = [
   "Just claimed my sandbox spot at Avana.",
   "A new Aave v4 lending market built for AMM markets.",
   "Borrow against AMM LP positions, lend, and loop — all risk-free before mainnet.",
   `Try it 👉 ${SHARE_URL}`,
 ].join("\n")
-const X_INTENT_HREF = `https://x.com/intent/post?text=${encodeURIComponent(SHARE_TEXT)}`
+
+/**
+ * Build the X composer text/href from the live Convex config so the share sub-flow
+ * stays in sync with server config (no drift). Falls back to the launch copy when the
+ * config carries no template. The template is appended with the app URL (and @handle
+ * when configured) so the shared tweet always links back and credits the account.
+ */
+function buildShareText(config: OnboardingGateState["config"] | null | undefined) {
+  const template = config?.tweetTemplate?.trim()
+  if (!template) return DEFAULT_SHARE_TEXT
+  const handle = config?.xHandle?.trim()
+  const mention = handle ? `\n@${handle.replace(/^@/, "")}` : ""
+  return `${template}${mention}\nTry it 👉 ${SHARE_URL}`
+}
+const xIntentHref = (shareText: string) =>
+  `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`
 
 // Onboarding progress (%) per phase — drives the animated rail + AnimatePresence key.
 const PROGRESS: Record<string, number> = {
@@ -290,6 +306,13 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const [hasStarted, setHasStarted] = useState(false)
   const { t } = useTranslation()
 
+  // Drive the X composer + done-state resources from the live Convex config so the
+  // fetched config never drifts from what the UI shows (issue #139: config was fetched
+  // but never rendered).
+  const shareText = buildShareText(state?.config)
+  const intentHref = xIntentHref(shareText)
+  const resourcesLinks = state?.config?.resourcesLinks ?? []
+
   const run = async (label: NonNullable<typeof busy>, task: () => Promise<unknown>, minimumMs = 0) => {
     setBusy(label)
     setError(null)
@@ -489,10 +512,10 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         <>
           <Headline muted="Tell your network about Avana." active="Post the prepared message on X." />
           <div className="mt-8 max-w-2xl whitespace-pre-line rounded-3xl border border-border p-5 text-[15px] leading-7 sm:p-7">
-            {SHARE_TEXT}
+            {shareText}
           </div>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <a className={PRIMARY} href={X_INTENT_HREF} rel="noreferrer" target="_blank">
+            <a className={PRIMARY} href={intentHref} rel="noreferrer" target="_blank">
               Open X <MoveUpRight className="ml-2 size-4" />
             </a>
             <button
@@ -549,10 +572,24 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link className={PRIMARY} href="/dashboard">{t("Open dashboard")}</Link>
-            <a className={SECONDARY} href={X_INTENT_HREF} rel="noreferrer" target="_blank">
+            <a className={SECONDARY} href={intentHref} rel="noreferrer" target="_blank">
               Share on X <MoveUpRight className="ml-2 size-4" />
             </a>
           </div>
+          {resourcesLinks.length > 0 ? (
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              {resourcesLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    className="inline-flex items-center text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+                    href={link.href}
+                  >
+                    {link.label} <MoveUpRight className="ml-1 size-3.5" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </>
       ) : null}
         </motion.div>
