@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
+import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { cn } from "@/lib/utils"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
@@ -352,18 +353,16 @@ export function ActionConfigureStage({
               isPending,
               blockedReason: preview?.blockedReason ?? null,
             })}
-            className={cn(
-              "mt-1 flex h-14 w-full items-center justify-center rounded-[20px] text-[17px] font-semibold transition-opacity disabled:cursor-not-allowed",
-              shouldDisablePrimaryCta({
+            className={primaryCtaClass({
+              disabled: shouldDisablePrimaryCta({
                 stage: configureStage,
                 isValid,
                 isPending,
                 blockedReason: preview?.blockedReason ?? null,
-              })
-                ? "border border-brand/25 bg-brand/20 text-brand-readable"
-                : "bg-brand text-brand-foreground hover:opacity-90",
-              (isPending || stage === "wallet_sign" || stage === "approve_allowance") && "opacity-70",
-            )}
+              }),
+              pending: isPending || stage === "wallet_sign" || stage === "approve_allowance",
+              className: "mt-1",
+            })}
             data-testid="action-footer-primary"
           >
             {isPending || stage === "wallet_sign" || stage === "approve_allowance" ? "Processing…" : primaryLabel}

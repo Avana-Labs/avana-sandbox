@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { actionPagePath, getActionDescriptor, type ActionKind, type ActionProduct } from "@/app/lib/action-system/contracts"
-import { cn } from "@/lib/utils"
+import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 
 export function ActionPageLaunchCta({
   product,
@@ -36,10 +36,7 @@ export function ActionPageLaunchCta({
   return (
     <Link
       href={actionPagePath(product, kind, params)}
-      className={cn(
-        "flex h-12 w-full items-center justify-center rounded-full bg-foreground text-[15px] font-medium text-background transition-opacity hover:opacity-90",
-        className,
-      )}
+      className={primaryCtaClass({ className })}
     >
       {label ?? descriptor.primaryVerb}
     </Link>
