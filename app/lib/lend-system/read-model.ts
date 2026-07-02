@@ -264,9 +264,9 @@ export function buildLendActivityHistory(
       product: "lend" as const,
       kind:
         item.kind === "deposit"
-          ? ("open" as const)
+          ? ("supply" as const)
           : item.kind === "withdraw"
-            ? ("reduce" as const)
+            ? ("withdraw" as const)
             : ("claim" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
       amountUsd: item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
@@ -293,7 +293,7 @@ function buildLendRangeData(data: PortfolioLendTabData): ChartRangeData {
   }
 
   const netFlowUsd = confirmedHistory.reduce((sum, item) => {
-    return sum + (item.kind === "open" ? item.amountUsd : -item.amountUsd)
+    return sum + (item.kind === "supply" ? item.amountUsd : -item.amountUsd)
   }, 0)
   const baseSuppliedUsd = Math.max(0, totalSuppliedUsd - netFlowUsd)
   const rangeStartValue = Math.max(0, baseSuppliedUsd)
@@ -331,7 +331,7 @@ function buildRangePoints(params: {
   const historyCount = params.history.length
   for (const [index, item] of params.history.entries()) {
     const pointIndex = historyCount === 1 ? Math.floor(pointCount * 0.6) : Math.round((index / Math.max(1, historyCount - 1)) * (pointCount - 2))
-    const delta = item.kind === "open" ? item.amountUsd : -item.amountUsd
+    const delta = item.kind === "supply" ? item.amountUsd : -item.amountUsd
     for (let cursor = pointIndex; cursor < points.length; cursor += 1) {
       points[cursor]!.value = Math.max(0, points[cursor]!.value + delta)
     }

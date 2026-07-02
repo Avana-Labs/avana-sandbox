@@ -73,4 +73,45 @@ describe("buildPortfolioLendData", () => {
       6,
     )
   })
+
+  it("labels a lend deposit as Supply (not Open) and a withdraw as Withdraw", () => {
+    const state = buildMockLendSystemStateWithSeedPosition("wallet-1")
+    const market = state.markets.eth!
+    const history: LendTransactionHistoryItem[] = [
+      {
+        id: "tx-1",
+        intentId: "intent-1",
+        walletId: "wallet-1",
+        marketId: market.marketId,
+        positionId: "wallet-1:eth",
+        kind: "deposit",
+        status: "success",
+        asset: market.asset.symbol,
+        amount: 2,
+        simulated: true,
+        timestamp: state.now,
+        hash: "0xdeposit",
+      },
+      {
+        id: "tx-2",
+        intentId: "intent-2",
+        walletId: "wallet-1",
+        marketId: market.marketId,
+        positionId: "wallet-1:eth",
+        kind: "withdraw",
+        status: "success",
+        asset: market.asset.symbol,
+        amount: 0.5,
+        simulated: true,
+        timestamp: state.now + 60_000,
+        hash: "0xwithdraw",
+      },
+    ]
+
+    const rows = buildLendActivityHistory("wallet-1", history, state)
+
+    // A deposit is a supply, not "open"; a withdraw stays a withdraw.
+    expect(rows.find((row) => row.id === "tx-1")?.kind).toBe("supply")
+    expect(rows.find((row) => row.id === "tx-2")?.kind).toBe("withdraw")
+  })
 })
