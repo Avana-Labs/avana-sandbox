@@ -90,7 +90,7 @@ export function BorrowableAssetsPanel({
                 return (
                   <li
                     key={asset.id}
-                    className="space-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-4 shadow-elev-1"
+                    className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5">

@@ -166,7 +166,7 @@ export function DebtsPanel({
           const pairLabel = `${row.pool.visuals[0].symbol} / ${row.pool.visuals[1].symbol} LP`
           const rowKey = row.id ?? `${row.pool.id}-${index}`
           return (
-            <li key={rowKey} className="space-y-3 rounded-radius-md border-0 bg-card px-4 py-4 shadow-none">
+            <li key={rowKey} className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1">
               <div>
                 <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Active debt</div>
                 <div className="mt-1 flex items-baseline gap-2">

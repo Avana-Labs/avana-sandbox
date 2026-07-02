@@ -163,7 +163,7 @@ export function SuppliesPanel({
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`
           return (
-            <li key={row.pool.id} className="space-y-3 rounded-radius-md border-0 bg-card px-4 py-4 shadow-none">
+            <li key={row.pool.id} className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="flex items-center">
