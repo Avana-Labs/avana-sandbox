@@ -83,4 +83,39 @@ describe("DashboardHero", () => {
     expect(screen.getAllByText("/actions/multiply/multiply?return=%2Fdashboard%3Ftab%3Dlooping").length).toBeGreaterThan(0)
     expect(screen.getAllByText("/actions/multiply/deleverage?return=%2Fdashboard%3Ftab%3Dlooping").length).toBeGreaterThan(0)
   })
+
+  it("pre-loads the user's actual position into Increase loop when a target exists", () => {
+    render(
+      <DashboardHero
+        tab="looping"
+        headlineValue="$12,000.00"
+        headlineDelta="2.48 health factor"
+        statOneValue="1"
+        statTwoValue="8.75%"
+        rangeData={buildRangeData(12_000, 240)}
+        multiplyPositionTarget={{ marketId: "weeth-weth", multiplier: 2.5 }}
+        multiplySnapshot={{
+          approvedUsd: 12_000,
+          liquidationThresholdUsd: 10_200,
+          totalBorrowedUsd: 4_950,
+          totalCollateralUsd: 12_000,
+          averageHealthFactor: 2.48,
+          currentLtvPct: 41.25,
+        }}
+      />,
+    )
+
+    // "Increase loop" targets the user's market and seeds the current leverage baseline.
+    expect(
+      screen.getAllByText(
+        "/actions/multiply/multiply?market=weeth-weth&multiplier=2.5&return=%2Fdashboard%3Ftab%3Dlooping",
+      ).length,
+    ).toBeGreaterThan(0)
+    // "Unwind loop" targets the same position's market.
+    expect(
+      screen.getAllByText(
+        "/actions/multiply/deleverage?market=weeth-weth&return=%2Fdashboard%3Ftab%3Dlooping",
+      ).length,
+    ).toBeGreaterThan(0)
+  })
 })

@@ -332,6 +332,14 @@ export function DashboardClient({
     return buildMultiplyHeroData(template, buildMultiplySnapshotFromTabData(multiplyTabData))
   }, [pageData, multiplyTabData])
 
+  // The user's primary open multiply position, so "Increase loop" grows that
+  // position (preselected market + current leverage) instead of a blank form.
+  const multiplyPositionTarget = useMemo(() => {
+    const primary =
+      multiplyTabData.lpCollaterals.find((row) => row.status === "open") ?? multiplyTabData.lpCollaterals[0]
+    return primary ? { marketId: primary.marketId, multiplier: primary.multiplier } : null
+  }, [multiplyTabData])
+
   useEffect(() => {
     setActiveTab(readTabFromLocation())
     const onPopState = () => setActiveTab(readTabFromLocation())
@@ -391,6 +399,7 @@ export function DashboardClient({
         multiplySnapshot={multiplySnapshot}
         lendSnapshot={lendSnapshot}
         multiplyHero={multiplyHero}
+        multiplyPositionTarget={multiplyPositionTarget}
       />
 
       {activeTab === "overview" ? (
