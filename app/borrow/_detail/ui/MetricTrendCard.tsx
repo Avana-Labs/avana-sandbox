@@ -3,6 +3,7 @@
 import * as React from "react"
 import { LightweightChart } from "@/app/borrow/_detail/ui/lw"
 import { SectionCard } from "@/app/borrow/_detail/ui/SectionCard"
+import type { Series } from "@/app/lib/borrow-detail"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -14,16 +15,11 @@ const DEFAULT_VIEW_LABEL: Record<MetricTrendView, string> = {
   utilization: "Utilization",
 }
 
-type MetricTrendPoint = {
-  time: number
-  value: number
-}
-
 type MetricTrendCardProps = {
   id?: string
   title: string
   subtitle: string
-  seriesByView: Record<MetricTrendView, MetricTrendPoint[]>
+  seriesByView: Record<MetricTrendView, Series>
   accentClassNameByView?: Partial<Record<MetricTrendView, string>>
   toneByView?: Partial<Record<MetricTrendView, "neutral" | "positive" | "negative">>
   formatValue: (view: MetricTrendView, value: number) => string

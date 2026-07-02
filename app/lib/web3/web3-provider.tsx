@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
+import { useTheme } from "next-themes"
 import { WagmiProvider, createConfig, http } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ConnectKitProvider, SIWEProvider, getDefaultConfig } from "connectkit"
@@ -57,18 +58,26 @@ const wagmiConfig = createConfig(
 )
 
 /**
- * A real frosted scrim. Blur alone is imperceptible on an already-dark page, so we
- * darken the overlay too — this becomes the shared modal/sheet scrim treatment.
+ * A frosted scrim: the darkened overlay does the work, with a light blur on top. The blur
+ * is deliberately kept small (3px, no saturate) — a heavy backdrop-filter recomputes every
+ * frame and lags the modal's open/screen-switch animation. Mirrors the global :root vars in
+ * globals.css (which is what actually reaches ConnectKit's out-of-root portal).
  */
 const connectKitTheme = {
   "--ck-overlay-background": "rgba(7, 9, 12, 0.64)",
-  "--ck-overlay-backdrop-filter": "blur(10px) saturate(118%)",
+  "--ck-overlay-backdrop-filter": "blur(3px)",
 } as const
 
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
+  // Mirror the app's resolved theme so the wallet modal matches light/dark instead of
+  // following the OS (ConnectKit's "auto" default). resolvedTheme is undefined until
+  // next-themes hydrates on the client; the modal never opens before then, so falling
+  // back to "light" only affects the pre-hydration default, not what the user sees.
+  const { resolvedTheme } = useTheme()
   const connectKit = (
     <ConnectKitProvider
+      mode={resolvedTheme === "dark" ? "dark" : "light"}
       customTheme={connectKitTheme}
       options={{
         enforceSupportedChains: false,

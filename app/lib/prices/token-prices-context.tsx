@@ -35,9 +35,48 @@ export function usePriceFreshness(): PriceFreshness {
   return React.useContext(PriceFreshnessContext)
 }
 
+/**
+ * Prices are decorative — a label under the pair logos plus a "may be stale" hint — so a
+ * failing Convex prices query must never take down the whole app. `useQuery` re-throws
+ * server errors during render (e.g. `getPriceStatus` missing on a stale Convex deploy, or
+ * the backend offline), and this provider sits ABOVE the onboarding gate in the root
+ * layout, so an uncaught throw here escalates to the global error boundary ("Something
+ * went wrong"). Catch it and fall back to the neutral defaults instead — cells show their
+ * static labels, no staleness banner. Mirrors `MarketLiquidityErrorBoundary`.
+ */
+class TokenPricesErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallbackChildren: React.ReactNode },
+  { errored: boolean }
+> {
+  state = { errored: false }
+
+  static getDerivedStateFromError() {
+    return { errored: true }
+  }
+
+  render() {
+    if (this.state.errored) {
+      // Render the app children directly (NOT the throwing Convex subtree) with neutral
+      // defaults, so the failed prices query can't re-throw in a loop.
+      return (
+        <TokenPricesContext.Provider value={{}}>
+          <PriceFreshnessContext.Provider value={{ stale: false, updatedAt: null, ageMs: null }}>
+            {this.props.fallbackChildren}
+          </PriceFreshnessContext.Provider>
+        </TokenPricesContext.Provider>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export function TokenPricesProvider({ children }: { children: React.ReactNode }) {
   if (!hasConvexClient) return <>{children}</>
-  return <ConvexTokenPrices>{children}</ConvexTokenPrices>
+  return (
+    <TokenPricesErrorBoundary fallbackChildren={children}>
+      <ConvexTokenPrices>{children}</ConvexTokenPrices>
+    </TokenPricesErrorBoundary>
+  )
 }
 
 function ConvexTokenPrices({ children }: { children: React.ReactNode }) {
