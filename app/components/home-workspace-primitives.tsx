@@ -37,7 +37,7 @@ type DetailListProps = {
 export function getToneClasses(tone: HomeSuccessRowTone = "default") {
   switch (tone) {
     case "positive":
-      return "text-emerald-600 dark:text-emerald-400"
+      return "text-success"
     case "warning":
       return "text-amber-600 dark:text-amber-400"
     case "danger":
@@ -113,7 +113,7 @@ export function ValueBadge({ label, tone = "default" }: { label: string; tone?: 
       variant="secondary"
       className={cn(
         "rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 font-compact text-[10.5px] font-medium uppercase tracking-[0.04em]",
-        tone === "positive" && "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+        tone === "positive" && "border-emerald-500/25 bg-emerald-500/10 text-success",
         tone === "warning" && "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400",
         tone === "danger" && "border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-400",
       )}

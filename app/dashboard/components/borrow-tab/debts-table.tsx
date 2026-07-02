@@ -274,7 +274,7 @@ export function CurrentLtvCard({
             text="Remaining room to borrow before your position approaches liquidation, based on current collateral and outstanding debt."
           />
         </div>
-        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-600">
+        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-success">
           {statusLabel}
         </span>
       </div>

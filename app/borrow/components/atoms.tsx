@@ -192,7 +192,7 @@ export function DeltaPill({ isPositive, value }: { isPositive: boolean; value: s
     <span
       className={cn(
         "inline-flex items-center gap-0.5 text-xs font-medium tabular-nums",
-        isPositive ? "text-emerald-600" : "text-rose-600",
+        isPositive ? "text-success" : "text-rose-600",
       )}
     >
       <span aria-hidden className="text-[10px]">

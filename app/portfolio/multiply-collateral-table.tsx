@@ -21,7 +21,7 @@ function formatHealthFactor(value: number) {
 
 function statusClass(status: PortfolioMultiplyCollateral["status"]) {
   return status === "open"
-    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+    ? "border-emerald-500/20 bg-emerald-500/10 text-success"
     : "border-slate-500/20 bg-muted0/10 text-slate-600 dark:text-slate-300"
 }
 
@@ -123,7 +123,7 @@ export function MultiplyCollateralTable({
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">
                     {formatPct(row.ltvPct)}
                   </td>
-                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-emerald-600 dark:text-emerald-400">
+                  <td className="px-4 py-3 font-data tabular-nums text-[14px] text-success">
                     {formatHealthFactor(row.healthFactor)}
                   </td>
                   <td className="px-4 py-3 font-data tabular-nums text-[14px] text-foreground dark:text-white/84">

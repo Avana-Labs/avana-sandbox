@@ -69,7 +69,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
               {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
             </p>
-            <span className="inline-flex items-center gap-1 font-data text-[11px] font-medium tabular-nums text-emerald-600">
+            <span className="inline-flex items-center gap-1 font-data text-[11px] font-medium tabular-nums text-success">
               <span aria-hidden className="text-[10px] leading-none">
                 {metrics.weightedChange24h >= 0 ? "▲" : "▼"}
               </span>

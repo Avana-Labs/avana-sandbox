@@ -32,7 +32,7 @@ function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
         const tone = event.tone ?? "info"
         const toneClass =
           tone === "positive"
-            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+            ? "bg-emerald-500/10 text-success"
             : tone === "warning"
               ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
               : tone === "danger"

@@ -97,7 +97,7 @@ function HoverTooltip({
         <span>{TIME_LABELS[timeIndex]}</span>
       </div>
       <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-[10px] dark:border-white/10">
-        <span className="flex items-center gap-1.5 text-emerald-600 dark:text-[#73dca9]">
+        <span className="flex items-center gap-1.5 text-success">
           <span className="size-2 rounded-full bg-emerald-500 dark:bg-[#73dca9]" />
           Borrow APY
         </span>
