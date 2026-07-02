@@ -250,6 +250,13 @@ export function LendActionPageClient({
     if (kind === "deposit") return depositItems.length > 1
     return false
   }, [depositItems.length, embedded, initialMarketId, kind, withdrawItems.length])
+  // Max fills the relevant balance: wallet balance for deposit, max withdrawable
+  // for withdraw. Both are already surfaced as preview.maxAmount by the mapper.
+  const handleMax = useCallback(() => {
+    if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
+    setAmount(String(Number(previewUi.maxAmount.toFixed(6))))
+  }, [previewUi?.maxAmount])
+
   const handleBack = useCallback(() => {
     if (stage === "review") {
       setStage("configure")
@@ -435,6 +442,8 @@ export function LendActionPageClient({
           outcome={outcome}
           homeLayout={isHomeLayout}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
+          showBalance
+          onMax={handleMax}
         />
       ) : null}
 
