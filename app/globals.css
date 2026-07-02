@@ -38,6 +38,14 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
+    /* Semantic status colors (light) — matched to Tailwind emerald/amber/rose-600 */
+    --success: 160 84% 30%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+    --danger: 347 77% 50%;
+    --danger-foreground: 0 0% 100%;
+
     --border: 0 0% 92%; /* #EBEBEB — soft Uniswap-style hairlines */
     --input: 0 0% 96%; /* #F5F5F5 recessed inputs on white */
     --ring: 191 99% 41%;
@@ -110,6 +118,14 @@
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 82%;
+
+    /* Semantic status colors (dark) — matched to Tailwind emerald/amber/rose-400 */
+    --success: 160 64% 52%;
+    --success-foreground: 0 0% 10%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 10%;
+    --danger: 351 95% 71%;
+    --danger-foreground: 0 0% 10%;
 
     --border: 0 0% 17%; /* #2B2B2B — subtle Uniswap-style hairlines */
     --input: 0 0% 9%; /* #171717 recessed inputs (below card) */
