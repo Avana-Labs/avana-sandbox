@@ -87,8 +87,32 @@ function shortHash(txHash: string) {
   return `${txHash.slice(0, 6)}…${txHash.slice(-4)}`
 }
 
+// A canonical on-chain tx hash is 0x + 64 hex chars. Sandbox/simulated hashes
+// (sim-…, sim_lend_…, 0xsim…) don't match and never exist on Etherscan, so they
+// link to the in-app sandbox receipt page instead of a dead Etherscan link.
+const REAL_TX_HASH = /^0x[0-9a-fA-F]{64}$/
+
+function isSimulatedTxHash(txHash: string) {
+  return !REAL_TX_HASH.test(txHash)
+}
+
 function getTxnHref(txHash: string) {
-  return `https://etherscan.io/tx/${txHash}`
+  return isSimulatedTxHash(txHash)
+    ? `/sandbox/transactions/${encodeURIComponent(txHash)}`
+    : `https://etherscan.io/tx/${txHash}`
+}
+
+function TxnLink({ txHash, className }: { txHash: string; className?: string }) {
+  const external = !isSimulatedTxHash(txHash)
+  return (
+    <a
+      href={getTxnHref(txHash)}
+      {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+      className={className}
+    >
+      {shortHash(txHash)}
+    </a>
+  )
 }
 
 function formatRelativeTime(iso: string) {
@@ -286,14 +310,10 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                   >
                     {STATUS_OPTIONS.find((option) => option.id === row.status)?.label}
                   </span>
-                  <a
-                    href={getTxnHref(row.txHash)}
-                    target="_blank"
-                    rel="noreferrer"
+                  <TxnLink
+                    txHash={row.txHash}
                     className="font-data text-[12px] tabular-nums text-muted-foreground underline-offset-2 hover:underline"
-                  >
-                    {shortHash(row.txHash)}
-                  </a>
+                  />
                 </div>
               </div>
             </div>
@@ -366,14 +386,10 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                       </span>
                     </td>
                     <td className="px-5 py-4 align-middle text-right font-data text-[13px] tabular-nums text-foreground">
-                      <a
-                        href={getTxnHref(row.txHash)}
-                        target="_blank"
-                        rel="noreferrer"
+                      <TxnLink
+                        txHash={row.txHash}
                         className="inline-block whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
-                      >
-                        {shortHash(row.txHash)}
-                      </a>
+                      />
                     </td>
                   </tr>
                 ))
