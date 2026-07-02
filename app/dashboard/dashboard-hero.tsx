@@ -199,13 +199,17 @@ function InfoTip({ text }: { text: string }) {
   )
 }
 
-function StatCard({ label, value, helpText }: { label: string; value: string; helpText: string }) {
+const MASKED_VALUE = "••••••••"
+
+function StatCard({ label, value, helpText, hidden = false }: { label: string; value: string; helpText: string; hidden?: boolean }) {
   return (
     <div className="bg-background p-3.5 dark:bg-card">
       <div className="mb-0.5 flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
         {label} <InfoTip text={helpText} />
       </div>
-      <div className="font-data text-[17px] font-medium tabular-nums text-[#01AACF] dark:text-[#7DDCFF]">{value}</div>
+      <div className="font-data text-[17px] font-medium tabular-nums text-[#01AACF] dark:text-[#7DDCFF]">
+        {hidden ? MASKED_VALUE : value}
+      </div>
     </div>
   )
 }
@@ -325,6 +329,9 @@ export function DashboardHero({
                 onActiveIndexChange={setHoverIndex}
                 gradientId="portfolioHeroFill"
                 tone={trendTone}
+                // Mask keeps the trend shape but hides every dollar value: axis ticks and tooltip.
+                formatYAxis={showDollarAmounts ? undefined : () => "••"}
+                formatValue={showDollarAmounts ? undefined : () => MASKED_VALUE}
               />
             ) : null}
           </div>
@@ -340,8 +347,8 @@ export function DashboardHero({
               statTwoValue &&
               uiConfig.statTwoHelpText ? (
                 <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-border bg-border/80 dark:border-white/10 dark:bg-card/10">
-                  <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} />
-                  <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} />
+                  <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} hidden={!showDollarAmounts} />
+                  <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} hidden={!showDollarAmounts} />
                 </div>
               ) : null}
             </div>
