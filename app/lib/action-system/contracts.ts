@@ -47,6 +47,7 @@ export type ActionPreviewUi = {
   assetLabel?: string
   assetSymbol?: string
   borrowSymbol?: string
+  amountUsd?: number
   amountUsdLabel: string
   rateLabel: string
   rateValue: string
@@ -81,6 +82,7 @@ export type ActionSuccessUi = {
   secondaryCtaLabel: string
   receiptContext?: {
     verb: string
+    amountUsd?: number
     amountLabel: string
     rateLabel: string
     rateValue: string
