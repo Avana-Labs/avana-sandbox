@@ -218,11 +218,12 @@ export function PillButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: PillVariant; size?: "sm" | "md" }) {
   const base =
-    "inline-flex items-center justify-center rounded-radius-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25"
+    "inline-flex items-center justify-center rounded-radius-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
   const sizeCls = size === "md" ? "h-9 px-4 text-[13px]" : "h-7 px-2.5 text-[12px]"
   const variantCls = {
-    primary: "bg-accent-primary text-accent-primary-foreground shadow-elev-1 hover:bg-accent-primary-hover disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none",
-    ghost: "border border-border bg-surface-raised text-foreground hover:bg-surface-inset",
+    primary:
+      "bg-brand text-brand-foreground shadow-elev-1 hover:bg-brand/90 active:bg-brand/80 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground disabled:shadow-none",
+    ghost: "border border-border bg-surface-raised text-foreground hover:bg-surface-hover",
     danger: "border border-destructive/30 bg-transparent text-destructive hover:bg-destructive/5 dark:text-rose-300",
     success: "bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-muted disabled:text-muted-foreground",
   }[variant]
