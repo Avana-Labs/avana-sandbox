@@ -103,7 +103,14 @@ export function BorrowActionPageClient({
   // the markets already pledged). Repay/remove/claim act on existing positions, so
   // they keep the pledged-pool list.
   const usesAllMarketPools = kind === "borrow" || kind === "supply"
-  const collateralPoolOptions = usesAllMarketPools ? session.availableCollateralPools : session.collateralPools
+  // The home express borrow should surface the wallet's already-pledged pools (with
+  // real collateral values) when it has them, so a user can borrow against existing
+  // collateral — the same source the dashboard/Repay tab use — instead of a list of
+  // $0 unpledged catalog markets that dead-ends at "Available $0.00". A fresh wallet
+  // with no positions still falls back to the full catalog so it can pledge.
+  const preferPledgedPools = isHomeBorrowZeroState && session.collateralPools.length > 0
+  const collateralPoolOptions =
+    usesAllMarketPools && !preferPledgedPools ? session.availableCollateralPools : session.collateralPools
   const hasInvalidInitialMarket = Boolean(
     initialMarketId &&
       !initialAssetId &&
