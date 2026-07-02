@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
@@ -15,6 +15,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  cleanup()
   vi.unstubAllGlobals()
 })
 
@@ -72,6 +73,40 @@ describe("ActionSuccessStage", () => {
     expect(screen.getByText("Confirmed")).toBeInTheDocument()
     // amountLabel animates on mount; wait for the final value to settle.
     await waitFor(() => expect(screen.getByText("1000.00 USDC")).toBeInTheDocument())
+  })
+
+  it("omits the rate receipt row when the action has no rate (multiply)", async () => {
+    render(
+      <DisplayPreferencesProvider>
+        <ActionSuccessStage
+          closeHref="/multiply"
+          success={{
+            title: "Multiply successful",
+            description: "3.00x on ETH processed.",
+            receiptHash: "sim-456",
+            metrics: [],
+            primaryCtaLabel: "View multiply dashboard",
+            primaryCtaHref: "/multiply",
+            secondaryCtaLabel: "Done",
+            receiptContext: {
+              verb: "Multiply",
+              amountLabel: "1.000000 ETH",
+              rateLabel: "",
+              rateValue: "",
+              marketValue: "ETH · USDT",
+            },
+          }}
+        />
+      </DisplayPreferencesProvider>,
+    )
+
+    // The verb and market rows render; the empty rate row (no label/value, stray
+    // info icon) must not.
+    await waitFor(() => expect(screen.getByText("1.000000 ETH")).toBeInTheDocument())
+    expect(screen.getByText("Multiply")).toBeInTheDocument()
+    expect(screen.getByText("Market")).toBeInTheDocument()
+    // Only two info-row tooltips (amount + market) — no orphan "rate" tooltip row.
+    expect(screen.getAllByRole("button", { name: /more info/i })).toHaveLength(2)
   })
 
   it("links the receipt hash to its sandbox receipt page", () => {
