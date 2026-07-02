@@ -30,6 +30,7 @@ type ActionAmountCardProps = {
   borrowSymbol?: string
   balanceLabel?: string
   balanceValue?: string
+  onMax?: () => void
   readOnly?: boolean
   receiveWeth?: boolean
   onReceiveWethChange?: (value: boolean) => void
@@ -53,6 +54,9 @@ export function ActionAmountCard({
   unitLabel,
   assetSymbol,
   borrowSymbol,
+  balanceLabel,
+  balanceValue,
+  onMax,
   readOnly = false,
   receiveWeth = false,
   onReceiveWethChange,
@@ -207,6 +211,24 @@ export function ActionAmountCard({
     </div>
   )
 
+  const balanceRow =
+    balanceValue != null ? (
+      <div className="mt-3 flex items-center justify-between gap-2 text-[13px] text-muted-foreground">
+        <span className="min-w-0 truncate">
+          {balanceLabel ?? "Balance"}: <span className="text-foreground/80">{balanceValue}</span>
+        </span>
+        {onMax && !readOnly ? (
+          <button
+            type="button"
+            onClick={onMax}
+            className="shrink-0 rounded-full border border-border bg-surface-raised px-2.5 py-1 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover"
+          >
+            Max
+          </button>
+        ) : null}
+      </div>
+    ) : null
+
   const assetPickerDialog =
     useDialogPicker && switchable && pickerTokens ? (
       <TokenPickerDialog
@@ -232,6 +254,7 @@ export function ActionAmountCard({
         >
           {amountRow}
           {usdRow}
+          {balanceRow}
         {showReceiveWethToggle ? (
           <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
             <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -270,6 +293,7 @@ export function ActionAmountCard({
         <div className="text-[14px] font-medium text-muted-foreground">{label}</div>
         {amountRow}
         {usdRow}
+        {balanceRow}
       </div>
 
       {showReceiveWethToggle ? (

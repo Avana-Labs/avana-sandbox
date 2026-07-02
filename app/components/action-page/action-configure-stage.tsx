@@ -52,6 +52,8 @@ type ActionConfigureStageProps = {
   amountReadOnly?: boolean
   amountVariant?: "card" | "inset" | "raised"
   amountFooter?: ReactNode
+  showBalance?: boolean
+  onMax?: () => void
   assetLabel?: string
   amountUnitLabel?: string
   hideAssetSelector?: boolean
@@ -80,6 +82,8 @@ export function ActionConfigureAmountSection({
   assetPickerVariant = "menu",
   pickerTokens,
   amountFooter,
+  showBalance = false,
+  onMax,
   assetLabel,
   amountUnitLabel,
   inputLabel,
@@ -104,6 +108,8 @@ export function ActionConfigureAmountSection({
   | "assetPickerVariant"
   | "pickerTokens"
   | "amountFooter"
+  | "showBalance"
+  | "onMax"
   | "assetLabel"
   | "amountUnitLabel"
 >) {
@@ -118,6 +124,9 @@ export function ActionConfigureAmountSection({
       assetLabel={pillLabel}
       unitLabel={amountUnitLabel}
       footer={amountFooter}
+      balanceLabel={showBalance ? preview?.balanceLabel : undefined}
+      balanceValue={showBalance ? preview?.balanceValue : undefined}
+      onMax={showBalance ? onMax : undefined}
       assetSymbol={assetSymbol ?? pillLabel}
       borrowSymbol={borrowSymbol}
       readOnly={amountReadOnly}
@@ -171,6 +180,8 @@ export function ActionConfigureStage({
   assetPickerVariant = "menu",
   pickerTokens,
   amountFooter,
+  showBalance = false,
+  onMax,
   assetLabel,
   amountUnitLabel,
   inputLabel,
@@ -237,6 +248,8 @@ export function ActionConfigureStage({
           assetPickerVariant={assetPickerVariant}
           pickerTokens={pickerTokens}
           amountFooter={amountFooter}
+          showBalance={showBalance}
+          onMax={onMax}
           assetLabel={assetLabel}
           amountUnitLabel={amountUnitLabel}
           inputLabel={inputLabel}
