@@ -366,6 +366,7 @@ export function ActionFooter({
   secondaryHref,
   primaryDisabled,
   primaryPending,
+  sticky = false,
   className,
 }: {
   primaryLabel: string
@@ -376,13 +377,24 @@ export function ActionFooter({
   secondaryHref?: string
   primaryDisabled?: boolean
   primaryPending?: boolean
+  /** Pin the CTA row to a sticky bottom bar on mobile so it isn't buried below
+   *  full-width metric cards. Resets to a normal in-flow row at md+. */
+  sticky?: boolean
   className?: string
 }) {
   const primaryClassName = primaryCtaClass({ disabled: primaryDisabled, pending: primaryPending })
   const secondaryClassName = SECONDARY_CTA_CLASS
 
   return (
-    <div className={cn("grid grid-cols-2 gap-3", className)} data-testid="action-footer">
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-3",
+        sticky &&
+          "sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none",
+        className,
+      )}
+      data-testid="action-footer"
+    >
       {secondaryHref && !onSecondary ? (
         <Link href={secondaryHref} className={secondaryClassName}>
           {secondaryLabel}

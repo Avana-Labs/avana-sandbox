@@ -316,11 +316,13 @@ export function MultiplyActionPageClient({
     router.push(closeHref)
   }, [closeHref, router, stage])
 
-  // Fill the collateral input with the market's maximum absorbable amount.
+  // Fill the collateral input with the max affordable amount. Floor to 6 decimals
+  // (not round) so the filled value can never round *up* past the cap and trip the
+  // over-cap guard — a real risk now that the cap is the smaller wallet balance.
   const handleMaxCollateral = useCallback(() => {
     if (maxCollateralAmount == null || maxCollateralAmount <= 0) return
     setHasUserInput(true)
-    setAmount(String(Number(maxCollateralAmount.toFixed(6))))
+    setAmount(String(Math.floor(maxCollateralAmount * 1e6) / 1e6))
   }, [maxCollateralAmount])
 
   const handlePrimary = useCallback(async () => {
