@@ -1,4 +1,4 @@
-import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
+import { buildBorrowCatalogBaselineState } from "@/app/lib/borrow-system/mock"
 import { mergeConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration"
 import { fetchConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration-server"
 import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
@@ -18,7 +18,7 @@ export type BorrowPageSource = {
 
 const catalogSources = createCatalogPageSources({
   product: "borrow",
-  buildBaselineState: buildMockBorrowSystemState,
+  buildBaselineState: buildBorrowCatalogBaselineState,
   fetchSnapshots: fetchConvexMarketSnapshots,
   mergeSnapshots: mergeConvexMarketSnapshots,
   readPageData: async (state, walletId) => {

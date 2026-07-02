@@ -5,7 +5,7 @@ import {
 } from "@/app/lib/data/core/source-runtime"
 import { createCatalogPageSources } from "@/app/lib/data/providers/catalog-page-source"
 import type { LendReadAdapter } from "@/app/lib/lend-system/contracts"
-import { buildMockLendSystemState } from "@/app/lib/lend-system/mock"
+import { buildLendCatalogBaselineState } from "@/app/lib/lend-system/mock"
 import { SandboxLendReadAdapter } from "@/app/lib/lend-system/sandbox-read-adapter"
 import { mergeConvexLendSnapshots } from "@/app/lib/lend-system/market-hydration"
 import { fetchLendMarketSnapshots } from "@/app/lib/lend-system/market-hydration-server"
@@ -39,7 +39,7 @@ function createLendPageSource({
 
 const catalogSources = createCatalogPageSources({
   product: "lend",
-  buildBaselineState: buildMockLendSystemState,
+  buildBaselineState: buildLendCatalogBaselineState,
   fetchSnapshots: fetchLendMarketSnapshots,
   mergeSnapshots: mergeConvexLendSnapshots,
   readPageData: async (state, walletId) => {

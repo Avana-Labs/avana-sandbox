@@ -53,6 +53,10 @@ export function buildMockLendSystemState(walletId = "demo-wallet", now = Date.UT
   }
 }
 
+export function buildLendCatalogBaselineState(walletId = "catalog", now = Date.UTC(2026, 5, 19)): LendSystemState {
+  return buildMockLendSystemState(walletId, now)
+}
+
 export function buildMockLendMarket(marketId: string): LendMarket {
   const state = buildMockLendSystemState()
   const market = state.markets[marketId]
