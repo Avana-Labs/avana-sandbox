@@ -68,9 +68,19 @@ export function buildBorrowDashboardMetricsFromSnapshot(
 export function buildBorrowDashboardMetrics(state: BorrowSystemState, walletId: string): DashboardTabMetrics {
   const metrics = calculateCreditMetrics(state, walletId)
 
+  // The engine's net account value counts pooled collateral + cash, but NOT the
+  // LP tokens the wallet holds outside a position. Removing collateral moves value
+  // from collateral into that LP balance, so omitting it made Net Value drift down
+  // on an economically net-neutral action. Fold the held LP balances back in so a
+  // supply/remove of fairly-valued collateral keeps Net Value flat.
+  const account = state.accounts[walletId]
+  const walletLpBalancesUsd6 = account
+    ? Object.values(account.walletLpBalancesUsd6 ?? {}).reduce((sum, value) => sum + value, 0n)
+    : 0n
+
   return {
     overview: {
-      netValueUsd: usd6ToNumber(metrics.netAccountValueUsd6),
+      netValueUsd: usd6ToNumber(metrics.netAccountValueUsd6 + walletLpBalancesUsd6),
       totalBorrowedUsd: usd6ToNumber(metrics.totalBorrowedUsd6),
       liquidationBufferUsd: usd6ToNumber(metrics.liquidationBufferUsd6 > 0n ? metrics.liquidationBufferUsd6 : 0n),
       riskPremiumPct: wadToPct(metrics.riskPremiumWad),
