@@ -371,5 +371,9 @@ export function buildMockBorrowSystemCatalog() {
   return catalog
 }
 
+export function buildBorrowCatalogBaselineState(walletId = "catalog"): BorrowSystemState {
+  return buildMockBorrowSystemState(walletId)
+}
+
 export const MOCK_BORROW_SYSTEM_STATE = buildMockBorrowSystemState()
 export const MOCK_BORROW_SYSTEM_CATALOG = buildMockBorrowSystemCatalog()
