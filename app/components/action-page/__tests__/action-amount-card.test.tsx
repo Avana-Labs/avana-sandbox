@@ -87,6 +87,8 @@ describe("ActionAmountCard", () => {
 
     expect(screen.getByText(/1\.28 ETH/)).toBeInTheDocument()
     const maxButton = screen.getByRole("button", { name: "Max" })
+    // min-h-10 keeps the Max shortcut at the >=40px mobile tap-target floor.
+    expect(maxButton.className).toContain("min-h-10")
     fireEvent.click(maxButton)
     expect(onMax).toHaveBeenCalledTimes(1)
   })
