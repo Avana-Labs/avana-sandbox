@@ -81,6 +81,12 @@ function toMarketRecord(seed: CatalogSeed): MultiplyMarketRecord {
     liquidationThreshold: seed.liquidationThreshold,
   })
   const collateralKey = seed.collateral as keyof typeof MULTIPLY_COLLATERAL_FACTORS
+  // The collateral factor (max borrow ratio) must sit strictly below the
+  // liquidation threshold — a market can't let you borrow up to the point it
+  // liquidates. The per-token MULTIPLY_COLLATERAL_FACTORS override could exceed a
+  // market's LT (e.g. AAVE CF 70% vs GHO LT 65%), so clamp it below LT.
+  const rawCollateralFactor = MULTIPLY_COLLATERAL_FACTORS[collateralKey] ?? seed.maxLtv
+  const collateralFactor = Math.min(rawCollateralFactor, seed.liquidationThreshold - 0.01)
 
   return {
     id: seed.id,
@@ -99,7 +105,7 @@ function toMarketRecord(seed: CatalogSeed): MultiplyMarketRecord {
     },
     risk: {
       maxLtv: seed.maxLtv,
-      collateralFactor: MULTIPLY_COLLATERAL_FACTORS[collateralKey] ?? seed.maxLtv,
+      collateralFactor,
       liquidationThreshold: seed.liquidationThreshold,
       hardMaxMultiplier,
       publicMaxMultiplier,
@@ -121,6 +127,17 @@ function toMarketRecord(seed: CatalogSeed): MultiplyMarketRecord {
 }
 
 export const MULTIPLY_MARKET_CATALOG: MultiplyMarketRecord[] = CATALOG_SEEDS.map(toMarketRecord)
+
+// Seed-time invariant: a valid market always has liquidationThreshold > collateralFactor.
+// The clamp above guarantees it; this guard fails loudly if a future catalog edit
+// (or a bad per-token override) ever reintroduces an impossible CF ≥ LT market.
+for (const market of MULTIPLY_MARKET_CATALOG) {
+  if (market.risk.liquidationThreshold <= market.risk.collateralFactor) {
+    throw new Error(
+      `Invalid multiply market "${market.id}": liquidationThreshold (${market.risk.liquidationThreshold}) must exceed collateralFactor (${market.risk.collateralFactor}).`,
+    )
+  }
+}
 
 export function getMultiplyMarketById(marketId: string) {
   return MULTIPLY_MARKET_CATALOG.find((market) => market.id === marketId) ?? null
