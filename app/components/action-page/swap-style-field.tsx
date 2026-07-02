@@ -1,5 +1,7 @@
 "use client"
 
+import { Children, Fragment } from "react"
+import { ArrowDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ComponentPropsWithoutRef, ReactNode } from "react"
 
@@ -36,9 +38,24 @@ export function SwapStyleField({
 }
 
 export function SwapStyleFieldStack({ children, className }: { children: ReactNode; className?: string }) {
+  const items = Children.toArray(children)
   return (
     <div className={cn("flex flex-col gap-1", className)} data-testid="swap-style-field-stack">
-      {children}
+      {items.map((child, index) => (
+        <Fragment key={index}>
+          {child}
+          {index === 0 && items.length > 1 ? (
+            // Uniswap-style directional affordance between the two fields. Decorative
+            // only (not a swap button): borrow's collateral→borrow flow isn't
+            // reversible, so this indicates direction without implying a toggle.
+            <div aria-hidden className="relative z-10 -my-3 flex justify-center">
+              <span className="flex size-7 items-center justify-center rounded-radius-md border-4 border-background bg-surface-inset text-muted-foreground">
+                <ArrowDown className="size-3.5" />
+              </span>
+            </div>
+          ) : null}
+        </Fragment>
+      ))}
     </div>
   )
 }
