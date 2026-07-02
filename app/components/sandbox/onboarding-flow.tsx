@@ -460,15 +460,15 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       {!wallet && !hasStarted ? (
         <>
           <Headline
-            muted={t("Welcome to the Avana Sandbox.")}
-            active={t("A risk-free space to test the app and learn how it works.")}
+            muted={t("Welcome to the Avana Sandbox")}
+            active={t("Test, learn, and explore Avana without risk.")}
             size="hero"
           />
           <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-            {t("Borrow against LP, lend, and loop positions with practice funds. When you're ready, switch to the real world. Have fun exploring.")}
+            {t("This Avana risk-free Sandbox will lets you borrow against fake LP positions, lend, and loop strategies using fake practice funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.")}
           </p>
           <ul className="mt-7 space-y-2.5">
-            {["Unlimited practice funds", "Risk-free exploration", "No real assets involved", "Fast — no transactions to sign"].map((perk) => (
+            {["Unlimited practice funds", "No transactions to sign", "No real assets involved"].map((perk) => (
               <li className="flex items-center gap-2.5 text-[15px] font-medium" key={perk}>
                 <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
                 {t(perk)}
