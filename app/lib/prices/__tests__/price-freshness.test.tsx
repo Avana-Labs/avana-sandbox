@@ -12,7 +12,11 @@ const statusResult = { current: undefined as unknown }
 vi.mock("convex/react", () => ({
   useQuery: (ref: unknown) => {
     const name = getFunctionName(ref as never)
-    return name === "prices:getPriceStatus" ? statusResult.current : []
+    const value = name === "prices:getPriceStatus" ? statusResult.current : []
+    // Convex's real useQuery re-throws server errors during render; model that so we can
+    // assert the provider's error boundary keeps a prices outage from crashing the app.
+    if (value instanceof Error) throw value
+    return value
   },
 }))
 
@@ -57,5 +61,20 @@ describe("usePriceFreshness", () => {
   it("flags staleness when the cron has stalled", () => {
     renderWithStatus({ stale: true, updatedAt: 1_600_000_000_000, ageMs: 99_999_999 })
     expect(screen.getByTestId("stale").textContent).toBe("true")
+  })
+
+  it("degrades to defaults (no crash) when the status query errors", () => {
+    // Reproduces the live incident: `getPriceStatus` missing on a stale Convex deploy, so
+    // useQuery re-throws. The provider sits above the root gate, so without a boundary this
+    // would escalate to the global "Something went wrong" screen. Assert children still
+    // render with neutral freshness instead.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    try {
+      renderWithStatus(new Error("[CONVEX Q(prices:getPriceStatus)] Server Error"))
+      expect(screen.getByTestId("stale").textContent).toBe("false")
+      expect(screen.getByTestId("updatedAt").textContent).toBe("null")
+    } finally {
+      errorSpy.mockRestore()
+    }
   })
 })
