@@ -73,4 +73,27 @@ describe("ActionSuccessStage", () => {
     // amountLabel animates on mount; wait for the final value to settle.
     await waitFor(() => expect(screen.getByText("1000.00 USDC")).toBeInTheDocument())
   })
+
+  it("links the receipt hash to its sandbox receipt page", () => {
+    render(
+      <DisplayPreferencesProvider>
+        <ActionSuccessStage
+          closeHref="/lend"
+          success={{
+            title: "Deposit successful",
+            description: "$1,000 processed.",
+            receiptHash: "sim-abc/1",
+            metrics: [],
+            primaryCtaLabel: "View lend dashboard",
+            primaryCtaHref: "/lend",
+            secondaryCtaLabel: "Done",
+          }}
+        />
+      </DisplayPreferencesProvider>,
+    )
+
+    const link = screen.getByRole("link", { name: "sim-abc/1" })
+    // Hash is URL-encoded so slashes don't break the receipt route.
+    expect(link).toHaveAttribute("href", "/sandbox/transactions/sim-abc%2F1")
+  })
 })
