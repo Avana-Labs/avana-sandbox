@@ -51,7 +51,9 @@ export function mergeLendTabData(
   return {
     investments: liveData.investments,
     positions: liveData.positions,
-    strategyBuckets: staticData.strategyBuckets,
+    // Prefer opportunities derived from the live markets; fall back to the static
+    // catalog only if the live read model surfaced none.
+    strategyBuckets: liveData.strategyBuckets.length > 0 ? liveData.strategyBuckets : staticData.strategyBuckets,
     history: liveData.history,
     rewardsSummary: liveData.rewardsSummary ?? staticData.rewardsSummary,
   }

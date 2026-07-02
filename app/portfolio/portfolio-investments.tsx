@@ -144,7 +144,10 @@ export function PortfolioInvestments({
                             {m(`+${formatUsdExact(token.earnedUsd)}`)}
                           </div>
                           <div className="font-data text-[11px] tabular-nums text-muted-foreground">
-                            {m(`+${formatUsdExact(token.dailyEarnedUsd)} today`)}
+                            {/* Projected run-rate (APY/365), not realized-today earnings —
+                                label it as a per-day estimate so a seconds-old position
+                                doesn't appear to have already earned this amount. */}
+                            {m(`≈ ${formatUsdExact(token.dailyEarnedUsd)}/day`)}
                           </div>
                         </td>
                       </tr>
