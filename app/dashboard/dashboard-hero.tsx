@@ -154,20 +154,16 @@ function buildActions({
   }
 
   const resolveClasses = (label: string) => {
+    // One consistent button chrome for every quick action, with a deliberate,
+    // theme-aware money-flow semantic on top: inflows (deposit) read success,
+    // outflows (withdraw/unwind) read danger, everything else stays neutral.
+    // (Replaces the ad-hoc mix of hardcoded blue/green/red/black hexes.)
     const normalized = label.toLowerCase()
-    if (normalized.includes("borrow")) {
-      return "!border-border/70 !bg-background !text-[#0B9BC9] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
-    }
-    if (normalized.includes("repay")) {
-      return "!border-border/70 !bg-background !text-black hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-white dark:hover:!bg-surface-hover"
-    }
-    if (normalized.includes("deposit") || normalized.includes("supply")) {
-      return "!border-border/70 !bg-background !text-[#16A34A] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-[#74d79c] dark:hover:!bg-surface-hover"
-    }
-    if (normalized.includes("withdraw") || normalized.includes("unwind")) {
-      return "!border-border/70 !bg-background !text-[#E11D48] hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:!text-[#f38aa3] dark:hover:!bg-surface-hover"
-    }
-    return "!border-border/70 !bg-background !text-brand hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
+    const chrome =
+      "!border-border/70 !bg-background hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
+    if (normalized.includes("deposit") || normalized.includes("supply")) return `${chrome} !text-success`
+    if (normalized.includes("withdraw") || normalized.includes("unwind")) return `${chrome} !text-danger`
+    return `${chrome} !text-foreground`
   }
 
   const resolveIcon = (label: string) => {
