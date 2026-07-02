@@ -115,3 +115,38 @@ export function resolveSeriesChange(points: ChartPoint[]): { changeAbs: number; 
   const pct = first ? ((last - first) / first) * 100 : 0
   return { changeAbs, pct }
 }
+
+/** Distinct sample points in a series (by time+value), ignoring repeated stamps. */
+function distinctPointCount(points: ChartPoint[]): number {
+  const seen = new Set<string>()
+  for (const point of points) seen.add(`${point.time}:${point.value}`)
+  return seen.size
+}
+
+/**
+ * The range tabs worth showing for a feed. A short range is hidden when it can't
+ * carry meaningful data — fewer than 3 distinct points AND a longer range has
+ * strictly more. This drops the misleading duplicate 2-point 1H/1D lines on
+ * daily-granularity feeds while leaving richer feeds (all ranges populated)
+ * untouched. Always keeps at least one range so the selector never disappears.
+ */
+export function resolveAvailableRanges(rangeData: ChartRangeData): ChartRangeOption[] {
+  const counts = new Map<ChartRangeOption, number>()
+  let richest = 0
+  for (const range of CHART_RANGE_OPTIONS) {
+    const count = distinctPointCount(rangeData[range] ?? [])
+    counts.set(range, count)
+    if (count > richest) richest = count
+  }
+
+  const available = CHART_RANGE_OPTIONS.filter((range) => {
+    const count = counts.get(range) ?? 0
+    if (count < 2) return false
+    return count >= 3 || count >= richest
+  })
+
+  if (available.length > 0) return available
+  // Degenerate feed (every range sparse): fall back to the range with the most points.
+  const best = CHART_RANGE_OPTIONS.reduce((a, b) => ((counts.get(b) ?? 0) > (counts.get(a) ?? 0) ? b : a))
+  return [best]
+}

@@ -6,9 +6,11 @@ type ChartRangeSelectorProps = {
   activeRange: ChartRangeOption
   onRangeChange: (range: ChartRangeOption) => void
   className?: string
+  /** Ranges to render. Defaults to all; pass a subset to hide ranges without real data. */
+  ranges?: readonly ChartRangeOption[]
 }
 
-export function ChartRangeSelector({ activeRange, onRangeChange, className }: ChartRangeSelectorProps) {
+export function ChartRangeSelector({ activeRange, onRangeChange, className, ranges = CHART_RANGE_OPTIONS }: ChartRangeSelectorProps) {
   return (
     <div
       className={
@@ -16,7 +18,7 @@ export function ChartRangeSelector({ activeRange, onRangeChange, className }: Ch
         "flex w-full items-center justify-between gap-0.5 rounded-full border border-border bg-card p-0.5 sm:inline-flex sm:w-auto sm:justify-start"
       }
     >
-      {CHART_RANGE_OPTIONS.map((range) => (
+      {ranges.map((range) => (
         <button
           key={range}
           type="button"

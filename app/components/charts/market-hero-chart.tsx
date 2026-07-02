@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { resolveSeriesChange, resolveSeriesTone } from "./chart-data"
+import { resolveAvailableRanges, resolveSeriesChange, resolveSeriesTone } from "./chart-data"
 import { ChartRangeSelector } from "./chart-range-selector"
 import { formatChartAxis, formatChartValue } from "./format"
 import { HeroAreaChart } from "./hero-area-chart"
@@ -34,7 +34,11 @@ export function MarketHeroChart({
   gradientId = "marketHeroFill",
   label,
 }: MarketHeroChartProps) {
-  const [activeRange, setActiveRange] = useState<ChartRangeOption>(defaultRange)
+  // Only offer ranges the feed can actually populate. Daily-granularity feeds omit
+  // 1H/1D (which would render as duplicate sparse 2-point lines).
+  const availableRanges = useMemo(() => resolveAvailableRanges(feed.rangeData), [feed.rangeData])
+  const [requestedRange, setRequestedRange] = useState<ChartRangeOption>(defaultRange)
+  const activeRange = availableRanges.includes(requestedRange) ? requestedRange : availableRanges[0]
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   // Subscribe to the active currency so the pre-formatted headline re-denominates
   // in sync with the (live-converting) delta, tooltip, and axis — no mixed $/€.
@@ -81,7 +85,7 @@ export function MarketHeroChart({
         formatYAxis={(v) => formatChartAxis(feed.valueFormat, v)}
         onActiveIndexChange={setHoverIndex}
       />
-      <ChartRangeSelector activeRange={activeRange} onRangeChange={setActiveRange} />
+      <ChartRangeSelector activeRange={activeRange} onRangeChange={setRequestedRange} ranges={availableRanges} />
     </div>
   )
 }
