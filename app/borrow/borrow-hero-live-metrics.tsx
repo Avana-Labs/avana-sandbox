@@ -1,8 +1,5 @@
 "use client"
 
-import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
-import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { cn } from "@/lib/utils"
 
@@ -77,30 +74,11 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
   )
 }
 
-/** Reads the calibrated borrow economy from Convex; falls back to the server value. */
-function ConvexMetrics({ fallback }: { fallback: BorrowHeroMetrics }) {
-  const economy = useQuery(api.markets.getBorrowEconomy)
-  if (!economy) return <MetricsView metrics={fallback} />
-  // Pool TVL is the canonical collateral, so Total TVL tracks it too.
-  return (
-    <MetricsView
-      metrics={{
-        totalTvlUsd: economy.totalCollateralUsd,
-        totalCollateralUsd: economy.totalCollateralUsd,
-        availableCreditUsd: economy.availableCreditUsd,
-        outstandingLoansUsd: economy.outstandingLoansUsd,
-        totalTvlChangePct: fallback.totalTvlChangePct,
-      }}
-    />
-  )
-}
-
 /**
- * Borrow hero headline metrics. When Convex is wired the totals come from the
- * seeded market data layer (getBorrowEconomy); otherwise they fall back to the
- * server-rendered catalog values so the page still paints.
+ * Borrow hero headline metrics. The caller owns which page-data snapshot is
+ * current (server fallback vs session-backed client refresh), so this stays a
+ * pure view over one consistent metrics object.
  */
-export function BorrowHeroLiveMetrics({ fallback }: { fallback: BorrowHeroMetrics }) {
-  if (!hasConvexClient) return <MetricsView metrics={fallback} />
-  return <ConvexMetrics fallback={fallback} />
+export function BorrowHeroLiveMetrics({ metrics }: { metrics: BorrowHeroMetrics }) {
+  return <MetricsView metrics={metrics} />
 }

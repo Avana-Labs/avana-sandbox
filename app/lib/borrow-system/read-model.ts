@@ -145,10 +145,7 @@ export function buildBorrowPageData(state: BorrowSystemState, walletId: string):
   const assets = Object.values(state.assets)
 
   const totalTvlUsd = markets.reduce((sum, market) => sum + fixedToNumber(market.snapshot.totalLiquidityUsd6, 6), 0)
-  const totalCollateralUsd = markets.reduce((sum, market) => {
-    const tokenAmount = sharesToAssets(market.snapshot.totalCollateralShares, market.snapshot.supplyIndexRay)
-    return sum + fixedToNumber(tokenAmountToUsd6(tokenAmount, market.snapshot.lpTokenPriceUsd6), 6)
-  }, 0)
+  const totalCollateralUsd = totalTvlUsd
   const availableCreditUsd = markets.reduce((sum, market) => sum + fixedToNumber(market.snapshot.availableUsd6, 6), 0)
   const outstandingLoansUsd = assets.reduce((sum, asset) => sum + fixedToNumber(asset.snapshot.totalBorrowedUsd6, 6), 0)
   const totalTvlChangePct =

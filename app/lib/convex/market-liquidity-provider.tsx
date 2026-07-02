@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
+import { Component, createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
 import { ConvexProviderWithAuth, ConvexReactClient, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useConvexSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
@@ -112,6 +112,24 @@ function MarketLiquidityBridge({
   return <MarketLiquidityContext.Provider value={value}>{children}</MarketLiquidityContext.Provider>
 }
 
+class MarketLiquidityErrorBoundary extends Component<
+  { children: ReactNode; fallbackChildren: ReactNode; fallbackValue: MarketLiquidityValue },
+  { errored: boolean }
+> {
+  state = { errored: false }
+
+  static getDerivedStateFromError() {
+    return { errored: true }
+  }
+
+  render() {
+    if (this.state.errored) {
+      return <MarketLiquidityContext.Provider value={this.props.fallbackValue}>{this.props.fallbackChildren}</MarketLiquidityContext.Provider>
+    }
+    return this.props.children
+  }
+}
+
 export function MarketLiquidityProvider({ children }: { children: ReactNode }) {
   const { localDeltas, recordLocal } = useLocalLedger()
 
@@ -123,13 +141,16 @@ export function MarketLiquidityProvider({ children }: { children: ReactNode }) {
       </MarketLiquidityContext.Provider>
     )
   }
+  const fallbackValue = { deltas: localDeltas, connected: false, recordDelta: recordLocal }
   return (
     // ConvexProviderWithAuth attaches the SIWE JWT (when signed in) to authed sandbox
     // calls; public market-data queries still resolve when signed out (identity null).
     <ConvexProviderWithAuth client={convexClient} useAuth={useConvexSiweAuth}>
-      <MarketLiquidityBridge localDeltas={localDeltas} recordLocal={recordLocal}>
-        {children}
-      </MarketLiquidityBridge>
+      <MarketLiquidityErrorBoundary fallbackChildren={children} fallbackValue={fallbackValue}>
+        <MarketLiquidityBridge localDeltas={localDeltas} recordLocal={recordLocal}>
+          {children}
+        </MarketLiquidityBridge>
+      </MarketLiquidityErrorBoundary>
     </ConvexProviderWithAuth>
   )
 }

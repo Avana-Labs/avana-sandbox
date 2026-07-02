@@ -119,7 +119,7 @@ describe("BorrowPageHero", () => {
     expect(screen.getByText("Top Markets")).toBeInTheDocument()
     expect(screen.getByText("WETH / USDC")).toBeInTheDocument()
     expect(screen.getByText("$100.0M TVL")).toBeInTheDocument()
-    expect(screen.getByText("5.3% APY")).toBeInTheDocument()
+    expect(screen.getByText("5.30% APY")).toBeInTheDocument()
   })
 
   it("formats billion-scale hero metrics with compact suffix", () => {

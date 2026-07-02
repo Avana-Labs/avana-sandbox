@@ -14,7 +14,7 @@ export default async function DashboardPage() {
     return (
       <div className="bg-background">
         <main className="container mx-auto px-4 py-4 sm:py-8">
-          <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
+          <div className="mx-auto max-w-[1152px]">
             <Suspense fallback={null}>
               <DashboardClient />
             </Suspense>
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   return (
     <div className="bg-background">
       <main className="container mx-auto px-4 py-4 sm:py-8">
-        <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
+        <div className="mx-auto max-w-[1152px]">
           <Suspense fallback={null}>
             <DashboardClient initialData={initialData} walletProfileId={walletProfileId} />
           </Suspense>

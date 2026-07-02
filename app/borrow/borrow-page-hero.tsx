@@ -57,7 +57,7 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
 
   return (
     <section className="mb-4 px-1 md:px-2">
-      <BorrowHeroLiveMetrics fallback={pageData.heroMetrics} />
+      <BorrowHeroLiveMetrics metrics={pageData.heroMetrics} />
 
       <div className="mt-6 space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
