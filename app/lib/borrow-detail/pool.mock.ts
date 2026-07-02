@@ -290,7 +290,7 @@ function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
     { id: "utilization", label: "Utilization", value: formatPct(spoke.maxLtv * 0.82, 1) },
     { id: "apr", label: "Supply APY", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
     { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
-    { id: "maxLtv", label: "Max LTV", value: formatPct(spoke.maxLtv, 1) },
+    { id: "maxLtv", label: "Max LTV", value: formatPct(row.ltv, 1) },
     { id: "available", label: "Available to borrow", value: formatCompactUsd(row.availableUsd) },
     ...buildLiquidationRiskQuickStats(row.id, totalBorrowed),
   ]
