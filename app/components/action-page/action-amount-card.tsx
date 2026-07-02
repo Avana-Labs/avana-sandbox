@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
+import { primaryCtaClass, SECONDARY_CTA_CLASS } from "@/app/components/action-page/action-cta"
 import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -374,12 +375,8 @@ export function ActionFooter({
   primaryPending?: boolean
   className?: string
 }) {
-  const primaryClassName = cn(
-    "flex h-12 items-center justify-center rounded-full bg-foreground text-[15px] font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
-    primaryPending && "opacity-70",
-  )
-  const secondaryClassName =
-    "flex h-12 items-center justify-center rounded-full border border-border bg-card text-[15px] font-medium text-foreground transition-colors hover:bg-surface-hover"
+  const primaryClassName = primaryCtaClass({ disabled: primaryDisabled, pending: primaryPending })
+  const secondaryClassName = SECONDARY_CTA_CLASS
 
   return (
     <div className={cn("grid grid-cols-2 gap-3", className)} data-testid="action-footer">
