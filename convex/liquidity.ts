@@ -48,6 +48,18 @@ async function foldDeltas(ctx: QueryCtx): Promise<FoldedDelta[]> {
   return Array.from(byMarket, ([marketSlug, net]) => ({ marketSlug, ...net }))
 }
 
+async function readDeltaSnapshotRows(ctx: QueryCtx) {
+  return ctx.db
+    .query("liquidityDeltasCache")
+    .withIndex("by_singleton", (q) => q.eq("singleton", DELTAS_SINGLETON))
+    .collect()
+}
+
+function selectCanonicalSnapshot<T extends { updatedAt: number }>(rows: T[]) {
+  if (rows.length === 0) return null
+  return rows.reduce((latest, row) => (row.updatedAt >= latest.updatedAt ? row : latest))
+}
+
 // The shared ledger is written ONLY as a server-side side-effect of a validated
 // `recordTransaction` (which recomputes the delta from the wallet-owned position, see
 // `convex/sandbox/transactions.ts:applyLedgerDelta`). There is intentionally no public,
@@ -97,10 +109,7 @@ export const listDeltas = query({
 export const listDeltaSnapshot = query({
   args: {},
   handler: async (ctx) => {
-    const cache = await ctx.db
-      .query("liquidityDeltasCache")
-      .withIndex("by_singleton", (q) => q.eq("singleton", DELTAS_SINGLETON))
-      .unique()
+    const cache = selectCanonicalSnapshot(await readDeltaSnapshotRows(ctx))
     if (cache) return cache.rows
     return foldDeltas(ctx)
   },
@@ -115,13 +124,18 @@ export const rebuildDeltaSnapshot = internalMutation({
   args: {},
   handler: async (ctx) => {
     const rows = await foldDeltas(ctx)
-    const existing = await ctx.db
-      .query("liquidityDeltasCache")
-      .withIndex("by_singleton", (q) => q.eq("singleton", DELTAS_SINGLETON))
-      .unique()
+    const existingRows = await readDeltaSnapshotRows(ctx)
+    const canonical = selectCanonicalSnapshot(existingRows)
     const doc = { singleton: DELTAS_SINGLETON, rows, updatedAt: Date.now() }
-    if (existing) await ctx.db.replace(existing._id, doc)
+
+    if (canonical) await ctx.db.replace(canonical._id, doc)
     else await ctx.db.insert("liquidityDeltasCache", doc)
+
+    for (const row of existingRows) {
+      if (row._id !== canonical?._id) {
+        await ctx.db.delete(row._id)
+      }
+    }
     return { markets: rows.length }
   },
 })

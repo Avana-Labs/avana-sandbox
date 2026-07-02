@@ -14,7 +14,7 @@ export default async function RewardsPage() {
     return (
       <div className="bg-background">
         <main className="container mx-auto px-3 py-6 sm:px-4 md:py-10">
-          <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
+          <div className="mx-auto max-w-[1152px]">
             <RewardsPageClient />
           </div>
         </main>
@@ -27,7 +27,7 @@ export default async function RewardsPage() {
   return (
     <div className="bg-background">
       <main className="container mx-auto px-3 py-6 sm:px-4 md:py-10">
-        <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
+        <div className="mx-auto max-w-[1152px]">
           <RewardsPageClient pageData={pageData} />
         </div>
       </main>

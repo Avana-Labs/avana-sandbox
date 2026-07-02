@@ -432,7 +432,7 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
     id: "uni-v3-stable",
     dex: "uniswap",
     label: "Uniswap v3 Stable LPs",
-    description: "Concentrated liquidity NFT positions",
+    description: "Concentrated-liquidity LP positions",
     eMode: true,
     borrowableTokens: [v("USDC"), v("USDT"), v("DAI"), v("crvUSD"), v("GHO")],
     maxLtv: 92,
@@ -448,7 +448,7 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
     id: "uni-v3-bluechip",
     dex: "uniswap",
     label: "Uniswap v3 Blue-Chip LPs",
-    description: "Concentrated liquidity NFT positions",
+    description: "Concentrated-liquidity LP positions",
     eMode: false,
     borrowableTokens: [v("USDC"), v("USDT"), v("DAI"), v("WETH"), v("WBTC")],
     maxLtv: 78,
@@ -464,7 +464,7 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
     id: "uni-v3-gov",
     dex: "uniswap",
     label: "Uniswap v3 Governance & DAO LPs",
-    description: "Concentrated liquidity NFT positions",
+    description: "Concentrated-liquidity LP positions",
     eMode: false,
     borrowableTokens: [v("USDC"), v("USDT"), v("DAI"), v("WETH")],
     maxLtv: 55,
@@ -646,7 +646,7 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
     id: "aero-slipstream-bluechip",
     dex: "aerodrome",
     label: "Aerodrome Slipstream Blue-Chip LPs",
-    description: "Concentrated liquidity NFT positions",
+    description: "Concentrated-liquidity LP positions",
     eMode: false,
     borrowableTokens: [v("USDC"), v("DAI"), v("WETH"), v("cbBTC")],
     maxLtv: 76,
@@ -1362,13 +1362,13 @@ function assetSortValue(row: BorrowableAsset, key: AssetSortKey): number {
 }
 
 export function aprToneClass(apr: number): string {
-  if (apr < 4) return "text-emerald-700 dark:text-emerald-300"
+  if (apr < 4) return "text-success"
   if (apr < 5.5) return "text-amber-700 dark:text-amber-300"
   return "text-rose-700 dark:text-rose-300"
 }
 
 export function utilizationToneClass(utilization: number): string {
-  if (utilization < 65) return "text-emerald-700 dark:text-emerald-300"
+  if (utilization < 65) return "text-success"
   if (utilization < 85) return "text-amber-700 dark:text-amber-300"
   return "text-rose-700 dark:text-rose-300"
 }
@@ -1376,7 +1376,7 @@ export function utilizationToneClass(utilization: number): string {
 export function healthFactorToneClass(hf: number | null): string {
   if (hf === null || Number.isNaN(hf)) return "text-muted-foreground"
   if (!Number.isFinite(hf)) return "text-muted-foreground"
-  if (hf > 2) return "text-emerald-700 dark:text-emerald-300"
+  if (hf > 2) return "text-success"
   if (hf > 1.5) return "text-amber-700 dark:text-amber-300"
   return "text-rose-700 dark:text-rose-300"
 }

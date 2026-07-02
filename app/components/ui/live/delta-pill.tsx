@@ -75,7 +75,7 @@ export function DeltaPill({
       : isGood
         ? isStrong
           ? "bg-emerald-600 text-white"
-          : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+          : "bg-emerald-500/10 text-success"
         : isStrong
           ? "bg-rose-600 text-white"
           : "bg-rose-500/10 text-rose-700 dark:text-rose-400"

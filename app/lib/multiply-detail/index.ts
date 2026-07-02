@@ -15,6 +15,7 @@ import {
   type Series,
 } from "@/app/lib/borrow-detail"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
+import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildMultiplyFaqs, type FaqContent } from "@/app/lib/borrow-detail/content-model"
 import {
   MULTIPLY_MARKET_ROWS,
@@ -122,7 +123,7 @@ function buildQuickStats(row: MultiplyMarketRow): QuickStat[] {
     { id: "available", label: "Available", value: available, delta: deltaUp(1.4) },
     { id: "collateralFactor", label: "Collateral factor", value: `${Math.round(row.collateralFactor * 100)}%` },
     { id: "supplyApy", label: "Supply APY", value: supplyApy },
-    { id: "borrowApy", label: "Borrow APR", value: borrowApy },
+    { id: "borrowApy", label: "Borrow APY", value: borrowApy },
     ...buildLiquidationRiskQuickStats(marketId, estimatedBorrowedUsd),
   ]
 }
@@ -156,10 +157,13 @@ function buildSeries(seedKey: string, base: number, volatility: number): Series 
   const seed = prngFromString(seedKey)
   const points: Point[] = []
   let value = base
+  const dayMs = 86_400_000
   for (let i = 0; i < 36; i += 1) {
     value = Math.max(0, value + (seed() - 0.5) * volatility)
     points.push({
-      t: new Date(Date.UTC(2026, 0, 1 + i)).toISOString(),
+      // End the series at the shared sandbox clock (so the range is recent),
+      // walking 36 daily points backward from it.
+      t: new Date(SANDBOX_NOW - (35 - i) * dayMs).toISOString(),
       v: Math.round(value),
     })
   }

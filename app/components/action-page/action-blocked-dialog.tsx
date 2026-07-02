@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { X } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import type { ActionBlockedUi } from "@/app/lib/action-system/contracts"
 
 export function ActionBlockedDialog({
@@ -20,6 +20,30 @@ export function ActionBlockedDialog({
 }) {
   if (!open) return null
 
+  // One shared pill treatment (full-width Button) for both the inline and modal
+  // variants; only the height differs.
+  const pill = variant === "inline" ? "h-11 w-full rounded-full text-[15px] font-medium" : "h-12 w-full rounded-full text-[15px] font-medium"
+
+  const actions = (
+    <>
+      {blocked.primaryCtaLabel && blocked.primaryCtaHref ? (
+        <Button asChild className={pill}>
+          <Link href={blocked.primaryCtaHref} onClick={onPrimary}>
+            {blocked.primaryCtaLabel}
+          </Link>
+        </Button>
+      ) : null}
+      <Button
+        type="button"
+        variant={blocked.primaryCtaLabel ? "secondary" : "default"}
+        onClick={onClose}
+        className={pill}
+      >
+        {blocked.secondaryCtaLabel}
+      </Button>
+    </>
+  )
+
   if (variant === "inline") {
     return (
       <div
@@ -32,27 +56,7 @@ export function ActionBlockedDialog({
           <p className="text-[14px] leading-6 text-muted-foreground">{blocked.description}</p>
         </div>
 
-        <div className="mt-5 space-y-2.5">
-          {blocked.primaryCtaLabel && blocked.primaryCtaHref ? (
-            <Link
-              href={blocked.primaryCtaHref}
-              onClick={onPrimary}
-              className="flex h-11 w-full items-center justify-center rounded-full bg-foreground text-[15px] font-medium text-background transition-opacity hover:opacity-90"
-            >
-              {blocked.primaryCtaLabel}
-            </Link>
-          ) : null}
-          <button
-            type="button"
-            onClick={onClose}
-            className={cn(
-              "flex h-11 w-full items-center justify-center rounded-full border border-border bg-surface-raised text-[15px] font-medium text-foreground transition-colors hover:bg-muted",
-              !blocked.primaryCtaLabel && "bg-foreground text-background hover:opacity-90",
-            )}
-          >
-            {blocked.secondaryCtaLabel}
-          </button>
-        </div>
+        <div className="mt-5 space-y-2.5">{actions}</div>
       </div>
     )
   }
@@ -74,27 +78,7 @@ export function ActionBlockedDialog({
           <p className="text-[14px] leading-6 text-muted-foreground">{blocked.description}</p>
         </div>
 
-        <div className="mt-6 space-y-3">
-          {blocked.primaryCtaLabel && blocked.primaryCtaHref ? (
-            <Link
-              href={blocked.primaryCtaHref}
-              onClick={onPrimary}
-              className="flex h-12 w-full items-center justify-center rounded-full bg-foreground text-[15px] font-medium text-background transition-opacity hover:opacity-90"
-            >
-              {blocked.primaryCtaLabel}
-            </Link>
-          ) : null}
-          <button
-            type="button"
-            onClick={onClose}
-            className={cn(
-              "flex h-12 w-full items-center justify-center rounded-full border border-border bg-surface-raised text-[15px] font-medium text-foreground transition-colors hover:bg-muted",
-              !blocked.primaryCtaLabel && "bg-foreground text-background hover:opacity-90",
-            )}
-          >
-            {blocked.secondaryCtaLabel}
-          </button>
-        </div>
+        <div className="mt-6 space-y-3">{actions}</div>
       </div>
     </div>
   )

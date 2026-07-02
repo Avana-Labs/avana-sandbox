@@ -75,61 +75,65 @@ export function AssetDetailClient({ detail }: Props) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
-        <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
-          <Link href="/borrow" className="transition-colors hover:text-foreground">
-            {t("Borrow")}
-          </Link>
-          <span aria-hidden className="text-border">›</span>
-          <span className="font-normal text-foreground">{detail.hero.name}</span>
-        </nav>
+      <main className="pb-24 pt-8 md:pb-12">
+        <div className="container mx-auto px-4">
+          <div className={cn("mx-auto", PAGE_MAX_W)}>
+            <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
+              <Link href="/borrow" className="transition-colors hover:text-foreground">
+                {t("Borrow")}
+              </Link>
+              <span aria-hidden className="text-border">›</span>
+              <span className="font-normal text-foreground">{detail.hero.name}</span>
+            </nav>
 
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_1fr] lg:gap-x-10">
-          <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
-            <AssetHeroIdentity detail={detail} className="pb-0" />
-          </div>
-
-          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-            <AssetHero detail={detail} hideIdentity className="mb-6" />
-
-            <section aria-label="Asset analytics" className="space-y-8 pt-8">
-              <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
-              <QuickStatsGrid detail={detail} />
-              <InterestRateModelCard detail={detail} />
-              <AllocationBreakdownCard detail={detail} />
-              <AssetCashflowCard detail={detail} />
-              <RiskSection detail={detail} />
-              <div className="space-y-6">
-                <CashflowTrendCard detail={detail} />
-                <EngagementTrendsCard
-                  engagement={detail.engagement}
-                  accentClassName={detail.hero.visual.textClass}
-                />
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+              <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
+                <AssetHeroIdentity detail={detail} className="pb-0" />
               </div>
-              <TransactionHistoryCard
-                transactions={detail.transactions}
-                assetSymbol={detail.hero.symbol}
-              />
-              <AboutNewsSection
-                className="lg:hidden"
-                about={detail.about}
-                newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
-                newsImageLabel={detail.hero.symbol}
-                mediaVariant="icon"
-              />
-              <DetailFaqSection
-                title="General FAQs"
-                items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-              />
-              <RelatedAssetsRow detail={detail} />
-            </section>
-          </div>
 
-          <aside className="hidden lg:col-start-2 lg:row-start-2 lg:block lg:self-start">
-            <div className="sticky top-20">
-              <AssetTokenSidebar detail={detail} />
+              <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+                <AssetHero detail={detail} hideIdentity className="mb-6" />
+
+                <section aria-label="Asset analytics" className="space-y-8 pt-8">
+                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
+                  <QuickStatsGrid detail={detail} />
+                  <InterestRateModelCard detail={detail} />
+                  <AllocationBreakdownCard detail={detail} />
+                  <AssetCashflowCard detail={detail} />
+                  <RiskSection detail={detail} />
+                  <div className="space-y-6">
+                    <CashflowTrendCard detail={detail} />
+                    <EngagementTrendsCard
+                      engagement={detail.engagement}
+                      accentClassName={detail.hero.visual.textClass}
+                    />
+                  </div>
+                  <AboutNewsSection
+                    className="lg:hidden"
+                    about={detail.about}
+                    newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
+                    newsImageLabel={detail.hero.symbol}
+                    mediaVariant="icon"
+                  />
+                  <DetailFaqSection
+                    title="General FAQs"
+                    items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
+                  />
+                  <TransactionHistoryCard
+                    transactions={detail.transactions}
+                    assetSymbol={detail.hero.symbol}
+                  />
+                  <RelatedAssetsRow detail={detail} />
+                </section>
+              </div>
+
+              <aside className="hidden lg:col-start-2 lg:row-start-2 lg:block lg:self-start">
+                <div className="sticky top-20">
+                  <AssetTokenSidebar detail={detail} />
+                </div>
+              </aside>
             </div>
-          </aside>
+          </div>
         </div>
       </main>
 

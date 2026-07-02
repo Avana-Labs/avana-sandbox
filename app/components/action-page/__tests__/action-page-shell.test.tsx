@@ -1,11 +1,19 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
+import ActionsLayout from "@/app/actions/layout"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { ThemeProvider } from "@/app/components/theme-provider"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+}))
+
+// The full site Header (wallet, search, preference controls) is rendered by the
+// /actions layout, not the shell; stub it here so the layout test doesn't need the
+// web3 provider tree.
+vi.mock("@/app/components/header", () => ({
+  Header: () => <div data-testid="site-header">site header</div>,
 }))
 
 describe("ActionPageShell", () => {
@@ -32,7 +40,7 @@ describe("ActionPageShell", () => {
       </ThemeProvider>,
     )
 
-  it("renders action shell title, subtitle, close control, and body without wallet pill or help menu", async () => {
+  it("renders action shell title, subtitle, close control, and body", async () => {
     renderShell(
       <ActionPageShell
         title="Borrow"
@@ -46,25 +54,22 @@ describe("ActionPageShell", () => {
     expect(await screen.findByRole("heading", { name: "Borrow" })).toBeInTheDocument()
     expect(screen.getByText("Configure and review your loan.")).toBeInTheDocument()
     expect(screen.getByLabelText("Close")).toBeInTheDocument()
-    expect(screen.getByLabelText("Change language")).toBeInTheDocument()
     expect(screen.getByText("Body")).toBeInTheDocument()
+    // Chrome (wallet pill, preference controls) now lives in the /actions layout
+    // Header, not the shell itself.
     expect(screen.queryByText(/demo-w/i)).not.toBeInTheDocument()
     expect(screen.queryByLabelText("Open help menu")).not.toBeInTheDocument()
   })
 
-  it("exposes currency, theme, and dollar-mask controls alongside the language switcher", async () => {
-    renderShell(
-      <ActionPageShell title="Borrow" subtitle="Configure and review your loan." closeHref="/borrow">
-        <div>Body</div>
-      </ActionPageShell>,
+  it("the /actions layout renders the full site header (currency/language live there)", () => {
+    render(
+      <ActionsLayout>
+        <div>Action page body</div>
+      </ActionsLayout>,
     )
 
-    expect(await screen.findByLabelText("Change language")).toBeInTheDocument()
-    expect(screen.getByLabelText("Change currency")).toBeInTheDocument()
-    // Theme toggle: matchMedia is stubbed to light, so it offers to switch to dark.
-    expect(screen.getByLabelText("Switch to dark mode")).toBeInTheDocument()
-    // Dollar-mask toggle (defaults to shown → offers to hide).
-    expect(screen.getByLabelText("Hide dollar amounts")).toBeInTheDocument()
+    expect(screen.getByTestId("site-header")).toBeInTheDocument()
+    expect(screen.getByText("Action page body")).toBeInTheDocument()
   })
 
   it("does not render a sandbox badge when simulated", () => {

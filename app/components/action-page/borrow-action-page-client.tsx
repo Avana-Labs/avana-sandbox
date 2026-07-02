@@ -103,7 +103,14 @@ export function BorrowActionPageClient({
   // the markets already pledged). Repay/remove/claim act on existing positions, so
   // they keep the pledged-pool list.
   const usesAllMarketPools = kind === "borrow" || kind === "supply"
-  const collateralPoolOptions = usesAllMarketPools ? session.availableCollateralPools : session.collateralPools
+  // The home express borrow should surface the wallet's already-pledged pools (with
+  // real collateral values) when it has them, so a user can borrow against existing
+  // collateral — the same source the dashboard/Repay tab use — instead of a list of
+  // $0 unpledged catalog markets that dead-ends at "Available $0.00". A fresh wallet
+  // with no positions still falls back to the full catalog so it can pledge.
+  const preferPledgedPools = isHomeBorrowZeroState && session.collateralPools.length > 0
+  const collateralPoolOptions =
+    usesAllMarketPools && !preferPledgedPools ? session.availableCollateralPools : session.collateralPools
   const hasInvalidInitialMarket = Boolean(
     initialMarketId &&
       !initialAssetId &&
@@ -175,8 +182,14 @@ export function BorrowActionPageClient({
         null
       )
     }
-    return debtPositions.length === 1 ? (debtPositions[0] ?? null) : null
-  }, [debtPositionId, debtPositions, initialMarketId, kind, session.state.markets])
+    // No explicit debt/market (e.g. the home express Repay tab): resolve to a real
+    // debt — the one in the currently selected market, else the sole/first debt.
+    // Never leave it null, which defaulted the repay asset to the market's first
+    // collateral token (e.g. WETH) instead of the asset actually owed (e.g. USDC).
+    return (
+      debtPositions.find((position) => position.marketId === marketId) ?? debtPositions[0] ?? null
+    )
+  }, [debtPositionId, debtPositions, initialMarketId, kind, marketId, session.state.markets])
 
   const activeMarketId = hasInvalidInitialMarket ? "" : marketId || (isHomeBorrowZeroState ? "" : session.collateralPools[0]?.id || "")
   const selectMarketId = activeMarketId

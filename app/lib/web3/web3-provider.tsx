@@ -28,8 +28,10 @@ const appOrigin = resolveAppOrigin()
 /**
  * ConnectKit's recommended config (Family getDefaultConfig). It wires WalletConnect via
  * the project id, registers the mainstream wallets, and — with coinbaseWalletPreference
- * "all" — lets users connect either a standard EOA or a Coinbase Smart Wallet. The Aave
- * Account connector (which preloads an app.family.co iframe) is opt-in and left off.
+ * "smartWalletOnly" — offers the Coinbase Smart Wallet without pulling in the legacy
+ * Coinbase Wallet SDK, whose analytics beacon (cca-lite.coinbase.com/metrics) otherwise
+ * fires on every navigation even for users who never pick Coinbase. The Aave Account
+ * connector (which preloads an app.family.co iframe) is opt-in and left off.
  */
 const wagmiConfig = createConfig(
   getDefaultConfig({
@@ -38,7 +40,7 @@ const wagmiConfig = createConfig(
     appUrl: appOrigin,
     appIcon: `${appOrigin}/avana-icon.svg`,
     walletConnectProjectId,
-    coinbaseWalletPreference: "all",
+    coinbaseWalletPreference: "smartWalletOnly",
     chains: [TARGET_CHAIN],
     transports: { [TARGET_CHAIN.id]: http() },
     // Hydrate wallet state on the client so static generation is preserved.

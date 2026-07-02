@@ -21,7 +21,7 @@ export function DetailFaqSection({ title, items, className, id }: DetailFaqSecti
 
   return (
     <section id={id} className={cn("min-w-0 space-y-2.5", className)}>
-      <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">{title}</h2>
+      <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{title}</h2>
 
       <Accordion type="single" collapsible className="w-full">
         {items.map((item, index) => (

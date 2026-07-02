@@ -1,6 +1,7 @@
 import { CHART_RANGE_LABELS, type ChartPoint, type ChartRangeData, type ChartRangeOption } from "@/app/components/charts"
 import { assertStableRecordIds, dedupeByStableId } from "@/app/lib/data/core/source-runtime"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
+import { toActive, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 import { calculateLiquidationNumberUsd } from "./liquidation"
 import type { PortfolioPageData, PortfolioHeroData, PortfolioTabKey } from "./types"
 import type { PortfolioPageRecords, PortfolioSnapshotRecord } from "./source"
@@ -13,12 +14,22 @@ function buildHero(rangeData?: ChartRangeData, overrides: Partial<PortfolioHeroD
 }
 
 function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  // Route portfolio hero money through the currency-aware formatter instead of a
+  // hardcoded "$": on the server getActiveCurrency() is USD (SSR always emits USD),
+  // and on the client it reflects the header switcher (e.g. ¥ for CNY).
+  const converted = toActive(value)
+  return withCurrencySymbol(
+    converted,
+    Math.abs(converted).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  )
 }
 
-function computeHealthFactor(collateralUsd: number, maxLtv: number, borrowedUsd: number) {
+// Health factor is collateral value at the *liquidation threshold* over debt,
+// matching the canonical credit engine (metrics.ts). maxLTV only sizes borrow
+// power; using it here understates HF and disagrees with the action-modal HF.
+function computeHealthFactor(liquidationUsd: number, borrowedUsd: number) {
   if (borrowedUsd <= 0) return null
-  return (collateralUsd * (maxLtv / 100)) / borrowedUsd
+  return liquidationUsd / borrowedUsd
 }
 
 const RANGE_LENGTH: Record<ChartRangeOption, number> = {
@@ -231,7 +242,7 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
   )
   const currentLtvPct = totalCollateralUsd ? (totalDebtUsd / totalCollateralUsd) * 100 : 0
   const collateralHealthFactors = walletCollaterals
-    .map((row) => computeHealthFactor(row.pool.collateralUsd, row.pool.maxLtv, row.borrowedUsd))
+    .map((row) => computeHealthFactor(row.pool.liquidationUsd, row.borrowedUsd))
     .filter((value): value is number => value !== null && Number.isFinite(value))
   const averageHealthFactor = collateralHealthFactors.length
     ? collateralHealthFactors.reduce((sum, value) => sum + value, 0) / collateralHealthFactors.length
@@ -303,11 +314,19 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         liquidationThresholdUsd: row.pool.liquidationUsd,
         feesLabel: formatUsd(row.feesUsd),
       })),
-      debtPositions: walletDebts.map((debt, index) => {
+      debtPositions: walletDebts.map((debt) => {
+        // Map each debt to the collateral pool it was actually taken against (by
+        // poolId). Never fall back to an index-based row — that mismapped a
+        // position's HF onto a different pool's row. When a debt has no matching
+        // collateral pool (cross-collateralized debt), show the account-level HF
+        // (total liquidation value / total debt) instead of a bogus per-pool one.
         const matchingCollateral = walletCollaterals.find((row) => row.pool.id === debt.poolId)
-        const fallbackCollateral = walletCollaterals[index % walletCollaterals.length] ?? walletCollaterals[0]
-        const resolvedCollateral = matchingCollateral ?? fallbackCollateral
-        const healthFactor = computeHealthFactor(resolvedCollateral.pool.collateralUsd, resolvedCollateral.pool.maxLtv, debt.borrowedUsd)
+        const resolvedCollateral = matchingCollateral ?? walletCollaterals[0]
+        const healthFactor = matchingCollateral
+          ? computeHealthFactor(matchingCollateral.pool.liquidationUsd, debt.borrowedUsd)
+          : totalDebtUsd > 0
+            ? liquidationThresholdUsd / totalDebtUsd
+            : null
 
         return {
           id: debt.id,

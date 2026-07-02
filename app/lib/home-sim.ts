@@ -453,7 +453,7 @@ export type HealthStatus = {
 
 export function getHealthStatus(hf: number): HealthStatus {
   if (!Number.isFinite(hf) || hf >= 2.5) {
-    return { label: "SAFE", dotClass: "bg-emerald-500", textClass: "text-emerald-600", barClass: "bg-emerald-500" }
+    return { label: "SAFE", dotClass: "bg-emerald-500", textClass: "text-success", barClass: "bg-emerald-500" }
   }
   if (hf >= 1.75) {
     return { label: "GOOD", dotClass: "bg-yellow-400", textClass: "text-yellow-600", barClass: "bg-yellow-400" }

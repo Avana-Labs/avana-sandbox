@@ -7,6 +7,7 @@
  * keeps tests deterministic and avoids flaky snapshots.
  */
 
+import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import type { Point, Series, TimeRangeId } from "./types"
 
 /**
@@ -101,7 +102,7 @@ export function buildSeries(
   const noise = shape.noise ?? 0.04
   const wave = shape.wave ?? 0.06
   const points: Point[] = []
-  const now = Date.UTC(2026, 3, 22)
+  const now = SANDBOX_NOW
   const msPerStep = (days * 24 * 60 * 60 * 1000) / Math.max(1, samples - 1)
   for (let i = 0; i < samples; i++) {
     const progress = samples === 1 ? 1 : i / (samples - 1)

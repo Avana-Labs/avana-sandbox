@@ -110,7 +110,7 @@ export function ActionHealthFactorBar({
         <span
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full bg-surface-inset px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
-            status.tone === "positive" && "text-emerald-600 dark:text-emerald-400",
+            status.tone === "positive" && "text-success",
             status.tone === "warning" && "text-amber-600 dark:text-amber-400",
             status.tone === "danger" && "text-rose-600 dark:text-rose-400",
           )}

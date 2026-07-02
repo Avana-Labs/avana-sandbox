@@ -17,6 +17,7 @@ export function CashflowCard({ detail }: Props) {
     <SectionCard
       title="Cashflow breakdown"
       subtitle={`${cashflow.periodLabel} · fees, incentives and protocol revenue.`}
+      chrome="plain"
       bodyClassName="p-0"
     >
       <div className="overflow-x-auto">

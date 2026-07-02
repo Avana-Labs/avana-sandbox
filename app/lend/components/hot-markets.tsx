@@ -89,7 +89,7 @@ function HoverTooltip({
 
   return (
     <div
-      className="pointer-events-none absolute top-[10px] z-30 w-[168px] -translate-x-1/2 rounded-[10px] border border-border bg-card/95 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm dark:border-white/15 dark:bg-[#1b1b1c]/95"
+      className="pointer-events-none absolute top-[10px] z-30 w-[168px] -translate-x-1/2 rounded-radius-sm border border-border bg-card/95 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm dark:border-white/15 dark:bg-[#1b1b1c]/95"
       style={{ left }}
     >
       <div className="flex items-center justify-between gap-2 text-[10px] font-medium text-muted-foreground">
@@ -97,7 +97,7 @@ function HoverTooltip({
         <span>{TIME_LABELS[timeIndex]}</span>
       </div>
       <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-[10px] dark:border-white/10">
-        <span className="flex items-center gap-1.5 text-emerald-600 dark:text-[#73dca9]">
+        <span className="flex items-center gap-1.5 text-success">
           <span className="size-2 rounded-full bg-emerald-500 dark:bg-[#73dca9]" />
           Borrow APY
         </span>
@@ -179,7 +179,7 @@ function FeaturedCard({
   const cardContent = (
     <>
       <div className="pointer-events-none absolute inset-0 z-0 opacity-100 [background-image:radial-gradient(circle,rgba(148,163,184,0.28)_1px,transparent_1.15px)] [background-position:0_4px] [background-size:16px_16px] dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1.15px)]" />
-      <div className="pointer-events-none absolute inset-0 z-0 rounded-2xl bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
+      <div className="pointer-events-none absolute inset-0 z-0 rounded-radius-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
 
       <Image
         src={asset.iconUrl}
@@ -216,7 +216,7 @@ function FeaturedCard({
   )
 
   const cardClassName = cn(
-    "relative block h-[176px] w-[372px] shrink-0 overflow-hidden rounded-2xl border text-left",
+    "relative block h-[176px] w-[372px] shrink-0 overflow-hidden rounded-radius-lg border text-left",
     "border-[#e1e4e8] bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     "dark:border-[#26272a] dark:bg-[#1b1b1c] dark:shadow-none",
   )

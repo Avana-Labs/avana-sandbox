@@ -10,14 +10,14 @@ export function RelatedMarketsRow({ detail }: Props) {
   return (
     <section id="related-markets" className="min-w-0">
       <div className="mb-3">
-        <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">Related markets</h2>
+        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Related markets</h2>
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {detail.related.map((rel) => (
           <li key={rel.id} className="shrink-0">
             <Link
               href={`/lend/markets/${rel.id}`}
-              className="group relative flex h-[120px] w-60 flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
+              className="group relative flex h-[120px] w-60 flex-col overflow-hidden rounded-radius-lg border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
             >
               <div className="pointer-events-none absolute right-2 top-2 flex size-7 items-center justify-center rounded-full border border-border bg-background/80 shadow-sm backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100">
                 <svg

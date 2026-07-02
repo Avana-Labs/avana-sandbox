@@ -1,7 +1,7 @@
-// The multiply system has no per-wallet balance, so the meaningful cap on a
-// collateral position is the market's available liquidity: you cannot loop against
-// more collateral value than the pool can supply. This also rejects absurd inputs
-// (e.g. 999,999,999 ETH) before they reach the simulation engine.
+// A multiply position is capped by two things: what the user's wallet can afford
+// (the collateral they actually hold) and what the market can absorb (available
+// liquidity). Max should fill the wallet balance — not the market's multi-million
+// liquidity — while still rejecting absurd inputs before the simulation engine.
 
 import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
 import {
@@ -10,11 +10,30 @@ import {
   formatActionFeeSummary,
 } from "@/app/lib/action-system/formatters"
 
-/** Maximum collateral amount (in collateral units) a market can absorb, or null if unknown. */
-export function maxMultiplyCollateralAmount(availableLiquidityUsd: number, collateralPriceUsd: number): number | null {
+/**
+ * The sandbox wallet's spendable collateral budget (USD), matching the borrow
+ * system's seeded wallet cash. Multiply has no per-token wallet ledger, so this
+ * stands in for "your balance" and keeps Max affordable instead of pegging it to
+ * the pool's entire liquidity.
+ */
+export const MULTIPLY_WALLET_COLLATERAL_BUDGET_USD = 12_500
+
+/**
+ * Maximum collateral amount (in collateral units), capped by the smaller of the
+ * wallet balance and the market's available liquidity. `walletBalanceUsd` defaults
+ * to unbounded so callers that only care about the liquidity ceiling are unchanged.
+ * Returns null if the inputs can't yield a meaningful cap.
+ */
+export function maxMultiplyCollateralAmount(
+  availableLiquidityUsd: number,
+  collateralPriceUsd: number,
+  walletBalanceUsd: number = Number.POSITIVE_INFINITY,
+): number | null {
   if (!Number.isFinite(availableLiquidityUsd) || availableLiquidityUsd <= 0) return null
   if (!Number.isFinite(collateralPriceUsd) || collateralPriceUsd <= 0) return null
-  return availableLiquidityUsd / collateralPriceUsd
+  const capUsd = Math.min(availableLiquidityUsd, Math.max(0, walletBalanceUsd))
+  if (capUsd <= 0) return null
+  return capUsd / collateralPriceUsd
 }
 
 /** True when the collateral amount exceeds what the market's liquidity can support. */
@@ -26,7 +45,7 @@ export function exceedsMultiplyCollateralCap(collateralAmount: number, maxCollat
 
 /** Human-readable reason for an over-cap collateral amount. */
 export function multiplyOverCapReason(collateralSymbol: string, maxCollateralAmount: number): string {
-  return `Amount exceeds available market liquidity. Max ${formatActionAmount(maxCollateralAmount, collateralSymbol, 6)}.`
+  return `Amount exceeds your available balance. Max ${formatActionAmount(maxCollateralAmount, collateralSymbol, 6)}.`
 }
 
 /**
@@ -55,7 +74,7 @@ export function buildMultiplyOverCapPreviewUi(options: {
     rateValue: "",
     marketLabel: "Market",
     marketValue: options.marketLabel,
-    balanceLabel: "Available liquidity",
+    balanceLabel: "Balance",
     balanceValue: formatActionAmount(options.maxCollateralAmount, options.collateralSymbol, 6),
     maxAmount: options.maxCollateralAmount,
     metrics: [],

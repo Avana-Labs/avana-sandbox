@@ -173,7 +173,7 @@ export function CompactBorrowCard({
             <FlashValue
               value={preview.remainingBorrowPowerUsd}
               goodDirection="up"
-              className="mt-0.5 font-data text-[12.5px] font-medium text-emerald-700 dark:text-emerald-400"
+              className="mt-0.5 font-data text-[12.5px] font-medium text-success"
             >
               {formatCompactUsd(preview.remainingBorrowPowerUsd)}
             </FlashValue>

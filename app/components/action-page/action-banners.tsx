@@ -19,7 +19,7 @@ export function ActionRiskBanner({
     <div
       data-testid="action-risk-banner"
       className={cn(
-        "flex gap-3 rounded-[18px] border px-4 py-3",
+        "flex gap-3 rounded-radius-lg border px-4 py-3",
         level === "danger" && "border-danger/30 bg-danger/10 text-danger",
         level === "warning" && "border-warning/30 bg-warning/10 text-warning",
         level === "safe" && "border-success/30 bg-success/10 text-success",
@@ -55,7 +55,7 @@ export function ActionOutcomeBanner({
     <div
       data-testid="action-outcome-banner"
       className={cn(
-        "flex gap-3 rounded-[18px] border px-4 py-3",
+        "flex gap-3 rounded-radius-lg border px-4 py-3",
         tone === "error" && "border-danger/30 bg-danger/10",
         tone === "success" && "border-success/30 bg-success/10",
       )}

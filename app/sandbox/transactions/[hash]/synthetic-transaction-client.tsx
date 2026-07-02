@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect, useState } from "react"
 import { Check } from "lucide-react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
@@ -14,6 +15,15 @@ export function SyntheticTransactionClient({ hash }: { hash: string }) {
     isSignedIn && authedWallet ? { wallet: authedWallet, hash } : "skip",
   )
 
+  // When the backend is unreachable the query stays `undefined` forever, leaving an
+  // empty card under the title. Time out so the user gets a clear message instead.
+  const [timedOut, setTimedOut] = useState(false)
+  useEffect(() => {
+    if (receipt !== undefined) return
+    const timer = setTimeout(() => setTimedOut(true), 8000)
+    return () => clearTimeout(timer)
+  }, [receipt])
+
   return (
     <main className="mx-auto min-h-[70vh] w-full max-w-3xl px-5 py-16">
       <p className="text-sm text-muted-foreground">Avana sandbox</p>
@@ -21,7 +31,13 @@ export function SyntheticTransactionClient({ hash }: { hash: string }) {
       {!isSignedIn ? (
         <p className="mt-8 text-muted-foreground">Sign in with the wallet that created this transaction.</p>
       ) : receipt === undefined ? (
-        <Skeleton className="skeleton-enter mt-8 h-32 rounded-3xl" />
+        timedOut ? (
+          <p className="mt-8 text-muted-foreground">
+            This receipt is taking too long to load. It may not be available in this environment.
+          </p>
+        ) : (
+          <Skeleton className="skeleton-enter mt-8 h-32 rounded-3xl" />
+        )
       ) : receipt === null ? (
         <p className="mt-8 text-muted-foreground">This receipt does not exist for the authenticated wallet.</p>
       ) : (

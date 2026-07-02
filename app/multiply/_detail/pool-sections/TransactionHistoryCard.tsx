@@ -14,8 +14,8 @@ const KIND_LABEL: Record<MultiplyTxHistoryRow["kind"], string> = {
 }
 
 const KIND_TONE: Record<MultiplyTxHistoryRow["kind"], string> = {
-  open: "text-emerald-600 dark:text-emerald-400",
-  add: "text-emerald-600 dark:text-emerald-400",
+  open: "text-success",
+  add: "text-success",
   reduce: "text-rose-600 dark:text-rose-400",
   close: "text-rose-600 dark:text-rose-400",
   interest: "text-slate-700 dark:text-slate-300",
@@ -38,8 +38,8 @@ const FILTERS = [
 ] as const
 
 const ROW_HOVER_BG = "transition-colors group-hover:bg-table-header/40 dark:group-hover:bg-[#131820]"
-const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-2xl`
-const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-2xl`
+const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-radius-lg`
+const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-radius-lg`
 
 export function TransactionHistoryCard({ transactions, collateralSymbol, borrowableSymbol }: Props) {
   const [activeFilter, setActiveFilter] = React.useState<(typeof FILTERS)[number]["id"]>("all")
@@ -84,7 +84,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  <th className="rounded-l-2xl bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     Time
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -96,7 +96,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
                   <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     For
                   </th>
-                  <th className="rounded-r-2xl bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     Wallet
                   </th>
                 </tr>
@@ -153,7 +153,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  <th className="rounded-l-2xl bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     Time
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -165,7 +165,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
                   <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     For
                   </th>
-                  <th className="rounded-r-2xl bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     Wallet
                   </th>
                 </tr>

@@ -390,7 +390,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   <Button
                     type="button"
                     onClick={handleReset}
-                    className="mt-6 h-10 rounded-[4px] bg-brand px-5 text-[14px] font-medium text-white hover:bg-[#009dbd]"
+                    className="mt-6 h-10 rounded-xs bg-brand px-5 text-[14px] font-medium text-white hover:bg-[#009dbd]"
                   >
                     Submit another request
                   </Button>
@@ -535,7 +535,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     type="button"
                     onClick={stage === 3 ? handleSend : handleContinue}
                     disabled={stage !== 3 ? !canContinue : !canSend}
-                    className="h-10 rounded-[4px] bg-brand px-5 text-[14px] font-medium text-white hover:bg-[#009dbd] disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
+                    className="h-10 rounded-xs bg-brand px-5 text-[14px] font-medium text-white hover:bg-[#009dbd] disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
                   >
                     {footerLabel}
                   </Button>

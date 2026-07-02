@@ -72,7 +72,7 @@ const KIND_LABEL: Record<PortfolioActivityRow["kind"], string> = {
 }
 
 const STATUS_TONE: Record<PortfolioActivityRow["status"], string> = {
-  confirmed: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  confirmed: "border-emerald-500/20 bg-emerald-500/10 text-success",
   pending: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   failed: "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 }
@@ -281,7 +281,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
       <div className="space-y-2 md:hidden">
         {visibleItems.length ? (
           visibleItems.map((row) => (
-            <div key={row.id} className="rounded-2xl border border-border bg-card p-3.5">
+            <div key={row.id} className="rounded-radius-lg border border-border bg-card p-3.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-baseline gap-1.5">
                   <span className="text-[14px] font-medium text-foreground">{KIND_LABEL[row.kind]}</span>
@@ -319,7 +319,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
+          <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
             No activity matches the current filters.
           </div>
         )}
@@ -340,13 +340,13 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-2xl bg-table-header px-5 py-3.5">Time</th>
+                <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5">Time</th>
                 <th className="bg-table-header px-5 py-3.5">Type</th>
                 <th className="bg-table-header px-5 py-3.5">Product</th>
                 <th className="bg-table-header px-5 py-3.5">For</th>
                 <th className="bg-table-header px-5 py-3.5">Amount</th>
                 <th className="bg-table-header px-5 py-3.5">Status</th>
-                <th className="rounded-r-2xl bg-table-header px-5 py-3.5 text-right">Txn</th>
+                <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right">Txn</th>
               </tr>
             </thead>
             <tbody>

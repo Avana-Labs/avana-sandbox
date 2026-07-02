@@ -11,6 +11,7 @@ type SectionCardProps = {
   children: React.ReactNode
   className?: string
   bodyClassName?: string
+  chrome?: "card" | "plain"
   /** Render the wrapper as a landmark. */
   as?: "section" | "div"
   id?: string
@@ -30,6 +31,7 @@ export function SectionCard({
   children,
   className,
   bodyClassName = "p-6",
+  chrome = "card",
   as: Tag = "section",
   id,
 }: SectionCardProps) {
@@ -39,15 +41,19 @@ export function SectionCard({
       {hasHeader ? (
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <div className="min-w-0">
-            {title ? <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">{title}</h2> : null}
+            {title ? <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{title}</h2> : null}
             {subtitle ? <p className="mt-0.5 text-[11.5px] text-muted-foreground">{subtitle}</p> : null}
           </div>
           {rightSlot ? <div className="flex shrink-0 items-center gap-2">{rightSlot}</div> : null}
         </div>
       ) : null}
-      <Card className="overflow-hidden border-border bg-surface-raised shadow-elev-1">
-        <CardContent className={cn(bodyClassName)}>{children}</CardContent>
-      </Card>
+      {chrome === "plain" ? (
+        <div className={cn(bodyClassName)}>{children}</div>
+      ) : (
+        <Card className="overflow-hidden border-border bg-surface-raised shadow-elev-1">
+          <CardContent className={cn(bodyClassName)}>{children}</CardContent>
+        </Card>
+      )}
     </Tag>
   )
 }

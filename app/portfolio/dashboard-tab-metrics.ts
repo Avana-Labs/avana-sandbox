@@ -73,9 +73,19 @@ export function buildBorrowDashboardMetrics(state: BorrowSystemState, walletId: 
   // from collateral into that LP balance, so omitting it made Net Value drift down
   // on an economically net-neutral action. Fold the held LP balances back in so a
   // supply/remove of fairly-valued collateral keeps Net Value flat.
+  //
+  // Only count LP balances for markets the wallet actually has a position in. The
+  // sandbox pre-seeds a pledgeable idle LP balance in *every* catalog market (~$1.5M
+  // total) purely so any market can be supplied; folding all of that into Net Value
+  // inflated it ~140× (e.g. $1.58M against $14.4K collateral). Position-adjacent
+  // inventory is still counted, which is what keeps the net-neutral actions flat.
   const account = state.accounts[walletId]
+  const positionMarketIds = new Set(account?.collateralPositions.map((position) => position.marketId) ?? [])
   const walletLpBalancesUsd6 = account
-    ? Object.values(account.walletLpBalancesUsd6 ?? {}).reduce((sum, value) => sum + value, 0n)
+    ? Object.entries(account.walletLpBalancesUsd6 ?? {}).reduce(
+        (sum, [marketId, value]) => (positionMarketIds.has(marketId) ? sum + value : sum),
+        0n,
+      )
     : 0n
 
   return {
@@ -171,8 +181,11 @@ export function buildLendDashboardMetrics(data: PortfolioLendTabData) {
     totalSuppliedUsd > 0
       ? investments.reduce((sum, item) => sum + item.apyPct * item.suppliedUsd, 0) / totalSuppliedUsd
       : 0
-  const interestEarnedUsd =
-    data.rewardsSummary?.totalEarnedUsd ?? investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  // Interest earned is the sum of per-position earned interest — the same figure the
+  // portfolio hero's "Earned" stat sums (map-portfolio-page totalEarnedUsd). Don't
+  // prefer rewardsSummary.totalEarnedUsd here: it drifted a cent from the hero and
+  // conflated protocol rewards with supply interest.
+  const interestEarnedUsd = investments.reduce((sum, item) => sum + item.earnedUsd, 0)
   const claimableRewardsUsd = data.rewardsSummary?.claimableUsd ?? 0
 
   return {

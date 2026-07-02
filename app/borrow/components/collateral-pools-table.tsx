@@ -19,6 +19,7 @@ import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { pairExchangeRateLabel } from "@/app/lib/prices/format"
+import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
 
@@ -32,7 +33,7 @@ function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
         const tone = event.tone ?? "info"
         const toneClass =
           tone === "positive"
-            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+            ? "bg-emerald-500/10 text-success"
             : tone === "warning"
               ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
               : tone === "danger"
@@ -265,7 +266,7 @@ function CollateralDesktopTable({
                   <CollateralAssetCell pool={pool} />
                 </td>
                 <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
-                  <span className="tabular-nums">{((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%</span>
+                  <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
                 </td>
                 <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{pool.ltv}%</span>
@@ -297,7 +298,7 @@ function CollateralDesktopTable({
     return table
   }
 
-  return <div className="overflow-hidden rounded-[20px] bg-transparent">{table}</div>
+  return <div className="overflow-hidden rounded-radius-xl bg-transparent">{table}</div>
 }
 
 export const CollateralPoolsTable = memo(function CollateralPoolsTable({
@@ -348,8 +349,8 @@ function SpokeDesktopSection({
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   return (
     <section className="cv-section mb-2">
-      <div className="mt-4 overflow-hidden rounded-[20px] bg-transparent md:shadow-none">
-        <div className="flex items-center justify-between gap-3 rounded-t-[20px] bg-transparent px-1 py-2 md:px-4 md:py-3">
+      <div className="mt-4 overflow-hidden rounded-radius-xl bg-transparent md:shadow-none">
+        <div className="flex items-center justify-between gap-3 rounded-t-radius-xl bg-transparent px-1 py-2 md:px-4 md:py-3">
           <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
           <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
@@ -452,7 +453,7 @@ function SpokeMobileSection({
                     <MobileField label="Max LTV" value={`${pool.ltv}%`} />
                     <MobileField
                       label="APY"
-                      value={`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
+                      value={formatApy((pool.aprMin + pool.aprMax) / 2)}
                       tone={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
                       flashValue={(pool.aprMin + pool.aprMax) / 2}
                       flashGoodDirection="down"

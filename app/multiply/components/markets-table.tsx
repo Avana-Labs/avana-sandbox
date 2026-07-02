@@ -142,7 +142,7 @@ export function MarketsTable({
                           rightLabel={`${m.shortOi}`}
                           leftClass="bg-emerald-500"
                           rightClass="bg-rose-500"
-                          leftLabelClass="text-emerald-600 dark:text-emerald-400"
+                          leftLabelClass="text-success"
                           rightLabelClass="text-rose-600 dark:text-rose-400"
                           heightClass="h-1.5"
                         />
@@ -200,7 +200,7 @@ export function MarketsTable({
                       rightLabel={`S ${m.shortOi}`}
                       leftClass="bg-emerald-500"
                       rightClass="bg-rose-500"
-                      leftLabelClass="text-emerald-600 dark:text-emerald-400"
+                      leftLabelClass="text-success"
                       rightLabelClass="text-rose-600 dark:text-rose-400"
                       heightClass="h-1.5"
                     />
