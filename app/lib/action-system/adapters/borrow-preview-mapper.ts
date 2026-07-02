@@ -109,6 +109,7 @@ export function mapBorrowTransactionPreviewToActionUi(
   return {
     allowed: preview.allowed,
     amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
+    amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: options.rateLabel ?? "Borrow APY",
     rateValue: formatActionPercent(options.ratePct),
@@ -199,6 +200,7 @@ export function mapBorrowRepayPreviewToActionUi(
   return {
     allowed: preview.allowed,
     amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
+    amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: "Repay amount",
     rateValue: formatActionUsd(options.amountUsd),
@@ -267,6 +269,7 @@ export function mapBorrowSupplyPreviewToActionUi(
     assetLabel: options.poolLabel,
     assetSymbol: options.collateralSymbol,
     borrowSymbol: options.borrowSymbol,
+    amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: "Collateral factor",
     rateValue: formatActionPercent(options.collateralFactorPct),
@@ -339,6 +342,7 @@ export function mapBorrowRemovePreviewToActionUi(
   return {
     allowed: preview.allowed,
     amountLabel: `${options.percent}%`,
+    amountUsd: options.removeUsd,
     amountUsdLabel: formatActionApproxUsd(options.removeUsd),
     rateLabel: "Position APY",
     rateValue: formatActionPercent(options.positionApyPct),
@@ -417,6 +421,7 @@ export function mapLiquidationPreviewToActionUi(
   return {
     allowed: simulation.allowed,
     amountLabel: formatActionAmount(options.amountUsd, options.debtSymbol, 2),
+    amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: "Liquidation",
     rateValue: formatActionUsd(options.amountUsd),
@@ -477,7 +482,7 @@ export function mapBorrowSuccessToActionUi(options: {
   metrics: ActionPreviewUi["metrics"]
   href: string
   primaryCtaLabel?: string
-  preview?: Pick<ActionPreviewUi, "amountLabel" | "rateLabel" | "rateValue" | "marketValue"> | null
+  preview?: Pick<ActionPreviewUi, "amountLabel" | "amountUsd" | "rateLabel" | "rateValue" | "marketValue"> | null
   verb?: string
 }): ActionSuccessUi {
   return {
@@ -491,6 +496,7 @@ export function mapBorrowSuccessToActionUi(options: {
     receiptContext: options.preview
       ? {
           verb: options.verb ?? "Action",
+          amountUsd: options.preview.amountUsd,
           amountLabel: options.preview.amountLabel,
           rateLabel: options.preview.rateLabel,
           rateValue: options.preview.rateValue,

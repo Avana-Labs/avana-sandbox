@@ -1,12 +1,10 @@
 "use client"
 
-import Link from "next/link"
-import { CheckCircle2 } from "lucide-react"
+import { useState } from "react"
 import type { ActionSuccessUi } from "@/app/lib/action-system/contracts"
-import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
-import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
-import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { TransactionReceipt, type TransactionReceiptData } from "@/app/components/action-page/transaction-receipt"
+import { syntheticBlockFromHash, syntheticNetworkFeeUsdFromHash } from "@/app/lib/action-system/synthetic-receipt"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 
 export function ActionSuccessStage({
@@ -22,67 +20,39 @@ export function ActionSuccessStage({
   onSecondary?: () => void
   secondaryLabel?: string
 }) {
-  const { t } = useTranslation()
-  const symbol = success.receiptContext?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
   const receipt = success.receiptContext
+  const hash = success.receiptHash
+  // Stable per mount so re-renders (e.g. switching currency) don't bump the timestamp.
+  const [dateMs] = useState(() => Date.now())
 
-  // Link the receipt hash to its sandbox receipt page — but only when that page can
-  // actually resolve it (live Convex). In test mode the synthetic hash isn't
-  // persisted, so a link would dead-end on an empty page; render it as plain text.
-  const receiptLine = success.receiptHash ? (
-    <p className="mt-2 font-data text-[12px] text-muted-foreground">
-      {t("Receipt")}:{" "}
-      {IS_DEV_SHORTCUT_MODE ? (
-        <span className="text-foreground">{success.receiptHash}</span>
-      ) : (
-        <Link
-          href={`/sandbox/transactions/${encodeURIComponent(success.receiptHash)}`}
-          className="text-foreground underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-readable"
-        >
-          {success.receiptHash}
-        </Link>
-      )}
-    </p>
-  ) : null
+  const symbol = receipt?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
+
+  // Only link the hash to its permalink when that page can actually resolve it (live
+  // Convex). In dev-shortcut mode the synthetic hash isn't persisted, so it renders as
+  // plain text instead of dead-ending — same guard the receipt page relies on.
+  const hashHref = hash && !IS_DEV_SHORTCUT_MODE ? `/sandbox/transactions/${encodeURIComponent(hash)}` : null
+
+  const data: TransactionReceiptData = {
+    title: success.title,
+    description: success.description,
+    symbol,
+    amountRowLabel: receipt?.verb,
+    amountLabel: receipt?.amountLabel,
+    amountUsd: receipt?.amountUsd ?? null,
+    rateLabel: receipt?.rateLabel ?? null,
+    rateValue: receipt?.rateValue ?? null,
+    marketValue: receipt?.marketValue ?? null,
+    networkFeeUsd: hash ? syntheticNetworkFeeUsdFromHash(hash) : null,
+    block: hash ? syntheticBlockFromHash(hash) : null,
+    dateMs,
+    hash,
+    hashHref,
+    metrics: success.metrics,
+  }
 
   return (
     <div data-testid="action-success-stage" className="space-y-4">
-      {receipt ? (
-        <ActionCard className="overflow-hidden">
-          <div className="relative px-4 pb-2 pt-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300">
-              <CheckCircle2 className="size-3.5" />
-              {t("Confirmed")}
-            </div>
-
-            <div className="flex flex-col items-center py-6 text-center">
-              <ActionTokenIcon symbol={symbol} className="size-14" />
-              <h2 className="mt-4 text-[1.25rem] font-medium tracking-[-0.03em]">{t(success.title)}</h2>
-              <p className="mt-1.5 max-w-sm text-[14px] text-muted-foreground">{t(success.description)}</p>
-              {receiptLine}
-            </div>
-
-            <div className="divide-y divide-border border-t border-border">
-              <ActionInfoRow label={receipt.verb} value={receipt.amountLabel} tooltip="amount" />
-              {receipt.rateLabel && receipt.rateValue ? (
-                <ActionInfoRow label={receipt.rateLabel} value={receipt.rateValue} tooltip="rate" />
-              ) : null}
-              <ActionInfoRow label={t("Market")} value={receipt.marketValue} tooltip="market" />
-            </div>
-          </div>
-        </ActionCard>
-      ) : (
-        <div className="flex flex-col items-center py-4 text-center">
-          <div className="flex size-14 items-center justify-center rounded-full bg-emerald-500/10">
-            <CheckCircle2 className="size-7 text-emerald-500" />
-          </div>
-          <h2 className="mt-3 text-[18px] font-medium tracking-[-0.02em]">{t(success.title)}</h2>
-          <p className="mt-1.5 max-w-sm text-[14px] text-muted-foreground">{t(success.description)}</p>
-          {receiptLine}
-        </div>
-      )}
-
-      {success.metrics.length > 0 ? <ActionMetricsBlock rows={success.metrics} /> : null}
+      <TransactionReceipt data={data} />
 
       <ActionFooter
         primaryLabel={success.primaryCtaLabel}
