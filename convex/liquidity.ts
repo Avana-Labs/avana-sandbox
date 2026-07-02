@@ -1,20 +1,52 @@
 /**
  * Shared multi-user market liquidity ledger.
  *
- * Every borrow / repay / supply / withdraw from any client calls `recordDelta`,
- * which APPENDS a delta event to `marketLiquidityDeltas`. Every client subscribes to
- * `listDeltas`, which folds the events per market and layers the net onto the static
- * catalog base, so a market's Total Borrowed / Available / Utilization (and pool
- * collateral / TVL) move with aggregate activity across all users — live — instead
- * of staying frozen.
+ * Every borrow / repay / supply / withdraw APPENDS a delta event to
+ * `marketLiquidityDeltas` (server-side, inside the validated recordTransaction). The
+ * folded net-per-market layers onto the static catalog base, so a market's Total
+ * Borrowed / Available / Utilization (and pool collateral / TVL) move with aggregate
+ * activity across all users — instead of staying frozen.
  *
  * Append-only writes keep every action on its OWN document: patching one shared
  * per-market row put concurrent writers on the same doc and made them contend under
  * Convex OCC. Reads fold O(#events).
+ *
+ * The app-wide subscription reads `listDeltaSnapshot` — a single precomputed cache
+ * document rebuilt on a schedule (`crons.ts`) — NOT the raw event table. Subscribing
+ * to the raw table meant one user's write invalidated every user's subscription and
+ * re-folded the whole table per subscriber; the snapshot decouples the hot write path
+ * from every reader, bounding cross-user staleness to the refresh interval.
  */
 
 import { v } from "convex/values"
 import { internalMutation, query } from "./_generated/server"
+import type { QueryCtx } from "./_generated/server"
+
+/** Single cache row discriminator (see `liquidityDeltasCache` in schema.ts). */
+const DELTAS_SINGLETON = "deltas"
+
+type FoldedDelta = { marketSlug: string; borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }
+
+/** Fold the append-only event table into one net aggregate per market. */
+async function foldDeltas(ctx: QueryCtx): Promise<FoldedDelta[]> {
+  const rows = await ctx.db.query("marketLiquidityDeltas").collect()
+  const byMarket = new Map<string, { borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }>()
+  for (const row of rows) {
+    const acc = byMarket.get(row.marketSlug)
+    if (acc) {
+      acc.borrowedDeltaUsd += row.borrowedDeltaUsd
+      acc.suppliedDeltaUsd += row.suppliedDeltaUsd
+      acc.updatedAt = Math.max(acc.updatedAt, row.updatedAt)
+    } else {
+      byMarket.set(row.marketSlug, {
+        borrowedDeltaUsd: row.borrowedDeltaUsd,
+        suppliedDeltaUsd: row.suppliedDeltaUsd,
+        updatedAt: row.updatedAt,
+      })
+    }
+  }
+  return Array.from(byMarket, ([marketSlug, net]) => ({ marketSlug, ...net }))
+}
 
 // The shared ledger is written ONLY as a server-side side-effect of a validated
 // `recordTransaction` (which recomputes the delta from the wallet-owned position, see
@@ -44,27 +76,52 @@ export const recordDelta = internalMutation({
   },
 })
 
+/**
+ * Direct fold of the append-only event table. Reads the WHOLE table, so subscribing to
+ * it invalidates every subscriber on every write — do NOT use it as the app-wide
+ * subscription (use `listDeltaSnapshot`). Kept for the snapshot rebuild and for tests
+ * that assert the exact ledger state immediately after a write.
+ */
 export const listDeltas = query({
   args: {},
+  handler: async (ctx) => foldDeltas(ctx),
+})
+
+/**
+ * App-wide liquidity subscription. Reads the single precomputed `liquidityDeltasCache`
+ * document (O(1)), so ONE user's borrow/repay/supply/withdraw does not invalidate every
+ * other subscriber. Cold-cache fallback: fold the raw events if the snapshot has not been
+ * built yet (fresh deploy, before the first `rebuildDeltaSnapshot`); steady state never
+ * hits that path. Same row shape as `listDeltas`.
+ */
+export const listDeltaSnapshot = query({
+  args: {},
   handler: async (ctx) => {
-    // The ledger is append-only (a fresh row per action), so fold events into one net
-    // aggregate per market for the client — same shape as before, contention-free write.
-    const rows = await ctx.db.query("marketLiquidityDeltas").collect()
-    const byMarket = new Map<string, { borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }>()
-    for (const row of rows) {
-      const acc = byMarket.get(row.marketSlug)
-      if (acc) {
-        acc.borrowedDeltaUsd += row.borrowedDeltaUsd
-        acc.suppliedDeltaUsd += row.suppliedDeltaUsd
-        acc.updatedAt = Math.max(acc.updatedAt, row.updatedAt)
-      } else {
-        byMarket.set(row.marketSlug, {
-          borrowedDeltaUsd: row.borrowedDeltaUsd,
-          suppliedDeltaUsd: row.suppliedDeltaUsd,
-          updatedAt: row.updatedAt,
-        })
-      }
-    }
-    return Array.from(byMarket, ([marketSlug, net]) => ({ marketSlug, ...net }))
+    const cache = await ctx.db
+      .query("liquidityDeltasCache")
+      .withIndex("by_singleton", (q) => q.eq("singleton", DELTAS_SINGLETON))
+      .unique()
+    if (cache) return cache.rows
+    return foldDeltas(ctx)
+  },
+})
+
+/**
+ * Rebuild the `liquidityDeltasCache` singleton from the append-only event table. Runs the
+ * fold once and upserts the single cache row. Driven by a schedule (`crons.ts`), never on
+ * the hot read path. Internal-only so anonymous callers can't trigger the full fold.
+ */
+export const rebuildDeltaSnapshot = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await foldDeltas(ctx)
+    const existing = await ctx.db
+      .query("liquidityDeltasCache")
+      .withIndex("by_singleton", (q) => q.eq("singleton", DELTAS_SINGLETON))
+      .unique()
+    const doc = { singleton: DELTAS_SINGLETON, rows, updatedAt: Date.now() }
+    if (existing) await ctx.db.replace(existing._id, doc)
+    else await ctx.db.insert("liquidityDeltasCache", doc)
+    return { markets: rows.length }
   },
 })
