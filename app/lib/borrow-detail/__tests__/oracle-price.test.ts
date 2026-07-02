@@ -23,10 +23,15 @@ describe("injectPoolOraclePrice", () => {
     expect(a.find((s) => s.id === "oraclePrice")?.value).toBe(b.find((s) => s.id === "oraclePrice")?.value)
   })
 
-  it("keeps the fixture fallback when the oracle is unavailable or a leg is unpriced", () => {
-    expect(injectPoolOraclePrice(stats("$3,450.00"), null, "WETH", "USDC")).toEqual(stats("$3,450.00"))
-    expect(
-      injectPoolOraclePrice(stats("$3,450.00"), { usdc: 1 }, "WETH", "USDC").find((s) => s.id === "oraclePrice")?.value,
-    ).toBe("$3,450.00")
+  it("drops the oracle-price stat (never the fabricated fallback) when unpriced or unavailable", () => {
+    // Oracle unavailable → the hardcoded fixture value must not reach the display path.
+    const whenNull = injectPoolOraclePrice(stats("$3,450.00"), null, "WETH", "USDC")
+    expect(whenNull.find((s) => s.id === "oraclePrice")).toBeUndefined()
+    // Other stats survive.
+    expect(whenNull.find((s) => s.id === "totalSupplied")?.value).toBe("$1.0M")
+
+    // One leg unpriced → still dropped rather than fabricated.
+    const whenPartial = injectPoolOraclePrice(stats("$3,450.00"), { usdc: 1 }, "WETH", "USDC")
+    expect(whenPartial.find((s) => s.id === "oraclePrice")).toBeUndefined()
   })
 })

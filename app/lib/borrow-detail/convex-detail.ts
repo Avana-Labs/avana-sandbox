@@ -90,8 +90,9 @@ function injectRealPrice(
 /**
  * Overlay the pool "Oracle price" quick stat with the real pair rate derived from the
  * DefiLlama token oracle (price0 / price1), so an asset shows one consistent oracle price
- * across borrow-detail, the lend list, and the multiply catalog. No-op when either leg is
- * unpriced or the oracle is unavailable, keeping the curated fixture / mock fallback.
+ * across borrow-detail, the lend list, and the multiply catalog. When either leg is
+ * unpriced or the oracle is unavailable, the stat is DROPPED rather than left showing the
+ * fabricated mock fallback — the display path never surfaces a hardcoded oracle price.
  */
 export function injectPoolOraclePrice(
   quickStats: QuickStat[],
@@ -99,10 +100,11 @@ export function injectPoolOraclePrice(
   symbol0: string,
   symbol1: string,
 ): QuickStat[] {
-  if (!prices) return quickStats
-  const p0 = prices[priceKey(symbol0)]
-  const p1 = prices[priceKey(symbol1)]
-  if (p0 === undefined || p1 === undefined || p1 === 0) return quickStats
+  const p0 = prices?.[priceKey(symbol0)]
+  const p1 = prices?.[priceKey(symbol1)]
+  if (p0 === undefined || p1 === undefined || p1 === 0) {
+    return quickStats.filter((s) => s.id !== "oraclePrice")
+  }
   const value = formatOraclePrice(p0 / p1)
   return quickStats.map((s) => (s.id === "oraclePrice" ? { ...s, value } : s))
 }
