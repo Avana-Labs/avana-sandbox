@@ -477,12 +477,9 @@ export function MultiplyActionPageClient({
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = isHomeLayout ? "home" : "default"
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
-  // The only input is the collateral asset. Spell out the loop so the single-token
-  // input reads clearly (no second token icon implying a dual input).
-  const loopHint =
-    kind === "multiply"
-      ? `You supply ${market.collateralAsset.symbol}. We borrow ${market.borrowAsset.symbol} against it, swap back to ${market.collateralAsset.symbol}, and repeat to your target leverage.`
-      : null
+  // The loop mechanics are documented in the market's "About" section — no inline
+  // explainer filler in the action widget.
+  const loopHint = null
   const effectiveMultiplierMax =
     kind === "deleverage"
       ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
