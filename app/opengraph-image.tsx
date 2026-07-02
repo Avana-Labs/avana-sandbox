@@ -2,7 +2,8 @@ import { ImageResponse } from "next/og"
 
 // Branded share card used for og:image + (via summary_large_image) the X/Twitter card.
 // Served from the app's own origin so the share preview works on any deploy domain.
-export const runtime = "edge"
+// Runs on the default Node.js runtime so the card is statically generated at build
+// time — pinning the edge runtime would disable static generation for this route.
 export const alt = "Avana — a new Aave v4 lending market built for AMM markets"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
