@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/app/components/theme-provider"
 import { WagmiProvider, createConfig, http } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ConnectKitProvider, SIWEProvider, getDefaultConfig } from "connectkit"
@@ -70,14 +70,13 @@ const connectKitTheme = {
 
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
-  // Mirror the app's resolved theme so the wallet modal matches light/dark instead of
-  // following the OS (ConnectKit's "auto" default). resolvedTheme is undefined until
-  // next-themes hydrates on the client; the modal never opens before then, so falling
-  // back to "light" only affects the pre-hydration default, not what the user sees.
+  // Mirror the app's resolved theme (from our custom ThemeProvider — next-themes is NOT
+  // mounted) so the wallet modal matches the in-app light/dark toggle instead of ConnectKit's
+  // OS-following default. resolvedTheme is always "light" | "dark".
   const { resolvedTheme } = useTheme()
   const connectKit = (
     <ConnectKitProvider
-      mode={resolvedTheme === "dark" ? "dark" : "light"}
+      mode={resolvedTheme}
       customTheme={connectKitTheme}
       options={{
         enforceSupportedChains: false,

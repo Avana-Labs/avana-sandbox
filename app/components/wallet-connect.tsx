@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { ArrowUpRight, CircleUserRound, Code2, Eye, EyeOff, FileText, LifeBuoy, Mail, Moon, Shield, Sun, type LucideIcon } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useTheme } from "./theme-provider"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { useDisplayPreferences } from "./display-preferences"

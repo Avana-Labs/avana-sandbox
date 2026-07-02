@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/app/components/theme-provider"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { resolveChartAccent, toRgba, type ThemeMode } from "@/app/lib/chart-colors"
