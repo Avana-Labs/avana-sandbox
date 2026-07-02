@@ -13,6 +13,18 @@ const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID 
 // The headless QA harness seeds a SIWE token without a live wagmi connection, so the
 // SIWE provider must not auto-sign-out on "disconnect" in that mode.
 
+// WalletConnect logs a warning (and silently overrides metadata.url) whenever the
+// configured URL differs from the actual page origin. Deriving it from the runtime
+// origin keeps local/preview/prod each matching their own page. This module is
+// client-only ("use client"), but createConfig also runs during SSR/prerender where
+// window is undefined — fall back to the canonical production origin there.
+export function resolveAppOrigin() {
+  if (typeof window !== "undefined") return window.location.origin
+  return "https://avana.cc"
+}
+
+const appOrigin = resolveAppOrigin()
+
 /**
  * ConnectKit's recommended config (Family getDefaultConfig). It wires WalletConnect via
  * the project id, registers the mainstream wallets, and — with coinbaseWalletPreference
@@ -23,8 +35,8 @@ const wagmiConfig = createConfig(
   getDefaultConfig({
     appName: "Avana",
     appDescription: "Practice DeFi borrowing, lending, and looping in a live sandbox.",
-    appUrl: "https://avana.cc",
-    appIcon: "https://avana.cc/avana-icon.svg",
+    appUrl: appOrigin,
+    appIcon: `${appOrigin}/avana-icon.svg`,
     walletConnectProjectId,
     coinbaseWalletPreference: "all",
     chains: [TARGET_CHAIN],
