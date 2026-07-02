@@ -9,13 +9,14 @@ import {
   utilizationToneClass,
   type BorrowableAsset,
 } from "@/app/lib/data/borrow-domain"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { formatApy } from "@/app/lib/format"
-import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
+import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
@@ -314,13 +315,17 @@ function LoanAssetsSection({
                   </td>
                   <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
                     <div className="inline-flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
-                      <Link
-                        href={borrowAssetDetailPath(asset.id)}
-                        onClick={(event) => event.stopPropagation()}
-                        className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+                      <PillButton
+                        variant="ghost"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          const lendMarketId = resolveLendMarketId(asset.symbol)
+                          if (!lendMarketId) return
+                          router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
+                        }}
                       >
-                        Details
-                      </Link>
+                        Deposit
+                      </PillButton>
                       <PillButton
                         variant="primary"
                         onClick={(event) => {
@@ -431,13 +436,17 @@ function AssetsSection({
                   </td>
                   <td className={`py-2.5 pl-4 pr-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
                     <div className="inline-flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
-                      <Link
-                        href={borrowAssetDetailPath(asset.id)}
-                        onClick={(event) => event.stopPropagation()}
-                        className="inline-flex h-7 items-center rounded-xs border border-border bg-surface-raised px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+                      <PillButton
+                        variant="ghost"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          const lendMarketId = resolveLendMarketId(asset.symbol)
+                          if (!lendMarketId) return
+                          router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
+                        }}
                       >
-                        Details
-                      </Link>
+                        Deposit
+                      </PillButton>
                       <PillButton
                         variant="primary"
                         onClick={(event) => {
