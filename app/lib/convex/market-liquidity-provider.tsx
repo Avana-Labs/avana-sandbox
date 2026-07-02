@@ -85,7 +85,9 @@ function MarketLiquidityBridge({
   recordLocal: (input: RecordDeltaInput) => void
   children: ReactNode
 }) {
-  const rows = useQuery(api.liquidity.listDeltas)
+  // Subscribe to the periodically-rebuilt snapshot, NOT the raw event table: reading the
+  // single cache doc means one user's write doesn't invalidate every subscriber (M33).
+  const rows = useQuery(api.liquidity.listDeltaSnapshot)
   const connected = rows !== undefined
 
   const value = useMemo<MarketLiquidityValue>(() => {

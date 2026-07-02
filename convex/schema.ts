@@ -313,6 +313,28 @@ export default defineSchema({
   }).index("by_slug", ["marketSlug"]),
 
   /**
+   * Precomputed fold of `marketLiquidityDeltas` into one net aggregate per market.
+   * The app-wide liquidity subscription (`liquidity.listDeltaSnapshot`) reads this
+   * single document (O(1)) instead of the append-only event table — so ONE user's
+   * borrow/repay/supply/withdraw no longer invalidates every other subscriber. A
+   * schedule (`crons.ts`) rebuilds it periodically from the raw events, bounding
+   * cross-user staleness to the refresh interval.
+   */
+  liquidityDeltasCache: defineTable({
+    /** Constant discriminator so there is exactly one cache row (`"deltas"`). */
+    singleton: v.string(),
+    rows: v.array(
+      v.object({
+        marketSlug: v.string(),
+        borrowedDeltaUsd: v.number(),
+        suppliedDeltaUsd: v.number(),
+        updatedAt: v.number(),
+      }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_singleton", ["singleton"]),
+
+  /**
    * Sharded economy counters. The single `sandboxEconomy` row is read-and-patched
    * by every claim, so concurrent claims all contend on it under Convex OCC (the
    * load sweep saw ~53% of concurrent claims fail there). Each claim instead adds
