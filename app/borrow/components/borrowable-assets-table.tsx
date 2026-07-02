@@ -25,6 +25,12 @@ type BorrowableAssetsTableProps = {
   variant?: "default" | "loan"
 }
 
+// Live selector-derived utilization is an unrounded float; format it to 2dp for display,
+// matching the fixed-decimal formatting used by the other cells (Borrow APR, USD figures).
+function formatUtilizationPct(utilization: number): string {
+  return `${utilization.toFixed(2)}%`
+}
+
 
 export function BorrowableAssetsPanel({
   rows,
@@ -106,7 +112,7 @@ export function BorrowableAssetsPanel({
                       <AssetStatLine label="Total Borrowed" value={formatCompactUsd(asset.totalBorrowedUsd)} />
                       <AssetStatLine
                         label="Utilization"
-                        value={`${asset.utilization}%`}
+                        value={formatUtilizationPct(asset.utilization)}
                         tone={utilizationToneClass(asset.utilization)}
                       />
                     </dl>
@@ -383,7 +389,7 @@ function AssetsSection({
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                     <span className={cn("font-data text-[13px] font-medium tabular-nums", utilizationToneClass(asset.utilization))}>
-                      {asset.utilization}%
+                      {formatUtilizationPct(asset.utilization)}
                     </span>
                   </td>
                   <td className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>

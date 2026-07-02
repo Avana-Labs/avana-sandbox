@@ -37,4 +37,14 @@ describe("BorrowableAssetsPanel loan variant", () => {
     expect(container.textContent).not.toMatch(/9\.6M\s+WBTC/)
     expect(container.textContent).not.toMatch(/4\.2M\s+WBTC/)
   })
+
+  it("rounds a raw unrounded utilization float to 2dp on the mobile card", () => {
+    const raw: BorrowableAsset = { ...wbtc, utilization: 69.68000215736105 }
+    const { container } = render(
+      <BorrowableAssetsPanel rows={[raw]} onBorrow={vi.fn()} groupByCategory={false} variant="loan" />,
+    )
+
+    expect(container.textContent).toContain("69.68%")
+    expect(container.textContent).not.toContain("69.68000215736105%")
+  })
 })
