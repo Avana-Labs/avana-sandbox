@@ -22,11 +22,9 @@ import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
 import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useMediaQuery } from "@/app/lib/use-media-query"
+import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
 
-const BTC_SYMBOLS = new Set(["WBTC", "CBBTC"])
-const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
-const FOREX_SYMBOLS = new Set(["USDC", "USDT", "DAI", "CRVUSD", "GHO", "EURC", "USD+", "SDAI", "FRAX", "USDE", "USDS", "USDP", "LUSD", "TUSD", "MIM", "PYUSD", "EURS"])
-const GOV_SYMBOLS = new Set(["AAVE", "UNI", "CRV", "LDO", "BAL", "AURA", "GNO"])
+// Curated (protocol-strategy) spokes that belong in "smart" regardless of their tokens.
 const SMART_SPOKES = new Set<string>([
   "uni-v2",
   "uni-v3-stable",
@@ -38,21 +36,24 @@ const SMART_SPOKES = new Set<string>([
   "aero-slipstream-bluechip",
 ])
 
-function poolHasAnySymbol(pool: BorrowPoolRow, symbols: Set<string>) {
-  return pool.visuals.some((visual) => symbols.has(visual.symbol.toUpperCase()))
+// Borrow pools carry multiple token visuals; categorise via the shared taxonomy so
+// filtering stays consistent with Lend / Multiply. A pool matches btc/eth/utility
+// if ANY leg is in that family; forex if EVERY leg is fiat-pegged.
+function poolHasCategory(pool: BorrowPoolRow, category: MarketCategory) {
+  return pool.visuals.some((visual) => categorizeMarket(visual.symbol) === category)
 }
 
 function poolIsStable(pool: BorrowPoolRow) {
-  return pool.visuals.every((visual) => FOREX_SYMBOLS.has(visual.symbol.toUpperCase()))
+  return pool.visuals.every((visual) => categorizeMarket(visual.symbol) === "forex")
 }
 
 function poolMatchesTab(pool: BorrowPoolRow, tab: PoolTabId) {
-  if (tab === "all-markets") return true
-  if (tab === "btc") return poolHasAnySymbol(pool, BTC_SYMBOLS)
-  if (tab === "eth") return poolHasAnySymbol(pool, ETH_SYMBOLS)
+  if (tab === "all") return true
+  if (tab === "btc") return poolHasCategory(pool, "btc")
+  if (tab === "eth") return poolHasCategory(pool, "eth")
   if (tab === "forex") return poolIsStable(pool)
-  if (tab === "governance") return poolHasAnySymbol(pool, GOV_SYMBOLS)
-  if (tab === "smart-pools") {
+  if (tab === "utility") return poolHasCategory(pool, "utility")
+  if (tab === "smart") {
     if (SMART_SPOKES.has(pool.spoke)) return true
     return !poolMatchesAnyCoreTab(pool)
   }
@@ -61,10 +62,10 @@ function poolMatchesTab(pool: BorrowPoolRow, tab: PoolTabId) {
 
 function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
   return (
-    poolHasAnySymbol(pool, BTC_SYMBOLS) ||
-    poolHasAnySymbol(pool, ETH_SYMBOLS) ||
+    poolHasCategory(pool, "btc") ||
+    poolHasCategory(pool, "eth") ||
     poolIsStable(pool) ||
-    poolHasAnySymbol(pool, GOV_SYMBOLS)
+    poolHasCategory(pool, "utility")
   )
 }
 
@@ -80,7 +81,7 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   const { pendingRows, dexes } = pageData
   const session = useBorrowSessionContext()
   const { deltas: liquidityDeltas } = useMarketLiquidity()
-  const [currentTab, setCurrentTab] = useState<BorrowTabId>("all-markets")
+  const [currentTab, setCurrentTab] = useState<BorrowTabId>("all")
   const [search, setSearch] = useState("")
   const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
   const marketSpokeById = useMemo(

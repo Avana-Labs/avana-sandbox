@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
 import { useCurrency } from "@/app/lib/currency/use-currency"
+import { CategoryChips } from "@/app/lib/ui/category-chips"
+import { CATEGORY_CHIPS, type CategoryChip } from "@/app/lib/markets/category"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -32,14 +34,7 @@ const FOREX_SYMBOLS = new Set([
 ])
 const UTILITY_SYMBOLS = new Set(["AAVE", "UNI", "CRV", "LDO", "BAL", "AURA", "GNO", "ARB", "OP", "LINK", "MKR"])
 
-const CATEGORY_TABS = [
-  { id: "all-markets", label: "All" },
-  { id: "btc", label: "BTC Loops" },
-  { id: "eth", label: "ETH Loops" },
-  { id: "forex", label: "Forex Loops" },
-  { id: "governance", label: "Utility Loops" },
-  { id: "smart-loops", label: "Smart Loops" },
-] as const
+const CATEGORY_TABS = CATEGORY_CHIPS.multiply
 
 const SORT_PRESETS = [
   { label: "Highest Leverage", value: "rewards:desc" },
@@ -50,7 +45,7 @@ const SORT_PRESETS = [
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
-type MultiplyCategoryTabId = (typeof CATEGORY_TABS)[number]["id"]
+type MultiplyCategoryTabId = CategoryChip["id"]
 
 function parseCompactUsdLabel(value?: string) {
   if (!value) return null
@@ -376,7 +371,7 @@ export function ExploreLoopsMarketsTable({
   onOpenMultiply,
 }: ExploreLoopsMarketsTableProps) {
   const { compact } = useCurrency()
-  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all-markets")
+  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
   const [search, setSearch] = React.useState("")
   const [page, setPage] = React.useState(0)
   const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
@@ -413,12 +408,12 @@ export function ExploreLoopsMarketsTable({
           (hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)) ||
           (hasAnySymbol(BTC_SYMBOLS, protocol) && hasAnySymbol(BTC_SYMBOLS, asset))
 
-        if (currentTab === "all-markets") return true
+        if (currentTab === "all") return true
         if (currentTab === "btc") return matchesBtc
         if (currentTab === "eth") return matchesEth
         if (currentTab === "forex") return matchesForex
-        if (currentTab === "governance") return matchesUtility
-        if (currentTab === "smart-loops") return matchesSmartLoop
+        if (currentTab === "utility") return matchesUtility
+        if (currentTab === "smart") return matchesSmartLoop
         return true
       })
       .filter((row) => searchQuery.length === 0 || buildSearchText(row).includes(searchQuery))
@@ -490,22 +485,8 @@ export function ExploreLoopsMarketsTable({
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex min-w-max items-center gap-6 py-1">
-            {CATEGORY_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setCurrentTab(tab.id)}
-                className={cn(
-                  "whitespace-nowrap text-[20px] font-normal tracking-[-0.03em] transition-colors md:text-[22px]",
-                  currentTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <div className="min-w-0 flex-1">
+          <CategoryChips chips={CATEGORY_TABS} value={currentTab} onChange={setCurrentTab} />
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
