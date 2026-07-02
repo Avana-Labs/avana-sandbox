@@ -1,7 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import { Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Eye, EyeOff, Globe2, MoonStar, MoreHorizontal, Shield, SunMedium } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, Coins, Globe2, MoonStar, MoreHorizontal, SunMedium } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,21 +9,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Switch } from "@/components/ui/switch"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
 import { useTheme } from "./theme-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useEffect, useState } from "react"
-import { AVANA_EXTERNAL_LINKS } from "./external-links"
 
 const triggerClassName =
-  "inline-flex size-10 items-center justify-center rounded-full border border-border/80 bg-background/85 text-foreground outline-none transition-colors hover:bg-surface-inset focus:outline-none focus-visible:outline-none dark:bg-[#141414] dark:hover:bg-[#1b1b1b] [-webkit-tap-highlight-color:transparent]"
+  "inline-flex size-11 items-center justify-center rounded-full border border-border/60 bg-[#181818] text-white/72 outline-none transition-colors hover:bg-[#222222] hover:text-white focus:outline-none focus-visible:outline-none dark:border-white/5 dark:bg-[#181818] dark:hover:bg-[#222222] [-webkit-tap-highlight-color:transparent]"
 
 type PreferencesView = "root" | "language" | "currency"
 
 export function DesktopPreferenceControls() {
-  const { currency, language, setCurrency, setLanguage, showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
+  const { currency, language, setCurrency, setLanguage } = useDisplayPreferences()
   const { theme, resolvedTheme, setTheme } = useTheme()
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
@@ -48,24 +45,28 @@ export function DesktopPreferenceControls() {
     >
       <DropdownMenuTrigger asChild>
         <button type="button" aria-label={t("Open preferences")} title={t("Preferences")} className={triggerClassName}>
-          <MoreHorizontal className="size-5" strokeWidth={2.1} />
+          <MoreHorizontal className="size-5" strokeWidth={2.35} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={12} className="w-[320px] rounded-[26px] border-border/70 bg-background/95 p-2.5 shadow-2xl backdrop-blur dark:bg-[#121212]/95">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={12}
+        className="w-[360px] rounded-[30px] border border-white/10 bg-[#121212]/98 p-3 text-white shadow-2xl backdrop-blur"
+      >
         {view === "root" ? (
           <>
-            <DropdownMenuLabel className="px-3 py-2 text-[15px] font-medium normal-case tracking-normal text-foreground">
+            <DropdownMenuLabel className="px-4 py-3 text-[18px] font-medium normal-case tracking-normal text-white">
               Global preferences
             </DropdownMenuLabel>
-            <div className="space-y-2 px-3 pb-2">
-              <div className="flex items-center justify-between gap-3 rounded-[22px] border border-border/70 bg-surface-inset/50 px-3 py-2.5 dark:bg-[#181818]">
-                <span className="text-[14px] text-muted-foreground">Theme</span>
-                <div className="flex items-center overflow-hidden rounded-full border border-border bg-background dark:bg-[#111111]">
+            <div className="space-y-3 px-4 pb-2">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[15px] text-white/64">Theme</span>
+                <div className="flex items-center overflow-hidden rounded-full border border-white/12 bg-[#1a1a1a] p-1">
                   <button
                     type="button"
                     onClick={() => setTheme("system")}
-                    className={`px-3.5 py-1.5 text-[13px] font-medium ${
-                      mounted && theme === "system" ? "bg-surface-inset text-foreground dark:bg-[#232323]" : "text-muted-foreground"
+                    className={`rounded-full px-4 py-2 text-[13px] font-medium ${
+                      mounted && theme === "system" ? "bg-[#2a2a2a] text-white" : "text-white/64"
                     }`}
                   >
                     Auto
@@ -73,8 +74,8 @@ export function DesktopPreferenceControls() {
                   <button
                     type="button"
                     onClick={() => setTheme("light")}
-                    className={`px-2.5 py-1.5 text-[13px] font-medium ${
-                      mounted && resolvedTheme === "light" ? "bg-surface-inset text-foreground dark:bg-[#232323]" : "text-muted-foreground"
+                    className={`rounded-full px-3 py-2 text-[13px] font-medium ${
+                      mounted && resolvedTheme === "light" ? "bg-[#2a2a2a] text-white" : "text-white/64"
                     }`}
                   >
                     <SunMedium className="h-4 w-4" />
@@ -82,8 +83,8 @@ export function DesktopPreferenceControls() {
                   <button
                     type="button"
                     onClick={() => setTheme("dark")}
-                    className={`px-2.5 py-1.5 text-[13px] font-medium ${
-                      mounted && resolvedTheme === "dark" ? "bg-surface-inset text-foreground dark:bg-[#232323]" : "text-muted-foreground"
+                    className={`rounded-full px-3 py-2 text-[13px] font-medium ${
+                      mounted && resolvedTheme === "dark" ? "bg-[#2a2a2a] text-white" : "text-white/64"
                     }`}
                   >
                     <MoonStar className="h-4 w-4" />
@@ -92,68 +93,48 @@ export function DesktopPreferenceControls() {
               </div>
             </div>
             <DropdownMenuSeparator />
-            <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-              <span className="flex items-center gap-2 text-[14px] text-muted-foreground">
-                {showDollarAmounts ? <Eye className="h-4 w-4 text-muted-foreground" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
-                {t("Dollar amounts")}
-              </span>
-              <Switch checked={showDollarAmounts} onCheckedChange={setShowDollarAmounts} aria-label="Toggle dollar amounts" />
-            </div>
             <DropdownMenuItem
-              className="flex cursor-pointer items-center justify-between rounded-[18px] px-3 py-3 text-[14px]"
+              className="flex cursor-pointer items-center justify-between rounded-[20px] px-4 py-3.5 text-[15px] text-white outline-none hover:bg-[#1d1d1d] focus:bg-[#1d1d1d]"
               onSelect={(event) => {
                 event.preventDefault()
                 setView("language")
               }}
             >
-              <span className="flex items-center gap-2 text-muted-foreground">
+              <span className="flex items-center gap-2 text-white/64">
                 <Globe2 className="h-4 w-4" />
                 <span>{t("Language")}</span>
               </span>
-              <span className="flex items-center gap-2 font-medium text-foreground">
+              <span className="flex items-center gap-2 font-medium text-white">
                 {currentLanguage.label}
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-4 w-4 text-white/52" />
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="flex cursor-pointer items-center justify-between rounded-[18px] px-3 py-3 text-[14px]"
+              className="flex cursor-pointer items-center justify-between rounded-[20px] px-4 py-3.5 text-[15px] text-white outline-none hover:bg-[#1d1d1d] focus:bg-[#1d1d1d]"
               onSelect={(event) => {
                 event.preventDefault()
                 setView("currency")
               }}
             >
-              <span className="flex items-center gap-2 text-muted-foreground">
+              <span className="flex items-center gap-2 text-white/64">
                 <Coins className="h-4 w-4" />
                 <span>{t("Currency")}</span>
               </span>
-              <span className="flex items-center gap-2 font-medium text-foreground">
+              <span className="flex items-center gap-2 font-medium text-white">
                 {currentCurrency.code}
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-4 w-4 text-white/52" />
               </span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="rounded-[18px] px-3 py-3 text-[14px]">
-              <Link href="/support-center" className="flex items-center gap-2">
-                <CircleHelp className="h-4 w-4 text-muted-foreground" />
-                {t("Support center")}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="rounded-[18px] px-3 py-3 text-[14px]">
-              <a href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer" className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-muted-foreground" />
-                Security & privacy
-              </a>
             </DropdownMenuItem>
           </>
         ) : null}
 
         {view === "language" ? (
           <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-2 py-2 text-[15px] font-medium normal-case tracking-normal text-foreground">
+            <DropdownMenuLabel className="flex items-center gap-1 px-2 py-2 text-[15px] font-medium normal-case tracking-normal text-white">
               <button
                 type="button"
                 onClick={() => setView("root")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground transition hover:bg-surface-inset dark:hover:bg-[#1d1d1d]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white transition hover:bg-[#1d1d1d]"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -163,7 +144,7 @@ export function DesktopPreferenceControls() {
               {LANGUAGE_OPTIONS.map((option) => (
                 <DropdownMenuItem
                   key={option.code}
-                  className="flex cursor-pointer items-center justify-between rounded-[18px] px-3 py-3 text-[14px]"
+                  className="flex cursor-pointer items-center justify-between rounded-[20px] px-4 py-3 text-[14px] text-white outline-none hover:bg-[#1d1d1d] focus:bg-[#1d1d1d]"
                   onSelect={(event) => {
                     event.preventDefault()
                     setLanguage(option.code)
@@ -180,11 +161,11 @@ export function DesktopPreferenceControls() {
 
         {view === "currency" ? (
           <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-2 py-2 text-[15px] font-medium normal-case tracking-normal text-foreground">
+            <DropdownMenuLabel className="flex items-center gap-1 px-2 py-2 text-[15px] font-medium normal-case tracking-normal text-white">
               <button
                 type="button"
                 onClick={() => setView("root")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground transition hover:bg-surface-inset dark:hover:bg-[#1d1d1d]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white transition hover:bg-[#1d1d1d]"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -194,7 +175,7 @@ export function DesktopPreferenceControls() {
               {CURRENCY_OPTIONS.map((option) => (
                 <DropdownMenuItem
                   key={option.code}
-                  className="flex cursor-pointer items-center justify-between rounded-[18px] px-3 py-3 text-[14px]"
+                  className="flex cursor-pointer items-center justify-between rounded-[20px] px-4 py-3 text-[14px] text-white outline-none hover:bg-[#1d1d1d] focus:bg-[#1d1d1d]"
                   onSelect={(event) => {
                     event.preventDefault()
                     setCurrency(option.code)

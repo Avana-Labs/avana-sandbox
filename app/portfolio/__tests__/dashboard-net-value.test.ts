@@ -45,11 +45,34 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
     expect(Math.abs(after - before)).toBeLessThanOrEqual(TOLERANCE)
   })
 
-  it("does not drift when supplying collateral from the wallet LP balance", () => {
+  it("does not drift when fully removing a collateral market that leaves no position row behind", () => {
     const state = makeExampleBorrowSystemState()
     const before = buildBorrowDashboardMetrics(state, "wallet-1").overview.netValueUsd
 
     const next = applyBorrowAction(state, {
+      type: "removeCollateral",
+      walletId: "wallet-1",
+      positionId: "wallet-1:curve-eth-usdt",
+      percentBps: 10_000,
+    })
+    const after = buildBorrowDashboardMetrics(next, "wallet-1").overview.netValueUsd
+
+    expect(next.accounts["wallet-1"]!.collateralPositions.some((position) => position.id === "wallet-1:curve-eth-usdt")).toBe(false)
+    expect(Math.abs(after - before)).toBeLessThanOrEqual(TOLERANCE)
+  })
+
+  it("does not drift when re-supplying LP that was first returned from collateral removal", () => {
+    const state = makeExampleBorrowSystemState()
+    const before = buildBorrowDashboardMetrics(state, "wallet-1").overview.netValueUsd
+
+    const afterRemove = applyBorrowAction(state, {
+      type: "removeCollateral",
+      walletId: "wallet-1",
+      positionId: "wallet-1:weth-usdc",
+      amountUsd6: parseFixed("1000", 6),
+    })
+
+    const next = applyBorrowAction(afterRemove, {
       type: "supplyCollateral",
       walletId: "wallet-1",
       marketId: EXAMPLE_UNI_MARKET_ID,

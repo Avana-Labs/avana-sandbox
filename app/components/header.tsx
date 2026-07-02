@@ -148,59 +148,78 @@ export function Header() {
       }`}
     >
       <div className="hidden xl:block">
-          <div className="flex h-[72px] w-full items-center justify-between gap-6 px-4 lg:px-5 xl:px-6 2xl:px-8">
-            <div className="flex min-w-0 items-center gap-7 overflow-hidden">
-              <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
-                <BrandLogo className="h-[48px] scale-100 md:h-[46px]" />
-              </Link>
+        <div className="grid h-[72px] w-full grid-cols-[minmax(0,1fr)_minmax(280px,420px)_minmax(0,1fr)] items-center gap-4 px-4 lg:px-5 xl:px-6 2xl:px-8">
+          <div className="flex min-w-0 items-center gap-5 overflow-hidden">
+            <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
+              <BrandLogo className="h-[50px] md:h-[50px]" />
+            </Link>
 
-              <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {desktopLinks.map((link) => {
-                  const isActive = mounted && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href))
+            <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {desktopLinks.slice(0, 4).map((link) => {
+                const isActive = mounted && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href))
 
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className={`inline-flex items-center rounded-full px-3 py-2 font-sans text-[15px] font-medium leading-[1.1] transition-colors ${
-                        isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <span>{t(link.label)}</span>
-                    </Link>
-                  )
-                })}
-              </nav>
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`inline-flex items-center rounded-full px-3 py-2 font-sans text-[15px] font-medium leading-[1.1] transition-colors ${
+                      isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>{t(link.label)}</span>
+                  </Link>
+                )
+              })}
+            </nav>
+          </div>
+
+          <div className="flex min-w-0 justify-center px-2">
+            <div className="w-full">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
+          </div>
+
+          <div className="flex min-w-0 items-center justify-end gap-2.5">
+            <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {desktopLinks.slice(4).map((link) => {
+                const isActive = mounted && pathname.startsWith(link.href)
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`inline-flex items-center rounded-full px-3 py-2 font-sans text-[15px] font-medium leading-[1.1] transition-colors ${
+                      isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>{t(link.label)}</span>
+                  </Link>
+                )
+              })}
             </div>
 
-            <div className="flex min-w-0 items-center justify-end gap-2">
-              <div className="hidden min-[1600px]:flex min-w-[280px] max-w-[360px] flex-1">
-                <div className="w-full">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <DesktopPreferenceControls />
-                <div className="flex shrink-0">
-                  <WalletControl size="desktop" />
-                </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <DesktopPreferenceControls />
+              <div className="flex shrink-0">
+                <WalletControl size="desktop" />
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="xl:hidden">
-          <div className="relative flex h-16 w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
-            <div className="flex items-center gap-3">
-              <Link href="/" aria-label="Home" title="Home" className="inline-flex items-center">
-                {renderMobileBrand()}
-              </Link>
+      <div className="xl:hidden">
+        <div className="relative flex h-16 w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
+          <div className="flex items-center gap-3">
+            <Link href="/" aria-label="Home" title="Home" className="inline-flex items-center">
+              {renderMobileBrand()}
+            </Link>
 
-              <LazyMobileMenu brand={renderMobileBrand()} />
-            </div>
-
-            <div className="flex items-center gap-0.5">
-              {renderMobileActions()}
-            </div>
+            <LazyMobileMenu brand={renderMobileBrand()} />
           </div>
+
+          <div className="flex items-center gap-0.5">
+            {renderMobileActions()}
+          </div>
+        </div>
       </div>
       <SandboxWalletDialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen} />
     </header>
