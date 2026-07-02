@@ -272,7 +272,7 @@ export function StatItem({ label, value, tone }: { label: string; value: string;
 
 export function StatsStrip({ items }: { items: Array<{ label: string; value: string; tone?: string }> }) {
   return (
-    <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-radius-md border border-border bg-surface-raised px-4 py-3 shadow-elev-1 sm:flex sm:items-start sm:gap-8">
+    <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-radius-md border border-border bg-card px-4 py-3 shadow-elev-1 sm:flex sm:items-start sm:gap-8">
       {items.map((item) => (
         <StatItem key={item.label} label={item.label} value={item.value} tone={item.tone} />
       ))}
