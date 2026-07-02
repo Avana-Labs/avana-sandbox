@@ -19,6 +19,7 @@ import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { pairExchangeRateLabel } from "@/app/lib/prices/format"
+import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
 import { FlashValue } from "@/app/components/ui/live"
 
@@ -265,7 +266,7 @@ function CollateralDesktopTable({
                   <CollateralAssetCell pool={pool} />
                 </td>
                 <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
-                  <span className="tabular-nums">{((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%</span>
+                  <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
                 </td>
                 <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{pool.ltv}%</span>
@@ -452,7 +453,7 @@ function SpokeMobileSection({
                     <MobileField label="Max LTV" value={`${pool.ltv}%`} />
                     <MobileField
                       label="APY"
-                      value={`${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`}
+                      value={formatApy((pool.aprMin + pool.aprMax) / 2)}
                       tone={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
                       flashValue={(pool.aprMin + pool.aprMax) / 2}
                       flashGoodDirection="down"

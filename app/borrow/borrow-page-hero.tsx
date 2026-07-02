@@ -3,6 +3,7 @@
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
+import { formatApy } from "@/app/lib/format"
 import { HeroMarketCard } from "./borrow-hero-market-card"
 import { BorrowHeroLiveMetrics } from "./borrow-hero-live-metrics"
 
@@ -17,7 +18,7 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
         title: pool.name,
         subtitle: `${compact(pool.tvlUsd)} TVL`,
         value: compact(pool.availableUsd),
-        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
+        delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
         deltaClassName: "text-apy-positive",
       })),
     },
@@ -30,7 +31,7 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
         title: pool.name,
         subtitle: `${compact(pool.tvlUsd)} TVL`,
         value: compact(pool.tvlUsd),
-        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
+        delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
         deltaClassName: "text-apy-positive",
       })),
     },
@@ -43,7 +44,7 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
         title: pool.name,
         subtitle: `${compact(pool.tvlUsd)} TVL`,
         value: compact(pool.tvlUsd),
-        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
+        delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
         deltaClassName: "text-apy-positive",
       })),
     },

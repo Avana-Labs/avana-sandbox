@@ -9,6 +9,7 @@ import {
   type BorrowableAsset,
 } from "@/app/lib/data/borrow-domain"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
+import { formatApy } from "@/app/lib/format"
 import Link from "next/link"
 import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
@@ -384,7 +385,7 @@ function AssetsSection({
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                     <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>
-                      {asset.borrowApr.toFixed(1)}%
+                      {formatApy(asset.borrowApr)}
                     </span>
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>

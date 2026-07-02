@@ -21,6 +21,7 @@ import {
 } from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
+import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
@@ -128,7 +129,7 @@ export function SuppliesPanel({
                     <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                       <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
                       <div className="font-data text-[11px] font-medium tabular-nums text-success">
-                        {row.pairApr.toFixed(1)}% APR
+                        {formatApy(row.pairApr)} APR
                       </div>
                     </td>
                     <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -226,7 +227,7 @@ export function SuppliesPanel({
                   valueTone="text-success"
                 />
                 <SupplyStatCell
-                  value={`${row.pairApr.toFixed(1)}%`}
+                  value={formatApy(row.pairApr)}
                   label="LP APR"
                 />
               </div>
