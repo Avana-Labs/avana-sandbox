@@ -262,6 +262,16 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
   }
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      // Close on a single Escape even when a query is present. Without this the
+      // keystroke can be consumed clearing the input first, needing a second press.
+      event.preventDefault()
+      event.stopPropagation()
+      setOpen(false)
+      setQuery("")
+      setActiveIndex(0)
+      return
+    }
     if (flatResults.length === 0) return
     if (event.key === "ArrowDown") {
       event.preventDefault()
