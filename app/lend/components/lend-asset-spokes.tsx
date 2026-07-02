@@ -3,6 +3,7 @@
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
@@ -27,11 +28,14 @@ type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
   totalApyLabel?: string
   supplyApyValue?: number
   rewardsApyValue?: number
+  totalDepositsLabel?: string
+  totalDepositsSecondaryLabel?: string
+  totalDepositsSortValue?: number
   utilizationLabel?: string
   utilizationValue?: number
-  reserveFactorLabel?: string
-  reserveFactorValue?: number
-  status?: string
+  availableLiquidityLabel?: string
+  availableLiquiditySecondaryLabel?: string
+  availableLiquiditySortValue?: number
 }
 type AssetGroup = LendPageData["assetGroups"][number]
 const DEFAULT_ASSET_GROUPS: AssetGroup[] = LEND_ASSET_GROUPS
@@ -306,46 +310,26 @@ function AssetIcon({ row }: { row: AssetRow }) {
   return <TokenIcon symbol={row.symbol} size="table" ring className="bg-card dark:bg-card" />
 }
 
-function StatusBadge({ status }: { status?: string }) {
-  const normalized = (status ?? "active").toLowerCase()
-  const tone =
-    normalized === "active"
-      ? "border-emerald-200/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400"
-      : normalized === "capped"
-        ? "border-amber-200/70 bg-amber-500/10 text-amber-800 dark:border-amber-900/50 dark:text-amber-300"
-        : "border-border bg-surface-inset text-muted-foreground"
-
-  return (
-    <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize", tone)}>
-      {normalized}
-    </span>
-  )
-}
-
 function AssetRowView({
   row,
   delay,
-  index,
   onDeposit,
 }: {
   row: AssetRow
   delay: number
-  index: number
   onDeposit?: (marketId: string) => void
 }) {
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
+  const detailReturn = detailHref
   return (
     <tr
       className="asset-swap group cursor-pointer transition-colors"
       style={{ animationDelay: `${delay}ms` }}
       onClick={() => router.push(detailHref)}
     >
-      <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
-        {index + 1}
-      </td>
-      <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
+      <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_LEFT}`}>
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} />
           <div className="min-w-0">
@@ -363,35 +347,57 @@ function AssetRowView({
         <span className="tabular-nums">{row.supplyApyLabel ?? row.apy}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
-        <span className="tabular-nums">{row.rewardsApyLabel ?? "0.00%"}</span>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
+          <span className="tabular-nums">{row.totalDepositsLabel ?? row.totalDepositsPrimary}</span>
+        </div>
+        <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+          {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
+        </div>
       </td>
 
       <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
-        <span className="tabular-nums">{row.reserveFactorLabel ?? "—"}</span>
-      </td>
-
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <StatusBadge status={row.status} />
+        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
+          <span className="tabular-nums">{row.availableLiquidityLabel ?? row.availableLiquidityPrimary}</span>
+        </div>
+        <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+          {row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary}
+        </div>
       </td>
 
       <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
         {onDeposit ? (
-          <Button
-            type="button"
-            size="sm"
-            className="h-7 rounded-xs px-2.5 text-[11px]"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDeposit(marketId)
-            }}
-          >
-            Deposit
-          </Button>
+          <div className="flex justify-end">
+            <div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-150 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 rounded-xs px-2.5 text-[11px]"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailReturn }))
+                }}
+              >
+                Withdraw
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="h-7 rounded-xs px-2.5 text-[11px]"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDeposit(marketId)
+                }}
+              >
+                Deposit
+              </Button>
+            </div>
+          </div>
         ) : null}
       </td>
     </tr>
@@ -426,24 +432,35 @@ function AssetCardView({
             </div>
           </div>
         </div>
-        <StatusBadge status={row.status} />
+        <div className="text-right">
+          <div className="font-data text-[18px] font-medium tabular-nums text-foreground dark:text-white/88">
+            {row.supplyApyLabel ?? row.apy}
+          </div>
+          <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">APY</div>
+        </div>
       </div>
-      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+      <dl className="mt-4 divide-y divide-border text-[12.5px]">
         <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Supply APY</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.supplyApyLabel ?? row.apy}</dd>
+          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Total Deposits</dt>
+          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">
+            {row.totalDepositsLabel ?? row.totalDepositsPrimary}
+          </dd>
+          <dd className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+            {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
+          </dd>
         </div>
-        <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Rewards APY</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.rewardsApyLabel ?? "0.00%"}</dd>
-        </div>
-        <div>
+        <div className="pt-3">
           <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Utilization</dt>
           <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.utilizationLabel ?? "—"}</dd>
         </div>
-        <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Reserve factor</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.reserveFactorLabel ?? "—"}</dd>
+        <div className="pt-3">
+          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Available Liquidity</dt>
+          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">
+            {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
+          </dd>
+          <dd className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+            {row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary}
+          </dd>
         </div>
       </dl>
       {onDeposit ? (
@@ -474,9 +491,7 @@ function AssetSection({
   rows: AssetRow[]
   onDeposit?: (marketId: string) => void
 }) {
-  const [sortKey, setSortKey] = useState<
-    "asset" | "supplyApy" | "rewardsApy" | "utilization" | "reserveFactor" | "status"
-  >("asset")
+  const [sortKey, setSortKey] = useState<"asset" | "supplyApy" | "totalDeposits" | "utilization" | "availableLiquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -496,14 +511,15 @@ function AssetSection({
       switch (sortKey) {
         case "supplyApy":
           return ((a.supplyApyValue ?? a.apyValue / 100) - (b.supplyApyValue ?? b.apyValue / 100)) * direction
-        case "rewardsApy":
-          return ((a.rewardsApyValue ?? 0) - (b.rewardsApyValue ?? 0)) * direction
+        case "totalDeposits":
+          return ((a.totalDepositsSortValue ?? a.totalDepositsValue ?? 0) - (b.totalDepositsSortValue ?? b.totalDepositsValue ?? 0)) * direction
         case "utilization":
           return ((a.utilizationValue ?? 0) - (b.utilizationValue ?? 0)) * direction
-        case "reserveFactor":
-          return ((a.reserveFactorValue ?? 0) - (b.reserveFactorValue ?? 0)) * direction
-        case "status":
-          return (a.status ?? "active").localeCompare(b.status ?? "active") * direction
+        case "availableLiquidity":
+          return (
+            (a.availableLiquiditySortValue ?? a.availableLiquidityValue ?? 0) -
+            (b.availableLiquiditySortValue ?? b.availableLiquidityValue ?? 0)
+          ) * direction
         case "asset":
         default:
           return a.name.localeCompare(b.name) * direction
@@ -542,23 +558,18 @@ function AssetSection({
           )}
         </div>
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[12px]">
+          <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-0 text-[12px]">
             <colgroup>
-              <col className="w-[4%]" />
-              <col className="w-[22%]" />
-              <col className="w-[11%]" />
-              <col className="w-[11%]" />
+              <col className="w-[26%]" />
               <col className="w-[12%]" />
+              <col className="w-[20%]" />
               <col className="w-[12%]" />
-              <col className="w-[12%]" />
+              <col className="w-[20%]" />
               <col className="w-[10%]" />
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  #
-                </th>
-                <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <th className="rounded-l-radius-lg bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   <button
                     type="button"
                     onClick={() => toggleSort("asset")}
@@ -591,15 +602,15 @@ function AssetSection({
                 <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
-                    onClick={() => toggleSort("rewardsApy")}
+                    onClick={() => toggleSort("totalDeposits")}
                     className={cn(
                       "flex items-center gap-2 transition-colors",
-                      sortKey === "rewardsApy"
+                      sortKey === "totalDeposits"
                         ? "text-foreground dark:text-white/90"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>REWARDS APY</span>
+                    <span>TOTAL DEPOSITS</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -621,46 +632,29 @@ function AssetSection({
                 <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                   <button
                     type="button"
-                    onClick={() => toggleSort("reserveFactor")}
+                    onClick={() => toggleSort("availableLiquidity")}
                     className={cn(
                       "flex items-center gap-2 transition-colors",
-                      sortKey === "reserveFactor"
+                      sortKey === "availableLiquidity"
                         ? "text-foreground dark:text-white/90"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>RESERVE FACTOR</span>
+                    <span>AVAILABLE LIQUIDITY</span>
                     <SortIcon />
                   </button>
                 </th>
-                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("status")}
-                    className={cn(
-                      "flex items-center gap-2 transition-colors",
-                      sortKey === "status"
-                        ? "text-foreground dark:text-white/90"
-                        : "text-foreground/70 dark:text-white/70",
-                    )}
-                  >
-                    <span>STATUS</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  ACTION
-                </th>
+                <th className="rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4" />
               </tr>
             </thead>
             <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
-                  <AssetRowView key={row.symbol} row={row} delay={index * 40} index={index} onDeposit={onDeposit} />
+                  <AssetRowView key={row.symbol} row={row} delay={index * 40} onDeposit={onDeposit} />
                 ))
               ) : (
                 <tr>
-                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={8}>
+                  <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={6}>
                     No assets match these filters.
                   </td>
                 </tr>
