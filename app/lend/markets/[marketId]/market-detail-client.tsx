@@ -8,6 +8,7 @@ import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/
 import { TransactionHistoryCard } from "@/app/borrow/_detail/asset-sections"
 import { LendHero, LendHeroIdentity, SupplyCard, RelatedMarketsRow, LendSidebar } from "@/app/lend/_detail"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
 import { cn } from "@/lib/utils"
@@ -49,6 +50,7 @@ function formatAge(elapsedMs: number) {
 export function LendMarketDetailClient({ detail }: Props) {
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const session = useLendSessionContext()
+  const { t } = useTranslation()
   const marketId = detail.row.marketId
 
   const transactions = React.useMemo(() => {
@@ -61,7 +63,7 @@ export function LendMarketDetailClient({ detail }: Props) {
       <main className={cn("mx-auto w-full px-5 pb-24 pt-8 md:px-8 md:pb-12", PAGE_MAX_W)}>
         <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
           <Link href="/lend" className="transition-colors hover:text-foreground">
-            Lend
+            {t("Lend")}
           </Link>
           <span aria-hidden className="text-border">
             ›
