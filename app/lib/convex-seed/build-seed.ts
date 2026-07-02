@@ -14,6 +14,7 @@
  */
 
 import { BORROW_POOL_CATALOG, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
 import { computeAssetAllocationRows } from "@/app/lib/borrow-detail/allocation"
@@ -468,7 +469,10 @@ function riskRow(slug: string, assessedAt: number, assessment: RiskAssessment): 
 /** Build the full deterministic seed for all borrow markets (assets + pools). */
 export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
   const days = options.days ?? 365
-  const asOf = options.asOf ?? Date.now()
+  // Default to the fixed sandbox clock, not Date.now(): a wall-clock asOf shifts the
+  // seeded daily walks every load, which made the /lend "Avg Utilization" (and other
+  // seeded metrics) non-deterministic across loads. Callers can still override.
+  const asOf = options.asOf ?? SANDBOX_NOW
   const reserveFactor = options.reserveFactor ?? RESERVE_FACTOR_DEFAULT
   const lastDay = isoDay(asOf)
 
