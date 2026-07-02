@@ -1,5 +1,13 @@
 /** Shared deterministic helpers for stable mock data and charts. */
 
+/**
+ * The sandbox's canonical "current time". Every mock/chart anchors its date range
+ * to this one clock so ranges stay consistent across surfaces (list hero, detail
+ * charts, history) instead of each module drifting to its own hardcoded month.
+ * Matches the borrow/lend/multiply system-state `now` (Jun 19, 2026).
+ */
+export const SANDBOX_NOW = Date.UTC(2026, 5, 19)
+
 export function hashString(value: string) {
   let hash = 2166136261
 
