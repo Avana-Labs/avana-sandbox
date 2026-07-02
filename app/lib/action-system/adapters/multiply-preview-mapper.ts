@@ -10,9 +10,13 @@ import {
   formatActionUsd,
 } from "@/app/lib/action-system/formatters"
 
+// Within ~15% of the 1.0 liquidation floor there is almost no safety buffer, so
+// this should read as danger (a firm "Risk of liquidation"), not a soft caution.
+const NEAR_LIQUIDATION_HF = 1.15
+
 function hfTone(value: number) {
   if (!Number.isFinite(value)) return "positive" as const
-  if (value < 1.05) return "danger" as const
+  if (value < NEAR_LIQUIDATION_HF) return "danger" as const
   if (value < 1.5) return "warning" as const
   return "positive" as const
 }
@@ -165,13 +169,13 @@ export function mapMultiplyPreviewToActionUi(
     metrics,
     networkFeeLabel: formatActionFeeSummary(preview.after.collateralValueUsd, 0.04),
     risk:
-      preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < 1.05)
+      preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < NEAR_LIQUIDATION_HF)
         ? {
             level: "danger",
             title: "Risk of liquidation",
             message:
               liquidationError ??
-              "Health factor is too low for this leverage.",
+              "This leverage leaves almost no safety buffer — the health factor is close to 1.0, where the position is liquidated.",
           }
         : preview.warnings.length > 0
           ? {
