@@ -168,9 +168,12 @@ export function selectAllAvailableCollateralPools(state: BorrowSystemState, wall
   const account = state.accounts[walletId]
 
   return Object.values(state.markets).map((market) => {
-    const position = account?.collateralPositions.find((row) => row.marketId === market.id)
-    const collateralUsd = position ? fixedToNumber(currentCollateralValueUsd6(position, market), 6) : 0
-    const metrics = position ? metricsForPosition(state, walletId, market.id) : null
+    // Report the SPOKE-scoped in-scope collateral (not just this market's own
+    // pledge) so the top Collateral card matches the "Net collateral in scope"
+    // metric block: a market whose spoke already holds collateral must not show
+    // $0.00 while a borrow against that scope is allowed.
+    const metrics = account ? metricsForPosition(state, walletId, market.id) : null
+    const collateralUsd = metrics ? fixedToNumber(metrics.poolCollateralValueUsd6, 6) : 0
     return {
       id: market.id,
       name: market.display.name,
