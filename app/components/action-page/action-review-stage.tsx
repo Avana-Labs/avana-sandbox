@@ -115,6 +115,7 @@ export function ActionReviewStage({
         secondaryHref={secondaryHref}
         primaryDisabled={!preview.allowed && Boolean(preview.blockedReason)}
         primaryPending={primaryPending}
+        sticky
       />
     </div>
   )
