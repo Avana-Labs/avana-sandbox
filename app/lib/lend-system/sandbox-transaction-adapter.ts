@@ -195,7 +195,15 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
     this.previewCache.set(intent.id, preview)
 
     if (!action || !preview.allowed) {
-      throw new Error(preview.validationErrors[0] ?? "Lend transaction is not allowed")
+      // Mirror borrow/multiply: record the failure so it appears in activity
+      // rather than throwing before anything is persisted. State is left
+      // unchanged so no phantom position is created.
+      return this.finalizeFailure(
+        intent,
+        preview,
+        state,
+        preview.validationErrors[0] ?? "Lend transaction is not allowed",
+      )
     }
 
     const positionId =
@@ -253,5 +261,63 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
     }
     this.writeStateImpl(nextState)
     return persistedResult
+  }
+
+  /**
+   * Record a FAILED lend action (deposit/withdraw/claim) without mutating state,
+   * mirroring the borrow/multiply adapters so a blocked attempt still shows up in
+   * activity. Persisting the failure is best-effort — if the backend is absent or
+   * throws, the local failed result is returned so nothing is lost.
+   */
+  private async finalizeFailure(
+    intent: LendTransactionIntent,
+    preview: LendTransactionPreview,
+    state: LendSystemState,
+    error: string,
+  ): Promise<LendSandboxActionResult> {
+    const timestamp = this.now()
+    const receipt: LendTransactionResult = {
+      id: this.generateId("tx"),
+      hash: this.generateId("sim_lend"),
+      status: "failed",
+      actionType: intent.actionType,
+      simulated: true,
+      timestamp,
+      error,
+    }
+    const historyItem: LendTransactionHistoryItem = {
+      id: receipt.id,
+      intentId: intent.id,
+      walletId: intent.walletId,
+      marketId: intent.marketId,
+      positionId: intent.positionId,
+      kind: intent.actionType,
+      status: "failed",
+      asset: intent.actionType === "claim" ? "Rewards" : state.markets[intent.marketId]?.asset.symbol ?? "",
+      amount: 0,
+      simulated: true,
+      timestamp,
+      hash: receipt.hash,
+    }
+    const localResult: LendSandboxActionResult = { preview, receipt, historyItem, state }
+
+    if (!this.persistResult) return localResult
+    try {
+      const persisted = await this.persistResult(localResult)
+      return {
+        ...localResult,
+        receipt: { ...receipt, ...persisted, actionType: receipt.actionType },
+        historyItem: {
+          ...historyItem,
+          id: persisted.id,
+          hash: persisted.hash,
+          status: persisted.status,
+          timestamp: persisted.timestamp,
+        },
+      }
+    } catch {
+      // Recording a failure is best-effort; keep the local failed result.
+      return localResult
+    }
   }
 }
