@@ -64,4 +64,17 @@ describe("SearchCommand keyboard navigation", () => {
     fireEvent.keyDown(input, { key: "Enter" })
     expect(push).toHaveBeenCalledTimes(1)
   })
+
+  it("closes on a single Escape even when a query is present", async () => {
+    const input = await openAndLoad()
+
+    fireEvent.change(input, { target: { value: "usdc" } })
+    await waitFor(() => expect(screen.getAllByRole("option").length).toBeGreaterThan(0))
+
+    fireEvent.keyDown(input, { key: "Escape" })
+
+    // One Escape must dismiss the dialog outright (no residual combobox/options).
+    await waitFor(() => expect(screen.queryByRole("combobox")).not.toBeInTheDocument())
+    expect(screen.queryAllByRole("option")).toHaveLength(0)
+  })
 })
