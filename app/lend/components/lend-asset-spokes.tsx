@@ -6,6 +6,14 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
@@ -418,66 +426,57 @@ function AssetCardView({
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
   return (
-    <div
-      className="cursor-pointer rounded-radius-lg border border-border bg-card p-4 transition-colors hover:border-brand/40"
-      style={{ animationDelay: `${index * 40}ms` }}
-      onClick={() => router.push(detailHref)}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <AssetIcon row={row} />
-          <div className="min-w-0">
-            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.name}</div>
-            <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
-              <AssetSubLabel symbol={row.symbol} />
+    <MarketMobileCard clickable style={{ animationDelay: `${index * 40}ms` }} onClick={() => router.push(detailHref)}>
+      <MarketMobileCardHeader
+        identity={
+          <div className="flex min-w-0 items-center gap-3">
+            <AssetIcon row={row} />
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.name}</div>
+              <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                <AssetSubLabel symbol={row.symbol} />
+              </div>
             </div>
           </div>
-        </div>
-        <div className="text-right">
-          <div className="font-data text-[18px] font-medium tabular-nums text-foreground dark:text-white/88">
-            {row.supplyApyLabel ?? row.apy}
-          </div>
-          <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">APY</div>
-        </div>
-      </div>
-      <dl className="mt-4 divide-y divide-border text-[12.5px]">
-        <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Total Deposits</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">
-            {row.totalDepositsLabel ?? row.totalDepositsPrimary}
-          </dd>
-          <dd className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
-            {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
-          </dd>
-        </div>
-        <div className="pt-3">
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Utilization</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">{row.utilizationLabel ?? "—"}</dd>
-        </div>
-        <div className="pt-3">
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Available Liquidity</dt>
-          <dd className="mt-0.5 font-data text-[15px] tabular-nums text-foreground dark:text-white/88">
-            {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
-          </dd>
-          <dd className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
-            {row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary}
-          </dd>
-        </div>
-      </dl>
+        }
+        metric={<MarketMobileMetric value={row.supplyApyLabel ?? row.apy} label="APY" />}
+      />
+      <MarketMobileStatList className="mt-4">
+        <MarketMobileStatRow
+          label="Total Deposits"
+          value={
+            <span>
+              {row.totalDepositsLabel ?? row.totalDepositsPrimary}
+              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
+              </span>
+            </span>
+          }
+        />
+        <MarketMobileStatRow label="Utilization" value={row.utilizationLabel ?? "—"} />
+        <MarketMobileStatRow
+          label="Available Liquidity"
+          value={
+            <span>
+              {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
+              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                {row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary}
+              </span>
+            </span>
+          }
+        />
+      </MarketMobileStatList>
       {onDeposit ? (
-        <Button
-          type="button"
-          size="sm"
-          className="mt-4 h-10 w-full rounded-full text-[14px]"
+        <MarketMobilePrimaryAction
           onClick={(e) => {
             e.stopPropagation()
             onDeposit(marketId)
           }}
         >
           Deposit
-        </Button>
+        </MarketMobilePrimaryAction>
       ) : null}
-    </div>
+    </MarketMobileCard>
   )
 }
 

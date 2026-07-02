@@ -4,6 +4,14 @@ import { memo, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
+import {
   aprToneClass,
   formatCompactUsd,
   formatRiskPremium,
@@ -459,55 +467,51 @@ function SpokeMobileSection({
           <div className="space-y-3">
             <ul className="space-y-3">
               {visibleRows.map((pool) => (
-                <li
-                  key={pool.id}
-                  className="cursor-pointer space-y-4 rounded-radius-lg border border-border bg-card px-4 py-4 shadow-elev-1 transition-colors hover:border-brand/30"
-                  onClick={() => onViewMarket(pool)}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <TokenPairCell
-                      visuals={pool.visuals}
-                      name={pool.name}
-                      subtitle={
-                        pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
-                        `${formatCompactUsd(pool.tvlUsd)} TVL`
+                <li key={pool.id}>
+                  <MarketMobileCard clickable onClick={() => onViewMarket(pool)}>
+                    <MarketMobileCardHeader
+                      identity={
+                        <TokenPairCell
+                          visuals={pool.visuals}
+                          name={pool.name}
+                          subtitle={
+                            pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
+                            `${formatCompactUsd(pool.tvlUsd)} TVL`
+                          }
+                          size="md"
+                        />
                       }
-                      size="md"
+                      metric={
+                        <MarketMobileMetric
+                          value={formatApy((pool.aprMin + pool.aprMax) / 2)}
+                          label="APY"
+                          valueClassName={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
+                        />
+                      }
                     />
-                    <div className="text-right">
-                      <div className={cn("font-data text-[18px] font-medium tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}>
-                        {formatApy((pool.aprMin + pool.aprMax) / 2)}
+                    {pool.events && pool.events.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        <EventTagList events={pool.events} />
                       </div>
-                      <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">APY</div>
+                    ) : null}
+                    <div className="mt-3 flex items-center justify-between text-[12px] text-muted-foreground">
+                      <DexChipRow dexes={pool.dexes} />
+                      <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
                     </div>
-                  </div>
-                  {pool.events && pool.events.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      <EventTagList events={pool.events} />
-                    </div>
-                  ) : null}
-                  <div className="flex items-center justify-between text-[12px] text-muted-foreground">
-                    <DexChipRow dexes={pool.dexes} />
-                    <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
-                  </div>
-                  <div className="divide-y divide-border text-[12.5px]">
-                    <AssetStatLine label="Liquidity" value={formatCompactUsd(pool.availableUsd)} />
-                    <AssetStatLine label="Max LTV" value={`${pool.ltv}%`} />
-                    <AssetStatLine label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
-                  </div>
-                  <div className="flex gap-2">
-                    <PillButton
-                      variant="primary"
-                      size="md"
-                      className="w-full"
+                    <MarketMobileStatList className="mt-3">
+                      <MarketMobileStatRow label="Liquidity" value={formatCompactUsd(pool.availableUsd)} />
+                      <MarketMobileStatRow label="Max LTV" value={`${pool.ltv}%`} />
+                      <MarketMobileStatRow label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
+                    </MarketMobileStatList>
+                    <MarketMobilePrimaryAction
                       onClick={(event) => {
                         event.stopPropagation()
                         onUseAsCollateral(pool)
                       }}
                     >
                       Supply
-                    </PillButton>
-                  </div>
+                    </MarketMobilePrimaryAction>
+                  </MarketMobileCard>
                 </li>
               ))}
               {pending.map((row) => (
@@ -537,15 +541,6 @@ function SpokeMobileSection({
         )}
       </div>
     </section>
-  )
-}
-
-function AssetStatLine({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="flex items-center justify-between py-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
-    </div>
   )
 }
 
