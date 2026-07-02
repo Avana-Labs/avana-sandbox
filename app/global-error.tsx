@@ -8,9 +8,13 @@ import { useEffect } from "react"
  * cannot rely on providers or fonts from RootLayout. Kept intentionally minimal
  * and self-contained (inline styles) so it renders even when everything else has.
  */
-export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production") console.error(error)
+    // Always surface the error — production included — so incidents aren't invisible. In a
+    // production build Next strips the message from the client error object but preserves
+    // `error.digest`, which correlates to the server-side log entry (Vercel / Convex). If
+    // an error tracker (Sentry etc.) is added later, report it here too.
+    console.error("[global-error]", error, error.digest ? `digest=${error.digest}` : "")
   }, [error])
 
   return (
@@ -38,6 +42,11 @@ export default function GlobalError({ error, reset }: { error: Error; reset: () 
         <p style={{ margin: 0, maxWidth: "34rem", opacity: 0.8 }}>
           The app hit an unexpected error. Try again — if it keeps happening, please let us know.
         </p>
+        {error.digest ? (
+          <p style={{ margin: 0, fontSize: "0.75rem", opacity: 0.5, fontFamily: "ui-monospace, monospace" }}>
+            Reference: {error.digest}
+          </p>
+        ) : null}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", justifyContent: "center" }}>
           <button
             type="button"

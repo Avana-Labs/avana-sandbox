@@ -20,25 +20,27 @@ export function mergeAliasedQuickStats<T extends DetailQuickStat>(
   })
 }
 
-type DetailContentOverlay = {
+type AboutContent = {
   description: string
-  stats: unknown[]
-  history?: string
-  faqs?: unknown[]
+  stats: Array<{ label: string; value: string; href?: string }>
+  history: Array<{ date: string; title: string; description?: string }>
 }
 
-type DetailWithContent<About, Faqs> = {
-  about: About
-  faqs: Faqs
+type FaqEntry = { question: string; answer: string }
+
+type DetailContentOverlay = AboutContent & {
+  faqs: FaqEntry[]
 }
 
-export function applyDetailContentOverlay<
-  About extends { description: string; stats: unknown[]; history?: string },
-  Faqs,
->(
-  detail: DetailWithContent<About, Faqs>,
+type DetailWithContent = {
+  about: AboutContent
+  faqs: FaqEntry[]
+}
+
+export function applyDetailContentOverlay<T extends DetailWithContent>(
+  detail: T,
   content: DetailContentOverlay | null | undefined,
-): DetailWithContent<About, Faqs> {
+): T {
   if (!content) return detail
   return {
     ...detail,
@@ -48,6 +50,6 @@ export function applyDetailContentOverlay<
       stats: content.stats,
       history: content.history,
     },
-    faqs: (content.faqs ?? detail.faqs) as Faqs,
-  }
+    faqs: content.faqs,
+  } as T
 }
