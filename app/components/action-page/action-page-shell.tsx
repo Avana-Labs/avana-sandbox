@@ -1,12 +1,10 @@
 "use client"
 
-import { Eye, EyeOff, X } from "lucide-react"
+import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import type { ActionPageMode } from "@/app/lib/action-system/contracts"
-import { DesktopPreferenceControls } from "@/app/components/desktop-preference-controls"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type ActionPageShellProps = {
@@ -39,7 +37,6 @@ export function ActionPageShell({
 }: ActionPageShellProps) {
   const router = useRouter()
   const { t } = useTranslation()
-  const { showDollarAmounts, toggleShowDollarAmounts } = useDisplayPreferences()
   const showChrome = true
   const showTitleBlock = showChrome && !hideTitle
 
@@ -67,36 +64,16 @@ export function ActionPageShell({
       data-testid="action-page-shell"
       data-mode={mode}
     >
-      {showChrome && (!hideClose || mode !== "embedded") ? (
+      {showChrome && !hideClose ? (
         <div className="flex items-center justify-end gap-1.5 px-4 pb-1 pt-3 sm:px-6">
-          {mode !== "embedded" ? (
-            <>
-              <button
-                type="button"
-                aria-label={showDollarAmounts ? t("Hide dollar amounts") : t("Show dollar amounts")}
-                title={t("Dollar amounts")}
-                onClick={toggleShowDollarAmounts}
-                className="inline-flex size-10 items-center justify-center rounded-full bg-transparent text-brand outline-none transition-transform duration-200 hover:-translate-y-px hover:text-brand/80 focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
-              >
-                {showDollarAmounts ? (
-                  <Eye className="size-5" strokeWidth={1.9} />
-                ) : (
-                  <EyeOff className="size-5" strokeWidth={1.9} />
-                )}
-              </button>
-              <DesktopPreferenceControls />
-            </>
-          ) : null}
-          {!hideClose ? (
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={handleClose}
-              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <X className="size-4" />
-            </button>
-          ) : null}
+          <button
+            type="button"
+            aria-label={t("Close")}
+            onClick={handleClose}
+            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <X className="size-4" />
+          </button>
         </div>
       ) : null}
 
