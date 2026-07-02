@@ -47,7 +47,7 @@ export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <div className="mx-auto max-w-[1152px] xl:max-w-5xl 2xl:max-w-[1152px]">
+      <div className="mx-auto max-w-[1152px]">
         <MultiplyHero metrics={livePageData.heroMetrics} />
         <ExploreLoopsMarketsTable
           rows={livePageData.lendRows}
