@@ -29,6 +29,7 @@ type DashboardTabsProps = {
   multiplySnapshot: BorrowSnapshot
   lendSnapshot?: LendSnapshot | null
   multiplyHero?: PortfolioPageData["heroByTab"]["looping"] | null
+  multiplyPositionTarget?: { marketId: string; multiplier: number } | null
 }
 
 export function DashboardTabs({
@@ -39,6 +40,7 @@ export function DashboardTabs({
   multiplySnapshot,
   lendSnapshot,
   multiplyHero,
+  multiplyPositionTarget,
 }: DashboardTabsProps) {
   const activeHero =
     activeTab === "overview"
@@ -85,6 +87,7 @@ export function DashboardTabs({
         rangeData={activeHero.rangeData}
         borrowSnapshot={borrowSnapshot}
         multiplySnapshot={multiplySnapshot}
+        multiplyPositionTarget={multiplyPositionTarget}
       />
     </section>
   )

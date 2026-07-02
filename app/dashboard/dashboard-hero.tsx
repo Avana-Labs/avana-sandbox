@@ -60,6 +60,8 @@ type DashboardHeroProps = {
   statTwoValue?: string
   borrowSnapshot?: BorrowSnapshot
   multiplySnapshot?: BorrowSnapshot
+  /** The user's primary open multiply position, used to pre-load "Increase loop". */
+  multiplyPositionTarget?: { marketId: string; multiplier: number } | null
 }
 
 type HeroUiConfig = {
@@ -109,12 +111,14 @@ function buildActions({
   secondaryActionLabel,
   returnHref,
   onNavigate,
+  multiplyPositionTarget,
 }: {
   actionLabels?: string[]
   primaryActionLabel: string
   secondaryActionLabel: string
   returnHref?: string
   onNavigate?: (href: string) => void
+  multiplyPositionTarget?: { marketId: string; multiplier: number } | null
 }): PortfolioHeroAction[] {
   const labels = actionLabels?.length ? actionLabels : [primaryActionLabel, secondaryActionLabel]
 
@@ -124,8 +128,24 @@ function buildActions({
     if (normalized.includes("repay")) return actionPagePath("borrow", "repay")
     if (normalized.includes("deposit")) return actionPagePath("lend", "deposit")
     if (normalized.includes("withdraw")) return actionPagePath("lend", "withdraw")
-    if (normalized.includes("increase")) return actionPagePath("multiply", "multiply")
-    if (normalized.includes("unwind") || normalized.includes("deleverage")) return actionPagePath("multiply", "deleverage")
+    if (normalized.includes("increase")) {
+      // Pre-load the user's actual position (market + current leverage baseline)
+      // so "Increase loop" grows the existing loop instead of a blank form.
+      return actionPagePath(
+        "multiply",
+        "multiply",
+        multiplyPositionTarget
+          ? { market: multiplyPositionTarget.marketId, multiplier: String(multiplyPositionTarget.multiplier) }
+          : undefined,
+      )
+    }
+    if (normalized.includes("unwind") || normalized.includes("deleverage")) {
+      return actionPagePath(
+        "multiply",
+        "deleverage",
+        multiplyPositionTarget ? { market: multiplyPositionTarget.marketId } : undefined,
+      )
+    }
     return null
   }
 
@@ -200,6 +220,7 @@ export function DashboardHero({
   statTwoValue = "+$12.46",
   borrowSnapshot,
   multiplySnapshot,
+  multiplyPositionTarget,
 }: DashboardHeroProps) {
   const router = useRouter()
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
@@ -253,6 +274,7 @@ export function DashboardHero({
         secondaryActionLabel: uiConfig.actionLabels?.[1] ?? "Withdraw",
         returnHref: dashboardHrefForTab(tab),
         onNavigate: (href) => router.push(href),
+        multiplyPositionTarget,
       })
     : []
 
