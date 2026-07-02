@@ -72,7 +72,7 @@ const KIND_LABEL: Record<PortfolioActivityRow["kind"], string> = {
 }
 
 const STATUS_TONE: Record<PortfolioActivityRow["status"], string> = {
-  confirmed: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  confirmed: "border-emerald-500/20 bg-emerald-500/10 text-success",
   pending: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   failed: "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 }

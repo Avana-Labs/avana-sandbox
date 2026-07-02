@@ -329,7 +329,7 @@
 }
 
 .text-apy-positive {
-  color: #047857;
+  color: hsl(var(--success));
 }
 
 .no-number-spinner {

@@ -14,10 +14,10 @@ const KIND_LABEL: Record<TxHistoryRow["kind"], string> = {
 }
 
 const KIND_TONE: Record<TxHistoryRow["kind"], string> = {
-  supply: "text-emerald-600 dark:text-emerald-400",
+  supply: "text-success",
   withdraw: "text-rose-600 dark:text-rose-400",
   borrow: "text-rose-600 dark:text-rose-400",
-  repay: "text-emerald-600 dark:text-emerald-400",
+  repay: "text-success",
   liquidation: "text-amber-600 dark:text-amber-400",
   rewards: "text-slate-700 dark:text-slate-300",
 }

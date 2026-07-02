@@ -42,7 +42,7 @@ export function BipolarBar({
   leftClass = "bg-rose-500",
   rightClass = "bg-emerald-500",
   leftLabelClass = "text-rose-600 dark:text-rose-400",
-  rightLabelClass = "text-emerald-600 dark:text-emerald-400",
+  rightLabelClass = "text-success",
   heightClass = "h-2.5",
   labelPosition = "inside",
   className,

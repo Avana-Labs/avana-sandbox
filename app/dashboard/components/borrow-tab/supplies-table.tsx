@@ -127,7 +127,7 @@ export function SuppliesPanel({
                     </td>
                     <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
                       <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
-                      <div className="font-data text-[11px] font-medium tabular-nums text-emerald-600">
+                      <div className="font-data text-[11px] font-medium tabular-nums text-success">
                         {row.pairApr.toFixed(1)}% APR
                       </div>
                     </td>
@@ -223,7 +223,7 @@ export function SuppliesPanel({
                 <SupplyStatCell
                   value={m(row.feesLabel)}
                   label="Fees Earned"
-                  valueTone="text-emerald-600"
+                  valueTone="text-success"
                 />
                 <SupplyStatCell
                   value={`${row.pairApr.toFixed(1)}%`}
@@ -293,7 +293,7 @@ export function SuppliesHealthFactorCard({
         <span
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full bg-table-header px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
-            status.tone === "positive" && "text-emerald-600",
+            status.tone === "positive" && "text-success",
             status.tone === "warning" && "text-amber-600",
             status.tone === "danger" && "text-rose-600",
             status.tone === "default" && "text-muted-foreground",

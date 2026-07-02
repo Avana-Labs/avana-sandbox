@@ -14,8 +14,8 @@ const KIND_LABEL: Record<MultiplyTxHistoryRow["kind"], string> = {
 }
 
 const KIND_TONE: Record<MultiplyTxHistoryRow["kind"], string> = {
-  open: "text-emerald-600 dark:text-emerald-400",
-  add: "text-emerald-600 dark:text-emerald-400",
+  open: "text-success",
+  add: "text-success",
   reduce: "text-rose-600 dark:text-rose-400",
   close: "text-rose-600 dark:text-rose-400",
   interest: "text-slate-700 dark:text-slate-300",

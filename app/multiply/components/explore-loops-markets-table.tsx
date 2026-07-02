@@ -652,7 +652,7 @@ export function ExploreLoopsMarketsTable({
                           </span>
                           <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
                             <span className="text-muted-foreground dark:text-white/38">APY</span>
-                            <span className="font-data tabular-nums text-emerald-600 dark:text-emerald-400">
+                            <span className="font-data tabular-nums text-success">
                               {getSupplyApy(row.protocol) ?? "—"}
                             </span>
                           </span>
@@ -693,7 +693,7 @@ export function ExploreLoopsMarketsTable({
                           row.apy
                             ? row.apy.startsWith("-")
                               ? "text-rose-600 dark:text-rose-400"
-                              : "text-emerald-600 dark:text-emerald-400"
+                              : "text-success"
                             : "text-muted-foreground",
                         )}
                       >
@@ -860,7 +860,7 @@ function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSn
         <div className="space-y-2.5">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[12px] leading-none text-muted-foreground">APY</span>
-            <span className="font-data text-[14px] font-medium tabular-nums leading-none text-emerald-600 dark:text-emerald-400">
+            <span className="font-data text-[14px] font-medium tabular-nums leading-none text-success">
               {snapshot.apyLabel}
             </span>
           </div>

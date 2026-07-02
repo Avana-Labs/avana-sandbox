@@ -37,7 +37,7 @@ export function PortfolioLendingOpportunities({
             >
               <div className="flex items-start justify-between gap-3">
                 <h3 className="text-[15px] font-medium tracking-[-0.02em] text-foreground">{bucket.title}</h3>
-                <span className="shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-data text-[12px] font-medium tabular-nums text-emerald-700 dark:text-emerald-300">
+                <span className="shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-data text-[12px] font-medium tabular-nums text-success">
                   {bucket.apyRangeLabel}
                 </span>
               </div>
@@ -46,7 +46,7 @@ export function PortfolioLendingOpportunities({
                 {bucket.pools.map((pool) => (
                   <li key={pool.name} className="flex items-center justify-between gap-3 text-[13.5px]">
                     <span className="min-w-0 truncate text-foreground">{pool.name}</span>
-                    <span className="shrink-0 font-data tabular-nums text-emerald-600 dark:text-emerald-400">{formatApy(pool.apyPct)}</span>
+                    <span className="shrink-0 font-data tabular-nums text-success">{formatApy(pool.apyPct)}</span>
                   </li>
                 ))}
               </ul>
