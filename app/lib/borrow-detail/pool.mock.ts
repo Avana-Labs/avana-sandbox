@@ -22,6 +22,7 @@ import {
 } from "@/app/lib/borrow-sim"
 import { HOME_COLLATERAL_POOLS } from "@/app/lib/home-sim"
 import { buildSeriesFamily, prngFromString } from "./prng"
+import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
 import { formatBpsAsPct, formatPct } from "./allocation"
 import { buildPoolRiskAssessment } from "./risk-model"
@@ -480,7 +481,7 @@ function buildPoolEngagement(row: BorrowPoolRow, fixture: FixtureOverride | unde
   const rand = prngFromString(`${row.id}:engagement`)
   const tvl = fixture?.baseTvlUsd ?? getSpokeById(row.spoke).liquidityUsd
   const base = Math.max(600, Math.round(Math.sqrt(tvl) * 1.3))
-  const now = Date.UTC(2026, 3, 22)
+  const now = SANDBOX_NOW
   const samples = 12
   const points: Series["points"] = []
   for (let i = samples - 1; i >= 0; i--) {
