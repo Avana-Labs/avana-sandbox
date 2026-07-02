@@ -19,12 +19,22 @@ const buttonVariants = cva(
           'border border-border bg-surface-inset text-foreground hover:bg-surface-hover',
         ghost: 'text-muted-foreground hover:bg-surface-inset hover:text-foreground',
         link: 'text-foreground underline-offset-2 hover:underline',
+        // Canonical action CTA (Uniswap-style solid brand fill). Disabled falls back
+        // to the soft brand tint instead of a low-contrast dimmed fill.
+        brand:
+          'w-full bg-brand font-semibold text-brand-foreground hover:bg-brand/90 active:bg-brand/80 focus-visible:ring-brand/40 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground',
+        // Secondary CTA that pairs with `brand` (matched height/radius).
+        'brand-secondary':
+          'w-full border border-border bg-surface-raised font-medium text-foreground hover:bg-surface-hover',
       },
       size: {
         default: 'h-9 px-3',
         sm: 'h-8 rounded-radius-sm px-2.5 text-[12px]',
         lg: 'h-10 rounded-radius-sm px-4',
         icon: 'h-9 w-9',
+        // Full-height action-flow CTAs.
+        cta: 'h-14 rounded-radius-xl px-4 text-[16px]',
+        compact: 'h-12 rounded-radius-xl px-4 text-[15px]',
       },
     },
     defaultVariants: {
