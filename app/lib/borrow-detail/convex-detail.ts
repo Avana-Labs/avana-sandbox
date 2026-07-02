@@ -16,7 +16,7 @@ import {
   fetchTokenPrices,
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
-import { formatOraclePrice } from "@/app/lib/borrow-detail/pool.mock"
+import { formatOraclePrice } from "@/app/lib/borrow-detail/formatters"
 import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
@@ -34,8 +34,9 @@ import type { AssetDetail, PoolDetail } from "./types"
  *   - reference values (TVL, available, utilization, APY, quick stats) ← Convex snapshot
  *   - HERO chart (pool = TVL / total supplied, asset = total borrows) ← Convex daily series
  *   - engagement (active wallets/sessions) ← Convex walletEvents
- * Each Convex read falls back to the catalog/mock value when unreachable, so the
- * page always renders.
+ * Each Convex read falls back to the deterministic catalog fixture when
+ * unreachable, so the page always renders and the sandbox/demo routes stay
+ * stable without pretending the fallback is the live source of truth.
  *
  * Kept OUT of `./index.ts` because that module is also imported by client
  * components, and `market-hydration-server.ts` is `server-only`.
