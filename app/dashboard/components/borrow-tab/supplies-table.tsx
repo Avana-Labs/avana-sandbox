@@ -133,7 +133,7 @@ export function SuppliesPanel({
                       </div>
                     </td>
                     <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
-                      <div className="flex justify-start gap-1.5">
+                      <div className="flex justify-start gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
                         <PillButton variant="ghost" onClick={() => onRemove(row)}>
                           Remove
                         </PillButton>
