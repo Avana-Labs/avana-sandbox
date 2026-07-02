@@ -66,7 +66,7 @@ type ActionConfigureStageProps = {
   homeLayout?: boolean
   amountPlacement?: "inline" | "stacked"
   assetPickerVariant?: "menu" | "dialog"
-  pickerTokens?: import("@/app/lib/home-sim").HomeBorrowToken[]
+  pickerTokens?: import("@/app/lib/borrow-system/home-contracts").HomeBorrowToken[]
 }
 
 export function ActionConfigureAmountSection({

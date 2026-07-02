@@ -9,7 +9,7 @@ import {
   selectHomeDebtMap,
   selectHomeBorrowTokensForMarket,
 } from "@/app/lib/borrow-system/home-runtime"
-import { HOME_CLAIM_POSITIONS } from "@/app/lib/home-sim"
+import { HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 
 describe("home runtime", () => {
   it("only exposes borrowables that belong to the selected market spoke", () => {

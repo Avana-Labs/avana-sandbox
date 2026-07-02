@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { sanitizeDecimalInput } from "@/app/lib/action-system/amount-input"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useMediaQuery } from "@/app/lib/use-media-query"
-import type { HomeBorrowToken } from "@/app/lib/home-sim"
+import type { HomeBorrowToken } from "@/app/lib/borrow-system/home-contracts"
 
 export type ActionAssetOption = {
   id: string
