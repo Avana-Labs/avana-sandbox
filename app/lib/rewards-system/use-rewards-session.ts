@@ -9,6 +9,15 @@ import type { RewardsSessionState } from "./contracts"
 import { clearRewardsSessionState, readRewardsSessionState, writeRewardsSessionState } from "./storage"
 import { REWARDS_SESSION_SYNC_EVENT } from "./session-sync"
 
+/**
+ * Freshness rank for a rewards state. Claims and activity events are append-only
+ * (you can't un-claim), so the state with more records is the more recent one.
+ * Claims dominate so a durably-persisted claim is never lost to a stale snapshot.
+ */
+function rewardsStateRank(state: RewardsSessionState): number {
+  return (state.claims?.length ?? 0) * 1_000_000 + (state.events?.length ?? 0)
+}
+
 export function useRewardsSession({
   walletId,
   sessionSeed,
@@ -37,9 +46,16 @@ export function useRewardsSession({
         setHasHydratedStorage(false)
         return
       }
-      const serialized = remoteState ?? sessionSeed
-      lastRemoteStateRef.current = serialized
-      setState(JSON.parse(serialized) as RewardsSessionState)
+      const remote = remoteState ? (JSON.parse(remoteState) as RewardsSessionState) : null
+      // Compare against the durable localStorage mirror: if a prior Convex save
+      // failed, the mirror holds the newer claim while Convex is stale. Prefer the
+      // fresher (more-records) state so a claimed balance never reverts on nav.
+      const local = readRewardsSessionState(walletId, sessionSeed)
+      const chosen = remote && rewardsStateRank(remote) >= rewardsStateRank(local) ? remote : local
+      // Track the remote value (not `chosen`) so the persist effect re-pushes a
+      // locally-fresher state up to Convex.
+      lastRemoteStateRef.current = remoteState
+      setState(chosen)
       setHasHydratedStorage(true)
       return
     }
@@ -52,6 +68,9 @@ export function useRewardsSession({
     if (!hasHydratedStorage) return
     if (!persistState) {
       const serialized = JSON.stringify(state)
+      // Durable write-through: mirror to localStorage so a failed/unreachable Convex
+      // save doesn't drop the claim on the next navigation (hydration picks it up).
+      writeRewardsSessionState(walletId, state)
       if (serialized === lastRemoteStateRef.current || !persistRemoteState) return
       lastRemoteStateRef.current = serialized
       void persistRemoteState(serialized).catch(() => {
