@@ -13,7 +13,7 @@ export function RelatedAssetsRow({ detail }: Props) {
   return (
     <section id="related-markets" className="min-w-0">
       <div className="mb-3">
-        <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">Related markets</h2>
+        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Related markets</h2>
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {detail.related.map((rel) => (

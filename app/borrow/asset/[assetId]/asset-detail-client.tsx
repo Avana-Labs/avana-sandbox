@@ -93,7 +93,7 @@ export function AssetDetailClient({ detail }: Props) {
             <AssetHero detail={detail} hideIdentity className="mb-6" />
 
             <section aria-label="Asset analytics" className="space-y-8 pt-8">
-              <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
+              <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
               <QuickStatsGrid detail={detail} />
               <InterestRateModelCard detail={detail} />
               <AllocationBreakdownCard detail={detail} />
