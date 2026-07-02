@@ -24,18 +24,25 @@ describe("useAvanaSession", () => {
     expect(result.current.borrowSessionSeed).not.toBe(result.current.lendSessionSeed)
   })
 
-  it("does not seed authenticated Convex sessions with demo positions or balances", () => {
+  it("does not seed authenticated Convex sessions with demo positions", () => {
     const wallet = "0xabc0000000000000000000000000000000000001"
     const { result } = renderHook(() => useAvanaSession(wallet, "convex"))
     const borrow = deserializeBorrowSystemState(result.current.borrowSessionSeed)
     const lend = deserializeLendSystemState(result.current.lendSessionSeed)
     const multiply = deserializeMultiplySystemState(result.current.multiplySessionSeed)
 
+    // No demo POSITIONS may leak into an authed session — real positions hydrate from Convex.
     expect(borrow.accounts[wallet]?.walletBalanceUsd6).toBe(0n)
     expect(borrow.accounts[wallet]?.collateralPositions).toEqual([])
     expect(borrow.accounts[wallet]?.debtPositions).toEqual([])
-    expect(lend.walletBalances[wallet]).toEqual({})
     expect(lend.positions).toEqual({})
     expect(multiply.positions).toEqual({})
+
+    // Wallet HOLDINGS are intentional sandbox play money (practice funds per asset) so any
+    // market can be deposited into without a "you don't have this asset" dead-end. This is
+    // spendable balance only — not a position, and not summed into the portfolio total.
+    const lendHoldings = lend.walletBalances[wallet] ?? {}
+    expect(Object.keys(lendHoldings).length).toBeGreaterThan(0)
+    expect(Object.values(lendHoldings).every((amount) => amount > 0)).toBe(true)
   })
 })
