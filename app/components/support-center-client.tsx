@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export type SupportSubmitPayload = {
   category: string
@@ -244,6 +245,7 @@ const SUPPORT_CATEGORIES: SupportCategory[] = [
 type SendStatus = "idle" | "sending" | "sent" | "error"
 
 function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
+  const { t } = useTranslation()
   const [stage, setStage] = useState<1 | 2 | 3>(1)
   const [categoryValue, setCategoryValue] = useState("")
   const [topicValue, setTopicValue] = useState("")
@@ -263,7 +265,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   const hasArticles = Boolean(selectedTopic && stage >= 2)
   const canContinue = Boolean(selectedTopic)
   const canSend = message.trim().length >= 10 && sendStatus !== "sending"
-  const footerLabel = stage === 3 ? (sendStatus === "sending" ? "Sending…" : "Send") : "Continue"
+  const footerLabel = stage === 3 ? (sendStatus === "sending" ? t("Sending…") : t("Send")) : t("Continue")
 
   const handleCategoryChange = (value: string) => {
     setCategoryValue(value)
@@ -318,9 +320,9 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
       setSendStatus("sent")
     } catch (error) {
       setSendStatus("error")
-      setSendError(error instanceof Error ? error.message : "Something went wrong. Please try again.")
+      setSendError(error instanceof Error ? error.message : t("Something went wrong. Please try again."))
     }
-  }, [submit, selectedCategory, selectedTopic, message])
+  }, [message, selectedCategory, selectedTopic, submit, t])
 
   const handleReset = useCallback(() => {
     setStage(1)
@@ -336,17 +338,17 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
       <div className="mx-auto w-full max-w-[960px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
         <header className="border-b border-border pb-6 sm:pb-8">
           <h1 className="max-w-[12ch] text-[32px] font-medium leading-[1.04] tracking-[-0.04em] sm:text-[48px]">
-            How can we help?
+            {t("How can we help?")}
           </h1>
         </header>
 
         <div className="mt-6 grid gap-7 sm:mt-8 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-14">
-          <aside aria-label="Support progress" className="lg:border-r lg:border-border lg:pr-8">
+          <aside aria-label={t("Support progress")} className="lg:border-r lg:border-border lg:pr-8">
             <ol className="grid grid-cols-3 gap-2 lg:flex lg:flex-col lg:gap-6">
               {[
-                ["Choose topic", stage >= 1],
-                ["Review resources", Boolean(selectedTopic)],
-                ["Contact support", stage === 3],
+                [t("Choose topic"), stage >= 1],
+                [t("Review resources"), Boolean(selectedTopic)],
+                [t("Contact support"), stage === 3],
               ].map(([label, isActive], index) => (
                 <li key={label as string} className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
                   <span
@@ -380,19 +382,19 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     </svg>
                   </div>
                   <h2 className="mt-4 text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
-                    Request received
+                    {t("Request received")}
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
-                    Thanks — we&apos;ve logged your message about{" "}
-                    <span className="font-medium text-foreground">{selectedTopic?.label}</span> and the Avana team will
-                    follow up. You can submit another request any time.
+                    {t("Thanks — we’ve logged your message about")}{" "}
+                    <span className="font-medium text-foreground">{selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}</span>{" "}
+                    {t("and the Avana team will follow up. You can submit another request any time.")}
                   </p>
                   <Button
                     type="button"
                     onClick={handleReset}
                     className="mt-6 h-10 rounded-xs bg-brand px-5 text-[14px] font-medium text-white hover:bg-[#009dbd]"
                   >
-                    Submit another request
+                    {t("Submit another request")}
                   </Button>
                 </div>
               </div>
@@ -400,29 +402,29 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
               <div className="max-w-[560px] space-y-6 sm:space-y-7">
                 <div>
                   <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
-                    Tell us what happened
+                    {t("Tell us what happened")}
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
-                    Choose the closest match so we can show the most relevant guidance first.
+                    {t("Choose the closest match so we can show the most relevant guidance first.")}
                   </p>
                 </div>
 
                 <div className="space-y-5">
                   <div className="space-y-2">
                     <label htmlFor="support-category" className="block text-[14px] font-medium text-foreground">
-                      Category
+                      {t("Category")}
                     </label>
                     <Select value={categoryValue} onValueChange={handleCategoryChange}>
                       <SelectTrigger
                         id="support-category"
                         className="h-11 w-full border-border bg-background px-3.5 text-[16px] font-normal shadow-none sm:text-[15px]"
                       >
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder={t("Select...")} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[420px]">
                         {SUPPORT_CATEGORIES.map((category) => (
                           <SelectItem key={category.value} value={category.value} className="py-3 text-[15px] font-normal">
-                            {category.label}
+                            {t(category.label)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -432,19 +434,19 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   {categoryValue ? (
                     <div className="space-y-2">
                       <label htmlFor="support-topic" className="block text-[14px] font-medium text-foreground">
-                        Topic
+                        {t("Topic")}
                       </label>
                       <Select value={topicValue} onValueChange={handleTopicChange}>
                         <SelectTrigger
                           id="support-topic"
                           className="h-11 w-full border-border bg-background px-3.5 text-[16px] font-normal shadow-none sm:text-[15px]"
                         >
-                          <SelectValue placeholder="Select..." />
+                          <SelectValue placeholder={t("Select...")} />
                         </SelectTrigger>
                         <SelectContent className="max-h-[420px]">
                           {selectedCategory?.topics.map((topic) => (
                             <SelectItem key={topic.value} value={topic.value} className="py-3 text-[15px] font-normal">
-                              {topic.label}
+                              {t(topic.label)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -455,7 +457,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
 
                 {hasArticles ? (
                   <div className="border-y border-border py-5">
-                    <h3 className="text-[15px] font-semibold text-foreground">Recommended articles</h3>
+                    <h3 className="text-[15px] font-semibold text-foreground">{t("Recommended articles")}</h3>
                     <div className="mt-3 divide-y divide-border">
                       {selectedTopic?.articles.map((article) => (
                         <button
@@ -464,10 +466,10 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                           className="block w-full py-3 text-left"
                         >
                           <div className="text-[15px] font-medium text-brand">
-                            {article.title}
+                            {t(article.title)}
                           </div>
                           <p className="mt-1 max-w-[56ch] text-[13px] leading-5 text-muted-foreground">
-                            {article.body}
+                            {t(article.body)}
                           </p>
                         </button>
                       ))}
@@ -479,35 +481,35 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
               <div className="max-w-[560px] space-y-6 sm:space-y-7">
                 <div className="border-b border-border pb-5">
                   <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
-                    Contact support
+                    {t("Contact support")}
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
-                    Tell us more about{" "}
-                    <span className="font-medium text-foreground">{selectedTopic?.label}</span>.
+                    {t("Tell us more about")}{" "}
+                    <span className="font-medium text-foreground">{selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}</span>.
                   </p>
                 </div>
 
                 <dl className="grid gap-x-6 gap-y-3 text-[13px] sm:grid-cols-2">
                   <div>
-                    <dt className="font-medium text-muted-foreground">Category</dt>
-                    <dd className="mt-1 text-foreground">{selectedCategory?.label}</dd>
+                    <dt className="font-medium text-muted-foreground">{t("Category")}</dt>
+                    <dd className="mt-1 text-foreground">{selectedCategory?.label ? t(selectedCategory.label) : selectedCategory?.label}</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-muted-foreground">Topic</dt>
-                    <dd className="mt-1 text-foreground">{selectedTopic?.label}</dd>
+                    <dt className="font-medium text-muted-foreground">{t("Topic")}</dt>
+                    <dd className="mt-1 text-foreground">{selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}</dd>
                   </div>
                 </dl>
 
                 <div className="space-y-2">
                   <label htmlFor="support-message" className="block text-[14px] font-medium text-foreground">
-                    Describe the issue
+                    {t("Describe the issue")}
                   </label>
                   <textarea
                     id="support-message"
                     value={message}
                     onChange={(event) => setMessage(event.target.value)}
                     className="h-[220px] w-full resize-none rounded-radius-sm border border-border bg-background px-3.5 py-3 text-[16px] leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-brand focus:ring-2 focus:ring-brand/15 sm:h-[260px] sm:text-[15px]"
-                    placeholder="Include what you were trying to do, what happened, and any transaction or market details that may help."
+                    placeholder={t("Include what you were trying to do, what happened, and any transaction or market details that may help.")}
                   />
                 </div>
               </div>
@@ -528,7 +530,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     disabled={sendStatus === "sending"}
                     className="h-10 px-0 text-[14px] font-medium text-brand hover:bg-transparent hover:text-[#009dbd] sm:h-9"
                   >
-                    Back
+                    {t("Back")}
                   </Button>
 
                   <Button

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type NewsItem = {
   title: string
@@ -20,10 +21,11 @@ type Props = {
 }
 
 export function NewsCard({ items, title = "Parameter Changes", plain = false, mediaVariant = "card" }: Props) {
+  const { t } = useTranslation()
   return (
     <section className={plain ? "space-y-4" : "overflow-hidden rounded-radius-lg border border-border bg-surface-raised shadow-elev-1"}>
       <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
-        <h2 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{title}</h2>
+        <h2 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{t(title)}</h2>
       </div>
       <ul className={plain ? "space-y-0 divide-y divide-border/70" : "divide-y divide-border/70"}>
         {items.map((item, index) => {
@@ -58,13 +60,13 @@ export function NewsCard({ items, title = "Parameter Changes", plain = false, me
               ) : null}
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-text-extra-high text-pretty line-clamp-3 underline-offset-2 group-hover:underline group-focus-visible:underline">
-                  {item.title}
+                  {t(item.title)}
                 </div>
                 {item.description ? (
-                  <div className="mt-1 text-xs text-text-extra-low line-clamp-2">{item.description}</div>
+                  <div className="mt-1 text-xs text-text-extra-low line-clamp-2">{t(item.description)}</div>
                 ) : null}
                 <div className="mt-1 text-xs text-text-extra-low">
-                  {item.source} • {item.time}
+                  {t(item.source)} • {t(item.time)}
                 </div>
               </div>
             </div>

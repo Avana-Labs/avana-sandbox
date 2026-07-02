@@ -6,6 +6,7 @@ import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from "fra
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type HoverState = {
   cardKey: string
@@ -81,6 +82,7 @@ function HoverTooltip({
   pointIndex: number
   left: number
 }) {
+  const { t } = useTranslation()
   const points = useMemo(() => parsePathPoints(asset.path), [asset.path])
   const point = points[pointIndex] ?? points[0]
   const timeIndex = Math.round((pointIndex / Math.max(points.length - 1, 1)) * (TIME_LABELS.length - 1))
@@ -93,13 +95,13 @@ function HoverTooltip({
       style={{ left }}
     >
       <div className="flex items-center justify-between gap-2 text-[10px] font-medium text-muted-foreground">
-        <span>6/3/2026</span>
+        <span>{t("Today")}</span>
         <span>{TIME_LABELS[timeIndex]}</span>
       </div>
       <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-[10px] dark:border-white/10">
         <span className="flex items-center gap-1.5 text-success">
           <span className="size-2 rounded-full bg-emerald-500 dark:bg-[#73dca9]" />
-          Borrow APY
+          {t("Borrow APY")}
         </span>
         <span className="font-medium text-foreground">{value.toFixed(2)}%</span>
       </div>
@@ -257,6 +259,7 @@ export function HotMarkets({
   sequence: LendPageData["featuredSequence"]
   snapshots?: ReadonlyArray<FeaturedSnapshot>
 }) {
+  const { t } = useTranslation()
   const [hover, setHover] = useState<HoverState | null>(null)
   const [carouselHovered, setCarouselHovered] = useState(false)
   const [sequenceWidth, setSequenceWidth] = useState(0)
@@ -318,7 +321,7 @@ export function HotMarkets({
     <section>
       <div className="w-full">
         <h2 className="mb-5 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
-          Featured
+          {t("Featured")}
         </h2>
 
         <div
