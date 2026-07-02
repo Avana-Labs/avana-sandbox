@@ -26,14 +26,16 @@ export function MarketSidebar({ detail, className, hideActions = false }: Props)
   return (
     <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={`Multiply ${detail.hero.name}`}>
       {hideActions ? null : <MarketActionRail detail={detail} className="mt-6" embedActions />}
-      <AboutNewsSection
-        about={detail.about}
-        aboutTitle={`About ${detail.hero.name}`}
-        compactAboutTitle
-        newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
-        newsImageLabel={detail.hero.name}
-        mediaVariant="icon"
-      />
+      {hideActions ? null : (
+        <AboutNewsSection
+          about={detail.about}
+          aboutTitle={`About ${detail.hero.name}`}
+          compactAboutTitle
+          newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
+          newsImageLabel={detail.hero.name}
+          mediaVariant="icon"
+        />
+      )}
     </aside>
   )
 }

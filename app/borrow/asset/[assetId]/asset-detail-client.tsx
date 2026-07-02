@@ -108,10 +108,6 @@ export function AssetDetailClient({ detail }: Props) {
                       accentClassName={detail.hero.visual.textClass}
                     />
                   </div>
-                  <TransactionHistoryCard
-                    transactions={detail.transactions}
-                    assetSymbol={detail.hero.symbol}
-                  />
                   <AboutNewsSection
                     className="lg:hidden"
                     about={detail.about}
@@ -122,6 +118,10 @@ export function AssetDetailClient({ detail }: Props) {
                   <DetailFaqSection
                     title="General FAQs"
                     items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
+                  />
+                  <TransactionHistoryCard
+                    transactions={detail.transactions}
+                    assetSymbol={detail.hero.symbol}
                   />
                   <RelatedAssetsRow detail={detail} />
                 </section>
