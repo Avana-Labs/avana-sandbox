@@ -12,7 +12,7 @@ import { ResponsiveLendAction } from "@/app/components/action-page/responsive-le
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import type { HomeAssetVisual, HomeCollateralPool } from "@/app/lib/home-sim"
+import type { HomeAssetVisual, HomeCollateralPool } from "@/app/lib/borrow-system/home-contracts"
 import type { BorrowPoolRow } from "@/app/lib/data/borrow-domain"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
