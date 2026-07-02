@@ -4,9 +4,13 @@ import { useEffect, useRef, useState } from "react"
 import { type BorrowDexId } from "@/app/lib/data/borrow-domain"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { useTheme } from "@/app/components/theme-provider"
+import { CategoryChips } from "@/app/lib/ui/category-chips"
+import { CATEGORY_CHIPS, type CategoryChip } from "@/app/lib/markets/category"
 import { cn } from "@/lib/utils"
 
-export const POOL_TAB_IDS = ["all-markets", "btc", "eth", "forex", "governance", "smart-pools"] as const
+// Category ids are the shared taxonomy (all / btc / eth / forex / utility / smart)
+// so Borrow, Lend and Multiply filter with one component and one id space.
+export const POOL_TAB_IDS = ["all", "btc", "eth", "forex", "utility", "smart"] as const
 
 export type PoolTabId = (typeof POOL_TAB_IDS)[number]
 
@@ -26,14 +30,7 @@ export type TabsBarProps = {
   onDexChange: (dex: BorrowDexId | null) => void
 }
 
-const TAB_ORDER: Array<{ id: BorrowTabId; label: string }> = [
-  { id: "all-markets", label: "All" },
-  { id: "btc", label: "BTC Based" },
-  { id: "eth", label: "ETH Based" },
-  { id: "forex", label: "Forex Based" },
-  { id: "governance", label: "Utility Based" },
-  { id: "smart-pools", label: "Smart Pools" },
-]
+const CATEGORY_TABS: readonly CategoryChip[] = CATEGORY_CHIPS.borrow
 
 function SearchIcon({ className }: { className?: string } = {}) {
   return (
@@ -363,22 +360,8 @@ export function TabsBar({
   return (
     <div className="z-30">
       <div className="hidden items-center gap-4 py-7 md:flex">
-        <div className="min-w-0 flex-1 overflow-x-auto">
-          <div className="flex min-w-max items-center gap-6">
-            {TAB_ORDER.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => onTabChange(tab.id)}
-                className={cn(
-                  "whitespace-nowrap text-[20px] font-normal tracking-[-0.03em] transition-colors md:text-[22px]",
-                  currentTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <div className="min-w-0 flex-1">
+          <CategoryChips chips={CATEGORY_TABS} value={currentTab} onChange={onTabChange} />
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -397,41 +380,34 @@ export function TabsBar({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto py-2.5 md:hidden">
-        <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
-          <SearchIcon className="dark:text-[#01AACF]" />
-          <input
-            aria-label="Filter assets"
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search markets"
-            className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
-          />
-        </label>
+      <div className="py-2.5 md:hidden">
+        <div className="flex items-center gap-2">
+          <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-[#01AACF]/30">
+            <SearchIcon className="dark:text-[#01AACF]" />
+            <input
+              aria-label="Filter assets"
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search markets"
+              className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
+            />
+          </label>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <SingleSelectDropdown
-            allLabel="All Markets"
-            value={currentTab}
-            options={TAB_ORDER.map((tab) => ({ label: tab.label, value: tab.id }))}
-            onChange={(nextValue) => {
-              const nextTab = (nextValue as BorrowTabId | null) ?? "all-markets"
-              onTabChange(nextTab)
-            }}
-            ariaLabel="Filter market"
-          />
-
-          <SingleSelectDropdown
-            allLabel="All DEX"
-            value={selectedDex}
-                options={dexes.map((dex) => ({ label: dex.label, value: dex.id }))}
-            onChange={(nextValue) => {
-              const nextDex = (nextValue as BorrowDexId | null) ?? null
-              onDexChange(nextDex)
-            }}
-            ariaLabel="Filter DEX"
-          />
+          <div className="flex shrink-0 items-center gap-2">
+            <SingleSelectDropdown
+              allLabel="All DEX"
+              value={selectedDex}
+              options={dexes.map((dex) => ({ label: dex.label, value: dex.id }))}
+              onChange={(nextValue) => {
+                const nextDex = (nextValue as BorrowDexId | null) ?? null
+                onDexChange(nextDex)
+              }}
+              ariaLabel="Filter DEX"
+            />
+          </div>
         </div>
+
+        <CategoryChips chips={CATEGORY_TABS} value={currentTab} onChange={onTabChange} className="mt-2.5" />
       </div>
     </div>
   )
