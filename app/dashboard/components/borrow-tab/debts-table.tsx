@@ -114,7 +114,7 @@ export function DebtsPanel({
                   const debtSymbol = row.debtAssetSymbol
                   const rowKey = row.id ?? `${row.pool.id}-${index}`
                   return (
-                    <tr key={rowKey} className="group transition-colors">
+                    <tr key={rowKey} className="group cursor-pointer transition-colors">
                       <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                         {index + 1}
                       </td>

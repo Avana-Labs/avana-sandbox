@@ -110,7 +110,7 @@ export function SuppliesPanel({
                 const meta = BORROW_SUPPLY_META[row.pool.id]
                 const hfTone = healthFactorToneClass(row.healthFactor)
                 return (
-                  <tr key={row.pool.id} className="group transition-colors">
+                  <tr key={row.pool.id} className="group cursor-pointer transition-colors">
                     <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
                       {index + 1}
                     </td>
