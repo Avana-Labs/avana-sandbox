@@ -82,6 +82,9 @@ const HERO_UI_CONFIG: Record<DashboardHeroProps["tab"], HeroUiConfig> = {
     headlineMeta: "Approved credit",
   },
   lending: {
+    // Label the headline so the per-tab figure reads as its own scope
+    // ("Total supplied") instead of a single portfolio total that flip-flops.
+    headlineMeta: "Total supplied",
     actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
     statOneLabel: "Average APY",
     statOneHelpText: "Weighted average APY across supplied assets in the wallet.",
@@ -89,6 +92,7 @@ const HERO_UI_CONFIG: Record<DashboardHeroProps["tab"], HeroUiConfig> = {
     statTwoHelpText: "Total yield already accrued by the portfolio.",
   },
   looping: {
+    headlineMeta: "Multiply value",
     actionLabels: ["Increase loop", "Unwind loop"],
     hideChart: true,
     statOneLabel: "Open positions",
