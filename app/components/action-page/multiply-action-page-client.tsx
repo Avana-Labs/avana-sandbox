@@ -34,6 +34,7 @@ import {
 } from "@/app/lib/multiply-system/collateral-limits"
 import { formatActionAmount } from "@/app/lib/action-system/formatters"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 
 export function MultiplyActionPageClient({
   kind,
@@ -389,10 +390,13 @@ export function MultiplyActionPageClient({
       )
       setStage("success")
     } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : "Transaction was cancelled"
+      // Raw backend codes stay in logs; users see plain-language copy (issue #143).
+      if (process.env.NODE_ENV !== "production") console.error(rawMessage)
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: error instanceof Error ? error.message : "Transaction was cancelled",
+        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
       })
       setStage("error")
     } finally {
@@ -446,10 +450,13 @@ export function MultiplyActionPageClient({
       )
       setStage("success")
     } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : "Transaction was cancelled"
+      // Raw backend codes stay in logs; users see plain-language copy (issue #143).
+      if (process.env.NODE_ENV !== "production") console.error(rawMessage)
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: error instanceof Error ? error.message : "Transaction was cancelled",
+        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
       })
       setStage("error")
     } finally {

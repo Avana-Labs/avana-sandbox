@@ -826,10 +826,14 @@ export function BorrowActionPageClient({
       )
       setStage("success")
     } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : "Transaction was cancelled"
+      // Keep the raw backend code (UNAUTHENTICATED / WALLET_MISMATCH / RATE_LIMITED / …)
+      // in logs only; users see plain-language copy.
+      if (process.env.NODE_ENV !== "production") console.error(rawMessage)
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: error instanceof Error ? error.message : "Transaction was cancelled",
+        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
       })
       setStage("error")
     } finally {

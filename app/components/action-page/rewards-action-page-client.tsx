@@ -19,6 +19,7 @@ import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runti
 import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 
 export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?: string }) {
   const descriptor = getActionDescriptor("rewards", "claim")
@@ -148,10 +149,13 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
       )
       setStage("success")
     } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : "Unable to claim rewards"
+      // Raw backend codes stay in logs; users see plain-language copy (issue #143).
+      if (process.env.NODE_ENV !== "production") console.error(rawMessage)
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: error instanceof Error ? error.message : "Unable to claim rewards",
+        message: humanizeBlockedReason(rawMessage) ?? "Unable to claim rewards",
       })
       setStage("error")
     } finally {
