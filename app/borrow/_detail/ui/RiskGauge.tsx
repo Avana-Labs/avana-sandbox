@@ -18,17 +18,17 @@ type RiskGaugeProps = {
 }
 
 const LEVEL_COLOR: Record<RiskLevel, string> = {
-  low: "text-emerald-500",
-  moderate: "text-amber-500",
-  elevated: "text-orange-500",
-  high: "text-rose-500",
+  low: "text-success",
+  moderate: "text-warning",
+  elevated: "text-warning",
+  high: "text-danger",
 }
 
 const LEVEL_STROKE: Record<RiskLevel, string> = {
-  low: "stroke-emerald-500",
-  moderate: "stroke-amber-500",
-  elevated: "stroke-orange-500",
-  high: "stroke-rose-500",
+  low: "stroke-success",
+  moderate: "stroke-warning",
+  elevated: "stroke-warning",
+  high: "stroke-danger",
 }
 
 /**
@@ -43,7 +43,7 @@ export function RiskGauge({
   ticks = 44,
   className,
 }: RiskGaugeProps) {
-  const clamped = Math.max(0, Math.min(100, score))
+  const clamped = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0
 
   // SVG coordinate system
   const W = 220
