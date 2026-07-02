@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   BORROWABLE_CATEGORIES,
   aprToneClass,
@@ -40,6 +41,7 @@ export function BorrowableAssetsPanel({
   groupByCategory = true,
   variant = "default",
 }: BorrowableAssetsTableProps) {
+  const router = useRouter()
   if (rows.length === 0) {
     return (
       <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
@@ -90,7 +92,11 @@ export function BorrowableAssetsPanel({
                 return (
                   <li
                     key={asset.id}
-                    className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1"
+                    className="cursor-pointer space-y-4 rounded-radius-lg border border-border bg-card px-4 py-4 shadow-elev-1 transition-colors hover:border-brand/30"
+                    onClick={() => {
+                      onViewMarket?.(asset)
+                      router.push(borrowAssetDetailPath(asset.id))
+                    }}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5">
@@ -109,8 +115,8 @@ export function BorrowableAssetsPanel({
                     </div>
 
                     <dl className="divide-y divide-border text-[12.5px]">
-                      <AssetStatLine label="Available to Borrow" value={formatCompactUsd(asset.availableUsd)} />
-                      <AssetStatLine label="Total Borrowed" value={formatCompactUsd(asset.totalBorrowedUsd)} />
+                      <AssetStatLine label="Total Borrows" value={formatCompactUsd(asset.totalBorrowedUsd)} />
+                      <AssetStatLine label="Liquidity" value={formatCompactUsd(asset.availableUsd)} />
                       <AssetStatLine
                         label="Utilization"
                         value={formatUtilizationPct(asset.utilization)}
@@ -121,18 +127,14 @@ export function BorrowableAssetsPanel({
                     <div className="flex items-stretch gap-2">
                       <button
                         type="button"
-                        onClick={() => onBorrow(asset)}
-                        className="flex-[2] rounded-radius-sm bg-accent-primary px-4 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onBorrow(asset)
+                        }}
+                        className="w-full rounded-radius-sm bg-accent-primary px-4 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
                       >
                         Borrow
                       </button>
-                      <Link
-                        href={borrowAssetDetailPath(asset.id)}
-                        onClick={() => onViewMarket?.(asset)}
-                        className="flex flex-1 items-center justify-center rounded-radius-sm border border-border bg-surface-raised px-4 py-2.5 text-center text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
-                      >
-                        Details
-                      </Link>
                     </div>
                   </li>
                 )

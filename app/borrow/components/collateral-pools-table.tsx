@@ -1,7 +1,6 @@
 "use client"
 
 import { memo, useMemo, useState } from "react"
-import Link from "next/link"
 import {
   aprToneClass,
   formatCompactUsd,
@@ -15,13 +14,11 @@ import {
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
-import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { pairExchangeRateLabel } from "@/app/lib/prices/format"
 import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
-import { FlashValue } from "@/app/components/ui/live"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
@@ -427,10 +424,14 @@ function SpokeMobileSection({
 
       <div className="mt-4">
         {activeTab === "collateral" ? (
-          <div className="overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
-            <ul className="divide-y divide-border">
+          <div className="space-y-3">
+            <ul className="space-y-3">
               {visibleRows.map((pool) => (
-                <li key={pool.id} className="space-y-3 px-4 py-4" onClick={() => onViewMarket(pool)}>
+                <li
+                  key={pool.id}
+                  className="cursor-pointer space-y-4 rounded-radius-lg border border-border bg-card px-4 py-4 shadow-elev-1 transition-colors hover:border-brand/30"
+                  onClick={() => onViewMarket(pool)}
+                >
                   <div className="flex items-center justify-between gap-3">
                     <TokenPairCell
                       visuals={pool.visuals}
@@ -441,43 +442,32 @@ function SpokeMobileSection({
                       }
                       size="md"
                     />
-                    <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
+                    <div className="text-right">
+                      <div className={cn("font-data text-[18px] font-medium tabular-nums", aprToneClass((pool.aprMin + pool.aprMax) / 2))}>
+                        {formatApy((pool.aprMin + pool.aprMax) / 2)}
+                      </div>
+                      <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">APY</div>
+                    </div>
                   </div>
                   {pool.events && pool.events.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       <EventTagList events={pool.events} />
                     </div>
                   ) : null}
-                  <DexChipRow dexes={pool.dexes} />
-                  <div className="grid grid-cols-2 gap-y-2 text-xs">
-                    <MobileField label="Max LTV" value={`${pool.ltv}%`} />
-                    <MobileField
-                      label="APY"
-                      value={formatApy((pool.aprMin + pool.aprMax) / 2)}
-                      tone={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
-                      flashValue={(pool.aprMin + pool.aprMax) / 2}
-                      flashGoodDirection="down"
-                    />
-                    <MobileField
-                      label="Available"
-                      value={formatCompactUsd(pool.availableUsd)}
-                      flashValue={pool.availableUsd}
-                      flashGoodDirection="up"
-                    />
-                    <MobileField label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
+                  <div className="flex items-center justify-between text-[12px] text-muted-foreground">
+                    <DexChipRow dexes={pool.dexes} />
+                    <TrendSpark isPositive={pool.trendUp} seed={`pool-${pool.id}`} values={pool.trendValues} width={52} />
+                  </div>
+                  <div className="divide-y divide-border text-[12.5px]">
+                    <AssetStatLine label="Liquidity" value={formatCompactUsd(pool.availableUsd)} />
+                    <AssetStatLine label="Max LTV" value={`${pool.ltv}%`} />
+                    <AssetStatLine label="Risk Premium" value={formatRiskPremium(pool.riskPremiumBps)} />
                   </div>
                   <div className="flex gap-2">
-                    <Link
-                      href={borrowMarketDetailPath(pool.id)}
-                      onClick={(event) => event.stopPropagation()}
-                      className="flex h-9 flex-1 items-center justify-center rounded-xs border border-border bg-surface-raised text-[13px] font-medium text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
-                    >
-                      Details
-                    </Link>
                     <PillButton
                       variant="primary"
                       size="md"
-                      className="flex-1"
+                      className="w-full"
                       onClick={(event) => {
                         event.stopPropagation()
                         onUseAsCollateral(pool)
@@ -489,7 +479,7 @@ function SpokeMobileSection({
                 </li>
               ))}
               {pending.map((row) => (
-                <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
+                <li key={row.id} className="flex items-center justify-between gap-3 rounded-radius-lg border border-border bg-card px-4 py-3 text-xs text-muted-foreground shadow-elev-1">
                   <span>
                     {row.label}
                     <span className="ml-1 text-xs">· {row.subLabel}</span>
@@ -504,7 +494,7 @@ function SpokeMobileSection({
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="flex h-11 w-full items-center justify-center border-t border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+                className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
               >
                 View {hiddenRowCount} more {spoke.label.replace(" Spoke", "").toLowerCase()} markets
               </button>
@@ -518,33 +508,11 @@ function SpokeMobileSection({
   )
 }
 
-function MobileField({
-  label,
-  value,
-  tone,
-  flashValue,
-  flashGoodDirection,
-}: {
-  label: string
-  value: string
-  tone?: string
-  flashValue?: number | string
-  flashGoodDirection?: "up" | "down"
-}) {
+function AssetStatLine({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <div>
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      {flashValue !== undefined ? (
-        <FlashValue
-          value={flashValue}
-          goodDirection={flashGoodDirection ?? "up"}
-          className={cn("mt-0.5 font-data text-[13px] font-medium tabular-nums text-foreground", tone)}
-        >
-          {value}
-        </FlashValue>
-      ) : (
-        <div className={cn("mt-0.5 font-data text-[13px] font-medium tabular-nums text-foreground", tone)}>{value}</div>
-      )}
+    <div className="flex items-center justify-between py-2">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
     </div>
   )
 }
