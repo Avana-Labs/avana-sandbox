@@ -434,19 +434,28 @@ export function DashboardClient({
         </div>
       ) : null}
       {activeTab === "looping" ? (
-        <div className="mt-12 space-y-10">
-          <DashboardOverviewSection title="Looping Overview" metrics={multiplyDashboardMetrics.overview} />
-          <DashboardSection title="Looping Positions">
-            <MultiplyCollateralTable
-              rows={multiplyTabData.lpCollaterals}
-              onDeleverage={(positionId) => {
-                const position = multiplySession.state.positions[positionId]
-                if (!position) return
-                router.push(actionPagePath("multiply", "deleverage", { market: position.marketId, return: dashboardReturnHref }))
-              }}
-            />
-          </DashboardSection>
-        </div>
+        multiplyTabData.lpCollaterals.length === 0 ? (
+          // Real empty state — no fabricated health/risk metrics computed over $0.
+          <div className="mt-12">
+            <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+              {t("No multiply positions yet. Open a loop to leverage your collateral.")}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-12 space-y-10">
+            <DashboardOverviewSection title="Looping Overview" metrics={multiplyDashboardMetrics.overview} />
+            <DashboardSection title="Looping Positions">
+              <MultiplyCollateralTable
+                rows={multiplyTabData.lpCollaterals}
+                onDeleverage={(positionId) => {
+                  const position = multiplySession.state.positions[positionId]
+                  if (!position) return
+                  router.push(actionPagePath("multiply", "deleverage", { market: position.marketId, return: dashboardReturnHref }))
+                }}
+              />
+            </DashboardSection>
+          </div>
+        )
       ) : null}
       {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
     </>
