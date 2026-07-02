@@ -79,12 +79,18 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/avana-icon.svg",
+        url: "/Avana Favicon.png",
+        type: "image/png",
       },
     ],
     shortcut: [
       {
-        url: "/avana-icon.svg",
+        url: "/Avana Favicon.png",
+      },
+    ],
+    apple: [
+      {
+        url: "/Avana Favicon.png",
       },
     ],
   },

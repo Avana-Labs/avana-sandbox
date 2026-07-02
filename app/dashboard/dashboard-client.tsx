@@ -41,6 +41,7 @@ import { Eye, EyeOff } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { RouteErrorFallback } from "@/app/components/route-error-fallback"
 
 export function mergeLendTabData(
   staticData: PortfolioLendTabData,
@@ -129,7 +130,7 @@ export function DashboardClient({
   const hasMounted = useHasMounted()
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
-  const { data, error: portfolioError, isLoading: portfolioLoading } = usePortfolioPage(
+  const { data, error: portfolioError, isLoading: portfolioLoading, retry: retryPortfolioPage } = usePortfolioPage(
     { walletProfileId: resolvedWalletProfileId ?? "" },
     initialData,
   )
@@ -349,9 +350,8 @@ export function DashboardClient({
     return () => window.removeEventListener("popstate", onPopState)
   }, [readTabFromLocation])
 
-  // Never surface a portfolio load error (transient aborts / RSC cancellations read as
-  // "Request aborted"). While there's no data yet, keep the loading state and quietly
-  // retry so a flaky fetch self-heals instead of dead-ending on an error screen.
+  // While the authenticated portfolio is still empty, retry transient client fetch
+  // failures directly through the hook instead of refreshing the whole route.
   const portfolioRetriesRef = useRef(0)
   useEffect(() => {
     if (pageData) {
@@ -361,10 +361,10 @@ export function DashboardClient({
     if (!portfolioError || portfolioLoading || portfolioRetriesRef.current >= 8) return
     const id = window.setTimeout(() => {
       portfolioRetriesRef.current += 1
-      router.refresh()
+      retryPortfolioPage()
     }, 1000)
     return () => window.clearTimeout(id)
-  }, [pageData, portfolioError, portfolioLoading, router])
+  }, [pageData, portfolioError, portfolioLoading, retryPortfolioPage])
 
   const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab)
@@ -377,6 +377,19 @@ export function DashboardClient({
   }
 
   if (!pageData) {
+    if (portfolioError && !portfolioLoading && portfolioRetriesRef.current >= 8) {
+      return (
+        <RouteErrorFallback
+          error={new Error(portfolioError)}
+          onRetry={() => {
+            portfolioRetriesRef.current = 0
+            retryPortfolioPage()
+          }}
+          title="We couldn't load your portfolio"
+          message="The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard."
+        />
+      )
+    }
     return <DashboardLoadingState />
   }
 
