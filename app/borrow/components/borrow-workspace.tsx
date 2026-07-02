@@ -123,6 +123,12 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
     onTabChange?.(currentTab)
   }, [currentTab, onTabChange])
 
+  const hasActiveFilters = search.trim().length > 0 || selectedDexes.size > 0
+  const clearFilters = useCallback(() => {
+    setSearch("")
+    setSelectedDexes(new Set())
+  }, [])
+
   const handlePoolsSupply = useCallback(
     (pool: BorrowPoolRow) => {
       triggerPageLoading()
@@ -192,32 +198,65 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
       <div className="pt-3 pb-6">
         <TokenPricesProvider>
         {isPoolTab(currentTab) ? (
-          <>
-            {isDesktop ? (
-              <CollateralPoolsTable
-                groups={poolGroups}
-                borrowAssetsBySpoke={borrowAssetsBySpoke}
-                pending={pendingRows}
-                onViewMarket={handleMarketDetail}
-                onUseAsCollateral={handlePoolsSupply}
-                onBorrowAssetDesktop={handleAssetBorrowDesktop}
-                onBorrowAssetMobile={handleAssetBorrowMobile}
-              />
-            ) : (
-              <CollateralPoolsList
-                groups={poolGroups}
-                borrowAssetsBySpoke={borrowAssetsBySpoke}
-                pending={pendingRows}
-                onViewMarket={handleMarketDetail}
-                onUseAsCollateral={handlePoolsSupply}
-                onBorrowAssetDesktop={handleAssetBorrowDesktop}
-                onBorrowAssetMobile={handleAssetBorrowMobile}
-              />
-            )}
-          </>
+          visiblePools.length === 0 ? (
+            <NoMarketsState query={search.trim()} hasFilters={hasActiveFilters} onClear={clearFilters} />
+          ) : isDesktop ? (
+            <CollateralPoolsTable
+              groups={poolGroups}
+              borrowAssetsBySpoke={borrowAssetsBySpoke}
+              pending={pendingRows}
+              onViewMarket={handleMarketDetail}
+              onUseAsCollateral={handlePoolsSupply}
+              onBorrowAssetDesktop={handleAssetBorrowDesktop}
+              onBorrowAssetMobile={handleAssetBorrowMobile}
+            />
+          ) : (
+            <CollateralPoolsList
+              groups={poolGroups}
+              borrowAssetsBySpoke={borrowAssetsBySpoke}
+              pending={pendingRows}
+              onViewMarket={handleMarketDetail}
+              onUseAsCollateral={handlePoolsSupply}
+              onBorrowAssetDesktop={handleAssetBorrowDesktop}
+              onBorrowAssetMobile={handleAssetBorrowMobile}
+            />
+          )
         ) : null}
         </TokenPricesProvider>
       </div>
     </section>
+  )
+}
+
+function NoMarketsState({
+  query,
+  hasFilters,
+  onClear,
+}: {
+  query: string
+  hasFilters: boolean
+  onClear: () => void
+}) {
+  return (
+    <div
+      role="status"
+      className="flex flex-col items-center justify-center gap-3 rounded-radius-md border border-dashed border-border px-6 py-16 text-center"
+    >
+      <p className="text-[15px] font-medium text-foreground">
+        {query ? <>No markets match &ldquo;{query}&rdquo;</> : "No markets match your filters"}
+      </p>
+      <p className="max-w-sm text-[13px] leading-6 text-muted-foreground">
+        Try a different token, venue, or clear the search to see every market.
+      </p>
+      {hasFilters ? (
+        <button
+          type="button"
+          onClick={onClear}
+          className="mt-1 rounded-full border border-border px-4 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-raised/60"
+        >
+          Clear search
+        </button>
+      ) : null}
+    </div>
   )
 }
