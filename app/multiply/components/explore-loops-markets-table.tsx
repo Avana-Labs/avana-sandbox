@@ -14,6 +14,7 @@ import {
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
@@ -67,6 +68,10 @@ function parseCompactUsdLabel(value?: string) {
   if (!Number.isFinite(amount)) return null
   const suffix = match[2]?.toUpperCase()
   return amount * (suffix === "B" ? 1e9 : suffix === "M" ? 1e6 : suffix === "K" ? 1e3 : 1)
+}
+
+function resolveMarketIdFromHref(href: string) {
+  return href.split("/").pop() ?? ""
 }
 
 function SearchIcon({ className }: { className?: string } = {}) {
@@ -791,50 +796,35 @@ export function ExploreLoopsMarketsTable({
                     </td>
                   <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
                     <div className="flex justify-end">
-                      <HoverActionGroup>
+                      <HoverActionGroup className="gap-2">
                         <Button
                           type="button"
-                          size="sm"
+                          size="table"
                           variant="brand-secondary"
-                          className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                          className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
-                            router.push(row.href)
+                            const marketId = resolveMarketIdFromHref(row.href)
+                            if (!marketId) return
+                            router.push(actionPagePath("multiply", "multiply", { market: marketId, return: row.href }))
                           }}
                         >
-                          View
+                          Multiply
                         </Button>
-                        {row.waitlistHref ? (
-                          <Button
-                            asChild
-                            type="button"
-                            size="sm"
-                            variant="brand"
-                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
-                          >
-                            <a
-                              href={row.waitlistHref}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              Join waitlist
-                            </a>
-                          </Button>
-                        ) : (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="brand"
-                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              onOpenMultiply?.(row.href)
-                            }}
-                          >
-                            Multiply
-                          </Button>
-                        )}
+                        <Button
+                          type="button"
+                          size="table"
+                          variant="brand"
+                          className="w-auto"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            const marketId = resolveMarketIdFromHref(row.href)
+                            if (!marketId) return
+                            router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: row.href }))
+                          }}
+                        >
+                          Deleverage
+                        </Button>
                       </HoverActionGroup>
                     </div>
                   </td>

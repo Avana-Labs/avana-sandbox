@@ -128,12 +128,12 @@ export function SuppliesPanel({
                         <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                       </td>
                       <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
-                        <HoverActionGroup align="start">
+                        <HoverActionGroup align="start" className="gap-2">
                           <Button
                             type="button"
-                            size="sm"
+                            size="table"
                             variant="brand-secondary"
-                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                            className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }))
@@ -143,9 +143,9 @@ export function SuppliesPanel({
                           </Button>
                           <Button
                             type="button"
-                            size="sm"
+                            size="table"
                             variant="brand"
-                            className="h-7 w-auto rounded-xs px-2.5 text-[11px]"
+                            className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               onBorrowMore(row)

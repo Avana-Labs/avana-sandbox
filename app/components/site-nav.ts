@@ -6,6 +6,7 @@ import {
   Gift,
   HandCoins,
   House,
+  LayoutGrid,
 } from "lucide-react"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 
@@ -24,6 +25,7 @@ export type SiteNavLink = {
 export type DesktopHeaderLink = {
   href: string
   label: string
+  icon?: LucideIcon
 }
 
 export const siteNavLinks: SiteNavLink[] = [
@@ -96,8 +98,8 @@ export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
   { href: "/lend", label: "Lend" },
   { href: "/borrow", label: "Borrow" },
   { href: "/multiply", label: "Multiply" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/rewards", label: "Rewards" },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+  { href: "/rewards", label: "Rewards", icon: Gift },
 ]
 
 export function getActiveSiteNav(pathname: string): SiteNavLink {
