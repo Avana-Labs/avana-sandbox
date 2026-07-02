@@ -42,7 +42,7 @@ export function PoolHeroIdentity({
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-foreground">
+              <h1 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-foreground">
                 {detail.hero.name}
               </h1>
               <BadgeCheck

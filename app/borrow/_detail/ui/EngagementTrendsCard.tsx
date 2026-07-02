@@ -17,7 +17,7 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
   return (
     <section className={cn("min-w-0", className)}>
       <div className="flex items-center justify-between gap-4">
-        <h2 className="min-w-0 text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">
+        <h2 className="min-w-0 text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
           {title ?? engagement.title}
         </h2>
       </div>

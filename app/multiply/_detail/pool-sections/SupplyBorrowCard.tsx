@@ -35,7 +35,7 @@ export function SupplyBorrowCard({ detail }: Props) {
     <section className="min-w-0">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">Supply & Borrow</h2>
+          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Supply & Borrow</h2>
           <p className="mt-0.5 text-[11.5px] text-muted-foreground">Leverage usage across this market over time.</p>
         </div>
         <div role="tablist" className="inline-flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5">

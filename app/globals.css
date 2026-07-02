@@ -295,6 +295,13 @@
 }
 
 /* Cursor-like text hierarchy — size and color only */
+.text-ui-heading {
+  /* Canonical detail/action section heading (was ad-hoc text-[21px]/[1.375rem]). */
+  font-size: 21px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
 .text-ui-section {
   font-size: 12px;
   line-height: 1.25rem;

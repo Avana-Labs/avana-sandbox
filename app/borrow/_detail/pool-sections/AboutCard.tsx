@@ -17,7 +17,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
           className={
             compact
               ? "truncate text-[18px] font-normal leading-none tracking-[-0.02em] text-brand-readable"
-              : "truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable"
+              : "truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable"
           }
         >
           {title}

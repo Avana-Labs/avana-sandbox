@@ -23,7 +23,7 @@ export function NewsCard({ items, title = "Parameter Changes", plain = false, me
   return (
     <section className={plain ? "space-y-4" : "overflow-hidden rounded-radius-lg border border-border bg-surface-raised shadow-elev-1"}>
       <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
-        <h2 className="truncate text-[21px] font-normal leading-none tracking-[-0.02em] text-brand-readable">{title}</h2>
+        <h2 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{title}</h2>
       </div>
       <ul className={plain ? "space-y-0 divide-y divide-border/70" : "divide-y divide-border/70"}>
         {items.map((item, index) => {
