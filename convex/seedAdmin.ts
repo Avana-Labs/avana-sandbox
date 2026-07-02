@@ -89,3 +89,12 @@ export const insertWalletEvents = action({
     return ctx.runMutation(internal.seed.insertWalletEvents, { rows })
   },
 })
+
+/** Secret-gated seed-verification counts (the internal getCounts, but not anon-callable). */
+export const getCounts = action({
+  args: { seedSecret: v.string() },
+  handler: async (ctx, { seedSecret }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    return ctx.runQuery(internal.seed.getCounts, {})
+  },
+})
