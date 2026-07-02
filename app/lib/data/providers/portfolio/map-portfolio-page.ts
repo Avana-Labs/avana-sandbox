@@ -1,6 +1,7 @@
 import { CHART_RANGE_LABELS, type ChartPoint, type ChartRangeData, type ChartRangeOption } from "@/app/components/charts"
 import { assertStableRecordIds, dedupeByStableId } from "@/app/lib/data/core/source-runtime"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
+import { toActive, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 import { calculateLiquidationNumberUsd } from "./liquidation"
 import type { PortfolioPageData, PortfolioHeroData, PortfolioTabKey } from "./types"
 import type { PortfolioPageRecords, PortfolioSnapshotRecord } from "./source"
@@ -13,7 +14,14 @@ function buildHero(rangeData?: ChartRangeData, overrides: Partial<PortfolioHeroD
 }
 
 function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  // Route portfolio hero money through the currency-aware formatter instead of a
+  // hardcoded "$": on the server getActiveCurrency() is USD (SSR always emits USD),
+  // and on the client it reflects the header switcher (e.g. ¥ for CNY).
+  const converted = toActive(value)
+  return withCurrencySymbol(
+    converted,
+    Math.abs(converted).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  )
 }
 
 // Health factor is collateral value at the *liquidation threshold* over debt,
