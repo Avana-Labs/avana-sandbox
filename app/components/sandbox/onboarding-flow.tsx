@@ -460,8 +460,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       {!wallet && !hasStarted ? (
         <>
           <Headline
-            muted={t("Welcome to the Avana Sandbox")}
-            active={t("Test, learn, and explore Avana without risk.")}
+            active={t("Welcome to the Avana Sandbox")}
             size="hero"
           />
           <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
