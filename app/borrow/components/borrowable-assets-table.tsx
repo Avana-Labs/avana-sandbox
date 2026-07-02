@@ -4,6 +4,14 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
+import {
   BORROWABLE_CATEGORIES,
   aprToneClass,
   formatCompactUsd,
@@ -92,52 +100,46 @@ export function BorrowableAssetsPanel({
               {group.assets.map((asset) => {
                 const aprTone = aprToneClass(asset.borrowApr)
                 return (
-                  <li
-                    key={asset.id}
-                    className="cursor-pointer space-y-4 rounded-radius-lg border border-border bg-card px-4 py-4 shadow-elev-1 transition-colors hover:border-brand/30"
-                    onClick={() => {
-                      onViewMarket?.(asset)
-                      router.push(borrowAssetDetailPath(asset.id))
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <TokenBubble visual={asset.visual} size="table" />
-                        <div className="min-w-0">
-                          <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
-                          <div className="text-[12px] text-muted-foreground">{asset.name}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={cn("flex items-center justify-end gap-1 font-data text-[18px] font-medium tabular-nums", aprTone)}>
-                          {asset.borrowApr.toFixed(2)}%
-                        </div>
-                        <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Borrow APR</div>
-                      </div>
-                    </div>
-
-                    <dl className="divide-y divide-border text-[12.5px]">
-                      <AssetStatLine label="Total Borrows" value={formatCompactUsd(asset.totalBorrowedUsd)} />
-                      <AssetStatLine label="Liquidity" value={formatCompactUsd(asset.availableUsd)} />
-                      <AssetStatLine
-                        label="Utilization"
-                        value={formatUtilizationPct(asset.utilization)}
-                        tone={utilizationToneClass(asset.utilization)}
+                  <li key={asset.id}>
+                    <MarketMobileCard
+                      clickable
+                      onClick={() => {
+                        onViewMarket?.(asset)
+                        router.push(borrowAssetDetailPath(asset.id))
+                      }}
+                    >
+                      <MarketMobileCardHeader
+                        identity={
+                          <div className="flex items-center gap-2.5">
+                            <TokenBubble visual={asset.visual} size="table" />
+                            <div className="min-w-0">
+                              <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
+                              <div className="text-[12px] text-muted-foreground">{asset.name}</div>
+                            </div>
+                          </div>
+                        }
+                        metric={<MarketMobileMetric value={`${asset.borrowApr.toFixed(2)}%`} label="Borrow APR" valueClassName={aprTone} />}
                       />
-                    </dl>
 
-                    <div className="flex items-stretch gap-2">
-                      <button
-                        type="button"
+                      <MarketMobileStatList className="mt-4">
+                        <MarketMobileStatRow label="Total Borrows" value={formatCompactUsd(asset.totalBorrowedUsd)} />
+                        <MarketMobileStatRow label="Liquidity" value={formatCompactUsd(asset.availableUsd)} />
+                        <MarketMobileStatRow
+                          label="Utilization"
+                          value={formatUtilizationPct(asset.utilization)}
+                          valueClassName={utilizationToneClass(asset.utilization)}
+                        />
+                      </MarketMobileStatList>
+
+                      <MarketMobilePrimaryAction
                         onClick={(event) => {
                           event.stopPropagation()
                           onBorrow(asset)
                         }}
-                        className="w-full rounded-radius-sm bg-accent-primary px-4 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
                       >
                         Borrow
-                      </button>
-                    </div>
+                      </MarketMobilePrimaryAction>
+                    </MarketMobileCard>
                   </li>
                 )
               })}
@@ -466,14 +468,5 @@ function AssetsSection({
         </div>
       </DesktopTableSurface>
     </section>
-  )
-}
-
-function AssetStatLine({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="flex items-center justify-between py-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
-    </div>
   )
 }

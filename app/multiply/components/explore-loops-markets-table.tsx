@@ -4,6 +4,16 @@ import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileInsetStat,
+  MarketMobileInsetStats,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
@@ -861,66 +871,61 @@ function MobileLoopCard({
   onOpenMultiply?: (href: string) => void
 }) {
   return (
-    <Link
-      href={row.href}
-      className="block rounded-radius-lg border border-border bg-card px-4 py-4 shadow-elev-1 transition-colors hover:border-brand/30"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-10 w-[62px] items-center">
-              {protocolLogo ? (
-                <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
-                </div>
-              ) : null}
-              {assetLogo ? (
-                <div className="absolute left-5 top-0 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={assetLogo} alt="" aria-hidden="true" className="size-full object-cover" />
-                </div>
-              ) : null}
-            </div>
+    <Link href={row.href}>
+      <MarketMobileCard clickable>
+        <MarketMobileCardHeader
+          identity={
             <div className="min-w-0">
-              <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.protocol}</div>
-              <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{row.asset}</div>
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-10 w-[62px] items-center">
+                  {protocolLogo ? (
+                    <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+                    </div>
+                  ) : null}
+                  {assetLogo ? (
+                    <div className="absolute left-5 top-0 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={assetLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+                    </div>
+                  ) : null}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.protocol}</div>
+                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{row.asset}</div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="text-right">
-          <div
-            className={cn(
-              "font-data text-[18px] font-medium tabular-nums",
-              row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-success") : "text-foreground",
-            )}
-          >
-            {row.apy || "—"}
-          </div>
-          <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Max APY</div>
-        </div>
-      </div>
+          }
+          metric={
+            <MarketMobileMetric
+              value={row.apy || "—"}
+              label="Max APY"
+              valueClassName={row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-success") : undefined}
+            />
+          }
+        />
 
-      <dl className="mt-4 divide-y divide-border text-[12.5px]">
-        <MobileStatLine label="Max Leverage" value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} />
-        <MobileStatLine label="Liquidity" value={availableLabel} />
-      </dl>
+        <MarketMobileStatList className="mt-4">
+          <MarketMobileStatRow label="Max Leverage" value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} />
+          <MarketMobileStatRow label="Liquidity" value={availableLabel} />
+        </MarketMobileStatList>
 
-      <div className="mt-3 grid grid-cols-2 divide-x divide-border overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
-        <MobileInsetStat label="Supply APY" value={supplyApy ?? "—"} tone="text-success" />
-        <MobileInsetStat label="Borrow APY" value={borrowApy ?? "—"} tone="text-rose-600 dark:text-rose-400" />
-      </div>
+        <MarketMobileInsetStats className="mt-3">
+          <MarketMobileInsetStat label="Supply APY" value={supplyApy ?? "—"} valueClassName="text-success" />
+          <MarketMobileInsetStat label="Borrow APY" value={borrowApy ?? "—"} valueClassName="text-rose-600 dark:text-rose-400" />
+        </MarketMobileInsetStats>
 
-      <Button
-        type="button"
-        className="mt-4 h-10 w-full rounded-full text-[14px]"
-        onClick={(event) => {
-          event.preventDefault()
-          onOpenMultiply?.(row.href)
-        }}
-      >
-        Multiply
-      </Button>
+        <MarketMobilePrimaryAction
+          onClick={(event) => {
+            event.preventDefault()
+            onOpenMultiply?.(row.href)
+          }}
+        >
+          Multiply
+        </MarketMobilePrimaryAction>
+      </MarketMobileCard>
     </Link>
   )
 }
@@ -1008,24 +1013,6 @@ function CellLink({ href, className, children }: { href: string; className?: str
     <Link href={href} className={cn("block text-left", className)}>
       {children}
     </Link>
-  )
-}
-
-function MobileStatLine({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="flex items-center justify-between py-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
-    </div>
-  )
-}
-
-function MobileInsetStat({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center px-2 py-2.5">
-      <span className={cn("font-data text-[14px] font-medium tabular-nums text-foreground", tone)}>{value}</span>
-      <span className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
-    </div>
   )
 }
 
