@@ -4,6 +4,7 @@ import Link from "next/link"
 import type { PortfolioStrategyBucket } from "@/app/lib/data/providers/portfolio"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { formatApy } from "@/app/lib/format"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function PortfolioLendingOpportunities({
   buckets,
@@ -12,18 +13,20 @@ export function PortfolioLendingOpportunities({
   buckets: PortfolioStrategyBucket[]
   returnHref?: string
 }) {
+  const { t } = useTranslation()
+
   return (
     <section className="space-y-5">
       <div className="flex items-baseline justify-between gap-4 border-b border-border pb-3">
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">Lending Opportunities</h2>
+        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Lending Opportunities")}</h2>
         <Link href={actionPagePath("lend", "deposit", returnHref ? { return: returnHref } : undefined)} className="text-[13px] text-muted-foreground transition-colors hover:text-foreground">
-          View markets
+          {t("View markets")}
         </Link>
       </div>
 
       {buckets.length === 0 ? (
         <p className="py-6 text-[14px] text-muted-foreground">
-          No curated opportunities right now. Browse markets on the lend page to supply assets.
+          {t("No curated opportunities right now. Browse markets on the lend page to supply assets.")}
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

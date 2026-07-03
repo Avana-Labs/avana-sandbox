@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import { TokenIcon } from "@/app/components/token-icon"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
@@ -34,6 +35,7 @@ export function MultiplyCollateralTable({
 }) {
   const router = useRouter()
   const { showDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
   const usd = (value: number) => (showDollarAmounts ? formatCompactUsd(value) : MASK)
 
   if (rows.length === 0) return null
@@ -56,22 +58,22 @@ export function MultiplyCollateralTable({
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
                   <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Market
+                    {t("Market")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Exposure
+                    {t("Exposure")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Multiplier
+                    {t("Multiplier")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Debt
+                    {t("Debt")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Health
+                    {t("Health")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Net APY
+                    {t("Net APY")}
                   </th>
                   <SilentActionHeader className="pr-5" />
                 </tr>
@@ -123,7 +125,7 @@ export function MultiplyCollateralTable({
                             router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
                           }}
                         >
-                          Multiply
+                          {t("Multiply")}
                         </Button>
                         <Button
                           type="button"
@@ -135,7 +137,7 @@ export function MultiplyCollateralTable({
                             router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
                           }}
                         >
-                          Deleverage
+                          {t("Deleverage")}
                         </Button>
                       </HoverActionGroup>
                     </td>
@@ -174,7 +176,7 @@ export function MultiplyCollateralTable({
                 metric={
                   <MarketMobileMetric
                     value={`${row.multiplier.toFixed(2)}x`}
-                    label="Multiplier"
+                    label={t("Multiplier")}
                     valueClassName="text-foreground dark:text-white/88"
                   />
                 }
@@ -182,19 +184,19 @@ export function MultiplyCollateralTable({
 
               <MarketMobileStatList>
                 <MarketMobileStatRow
-                  label="Exposure"
+                  label={t("Exposure")}
                   value={usd(row.collateralUsd)}
                 />
                 <MarketMobileStatRow
-                  label="Debt"
+                  label={t("Debt")}
                   value={usd(row.debtUsd)}
                 />
                 <MarketMobileStatRow
-                  label="Health"
+                  label={t("Health")}
                   value={formatHealthFactor(row.healthFactor)}
                 />
                 <MarketMobileStatRow
-                  label="Net APY"
+                  label={t("Net APY")}
                   value={formatPct(row.netApyPct)}
                   valueClassName="text-success"
                 />
@@ -210,7 +212,7 @@ export function MultiplyCollateralTable({
                     router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
                   }}
                 >
-                  Multiply
+                  {t("Multiply")}
                 </Button>
                 <Button
                   type="button"
@@ -221,7 +223,7 @@ export function MultiplyCollateralTable({
                     router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
                   }}
                 >
-                  Deleverage
+                  {t("Deleverage")}
                 </Button>
               </div>
             </MarketMobileCard>

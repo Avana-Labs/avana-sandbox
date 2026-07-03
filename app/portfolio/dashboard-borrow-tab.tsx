@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/components/borrow-tab/debts-table"
@@ -42,6 +43,7 @@ export function DashboardBorrowTab({
 }) {
   const router = useRouter()
   const { showDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
   const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">(section === "debts" ? "debts" : "supplies")
   const supplies = collateralPositions
   const debtsRows = useMemo(() => debtPositions.filter((row) => row.borrowedUsd > 0), [debtPositions])
@@ -117,10 +119,10 @@ export function DashboardBorrowTab({
           <Tabs value={marketsTab} onValueChange={(value) => setMarketsTab(value as "supplies" | "debts")}>
             <TabsList className="inline-flex w-max min-w-max justify-start">
               <TabsTrigger value="supplies" className="shrink-0 text-[14px] font-normal">
-                Collateral Positions
+                {t("Collateral Positions")}
               </TabsTrigger>
               <TabsTrigger value="debts" className="shrink-0 text-[14px] font-normal">
-                Debt Positions
+                {t("Debt Positions")}
               </TabsTrigger>
             </TabsList>
           </Tabs>
