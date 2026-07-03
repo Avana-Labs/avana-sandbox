@@ -17,6 +17,7 @@ import {
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 
 const MASK = "••••"
 
@@ -107,7 +108,9 @@ export function MultiplyCollateralTable({
                     <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
                       {usd(row.debtUsd)}
                     </td>
-                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-success ${TABLE_ROW_HOVER_BG}`}>
+                    <td
+                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] ${healthFactorBand(row.healthFactor).textClass} ${TABLE_ROW_HOVER_BG}`}
+                    >
                       {formatHealthFactor(row.healthFactor)}
                     </td>
                     <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
@@ -194,6 +197,7 @@ export function MultiplyCollateralTable({
                 <MarketMobileStatRow
                   label={t("Health")}
                   value={formatHealthFactor(row.healthFactor)}
+                  valueClassName={healthFactorBand(row.healthFactor).textClass}
                 />
                 <MarketMobileStatRow
                   label={t("Net APY")}
