@@ -17,6 +17,54 @@ import { validateDeleverageAction, validateMultiplyAction } from "./validation"
 const DEFAULT_BASE_IMPACT = 0.001
 const MAX_ALLOWED_PRICE_IMPACT = 0.05
 
+/**
+ * Re-price a stored multiply position against the CURRENT collateral price and
+ * re-derive its dollar figures with the SAME engine math a live simulation uses
+ * (`calculateMultiplyHealthFactor` / `calculateMultiplyLtv` / `calculateLiquidationPrice`).
+ *
+ * The stored primitives are `collateralAmount` (token quantity) and `debtValueUsd`;
+ * everything else (`collateralValueUsd`, `healthFactor`, `ltv`, `liquidationPrice`) is
+ * derived so a freshly-hydrated position and a just-simulated one agree instead of the
+ * position carrying a frozen persisted health factor while the price moves.
+ *
+ * `collateralPriceOverrideUsd` defaults to the live market price so the read path stays
+ * deterministic in tests (pass the price explicitly) yet reflects the current oracle in
+ * production. A non-finite/non-positive override falls back to the market price.
+ */
+export function revalueMultiplyPosition(
+  position: MultiplyPosition,
+  market: MultiplyMarketRecord,
+  collateralPriceOverrideUsd?: number,
+): MultiplyPosition {
+  const collateralPriceUsd =
+    collateralPriceOverrideUsd != null &&
+    Number.isFinite(collateralPriceOverrideUsd) &&
+    collateralPriceOverrideUsd > 0
+      ? collateralPriceOverrideUsd
+      : market.collateralAsset.priceUsd
+  const collateralValueUsd = position.collateralAmount * collateralPriceUsd
+  const debtValueUsd = position.debtValueUsd
+  const ltv = calculateMultiplyLtv(debtValueUsd, collateralValueUsd)
+  const healthFactor = calculateMultiplyHealthFactor(
+    collateralValueUsd,
+    debtValueUsd,
+    market.risk.liquidationThreshold,
+  )
+  const liquidationPrice = calculateLiquidationPrice({
+    debtValueUsd,
+    collateralAmount: position.collateralAmount,
+    liquidationThreshold: market.risk.liquidationThreshold,
+  })
+
+  return {
+    ...position,
+    collateralValueUsd,
+    ltv,
+    healthFactor,
+    liquidationPrice,
+  }
+}
+
 function emptyBefore() {
   return {
     collateralValueUsd: 0,

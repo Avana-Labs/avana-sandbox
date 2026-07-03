@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { MultiplyAction, MultiplySystemState } from "@/app/lib/multiply-engine"
+import { revalueMultiplyPosition } from "@/app/lib/multiply-engine"
 import { deserializeMultiplySystemState, serializeMultiplySystemState } from "./codec"
 import type {
   MultiplyReadAdapter,
@@ -276,7 +277,22 @@ export function useMultiplySession({
             hash: transaction.syntheticTxHash,
           }
         })
-      setState((current) => ({ ...current, positions }))
+      // Do NOT trust the persisted collateralValueUsd/healthFactor/liquidationPrice —
+      // they freeze at the price captured when the position was last written. Re-derive
+      // them from the stored collateralAmount (token qty) × the CURRENT collateral price
+      // (from the hydrated market data) using the same engine math a live simulation
+      // uses, so a freshly-hydrated position and a just-simulated one agree. Fall back to
+      // the persisted value only when the market/price isn't available for a position.
+      setState((current) => {
+        const revalued = Object.fromEntries(
+          Object.entries(positions).map(([id, position]) => {
+            const market = current.markets[position.marketId]
+            if (!market) return [id, position]
+            return [id, revalueMultiplyPosition(position, market)]
+          }),
+        )
+        return { ...current, positions: revalued }
+      })
       setTransactionHistory(history)
       setTransactionReceipts(buildSyntheticReceipts(history))
     },
