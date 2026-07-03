@@ -300,7 +300,13 @@ export default defineSchema({
    *
    * Append-only by design: patching a single per-market row put every writer on the
    * same document and made concurrent actions contend under Convex OCC. Appending a
-   * fresh row per action removes that hot-write contention; reads fold O(#events).
+   * fresh row per action removes that hot-write contention.
+   *
+   * Scale is handled by COMPACTION, not by changing this write path: a scheduled
+   * `liquidity.compactDeltas` folds the oldest rows into the cumulative
+   * `marketLiquidityBaseline` (one row per market) and deletes them, so this table only
+   * holds a bounded recent window and the fold reads `#markets + #recent rows` instead of
+   * O(#events). Each row is counted exactly once — raw here until folded, then baseline.
    */
   marketLiquidityDeltas: defineTable({
     /** Catalog market id — a pool id ("uni-v3-bluechip-weth-usdc") or borrowable asset id ("uni-v2:usdc"). */
@@ -313,12 +319,39 @@ export default defineSchema({
   }).index("by_slug", ["marketSlug"]),
 
   /**
+   * Cumulative per-market fold of every COMPACTED `marketLiquidityDeltas` row — the
+   * bounded baseline that keeps the fold independent of the total number of actions.
+   *
+   * The append-only event table stays the zero-contention hot-write sink (all products
+   * append a fresh row per action — never patch a shared row). A scheduled compaction
+   * (`crons.ts` → `liquidity.compactDeltas`) folds the OLDEST delta rows into these
+   * per-market accumulators and DELETES the folded rows, so the raw table only ever holds
+   * a bounded recent window. The fold is then `baseline + the few un-compacted deltas`
+   * (markets + recent-window rows), not a full-table scan. One row per market slug.
+   *
+   * Correctness: every delta row is counted exactly once — either it is still in the raw
+   * table (summed live) or it has been folded into a baseline row and deleted (summed via
+   * the baseline), never both. Compaction only touches this table, so it never contends
+   * with the hot append path on a document.
+   */
+  marketLiquidityBaseline: defineTable({
+    marketSlug: v.string(),
+    /** Running sum of borrowedDeltaUsd across all compacted rows for this market. */
+    borrowedDeltaUsd: v.number(),
+    /** Running sum of suppliedDeltaUsd across all compacted rows for this market. */
+    suppliedDeltaUsd: v.number(),
+    /** Max `updatedAt` of any delta folded into this baseline (for the fold's freshness). */
+    updatedAt: v.number(),
+  }).index("by_slug", ["marketSlug"]),
+
+  /**
    * Precomputed fold of `marketLiquidityDeltas` into one net aggregate per market.
    * The app-wide liquidity subscription (`liquidity.listDeltaSnapshot`) reads this
    * single document (O(1)) instead of the append-only event table — so ONE user's
    * borrow/repay/supply/withdraw no longer invalidates every other subscriber. A
-   * schedule (`crons.ts`) rebuilds it periodically from the raw events, bounding
-   * cross-user staleness to the refresh interval.
+   * schedule (`crons.ts`) rebuilds it periodically from the bounded fold (the
+   * `marketLiquidityBaseline` plus the un-compacted deltas), bounding cross-user
+   * staleness to the refresh interval.
    */
   liquidityDeltasCache: defineTable({
     /** Constant discriminator so there is exactly one cache row (`"deltas"`). */
