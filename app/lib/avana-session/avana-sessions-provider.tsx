@@ -56,7 +56,10 @@ function useRewardsEventBridge({
   useEffect(() => {
     for (const item of borrow.transactionHistory) {
       const bridgeId = `borrow:${item.id}`
-      if (item.status !== "success" || seenIdsRef.current.has(bridgeId)) continue
+      // History is prepended newest-first, so the first already-bridged id means every older
+      // item was bridged in a prior run — stop instead of scanning the whole array each change.
+      if (seenIdsRef.current.has(bridgeId)) break
+      if (item.status !== "success") continue
       seenIdsRef.current.add(bridgeId)
 
       if (item.kind === "borrow") {
@@ -88,7 +91,8 @@ function useRewardsEventBridge({
   useEffect(() => {
     for (const item of multiply.transactionHistory) {
       const bridgeId = `multiply:${item.id}`
-      if (item.status !== "success" || seenIdsRef.current.has(bridgeId)) continue
+      if (seenIdsRef.current.has(bridgeId)) break // newest-first: older items already bridged
+      if (item.status !== "success") continue
       seenIdsRef.current.add(bridgeId)
 
       void rewards.recordActivityEvent({
@@ -106,7 +110,8 @@ function useRewardsEventBridge({
   useEffect(() => {
     for (const item of lend.transactionHistory) {
       const bridgeId = `lend:${item.id}`
-      if (item.status !== "success" || seenIdsRef.current.has(bridgeId)) continue
+      if (seenIdsRef.current.has(bridgeId)) break // newest-first: older items already bridged
+      if (item.status !== "success") continue
       seenIdsRef.current.add(bridgeId)
 
       if (item.kind === "claim") continue
