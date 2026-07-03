@@ -23,8 +23,11 @@
     "test:unit": "vitest run tests/unit",
     "test:e2e": "playwright test",
     "test:e2e:audit": "playwright test tests/e2e/app-audit.spec.ts",
+    "test:e2e:browser-soak": "playwright test tests/e2e/browser-session-soak.spec.ts --project=chromium",
     "test:e2e:performance": "playwright test tests/e2e/route-performance.spec.ts",
     "test:e2e:update": "playwright test --update-snapshots",
+    "test:stress:engine": "RUN_FULL_APP_STRESS=1 vitest run app/lib/__tests__/full-app-stress.test.ts",
+    "test:stress:onboarding": "RUN_ONBOARDING_10K=1 vitest run convex/sandbox-onboarding-10k.test.ts",
     "start": "node scripts/run-next.mjs start",
     "lighthouse:budgets": "node scripts/lighthouse-budgets.mjs"
   },
