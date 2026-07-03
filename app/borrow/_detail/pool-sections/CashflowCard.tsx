@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import type { CashflowCard as CashflowCardData } from "@/app/lib/borrow-detail"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { SectionCard } from "../ui"
 import { DeltaPill } from "@/app/components/ui/live/delta-pill"
 
@@ -12,11 +13,12 @@ type Props = { detail: { cashflow: CashflowCardData } }
 
 export function CashflowCard({ detail }: Props) {
   const { cashflow } = detail
+  const { t } = useTranslation()
 
   return (
     <SectionCard
-      title="Cashflow breakdown"
-      subtitle={`${cashflow.periodLabel} · fees, incentives and protocol revenue.`}
+      title={t("Cashflow breakdown")}
+      subtitle={t("{period} · fees, incentives and protocol revenue.").replace("{period}", cashflow.periodLabel)}
       chrome="plain"
       bodyClassName="p-0"
     >
@@ -24,9 +26,9 @@ export function CashflowCard({ detail }: Props) {
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              <th className="pb-2 pl-5 pt-3">Line</th>
-              <th className="pb-2 pt-3 text-right">Reported</th>
-              <th className="pb-2 pr-5 pt-3 text-right">YoY</th>
+              <th className="pb-2 pl-5 pt-3">{t("Line")}</th>
+              <th className="pb-2 pt-3 text-right">{t("Reported")}</th>
+              <th className="pb-2 pr-5 pt-3 text-right">{t("YoY")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
