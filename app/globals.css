@@ -177,6 +177,21 @@
   --ck-overlay-backdrop-filter: none;
 }
 
+html.wallet-modal-open [role="dialog"],
+html.wallet-modal-open [role="dialog"] *,
+html.wallet-modal-open [role="dialog"] *::before,
+html.wallet-modal-open [role="dialog"] *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
+}
+
+html.wallet-modal-open [role="dialog"] {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
 @layer base {
   * {
     @apply border-border;
