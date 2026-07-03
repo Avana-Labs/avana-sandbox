@@ -129,6 +129,57 @@ describe("useMultiplySession", () => {
     expect(item?.multiplierAfter).toBe(2.5)
   })
 
+  it("revalues a hydrated position from the live market price, not the frozen persisted value", () => {
+    const walletId = "demo-wallet"
+    const sessionSeed = buildMultiplySessionSeed(walletId)
+    const { result } = renderHook(() => useMultiplySession({ walletId, sessionSeed, persistState: false }))
+
+    const marketId = "eth-usdt"
+    const collateralAmount = 3
+    // A stale persisted valuation ("a price ago"): collateralValueUsd/healthFactor/
+    // liquidationPrice must be recomputed from collateralAmount × the current market
+    // price on hydrate, so these frozen numbers must NOT survive.
+    const frozenCollateralValueUsd = 1
+    const debtValueUsd = 4_000
+
+    act(() => {
+      result.current.hydrateWalletData({
+        positions: [
+          {
+            _id: "pos-live",
+            product: "multiply",
+            marketSlug: marketId,
+            status: "open",
+            collateralAmount,
+            collateralValueUsd: frozenCollateralValueUsd,
+            debtValueUsd,
+            multiplier: 2,
+            healthFactor: 0.01,
+            liquidationPrice: 999_999,
+            openedAt: 1,
+            lastUpdatedAt: 1,
+          },
+        ],
+        transactions: [],
+      })
+    })
+
+    const price = result.current.state.markets[marketId]!.collateralAsset.priceUsd
+    const threshold = result.current.state.markets[marketId]!.risk.liquidationThreshold
+    const position = result.current.state.positions["pos-live"]!
+
+    // Derived from live price, not the frozen persisted number.
+    expect(position.collateralValueUsd).toBeCloseTo(collateralAmount * price, 6)
+    expect(position.collateralValueUsd).not.toBeCloseTo(frozenCollateralValueUsd, 6)
+    // Health factor uses the SAME engine math: (collateral * LT) / debt.
+    expect(position.healthFactor).not.toBe("infinity")
+    expect(position.healthFactor as number).toBeCloseTo((collateralAmount * price * threshold) / debtValueUsd, 6)
+    expect(position.healthFactor as number).not.toBeCloseTo(0.01, 6)
+    // Stored token quantity + debt are preserved as the primitives.
+    expect(position.collateralAmount).toBe(collateralAmount)
+    expect(position.debtValueUsd).toBe(debtValueUsd)
+  })
+
   it("exposes a real isPending signal during execution (issue #142)", async () => {
     const walletId = "demo-wallet"
     const sessionSeed = buildMultiplySessionSeed(walletId)
