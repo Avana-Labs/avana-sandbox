@@ -58,7 +58,9 @@ function PreferencesProfileSyncConnected() {
   const { language, setLanguage, currency, setCurrency, showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
   const { authedWallet, isSignedIn } = useSiweAuth()
   const wallet = isSignedIn && authedWallet ? authedWallet : null
-  const state = useQuery(api.sandbox.onboarding.getState, wallet ? { wallet } : "skip") as
+  // Wallet-only query (no global economy shard reads): this component is mounted for every
+  // authed user app-wide, so it must not subscribe to counters that every claim invalidates.
+  const state = useQuery(api.sandbox.onboarding.getWalletOnboardingState, wallet ? { wallet } : "skip") as
     | { profile?: { preferences?: StoredPreferences } }
     | undefined
   const savePreferences = useMutation((api as typeof api & { sandbox: { onboarding: { savePreferences: unknown } } }).sandbox.onboarding.savePreferences)

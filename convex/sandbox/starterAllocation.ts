@@ -88,6 +88,73 @@ function allocateBucket(
 
 type BucketKey = "liquid" | "collateral" | "lend" | "multiply"
 
+/** A candidate market plus the price its chosen leg would be valued at, for completeness checks. */
+export type StarterPricedMarket = StarterMarket & { priceUsd?: number }
+
+/** Human-readable scope → bucket label for error messages. */
+const SCOPE_TO_BUCKET: Record<StarterMarket["scope"], BucketKey> = {
+  asset: "liquid",
+  pool: "collateral",
+  lend: "lend",
+  multiply: "multiply",
+}
+
+/**
+ * Fail-closed catalog gate for onboarding. Onboarding must never mark a wallet "done"
+ * on a partial/empty seed (that seeds a truncated portfolio and permanently locks the
+ * wallet out of a real allocation). This asserts the seed can satisfy EVERY starter
+ * bucket — enough candidates for each `STARTER_BUCKETS.*.count`, and that the specific
+ * legs the plan would select all carry a positive price. Throws
+ * `ONBOARDING_CATALOG_INCOMPLETE` with a descriptive reason; the caller aborts the claim
+ * (no seeding, wallet stays claimable) rather than completing onboarding on bad data.
+ *
+ * `buildStarterAllocationPlan` deliberately still degrades gracefully for its other
+ * callers; this is the strict gate used only on the claim path.
+ */
+export function assertCatalogCanSatisfyStarter(
+  wallet: string,
+  markets: readonly StarterPricedMarket[],
+): void {
+  const byScope = (scope: StarterMarket["scope"]) =>
+    markets
+      .filter((market) => market.scope === scope)
+      .slice()
+      .sort((left, right) => left.slug.localeCompare(right.slug))
+
+  // 1) Every bucket must have at least its required number of candidate markets.
+  const bucketReqs: Array<{ scope: StarterMarket["scope"]; count: number }> = [
+    { scope: "asset", count: STARTER_BUCKETS.liquid.count },
+    { scope: "pool", count: STARTER_BUCKETS.collateral.count },
+    { scope: "lend", count: STARTER_BUCKETS.lend.count },
+    { scope: "multiply", count: STARTER_BUCKETS.multiply.count },
+  ]
+  for (const req of bucketReqs) {
+    const available = byScope(req.scope).length
+    if (available < req.count) {
+      throw new Error(
+        `ONBOARDING_CATALOG_INCOMPLETE: ${SCOPE_TO_BUCKET[req.scope]} bucket needs ${req.count} ${req.scope} markets, found ${available}.`,
+      )
+    }
+  }
+
+  // 2) Every leg the plan would actually select must have a positive price. A zero/absent
+  //    price would seed a $0-valued or divide-by-zero position, so treat it as incomplete.
+  const priceBySlug = new Map(markets.map((market) => [market.slug, market.priceUsd]))
+  const plan = buildStarterAllocationPlan(
+    wallet,
+    markets.map((market) => ({ slug: market.slug, scope: market.scope })),
+  )
+  const chosen = [...plan.liquid, ...plan.collateral, ...plan.lend, ...plan.multiply]
+  for (const leg of chosen) {
+    const price = priceBySlug.get(leg.marketSlug)
+    if (price === undefined || !(price > 0) || !Number.isFinite(price)) {
+      throw new Error(
+        `ONBOARDING_CATALOG_INCOMPLETE: selected market "${leg.marketSlug}" has no positive price (got ${String(price)}).`,
+      )
+    }
+  }
+}
+
 export function buildStarterAllocationPlan(
   wallet: string,
   markets: readonly StarterMarket[],
