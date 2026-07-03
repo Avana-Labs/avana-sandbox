@@ -465,6 +465,20 @@ export default defineSchema({
     resourcesLinks: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
   }),
 
+  /** Minimal immutable starter catalog read by every onboarding claim in one indexed lookup. */
+  sandboxStarterCatalog: defineTable({
+    singleton: v.string(),
+    rows: v.array(
+      v.object({
+        slug: v.string(),
+        scope: marketScope,
+        symbol: v.string(),
+        priceUsd: v.number(),
+      }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_singleton", ["singleton"]),
+
   /** Per-authenticated-user onboarding + allocation profile. */
   sandboxProfiles: defineTable({
     /** Lowercased wallet address; must match the authenticated identity. */
