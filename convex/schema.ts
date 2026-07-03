@@ -596,10 +596,20 @@ export default defineSchema({
     lastUpdatedAt: v.number(),
     closedAt: v.optional(v.number()),
     openTxSynthetic: v.optional(v.string()),
+    /**
+     * Optimistic-concurrency version, bumped on every successful write. A client that
+     * computed a write from revision N sends `expectedRevision: N`; the server rejects it
+     * if the stored position has since advanced (another tab/device wrote first), instead
+     * of silently clobbering that write. Optional for rows seeded before this field.
+     */
+    revision: v.optional(v.number()),
   })
     .index("by_wallet", ["wallet"])
     .index("by_wallet_product", ["wallet", "product"])
-    .index("by_wallet_market", ["wallet", "marketSlug"]),
+    .index("by_wallet_market", ["wallet", "marketSlug"])
+    // Direct (wallet, product, market) lookup so the position upsert is a `.unique()`
+    // instead of collect()+find() over every position sharing a market slug.
+    .index("by_wallet_product_market", ["wallet", "product", "marketSlug"]),
 
   /** Collateral leg of a borrow position. Mirrors `UserCollateralPosition`. */
   positionCollateral: defineTable({
