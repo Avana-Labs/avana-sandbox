@@ -323,6 +323,85 @@ describe("liquidation recording", () => {
     expect(state.transactions[0]?.kind).toBe("liquidation")
     expect(state.snapshots).toHaveLength(1)
   })
+
+  test("bumps position revision so a victim's stale-read write is rejected (regression: C-2)", async () => {
+    const t = convexTest(schema, modules)
+    const ids = await t.run(async (ctx) => {
+      const positionId = await ctx.db.insert("positions", {
+        wallet: WALLET.toLowerCase(),
+        product: "borrow",
+        marketSlug: "uni-v3-bluechip-weth-usdc",
+        status: "open",
+        collateralValueUsd6: "2000000000",
+        debtValueUsd6: "1200000000",
+        revision: 0,
+        openedAt: 1,
+        lastUpdatedAt: 1,
+      })
+      await ctx.db.insert("positionCollateral", {
+        wallet: WALLET.toLowerCase(),
+        positionId,
+        marketSlug: "uni-v3-bluechip-weth-usdc",
+        collateralShares: "2000000000",
+        principalTokenAmount: "2000000000",
+        collateralEnabled: true,
+        collateralValueUsd6: "2000000000",
+        updatedAt: 1,
+      })
+      const debtPositionId = await ctx.db.insert("positionDebt", {
+        wallet: WALLET.toLowerCase(),
+        positionId,
+        assetId: "uni-v2:usdc",
+        baseAssetId: "usdc",
+        debtSharesUsd6: "1200000000",
+        debtIndexRay: "1000000000000000000000000000",
+        borrowRateWad: "50000000000000000",
+        principalBorrowedUsd6: "1200000000",
+        updatedAt: 1,
+      })
+      return { positionId, debtPositionId }
+    })
+
+    const asLiquidator = t.withIdentity({ subject: OTHER })
+    await asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
+      wallet: WALLET,
+      liquidatorWallet: OTHER,
+      positionId: ids.positionId,
+      debtPositionId: ids.debtPositionId,
+      marketSlug: "uni-v3-bluechip-weth-usdc",
+      repaidUsd6: "500000000",
+      seizedCollateralUsd6: "550000000",
+      healthFactorWadBefore: "900000000000000000",
+      healthFactorWadAfter: "1100000000000000000",
+    })
+
+    // The liquidation advanced the optimistic-concurrency token.
+    const after = await t.run(async (ctx) => ctx.db.get(ids.positionId))
+    expect(after?.revision).toBe(1)
+
+    // A victim tab that cached the pre-liquidation revision (0) must NOT be able to write —
+    // its payload was computed from the pre-liquidation numbers and would reverse the seizure.
+    const asVictim = t.withIdentity({ subject: WALLET })
+    await expect(
+      asVictim.mutation(api.sandbox.transactions.recordTransaction, {
+        wallet: WALLET,
+        intentId: "victim-stale-repay",
+        product: "borrow",
+        kind: "repay",
+        marketSlug: "uni-v3-bluechip-weth-usdc",
+        assetId: "uni-v2:usdc",
+        requestedAmountUsd6: "0",
+        executedAmountUsd6: "0",
+        amountUsd: 0,
+        expectedRevision: 0,
+        position: {
+          status: "open",
+          marketSlug: "uni-v3-bluechip-weth-usdc",
+          debtValueUsd6: "1200000000",
+        },
+      }),
+    ).rejects.toThrow(/STALE_WRITE/)
+  })
 })
 
 describe("recordTransaction — server-side solvency re-derivation", () => {
