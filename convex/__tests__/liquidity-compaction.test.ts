@@ -69,6 +69,7 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
       requestedAmountUsd6: "400000000",
       executedAmountUsd6: "400000000",
       amountUsd: 400,
+      expectedRevision: 0,
       position: {
         status: "open",
         marketSlug: "uni-v3-bluechip-weth-usdc",

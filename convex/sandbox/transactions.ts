@@ -402,9 +402,14 @@ export const recordTransaction = mutation({
       existingPosition = existing
       // Optimistic concurrency: reject a write computed from a stale read instead of
       // silently clobbering a concurrent one (two tabs on the same wallet/market).
-      // Backward-compatible — only enforced when the client supplies expectedRevision.
       const currentRevision = existing?.revision ?? 0
-      if (existing && args.expectedRevision != null && args.expectedRevision !== currentRevision) {
+      if (existing && args.expectedRevision == null) {
+        throw new Error(
+          `REVISION_REQUIRED: ${args.product} position for ${marketSlug} already exists; ` +
+            "reload it and submit its expectedRevision.",
+        )
+      }
+      if (existing && args.expectedRevision !== currentRevision) {
         throw new Error(
           `STALE_WRITE: ${args.product} position for ${marketSlug} changed since it was read ` +
             `(expected revision ${args.expectedRevision}, found ${currentRevision}); reload and retry.`,
