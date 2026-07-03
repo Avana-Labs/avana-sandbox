@@ -1,5 +1,6 @@
 import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { getActiveCurrency, withCurrencySymbol } from "@/app/lib/currency/active-rate"
+import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 
 export type BorrowDexId = "uniswap" | "curve" | "balancer" | "aerodrome"
 
@@ -1374,11 +1375,10 @@ export function utilizationToneClass(utilization: number): string {
 }
 
 export function healthFactorToneClass(hf: number | null): string {
-  if (hf === null || Number.isNaN(hf)) return "text-muted-foreground"
-  if (!Number.isFinite(hf)) return "text-muted-foreground"
-  if (hf > 2) return "text-success"
-  if (hf > 1.5) return "text-amber-700 dark:text-amber-300"
-  return "text-rose-700 dark:text-rose-300"
+  // ∞ (no debt) stays muted here — per-row tables treat it as "not applicable"
+  // rather than a green badge. Finite values defer to the shared band scale.
+  if (hf === null || !Number.isFinite(hf)) return "text-muted-foreground"
+  return healthFactorBand(hf).textClass
 }
 
 export function homeVisualToBorrowVisual(visual: { symbol: string; shortLabel: string; bgClassName: string; textClassName: string }): BorrowAssetVisual {

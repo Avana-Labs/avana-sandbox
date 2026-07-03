@@ -22,6 +22,13 @@ export type RecordTransactionArgs = {
   executedAmountUsd6: string
   amountUsd: number
   simulated: boolean
+  /** Optimistic-concurrency token: the position revision this write was computed from.
+   *  The server rejects the write (STALE_WRITE) if the stored position has advanced past it. */
+  expectedRevision?: number
+  /** Per-transaction multiply leverage, persisted so hydrated history renders the real
+   *  before→after (e.g. "3.00x → 2.00x") instead of a constant 1 × current multiplier. */
+  multiplierBefore?: number
+  multiplierAfter?: number
   position?: {
     status: "open" | "closed"
     marketSlug?: string
@@ -91,19 +98,38 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
   const item = result.historyItem
   const positionId = item.positionId ?? Object.keys(result.state.positions).find((id) => result.state.positions[id]?.marketId === item.marketId)
   const position = positionId ? result.state.positions[positionId] : undefined
+  const marketSlug = position?.marketId ?? item.marketId
+
+  // A successful close DELETES the position from engine state (multiply-engine/actions.ts), so
+  // it can no longer be read back here. Without an explicit payload, recordTransaction skips its
+  // position-close branch and the server row stays status:"open" forever — a closed position
+  // that resurrects on reload / in a second tab, carrying stale debt and a phantom liquidation
+  // price. Emit an explicit closed payload so the server marks the row closed (sets closedAt)
+  // and releases the position's liquidity.
+  const closedByDelete = !position && item.status === "success" && item.kind === "close" && Boolean(marketSlug)
+
   return {
     wallet,
     intentId: item.intentId,
     product: "multiply",
     kind: item.kind,
-    marketSlug: position?.marketId ?? item.marketId,
+    marketSlug,
     requestedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
     executedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
     amountUsd: item.amountUsd,
     simulated: item.simulated,
+    // Persist the leverage at THIS transaction so hydrated history shows the real before→after.
+    multiplierBefore: item.multiplierBefore,
+    multiplierAfter: item.multiplierAfter,
     position: position
       ? {
-          status: position.multiplier <= 1 ? "closed" : "open",
+          // A multiply position that still exists in engine state is OPEN — including a fully
+          // deleveraged 1x/$0 position, which the engine intentionally keeps (see
+          // multiply-system sequence-consistency test). "Closed" is signalled by DELETION (the
+          // close action → closedByDelete above). Inferring "closed" from multiplier<=1 here
+          // diverged from local state: the dashboard showed an open 1x position while the server
+          // row was marked closed, flip-flopping on reload.
+          status: "open",
           marketSlug: position.marketId,
           collateralAmount: position.collateralAmount,
           collateralValueUsd: position.collateralValueUsd,
@@ -114,7 +140,20 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
           liquidationPrice: position.liquidationPrice,
           netApyPct: position.netApy,
         }
-      : undefined,
+      : closedByDelete
+        ? {
+            status: "closed",
+            marketSlug,
+            collateralAmount: 0,
+            collateralValueUsd: 0,
+            debtValueUsd: 0,
+            multiplier: 1,
+            ltv: 0,
+            healthFactor: "infinity",
+            liquidationPrice: null,
+            netApyPct: 0,
+          }
+        : undefined,
   }
 }
 

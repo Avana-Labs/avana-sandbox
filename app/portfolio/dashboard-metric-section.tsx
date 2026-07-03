@@ -3,6 +3,7 @@
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { DashboardOverviewMetrics, DashboardPerformanceMetrics } from "./dashboard-tab-metrics"
 
 const MASK = "••••"
@@ -37,6 +38,7 @@ function MetricGrid({ metrics }: { metrics: MetricItem[] }) {
 
 export function DashboardOverviewSection({ title, metrics }: { title: string; metrics: DashboardOverviewMetrics }) {
   const { showDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
@@ -45,24 +47,24 @@ export function DashboardOverviewSection({ title, metrics }: { title: string; me
       <MetricGrid
         metrics={[
           {
-            label: "Net Value",
+            label: t("Net Value"),
             value: m(formatUsdExact(metrics.netValueUsd)),
-            description: "Total value of your positions minus outstanding loans",
+            description: t("Total value of your positions minus outstanding loans"),
           },
           {
-            label: "Total Borrowed",
+            label: t("Total Borrowed"),
             value: m(formatUsdExact(metrics.totalBorrowedUsd)),
-            description: "Current outstanding loan balance",
+            description: t("Current outstanding loan balance"),
           },
           {
-            label: "Liquidation Buffer",
+            label: t("Liquidation Buffer"),
             value: m(formatUsdExact(metrics.liquidationBufferUsd)),
-            description: "Distance from liquidation based on current collateral value",
+            description: t("Distance from liquidation based on current collateral value"),
           },
           {
-            label: "Risk Premium",
+            label: t("Risk Premium"),
             value: showDollarAmounts ? formatPct(metrics.riskPremiumPct) : MASK,
-            description: "An additional cost on your borrow rate based on the riskiness of your collateral",
+            description: t("An additional cost on your borrow rate based on the riskiness of your collateral"),
           },
         ]}
       />
@@ -78,6 +80,7 @@ export function DashboardPerformanceSection({
   metrics: DashboardPerformanceMetrics
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
@@ -86,24 +89,24 @@ export function DashboardPerformanceSection({
       <MetricGrid
         metrics={[
           {
-            label: "Pool Collateral",
+            label: t("Pool Collateral"),
             value: m(formatUsdExact(metrics.poolCollateralUsd)),
-            description: "LP positions currently securing your loans",
+            description: t("LP positions currently securing your loans"),
           },
           {
-            label: "Net APY",
+            label: t("Net APY"),
             value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
-            description: "Weighted average APY across all active positions",
+            description: t("Weighted average APY across all active positions"),
           },
           {
-            label: "Interest Earned",
+            label: t("Interest Earned"),
             value: m(formatUsdExact(metrics.interestEarnedUsd)),
-            description: "Total yield earned from trading fees activities",
+            description: t("Total yield earned from trading fees activities"),
           },
           {
-            label: "Interest Owed",
+            label: t("Interest Owed"),
             value: m(formatUsdExact(metrics.interestOwedUsd)),
-            description: "Total interest accrued on outstanding loans",
+            description: t("Total interest accrued on outstanding loans"),
           },
         ]}
       />
@@ -126,6 +129,7 @@ export function DashboardLendPerformanceSection({
   metrics: DashboardLendPerformanceMetrics
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
@@ -134,24 +138,24 @@ export function DashboardLendPerformanceSection({
       <MetricGrid
         metrics={[
           {
-            label: "Total Supplied",
+            label: t("Total Supplied"),
             value: m(formatUsdExact(metrics.totalSuppliedUsd)),
-            description: "Total assets currently supplied and earning yield",
+            description: t("Total assets currently supplied and earning yield"),
           },
           {
-            label: "Net APY",
+            label: t("Net APY"),
             value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
-            description: "Weighted average APY across all supplied positions",
+            description: t("Weighted average APY across all supplied positions"),
           },
           {
-            label: "Interest Earned",
+            label: t("Interest Earned"),
             value: m(formatUsdExact(metrics.interestEarnedUsd)),
-            description: "Total yield accrued across your lending positions",
+            description: t("Total yield accrued across your lending positions"),
           },
           {
-            label: "Claimable Rewards",
+            label: t("Claimable Rewards"),
             value: m(formatUsdExact(metrics.claimableRewardsUsd)),
-            description: "Rewards available to claim from your lending activity",
+            description: t("Rewards available to claim from your lending activity"),
           },
         ]}
       />

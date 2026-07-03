@@ -46,30 +46,54 @@ export function mergeConvexMarketSnapshots(
     if (snap.scope === "pool") {
       const market = markets[snap.slug]
       if (!market) continue
-      markets[snap.slug] = {
-        ...market,
-        snapshot: {
-          ...market.snapshot,
-          totalLiquidityUsd6: usd6(snap.tvlUsd),
-          totalBorrowedUsd6: usd6(snap.borrowedUsd),
-          availableUsd6: usd6(snap.availableUsd),
-          volume24hUsd6: usd6(snap.volumeUsd),
-          fees24hUsd6: usd6(snap.feesUsd),
-          feeApyWad: wadFromPct(snap.borrowAprPct),
-        },
+      const nextSnapshot = {
+        ...market.snapshot,
+        totalLiquidityUsd6: usd6(snap.tvlUsd),
+        totalBorrowedUsd6: usd6(snap.borrowedUsd),
+        availableUsd6: usd6(snap.availableUsd),
+        volume24hUsd6: usd6(snap.volumeUsd),
+        fees24hUsd6: usd6(snap.feesUsd),
+        feeApyWad: wadFromPct(snap.borrowAprPct),
       }
+      const s = market.snapshot
+      // Only rebuild when a value actually differs. Every emit re-sends every market, so an
+      // unconditional `changed = true` allocated a fresh state object on each push — re-firing
+      // every page-live async readAdapter on 10k clients even when nothing moved.
+      if (
+        s.totalLiquidityUsd6 === nextSnapshot.totalLiquidityUsd6 &&
+        s.totalBorrowedUsd6 === nextSnapshot.totalBorrowedUsd6 &&
+        s.availableUsd6 === nextSnapshot.availableUsd6 &&
+        s.volume24hUsd6 === nextSnapshot.volume24hUsd6 &&
+        s.fees24hUsd6 === nextSnapshot.fees24hUsd6 &&
+        s.feeApyWad === nextSnapshot.feeApyWad
+      ) {
+        continue
+      }
+      markets[snap.slug] = { ...market, snapshot: nextSnapshot }
       changed = true
     } else {
       const asset = assets[snap.slug]
       if (!asset) continue
+      const availableLiquidityUsd6 = usd6(snap.availableUsd)
+      const totalBorrowedUsd6 = usd6(snap.borrowedUsd)
+      const baseBorrowAprWad = wadFromPct(snap.borrowAprPct)
+      const a = asset.snapshot
+      if (
+        asset.borrowConfig.baseBorrowAprWad === baseBorrowAprWad &&
+        a.availableLiquidityUsd6 === availableLiquidityUsd6 &&
+        a.totalBorrowedUsd6 === totalBorrowedUsd6 &&
+        a.totalDebtSharesUsd6 === totalBorrowedUsd6
+      ) {
+        continue
+      }
       assets[snap.slug] = {
         ...asset,
-        borrowConfig: { ...asset.borrowConfig, baseBorrowAprWad: wadFromPct(snap.borrowAprPct) },
+        borrowConfig: { ...asset.borrowConfig, baseBorrowAprWad },
         snapshot: {
           ...asset.snapshot,
-          availableLiquidityUsd6: usd6(snap.availableUsd),
-          totalBorrowedUsd6: usd6(snap.borrowedUsd),
-          totalDebtSharesUsd6: usd6(snap.borrowedUsd),
+          availableLiquidityUsd6,
+          totalBorrowedUsd6,
+          totalDebtSharesUsd6: totalBorrowedUsd6,
         },
       }
       changed = true

@@ -22,7 +22,7 @@ export function BrandLogo({ mobileOnly = false, className }: BrandLogoProps) {
           cn(
             mobileOnly
               ? "h-[56px] w-auto scale-[1.08] origin-left"
-              : "h-[56px] w-auto scale-[1.08] origin-left md:h-[52px]",
+              : "h-[44px] w-auto origin-left md:h-[44px]",
             className,
           )
         }

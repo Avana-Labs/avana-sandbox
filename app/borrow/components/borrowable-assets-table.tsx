@@ -22,11 +22,12 @@ import {
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { formatApy } from "@/app/lib/format"
-import { PillButton, TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
+import { TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
+import { Button } from "@/components/ui/button"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
@@ -322,9 +323,12 @@ function LoanAssetsSection({
                     </div>
                   </td>
                   <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <HoverActionGroup className="inline-flex items-center">
-                      <PillButton
-                        variant="ghost"
+                    <HoverActionGroup className="gap-2">
+                      <Button
+                        type="button"
+                        size="table"
+                        variant="brand-secondary"
+                        className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
                           const lendMarketId = resolveLendMarketId(asset.symbol)
@@ -333,16 +337,19 @@ function LoanAssetsSection({
                         }}
                       >
                         {t("Deposit")}
-                      </PillButton>
-                      <PillButton
-                        variant="primary"
+                      </Button>
+                      <Button
+                        type="button"
+                        size="table"
+                        variant="brand"
+                        className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
                           onBorrow(asset)
                         }}
                       >
                         {t("Borrow")}
-                      </PillButton>
+                      </Button>
                     </HoverActionGroup>
                   </td>
                 </tr>
@@ -445,9 +452,12 @@ function AssetsSection({
                     </div>
                   </td>
                   <td className={`py-2.5 pl-4 pr-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <HoverActionGroup className="inline-flex items-center">
-                      <PillButton
-                        variant="ghost"
+                    <HoverActionGroup className="gap-2">
+                      <Button
+                        type="button"
+                        size="table"
+                        variant="brand-secondary"
+                        className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
                           const lendMarketId = resolveLendMarketId(asset.symbol)
@@ -456,16 +466,19 @@ function AssetsSection({
                         }}
                       >
                         {t("Deposit")}
-                      </PillButton>
-                      <PillButton
-                        variant="primary"
+                      </Button>
+                      <Button
+                        type="button"
+                        size="table"
+                        variant="brand"
+                        className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
                           onBorrow(asset)
                         }}
                       >
                         {t("Borrow")}
-                      </PillButton>
+                      </Button>
                     </HoverActionGroup>
                   </td>
                 </tr>

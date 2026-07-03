@@ -18,6 +18,7 @@ export function mapRewardsClaimPreviewToActionUi(options: {
   return {
     allowed: options.allowed,
     amountLabel: "AVA",
+    amountUsd: options.claimUsd,
     amountUsdLabel: formatActionApproxUsd(options.claimUsd),
     rateLabel: "Ready to claim",
     rateValue: `${options.claimableTaskCount} ${questLabel}`,
@@ -57,6 +58,7 @@ export function mapBorrowRewardsClaimPreviewToActionUi(options: {
     allowed: options.allowed,
     amountValue: formatActionUsd(options.claimUsd),
     amountLabel: formatActionUsd(options.claimUsd),
+    amountUsd: options.claimUsd,
     amountUsdLabel: formatActionApproxUsd(options.claimUsd),
     assetLabel: options.marketLabel,
     assetSymbol: Object.keys(options.tokenTotals)[0] ?? "Rewards",

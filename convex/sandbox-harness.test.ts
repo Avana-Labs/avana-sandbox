@@ -12,7 +12,7 @@ import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import schema from "./schema"
 import { api } from "./_generated/api"
-import { STARTER_TEST_MARKETS } from "./starterTestMarkets"
+import { seedStarterTestMarkets } from "./starterTestMarkets"
 
 const modules = import.meta.glob("./**/*.*s")
 
@@ -39,9 +39,7 @@ describe("multi-user harness — capRush", () => {
     const USER_CAP = 3
     const PER_USER = 1_000_000
     await t.run(async (ctx) => {
-      for (const market of STARTER_TEST_MARKETS) {
-        await ctx.db.insert("markets", { ...market, chainId: 1, createdAt: 0 })
-      }
+      await seedStarterTestMarkets(ctx)
       await ctx.db.insert("sandboxEconomy", {
         userCap: USER_CAP,
         totalGrantedUsdCap: 10_000_000_000,
@@ -111,6 +109,7 @@ describe("multi-user harness — calm + borrowHeavy (ledger invariant)", () => {
           requestedAmountUsd6: String(amount * 1_000_000),
           executedAmountUsd6: String(amount * 1_000_000),
           amountUsd: amount,
+          expectedRevision: a > 0 ? a - 1 : undefined,
           position: {
             status: "open",
             marketSlug: "uni-v3-bluechip-weth-usdc",

@@ -2,6 +2,7 @@
 
 import { PortfolioHeroActionCard } from "./portfolio-hero-action-card"
 import type { PortfolioHeroAction } from "./types"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type PortfolioHeroActionsProps = {
   actions: PortfolioHeroAction[]
@@ -12,8 +13,10 @@ type PortfolioHeroActionsProps = {
  * Kept as its own segment so each action can later open a popup/dialog.
  */
 export function PortfolioHeroActions({ actions }: PortfolioHeroActionsProps) {
+  const { t } = useTranslation()
+
   return (
-    <section aria-label="Portfolio quick actions" className="min-w-0">
+    <section aria-label={t("Portfolio quick actions")} className="min-w-0">
       <div className="grid grid-cols-2 gap-3">
         {actions.map((action) => (
           <PortfolioHeroActionCard

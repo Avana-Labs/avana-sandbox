@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { type BorrowDexId } from "@/app/lib/data/borrow-domain"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { useTheme } from "@/app/components/theme-provider"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { CategoryChips } from "@/app/lib/ui/category-chips"
 import { CATEGORY_CHIPS, type CategoryChip } from "@/app/lib/markets/category"
 import { cn } from "@/lib/utils"
@@ -56,6 +57,7 @@ function ExpandableDesktopSearch({
   value: string
   onChange: (nextValue: string) => void
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -105,7 +107,7 @@ function ExpandableDesktopSearch({
       >
         <button
           type="button"
-          aria-label="Filter assets"
+          aria-label={t("Filter assets")}
           className={cn(
             "flex shrink-0 items-center justify-center",
             isExpanded ? "pointer-events-none mr-2 size-5" : "size-10",
@@ -118,10 +120,10 @@ function ExpandableDesktopSearch({
         {isExpanded ? (
           <input
             ref={inputRef}
-            aria-label="Filter assets"
+            aria-label={t("Filter assets")}
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            placeholder="Search markets"
+            placeholder={t("Search markets")}
             className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
           />
         ) : null}
@@ -172,6 +174,7 @@ function SingleSelectDropdown({
   } | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
+  const { t } = useTranslation()
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const isDark = mounted && resolvedTheme === "dark"
@@ -282,7 +285,7 @@ function SingleSelectDropdown({
         <>
           <button
             type="button"
-            aria-label={`Close ${ariaLabel}`}
+            aria-label={t("Close {name}").replace("{name}", ariaLabel)}
             onClick={() => setOpen(false)}
             className="fixed inset-0 z-[45] cursor-default bg-transparent"
           />
@@ -366,6 +369,7 @@ export function TabsBar({
   selectedDexes,
   onDexChange,
 }: TabsBarProps) {
+  const { t } = useTranslation()
   const selectedDex = Array.from(selectedDexes)[0] ?? null
 
   return (
@@ -377,14 +381,14 @@ export function TabsBar({
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <SingleSelectDropdown
-            allLabel="All DEX"
+            allLabel={t("All DEX")}
             value={selectedDex}
               options={dexes.map((dex) => ({ label: dex.label, value: dex.id }))}
             onChange={(nextValue) => {
               const nextDex = (nextValue as BorrowDexId | null) ?? null
               onDexChange(nextDex)
             }}
-            ariaLabel="Filter DEX"
+            ariaLabel={t("Filter DEX")}
           />
 
           <ExpandableDesktopSearch value={search} onChange={onSearchChange} />
@@ -396,24 +400,24 @@ export function TabsBar({
           <label className="flex h-10 min-w-[11rem] flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-brand/30">
             <SearchIcon className="dark:text-brand" />
             <input
-              aria-label="Filter assets"
+              aria-label={t("Filter assets")}
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Search markets"
+              placeholder={t("Search markets")}
               className="w-full min-w-0 bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
             />
           </label>
 
           <div className="flex shrink-0 items-center gap-2">
             <SingleSelectDropdown
-              allLabel="All DEX"
+              allLabel={t("All DEX")}
               value={selectedDex}
               options={dexes.map((dex) => ({ label: dex.label, value: dex.id }))}
               onChange={(nextValue) => {
                 const nextDex = (nextValue as BorrowDexId | null) ?? null
                 onDexChange(nextDex)
               }}
-              ariaLabel="Filter DEX"
+              ariaLabel={t("Filter DEX")}
             />
           </div>
         </div>

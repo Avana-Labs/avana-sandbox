@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 const KIND_LABEL: Record<TxHistoryRow["kind"], string> = {
@@ -43,16 +45,19 @@ const ROW_HOVER_BG = "transition-colors group-hover:bg-table-header/40 dark:grou
 const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-radius-lg`
 const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-radius-lg`
 
-function formatRelativeTime(iso: string) {
+function formatRelativeTime(iso: string, locale: string) {
   const elapsedMs = Math.max(0, Date.now() - new Date(iso).getTime())
   const totalSeconds = Math.max(1, Math.floor(elapsedMs / 1000))
+  // `narrow` keeps the compact "5s"/"3h"/"2d" footprint while letting Intl swap
+  // in the locale's own unit suffixes (e.g. ja "5秒前", ar "قبل ٥ ثوانٍ").
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "always", style: "narrow" })
 
-  if (totalSeconds < 60) return `${totalSeconds}s`
+  if (totalSeconds < 60) return rtf.format(-totalSeconds, "second")
   const totalMinutes = Math.floor(totalSeconds / 60)
-  if (totalMinutes < 60) return `${totalMinutes}m`
+  if (totalMinutes < 60) return rtf.format(-totalMinutes, "minute")
   const totalHours = Math.floor(totalMinutes / 60)
-  if (totalHours < 24) return `${totalHours}h`
-  return `${Math.floor(totalHours / 24)}d`
+  if (totalHours < 24) return rtf.format(-totalHours, "hour")
+  return rtf.format(-Math.floor(totalHours / 24), "day")
 }
 
 export function TransactionHistoryCard({
@@ -62,6 +67,8 @@ export function TransactionHistoryCard({
   subtitle,
   kindLabelMap,
 }: Props) {
+  const { t, language } = useTranslation()
+  const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const [activeFilter, setActiveFilter] = React.useState<(typeof FILTERS)[number]["id"]>("all")
   const visibleTransactions =
     activeFilter === "all" ? transactions : transactions.filter((tx) => tx.kind === activeFilter)
@@ -70,8 +77,8 @@ export function TransactionHistoryCard({
     <section className="min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">{title}</h2>
-          {subtitle ? <p className="mt-1 text-[12px] text-muted-foreground">{subtitle}</p> : null}
+          <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">{t(title)}</h2>
+          {subtitle ? <p className="mt-1 text-[12px] text-muted-foreground">{t(subtitle)}</p> : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {FILTERS.map((filter) => {
@@ -88,7 +95,7 @@ export function TransactionHistoryCard({
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
                 )}
               >
-                {filter.label}
+                {t(filter.label)}
               </button>
             )
           })}
@@ -107,19 +114,19 @@ export function TransactionHistoryCard({
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                   <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Time
+                    {t("Time")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Type
+                    {t("Type")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Amount
+                    {t("Amount")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    For
+                    {t("For")}
                   </th>
                   <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Wallet
+                    {t("Wallet")}
                   </th>
                 </tr>
               </thead>
@@ -127,18 +134,18 @@ export function TransactionHistoryCard({
                 {visibleTransactions.map((tx) => (
                   <tr key={tx.id} className="group transition-colors">
                     <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
-                      {tx.timeLabel ?? formatRelativeTime(tx.at)}
+                      {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                       <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
-                        {kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind]}
+                        {t(kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind])}
                       </span>
                     </td>
                     <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel}
                     </td>
                     <td className={`px-3 py-3 align-middle text-right text-[12px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
-                      <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol)}</span>
+                      <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol, t)}</span>
                     </td>
                     <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
@@ -174,19 +181,19 @@ export function TransactionHistoryCard({
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                   <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Time
+                    {t("Time")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Type
+                    {t("Type")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Amount
+                    {t("Amount")}
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    For
+                    {t("For")}
                   </th>
                   <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    Wallet
+                    {t("Wallet")}
                   </th>
                 </tr>
               </thead>
@@ -194,18 +201,18 @@ export function TransactionHistoryCard({
                 {visibleTransactions.map((tx) => (
                   <tr key={tx.id} className="group transition-colors">
                     <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
-                      {tx.timeLabel ?? formatRelativeTime(tx.at)}
+                      {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                       <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
-                        {kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind]}
+                        {t(kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind])}
                       </span>
                     </td>
                     <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel}
                     </td>
                     <td className={`px-3 py-3 align-middle text-right text-[12px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
-                      <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol)}</span>
+                      <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol, t)}</span>
                     </td>
                     <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
@@ -233,20 +240,20 @@ export function TransactionHistoryCard({
   )
 }
 
-function describeTransaction(kind: TxHistoryRow["kind"], assetSymbol: string) {
+function describeTransaction(kind: TxHistoryRow["kind"], assetSymbol: string, t: (key: string) => string) {
   switch (kind) {
     case "supply":
-      return `${assetSymbol} market`
+      return t("{symbol} market").replace("{symbol}", assetSymbol)
     case "withdraw":
-      return `${assetSymbol} market`
+      return t("{symbol} market").replace("{symbol}", assetSymbol)
     case "borrow":
-      return `${assetSymbol} debt`
+      return t("{symbol} debt").replace("{symbol}", assetSymbol)
     case "repay":
-      return `${assetSymbol} debt`
+      return t("{symbol} debt").replace("{symbol}", assetSymbol)
     case "rewards":
-      return `${assetSymbol} incentives`
+      return t("{symbol} incentives").replace("{symbol}", assetSymbol)
     case "liquidation":
-      return "Liquidator"
+      return t("Liquidator")
     default:
       return assetSymbol
   }

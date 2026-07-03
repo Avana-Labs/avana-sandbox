@@ -300,7 +300,13 @@ export default defineSchema({
    *
    * Append-only by design: patching a single per-market row put every writer on the
    * same document and made concurrent actions contend under Convex OCC. Appending a
-   * fresh row per action removes that hot-write contention; reads fold O(#events).
+   * fresh row per action removes that hot-write contention.
+   *
+   * Scale is handled by COMPACTION, not by changing this write path: a scheduled
+   * `liquidity.compactDeltas` folds the oldest rows into the cumulative
+   * `marketLiquidityBaseline` (one row per market) and deletes them, so this table only
+   * holds a bounded recent window and the fold reads `#markets + #recent rows` instead of
+   * O(#events). Each row is counted exactly once — raw here until folded, then baseline.
    */
   marketLiquidityDeltas: defineTable({
     /** Catalog market id — a pool id ("uni-v3-bluechip-weth-usdc") or borrowable asset id ("uni-v2:usdc"). */
@@ -313,12 +319,39 @@ export default defineSchema({
   }).index("by_slug", ["marketSlug"]),
 
   /**
+   * Cumulative per-market fold of every COMPACTED `marketLiquidityDeltas` row — the
+   * bounded baseline that keeps the fold independent of the total number of actions.
+   *
+   * The append-only event table stays the zero-contention hot-write sink (all products
+   * append a fresh row per action — never patch a shared row). A scheduled compaction
+   * (`crons.ts` → `liquidity.compactDeltas`) folds the OLDEST delta rows into these
+   * per-market accumulators and DELETES the folded rows, so the raw table only ever holds
+   * a bounded recent window. The fold is then `baseline + the few un-compacted deltas`
+   * (markets + recent-window rows), not a full-table scan. One row per market slug.
+   *
+   * Correctness: every delta row is counted exactly once — either it is still in the raw
+   * table (summed live) or it has been folded into a baseline row and deleted (summed via
+   * the baseline), never both. Compaction only touches this table, so it never contends
+   * with the hot append path on a document.
+   */
+  marketLiquidityBaseline: defineTable({
+    marketSlug: v.string(),
+    /** Running sum of borrowedDeltaUsd across all compacted rows for this market. */
+    borrowedDeltaUsd: v.number(),
+    /** Running sum of suppliedDeltaUsd across all compacted rows for this market. */
+    suppliedDeltaUsd: v.number(),
+    /** Max `updatedAt` of any delta folded into this baseline (for the fold's freshness). */
+    updatedAt: v.number(),
+  }).index("by_slug", ["marketSlug"]),
+
+  /**
    * Precomputed fold of `marketLiquidityDeltas` into one net aggregate per market.
    * The app-wide liquidity subscription (`liquidity.listDeltaSnapshot`) reads this
    * single document (O(1)) instead of the append-only event table — so ONE user's
    * borrow/repay/supply/withdraw no longer invalidates every other subscriber. A
-   * schedule (`crons.ts`) rebuilds it periodically from the raw events, bounding
-   * cross-user staleness to the refresh interval.
+   * schedule (`crons.ts`) rebuilds it periodically from the bounded fold (the
+   * `marketLiquidityBaseline` plus the un-compacted deltas), bounding cross-user
+   * staleness to the refresh interval.
    */
   liquidityDeltasCache: defineTable({
     /** Constant discriminator so there is exactly one cache row (`"deltas"`). */
@@ -431,6 +464,20 @@ export default defineSchema({
     xHandle: v.optional(v.string()),
     resourcesLinks: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
   }),
+
+  /** Minimal immutable starter catalog read by every onboarding claim in one indexed lookup. */
+  sandboxStarterCatalog: defineTable({
+    singleton: v.string(),
+    rows: v.array(
+      v.object({
+        slug: v.string(),
+        scope: marketScope,
+        symbol: v.string(),
+        priceUsd: v.number(),
+      }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_singleton", ["singleton"]),
 
   /** Per-authenticated-user onboarding + allocation profile. */
   sandboxProfiles: defineTable({
@@ -596,10 +643,20 @@ export default defineSchema({
     lastUpdatedAt: v.number(),
     closedAt: v.optional(v.number()),
     openTxSynthetic: v.optional(v.string()),
+    /**
+     * Optimistic-concurrency version, bumped on every successful write. A client that
+     * computed a write from revision N sends `expectedRevision: N`; the server rejects it
+     * if the stored position has since advanced (another tab/device wrote first), instead
+     * of silently clobbering that write. Optional for rows seeded before this field.
+     */
+    revision: v.optional(v.number()),
   })
     .index("by_wallet", ["wallet"])
     .index("by_wallet_product", ["wallet", "product"])
-    .index("by_wallet_market", ["wallet", "marketSlug"]),
+    .index("by_wallet_market", ["wallet", "marketSlug"])
+    // Direct (wallet, product, market) lookup so the position upsert is a `.unique()`
+    // instead of collect()+find() over every position sharing a market slug.
+    .index("by_wallet_product_market", ["wallet", "product", "marketSlug"]),
 
   /** Collateral leg of a borrow position. Mirrors `UserCollateralPosition`. */
   positionCollateral: defineTable({
@@ -658,6 +715,11 @@ export default defineSchema({
     amountUsd: v.number(),
     healthFactorWadBefore: v.optional(v.union(v.string(), v.null())),
     healthFactorWadAfter: v.optional(v.union(v.string(), v.null())),
+    /** Multiply/deleverage leverage at the time of THIS transaction, so hydrated history shows
+     *  the real before→after (e.g. "3.00x → 2.00x") instead of a constant 1 × the position's
+     *  current multiplier (which rendered deleverages as leverage increases). */
+    multiplierBefore: v.optional(v.number()),
+    multiplierAfter: v.optional(v.number()),
     syntheticTxHash: v.string(),
     simulated: v.boolean(),
     at: v.number(),
@@ -751,6 +813,18 @@ export default defineSchema({
     totalMultiplyExposureUsd: v.number(),
     totalEarnedUsd: v.number(),
   }).index("by_wallet_at", ["wallet", "at"]),
+
+  /** One mutable current portfolio row per wallet; hot dashboard reads never scan history. */
+  portfolioCurrent: defineTable({
+    wallet: v.string(),
+    at: v.number(),
+    totalValueUsd: v.number(),
+    totalSuppliedUsd: v.number(),
+    totalBorrowedUsd: v.number(),
+    availableToBorrowUsd: v.number(),
+    totalMultiplyExposureUsd: v.number(),
+    totalEarnedUsd: v.number(),
+  }).index("by_wallet", ["wallet"]),
 
   /**
    * Optional per-wallet session metadata: which seed version provisioned this

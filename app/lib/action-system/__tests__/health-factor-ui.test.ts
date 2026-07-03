@@ -16,31 +16,38 @@ describe("health factor ui helpers", () => {
     expect(isHealthFactorMetric("Net balance")).toBe(false)
   })
 
-  it("maps after values to tone bands", () => {
-    expect(healthFactorToneFromAfter("4.39")).toBe("positive")
-    expect(healthFactorToneFromAfter("1.20")).toBe("positive")
-    expect(healthFactorToneFromAfter("1.10")).toBe("warning")
+  it("maps after values to the conservative 4-band tone scale", () => {
+    expect(healthFactorToneFromAfter("4.39")).toBe("positive") // safe ≥ 2.5
+    expect(healthFactorToneFromAfter("2.10")).toBe("warning") // moderate 1.75–2.5
+    expect(healthFactorToneFromAfter("1.60")).toBe("warning") // watch 1.2–1.75
+    expect(healthFactorToneFromAfter("1.10")).toBe("danger") // < 1.2
     expect(healthFactorToneFromAfter("1.02")).toBe("danger")
     expect(healthFactorToneFromAfter("∞")).toBe("positive")
   })
 
-  it("parses health factor values for the bar", () => {
+  it("parses health factor values and bands them", () => {
     expect(parseHealthFactorValue("4.39")).toBe(4.39)
     expect(parseHealthFactorValue("∞")).toBe(Number.POSITIVE_INFINITY)
     expect(activeHealthFactorZoneIndex(4.39)).toBe(0)
     expect(activeHealthFactorZoneIndex(Number.POSITIVE_INFINITY)).toBe(0)
-    expect(healthFactorStatusLabel(1.2).label).toBe("Caution")
+    expect(activeHealthFactorZoneIndex(1.6)).toBe(2) // watch
+    expect(activeHealthFactorZoneIndex(1.0)).toBe(3) // danger
+    expect(healthFactorStatusLabel(3.0).label).toBe("Safe")
+    expect(healthFactorStatusLabel(2.0).label).toBe("Moderate")
+    expect(healthFactorStatusLabel(1.6).label).toBe("Watch")
     expect(healthFactorStatusLabel(1.05).label).toBe("At risk")
   })
 
   it("positions safer health factors toward the left of the bar", () => {
-    expect(healthFactorBarPositionPct(9.6)).toBeLessThan(healthFactorBarPositionPct(1.2))
+    expect(healthFactorBarPositionPct(Number.POSITIVE_INFINITY)).toBeLessThan(healthFactorBarPositionPct(3.0))
+    expect(healthFactorBarPositionPct(3.0)).toBeLessThan(healthFactorBarPositionPct(2.0))
+    expect(healthFactorBarPositionPct(2.0)).toBeLessThan(healthFactorBarPositionPct(1.6))
+    expect(healthFactorBarPositionPct(1.6)).toBeLessThan(healthFactorBarPositionPct(1.05))
     expect(healthFactorBarPositionPct(4.22)).toBeLessThan(50)
     expect(healthFactorBarPositionPct(1.2)).toBeGreaterThan(50)
-    expect(healthFactorBarPositionPct(1.2)).toBeLessThan(80)
   })
 
   it("prefers health factor tone over generic default", () => {
-    expect(resolveMetricTone("Health factor", "default", "1.08", "hf")).toBe("warning")
+    expect(resolveMetricTone("Health factor", "default", "1.60", "hf")).toBe("warning")
   })
 })

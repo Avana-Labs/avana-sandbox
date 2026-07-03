@@ -27,6 +27,7 @@ function basePreviewFields(
   ActionPreviewUi,
   | "allowed"
   | "amountLabel"
+  | "amountUsd"
   | "amountUsdLabel"
   | "rateLabel"
   | "rateValue"
@@ -43,6 +44,7 @@ function basePreviewFields(
   return {
     allowed: preview.allowed,
     amountLabel: formatActionAmount(options.amount, options.symbol, 4),
+    amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: options.rateLabel,
     rateValue: options.rateValue,

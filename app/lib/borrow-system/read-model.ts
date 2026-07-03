@@ -1,12 +1,11 @@
 import {
+  accrueBorrowSystemState,
   calculateBorrowCapacityUsd6,
   calculateCollateralValueUsd6,
   calculateCreditMetrics,
   calculateCurrentLtvWad,
   calculateHealthFactorWad,
   formatFixed,
-  sharesToAssets,
-  tokenAmountToUsd6,
   totalDebtValueUsd6,
   type BorrowSystemState,
 } from "@/app/lib/credit-engine"
@@ -131,15 +130,27 @@ export function buildWalletReadSnapshot(
   state: BorrowSystemState,
   walletId: string,
   transactionHistory: TransactionHistoryItem[] = buildLegacyTransactionHistory(state, walletId),
+  now: number = Date.now(),
 ): WalletReadSnapshot {
+  // Advance debt/supply indexes to "now" so the displayed HF drifts with interest
+  // between actions. accrueBorrowSystemState is immutable (returns a new state and
+  // no-ops when now <= state.now), so we select from the accrued copy without
+  // double-accruing or mutating the shared session state.
+  const accrued = accrueBorrowSystemState(state, now)
   return {
     walletId,
     transactionHistory,
-    creditSnapshot: toMetricsSnapshot(state, walletId),
+    creditSnapshot: toMetricsSnapshot(accrued, walletId),
   }
 }
 
 export function buildBorrowPageData(state: BorrowSystemState, walletId: string): BorrowPageData {
+  // NOTE: the borrow markets/landing page shows market-reference figures (pool TVL,
+  // example collateral) and re-emits the session seed, so it is intentionally NOT
+  // accrued here — accruing would drift those reference numbers and bake an advanced
+  // `now` into the serialized seed. The between-actions wallet HF that must stay live
+  // is accrued in the portfolio/wallet-snapshot read paths (buildPortfolioBorrowData /
+  // buildWalletReadSnapshot) instead.
   const poolCatalog = selectBorrowMarketSummaries(state, walletId)
   const markets = Object.values(state.markets)
   const assets = Object.values(state.assets)
@@ -180,7 +191,14 @@ export function buildBorrowPageData(state: BorrowSystemState, walletId: string):
   }
 }
 
-export function buildPortfolioBorrowData(state: BorrowSystemState, walletId: string): PortfolioBorrowTabData {
+export function buildPortfolioBorrowData(
+  state: BorrowSystemState,
+  walletId: string,
+  now: number = Date.now(),
+): PortfolioBorrowTabData {
+  // Accrue once here so the portfolio HF/debt rows drift with interest between actions;
+  // the low-level selectors below stay pure and select from this accrued copy.
+  state = accrueBorrowSystemState(state, now)
   const snapshot = selectBorrowSnapshot(state, walletId)
   const debtPositions = selectPortfolioDebtRows(state, walletId).map((position, index) => ({
     ...position,

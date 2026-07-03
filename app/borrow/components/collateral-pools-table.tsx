@@ -31,6 +31,7 @@ import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { pairExchangeRateLabel } from "@/app/lib/prices/format"
 import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
@@ -298,27 +299,33 @@ function CollateralDesktopTable({
                   </div>
                 </td>
                 <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                  <HoverActionGroup className="inline-flex items-center">
+                  <HoverActionGroup className="gap-2">
                     {onUseAsCollateral ? (
-                      <PillButton
-                        variant="ghost"
+                      <Button
+                        type="button"
+                        size="table"
+                        variant="brand-secondary"
+                        className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
                           onUseAsCollateral(pool)
                         }}
                       >
                         {t("Pledge")}
-                      </PillButton>
+                      </Button>
                     ) : null}
-                    <PillButton
-                      variant="primary"
+                    <Button
+                      type="button"
+                      size="table"
+                      variant="brand"
+                      className="w-auto"
                       onClick={(event) => {
                         event.stopPropagation()
                         router.push(actionPagePath("borrow", "borrow", { market: pool.id, return: `/borrow/markets/${pool.id}` }))
                       }}
                     >
                       {t("Borrow")}
-                    </PillButton>
+                    </Button>
                   </HoverActionGroup>
                 </td>
               </tr>

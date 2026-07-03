@@ -1,6 +1,7 @@
 "use client"
 
 import type { EngagementTrend } from "@/app/lib/borrow-detail"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 import { LightweightChart } from "./lw"
 
@@ -14,16 +15,17 @@ type Props = {
 }
 
 export function EngagementTrendsCard({ engagement, accentClassName, title, className }: Props) {
+  const { t } = useTranslation()
   return (
     <section className={cn("min-w-0", className)}>
       <div className="flex items-center justify-between gap-4">
         <h2 className="min-w-0 text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
-          {title ?? engagement.title}
+          {t(title ?? engagement.title)}
         </h2>
       </div>
 
       <p className="mt-3 max-w-[36rem] text-[13px] leading-5 text-muted-foreground">
-        Active wallets track unique wallets with activity over the last 30 days.
+        {t("Active wallets track unique wallets with activity over the last 30 days.")}
       </p>
 
       <div className="mt-4 flex flex-wrap items-end gap-x-10 gap-y-3">
@@ -37,11 +39,11 @@ export function EngagementTrendsCard({ engagement, accentClassName, title, class
             series={engagement.series}
             height={280}
             accentClassName={accentClassName}
-            ariaLabel="Daily engagement"
+            ariaLabel={t("Daily engagement")}
             formatValue={(v) => v.toLocaleString()}
           />
         ) : (
-          <div className="grid h-[240px] place-items-center text-sm text-muted-foreground">No engagement data available.</div>
+          <div className="grid h-[240px] place-items-center text-sm text-muted-foreground">{t("No engagement data available.")}</div>
         )}
       </div>
     </section>

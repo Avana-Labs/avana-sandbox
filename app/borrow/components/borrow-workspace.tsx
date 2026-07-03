@@ -23,6 +23,7 @@ import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-ta
 import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 // Curated (protocol-strategy) spokes that belong in "smart" regardless of their tokens.
 const SMART_SPOKES = new Set<string>([
@@ -238,16 +239,17 @@ function NoMarketsState({
   hasFilters: boolean
   onClear: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <div
       role="status"
       className="flex flex-col items-center justify-center gap-3 rounded-radius-md border border-dashed border-border px-6 py-16 text-center"
     >
       <p className="text-[15px] font-medium text-foreground">
-        {query ? <>No markets match &ldquo;{query}&rdquo;</> : "No markets match your filters"}
+        {query ? t("No markets match “{query}”").replace("{query}", query) : t("No markets match your filters")}
       </p>
       <p className="max-w-sm text-[13px] leading-6 text-muted-foreground">
-        Try a different token, venue, or clear the search to see every market.
+        {t("Try a different token, venue, or clear the search to see every market.")}
       </p>
       {hasFilters ? (
         <button
@@ -255,7 +257,7 @@ function NoMarketsState({
           onClick={onClear}
           className="mt-1 rounded-full border border-border px-4 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-raised/60"
         >
-          Clear search
+          {t("Clear search")}
         </button>
       ) : null}
     </div>

@@ -145,6 +145,12 @@ export const recordLiquidation = mutation({
         debtValueUsd6: (debtAfter > 0n ? debtAfter : 0n).toString(),
         status: closed ? "closed" : "open",
         lastUpdatedAt: now,
+        // Bump the optimistic-concurrency token: a liquidation mutates the position outside
+        // recordTransaction, so without this a victim's tab that cached the pre-liquidation
+        // revision would still match currentRevision and its stale-read repay/withdraw/borrow
+        // would pass the STALE_WRITE guard — silently restoring the seized collateral and
+        // repaid debt. Advancing revision forces that client to reload before it can write.
+        revision: (position.revision ?? 0) + 1,
         ...(closed ? { closedAt: now } : {}),
       })
 

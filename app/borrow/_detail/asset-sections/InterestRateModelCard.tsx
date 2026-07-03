@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -15,6 +16,7 @@ const X_TICKS = [0, 25, 50, 75, 100]
 const Y_TICKS = [0, 5, 10]
 
 export function InterestRateModelCard({ detail, className }: Props) {
+  const { t } = useTranslation()
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
   const utilization = getQuickStatPercent(detail, "utilization", 0)
   const borrowApr = getQuickStatPercent(detail, "borrowApy", 4)
@@ -115,9 +117,9 @@ export function InterestRateModelCard({ detail, className }: Props) {
     <section className={cn("min-w-0", className)}>
       <div className="min-w-0">
         <div className="min-w-0">
-          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Interest rate model</h2>
+          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{t("Interest rate model")}</h2>
           <p className="mt-1 text-[11.5px] text-muted-foreground">
-            Borrow APR rises as utilization increases and steepens past the optimal threshold.
+            {t("Borrow APR rises as utilization increases and steepens past the optimal threshold.")}
           </p>
         </div>
       </div>
@@ -160,13 +162,13 @@ export function InterestRateModelCard({ detail, className }: Props) {
               className="absolute -translate-x-1/2 text-[13px] font-medium leading-none text-[#6A728A]"
               style={{ left: `${Math.min(96, 7.2 + currentUtilization * 0.888)}%`, top: "18px" }}
             >
-              Current {currentUtilization.toFixed(2)}%
+              {t("Current {value}%").replace("{value}", currentUtilization.toFixed(2))}
             </div>
             <div
               className="absolute -translate-x-1/2 text-[13px] font-medium leading-none text-[#6A728A]"
               style={{ left: `${Math.min(88, 7.2 + optimalUtilization * 0.888 - 8)}%`, top: "28px" }}
             >
-              Optimal 92%
+              {t("Optimal {value}%").replace("{value}", String(optimalUtilization))}
             </div>
           </div>
 

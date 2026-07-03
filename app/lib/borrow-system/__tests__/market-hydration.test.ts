@@ -37,6 +37,19 @@ describe("mergeConvexMarketSnapshots", () => {
     expect(next.accounts).toBe(state.accounts)
   })
 
+  it("returns the SAME state ref when re-merging identical snapshots (regression: M-11)", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const snapshots: ConvexMarketSnapshot[] = [
+      { slug: POOL_SLUG, scope: "pool", suppliedUsd: 33_000_000, borrowedUsd: 22_000_000, availableUsd: 11_000_000, utilizationPct: 66, supplyApyPct: 2.4, borrowAprPct: 4.2, tvlUsd: 33_000_000, volumeUsd: 4_000_000, feesUsd: 2_600 },
+      { slug: ASSET_SLUG, scope: "asset", suppliedUsd: 10_000_000, borrowedUsd: 7_000_000, availableUsd: 3_000_000, utilizationPct: 70, supplyApyPct: 3, borrowAprPct: 5, tvlUsd: 10_000_000, volumeUsd: 0, feesUsd: 0 },
+    ]
+    const first = mergeConvexMarketSnapshots(state, snapshots)
+    expect(first).not.toBe(state)
+    // A second, identical emit must NOT allocate a new object — otherwise every re-emit
+    // re-renders the tree and re-fires every page-live async read across all clients.
+    expect(mergeConvexMarketSnapshots(first, snapshots)).toBe(first)
+  })
+
   it("returns the same state ref for empty or non-matching snapshots", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
     expect(mergeConvexMarketSnapshots(state, [])).toBe(state)

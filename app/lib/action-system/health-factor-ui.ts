@@ -1,18 +1,25 @@
 import type { ActionMetricTone } from "./contracts"
+import {
+  HEALTH_BANDS,
+  healthFactorBand,
+  parseHealthFactorValue as parseHealthFactorValueImpl,
+} from "@/app/lib/health/health-factor-bands"
 
 export function isHealthFactorMetric(label: string, id?: string) {
   if (id === "health-factor" || id === "hf") return true
   return /health factor/i.test(label)
 }
 
-/** Aave-style looping: liquidation risk only near HF 1.0. */
+/**
+ * Tone for a formatted "after" HF string. No value / ∞ / — read as positive
+ * (nothing to warn about yet); otherwise defer to the shared band scale so the
+ * thresholds match every other surface.
+ */
 export function healthFactorToneFromAfter(after: string | undefined): ActionMetricTone {
   if (!after || after === "∞" || after === "—") return "positive"
-  const value = Number.parseFloat(after.replace(/[^\d.]/g, ""))
-  if (!Number.isFinite(value)) return "default"
-  if (value < 1.05) return "danger"
-  if (value < 1.15) return "warning"
-  return "positive"
+  const value = parseHealthFactorValueImpl(after)
+  if (value == null) return "default"
+  return healthFactorBand(value).tone
 }
 
 export function resolveMetricTone(
@@ -27,30 +34,27 @@ export function resolveMetricTone(
   return tone ?? "default"
 }
 
-export const HF_ZONES = [
-  { id: "safe", label: "Safe", min: 1.5, max: Infinity, widthPct: 50, color: "bg-success" },
-  { id: "warn", label: "Caution", min: 1.15, max: 1.5, widthPct: 30, color: "bg-warning" },
-  { id: "danger", label: "Liquidation", min: 0, max: 1.15, widthPct: 20, color: "bg-danger" },
-] as const
+/** Labelled zone strip under the position bar, derived from the shared bands (safe → liquidation). */
+export const HF_ZONES = HEALTH_BANDS.map((band) => ({
+  id: band.id,
+  label: band.label,
+  min: band.min,
+  max: band.max,
+  widthPct: band.widthPct,
+  color: band.segmentColor,
+}))
 
-export function parseHealthFactorValue(value: string | undefined): number | null {
-  if (!value || value === "—") return null
-  if (value.includes("∞")) return Number.POSITIVE_INFINITY
-  const parsed = Number.parseFloat(value.replace(/[^\d.]/g, ""))
-  return Number.isFinite(parsed) ? parsed : null
-}
+export const parseHealthFactorValue = parseHealthFactorValueImpl
 
 export function healthFactorStatusLabel(value: number | null) {
-  if (value == null || Number.isNaN(value)) return { label: "Unknown", tone: "default" as const }
-  if (!Number.isFinite(value) || value >= 1.5) return { label: "Safe", tone: "positive" as const }
-  if (value >= 1.15) return { label: "Caution", tone: "warning" as const }
-  return { label: "At risk", tone: "danger" as const }
+  const band = healthFactorBand(value)
+  return { label: band.label, tone: band.tone }
 }
 
 export function activeHealthFactorZoneIndex(value: number | null) {
-  if (value == null || Number.isNaN(value)) return -1
-  if (!Number.isFinite(value) || value >= HF_ZONES[0].min) return 0
-  return HF_ZONES.findIndex((zone) => value >= zone.min && value < zone.max)
+  const band = healthFactorBand(value)
+  if (band.id === "unknown") return -1
+  return HF_ZONES.findIndex((zone) => zone.id === band.id)
 }
 
 /** Left = safer, right = closer to liquidation. Thumb position aligns with HF_ZONES segment widths. */
@@ -60,36 +64,28 @@ export function healthFactorBarPositionPct(value: number | null): number {
   const zoneIdx = activeHealthFactorZoneIndex(value)
   if (zoneIdx < 0) return 50
 
-  const zoneStart = HF_ZONES.slice(0, zoneIdx).reduce((sum, zone) => sum + zone.widthPct, 0)
   const zone = HF_ZONES[zoneIdx]
-  const innerPadding = zone.widthPct * 0.1
+  const zoneStart = HF_ZONES.slice(0, zoneIdx).reduce((sum, z) => sum + z.widthPct, 0)
 
-  const ratioInZone =
-    zone.id === "safe"
-      ? (() => {
-    const clamped = Number.isFinite(value) ? Math.min(value, 10) : 10
-          return 1 - Math.min((clamped - zone.min) / (10 - zone.min), 1)
-        })()
-      : zone.id === "warn"
-        ? 1 - (value - zone.min) / (zone.max - zone.min)
-        : (() => {
-            const clamped = Math.max(value, 1)
-            return clamped <= 1 ? 1 : 1 - (clamped - 1) / (zone.max - 1)
-          })()
+  // Within the active zone, the safer (higher-HF) edge is on the left. As HF
+  // falls toward the zone's lower bound, the thumb slides right.
+  let fraction: number
+  if (zone.id === "safe") {
+    const SAFE_LEFT_EDGE = 4
+    const clamped = Number.isFinite(value) ? Math.min(value, SAFE_LEFT_EDGE) : SAFE_LEFT_EDGE
+    fraction = 1 - Math.min((clamped - zone.min) / (SAFE_LEFT_EDGE - zone.min), 1)
+  } else if (zone.id === "danger") {
+    const LIQUIDATION = 1
+    const clamped = Math.max(value, LIQUIDATION)
+    fraction = clamped >= zone.max ? 0 : (zone.max - clamped) / (zone.max - LIQUIDATION)
+  } else {
+    fraction = (zone.max - value) / (zone.max - zone.min)
+  }
 
-  return zoneStart + innerPadding + Math.max(0, Math.min(1, ratioInZone)) * Math.max(0, zone.widthPct - innerPadding * 2)
+  const clampedFraction = Math.max(0, Math.min(1, fraction))
+  return zoneStart + clampedFraction * zone.widthPct
 }
 
 export function healthFactorBarTone(value: number | null): { text: string; fill: string; border: string } {
-  const status = healthFactorStatusLabel(value)
-  if (status.tone === "positive") {
-    return { text: "text-success", fill: "bg-success", border: "border-success" }
-  }
-  if (status.tone === "warning") {
-    return { text: "text-warning", fill: "bg-warning", border: "border-warning" }
-  }
-  if (status.tone === "danger") {
-    return { text: "text-danger", fill: "bg-danger", border: "border-danger" }
-  }
-  return { text: "text-muted-foreground", fill: "bg-muted", border: "border-border" }
+  return healthFactorBand(value).bar
 }

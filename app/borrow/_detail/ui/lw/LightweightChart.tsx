@@ -2,8 +2,9 @@
 
 import * as React from "react"
 import { Area, AreaChart, Bar, BarChart, Line, LineChart, ReferenceDot, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/app/components/theme-provider"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { Series, TimeRangeId } from "@/app/lib/borrow-detail"
 import type { TokenChartHover } from "../TokenPriceChart"
@@ -302,10 +303,11 @@ function formatTick(raw: string, locale: string) {
 }
 
 function defaultFormat(v: number): string {
-  if (Math.abs(v) >= 1_000_000_000) return `$${(v / 1_000_000_000).toFixed(2)}B`
-  if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`
-  if (Math.abs(v) >= 1_000) return `$${(v / 1_000).toFixed(2)}K`
-  return `$${v.toFixed(2)}`
+  // Sentinel default: when a caller doesn't pass `formatValue`, the component's
+  // `resolvedFormatValue` uses the locale-aware active-currency Intl path instead.
+  // Route this fallback through the shared active-currency compact formatter so it
+  // never hardcodes USD if it is ever rendered directly.
+  return formatCompactUsd(v)
 }
 
 function defaultFormatTime(iso: string, locale?: string): string {

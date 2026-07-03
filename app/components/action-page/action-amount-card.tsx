@@ -210,7 +210,7 @@ export function ActionAmountCard({
           {switchable && !useDialogPicker && menuOpen && !useMenuSheet ? (
             <div
               role="listbox"
-              aria-label="Select asset"
+              aria-label={t("Select asset")}
               className="absolute right-0 top-full z-50 mt-2 max-h-56 w-[min(20rem,calc(100vw-2rem))] overflow-auto rounded-radius-lg border border-border bg-popover p-1 shadow-elev-3"
             >
               {assetOptions!.map((option) => renderAssetOption(option))}
@@ -231,7 +231,7 @@ export function ActionAmountCard({
     balanceValue != null ? (
       <div className="mt-3 flex items-center justify-between gap-2 text-[13px] text-muted-foreground">
         <span className="min-w-0 truncate">
-          {balanceLabel ?? "Balance"}: <span className="text-foreground/80">{balanceValue}</span>
+          {t(balanceLabel ?? "Balance")}: <span className="text-foreground/80">{balanceValue}</span>
         </span>
         {onMax && !readOnly ? (
           <button
@@ -239,7 +239,7 @@ export function ActionAmountCard({
             onClick={onMax}
             className="inline-flex min-h-10 shrink-0 items-center rounded-full border border-border bg-surface-raised px-3 py-1 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover"
           >
-            Max
+            {t("Max")}
           </button>
         ) : null}
       </div>
@@ -276,7 +276,7 @@ export function ActionAmountCard({
     return (
       <>
         <SwapStyleField
-          label={label}
+          label={t(label)}
           tone={variant === "raised" ? "raised" : "inset"}
           className={cn(showReceiveWethToggle || footer ? "rounded-b-none" : undefined)}
           data-testid="action-amount-card"

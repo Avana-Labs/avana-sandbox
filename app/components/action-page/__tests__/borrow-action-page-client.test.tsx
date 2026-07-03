@@ -1,9 +1,17 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import type { ReactNode } from "react"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
+
+// The action client now consults wagmi (via useWrongNetwork) to gate submission. These unit
+// tests render it without a WagmiProvider, so stub the two hooks the guard uses; "disconnected"
+// means isWrongNetwork=false, matching the sandbox flows these tests exercise.
+vi.mock("wagmi", () => ({
+  useAccount: () => ({ isConnected: false, chainId: undefined }),
+  useSwitchChain: () => ({ switchChainAsync: vi.fn(), isPending: false }),
+}))
 
 const renderWithProviders = (ui: ReactNode) => render(<DisplayPreferencesProvider>{ui}</DisplayPreferencesProvider>)
 

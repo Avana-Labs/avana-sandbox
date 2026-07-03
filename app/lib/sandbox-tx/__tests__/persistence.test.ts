@@ -1,82 +1,101 @@
 import { describe, expect, it } from "vitest"
-import type { TransactionHistoryItem } from "@/app/lib/borrow-system/contracts"
-import type { LendSandboxActionResult } from "@/app/lib/lend-system/contracts"
-import { borrowHistoryItemToRecordArgs, lendResultToRecordArgs } from "../persistence"
+import { multiplyResultToRecordArgs } from "@/app/lib/sandbox-tx/persistence"
+import type { MultiplySandboxActionResult } from "@/app/lib/multiply-system/contracts"
 
-const baseItem: TransactionHistoryItem = {
-  id: "h1",
-  intentId: "intent-1",
-  walletId: "0xabc",
-  marketId: "uni-v3-bluechip-weth-usdc",
-  assetId: "uni-v2:usdc",
-  kind: "borrow",
-  status: "success",
-  requestedAmountUsd6: 1_500_000_000n,
-  executedAmountUsd6: 1_500_000_000n,
-  simulated: true,
-  timestamp: 123,
-  hash: "0xsim",
+const WALLET = "0xabc0000000000000000000000000000000000001"
+
+/**
+ * Build the minimal shape multiplyResultToRecordArgs actually reads: the history item and
+ * the post-action positions map. A close deletes the position from state, so it is absent.
+ */
+function closeResult(overrides: { positions?: Record<string, unknown> } = {}): MultiplySandboxActionResult {
+  return {
+    historyItem: {
+      id: "r1",
+      intentId: "intent-close-1",
+      walletId: WALLET,
+      marketId: "eth-usdc-loop",
+      positionId: "pos-1",
+      kind: "close",
+      status: "success",
+      amountUsd: 1000,
+      multiplierBefore: 2.2,
+      multiplierAfter: 1,
+      simulated: true,
+      timestamp: 1,
+      hash: "0xsimclose",
+    },
+    // Position was deleted by applyMultiplyAction('close').
+    state: { positions: overrides.positions ?? {} },
+  } as unknown as MultiplySandboxActionResult
 }
 
-describe("borrowHistoryItemToRecordArgs", () => {
-  it("maps usd6 bigints to decimal strings and derives human USD", () => {
-    const args = borrowHistoryItemToRecordArgs(baseItem, "0xWALLET")
-    expect(args).toEqual({
-      wallet: "0xWALLET",
-      intentId: "intent-1",
-      product: "borrow",
-      kind: "borrow",
-      marketSlug: "uni-v3-bluechip-weth-usdc",
-      assetId: "uni-v2:usdc",
-      requestedAmountUsd6: "1500000000",
-      executedAmountUsd6: "1500000000",
-      amountUsd: 1500,
-      simulated: true,
-    })
+describe("multiplyResultToRecordArgs — close persistence (regression: C-1)", () => {
+  it("emits an explicit closed position payload when a successful close deleted the position", () => {
+    const args = multiplyResultToRecordArgs(closeResult(), WALLET)
+    expect(args.kind).toBe("close")
+    expect(args.marketSlug).toBe("eth-usdc-loop")
+    // The whole point: without a position payload recordTransaction skips the close and the
+    // server row resurrects as "open". It must be present and closed.
+    expect(args.position).toBeDefined()
+    expect(args.position?.status).toBe("closed")
+    expect(args.position?.debtValueUsd).toBe(0)
+    expect(args.position?.collateralValueUsd).toBe(0)
+    expect(args.position?.multiplier).toBe(1)
+    expect(args.position?.ltv).toBe(0)
   })
 
-  it("preserves the intentId as the idempotency key across a partial execution", () => {
-    const partial = { ...baseItem, executedAmountUsd6: 750_000_000n }
-    const args = borrowHistoryItemToRecordArgs(partial, "0xWALLET")
-    expect(args.requestedAmountUsd6).toBe("1500000000")
-    expect(args.executedAmountUsd6).toBe("750000000")
-    expect(args.amountUsd).toBe(750)
-    expect(args.intentId).toBe("intent-1")
+  it("does not synthesize a closed payload for a failed close (position untouched)", () => {
+    const failed = closeResult({ positions: {} })
+    failed.historyItem.status = "failed"
+    const args = multiplyResultToRecordArgs(failed, WALLET)
+    expect(args.position).toBeUndefined()
   })
-})
 
-describe("lendResultToRecordArgs (token→USD reconciliation)", () => {
-  // Regression for the critical bug where token-denominated lend amounts were sent as
-  // USD, tripping the server's USD supplied-balance reconciliation for every non-$1 asset.
-  function ethDepositResult(tokenAmount: number, suppliedValueUsd: number): LendSandboxActionResult {
-    return {
+  it("persists a fully-deleveraged 1x position as OPEN, matching local state (regression: M-6)", () => {
+    // The engine keeps a 1x/$0 position after a full deleverage; persisting it as "closed"
+    // (the old multiplier<=1 heuristic) made the dashboard and server disagree.
+    const result = {
       historyItem: {
-        id: "h", intentId: "lend-intent-1", walletId: "0xabc", marketId: "eth",
-        positionId: "pos-1", kind: "deposit", status: "success", asset: "ETH",
-        amount: tokenAmount, simulated: true, timestamp: 1, hash: "0xsim",
+        id: "r2",
+        intentId: "intent-deleverage-1",
+        walletId: WALLET,
+        marketId: "eth-usdc-loop",
+        positionId: "pos-1",
+        kind: "deleverage",
+        status: "success",
+        amountUsd: 500,
+        multiplierBefore: 2.2,
+        multiplierAfter: 1,
+        simulated: true,
+        timestamp: 1,
+        hash: "0xsimdelever",
       },
       state: {
-        now: 1,
-        markets: { eth: { marketId: "eth", assetPriceUsd: 3500 } as never },
-        positions: { "pos-1": { suppliedValueUsd, interestEarned: 0 } as never },
-        walletBalances: {},
-        transactions: [],
-      } as never,
-    } as LendSandboxActionResult
-  }
+        positions: {
+          "pos-1": {
+            id: "pos-1",
+            walletId: WALLET,
+            marketId: "eth-usdc-loop",
+            collateralAmount: 1,
+            collateralValueUsd: 1000,
+            debtValueUsd: 0,
+            multiplier: 1,
+            ltv: 0,
+            healthFactor: "infinity",
+            liquidationPrice: null,
+            netApy: 3,
+          },
+        },
+      },
+    } as unknown as MultiplySandboxActionResult
 
-  it("converts a non-$1 token deposit (2 ETH @ $3500) to USD for the recorded amount", () => {
-    const args = lendResultToRecordArgs(ethDepositResult(2, 7000), "0xWALLET")
-    expect(args.amountUsd).toBe(7000)
-    expect(args.requestedAmountUsd6).toBe("7000000000")
-    expect(args.executedAmountUsd6).toBe("7000000000")
-    expect(args.position?.suppliedUsd6).toBe("7000000000")
-  })
-
-  it("reports the USD amount for a withdraw (server recomputes the ledger delta)", () => {
-    const result = ethDepositResult(1, 3500)
-    result.historyItem.kind = "withdraw"
-    const args = lendResultToRecordArgs(result, "0xWALLET")
-    expect(args.amountUsd).toBe(3500)
+    const args = multiplyResultToRecordArgs(result, WALLET)
+    expect(args.position).toBeDefined()
+    expect(args.position?.status).toBe("open")
+    expect(args.position?.multiplier).toBe(1)
+    // Per-transaction leverage is carried through so hydrated history shows 2.2x → 1x (M-7).
+    expect(args.multiplierBefore).toBe(2.2)
+    expect(args.multiplierAfter).toBe(1)
   })
 })
