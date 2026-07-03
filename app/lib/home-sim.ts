@@ -1,4 +1,5 @@
 import { getActiveCurrency } from "@/app/lib/currency/active-rate"
+import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 
 export type HomeMode = "borrow" | "repay" | "claim" | "remove"
 
@@ -429,19 +430,11 @@ export function getClaimPositionById(positionId: string) {
 }
 
 export function getRiskTone(healthFactor: number | null): HomeRiskTone {
-  if (healthFactor === null || Number.isNaN(healthFactor)) {
-    return "neutral"
-  }
-
-  if (!Number.isFinite(healthFactor) || healthFactor > 2) {
-    return "positive"
-  }
-
-  if (healthFactor > 1.5) {
-    return "warning"
-  }
-
-  return "danger"
+  const band = healthFactorBand(healthFactor)
+  if (band.id === "unknown") return "neutral"
+  if (band.tone === "positive") return "positive"
+  if (band.tone === "danger") return "danger"
+  return "warning"
 }
 
 export type HealthStatus = {
@@ -452,16 +445,13 @@ export type HealthStatus = {
 }
 
 export function getHealthStatus(hf: number): HealthStatus {
-  if (!Number.isFinite(hf) || hf >= 2.5) {
-    return { label: "SAFE", dotClass: "bg-emerald-500", textClass: "text-success", barClass: "bg-emerald-500" }
+  const band = healthFactorBand(hf)
+  return {
+    label: band.label.toUpperCase(),
+    dotClass: band.status.dotClass,
+    textClass: band.status.textClass,
+    barClass: band.status.barClass,
   }
-  if (hf >= 1.75) {
-    return { label: "GOOD", dotClass: "bg-yellow-400", textClass: "text-yellow-600", barClass: "bg-yellow-400" }
-  }
-  if (hf >= 1.2) {
-    return { label: "WATCH", dotClass: "bg-orange-500", textClass: "text-orange-600", barClass: "bg-orange-500" }
-  }
-  return { label: "AT RISK", dotClass: "bg-rose-500", textClass: "text-rose-600", barClass: "bg-rose-500" }
 }
 
 export function healthGaugePercent(hf: number): number {
