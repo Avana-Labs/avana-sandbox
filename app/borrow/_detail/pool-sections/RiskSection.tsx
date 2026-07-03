@@ -3,6 +3,7 @@
 import * as React from "react"
 import type { RiskAssessment } from "@/app/lib/borrow-detail"
 import { formatBpsAsPct, riskLevelLabel } from "@/app/lib/borrow-detail"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RiskGauge, RiskLevelPill, SectionCard } from "../ui"
 import { DeltaPill } from "@/app/components/ui/live/delta-pill"
 
@@ -10,6 +11,7 @@ type Props = { detail: { risk: RiskAssessment } }
 
 export function RiskSection({ detail }: Props) {
   const { risk } = detail
+  const { t } = useTranslation()
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set())
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -27,14 +29,14 @@ export function RiskSection({ detail }: Props) {
 
   return (
     <SectionCard
-      title="Risk assessment"
-      subtitle="Composite rating combining volatility, depth, oracle and dependency risks."
+      title={t("Risk assessment")}
+      subtitle={t("Composite rating combining volatility, depth, oracle and dependency risks.")}
       rightSlot={<RiskLevelPill level={risk.level} size="md" />}
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="min-w-0">
-            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Risk premium</div>
+            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{t("Risk premium")}</div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="font-data text-[26px] font-medium tabular-nums text-foreground md:text-[30px]">
                 {formatBpsAsPct(risk.premiumBps)}
@@ -44,9 +46,16 @@ export function RiskSection({ detail }: Props) {
             <p className="mt-2 max-w-prose text-[13px] leading-6 text-foreground/80">{risk.headline}</p>
           </div>
           <div className="flex flex-col items-center">
-            <RiskGauge score={risk.score} level={risk.level} label={`${riskLevelLabel(risk.level)} risk`} size={140} />
+            <RiskGauge
+              score={risk.score}
+              level={risk.level}
+              label={t("{level} risk").replace("{level}", t(riskLevelLabel(risk.level)))}
+              size={140}
+            />
             {risk.lastReviewed ? (
-              <p className="mt-1 text-[10.5px] text-muted-foreground">Last reviewed {risk.lastReviewed}</p>
+              <p className="mt-1 text-[10.5px] text-muted-foreground">
+                {t("Last reviewed {date}").replace("{date}", risk.lastReviewed)}
+              </p>
             ) : null}
           </div>
         </div>
@@ -54,7 +63,7 @@ export function RiskSection({ detail }: Props) {
         <p className="text-[13px] leading-6 text-foreground/80">{risk.summary}</p>
 
         <div>
-          <div className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">Breakdown</div>
+          <div className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{t("Breakdown")}</div>
           <ul className="divide-y divide-border rounded-radius-sm border border-border bg-surface-inset">
             {risk.breakdown.map((item) => {
               const open = expanded.has(item.id)

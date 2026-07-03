@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { SectionCard } from "../ui"
 import { DeltaPill } from "@/app/components/ui/live/delta-pill"
 
@@ -10,19 +11,20 @@ type Props = { detail: AssetDetail }
 
 export function AssetCashflowCard({ detail }: Props) {
   const { cashflow } = detail
+  const { t } = useTranslation()
   return (
     <SectionCard
-      title="Interest & rewards"
-      subtitle={`${cashflow.periodLabel} · borrower interest, LP incentives and reserve take.`}
+      title={t("Interest & rewards")}
+      subtitle={t("{period} · borrower interest, LP incentives and reserve take.").replace("{period}", cashflow.periodLabel)}
       bodyClassName="p-0"
     >
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              <th className="pb-2 pl-5 pt-3">Line</th>
-              <th className="pb-2 pt-3 text-right">Reported</th>
-              <th className="pb-2 pr-5 pt-3 text-right">YoY</th>
+              <th className="pb-2 pl-5 pt-3">{t("Line")}</th>
+              <th className="pb-2 pt-3 text-right">{t("Reported")}</th>
+              <th className="pb-2 pr-5 pt-3 text-right">{t("YoY")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
