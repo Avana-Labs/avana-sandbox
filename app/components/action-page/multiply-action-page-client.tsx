@@ -312,6 +312,10 @@ export function MultiplyActionPageClient({
 
   useEffect(() => {
     setDismissedBlockedReason(null)
+    // Editing inputs after a failed submit clears the stale error banner and returns to
+    // configure so the CTA is actionable again instead of stuck showing the old error.
+    setOutcome(null)
+    setStage((prev) => (prev === "error" ? "configure" : prev))
   }, [amount, kind, market?.id, multiplier])
 
   const handleBack = useCallback(() => {
@@ -342,7 +346,7 @@ export function MultiplyActionPageClient({
       setStage("review")
       return
     }
-    if (stage !== "review") return
+    if (stage !== "review" && stage !== "error") return // allow in-place retry from error
     if (!market || !previewUi?.allowed) return
     if (isPending) return // guard against double-submit (rapid double-click)
     if (networkGuardRef.current.isWrongNetwork) {
