@@ -13,16 +13,18 @@ afterEach(() => {
 })
 
 describe("getPriceStatus surfaces price freshness", () => {
-  test("no prices yet → stale (nothing served)", async () => {
+  // getPriceStatus returns only the raw updatedAt; the client derives stale/ageMs from a
+  // ticking clock (see app/lib/prices token-prices-context + its test). These assert the
+  // query exposes the correct last-refresh time to derive from.
+  test("no prices yet → updatedAt null (nothing served)", async () => {
     const t = convexTest(schema, modules)
     const status = await t.query(api.prices.getPriceStatus, {})
     expect(status.count).toBe(0)
     expect(status.updatedAt).toBeNull()
-    expect(status.stale).toBe(true)
     expect(status.staleAfterMs).toBe(PRICE_STALE_AFTER_MS)
   })
 
-  test("a fresh refresh is not stale", async () => {
+  test("a fresh refresh reports a recent updatedAt", async () => {
     const t = convexTest(schema, modules)
     vi.stubGlobal(
       "fetch",
@@ -35,12 +37,12 @@ describe("getPriceStatus surfaces price freshness", () => {
 
     const status = await t.query(api.prices.getPriceStatus, {})
     expect(status.count).toBeGreaterThan(0)
-    expect(status.stale).toBe(false)
-    expect(status.ageMs).not.toBeNull()
-    expect(status.ageMs!).toBeLessThan(PRICE_STALE_AFTER_MS)
+    expect(status.updatedAt).not.toBeNull()
+    // Derived client-side: a just-written row is well within the stale window.
+    expect(Date.now() - status.updatedAt!).toBeLessThan(PRICE_STALE_AFTER_MS)
   })
 
-  test("prices older than the threshold are flagged stale (cron stalled)", async () => {
+  test("a stalled cron leaves updatedAt older than the threshold (client flags stale)", async () => {
     const t = convexTest(schema, modules)
     // Land a price whose updatedAt is well past the stale threshold.
     await t.mutation(internal.prices.upsertPrices, {
@@ -55,8 +57,8 @@ describe("getPriceStatus surfaces price freshness", () => {
       ],
     })
     const status = await t.query(api.prices.getPriceStatus, {})
-    expect(status.stale).toBe(true)
-    expect(status.ageMs!).toBeGreaterThan(PRICE_STALE_AFTER_MS)
+    expect(status.updatedAt).not.toBeNull()
+    expect(Date.now() - status.updatedAt!).toBeGreaterThan(PRICE_STALE_AFTER_MS)
   })
 
   test("a failing refresh throws so the scheduled run is recorded failed", async () => {

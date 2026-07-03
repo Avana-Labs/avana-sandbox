@@ -17,7 +17,11 @@ import { SandboxGate } from "./components/sandbox/sandbox-gate"
 import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
 import { PreferencesProfileSync } from "./components/preferences-profile-sync"
 import { TokenPricesProvider } from "./lib/prices/token-prices-context"
-const enableProductionAnalytics = process.env.NODE_ENV === "production"
+// Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
+// scripts are served by Vercel's edge (/_vercel/*), so a local `next start` build 404s
+// on them and logs console errors (a Lighthouse best-practices failure). On Vercel the
+// VERCEL env var is set and the scripts resolve normally.
+const enableProductionAnalytics = process.env.NODE_ENV === "production" && Boolean(process.env.VERCEL)
 
 const diatypeSans = localFont({
   src: [

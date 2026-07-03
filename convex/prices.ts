@@ -60,10 +60,16 @@ export const getPrices = query({
 })
 
 /**
- * Price freshness signal for the UI. If the refresh cron fails, `getPrices` keeps
- * serving the last-known values silently; this exposes how old they are so the UI can
- * warn ("prices may be stale") instead of presenting stale numbers as live. Freshness is
- * the OLDEST row's age (a partially-failed refresh is only as fresh as its stalest token).
+ * Price freshness signal for the UI. If the refresh cron fails, `getPrices` keeps serving
+ * the last-known values silently; this exposes the OLDEST row's last-refresh time so the UI
+ * can warn ("prices may be stale") instead of presenting stale numbers as live.
+ *
+ * IMPORTANT: this returns only the raw `updatedAt` — it does NOT compute ageMs/stale from
+ * Date.now(). A Convex query result is cached and only recomputed when a document it read
+ * changes; a wall-clock-derived value would freeze the instant a client subscribed and never
+ * flip fresh→stale until an unrelated `tokenPrices` write occurred (so a wedged cron would
+ * never surface). The client derives ageMs/stale from `updatedAt` against a ticking clock
+ * (see token-prices-context), so freshness advances with real time for connected clients.
  */
 export const getPriceStatus = query({
   args: {},
@@ -71,11 +77,11 @@ export const getPriceStatus = query({
     const rows = await ctx.db.query("tokenPrices").collect()
     if (rows.length === 0) {
       // Never refreshed yet (fresh deploy, or the cron has never succeeded).
-      return { updatedAt: null, ageMs: null, stale: true, staleAfterMs: PRICE_STALE_AFTER_MS, count: 0 }
+      return { updatedAt: null, staleAfterMs: PRICE_STALE_AFTER_MS, count: 0 }
     }
+    // OLDEST row's timestamp: a partially-failed refresh is only as fresh as its stalest token.
     const updatedAt = Math.min(...rows.map((r) => r.updatedAt))
-    const ageMs = Math.max(0, Date.now() - updatedAt)
-    return { updatedAt, ageMs, stale: ageMs > PRICE_STALE_AFTER_MS, staleAfterMs: PRICE_STALE_AFTER_MS, count: rows.length }
+    return { updatedAt, staleAfterMs: PRICE_STALE_AFTER_MS, count: rows.length }
   },
 })
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/app/components/theme-provider"
 import { WagmiProvider, createConfig, http } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ConnectKitProvider, SIWEProvider, getDefaultConfig } from "connectkit"
@@ -58,29 +58,29 @@ const wagmiConfig = createConfig(
 )
 
 /**
- * A frosted scrim: the darkened overlay does the work, with a light blur on top. The blur
- * is deliberately kept small (3px, no saturate) — a heavy backdrop-filter recomputes every
- * frame and lags the modal's open/screen-switch animation. Mirrors the global :root vars in
- * globals.css (which is what actually reaches ConnectKit's out-of-root portal).
+ * Keep the wallet overlay compositor-cheap. ConnectKit 1.9.x still animates the modal with
+ * older framer-motion transitions, and any live backdrop blur behind those transitions causes
+ * visible ghosting / frame drops while switching wallet screens.
  */
 const connectKitTheme = {
-  "--ck-overlay-background": "rgba(7, 9, 12, 0.64)",
-  "--ck-overlay-backdrop-filter": "blur(3px)",
+  "--ck-overlay-background": "rgba(7, 9, 12, 0.72)",
+  "--ck-overlay-backdrop-filter": "none",
 } as const
 
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
-  // Mirror the app's resolved theme so the wallet modal matches light/dark instead of
-  // following the OS (ConnectKit's "auto" default). resolvedTheme is undefined until
-  // next-themes hydrates on the client; the modal never opens before then, so falling
-  // back to "light" only affects the pre-hydration default, not what the user sees.
+  // Mirror the app's resolved theme (from our custom ThemeProvider — next-themes is NOT
+  // mounted) so the wallet modal matches the in-app light/dark toggle instead of ConnectKit's
+  // OS-following default. resolvedTheme is always "light" | "dark".
   const { resolvedTheme } = useTheme()
   const connectKit = (
     <ConnectKitProvider
-      mode={resolvedTheme === "dark" ? "dark" : "light"}
+      mode={resolvedTheme}
       customTheme={connectKitTheme}
       options={{
         enforceSupportedChains: false,
+        reducedMotion: true,
+        overlayBlur: 0,
         disclaimer: (
           <>
             By connecting your wallet you agree to the{" "}

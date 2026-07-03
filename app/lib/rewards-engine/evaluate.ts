@@ -247,10 +247,15 @@ export function applyActivityEvent(state: RewardsEngineState, event: RewardActiv
   if (state.events.some((entry) => entry.id === event.id)) {
     return state
   }
-  return {
-    ...state,
-    events: [...state.events, event].sort((left, right) => left.timestamp - right.timestamp),
-  }
+  // Insert in timestamp order without re-sorting the whole array on every append. Events arrive
+  // roughly monotonically, so scanning from the end finds the slot in O(1) for the common case
+  // (the old `[...events, event].sort()` was O(n log n) on each of potentially thousands of
+  // events per session).
+  const events = state.events.slice()
+  let index = events.length
+  while (index > 0 && events[index - 1].timestamp > event.timestamp) index -= 1
+  events.splice(index, 0, event)
+  return { ...state, events }
 }
 
 export function claimReward({

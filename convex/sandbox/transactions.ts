@@ -26,6 +26,8 @@ import type { Doc } from "../_generated/dataModel"
 
 /** Hourly per-wallet transaction cap (anti-abuse). Exported for tests. */
 export const MAX_TX_PER_HOUR = 200
+const PORTFOLIO_HISTORY_INTERVAL_MS = 60 * 60 * 1000
+const MAX_PORTFOLIO_HISTORY_ROWS = 365
 
 /** Global multiply leverage ceiling, mirrors MULTIPLY_ACTION_MAX_LEVERAGE (client slider). */
 const MAX_MULTIPLIER = 10
@@ -141,7 +143,9 @@ function validateTransactionTransition(
   const allowedKinds = {
     borrow: new Set(["deposit", "withdraw", "borrow", "repay", "claim"]),
     lend: new Set(["deposit", "withdraw", "claim"]),
-    multiply: new Set(["multiply", "deleverage"]),
+    // "close" carries an explicit zeroed position payload (see multiplyResultToRecordArgs) so
+    // the server runs its position-close branch instead of leaving a resurrecting "open" row.
+    multiply: new Set(["multiply", "deleverage", "close"]),
   }
   if (!allowedKinds[args.product].has(args.kind)) {
     throw new Error(`INVALID_TRANSITION: ${args.kind} is not valid for ${args.product}.`)
@@ -196,11 +200,13 @@ async function assertBorrowSolvent(
   }
 
   let liquidationValueUsd = 0
-  let valuedCollateralUsd = 0
   for (const row of collateralRows) {
     const valueUsd = usd6Number(row.collateralValueUsd6)
-    if (valueUsd <= 0) continue // value not provided for this leg — can't bound it
-    valuedCollateralUsd += valueUsd
+    if (valueUsd <= 0) {
+      throw new Error(
+        `INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`,
+      )
+    }
     const pool = await ctx.db
       .query("pools")
       .withIndex("by_slug", (q) => q.eq("slug", row.marketSlug))
@@ -209,10 +215,7 @@ async function assertBorrowSolvent(
     liquidationValueUsd += valueUsd * (thresholdPct / 100)
   }
 
-  // Only enforce the health-factor bound when we actually have collateral values to
-  // re-derive from; missing value data fails open (don't block a legitimate borrow on a
-  // mapping gap) while a clearly underwater position (debt > liquidation value) is rejected.
-  if (valuedCollateralUsd > 0 && debtUsd > liquidationValueUsd + 0.01) {
+  if (debtUsd > liquidationValueUsd + 0.01) {
     throw new Error("INVALID_TRANSITION: borrow position would be undercollateralized (health factor < 1).")
   }
 }
@@ -279,7 +282,7 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
     .filter((position) => position.product === "multiply")
     .reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
 
-  await ctx.db.insert("portfolioSnapshots", {
+  const snapshot = {
     wallet,
     at: now,
     totalValueUsd: liquid + borrowCollateral - borrowDebt + lendSupplied + multiplyCollateral - multiplyDebt,
@@ -288,14 +291,45 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
     availableToBorrowUsd: Math.max(0, borrowCollateral * 0.7 - borrowDebt),
     totalMultiplyExposureUsd: multiplyCollateral,
     totalEarnedUsd: earned,
-  })
+  }
+
+  const current = await ctx.db
+    .query("portfolioCurrent")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .unique()
+  if (current) await ctx.db.replace(current._id, snapshot)
+  else await ctx.db.insert("portfolioCurrent", snapshot)
+
+  const latestHistory = await ctx.db
+    .query("portfolioSnapshots")
+    .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+    .order("desc")
+    .first()
+  if (!latestHistory || now - latestHistory.at >= PORTFOLIO_HISTORY_INTERVAL_MS) {
+    await ctx.db.insert("portfolioSnapshots", snapshot)
+    const history = await ctx.db
+      .query("portfolioSnapshots")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .order("desc")
+      .take(MAX_PORTFOLIO_HISTORY_ROWS + 1)
+    for (const expired of history.slice(MAX_PORTFOLIO_HISTORY_ROWS)) {
+      await ctx.db.delete(expired._id)
+    }
+  }
 }
 
 /**
  * Append a delta event to the shared liquidity ledger (`marketLiquidityDeltas`).
  * This is the auth-gated, wallet-attributed write path that unifies every product's
  * supply/borrow movement onto one ledger (mirrors `convex/liquidity.recordDelta`, but
- * reached only from inside an owner-verified mutation). Append-only — `listDeltas` folds.
+ * reached only from inside an owner-verified mutation).
+ *
+ * Deliberately still a pure append — a fresh row per action, never a read-modify-write of
+ * a shared per-market row — so concurrent writers never contend on the same document under
+ * Convex OCC (the property this ledger was designed around). Scale is handled OFF this hot
+ * path: `liquidity.compactDeltas` periodically folds old rows into a bounded per-market
+ * baseline and deletes them, so the fold (`liquidity.foldDeltas`) reads
+ * `#markets + #recent rows` instead of the whole table — without adding any contention here.
  */
 export async function applyLedgerDelta(
   ctx: MutationCtx,
@@ -308,8 +342,6 @@ export async function applyLedgerDelta(
   const supplied = Number.isFinite(suppliedDeltaUsd) ? suppliedDeltaUsd : 0
   if (borrowed === 0 && supplied === 0) return
 
-  // Append-only: a fresh row per action instead of patching one shared per-market row,
-  // so concurrent writers never contend on the same document (`listDeltas` folds them).
   await ctx.db.insert("marketLiquidityDeltas", {
     marketSlug,
     borrowedDeltaUsd: borrowed,
@@ -338,7 +370,17 @@ export const recordTransaction = mutation({
     simulated: v.optional(v.boolean()),
     healthFactorWadBefore: v.optional(v.union(v.string(), v.null())),
     healthFactorWadAfter: v.optional(v.union(v.string(), v.null())),
+    /** Per-transaction multiply leverage, persisted so hydrated history renders the real
+     *  before→after instead of a constant 1 × the position's current multiplier. */
+    multiplierBefore: v.optional(v.number()),
+    multiplierAfter: v.optional(v.number()),
     position: v.optional(positionPayload),
+    /**
+     * Optimistic-concurrency token: the `positions.revision` the client read before it
+     * computed this write. When supplied and the stored position has since advanced, the
+     * write is rejected (STALE_WRITE) instead of overwriting the concurrent change.
+     */
+    expectedRevision: v.optional(v.number()),
     // NOTE: there is intentionally no client `ledger` arg. The aggregate market-liquidity
     // delta is recomputed server-side (canonicalLedgerDelta) so a client can never dictate
     // the shared ledger.
@@ -353,10 +395,16 @@ export const recordTransaction = mutation({
       .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))
       .first()
     if (prior) {
+      // Return the position's CURRENT revision so a client whose original response was lost can
+      // seed its optimistic-concurrency map from the replay. Without it, an idempotent CREATE
+      // replay left the client's map empty and its next write to this position sent no
+      // expectedRevision → REVISION_REQUIRED (M-12).
+      const priorPosition = prior.positionId ? await ctx.db.get(prior.positionId) : null
       return {
         idempotent: true,
         transactionId: prior._id,
         positionId: prior.positionId ?? null,
+        revision: priorPosition?.revision ?? null,
         receipt: { id: prior._id, hash: prior.syntheticTxHash, status: prior.status, simulated: prior.simulated, timestamp: prior.at },
       }
     }
@@ -380,14 +428,34 @@ export const recordTransaction = mutation({
     // Upsert the (wallet, product, market) position on success.
     let positionId: import("../_generated/dataModel").Id<"positions"> | undefined
     let existingPosition: Doc<"positions"> | undefined
+    // Revision actually written to the position this call, returned so the client seeds its
+    // optimistic-concurrency map from the server truth instead of inferring it (M-12).
+    let writtenRevision: number | undefined
     if (args.position && status === "success" && marketSlug) {
       validatePositionPayload(args.position)
-      const matches = await ctx.db
-        .query("positions")
-        .withIndex("by_wallet_market", (q) => q.eq("wallet", wallet).eq("marketSlug", marketSlug))
-        .collect()
-      const existing = matches.find((p) => p.product === args.product)
+      const existing =
+        (await ctx.db
+          .query("positions")
+          .withIndex("by_wallet_product_market", (q) =>
+            q.eq("wallet", wallet).eq("product", args.product).eq("marketSlug", marketSlug),
+          )
+          .unique()) ?? undefined
       existingPosition = existing
+      // Optimistic concurrency: reject a write computed from a stale read instead of
+      // silently clobbering a concurrent one (two tabs on the same wallet/market).
+      const currentRevision = existing?.revision ?? 0
+      if (existing && args.expectedRevision == null) {
+        throw new Error(
+          `REVISION_REQUIRED: ${args.product} position for ${marketSlug} already exists; ` +
+            "reload it and submit its expectedRevision.",
+        )
+      }
+      if (existing && args.expectedRevision !== currentRevision) {
+        throw new Error(
+          `STALE_WRITE: ${args.product} position for ${marketSlug} changed since it was read ` +
+            `(expected revision ${args.expectedRevision}, found ${currentRevision}); reload and retry.`,
+        )
+      }
       validateTransactionTransition(args, existing)
       await assertBorrowSolvent(ctx, args)
       const fields = {
@@ -407,8 +475,10 @@ export const recordTransaction = mutation({
         liquidationPrice: args.position.liquidationPrice,
         netApyPct: args.position.netApyPct,
         lastUpdatedAt: now,
+        revision: existing ? currentRevision + 1 : 0,
         ...(args.position.status === "closed" ? { closedAt: now } : {}),
       }
+      writtenRevision = fields.revision
       if (existing) {
         await ctx.db.patch(existing._id, fields)
         positionId = existing._id
@@ -465,6 +535,8 @@ export const recordTransaction = mutation({
       amountUsd: args.amountUsd,
       healthFactorWadBefore: args.healthFactorWadBefore,
       healthFactorWadAfter: args.healthFactorWadAfter,
+      multiplierBefore: args.multiplierBefore,
+      multiplierAfter: args.multiplierAfter,
       syntheticTxHash: hash,
       simulated,
       at: now,
@@ -499,6 +571,7 @@ export const recordTransaction = mutation({
       idempotent: false,
       transactionId,
       positionId: positionId ?? null,
+      revision: writtenRevision ?? null,
       receipt: { id: transactionId, hash, status, simulated, timestamp: now },
     }
   },
@@ -632,14 +705,16 @@ export const getSessionState = query({
       ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
       ctx.db.query("starterAllocations").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
     ])
-    const hydratedPositions = []
-    for (const position of positions) {
-      const [collateral, debt] = await Promise.all([
-        ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
-        ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
-      ])
-      hydratedPositions.push({ ...position, collateral, debt })
-    }
+    // Hydrate collateral/debt in parallel (was a sequential per-position await loop).
+    const hydratedPositions = await Promise.all(
+      positions.map(async (position) => {
+        const [collateral, debt] = await Promise.all([
+          ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+          ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+        ])
+        return { ...position, collateral, debt }
+      }),
+    )
     return { positions: hydratedPositions, transactions, balances, starterAllocation }
   },
 })
@@ -675,9 +750,14 @@ export const getPortfolioPageState = query({
       }
     }
 
-    const [transactions, snapshots, risk, rewards, balances, starterAllocation, poolRows, marketRows] = await Promise.all([
+    const [transactions, snapshotRows, current, risk, rewards, balances, starterAllocation, poolRows, marketRows] = await Promise.all([
       ctx.db.query("transactions").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("desc").take(500),
-      ctx.db.query("portfolioSnapshots").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("asc").collect(),
+      ctx.db
+        .query("portfolioSnapshots")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+        .order("desc")
+        .take(MAX_PORTFOLIO_HISTORY_ROWS),
+      ctx.db.query("portfolioCurrent").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
       ctx.db.query("riskSnapshots").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("desc").first(),
       ctx.db.query("sandboxRewards").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
       ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
@@ -693,6 +773,12 @@ export const getPortfolioPageState = query({
     ])
     const pools = poolRows.filter((row): row is NonNullable<typeof row> => row !== null)
     const markets = marketRows.filter((row): row is NonNullable<typeof row> => row !== null)
+    const snapshots = snapshotRows.reverse()
+    // portfolioCurrent and portfolioSnapshots share identical value fields; only the branded _id
+    // differs. Appending the live "current" point to the historical series is intended, so cast
+    // past the nominal _id mismatch (runtime-identical to the prior push; keeps `tsc --noEmit`
+    // green, which CI gates on).
+    if (current && snapshots.at(-1)?.at !== current.at) snapshots.push(current as unknown as (typeof snapshots)[number])
     return { positions: hydratedPositions, transactions, snapshots, risk, pools, markets, rewards, balances, starterAllocation }
   },
 })
@@ -702,18 +788,25 @@ export const getPortfolio = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const snapshots = await ctx.db
-      .query("portfolioSnapshots")
-      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-      .order("asc")
-      .collect()
-    const positions = await ctx.db
-      .query("positions")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .collect()
+    const [snapshotRows, current, positions] = await Promise.all([
+      ctx.db
+        .query("portfolioSnapshots")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+        .order("desc")
+        .take(MAX_PORTFOLIO_HISTORY_ROWS),
+      ctx.db.query("portfolioCurrent").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
+      ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+    ])
+    const snapshots = snapshotRows.reverse()
+    const latest = current ?? snapshots.at(-1) ?? null
+    // portfolioCurrent and portfolioSnapshots share identical value fields; only the branded _id
+    // differs. Appending the live "current" point to the historical series is intended, so cast
+    // past the nominal _id mismatch (runtime-identical to the prior push; keeps `tsc --noEmit`
+    // green, which CI gates on).
+    if (current && snapshots.at(-1)?.at !== current.at) snapshots.push(current as unknown as (typeof snapshots)[number])
     return {
       snapshots,
-      latest: snapshots.length > 0 ? snapshots[snapshots.length - 1] : null,
+      latest,
       openPositions: positions.filter((p) => p.status === "open").length,
       positionCount: positions.length,
     }

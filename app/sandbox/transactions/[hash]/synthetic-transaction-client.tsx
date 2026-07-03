@@ -2,16 +2,56 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Check } from "lucide-react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TransactionReceipt, type TransactionReceiptData } from "@/app/components/action-page/transaction-receipt"
+import { syntheticBlockFromHash, syntheticNetworkFeeUsdFromHash } from "@/app/lib/action-system/synthetic-receipt"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
+const KIND_VERB: Record<string, string> = {
+  borrow: "Borrow",
+  deposit: "Deposit",
+  withdraw: "Withdraw",
+  repay: "Repay",
+  claim: "Claim",
+  multiply: "Multiply",
+  deleverage: "Deleverage",
+  liquidate: "Liquidate",
+}
+
+function prettyKind(kind: string) {
+  return KIND_VERB[kind] ?? `${kind.charAt(0).toUpperCase()}${kind.slice(1)}`
+}
+
+/** Map a stored synthetic transaction to the shared receipt shape. */
+function toReceiptData(receipt: {
+  at: number
+  syntheticTxHash: string
+  amountUsd: number
+  product?: string
+  kind?: string
+  marketSlug?: string | null
+  assetId?: string | null
+}): TransactionReceiptData {
+  const hash = receipt.syntheticTxHash
+  const symbol = receipt.assetId ? receipt.assetId.toUpperCase() : "Asset"
+  const verb = receipt.kind ? prettyKind(receipt.kind) : "Transaction"
+  return {
+    title: symbol !== "Asset" ? `${verb} ${symbol}` : verb,
+    symbol,
+    amountRowLabel: verb,
+    amountUsd: receipt.amountUsd,
+    marketValue: receipt.marketSlug ?? null,
+    networkFeeUsd: syntheticNetworkFeeUsdFromHash(hash),
+    block: syntheticBlockFromHash(hash),
+    dateMs: receipt.at,
+    hash,
+  }
+}
+
 export function SyntheticTransactionClient({ hash }: { hash: string }) {
-  const { exact } = useCurrency()
   const { t } = useTranslation()
   const { authedWallet, isSignedIn } = useSiweAuth()
   const receipt = useQuery(
@@ -45,36 +85,14 @@ export function SyntheticTransactionClient({ hash }: { hash: string }) {
       ) : receipt === null ? (
         <p className="mt-8 text-muted-foreground">{t("This receipt does not exist for the authenticated wallet.")}</p>
       ) : (
-        <dl className="mt-8 grid gap-5 rounded-3xl border border-border p-6 sm:grid-cols-2">
-          <div>
-            <dt className="text-xs uppercase tracking-[0.12em] text-muted-foreground">{t("Status")}</dt>
-            <dd className="mt-2 flex items-center gap-2 font-medium">
-              <Check className="size-4 text-emerald-500" /> {t("Confirmed")}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.12em] text-muted-foreground">{t("Timestamp")}</dt>
-            <dd className="mt-2 font-medium">{new Date(receipt.at).toLocaleString()}</dd>
-          </div>
-          <div className="sm:col-span-2">
-            <dt className="text-xs uppercase tracking-[0.12em] text-muted-foreground">{t("Hash")}</dt>
-            <dd className="mt-2 break-all font-mono text-sm">{receipt.syntheticTxHash}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.12em] text-muted-foreground">{t("Amount")}</dt>
-            <dd className="mt-2 font-medium">
-              {exact(receipt.amountUsd)}
-            </dd>
-          </div>
-          {"product" in receipt ? (
-            <div>
-              <dt className="text-xs uppercase tracking-[0.12em] text-muted-foreground">{t("Action")}</dt>
-              <dd className="mt-2 font-medium capitalize">{receipt.product} · {receipt.kind}</dd>
-            </div>
-          ) : null}
-        </dl>
+        <div className="mx-auto mt-8 max-w-md">
+          <TransactionReceipt data={toReceiptData(receipt)} />
+        </div>
       )}
-      <Link className="mt-8 inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background" href="/dashboard">
+      <Link
+        className="mt-8 inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background"
+        href="/dashboard"
+      >
         {t("Back to dashboard")}
       </Link>
     </main>

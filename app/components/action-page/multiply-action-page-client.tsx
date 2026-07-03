@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
@@ -16,6 +16,7 @@ import { ActionProcessingStage } from "@/app/components/action-page/action-proce
 import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
@@ -36,6 +37,7 @@ import {
 import { formatActionAmount } from "@/app/lib/action-system/formatters"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function MultiplyActionPageClient({
   kind,
@@ -57,6 +59,7 @@ export function MultiplyActionPageClient({
   initialMultiplier?: string
 }) {
   const descriptor = getActionDescriptor("multiply", kind)
+  const { t } = useTranslation()
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useMultiplySessionContext()
@@ -173,6 +176,10 @@ export function MultiplyActionPageClient({
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
+  // Wrong-network submit gate (read via ref inside the submit handlers; see borrow client).
+  const networkGuard = useActionNetworkGuard()
+  const networkGuardRef = useRef(networkGuard)
+  networkGuardRef.current = networkGuard
   const [isPending, setIsPending] = useState(false)
 
   useEffect(() => {
@@ -305,6 +312,10 @@ export function MultiplyActionPageClient({
 
   useEffect(() => {
     setDismissedBlockedReason(null)
+    // Editing inputs after a failed submit clears the stale error banner and returns to
+    // configure so the CTA is actionable again instead of stuck showing the old error.
+    setOutcome(null)
+    setStage((prev) => (prev === "error" ? "configure" : prev))
   }, [amount, kind, market?.id, multiplier])
 
   const handleBack = useCallback(() => {
@@ -335,9 +346,17 @@ export function MultiplyActionPageClient({
       setStage("review")
       return
     }
-    if (stage !== "review") return
+    if (stage !== "review" && stage !== "error") return // allow in-place retry from error
     if (!market || !previewUi?.allowed) return
     if (isPending) return // guard against double-submit (rapid double-click)
+    if (networkGuardRef.current.isWrongNetwork) {
+      setOutcome({
+        tone: "error",
+        title: "Wrong network",
+        message: networkGuardRef.current.blockedReason ?? "Switch networks to continue.",
+      })
+      return
+    }
 
     setIsPending(true)
     setOutcome(null)
@@ -419,6 +438,14 @@ export function MultiplyActionPageClient({
         (entry) => entry.walletId === walletId && entry.marketId === market.id,
       )
     if (!closingPosition) return
+    if (networkGuardRef.current.isWrongNetwork) {
+      setOutcome({
+        tone: "error",
+        title: "Wrong network",
+        message: networkGuardRef.current.blockedReason ?? "Switch networks to continue.",
+      })
+      return
+    }
 
     setIsPending(true)
     setOutcome(null)
@@ -445,8 +472,11 @@ export function MultiplyActionPageClient({
 
       setSuccessUi(
         mapBorrowSuccessToActionUi({
-          title: "Position closed",
-          description: `Your ${market.collateralAsset.symbol} position was fully unwound and collateral withdrawn.`,
+          title: t("Position closed"),
+          description: t("Your {symbol} position was fully unwound and collateral withdrawn.").replace(
+            "{symbol}",
+            market.collateralAsset.symbol,
+          ),
           receiptHash: result.receipt.hash ?? null,
           metrics: previewUi?.metrics ?? [],
           href: dashboardHrefForProduct("multiply"),
@@ -570,6 +600,7 @@ export function MultiplyActionPageClient({
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           primaryPending={isPending}
+          blockedReason={networkGuard.blockedReason}
         />
       ) : null}
 
@@ -639,7 +670,7 @@ export function MultiplyActionPageClient({
           className="mt-3 w-full rounded-radius-lg border border-border/70 px-4 py-3 text-[15px] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           data-testid="multiply-close-position"
         >
-          Close position and withdraw collateral
+          {t("Close position and withdraw collateral")}
         </button>
       ) : null}
 

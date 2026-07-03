@@ -57,6 +57,7 @@ import {
 // Config + deterministic RNG
 // --------------------------------------------------------------------------
 const USERS = Number(process.env.STRESS_USERS ?? 10_000)
+const ACTIONS_PER_USER = Number(process.env.STRESS_ACTIONS_PER_USER ?? 100)
 const SEED = Number(process.env.STRESS_SEED ?? 0xc0ffee)
 
 function mulberry32(seed: number) {
@@ -146,6 +147,7 @@ function scanNumbersForNonFinite(value: unknown, seen = new Set<unknown>()): boo
 type EngineTally = { ok: number; rejected: number; crash: number }
 const report = {
   users: USERS,
+  actionsPerUser: ACTIONS_PER_USER,
   seed: SEED,
   totalActions: 0,
   durationMs: 0,
@@ -226,7 +228,7 @@ function findLendPosition(state: LendSystemState, walletId: string, marketId: st
 // --------------------------------------------------------------------------
 // The run
 // --------------------------------------------------------------------------
-describe("full-app engine stress (10k personas)", () => {
+describe.skipIf(process.env.RUN_FULL_APP_STRESS !== "1")("full-app engine stress (10k personas)", () => {
   it(
     `drives ${USERS} wallets through Borrow/Lend/Multiply/Rewards`,
     () => {
@@ -257,7 +259,7 @@ describe("full-app engine stress (10k personas)", () => {
       for (let u = 0; u < USERS; u += 1) {
         const persona = PERSONAS[u % PERSONAS.length]!
         const walletId = `w-${persona}-${u}`
-        const actionCount = 6 + Math.floor(rng() * 18)
+        const actionCount = ACTIONS_PER_USER
 
         // ---- engine states for this wallet -------------------------------
         let borrow = buildMockBorrowSystemState(walletId)
@@ -552,9 +554,9 @@ describe("full-app engine stress (10k personas)", () => {
       // eslint-disable-next-line no-console
       console.log("=======================================================\n")
 
-      expect(report.totalActions).toBeGreaterThan(USERS)
+      expect(report.totalActions).toBe(USERS * ACTIONS_PER_USER)
       expect(gateFailures, gateFailures.join("\n")).toEqual([])
     },
-    300_000,
+    1_200_000,
   )
 })

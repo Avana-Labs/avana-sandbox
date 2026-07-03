@@ -98,3 +98,114 @@ describe("shared ledger — no double-count across tabs (H20)", () => {
     expect(row?.borrowedDeltaUsd).toBe(2000) // debt delta once, not 4000
   })
 })
+
+/**
+ * Optimistic concurrency: two tabs each make a DIFFERENT change (distinct intentId) from
+ * the SAME base revision. The first wins; the second — computed from a now-stale read —
+ * must be rejected instead of silently clobbering the first (lost update).
+ */
+describe("optimistic concurrency — stale write is rejected (not a silent overwrite)", () => {
+  test("existing positions reject revisionless updates", async () => {
+    const t = convexTest(schema, modules)
+    const tab = t.withIdentity({ subject: WALLET })
+    await tab.mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET,
+      intentId: "revision-required-seed",
+      product: "lend",
+      kind: "deposit",
+      marketSlug: "usdc",
+      requestedAmountUsd6: "500000000",
+      executedAmountUsd6: "500000000",
+      amountUsd: 500,
+      position: { status: "open", marketSlug: "usdc", suppliedUsd6: "500000000" },
+    })
+
+    await expect(
+      tab.mutation(api.sandbox.transactions.recordTransaction, {
+        wallet: WALLET,
+        intentId: "revision-required-update",
+        product: "lend",
+        kind: "deposit",
+        marketSlug: "usdc",
+        requestedAmountUsd6: "100000000",
+        executedAmountUsd6: "100000000",
+        amountUsd: 100,
+        position: { status: "open", marketSlug: "usdc", suppliedUsd6: "600000000" },
+      }),
+    ).rejects.toThrow(/REVISION_REQUIRED/)
+  })
+
+  test("lend: second tab writing from a stale revision is rejected, matching revision succeeds", async () => {
+    const t = convexTest(schema, modules)
+    const tab = t.withIdentity({ subject: WALLET })
+
+    // Seed the position (first write → revision 0).
+    await tab.mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET,
+      intentId: "cas-seed",
+      product: "lend",
+      kind: "deposit",
+      marketSlug: "usdc",
+      requestedAmountUsd6: "500000000",
+      executedAmountUsd6: "500000000",
+      amountUsd: 500,
+      position: { status: "open", marketSlug: "usdc", suppliedUsd6: "500000000" },
+    })
+
+    const seeded = await tab.query(api.sandbox.transactions.getSessionState, { wallet: WALLET })
+    const position = seeded.positions.find((p) => p.product === "lend" && p.marketSlug === "usdc")
+    expect(position?.revision).toBe(0) // revision is exposed to clients
+
+    // Tab A advances revision 0 → 1.
+    await tab.mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET,
+      intentId: "cas-tabA",
+      product: "lend",
+      kind: "deposit",
+      marketSlug: "usdc",
+      requestedAmountUsd6: "100000000",
+      executedAmountUsd6: "100000000",
+      amountUsd: 100,
+      expectedRevision: 0,
+      position: { status: "open", marketSlug: "usdc", suppliedUsd6: "600000000" },
+    })
+
+    // Tab B still thinks it's on revision 0 → must be rejected, not applied.
+    await expect(
+      tab.mutation(api.sandbox.transactions.recordTransaction, {
+        wallet: WALLET,
+        intentId: "cas-tabB",
+        product: "lend",
+        kind: "deposit",
+        marketSlug: "usdc",
+        requestedAmountUsd6: "100000000",
+        executedAmountUsd6: "100000000",
+        amountUsd: 100,
+        expectedRevision: 0,
+        position: { status: "open", marketSlug: "usdc", suppliedUsd6: "600000000" },
+      }),
+    ).rejects.toThrow(/STALE_WRITE/)
+
+    // Tab B re-reads (now revision 1) and its write succeeds.
+    const reread = await tab.query(api.sandbox.transactions.getSessionState, { wallet: WALLET })
+    const fresh = reread.positions.find((p) => p.product === "lend" && p.marketSlug === "usdc")
+    expect(fresh?.revision).toBe(1)
+    await tab.mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET,
+      intentId: "cas-tabB2",
+      product: "lend",
+      kind: "deposit",
+      marketSlug: "usdc",
+      requestedAmountUsd6: "100000000",
+      executedAmountUsd6: "100000000",
+      amountUsd: 100,
+      expectedRevision: 1,
+      position: { status: "open", marketSlug: "usdc", suppliedUsd6: "700000000" },
+    })
+
+    const final = await tab.query(api.sandbox.transactions.getSessionState, { wallet: WALLET })
+    const finalPosition = final.positions.find((p) => p.product === "lend" && p.marketSlug === "usdc")
+    expect(finalPosition?.revision).toBe(2)
+    expect(finalPosition?.suppliedUsd6).toBe("700000000") // tab A's write survived; not clobbered
+  })
+})

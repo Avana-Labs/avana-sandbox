@@ -29,7 +29,9 @@ export function formatCompactCurrency(usd: number, ctx: CurrencyContext): string
   if (abs >= 1_000_000_000) return `${sign}${ctx.symbol}${(abs / 1_000_000_000).toFixed(1)}B`
   if (abs >= 1_000_000) return `${sign}${ctx.symbol}${(abs / 1_000_000).toFixed(1)}M`
   if (abs >= 1_000) return `${sign}${ctx.symbol}${(abs / 1_000).toFixed(1)}K`
-  const decimals = ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? 0 : 0
+  // Sub-$1000 shows the plain amount; keep cents for decimal currencies (JPY/KRW/etc. drop
+  // them). The old ternary returned 0 in BOTH branches, rounding e.g. $500.50 to "$501".
+  const decimals = ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? 0 : 2
   return `${sign}${ctx.symbol}${abs.toLocaleString("en-US", { maximumFractionDigits: decimals })}`
 }
 

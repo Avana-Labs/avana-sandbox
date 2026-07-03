@@ -33,9 +33,10 @@ describe("borrow preview mappers", () => {
       "Net collateral in scope",
       "Health factor in scope",
     ])
-    // LTV live-updates from before → after (0.25 → 0.35 in the fixture).
-    expect(ui.metrics.find((row) => row.id === "ltv")?.value).toBe("25% → 35%")
-    expect(ui.metrics.find((row) => row.id === "liquidation-threshold")?.value).toBe("82.5%")
+    // LTV live-updates from before → after (0.25 → 0.35 in the fixture). Percentages now use
+    // fixed 2dp everywhere (formatActionPercent unified with formatActionRatioPercent).
+    expect(ui.metrics.find((row) => row.id === "ltv")?.value).toBe("25.00% → 35.00%")
+    expect(ui.metrics.find((row) => row.id === "liquidation-threshold")?.value).toBe("82.50%")
     // Max borrow respects the collateral factor (pre-borrow available credit).
     expect(ui.maxAmount).toBe(5000)
   })

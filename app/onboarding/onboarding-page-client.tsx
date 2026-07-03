@@ -11,17 +11,30 @@ import {
   type OnboardingGateState,
 } from "@/app/components/sandbox/onboarding-flow"
 
-/** Drives OnboardingFlow with a live getState subscription (rendered only with Convex). */
+/**
+ * Drives OnboardingFlow with live subscriptions (rendered only with Convex). This is the
+ * in-progress onboarding UI, so it legitimately subscribes to the global economy status
+ * (seats-left/open|closed) in addition to the wallet-only state. The split mirrors the gate:
+ * the economy subscription is confined to this actively-onboarding surface, not app-wide.
+ */
 function OnboardingConnected() {
   const { authedWallet, isSignedIn } = useSiweAuth()
   const wallet = isSignedIn ? authedWallet : null
-  const state = useQuery(api.sandbox.onboarding.getState, wallet ? { wallet } : "skip") as
-    | OnboardingGateState
+  const walletState = useQuery(api.sandbox.onboarding.getWalletOnboardingState, wallet ? { wallet } : "skip") as
+    | Omit<OnboardingGateState, "economy">
     | undefined
+  const isDone = walletState?.onboardingStep === "done"
+  // An already-onboarded wallet has no claim to run and doesn't need economy status.
+  const economy = useQuery(
+    api.sandbox.onboarding.getEconomyStatus,
+    !wallet || isDone || walletState === undefined ? "skip" : { wallet },
+  ) as OnboardingGateState["economy"] | undefined
   // An already-onboarded wallet has no claim to run: show the persistent completed state
   // instead of the re-runnable welcome/claim flow (issue #140).
-  if (wallet && state?.onboardingStep === "done") return <OnboardingComplete />
-  return <OnboardingFlow wallet={wallet} state={state ?? null} />
+  if (wallet && isDone) return <OnboardingComplete />
+  const state: OnboardingGateState | null =
+    walletState && economy ? { ...walletState, economy } : null
+  return <OnboardingFlow wallet={wallet} state={state} />
 }
 
 export function OnboardingPageClient() {

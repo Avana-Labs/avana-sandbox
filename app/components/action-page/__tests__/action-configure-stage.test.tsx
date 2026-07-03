@@ -146,8 +146,10 @@ describe("ActionConfigureStage", () => {
     const card = screen.getByTestId("action-health-factor-card")
     expect(within(card).getByTestId("action-health-factor-bar")).toBeInTheDocument()
     expect(within(card).getByText("Health factor")).toBeInTheDocument()
-    expect(within(card).getByText("Caution")).toBeInTheDocument()
-    expect(within(card).getByText("Liquidation")).toBeInTheDocument()
+    // Zone strip labels from the conservative 4-band scale (getAllByText since the active
+    // band's label also appears in the status badge).
+    expect(within(card).getAllByText("Watch").length).toBeGreaterThan(0)
+    expect(within(card).getAllByText("At risk").length).toBeGreaterThan(0)
   })
 
   it("renders leverage ruler when multiplier controls are provided", async () => {

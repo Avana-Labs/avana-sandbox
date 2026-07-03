@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -260,5 +261,9 @@ function formatAxisDate(raw: string, locale: string) {
 }
 
 function defaultFormatValue(v: number) {
-  return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  // Sentinel default: when a caller doesn't pass `formatValue`, the component's
+  // `resolvedFormatValue` uses the locale-aware active-currency Intl path instead.
+  // Route this fallback through the shared active-currency formatter so it never
+  // hardcodes USD if it is ever rendered directly.
+  return formatUsdExact(v)
 }

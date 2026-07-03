@@ -54,7 +54,7 @@
     --surface-2: 0 0% 92.2%;
     --surface-hover: 0 0% 91.8%;
 
-    --brand: 191 99% 41%;
+    --brand: 191 99% 30%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 191 100% 95%;
     --brand-soft-foreground: 192 100% 26%;
@@ -136,7 +136,7 @@
     --surface-2: 0 0% 13%;
     --surface-hover: 0 0% 22%;
 
-    --brand: 191 99% 41%;
+    --brand: 191 99% 30%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 191 55% 18%;
     --brand-soft-foreground: 191 92% 70%;
@@ -169,13 +169,39 @@
 }
 
 /* ConnectKit renders its overlay in a portal outside the modal root, so these theme
-   vars must be set globally to take effect. The dark scrim does the darkening; the blur
-   is kept light (3px, no saturate) because a heavier backdrop-filter must recompute the
-   blurred backdrop every frame, which visibly lags the modal's open / screen-switch
-   animation on ConnectKit's older framer-motion transitions. */
+   vars must be set globally to take effect. Keep the overlay blur disabled entirely:
+   the modal already animates between screens, and live backdrop filtering behind those
+   transitions causes visible ghosting on this app shell. */
 :root {
-  --ck-overlay-background: rgba(7, 9, 12, 0.64);
-  --ck-overlay-backdrop-filter: blur(3px);
+  --ck-overlay-background: rgba(7, 9, 12, 0.72);
+  --ck-overlay-backdrop-filter: none;
+}
+
+/*
+ * ConnectKit keeps the previous route mounted for 400ms while the next route
+ * enters. On mobile its page animation is 0ms, so both complete pages can remain
+ * painted on top of each other. Hide only those exiting route containers and
+ * snap incoming route containers to their final state. The modal overlay and
+ * open/close animation remain unaffected.
+ */
+#__CONNECTKIT__ [role="dialog"] .exit,
+#__CONNECTKIT__ [role="dialog"] .exit-scale-down {
+  display: none !important;
+  animation: none !important;
+}
+
+#__CONNECTKIT__ [role="dialog"] .active-scale-up {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+@media (max-width: 560px) {
+  #__CONNECTKIT__ [role="dialog"] div.active {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
 }
 
 @layer base {

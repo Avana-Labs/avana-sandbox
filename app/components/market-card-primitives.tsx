@@ -130,7 +130,7 @@ export function MarketMobilePrimaryAction({
     <button
       type="button"
       className={cn(
-        "mt-4 h-10 w-full rounded-radius-sm bg-accent-primary px-4 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover",
+        "mt-4 h-10 w-full rounded-radius-sm bg-brand px-4 text-center text-[13px] font-semibold text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 active:bg-brand/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground",
         className,
       )}
       {...props}

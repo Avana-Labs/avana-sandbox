@@ -208,9 +208,21 @@ export function useLendSession({
       })
     }
 
-    tick()
-    const intervalId = window.setInterval(tick, 30_000)
-    return () => window.clearInterval(intervalId)
+    // Only accrue while the tab is visible. accrueLendSystemState integrates from each position's
+    // lastAccrualTimestamp to now, so a single catch-up tick on refocus recovers everything missed
+    // while hidden — no accrual is lost, and backgrounded tabs stop spinning a 30s render+persist
+    // loop (wasted work multiplied across many open tabs).
+    const tickIfVisible = () => {
+      if (document.visibilityState === "visible") tick()
+    }
+
+    tickIfVisible()
+    const intervalId = window.setInterval(tickIfVisible, 30_000)
+    document.addEventListener("visibilitychange", tickIfVisible)
+    return () => {
+      window.clearInterval(intervalId)
+      document.removeEventListener("visibilitychange", tickIfVisible)
+    }
   }, [shouldPersistState])
 
   const transactionAdapter = useMemo(

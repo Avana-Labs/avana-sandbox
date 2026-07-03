@@ -34,7 +34,6 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
-
   const siwe = useSIWE()
   const isSignedIn = Boolean(siwe?.isSignedIn)
   const signingIn = Boolean(siwe?.isLoading)

@@ -36,6 +36,7 @@ import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { mapPreviewToBlockedUi, blockedUiForMissingWalletLp } from "@/app/lib/action-system/blocked-ui"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
@@ -159,6 +160,11 @@ export function BorrowActionPageClient({
   const [dismissedLpBlock, setDismissedLpBlock] = useState(false)
   const [claimPositionId, setClaimPositionId] = useState(initialPositionId ?? "")
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
+  // Wrong-network submit gate. Read through a ref inside handlePrimary so the (heavily-memoised)
+  // callback always sees the current chain without being rebuilt on every network change.
+  const networkGuard = useActionNetworkGuard()
+  const networkGuardRef = useRef(networkGuard)
+  networkGuardRef.current = networkGuard
   const [isPending, setIsPending] = useState(false)
   const lastInitialAssetIdRef = useRef(initialAssetId)
   const lastInitialMarketIdRef = useRef(initialMarketId)
@@ -663,6 +669,10 @@ export function BorrowActionPageClient({
 
   useEffect(() => {
     setDismissedBlockedReason(null)
+    // Editing inputs after a failed submit clears the stale error banner and drops back to
+    // configure, so the CTA is actionable again instead of stuck showing the old error.
+    setOutcome(null)
+    setStage((prev) => (prev === "error" ? "configure" : prev))
   }, [amount, assetId, claimPositionId, debtPositionId, marketId, percent])
 
   const canGoBackToSelect = useMemo(() => {
@@ -758,9 +768,19 @@ export function BorrowActionPageClient({
       setStage("review")
       return
     }
-    if (stage !== "review") return
+    if (stage !== "review" && stage !== "error") return // allow in-place retry from error
     if (!previewUi?.allowed) return
     if (isPending) return // guard against double-submit (rapid double-click)
+    if (networkGuardRef.current.isWrongNetwork) {
+      // Hard gate: never submit against a chain the app doesn't support (the banner alone
+      // did not stop this). The confirm CTA is also disabled via ActionReviewStage.
+      setOutcome({
+        tone: "error",
+        title: "Wrong network",
+        message: networkGuardRef.current.blockedReason ?? "Switch networks to continue.",
+      })
+      return
+    }
 
     setOutcome(null)
     setIsPending(true)
@@ -1047,6 +1067,7 @@ export function BorrowActionPageClient({
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           primaryPending={isPending}
+          blockedReason={networkGuard.blockedReason}
         />
       ) : null}
 

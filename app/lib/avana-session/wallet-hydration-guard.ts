@@ -20,6 +20,39 @@ export type HydrationSnapshot = {
 }
 
 /**
+ * How long an optimistic intent may gate hydration before it is assumed never-landing.
+ *
+ * A write round-trips through Convex in well under a second, so any intent still missing from
+ * a re-emit after this window is treated as rejected/lost (STALE_WRITE, RATE_LIMITED, dropped
+ * persist, …) rather than in-flight. This bounds a "poison" intent's blast radius to a brief,
+ * self-correcting flicker instead of a PERMANENT hydration freeze that pins the tab on stale
+ * positions/balances forever.
+ */
+export const HYDRATION_GATE_TTL_MS = 30_000
+
+/** Local history item shape the gate needs: its intent id, status, and submit time. */
+export type PendingHydrationItem = { intentId: string; status: string; timestamp: number }
+
+/**
+ * The subset of local intent ids that should gate hydration: RECENT, non-failed optimistic
+ * writes. Failed/rejected actions never keep a durable server row, so they must not gate (a
+ * best-effort-persisted failure or an unpersisted one would otherwise block every future
+ * re-emit). Intents older than `ttlMs` are dropped for the same reason. This is what keeps a
+ * never-persisted intent from freezing the WalletHydrator (see the effect that calls it).
+ */
+export function pendingHydrationIntentIds(
+  items: Iterable<PendingHydrationItem>,
+  now: number,
+  ttlMs: number = HYDRATION_GATE_TTL_MS,
+): Set<string> {
+  const pending = new Set<string>()
+  for (const item of items) {
+    if (item.status !== "failed" && now - item.timestamp < ttlMs) pending.add(item.intentId)
+  }
+  return pending
+}
+
+/**
  * Decide whether an incoming Convex snapshot is safe to hydrate from.
  *
  * @param snapshot           the re-emitted session state (undefined while loading)

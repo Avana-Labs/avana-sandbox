@@ -20,7 +20,14 @@ import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { useAvanaSession } from "./use-avana-session"
-import { shouldApplyHydration } from "./wallet-hydration-guard"
+import { pendingHydrationIntentIds, shouldApplyHydration } from "./wallet-hydration-guard"
+import {
+  advanceRevisionOnSuccess,
+  captureHydratedRevisions,
+  seedRevisionFromReceipt,
+  withExpectedRevision,
+  type PositionRevisionSummary,
+} from "./optimistic-revision"
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
 type MultiplySession = ReturnType<typeof useMultiplySession>
@@ -49,7 +56,10 @@ function useRewardsEventBridge({
   useEffect(() => {
     for (const item of borrow.transactionHistory) {
       const bridgeId = `borrow:${item.id}`
-      if (item.status !== "success" || seenIdsRef.current.has(bridgeId)) continue
+      // History is prepended newest-first, so the first already-bridged id means every older
+      // item was bridged in a prior run — stop instead of scanning the whole array each change.
+      if (seenIdsRef.current.has(bridgeId)) break
+      if (item.status !== "success") continue
       seenIdsRef.current.add(bridgeId)
 
       if (item.kind === "borrow") {
@@ -81,7 +91,8 @@ function useRewardsEventBridge({
   useEffect(() => {
     for (const item of multiply.transactionHistory) {
       const bridgeId = `multiply:${item.id}`
-      if (item.status !== "success" || seenIdsRef.current.has(bridgeId)) continue
+      if (seenIdsRef.current.has(bridgeId)) break // newest-first: older items already bridged
+      if (item.status !== "success") continue
       seenIdsRef.current.add(bridgeId)
 
       void rewards.recordActivityEvent({
@@ -99,7 +110,8 @@ function useRewardsEventBridge({
   useEffect(() => {
     for (const item of lend.transactionHistory) {
       const bridgeId = `lend:${item.id}`
-      if (item.status !== "success" || seenIdsRef.current.has(bridgeId)) continue
+      if (seenIdsRef.current.has(bridgeId)) break // newest-first: older items already bridged
+      if (item.status !== "success") continue
       seenIdsRef.current.add(bridgeId)
 
       if (item.kind === "claim") continue
@@ -195,6 +207,7 @@ function WalletHydrator({
   hydrateBorrow,
   hydrateLend,
   hydrateMultiply,
+  onWalletHydrated,
 }: {
   walletId: string
   borrow: BorrowSession
@@ -203,28 +216,41 @@ function WalletHydrator({
   hydrateBorrow: BorrowSession["hydrateWalletData"]
   hydrateLend: LendSession["hydrateWalletData"]
   hydrateMultiply: MultiplySession["hydrateWalletData"]
+  /** Called with the position set of a snapshot that actually gets APPLIED, so the caller
+   *  can track the revision the engine state is now based on (for optimistic concurrency). */
+  onWalletHydrated?: (positions: readonly PositionRevisionSummary[]) => void
 }) {
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
 
-  // Read the client's current (incl. just-submitted optimistic) intent ids via a ref so
-  // the hydration effect doesn't re-run on every local history change — only on re-emit.
-  const localIntentIdsRef = useRef<Set<string>>(new Set())
-  localIntentIdsRef.current = new Set(
-    [...borrow.transactionHistory, ...lend.transactionHistory, ...multiply.transactionHistory].map(
-      (item) => item.intentId,
-    ),
-  )
+  // Hold the latest history arrays in a ref so the hydration effect reads current optimistic
+  // edits without re-running on every local history change (it runs only on re-emit). Storing
+  // references (O(1)/render) instead of an eagerly-built Set keeps unrelated re-renders cheap.
+  const historiesRef = useRef({
+    borrow: borrow.transactionHistory,
+    lend: lend.transactionHistory,
+    multiply: multiply.transactionHistory,
+  })
+  historiesRef.current = {
+    borrow: borrow.transactionHistory,
+    lend: lend.transactionHistory,
+    multiply: multiply.transactionHistory,
+  }
 
   useEffect(() => {
     if (!session) return
-    // Skip a re-emit that predates an in-flight optimistic edit; applying it would clobber
-    // the just-submitted write until its own re-emit lands. The next emit (which includes
-    // the write) passes the guard and hydrates normally.
-    if (!shouldApplyHydration(session, localIntentIdsRef.current)) return
+    // Gate on RECENT, non-failed optimistic intents only. Applying a re-emit that predates an
+    // in-flight write would clobber it; but gating on EVERY known intent (incl. failed/rejected
+    // ones the server never stored) permanently froze the hydrator. pendingHydrationIntentIds
+    // drops failed + aged-out intents so a poison intent can't pin the tab on stale data.
+    const { borrow: b, lend: l, multiply: m } = historiesRef.current
+    const pending = pendingHydrationIntentIds([...b, ...l, ...m], Date.now())
+    if (!shouldApplyHydration(session, pending)) return
     hydrateBorrow(session)
     hydrateLend(session)
     hydrateMultiply(session)
-  }, [hydrateBorrow, hydrateLend, hydrateMultiply, session])
+    // Track the revisions this applied snapshot is based on (optimistic-concurrency guard).
+    onWalletHydrated?.(session.positions)
+  }, [hydrateBorrow, hydrateLend, hydrateMultiply, onWalletHydrated, session])
   return null
 }
 
@@ -250,6 +276,7 @@ export function AvanaSessionsProvider({
   persistRewardsState,
   persistLocalState = true,
   sessionSource = "demo",
+  onWalletHydrated,
 }: {
   walletId?: string
   children: ReactNode
@@ -266,6 +293,9 @@ export function AvanaSessionsProvider({
   persistRewardsState?: (stateJson: string) => Promise<unknown>
   persistLocalState?: boolean
   sessionSource?: "demo" | "convex"
+  /** Notified with the position set each time a Convex snapshot is applied to the engine
+   *  state; used by the Convex provider to track revisions for optimistic concurrency. */
+  onWalletHydrated?: (positions: readonly PositionRevisionSummary[]) => void
 }) {
   const avana = useAvanaSession(walletId, sessionSource)
   const borrow = useBorrowSession({
@@ -335,6 +365,7 @@ export function AvanaSessionsProvider({
               hydrateBorrow={borrow.hydrateWalletData}
               hydrateLend={lend.hydrateWalletData}
               hydrateMultiply={multiply.hydrateWalletData}
+              onWalletHydrated={onWalletHydrated}
             />
           ) : null}
         </>
@@ -354,9 +385,24 @@ export function ConvexAvanaSessionsProvider({
   const recordTransaction = useMutation(api.sandbox.transactions.recordTransaction)
   const saveRewardsState = useMutation(api.sandbox.rewards.saveState)
   const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
+
+  // Optimistic-concurrency: the revision each (product, market) position was last hydrated
+  // to. Sent as expectedRevision so the server rejects a write computed from a stale read
+  // (another tab wrote first) instead of silently clobbering it. See ./optimistic-revision.
+  const revisionByKeyRef = useRef(new Map<string, number>())
+  const handleWalletHydrated = useCallback(
+    (positions: readonly PositionRevisionSummary[]) => captureHydratedRevisions(revisionByKeyRef.current, positions),
+    [],
+  )
+
   const persistBorrowTransaction = useCallback(
     async (result: SandboxActionResult) => {
-      const persisted = await recordTransaction(borrowResultToRecordArgs(result, walletId))
+      const { args, key } = withExpectedRevision(borrowResultToRecordArgs(result, walletId), "borrow", revisionByKeyRef.current)
+      const persisted = await recordTransaction(args)
+      // Seed from the server-authoritative revision (works for idempotent replays too, M-12);
+      // fall back to the +1 inference only if the receipt carries no revision.
+      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -369,7 +415,12 @@ export function ConvexAvanaSessionsProvider({
   )
   const persistLendTransaction = useCallback(
     async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
-      const persisted = await recordTransaction(lendResultToRecordArgs(result, walletId))
+      const { args, key } = withExpectedRevision(lendResultToRecordArgs(result, walletId), "lend", revisionByKeyRef.current)
+      const persisted = await recordTransaction(args)
+      // Seed from the server-authoritative revision (works for idempotent replays too, M-12);
+      // fall back to the +1 inference only if the receipt carries no revision.
+      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -383,7 +434,12 @@ export function ConvexAvanaSessionsProvider({
   )
   const persistMultiplyTransaction = useCallback(
     async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
-      const persisted = await recordTransaction(multiplyResultToRecordArgs(result, walletId))
+      const { args, key } = withExpectedRevision(multiplyResultToRecordArgs(result, walletId), "multiply", revisionByKeyRef.current)
+      const persisted = await recordTransaction(args)
+      // Seed from the server-authoritative revision (works for idempotent replays too, M-12);
+      // fall back to the +1 inference only if the receipt carries no revision.
+      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -410,6 +466,7 @@ export function ConvexAvanaSessionsProvider({
       persistRewardsState={persistRewardsState}
       persistLocalState={false}
       sessionSource="convex"
+      onWalletHydrated={handleWalletHydrated}
     >
       {children}
     </AvanaSessionsProvider>

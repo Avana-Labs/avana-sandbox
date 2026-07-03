@@ -29,7 +29,8 @@ describe("ActionProcessingStage", () => {
     expect(screen.getByTestId("action-processing-stage")).toBeInTheDocument()
     expect(screen.getByText("Pending")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Depositing WETH" })).toBeInTheDocument()
-    expect(screen.getByText("Deposit")).toBeInTheDocument()
+    expect(screen.getByTestId("processing-narration")).toBeInTheDocument()
+    expect(screen.getByText("Connecting to Aave v4")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Close" })).toHaveAttribute("href", "/lend")
   })
 

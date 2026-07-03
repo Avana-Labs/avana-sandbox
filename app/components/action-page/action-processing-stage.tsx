@@ -3,8 +3,9 @@
 import Link from "next/link"
 import { LoaderCircle } from "lucide-react"
 import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
-import { ActionCard, ActionInfoRow } from "@/app/components/action-page/action-metrics"
+import { ActionCard } from "@/app/components/action-page/action-metrics"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
+import { ProcessingNarration } from "@/app/components/action-page/processing-narration"
 import { getProcessingTitle } from "@/app/lib/action-system/action-page-labels"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -36,11 +37,7 @@ export function ActionProcessingStage({
             <h2 className="mt-4 text-[1.25rem] font-medium tracking-[-0.03em]">{t(getProcessingTitle(verb, symbol))}</h2>
           </div>
 
-          <div className="divide-y divide-border border-t border-border">
-            <ActionInfoRow label={verb} value={preview?.amountLabel ?? "—"} tooltip="amount" />
-            <ActionInfoRow label="Your APY" value={preview?.rateValue ?? "—"} tooltip="apy" />
-            <ActionInfoRow label="Market" value={preview?.marketValue ?? "—"} tooltip="market" />
-          </div>
+          <ProcessingNarration verb={verb} />
         </div>
       </ActionCard>
 

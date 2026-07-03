@@ -1,8 +1,15 @@
 import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
+
+const push = vi.fn()
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+}))
 
 const rows: PortfolioMultiplyCollateral[] = [
   {
@@ -25,15 +32,20 @@ const rows: PortfolioMultiplyCollateral[] = [
 ]
 
 describe("MultiplyCollateralTable", () => {
-  it("calls onDeleverage when the row action is clicked", () => {
-    const onDeleverage = vi.fn()
+  it("routes desktop deleverage to the multiply action page", () => {
+    push.mockClear()
     render(
       <DisplayPreferencesProvider>
-        <MultiplyCollateralTable rows={rows} onDeleverage={onDeleverage} />
+        <MultiplyCollateralTable rows={rows} />
       </DisplayPreferencesProvider>,
     )
 
     fireEvent.click(screen.getAllByRole("button", { name: "Deleverage" })[0]!)
-    expect(onDeleverage).toHaveBeenCalledWith("demo-wallet:eth-usdt")
+    expect(push).toHaveBeenCalledWith(
+      actionPagePath("multiply", "deleverage", {
+        market: "eth-usdt",
+        return: "/multiply/markets/eth-usdt",
+      }),
+    )
   })
 })

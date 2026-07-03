@@ -1,11 +1,13 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { useRouter } from "next/navigation"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   BORROW_SUPPLY_META,
-  HOME_COLLATERAL_POOLS,
   formatHealthFactor,
   getSpokeById,
   healthFactorToneClass,
@@ -19,20 +21,20 @@ import {
   healthFactorBarTone,
   healthFactorStatusLabel,
 } from "@/app/lib/action-system/health-factor-ui"
-import { HfNumber, PillButton, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
+import { HfNumber, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import { MarketMobileCard } from "@/app/components/market-card-primitives"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
-import { HoverActionGroup } from "@/app/components/market-table-primitives"
 import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
-
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type SuppliesTableProps = {
   rows: SupplyRowContext[]
   totals: { collateral: number; borrowed: number; available: number; fees: number; averageHf: number | null }
   onBorrowMore: (context: SupplyRowContext) => void
-  onAddCollateral: (context: SupplyRowContext) => void
-  onRemove: (context: SupplyRowContext) => void
+  onAddCollateral?: (context: SupplyRowContext) => void
+  onRemove?: (context: SupplyRowContext) => void
   showBalance?: boolean
   showSummary?: boolean
   showHeading?: boolean
@@ -44,13 +46,12 @@ export function SuppliesPanel({
   rows,
   totals,
   onBorrowMore,
-  onAddCollateral,
-  onRemove,
   showBalance = true,
   showSummary = true,
   showHeading = true,
 }: SuppliesTableProps) {
   const { t } = useTranslation()
+  const router = useRouter()
   const { compact, exact } = useCurrency()
   const m = (value: string) => (showBalance ? value : MASK)
   if (rows.length === 0) {
@@ -72,86 +73,95 @@ export function SuppliesPanel({
         </div>
       ) : null}
       <div className="hidden md:block">
-        <div className="rounded-radius-lg bg-transparent">
+        <DesktopTableSurface className="rounded-radius-md">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[4%]" />
-                <col className="w-[26%]" />
-                <col className="w-[13%]" />
-                <col className="w-[13%]" />
-                <col className="w-[15%]" />
-                <col className="w-[15%]" />
-                <col className="w-[14%]" />
+                <col className="w-[30%]" />
+                <col className="w-[20%]" />
+                <col className="w-[20%]" />
+                <col className="w-[18%]" />
+                <col className="w-[12%]" />
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    #
-                  </th>
-                  <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("LP Position")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Collateral")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Scope Max Borrow")}
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    {t("Borrow Power")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Scope Health Factor")}
-                  </th>
-                  <th className="bg-table-header px-4 py-3.5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Fees Earned")}
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    {t("Health Factor")}
                   </th>
                   <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 pr-6 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
                 </tr>
               </thead>
               <tbody>
-              {rows.map((row, index) => {
-                const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
-                const meta = BORROW_SUPPLY_META[row.pool.id]
-                const hfTone = healthFactorToneClass(row.healthFactor)
-                return (
-                  <tr key={row.pool.id} className="group cursor-pointer transition-colors">
-                    <td className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
-                      {index + 1}
-                    </td>
-                    <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_BG}`}>
-                      <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
-                    </td>
-                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
-                      {m(compact(row.pool.collateralUsd))}
-                    </td>
-                    <td className={`py-3 pl-4 text-left font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
-                      {m(compact(row.remainingBorrowPowerUsd))}
-                    </td>
-                    <td className={`py-3 text-right ${TABLE_ROW_HOVER_BG}`}>
-                      <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
-                    </td>
-                    <td className={`py-3 pl-4 text-left ${TABLE_ROW_HOVER_BG}`}>
-                      <div className="font-data text-[13px] tabular-nums text-foreground">{m(row.feesLabel)}</div>
-                      <div className="font-data text-[11px] font-medium tabular-nums text-success">
-                        {formatApy(row.pairApr)} {t("APR")}
-                      </div>
-                    </td>
-                    <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
-                      <HoverActionGroup align="start">
-                        <PillButton variant="ghost" onClick={() => onRemove(row)}>
-                          {t("Remove")}
-                        </PillButton>
-                        <PillButton variant="primary" onClick={() => onBorrowMore(row)}>
-                          {t("Borrow")}
-                        </PillButton>
-                      </HoverActionGroup>
-                    </td>
-                  </tr>
-                )
-              })}
+                {rows.map((row) => {
+                  const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
+                    ReturnType<typeof homeVisualToBorrowVisual>,
+                    ReturnType<typeof homeVisualToBorrowVisual>,
+                  ]
+                  const meta = BORROW_SUPPLY_META[row.pool.id]
+                  const hfTone = healthFactorToneClass(row.healthFactor)
+                  const detailHref = `/borrow/markets/${row.pool.id}`
+                  return (
+                    <tr
+                      key={row.pool.id}
+                      className="group cursor-pointer transition-colors"
+                      onClick={() => router.push(detailHref)}
+                    >
+                      <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
+                        <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
+                      </td>
+                      <td className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
+                        {m(compact(row.pool.collateralUsd))}
+                      </td>
+                      <td className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
+                        {m(compact(row.remainingBorrowPowerUsd))}
+                      </td>
+                      <td className={`py-3 text-right ${TABLE_ROW_HOVER_BG}`}>
+                        <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
+                      </td>
+                      <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
+                        <HoverActionGroup align="start" className="gap-2">
+                          <Button
+                            type="button"
+                            size="table"
+                            variant="brand-secondary"
+                            className="w-auto"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }))
+                            }}
+                          >
+                            {t("Pledge")}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="table"
+                            variant="brand"
+                            className="w-auto"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onBorrowMore(row)
+                            }}
+                          >
+                            {t("Borrow")}
+                          </Button>
+                        </HoverActionGroup>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
-        </div>
+        </DesktopTableSurface>
       </div>
 
       <ul className="space-y-5 md:hidden">
@@ -166,7 +176,12 @@ export function SuppliesPanel({
           const spokeShort = spoke.label.replace(" Spoke", "")
           const spokePillLabel = `${spokeShort} · Uni v3`
           return (
-            <li key={row.pool.id} className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1">
+            <MarketMobileCard
+              key={row.pool.id}
+              clickable
+              className="space-y-3"
+              onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="flex items-center">
@@ -225,8 +240,8 @@ export function SuppliesPanel({
                   valueTone="text-rose-500"
                 />
                 <SupplyStatCell
-                  value={m(row.feesLabel)}
-                  label={t("Fees Earned")}
+                  value={m(compact(row.remainingBorrowPowerUsd))}
+                  label={t("Borrow Power")}
                   valueTone="text-success"
                 />
                 <SupplyStatCell
@@ -236,22 +251,30 @@ export function SuppliesPanel({
               </div>
 
               <div className="flex items-stretch gap-2">
-                <button
+                <Button
                   type="button"
-                  onClick={() => onRemove(row)}
-                  className="flex-1 rounded-radius-sm border border-border bg-surface-raised px-4 py-2.5 text-center text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+                  variant="brand-secondary"
+                  className="h-10 flex-1 rounded-radius-sm px-4 text-[13px]"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: `/borrow/markets/${row.pool.id}` }))
+                  }}
                 >
-                  {t("Remove LP")}
-                </button>
-                <button
+                  {t("Pledge")}
+                </Button>
+                <Button
                   type="button"
-                  onClick={() => onAddCollateral(row)}
-                  className="flex-[2] rounded-radius-sm bg-accent-primary px-4 py-2.5 text-center text-[13px] font-medium text-accent-primary-foreground shadow-elev-1 transition-colors hover:bg-accent-primary-hover"
+                  variant="brand"
+                  className="h-10 flex-[2] rounded-radius-sm px-4 text-[13px]"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onBorrowMore(row)
+                  }}
                 >
-                  {t("Add Collateral")}
-                </button>
+                  {t("Borrow")}
+                </Button>
               </div>
-            </li>
+            </MarketMobileCard>
           )
         })}
       </ul>
@@ -292,7 +315,7 @@ export function SuppliesHealthFactorCard({
           <span className="text-[13px] font-semibold text-foreground">{t("Credit Health")}</span>
           <ActionMetricHelp
             topic="Credit Health"
-            text={t("Wallet-wide health factor from total liquidation value divided by total borrowed. Above 1.5 is generally healthy.")}
+            text={t("Wallet-wide health factor: total liquidation value divided by total borrowed. 2.5 and above is comfortable; below 1.2 risks liquidation.")}
           />
         </div>
         <span
@@ -335,5 +358,3 @@ export function SuppliesHealthFactorCard({
     </div>
   )
 }
-
-export { HOME_COLLATERAL_POOLS }
