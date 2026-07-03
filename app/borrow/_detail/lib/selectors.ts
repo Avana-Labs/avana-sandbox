@@ -7,6 +7,7 @@
  */
 
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import { getActiveCurrency, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 import type {
   AssetDetail,
   ChartMetricId,
@@ -114,10 +115,20 @@ function formatKeyMetric(id: KeyMetricId, v: number): string {
   }
 }
 
+/**
+ * Price hint formatter routed through the active currency. Runs at module/render
+ * time (these selectors are pure, non-hook helpers), so it reads the shared
+ * active-currency state rather than the `useCurrency` hook. Preserves the tiered
+ * decimals (2/4/6) used for small token prices, clamped to 0 for zero-decimal
+ * currencies (e.g. JPY/KRW), matching `formatUsdExact`.
+ */
 function formatPrice(v: number): string {
-  if (v >= 100) return `$${v.toFixed(2)}`
-  if (v >= 1) return `$${v.toFixed(4)}`
-  return `$${v.toFixed(6)}`
+  const { rate, zeroDecimal } = getActiveCurrency()
+  const value = v * rate
+  const abs = Math.abs(value)
+  const tiered = abs >= 100 ? 2 : abs >= 1 ? 4 : 6
+  const decimals = zeroDecimal ? 0 : tiered
+  return withCurrencySymbol(value, abs.toFixed(decimals))
 }
 
 /** Ordinal y-axis label formatter for a KeyMetric series. */

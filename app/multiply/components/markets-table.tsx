@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { TokenIcon } from "@/app/components/token-icon"
 import { BipolarBar, DeltaPill, FlashValue } from "@/app/components/ui/live"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 
 function LongShortButtons({
   symbol,
@@ -57,13 +58,6 @@ type Market = {
   shortOi: number
 }
 
-function formatVolume(value: number): string {
-  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`
-  return `$${value.toFixed(0)}`
-}
-
 export function MarketsTable({
   markets,
   onMultiply,
@@ -71,6 +65,7 @@ export function MarketsTable({
   markets: Market[]
   onMultiply?: (symbol: string, side: "long" | "short") => void
 }) {
+  const currency = useCurrency()
   const totalVolume = markets.reduce((sum, m) => sum + m.volume, 0)
 
   return (
@@ -78,7 +73,7 @@ export function MarketsTable({
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <h2 className="text-[14px] font-medium tracking-tight text-foreground">Markets</h2>
         <span className="text-[11px] text-muted-foreground">
-          Avana 24h volume <span className="font-data tabular-nums text-foreground">{formatVolume(totalVolume)}</span>
+          Avana 24h volume <span className="font-data tabular-nums text-foreground">{currency.compact(totalVolume)}</span>
         </span>
       </div>
       <Card className="border-border bg-surface-raised shadow-elev-1 overflow-hidden">
@@ -130,7 +125,7 @@ export function MarketsTable({
                         goodDirection="up"
                         className="font-data tabular-nums text-foreground"
                       >
-                        {formatVolume(m.volume)}
+                        {currency.compact(m.volume)}
                       </FlashValue>
                     </td>
                     <td className="px-3 py-3">
@@ -190,7 +185,7 @@ export function MarketsTable({
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-[11px] text-muted-foreground">
-                    Vol <span className="font-data text-foreground">{formatVolume(m.volume)}</span>
+                    Vol <span className="font-data text-foreground">{currency.compact(m.volume)}</span>
                   </span>
                   <div className="w-[55%] min-w-[140px]">
                     <BipolarBar
