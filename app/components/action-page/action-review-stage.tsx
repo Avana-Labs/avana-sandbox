@@ -2,7 +2,7 @@
 
 import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
 import { resolveActionAmountCardProps } from "@/app/lib/action-system/action-amount-display"
-import { ActionRiskBanner } from "@/app/components/action-page/action-banners"
+import { ActionOutcomeBanner, ActionRiskBanner } from "@/app/components/action-page/action-banners"
 import { ActionAmountCard } from "@/app/components/action-page/action-amount-card"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
@@ -19,6 +19,7 @@ export function ActionReviewStage({
   secondaryHref,
   hideHeader = false,
   primaryPending = false,
+  blockedReason = null,
 }: {
   title: string
   subtitle?: string
@@ -30,6 +31,8 @@ export function ActionReviewStage({
   secondaryHref?: string
   hideHeader?: boolean
   primaryPending?: boolean
+  /** When set (e.g. wrong network), hard-disable the confirm CTA and show the reason. */
+  blockedReason?: string | null
 }) {
   const { t } = useTranslation()
   const amountDisplay = resolveActionAmountCardProps(preview)
@@ -109,13 +112,15 @@ export function ActionReviewStage({
         <ActionInfoRow label="Avana Fee" value={preview.networkFeeLabel} tooltip="fee" />
       </ActionCard>
 
+      {blockedReason ? <ActionOutcomeBanner tone="error" title="Action unavailable" message={blockedReason} /> : null}
+
       <ActionFooter
         primaryLabel={primaryLabel}
         secondaryLabel={secondaryLabel}
         onPrimary={onPrimary}
         onSecondary={onSecondary}
         secondaryHref={secondaryHref}
-        primaryDisabled={!preview.allowed && Boolean(preview.blockedReason)}
+        primaryDisabled={(!preview.allowed && Boolean(preview.blockedReason)) || Boolean(blockedReason)}
         primaryPending={primaryPending}
         sticky
       />
