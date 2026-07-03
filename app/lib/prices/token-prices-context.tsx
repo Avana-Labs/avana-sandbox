@@ -87,13 +87,24 @@ function ConvexTokenPrices({ children }: { children: React.ReactNode }) {
     for (const row of rows ?? []) next[priceKey(row.symbol)] = row.priceUsd
     return next
   }, [rows])
-  const freshness = React.useMemo<PriceFreshness>(
-    () =>
-      status === undefined
-        ? { stale: false, updatedAt: null, ageMs: null }
-        : { stale: status.stale, updatedAt: status.updatedAt, ageMs: status.ageMs },
-    [status],
-  )
+  // Derive staleness from a CLIENT-side ticking clock, not the reactive query (which returns
+  // only updatedAt). getPriceStatus is cached until tokenPrices changes, so if freshness were
+  // computed server-side it would freeze; ticking `now` here lets fresh→stale flip in real time
+  // even while the cron is wedged. Initialised in an effect (null first) to avoid an SSR/client
+  // hydration mismatch on Date.now().
+  const [now, setNow] = React.useState<number | null>(null)
+  React.useEffect(() => {
+    setNow(Date.now())
+    const id = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(id)
+  }, [])
+  const freshness = React.useMemo<PriceFreshness>(() => {
+    if (status === undefined) return { stale: false, updatedAt: null, ageMs: null } // still loading
+    if (status.updatedAt == null) return { stale: true, updatedAt: null, ageMs: null } // never refreshed
+    if (now == null) return { stale: false, updatedAt: status.updatedAt, ageMs: null } // pre-first-tick
+    const ageMs = Math.max(0, now - status.updatedAt)
+    return { stale: ageMs > status.staleAfterMs, updatedAt: status.updatedAt, ageMs }
+  }, [status, now])
   return (
     <TokenPricesContext.Provider value={map}>
       <PriceFreshnessContext.Provider value={freshness}>{children}</PriceFreshnessContext.Provider>
