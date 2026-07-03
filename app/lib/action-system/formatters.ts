@@ -31,8 +31,10 @@ export function formatActionApproxUsd(value: number) {
 
 export function formatActionPercent(value: number, digits = 2) {
   if (!Number.isFinite(value)) return "—"
-  const factor = 10 ** digits
-  return `${Math.round(value * factor) / factor}%`
+  // Fixed decimals (matching formatActionRatioPercent) so a given LTV/APY reads identically on
+  // every surface. The old round-then-stringify dropped trailing zeros (80 -> "80%", 5.3 ->
+  // "5.3%") while the ratio formatter emitted "80.00%"/"5.30%" for the same value.
+  return `${value.toFixed(digits)}%`
 }
 
 export function formatActionRatioPercent(value: number, digits = 2) {
