@@ -295,7 +295,14 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
  * Append a delta event to the shared liquidity ledger (`marketLiquidityDeltas`).
  * This is the auth-gated, wallet-attributed write path that unifies every product's
  * supply/borrow movement onto one ledger (mirrors `convex/liquidity.recordDelta`, but
- * reached only from inside an owner-verified mutation). Append-only — `listDeltas` folds.
+ * reached only from inside an owner-verified mutation).
+ *
+ * Deliberately still a pure append — a fresh row per action, never a read-modify-write of
+ * a shared per-market row — so concurrent writers never contend on the same document under
+ * Convex OCC (the property this ledger was designed around). Scale is handled OFF this hot
+ * path: `liquidity.compactDeltas` periodically folds old rows into a bounded per-market
+ * baseline and deletes them, so the fold (`liquidity.foldDeltas`) reads
+ * `#markets + #recent rows` instead of the whole table — without adding any contention here.
  */
 export async function applyLedgerDelta(
   ctx: MutationCtx,
@@ -308,8 +315,6 @@ export async function applyLedgerDelta(
   const supplied = Number.isFinite(suppliedDeltaUsd) ? suppliedDeltaUsd : 0
   if (borrowed === 0 && supplied === 0) return
 
-  // Append-only: a fresh row per action instead of patching one shared per-market row,
-  // so concurrent writers never contend on the same document (`listDeltas` folds them).
   await ctx.db.insert("marketLiquidityDeltas", {
     marketSlug,
     borrowedDeltaUsd: borrowed,
