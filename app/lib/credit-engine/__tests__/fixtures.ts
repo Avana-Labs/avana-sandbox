@@ -339,6 +339,7 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
           [EXAMPLE_UNI_MARKET_ID]: parseFixed("8400", 6),
           [EXAMPLE_CURVE_MARKET_ID]: parseFixed("6200", 6),
         },
+        walletReturnedLpBalancesUsd6: {},
         interestSettledUsd6: 0n,
         lastUpdatedAt: Date.UTC(2026, 5, 18, 12),
         collateralPositions: [
@@ -391,6 +392,7 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
         walletLpBalancesUsd6: {
           [EXAMPLE_CURVE_MARKET_ID]: parseFixed("6200", 6),
         },
+        walletReturnedLpBalancesUsd6: {},
         interestSettledUsd6: 0n,
         lastUpdatedAt: Date.UTC(2026, 5, 18, 18),
         collateralPositions: [],

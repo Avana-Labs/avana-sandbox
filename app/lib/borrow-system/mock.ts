@@ -352,6 +352,7 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
         walletId,
         walletBalanceUsd6: usd6(12_500),
         walletLpBalancesUsd6: walletLpBalancesFromHomePools(),
+        walletReturnedLpBalancesUsd6: {},
         interestSettledUsd6: 0n,
         lastUpdatedAt: Date.UTC(2026, 5, 18, 12),
         collateralPositions,
