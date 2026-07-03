@@ -297,7 +297,15 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
       amountUsd:
         action.type === "multiply"
           ? Math.max(0, preview.after.collateralValueUsd - preview.before.collateralValueUsd)
-          : Math.max(0, preview.before.collateralValueUsd - preview.after.collateralValueUsd),
+          : // Close/deleverage: the amount MOVED is the equity unwound (collateral reduction
+            // minus debt repaid), not the gross collateral — otherwise a 2.2x close overstates
+            // what the user received by the repaid-debt portion.
+            Math.max(
+              0,
+              preview.before.collateralValueUsd -
+                preview.after.collateralValueUsd -
+                (preview.before.debtValueUsd - preview.after.debtValueUsd),
+            ),
       multiplierBefore: preview.before.multiplier,
       multiplierAfter: preview.after.multiplier,
       simulated: true,
