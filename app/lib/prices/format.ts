@@ -12,8 +12,12 @@ export function priceKey(symbol: string): string {
 /** Format a USD token price: "$1,612.87", "$1.00", "$0.9997" (more precision under $1). */
 export function formatTokenPrice(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "—"
-  if (value >= 1) return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`
+  // Force en-US grouping/decimal so the baked "$…" string round-trips through the currency
+  // switcher's en-US-only regex (redenominateCompactUsd). toLocaleString(undefined) followed the
+  // server/render locale, producing e.g. "$1.612,87" that the switcher couldn't parse — the price
+  // tile then stayed in USD while sibling tiles converted.
+  if (value >= 1) return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`
 }
 
 /**
