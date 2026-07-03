@@ -21,6 +21,12 @@ import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { useAvanaSession } from "./use-avana-session"
 import { shouldApplyHydration } from "./wallet-hydration-guard"
+import {
+  advanceRevisionOnSuccess,
+  captureHydratedRevisions,
+  withExpectedRevision,
+  type PositionRevisionSummary,
+} from "./optimistic-revision"
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
 type MultiplySession = ReturnType<typeof useMultiplySession>
@@ -195,6 +201,7 @@ function WalletHydrator({
   hydrateBorrow,
   hydrateLend,
   hydrateMultiply,
+  onWalletHydrated,
 }: {
   walletId: string
   borrow: BorrowSession
@@ -203,6 +210,9 @@ function WalletHydrator({
   hydrateBorrow: BorrowSession["hydrateWalletData"]
   hydrateLend: LendSession["hydrateWalletData"]
   hydrateMultiply: MultiplySession["hydrateWalletData"]
+  /** Called with the position set of a snapshot that actually gets APPLIED, so the caller
+   *  can track the revision the engine state is now based on (for optimistic concurrency). */
+  onWalletHydrated?: (positions: readonly PositionRevisionSummary[]) => void
 }) {
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
 
@@ -224,7 +234,9 @@ function WalletHydrator({
     hydrateBorrow(session)
     hydrateLend(session)
     hydrateMultiply(session)
-  }, [hydrateBorrow, hydrateLend, hydrateMultiply, session])
+    // Track the revisions this applied snapshot is based on (optimistic-concurrency guard).
+    onWalletHydrated?.(session.positions)
+  }, [hydrateBorrow, hydrateLend, hydrateMultiply, onWalletHydrated, session])
   return null
 }
 
@@ -250,6 +262,7 @@ export function AvanaSessionsProvider({
   persistRewardsState,
   persistLocalState = true,
   sessionSource = "demo",
+  onWalletHydrated,
 }: {
   walletId?: string
   children: ReactNode
@@ -266,6 +279,9 @@ export function AvanaSessionsProvider({
   persistRewardsState?: (stateJson: string) => Promise<unknown>
   persistLocalState?: boolean
   sessionSource?: "demo" | "convex"
+  /** Notified with the position set each time a Convex snapshot is applied to the engine
+   *  state; used by the Convex provider to track revisions for optimistic concurrency. */
+  onWalletHydrated?: (positions: readonly PositionRevisionSummary[]) => void
 }) {
   const avana = useAvanaSession(walletId, sessionSource)
   const borrow = useBorrowSession({
@@ -335,6 +351,7 @@ export function AvanaSessionsProvider({
               hydrateBorrow={borrow.hydrateWalletData}
               hydrateLend={lend.hydrateWalletData}
               hydrateMultiply={multiply.hydrateWalletData}
+              onWalletHydrated={onWalletHydrated}
             />
           ) : null}
         </>
@@ -354,9 +371,21 @@ export function ConvexAvanaSessionsProvider({
   const recordTransaction = useMutation(api.sandbox.transactions.recordTransaction)
   const saveRewardsState = useMutation(api.sandbox.rewards.saveState)
   const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
+
+  // Optimistic-concurrency: the revision each (product, market) position was last hydrated
+  // to. Sent as expectedRevision so the server rejects a write computed from a stale read
+  // (another tab wrote first) instead of silently clobbering it. See ./optimistic-revision.
+  const revisionByKeyRef = useRef(new Map<string, number>())
+  const handleWalletHydrated = useCallback(
+    (positions: readonly PositionRevisionSummary[]) => captureHydratedRevisions(revisionByKeyRef.current, positions),
+    [],
+  )
+
   const persistBorrowTransaction = useCallback(
     async (result: SandboxActionResult) => {
-      const persisted = await recordTransaction(borrowResultToRecordArgs(result, walletId))
+      const { args, key } = withExpectedRevision(borrowResultToRecordArgs(result, walletId), "borrow", revisionByKeyRef.current)
+      const persisted = await recordTransaction(args)
+      advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -369,7 +398,9 @@ export function ConvexAvanaSessionsProvider({
   )
   const persistLendTransaction = useCallback(
     async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
-      const persisted = await recordTransaction(lendResultToRecordArgs(result, walletId))
+      const { args, key } = withExpectedRevision(lendResultToRecordArgs(result, walletId), "lend", revisionByKeyRef.current)
+      const persisted = await recordTransaction(args)
+      advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -383,7 +414,9 @@ export function ConvexAvanaSessionsProvider({
   )
   const persistMultiplyTransaction = useCallback(
     async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
-      const persisted = await recordTransaction(multiplyResultToRecordArgs(result, walletId))
+      const { args, key } = withExpectedRevision(multiplyResultToRecordArgs(result, walletId), "multiply", revisionByKeyRef.current)
+      const persisted = await recordTransaction(args)
+      advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -410,6 +443,7 @@ export function ConvexAvanaSessionsProvider({
       persistRewardsState={persistRewardsState}
       persistLocalState={false}
       sessionSource="convex"
+      onWalletHydrated={handleWalletHydrated}
     >
       {children}
     </AvanaSessionsProvider>

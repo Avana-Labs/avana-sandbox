@@ -22,6 +22,9 @@ export type RecordTransactionArgs = {
   executedAmountUsd6: string
   amountUsd: number
   simulated: boolean
+  /** Optimistic-concurrency token: the position revision this write was computed from.
+   *  The server rejects the write (STALE_WRITE) if the stored position has advanced past it. */
+  expectedRevision?: number
   position?: {
     status: "open" | "closed"
     marketSlug?: string
