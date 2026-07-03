@@ -90,6 +90,40 @@ async function getOrSeedConfig(ctx: MutationCtx) {
   return (await ctx.db.get(id))!
 }
 
+async function getOrSeedStarterCatalog(ctx: MutationCtx) {
+  const existing = await ctx.db
+    .query("sandboxStarterCatalog")
+    .withIndex("by_singleton", (q) => q.eq("singleton", "starter"))
+    .first()
+  if (existing) return existing.rows
+
+  const [priceRows, markets] = await Promise.all([
+    ctx.db.query("tokenPrices").collect(),
+    ctx.db.query("markets").collect(),
+  ])
+  const livePrice = new Map(priceRows.map((row) => [row.symbol, row.priceUsd]))
+  const rows = markets.map((market) => {
+    const symbol = market.symbol.toLowerCase()
+    return {
+      slug: market.slug,
+      scope: market.scope,
+      symbol: market.symbol,
+      priceUsd: livePrice.get(symbol) ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 0,
+    }
+  })
+  const id = await ctx.db.insert("sandboxStarterCatalog", {
+    singleton: "starter",
+    rows,
+    updatedAt: Date.now(),
+  })
+  const duplicates = await ctx.db
+    .query("sandboxStarterCatalog")
+    .withIndex("by_singleton", (q) => q.eq("singleton", "starter"))
+    .collect()
+  for (const duplicate of duplicates) if (duplicate._id !== id) await ctx.db.delete(duplicate._id)
+  return rows
+}
+
 /** Live economy counts = baseline on the singleton row + the sum of every shard. */
 async function readEconomyCounts(ctx: MutationCtx | QueryCtx, economy: { userCount: number; totalGrantedUsd: number }) {
   const shards = await ctx.db.query("sandboxEconomyShards").collect()
@@ -394,13 +428,9 @@ export const claim = mutation({
 
     const now = Date.now()
 
-    const [priceRows, markets] = await Promise.all([
-      ctx.db.query("tokenPrices").collect(),
-      ctx.db.query("markets").collect(),
-    ])
-    const marketBySlug = new Map(markets.map((market) => [market.slug, market]))
-    const livePrice: Record<string, number> = {}
-    for (const row of priceRows) livePrice[row.symbol] = row.priceUsd
+    const starterCatalog = await getOrSeedStarterCatalog(ctx)
+    const marketBySlug = new Map(starterCatalog.map((market) => [market.slug, market]))
+    const catalogBySlug = new Map(starterCatalog.map((market) => [market.slug, market]))
 
     // Fail closed on an incomplete catalog: never mark a wallet "done" with a partial or
     // empty starter portfolio (that permanently locks it out of a real $1M allocation).
@@ -411,20 +441,17 @@ export const claim = mutation({
     // the profile stays on its current (non-"done") step, so the wallet can retry once seeded.
     assertCatalogCanSatisfyStarter(
       wallet,
-      markets.map((market) => {
-        const symbol = market.symbol.toLowerCase()
-        return { slug: market.slug, scope: market.scope, priceUsd: livePrice[symbol] ?? SANDBOX_TOKEN_PRICE_USD[symbol] }
-      }),
+      starterCatalog,
     )
 
     const allocation = buildStarterAllocationPlan(
       wallet,
-      markets.map((market) => ({ slug: market.slug, scope: market.scope })),
+      starterCatalog,
     )
     const basketSnapshot = allocation.liquid.map((leg) => {
       const market = marketBySlug.get(leg.marketSlug)
       const symbol = market?.symbol.toLowerCase() ?? leg.marketSlug
-      const priceUsdAtClaim = livePrice[symbol] ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
+      const priceUsdAtClaim = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
       return { tokenId: leg.marketSlug, amount: leg.amountUsd / priceUsdAtClaim, priceUsdAtClaim }
     })
 
@@ -437,7 +464,7 @@ export const claim = mutation({
       // references seeded slugs, so this is just belt-and-suspenders against seed drift).
       if (!market) continue
       const symbol = market.symbol.toLowerCase()
-      const priceUsd = livePrice[symbol] ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
+      const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
       await ctx.db.insert("sandboxBalances", {
         wallet,
         assetSlug: leg.marketSlug,
@@ -556,7 +583,8 @@ export const claim = mutation({
       // (leveraged) collateral so `collateralValueUsd (gross) ≈ collateralAmount * price`.
       const multiplyMarket = marketBySlug.get(leg.marketSlug)
       const multiplySymbol = multiplyMarket?.symbol.toLowerCase() ?? leg.marketSlug
-      const collateralPriceUsd = livePrice[multiplySymbol] ?? SANDBOX_TOKEN_PRICE_USD[multiplySymbol] ?? 1
+      const collateralPriceUsd =
+        catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[multiplySymbol] ?? 1
       const collateralAmount = grossExposureUsd / collateralPriceUsd
       const positionId = await ctx.db.insert("positions", {
         wallet,

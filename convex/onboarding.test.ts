@@ -156,13 +156,15 @@ describe("sandbox onboarding + economy caps", () => {
       expect(res.status).toBe("done")
     }
 
-    const { singletonUserCount, shardedUserCount, shardRows } = await t.run(async (ctx) => {
+    const { singletonUserCount, shardedUserCount, shardRows, starterCatalogRows } = await t.run(async (ctx) => {
       const economy = await ctx.db.query("sandboxEconomy").first()
       const shards = await ctx.db.query("sandboxEconomyShards").collect()
+      const starterCatalog = await ctx.db.query("sandboxStarterCatalog").collect()
       return {
         singletonUserCount: economy?.userCount ?? 0,
         shardedUserCount: shards.reduce((sum, s) => sum + s.userCount, 0),
         shardRows: shards.length,
+        starterCatalogRows: starterCatalog.length,
       }
     })
 
@@ -173,6 +175,7 @@ describe("sandbox onboarding + economy caps", () => {
     expect(shardedUserCount).toBe(N)
     // Claims are spread across multiple shard rows, not folded onto a single document.
     expect(shardRows).toBeGreaterThan(1)
+    expect(starterCatalogRows).toBe(1)
 
     // getState surfaces the summed live count to the client.
     const lastWallet = `0x${N.toString(16).padStart(40, "0")}`
