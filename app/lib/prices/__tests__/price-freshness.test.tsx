@@ -22,6 +22,8 @@ vi.mock("convex/react", () => ({
 
 import { TokenPricesProvider, usePriceFreshness } from "@/app/lib/prices/token-prices-context"
 
+const STALE_AFTER = 3 * 60 * 60 * 1000
+
 function Probe() {
   const { stale, updatedAt } = usePriceFreshness()
   return (
@@ -53,13 +55,23 @@ describe("usePriceFreshness", () => {
   })
 
   it("reflects a fresh oracle (not stale)", () => {
-    renderWithStatus({ stale: false, updatedAt: 1_700_000_000_000, ageMs: 1000 })
+    // New contract: the query returns only updatedAt/staleAfterMs; the client derives stale
+    // from a ticking clock. A just-refreshed row is within the window.
+    const updatedAt = Date.now()
+    renderWithStatus({ updatedAt, staleAfterMs: STALE_AFTER, count: 5 })
     expect(screen.getByTestId("stale").textContent).toBe("false")
-    expect(screen.getByTestId("updatedAt").textContent).toBe("1700000000000")
+    expect(screen.getByTestId("updatedAt").textContent).toBe(String(updatedAt))
   })
 
-  it("flags staleness when the cron has stalled", () => {
-    renderWithStatus({ stale: true, updatedAt: 1_600_000_000_000, ageMs: 99_999_999 })
+  it("flags staleness when the cron has stalled (derived from wall clock)", () => {
+    // Last refresh is older than the stale window → the client derivation flags it, even
+    // though the query result itself never changed (the whole point of moving this client-side).
+    renderWithStatus({ updatedAt: Date.now() - (STALE_AFTER + 60_000), staleAfterMs: STALE_AFTER, count: 5 })
+    expect(screen.getByTestId("stale").textContent).toBe("true")
+  })
+
+  it("flags staleness when no prices have ever been served", () => {
+    renderWithStatus({ updatedAt: null, staleAfterMs: STALE_AFTER, count: 0 })
     expect(screen.getByTestId("stale").textContent).toBe("true")
   })
 
