@@ -105,6 +105,36 @@ describe("shared ledger — no double-count across tabs (H20)", () => {
  * must be rejected instead of silently clobbering the first (lost update).
  */
 describe("optimistic concurrency — stale write is rejected (not a silent overwrite)", () => {
+  test("existing positions reject revisionless updates", async () => {
+    const t = convexTest(schema, modules)
+    const tab = t.withIdentity({ subject: WALLET })
+    await tab.mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET,
+      intentId: "revision-required-seed",
+      product: "lend",
+      kind: "deposit",
+      marketSlug: "usdc",
+      requestedAmountUsd6: "500000000",
+      executedAmountUsd6: "500000000",
+      amountUsd: 500,
+      position: { status: "open", marketSlug: "usdc", suppliedUsd6: "500000000" },
+    })
+
+    await expect(
+      tab.mutation(api.sandbox.transactions.recordTransaction, {
+        wallet: WALLET,
+        intentId: "revision-required-update",
+        product: "lend",
+        kind: "deposit",
+        marketSlug: "usdc",
+        requestedAmountUsd6: "100000000",
+        executedAmountUsd6: "100000000",
+        amountUsd: 100,
+        position: { status: "open", marketSlug: "usdc", suppliedUsd6: "600000000" },
+      }),
+    ).rejects.toThrow(/REVISION_REQUIRED/)
+  })
+
   test("lend: second tab writing from a stale revision is rejected, matching revision succeeds", async () => {
     const t = convexTest(schema, modules)
     const tab = t.withIdentity({ subject: WALLET })
