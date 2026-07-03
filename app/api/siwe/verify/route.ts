@@ -1,7 +1,8 @@
 import { cookies } from "next/headers"
-import { recoverMessageAddress } from "viem"
+import type { Address, Hex } from "viem"
 import { extractSiweAddress, extractSiweDomain, extractSiweNonce, extractSiweUri } from "@/app/lib/siwe/message"
 import { mintSandboxJwt, resolveIssuer } from "@/app/lib/siwe/jwt"
+import { verifySiweSignature } from "@/app/lib/siwe/signature"
 
 export const dynamic = "force-dynamic"
 
@@ -53,13 +54,12 @@ export async function POST(req: Request) {
     return Response.json({ error: "invalid or expired nonce" }, { status: 401 })
   }
 
-  let recovered: string
-  try {
-    recovered = await recoverMessageAddress({ message, signature: signature as `0x${string}` })
-  } catch {
-    return Response.json({ error: "signature verification failed" }, { status: 401 })
-  }
-  if (recovered.toLowerCase() !== address.toLowerCase()) {
+  const signatureIsValid = await verifySiweSignature({
+    address: address as Address,
+    message,
+    signature: signature as Hex,
+  })
+  if (!signatureIsValid) {
     return Response.json({ error: "signature does not match address" }, { status: 401 })
   }
 
