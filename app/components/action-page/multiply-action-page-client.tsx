@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
@@ -16,6 +16,7 @@ import { ActionProcessingStage } from "@/app/components/action-page/action-proce
 import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
@@ -175,6 +176,10 @@ export function MultiplyActionPageClient({
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
+  // Wrong-network submit gate (read via ref inside the submit handlers; see borrow client).
+  const networkGuard = useActionNetworkGuard()
+  const networkGuardRef = useRef(networkGuard)
+  networkGuardRef.current = networkGuard
   const [isPending, setIsPending] = useState(false)
 
   useEffect(() => {
@@ -340,6 +345,14 @@ export function MultiplyActionPageClient({
     if (stage !== "review") return
     if (!market || !previewUi?.allowed) return
     if (isPending) return // guard against double-submit (rapid double-click)
+    if (networkGuardRef.current.isWrongNetwork) {
+      setOutcome({
+        tone: "error",
+        title: "Wrong network",
+        message: networkGuardRef.current.blockedReason ?? "Switch networks to continue.",
+      })
+      return
+    }
 
     setIsPending(true)
     setOutcome(null)
@@ -421,6 +434,14 @@ export function MultiplyActionPageClient({
         (entry) => entry.walletId === walletId && entry.marketId === market.id,
       )
     if (!closingPosition) return
+    if (networkGuardRef.current.isWrongNetwork) {
+      setOutcome({
+        tone: "error",
+        title: "Wrong network",
+        message: networkGuardRef.current.blockedReason ?? "Switch networks to continue.",
+      })
+      return
+    }
 
     setIsPending(true)
     setOutcome(null)
@@ -575,6 +596,7 @@ export function MultiplyActionPageClient({
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           primaryPending={isPending}
+          blockedReason={networkGuard.blockedReason}
         />
       ) : null}
 
