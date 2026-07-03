@@ -170,6 +170,44 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
       /RATE_LIMITED/,
     )
   })
+
+  test("updates the current portfolio without appending per-action history", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.transactions.recordTransaction, {
+      ...borrowIntent("portfolio-current-create"),
+      product: "lend",
+      kind: "deposit",
+      marketSlug: "usdc",
+      assetId: undefined,
+      requestedAmountUsd6: "500000000",
+      executedAmountUsd6: "500000000",
+      amountUsd: 500,
+      position: { status: "open", marketSlug: "usdc", suppliedUsd6: "500000000" },
+    })
+    await asUser.mutation(api.sandbox.transactions.recordTransaction, {
+      ...borrowIntent("portfolio-current-update"),
+      product: "lend",
+      kind: "deposit",
+      marketSlug: "usdc",
+      assetId: undefined,
+      requestedAmountUsd6: "250000000",
+      executedAmountUsd6: "250000000",
+      amountUsd: 250,
+      expectedRevision: 0,
+      position: { status: "open", marketSlug: "usdc", suppliedUsd6: "750000000" },
+    })
+
+    const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
+    expect(portfolio.latest?.totalSuppliedUsd).toBe(750)
+    expect(portfolio.snapshots).toHaveLength(2)
+    const stored = await t.run(async (ctx) => ({
+      current: await ctx.db.query("portfolioCurrent").collect(),
+      history: await ctx.db.query("portfolioSnapshots").collect(),
+    }))
+    expect(stored.current).toHaveLength(1)
+    expect(stored.history).toHaveLength(1)
+  })
 })
 
 describe("liquidation recording", () => {
