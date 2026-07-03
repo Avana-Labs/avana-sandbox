@@ -715,6 +715,11 @@ export default defineSchema({
     amountUsd: v.number(),
     healthFactorWadBefore: v.optional(v.union(v.string(), v.null())),
     healthFactorWadAfter: v.optional(v.union(v.string(), v.null())),
+    /** Multiply/deleverage leverage at the time of THIS transaction, so hydrated history shows
+     *  the real before→after (e.g. "3.00x → 2.00x") instead of a constant 1 × the position's
+     *  current multiplier (which rendered deleverages as leverage increases). */
+    multiplierBefore: v.optional(v.number()),
+    multiplierAfter: v.optional(v.number()),
     syntheticTxHash: v.string(),
     simulated: v.boolean(),
     at: v.number(),

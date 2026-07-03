@@ -60,6 +60,8 @@ export type ConvexMultiplyWalletData = {
     marketSlug?: string
     positionId?: string | null
     amountUsd: number
+    multiplierBefore?: number
+    multiplierAfter?: number
     syntheticTxHash: string
     simulated: boolean
     at: number
@@ -270,8 +272,10 @@ export function useMultiplySession({
             kind: transaction.kind as MultiplyTransactionHistoryItem["kind"],
             status: transaction.status,
             amountUsd: transaction.amountUsd,
-            multiplierBefore: 1,
-            multiplierAfter: position?.multiplier ?? 1,
+            // Use the leverage captured AT the transaction; fall back to the old heuristic only
+            // for legacy rows written before multiplierBefore/After were persisted.
+            multiplierBefore: transaction.multiplierBefore ?? 1,
+            multiplierAfter: transaction.multiplierAfter ?? position?.multiplier ?? 1,
             simulated: transaction.simulated,
             timestamp: transaction.at,
             hash: transaction.syntheticTxHash,

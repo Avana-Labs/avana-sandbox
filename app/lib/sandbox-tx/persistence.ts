@@ -25,6 +25,10 @@ export type RecordTransactionArgs = {
   /** Optimistic-concurrency token: the position revision this write was computed from.
    *  The server rejects the write (STALE_WRITE) if the stored position has advanced past it. */
   expectedRevision?: number
+  /** Per-transaction multiply leverage, persisted so hydrated history renders the real
+   *  before→after (e.g. "3.00x → 2.00x") instead of a constant 1 × current multiplier. */
+  multiplierBefore?: number
+  multiplierAfter?: number
   position?: {
     status: "open" | "closed"
     marketSlug?: string
@@ -114,6 +118,9 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
     executedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
     amountUsd: item.amountUsd,
     simulated: item.simulated,
+    // Persist the leverage at THIS transaction so hydrated history shows the real before→after.
+    multiplierBefore: item.multiplierBefore,
+    multiplierAfter: item.multiplierAfter,
     position: position
       ? {
           // A multiply position that still exists in engine state is OPEN — including a fully

@@ -370,6 +370,10 @@ export const recordTransaction = mutation({
     simulated: v.optional(v.boolean()),
     healthFactorWadBefore: v.optional(v.union(v.string(), v.null())),
     healthFactorWadAfter: v.optional(v.union(v.string(), v.null())),
+    /** Per-transaction multiply leverage, persisted so hydrated history renders the real
+     *  before→after instead of a constant 1 × the position's current multiplier. */
+    multiplierBefore: v.optional(v.number()),
+    multiplierAfter: v.optional(v.number()),
     position: v.optional(positionPayload),
     /**
      * Optimistic-concurrency token: the `positions.revision` the client read before it
@@ -521,6 +525,8 @@ export const recordTransaction = mutation({
       amountUsd: args.amountUsd,
       healthFactorWadBefore: args.healthFactorWadBefore,
       healthFactorWadAfter: args.healthFactorWadAfter,
+      multiplierBefore: args.multiplierBefore,
+      multiplierAfter: args.multiplierAfter,
       syntheticTxHash: hash,
       simulated,
       at: now,
