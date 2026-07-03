@@ -51,4 +51,48 @@ describe("multiplyResultToRecordArgs — close persistence (regression: C-1)", (
     const args = multiplyResultToRecordArgs(failed, WALLET)
     expect(args.position).toBeUndefined()
   })
+
+  it("persists a fully-deleveraged 1x position as OPEN, matching local state (regression: M-6)", () => {
+    // The engine keeps a 1x/$0 position after a full deleverage; persisting it as "closed"
+    // (the old multiplier<=1 heuristic) made the dashboard and server disagree.
+    const result = {
+      historyItem: {
+        id: "r2",
+        intentId: "intent-deleverage-1",
+        walletId: WALLET,
+        marketId: "eth-usdc-loop",
+        positionId: "pos-1",
+        kind: "deleverage",
+        status: "success",
+        amountUsd: 500,
+        multiplierBefore: 2.2,
+        multiplierAfter: 1,
+        simulated: true,
+        timestamp: 1,
+        hash: "0xsimdelever",
+      },
+      state: {
+        positions: {
+          "pos-1": {
+            id: "pos-1",
+            walletId: WALLET,
+            marketId: "eth-usdc-loop",
+            collateralAmount: 1,
+            collateralValueUsd: 1000,
+            debtValueUsd: 0,
+            multiplier: 1,
+            ltv: 0,
+            healthFactor: "infinity",
+            liquidationPrice: null,
+            netApy: 3,
+          },
+        },
+      },
+    } as unknown as MultiplySandboxActionResult
+
+    const args = multiplyResultToRecordArgs(result, WALLET)
+    expect(args.position).toBeDefined()
+    expect(args.position?.status).toBe("open")
+    expect(args.position?.multiplier).toBe(1)
+  })
 })
