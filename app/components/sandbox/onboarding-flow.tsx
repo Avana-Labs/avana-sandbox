@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Check, LoaderCircle, MoveUpRight } from "lucide-react"
-import { AnimatePresence, motion } from "framer-motion"
+import { motion } from "framer-motion"
 import { useMutation } from "convex/react"
 import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
@@ -449,14 +449,11 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
     >
       <StatusRow wallet={wallet} pct={pct} />
 
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={phase}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-        >
+      {/* Screen wrapper is a plain div (no framer-motion): the above-the-fold hero must
+          paint from the SSR HTML and never be re-touched by JS on hydration, or LCP is
+          pinned to hydration completion (~4s on throttled mobile). Step changes swap
+          instantly; a CSS-only fade could be added later without an opacity:0 start. */}
+      <div key={phase} data-onboarding-phase={phase}>
       {!wallet && !hasStarted ? (
         <>
           <Headline
@@ -629,8 +626,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           ) : null}
         </>
       ) : null}
-        </motion.div>
-      </AnimatePresence>
+      </div>
     </div>
   )
 }
