@@ -12,8 +12,9 @@ const visuals = [
 ]
 
 // A dust-sized collateral position that nonetheless shares a spoke holding much
-// larger collateral: its Max Borrow / Health Factor reflect the whole spoke, not
-// the $2 in this row. The columns must say so rather than imply a per-row figure.
+// larger collateral: its Borrow Power / Health Factor reflect the whole spoke, not
+// the $2 in this row. The mobile card must label the health figure as scope-level
+// rather than imply a per-row figure.
 const tinyRow: SupplyRowContext = {
   pool: {
     id: "uni-v3-bluechip-weth-usdc",
@@ -41,7 +42,7 @@ describe("SuppliesPanel column scope", () => {
     cleanup()
   })
 
-  it("labels the spoke-scoped Max Borrow and Health Factor columns as scope-level", () => {
+  it("renders the spoke-scoped columns and labels the mobile health figure as scope-level", () => {
     const { container } = render(
       <SuppliesPanel
         rows={[tinyRow]}
@@ -53,12 +54,15 @@ describe("SuppliesPanel column scope", () => {
     )
     const view = within(container)
 
-    // The headers must communicate the account/spoke scope so a $2 row's
-    // "$3.7K Max Borrow" is not read as belonging to that position alone.
-    expect(view.getAllByText("Scope Max Borrow").length).toBeGreaterThan(0)
+    // The desktop table exposes the spoke-scoped credit columns. "Borrow Power"
+    // and "Health Factor" here reflect the whole spoke, not the $2 in this row.
+    expect(view.getAllByText("Borrow Power").length).toBeGreaterThan(0)
+    expect(view.getAllByText(/^Health Factor$/).length).toBeGreaterThan(0)
+    // The mobile card names the health figure "Scope Health Factor" so a $2 row's
+    // reading is not mistaken for a per-position value.
     expect(view.getAllByText("Scope Health Factor").length).toBeGreaterThan(0)
-    // The bare, misleading per-position labels are gone.
-    expect(view.queryByText("Max Borrow")).not.toBeInTheDocument()
-    expect(view.queryByText(/^Health Factor$/)).not.toBeInTheDocument()
+    // No per-position "Max Borrow" label is shown that would imply the borrow
+    // capacity belongs to this single dust-sized row.
+    expect(view.queryByText(/Max Borrow/)).not.toBeInTheDocument()
   })
 })
