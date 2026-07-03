@@ -109,6 +109,7 @@ describe("multi-user harness — calm + borrowHeavy (ledger invariant)", () => {
           requestedAmountUsd6: String(amount * 1_000_000),
           executedAmountUsd6: String(amount * 1_000_000),
           amountUsd: amount,
+          expectedRevision: a > 0 ? a - 1 : undefined,
           position: {
             status: "open",
             marketSlug: "uni-v3-bluechip-weth-usdc",

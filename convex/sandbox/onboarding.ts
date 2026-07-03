@@ -641,6 +641,17 @@ export const claim = mutation({
     // Increment a random shard instead of the hot singleton row so concurrent
     // claims write disjoint documents (no OCC contention on the counter).
     await incrementEconomyShard(ctx, allocatedUsd)
+    if (
+      counts.userCount + 1 >= economy.userCap ||
+      counts.totalGrantedUsd + allocatedUsd >= economy.totalGrantedUsdCap
+    ) {
+      await ctx.db.patch(economy._id, {
+        status: "closed",
+        closedReason:
+          counts.userCount + 1 >= economy.userCap ? "userCap reached" : "totalGrantedUsdCap reached",
+        closedAt: now,
+      })
+    }
     await ctx.db.insert("sandboxActivity", {
       wallet,
       kind: "onboardingClaim",
