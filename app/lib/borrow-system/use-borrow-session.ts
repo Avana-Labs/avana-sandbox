@@ -41,6 +41,17 @@ function mergeReceipts(nextReceipt: SyntheticTransactionReceipt, receipts: Synth
   return [nextReceipt, ...receipts.filter((receipt) => receipt.id !== nextReceipt.id)]
 }
 
+/** Stable string for cross-tab change detection. History items carry bigint usd6 fields, so a
+ *  plain JSON.stringify throws — coerce bigints to strings in the replacer. */
+function serializeSessionSnapshot(
+  transactionHistory: TransactionHistoryItem[],
+  receipts: SyntheticTransactionReceipt[],
+): string {
+  return JSON.stringify({ h: transactionHistory, r: receipts }, (_key, value) =>
+    typeof value === "bigint" ? value.toString() : value,
+  )
+}
+
 export type ConvexBorrowWalletData = {
   balances?: Array<{ valueUsd: number }>
   positions: Array<{
@@ -115,6 +126,10 @@ export function useBorrowSession({
   )
   const stateRef = useRef(state)
   const lastPersistedAtRef = useRef(0)
+  // Serialized snapshot of the last history/receipts this tab persisted or applied, so the
+  // cross-tab storage handler detects a REAL change by CONTENT rather than a millisecond
+  // timestamp (two tabs writing in the same ms otherwise let a stale tab drop the other's write).
+  const lastSerializedRef = useRef<string | null>(null)
   const pendingExecutionsRef = useRef(new Map<string, Promise<SandboxActionResult>>())
   const [isPending, setIsPending] = useState(false)
 
@@ -152,6 +167,7 @@ export function useBorrowSession({
     // than what it just persisted.
     const persistedAt = Date.now()
     lastPersistedAtRef.current = persistedAt
+    lastSerializedRef.current = serializeSessionSnapshot(transactionHistory, transactionReceipts)
     writeBorrowSessionMetadata(walletId, {
       transactionHistory,
       receipts: transactionReceipts,
@@ -166,9 +182,14 @@ export function useBorrowSession({
       if (event.key == null || !event.key.endsWith(`:${walletId}`)) return
 
       const metadata = readBorrowSessionMetadata(walletId)
-      // Multi-tab guard: ignore a cross-tab write that isn't strictly newer than
-      // what this tab last persisted, so a stale tab can't clobber live state.
-      if (metadata.persistedAt != null && metadata.persistedAt <= lastPersistedAtRef.current) return
+      // Multi-tab guard by CONTENT, not clock: apply only when the persisted history/receipts
+      // actually differ from what this tab already holds. A millisecond timestamp let two tabs
+      // writing in the same ms drop each other's change; comparing content also makes a
+      // self-echo re-persist a no-op. (localStorage is last-writer-wins, so this read reflects
+      // the newest snapshot.)
+      const incomingSerialized = serializeSessionSnapshot(metadata.transactionHistory, metadata.receipts)
+      if (incomingSerialized === lastSerializedRef.current) return
+      lastSerializedRef.current = incomingSerialized
       if (metadata.persistedAt != null) lastPersistedAtRef.current = metadata.persistedAt
 
       const nextState = readBorrowSessionState(walletId, sessionSeed)
