@@ -339,6 +339,12 @@ export const recordTransaction = mutation({
     healthFactorWadBefore: v.optional(v.union(v.string(), v.null())),
     healthFactorWadAfter: v.optional(v.union(v.string(), v.null())),
     position: v.optional(positionPayload),
+    /**
+     * Optimistic-concurrency token: the `positions.revision` the client read before it
+     * computed this write. When supplied and the stored position has since advanced, the
+     * write is rejected (STALE_WRITE) instead of overwriting the concurrent change.
+     */
+    expectedRevision: v.optional(v.number()),
     // NOTE: there is intentionally no client `ledger` arg. The aggregate market-liquidity
     // delta is recomputed server-side (canonicalLedgerDelta) so a client can never dictate
     // the shared ledger.
@@ -382,12 +388,24 @@ export const recordTransaction = mutation({
     let existingPosition: Doc<"positions"> | undefined
     if (args.position && status === "success" && marketSlug) {
       validatePositionPayload(args.position)
-      const matches = await ctx.db
-        .query("positions")
-        .withIndex("by_wallet_market", (q) => q.eq("wallet", wallet).eq("marketSlug", marketSlug))
-        .collect()
-      const existing = matches.find((p) => p.product === args.product)
+      const existing =
+        (await ctx.db
+          .query("positions")
+          .withIndex("by_wallet_product_market", (q) =>
+            q.eq("wallet", wallet).eq("product", args.product).eq("marketSlug", marketSlug),
+          )
+          .unique()) ?? undefined
       existingPosition = existing
+      // Optimistic concurrency: reject a write computed from a stale read instead of
+      // silently clobbering a concurrent one (two tabs on the same wallet/market).
+      // Backward-compatible — only enforced when the client supplies expectedRevision.
+      const currentRevision = existing?.revision ?? 0
+      if (existing && args.expectedRevision != null && args.expectedRevision !== currentRevision) {
+        throw new Error(
+          `STALE_WRITE: ${args.product} position for ${marketSlug} changed since it was read ` +
+            `(expected revision ${args.expectedRevision}, found ${currentRevision}); reload and retry.`,
+        )
+      }
       validateTransactionTransition(args, existing)
       await assertBorrowSolvent(ctx, args)
       const fields = {
@@ -407,6 +425,7 @@ export const recordTransaction = mutation({
         liquidationPrice: args.position.liquidationPrice,
         netApyPct: args.position.netApyPct,
         lastUpdatedAt: now,
+        revision: existing ? currentRevision + 1 : 0,
         ...(args.position.status === "closed" ? { closedAt: now } : {}),
       }
       if (existing) {
@@ -632,14 +651,16 @@ export const getSessionState = query({
       ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
       ctx.db.query("starterAllocations").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
     ])
-    const hydratedPositions = []
-    for (const position of positions) {
-      const [collateral, debt] = await Promise.all([
-        ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
-        ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
-      ])
-      hydratedPositions.push({ ...position, collateral, debt })
-    }
+    // Hydrate collateral/debt in parallel (was a sequential per-position await loop).
+    const hydratedPositions = await Promise.all(
+      positions.map(async (position) => {
+        const [collateral, debt] = await Promise.all([
+          ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+          ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+        ])
+        return { ...position, collateral, debt }
+      }),
+    )
     return { positions: hydratedPositions, transactions, balances, starterAllocation }
   },
 })
