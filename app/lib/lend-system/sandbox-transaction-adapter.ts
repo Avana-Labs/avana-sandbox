@@ -214,6 +214,10 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
         : findWalletPosition(state, action.walletId, action.marketId)?.positionId ?? `${action.walletId}:${action.marketId}`
     const transactionId = this.generateId("tx")
     const nextState = applyLendAction(state, action, { positionId, transactionId })
+    // The engine may sweep a sub-cent remainder into a full withdraw and record the swept total
+    // as the transaction amount; surface THAT (not the pre-sweep requested amount) so history
+    // reconciles with the position closing to zero.
+    const engineTxAmount = nextState.transactions.find((tx) => tx.id === transactionId)?.amount
 
     const localReceipt = {
       id: transactionId,
@@ -233,7 +237,7 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
       kind: action.type,
       status: "success",
       asset: action.type === "claim" ? "Rewards" : state.markets[action.marketId]?.asset.symbol ?? "",
-      amount: action.type === "deposit" ? action.depositAmount : action.type === "withdraw" ? action.withdrawAmount : preview.before.rewardsEarnedUsd,
+      amount: action.type === "deposit" ? action.depositAmount : action.type === "withdraw" ? engineTxAmount ?? action.withdrawAmount : preview.before.rewardsEarnedUsd,
       simulated: true,
       timestamp: localReceipt.timestamp,
       hash: localReceipt.hash,
