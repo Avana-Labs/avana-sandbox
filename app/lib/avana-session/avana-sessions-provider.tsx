@@ -20,7 +20,7 @@ import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { useAvanaSession } from "./use-avana-session"
-import { shouldApplyHydration } from "./wallet-hydration-guard"
+import { pendingHydrationIntentIds, shouldApplyHydration } from "./wallet-hydration-guard"
 import {
   advanceRevisionOnSuccess,
   captureHydratedRevisions,
@@ -216,21 +216,29 @@ function WalletHydrator({
 }) {
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
 
-  // Read the client's current (incl. just-submitted optimistic) intent ids via a ref so
-  // the hydration effect doesn't re-run on every local history change — only on re-emit.
-  const localIntentIdsRef = useRef<Set<string>>(new Set())
-  localIntentIdsRef.current = new Set(
-    [...borrow.transactionHistory, ...lend.transactionHistory, ...multiply.transactionHistory].map(
-      (item) => item.intentId,
-    ),
-  )
+  // Hold the latest history arrays in a ref so the hydration effect reads current optimistic
+  // edits without re-running on every local history change (it runs only on re-emit). Storing
+  // references (O(1)/render) instead of an eagerly-built Set keeps unrelated re-renders cheap.
+  const historiesRef = useRef({
+    borrow: borrow.transactionHistory,
+    lend: lend.transactionHistory,
+    multiply: multiply.transactionHistory,
+  })
+  historiesRef.current = {
+    borrow: borrow.transactionHistory,
+    lend: lend.transactionHistory,
+    multiply: multiply.transactionHistory,
+  }
 
   useEffect(() => {
     if (!session) return
-    // Skip a re-emit that predates an in-flight optimistic edit; applying it would clobber
-    // the just-submitted write until its own re-emit lands. The next emit (which includes
-    // the write) passes the guard and hydrates normally.
-    if (!shouldApplyHydration(session, localIntentIdsRef.current)) return
+    // Gate on RECENT, non-failed optimistic intents only. Applying a re-emit that predates an
+    // in-flight write would clobber it; but gating on EVERY known intent (incl. failed/rejected
+    // ones the server never stored) permanently froze the hydrator. pendingHydrationIntentIds
+    // drops failed + aged-out intents so a poison intent can't pin the tab on stale data.
+    const { borrow: b, lend: l, multiply: m } = historiesRef.current
+    const pending = pendingHydrationIntentIds([...b, ...l, ...m], Date.now())
+    if (!shouldApplyHydration(session, pending)) return
     hydrateBorrow(session)
     hydrateLend(session)
     hydrateMultiply(session)
