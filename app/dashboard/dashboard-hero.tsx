@@ -117,6 +117,7 @@ function buildActions({
   returnHref,
   onNavigate,
   multiplyPositionTarget,
+  t,
 }: {
   actionLabels?: string[]
   primaryActionLabel: string
@@ -124,6 +125,7 @@ function buildActions({
   returnHref?: string
   onNavigate?: (href: string) => void
   multiplyPositionTarget?: { marketId: string; multiplier: number } | null
+  t: (key: string) => string
 }): PortfolioHeroAction[] {
   const labels = actionLabels?.length ? actionLabels : [primaryActionLabel, secondaryActionLabel]
 
@@ -183,7 +185,7 @@ function buildActions({
     const actionHref = href && returnHref ? `${href}${href.includes("?") ? "&" : "?"}return=${encodeURIComponent(returnHref)}` : href
     return {
       id: `${index}-${label.toLowerCase().replace(/\s+/g, "-")}`,
-      label,
+      label: t(label),
       icon: resolveIcon(label),
       href: actionHref ?? undefined,
       onClick: actionHref && onNavigate ? () => onNavigate(actionHref) : undefined,
@@ -278,6 +280,7 @@ export function DashboardHero({
         returnHref: dashboardHrefForTab(tab),
         onNavigate: (href) => router.push(href),
         multiplyPositionTarget,
+        t,
       })
     : []
 
@@ -293,7 +296,7 @@ export function DashboardHero({
             value={resolvedDisplayValue}
             delta={headlineDelta ?? overviewDelta ?? ""}
             deltaTone="positive"
-            meta={uiConfig.headlineMeta}
+            meta={uiConfig.headlineMeta ? t(uiConfig.headlineMeta) : undefined}
             hidden={!showDollarAmounts}
           />
           {isBorrowOverview && borrowSnapshot ? (
@@ -314,7 +317,7 @@ export function DashboardHero({
               value={resolvedDisplayValue}
               delta={resolvedHeadlineDelta ?? ""}
               deltaTone={displayTone}
-              meta={uiConfig.headlineMeta}
+              meta={uiConfig.headlineMeta ? t(uiConfig.headlineMeta) : undefined}
               hidden={!showDollarAmounts}
             />
             {showChart ? (
@@ -346,8 +349,8 @@ export function DashboardHero({
               statTwoValue &&
               uiConfig.statTwoHelpText ? (
                 <div className="grid grid-cols-2 gap-px overflow-hidden rounded-radius-md border border-border bg-border/80 dark:border-white/10 dark:bg-card/10">
-                  <StatCard label={uiConfig.statOneLabel} value={statOneValue} helpText={uiConfig.statOneHelpText} hidden={!showDollarAmounts} />
-                  <StatCard label={uiConfig.statTwoLabel} value={statTwoValue} helpText={uiConfig.statTwoHelpText} hidden={!showDollarAmounts} />
+                  <StatCard label={t(uiConfig.statOneLabel)} value={statOneValue} helpText={t(uiConfig.statOneHelpText)} hidden={!showDollarAmounts} />
+                  <StatCard label={t(uiConfig.statTwoLabel)} value={statTwoValue} helpText={t(uiConfig.statTwoHelpText)} hidden={!showDollarAmounts} />
                 </div>
               ) : null}
             </div>

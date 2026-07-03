@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import { useDisplayPreferences } from "./display-preferences"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { Switch } from "@/components/ui/switch"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 function AppsGridIcon({ className }: { className?: string }) {
   return (
@@ -75,6 +76,7 @@ function MenuLink({ href, label, icon: Icon, newTab, internal }: MenuLinkItem) {
 export function WalletConnect({ isResourcesActive = false }: { isResourcesActive?: boolean }) {
   const { theme, setTheme } = useTheme()
   const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -86,7 +88,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
   const topLinks: MenuLinkItem[] = [
     {
       href: AVANA_EXTERNAL_LINKS.faq,
-      label: "Support center",
+      label: t("Support center"),
       icon: LifeBuoy,
       newTab: true,
     },
@@ -95,25 +97,25 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
   const docsLinks: MenuLinkItem[] = [
     {
       href: AVANA_EXTERNAL_LINKS.lightpaper,
-      label: "Lightpaper",
+      label: t("Lightpaper"),
       icon: FileText,
       newTab: true,
     },
     {
       href: AVANA_EXTERNAL_LINKS.developers,
-      label: "Developer docs",
+      label: t("Developer docs"),
       icon: Code2,
       newTab: true,
     },
     {
       href: AVANA_EXTERNAL_LINKS.privacy,
-      label: "Privacy",
+      label: t("Privacy"),
       icon: Shield,
       newTab: true,
     },
     {
       href: AVANA_EXTERNAL_LINKS.terms,
-      label: "Terms",
+      label: t("Terms"),
       icon: FileText,
       newTab: true,
     },
@@ -122,12 +124,12 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
   const moreLinks: MenuLinkItem[] = [
     {
       href: "mailto:support@avana.cc?subject=Avana%20Feedback",
-      label: "Give feedback",
+      label: t("Give feedback"),
       icon: Mail,
     },
     {
       href: AVANA_EXTERNAL_LINKS.home,
-      label: "About Avana",
+      label: t("About Avana"),
       icon: FileText,
       newTab: true,
     },
@@ -141,8 +143,8 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label="Open resources and support"
-            title="Resources and support"
+            aria-label={t("Open resources and support")}
+            title={t("Resources and support")}
             className={cn(
               "flex size-8 appearance-none select-none items-center justify-center rounded-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25",
               isResourcesActive
@@ -154,9 +156,9 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={8} className={`w-64 ${menuContentClass}`}>
-          <DropdownMenuLabel>Global preferences</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("Global preferences")}</DropdownMenuLabel>
           <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-            <span className="text-[12px] text-muted-foreground">Theme</span>
+            <span className="text-[12px] text-muted-foreground">{t("Theme")}</span>
             <div className="flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5">
               <button
                 onClick={() => setTheme("system")}
@@ -167,7 +169,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                Auto
+                {t("Auto")}
               </button>
               <button
                 onClick={() => setTheme("light")}
@@ -196,29 +198,29 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
           <div className="flex items-center justify-between gap-3 px-2 py-1.5">
             <span className="flex items-center gap-2 text-[12px] text-muted-foreground">
               {showDollarAmounts ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-              Dollar amounts
+              {t("Dollar amounts")}
             </span>
             <Switch
               checked={showDollarAmounts}
               onCheckedChange={setShowDollarAmounts}
-              aria-label="Toggle dollar amounts"
+              aria-label={t("Toggle dollar amounts")}
             />
           </div>
           <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[12px] text-muted-foreground">
-            <span>Language</span>
-            <span className="font-medium text-foreground">English <span className="ml-1 opacity-50">&gt;</span></span>
+            <span>{t("Language")}</span>
+            <span className="font-medium text-foreground">{t("English")} <span className="ml-1 opacity-50">&gt;</span></span>
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[12px] text-muted-foreground">
-            <span>Currency</span>
-            <span className="font-medium text-foreground">USD <span className="ml-1 opacity-50">&gt;</span></span>
+            <span>{t("Currency")}</span>
+            <span className="font-medium text-foreground">{t("USD")} <span className="ml-1 opacity-50">&gt;</span></span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuLabel>Resources</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("Resources")}</DropdownMenuLabel>
           {topLinks.map((item) => (
             <MenuLink key={item.label} {...item} />
           ))}
           <DropdownMenuSeparator />
-          <DropdownMenuLabel>Docs</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("Docs")}</DropdownMenuLabel>
           {docsLinks.map((item) => (
             <MenuLink key={item.label} {...item} />
           ))}
@@ -231,8 +233,8 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
 
       <button
         type="button"
-        aria-label="Sign in"
-        title="Sign in"
+        aria-label={t("Sign in")}
+        title={t("Sign in")}
         className="inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25"
       >
         <CircleUserRound className="h-4 w-4" strokeWidth={1.5} />
