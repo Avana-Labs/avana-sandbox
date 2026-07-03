@@ -335,6 +335,31 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
     ).rejects.toThrow(/no backing collateral/i)
   })
 
+  test("rejects borrow debt when collateral value is missing", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("unpriced-collateral", {
+          position: {
+            status: "open",
+            marketSlug: "uni-v3-bluechip-weth-usdc",
+            debtValueUsd6: "1000000000",
+            collateral: [
+              {
+                marketSlug: "uni-v3-bluechip-weth-usdc",
+                collateralShares: "2000000000",
+                principalTokenAmount: "2000000000",
+                collateralEnabled: true,
+              },
+            ],
+          },
+        }),
+      ),
+    ).rejects.toThrow(/no server-verifiable value/i)
+  })
+
   test("rejects a multiply position above the protocol leverage ceiling", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })

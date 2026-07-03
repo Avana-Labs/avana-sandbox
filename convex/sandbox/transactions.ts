@@ -196,11 +196,13 @@ async function assertBorrowSolvent(
   }
 
   let liquidationValueUsd = 0
-  let valuedCollateralUsd = 0
   for (const row of collateralRows) {
     const valueUsd = usd6Number(row.collateralValueUsd6)
-    if (valueUsd <= 0) continue // value not provided for this leg — can't bound it
-    valuedCollateralUsd += valueUsd
+    if (valueUsd <= 0) {
+      throw new Error(
+        `INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`,
+      )
+    }
     const pool = await ctx.db
       .query("pools")
       .withIndex("by_slug", (q) => q.eq("slug", row.marketSlug))
@@ -209,10 +211,7 @@ async function assertBorrowSolvent(
     liquidationValueUsd += valueUsd * (thresholdPct / 100)
   }
 
-  // Only enforce the health-factor bound when we actually have collateral values to
-  // re-derive from; missing value data fails open (don't block a legitimate borrow on a
-  // mapping gap) while a clearly underwater position (debt > liquidation value) is rejected.
-  if (valuedCollateralUsd > 0 && debtUsd > liquidationValueUsd + 0.01) {
+  if (debtUsd > liquidationValueUsd + 0.01) {
     throw new Error("INVALID_TRANSITION: borrow position would be undercollateralized (health factor < 1).")
   }
 }
