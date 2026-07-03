@@ -315,7 +315,7 @@ export function SuppliesHealthFactorCard({
           <span className="text-[13px] font-semibold text-foreground">{t("Credit Health")}</span>
           <ActionMetricHelp
             topic="Credit Health"
-            text={t("Wallet-wide health factor from total liquidation value divided by total borrowed. Above 1.5 is generally healthy.")}
+            text={t("Wallet-wide health factor: total liquidation value divided by total borrowed. 2.5 and above is comfortable; below 1.2 risks liquidation.")}
           />
         </div>
         <span

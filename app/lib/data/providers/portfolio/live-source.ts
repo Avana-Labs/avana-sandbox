@@ -1,6 +1,7 @@
 import { createDataSourceAdapter } from "@/app/lib/data/core/source-runtime"
 import { api } from "@/convex/_generated/api"
 import { getAuthenticatedConvexClient } from "@/app/lib/data/providers/live-convex-client"
+import { MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR, worstMultiplyHealthFactor } from "@/app/lib/multiply-system/read-model"
 import type { PortfolioActivityKind, PortfolioActivityRecord, PortfolioCollateralRecord, PortfolioDebtRecord, PortfolioPageRecords, PortfolioSupplyRecord } from "./records"
 import type { PortfolioPageSource } from "./source"
 
@@ -148,10 +149,10 @@ export const livePortfolioPageSource: PortfolioPageSource = {
       multiplyCreditLines: {
         walletProfileId: wallet,
         approvedUsd: Math.max(0, totalMultiplyCollateral - totalMultiplyDebt),
-        liquidationThresholdUsd: totalMultiplyCollateral * 0.8,
-        averageHealthFactor: healthFactors.length
-          ? healthFactors.reduce((sum, value) => sum + value, 0) / healthFactors.length
-          : null,
+        liquidationThresholdUsd: totalMultiplyCollateral * MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR,
+        // Worst active-position HF (not average), matching the client read-model so the
+        // multiply hero does not change on hydration.
+        averageHealthFactor: worstMultiplyHealthFactor(healthFactors, multiplyPositions.length),
         currentLtvPct: totalMultiplyCollateral > 0 ? (totalMultiplyDebt / totalMultiplyCollateral) * 100 : 0,
         totalBorrowedUsd: totalMultiplyDebt,
         totalCollateralUsd: totalMultiplyCollateral,
