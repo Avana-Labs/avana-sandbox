@@ -51,20 +51,37 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
   )
 }
 
+/** Wallet-only state (no economy) shaped for OnboardingFlow. */
+type WalletOnlyState = Omit<OnboardingGateState, "economy">
+
 function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode }) {
-  const state = useQuery(api.sandbox.onboarding.getState, { wallet }) as OnboardingGateState | undefined
+  // Steady-state subscription: wallet profile/step ONLY. This does NOT read the global
+  // economy shard counters, so a claim by any other wallet no longer invalidates every
+  // authed wallet's gate subscription (the 10k-concurrency hazard). The economy status is
+  // subscribed separately, and only while onboarding is still in progress (below).
+  const walletState = useQuery(api.sandbox.onboarding.getWalletOnboardingState, { wallet }) as
+    | WalletOnlyState
+    | undefined
+  const isDone = walletState?.onboardingStep === "done"
+  // Only pull the (invalidated-by-every-claim) economy status when this wallet is NOT done —
+  // i.e. it is actively onboarding and the OnboardingFlow needs seats-left/open|closed.
+  const economy = useQuery(
+    api.sandbox.onboarding.getEconomyStatus,
+    isDone || walletState === undefined ? "skip" : { wallet },
+  ) as OnboardingGateState["economy"] | undefined
+
   // When Convex is configured but unreachable the query never resolves, leaving a
   // forever "Verifying…" spinner. Time out into the offline state after 12s.
   const [timedOut, setTimedOut] = useState(false)
   useEffect(() => {
-    if (state !== undefined) {
+    if (walletState !== undefined) {
       setTimedOut(false)
       return
     }
     const timer = setTimeout(() => setTimedOut(true), 12000)
     return () => clearTimeout(timer)
-  }, [state])
-  if (state === undefined) {
+  }, [walletState])
+  if (walletState === undefined) {
     if (timedOut) return <GateUnavailable variant="offline" />
     return (
       <LockedShell>
@@ -72,10 +89,19 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
       </LockedShell>
     )
   }
-  if (state.onboardingStep === "done") return <>{children}</>
+  if (isDone) return <>{children}</>
+  // Onboarding still in progress: wait for the economy status before rendering the flow so
+  // seats-left/closed copy is accurate rather than flashing a default.
+  if (economy === undefined) {
+    return (
+      <LockedShell>
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
+      </LockedShell>
+    )
+  }
   return (
     <LockedShell>
-      <OnboardingFlow wallet={wallet} state={state} />
+      <OnboardingFlow wallet={wallet} state={{ ...walletState, economy }} />
     </LockedShell>
   )
 }

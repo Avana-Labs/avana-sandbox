@@ -3,7 +3,7 @@ import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import schema from "./schema"
 import { api } from "./_generated/api"
-import { STARTER_TEST_MARKETS } from "./starterTestMarkets"
+import { seedStarterTestMarkets, starterTestPriceFor, STARTER_TEST_MARKETS } from "./starterTestMarkets"
 
 // Rooted at the convex directory so convex-test can resolve "sandbox/onboarding".
 const modules = import.meta.glob("./**/*.*s")
@@ -40,11 +40,7 @@ describe("sandbox onboarding + economy caps", () => {
   test("claim allocates the basket, marks done, and increments the economy atomically", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
-    await t.run(async (ctx) => {
-      for (const market of STARTER_TEST_MARKETS) {
-        await ctx.db.insert("markets", { ...market, chainId: 1, createdAt: 0 })
-      }
-    })
+    await t.run(seedStarterTestMarkets)
 
     await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
     expect(await asUser.mutation(api.sandbox.onboarding.beginClaim, { wallet: WALLET })).toBe("claimPending")
@@ -105,11 +101,7 @@ describe("sandbox onboarding + economy caps", () => {
   test("claim seeds wallet-scoped starter state (position + portfolio snapshot)", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
-    await t.run(async (ctx) => {
-      for (const market of STARTER_TEST_MARKETS) {
-        await ctx.db.insert("markets", { ...market, chainId: 1, createdAt: 0 })
-      }
-    })
+    await t.run(seedStarterTestMarkets)
     await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
     const result = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
     expect(result.status).toBe("done")
@@ -153,11 +145,7 @@ describe("sandbox onboarding + economy caps", () => {
 
   test("economy counters are sharded off the hot claim row; live counts stay exact", async () => {
     const t = convexTest(schema, modules)
-    await t.run(async (ctx) => {
-      for (const market of STARTER_TEST_MARKETS) {
-        await ctx.db.insert("markets", { ...market, chainId: 1, createdAt: 0 })
-      }
-    })
+    await t.run(seedStarterTestMarkets)
 
     const N = 12
     for (let i = 0; i < N; i++) {
@@ -214,5 +202,137 @@ describe("sandbox onboarding + economy caps", () => {
     const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
     expect(state.onboardingStep).toBe("waitlisted")
     expect(state.economy.userCount).toBe(1)
+  })
+
+  // FIX 1 (B2): multiply `collateralAmount` is a TOKEN QUANTITY, not USD. The engine values
+  // a position as collateralValueUsd = collateralAmount * price, so onboarding must store the
+  // gross (leveraged) collateral in tokens; the USD it stores must equal amount * price.
+  test("multiply positions store collateralAmount as a token quantity (collateralValueUsd ≈ amount * price)", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await t.run(seedStarterTestMarkets)
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
+
+    const multiplyPositions = await t.run(async (ctx) =>
+      ctx.db
+        .query("positions")
+        .withIndex("by_wallet_market", (q) => q.eq("wallet", WALLET.toLowerCase()))
+        .collect(),
+    )
+    const multiply = multiplyPositions.filter((p) => p.product === "multiply")
+    expect(multiply).toHaveLength(6)
+
+    const priceForSlug = (slug: string) => {
+      const index = Number(slug.split("-")[1])
+      return starterTestPriceFor(`MULT${index}`)
+    }
+
+    for (const position of multiply) {
+      const price = priceForSlug(position.marketSlug)
+      // The stored token quantity must NOT equal the USD equity (the old bug stored USD here).
+      // With price ≥ 100, amount and USD differ by ~2 orders of magnitude.
+      expect(position.collateralAmount).toBeDefined()
+      expect(position.collateralValueUsd).toBeDefined()
+      // Invariant the multiply engine relies on: collateralValueUsd = collateralAmount * price.
+      expect(position.collateralAmount! * price).toBeCloseTo(position.collateralValueUsd!, 6)
+      // collateralValueUsd is the GROSS (2x) exposure, so equity = value - debt and the
+      // token quantity is the gross collateral, i.e. clearly less than the USD value here.
+      expect(position.collateralAmount!).toBeLessThan(position.collateralValueUsd!)
+      expect(position.collateralAmount!).toBeGreaterThan(0)
+      // Debt is exactly half the gross exposure (multiplier 2 ⇒ equity = debt = value/2).
+      expect(position.debtValueUsd!).toBeCloseTo(position.collateralValueUsd! / 2, 6)
+    }
+  })
+
+  // FIX 2 (B1): the claim must FAIL CLOSED on an incomplete catalog rather than seeding a
+  // partial/empty portfolio and marking the wallet "done".
+  test("claim fails (does not mark done) when the catalog is entirely unseeded", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+
+    await expect(asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })).rejects.toThrow(
+      /ONBOARDING_CATALOG_INCOMPLETE/,
+    )
+
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).not.toBe("done")
+    // No portfolio was seeded.
+    const positions = await asUser.query(api.sandbox.transactions.getPositions, { wallet: WALLET })
+    expect(positions).toHaveLength(0)
+  })
+
+  test("claim fails (does not mark done) when a bucket is under-seeded", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    // Seed a full catalog EXCEPT the multiply bucket (only 5 of the required 6).
+    await t.run(async (ctx) => {
+      await seedStarterTestMarkets(ctx)
+      const multiply = await ctx.db
+        .query("markets")
+        .withIndex("by_scope_slug", (q) => q.eq("scope", "multiply"))
+        .collect()
+      await ctx.db.delete(multiply[0]!._id)
+    })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+
+    await expect(asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })).rejects.toThrow(
+      /ONBOARDING_CATALOG_INCOMPLETE.*multiply/,
+    )
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).not.toBe("done")
+  })
+
+  test("claim fails (does not mark done) when a chosen leg has no positive price", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    // Seed the full catalog but WITHOUT any tokenPrices rows — no chosen leg can be priced,
+    // and the synthetic symbols aren't in the sandbox fallback table either.
+    await t.run(async (ctx) => {
+      for (const market of STARTER_TEST_MARKETS) {
+        await ctx.db.insert("markets", { ...market, chainId: 1, createdAt: 0 })
+      }
+    })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+
+    await expect(asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })).rejects.toThrow(
+      /ONBOARDING_CATALOG_INCOMPLETE.*positive price/,
+    )
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).not.toBe("done")
+  })
+
+  // FIX 3 (C1): the steady-state gate query is wallet-only (no economy shard reads); the
+  // economy status lives in a separate query used only while onboarding is in progress.
+  test("getWalletOnboardingState returns wallet profile only (no economy); getEconomyStatus returns global counts", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await t.run(seedStarterTestMarkets)
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
+
+    const walletState = await asUser.query(api.sandbox.onboarding.getWalletOnboardingState, { wallet: WALLET })
+    expect(walletState.onboardingStep).toBe("done")
+    expect(walletState.profile?.allocatedUsd).toBe(1_000_000)
+    expect(walletState.config).toBeDefined()
+    // The wallet-only query must NOT surface the global economy counters.
+    expect("economy" in walletState).toBe(false)
+
+    const economy = await asUser.query(api.sandbox.onboarding.getEconomyStatus, { wallet: WALLET })
+    expect(economy.userCount).toBe(1)
+    expect(economy.status).toBe("open")
+    expect(economy.perUserTargetUsd).toBe(1_000_000)
+  })
+
+  test("getWalletOnboardingState and getEconomyStatus enforce wallet-identity match", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.query(api.sandbox.onboarding.getWalletOnboardingState, { wallet: "0xdifferent" }),
+    ).rejects.toThrow(/WALLET_MISMATCH/)
+    await expect(
+      asUser.query(api.sandbox.onboarding.getEconomyStatus, { wallet: "0xdifferent" }),
+    ).rejects.toThrow(/WALLET_MISMATCH/)
   })
 })

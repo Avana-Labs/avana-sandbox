@@ -6,10 +6,17 @@ import type { OnboardingGateState } from "@/app/components/sandbox/onboarding-fl
 // "requires a Convex connection" placeholder.
 vi.mock("@/app/lib/convex/market-liquidity-provider", () => ({ hasConvexClient: true }))
 
-const useQueryMock = vi.fn()
+// Route each useQuery(...) call by the mocked query identity so the split
+// getWalletOnboardingState / getEconomyStatus subscriptions each get their own value.
+const walletStateMock = vi.fn()
+const economyMock = vi.fn()
 const noopMutation = vi.fn().mockResolvedValue(undefined)
 vi.mock("convex/react", () => ({
-  useQuery: (...args: unknown[]) => useQueryMock(...args),
+  useQuery: (query: { name?: string } | undefined, args: unknown) => {
+    if (args === "skip") return undefined
+    if (query?.name === "getEconomyStatus") return economyMock()
+    return walletStateMock()
+  },
   useMutation: () => noopMutation,
 }))
 
@@ -18,6 +25,8 @@ vi.mock("@/convex/_generated/api", () => ({
     sandbox: {
       onboarding: {
         getState: { name: "getState" },
+        getWalletOnboardingState: { name: "getWalletOnboardingState" },
+        getEconomyStatus: { name: "getEconomyStatus" },
         beginAnalysis: {},
         startAnalysis: {},
         startTweet: {},
@@ -43,17 +52,19 @@ import { OnboardingPageClient } from "../onboarding-page-client"
 
 const WALLET = "0xabc0000000000000000000000000000000000001"
 
-function gateState(step: OnboardingGateState["onboardingStep"]): OnboardingGateState {
+function walletState(step: OnboardingGateState["onboardingStep"]): Omit<OnboardingGateState, "economy"> {
   return {
     onboardingStep: step,
     profile: { eligibilityTier: 1 },
     config: { basket: [], tweetTemplate: "", xHandle: "", resourcesLinks: [] },
-    economy: { status: "open", userCount: 1, userCap: 10, perUserTargetUsd: 1_000_000 },
   }
 }
 
+const ECONOMY: OnboardingGateState["economy"] = { status: "open", userCount: 1, userCap: 10, perUserTargetUsd: 1_000_000 }
+
 beforeEach(() => {
   useSiweAuthMock.mockReturnValue({ authedWallet: WALLET, isSignedIn: true })
+  economyMock.mockReturnValue(ECONOMY)
 })
 
 afterEach(() => {
@@ -63,7 +74,7 @@ afterEach(() => {
 
 describe("OnboardingPageClient — already-onboarded wallet (issue #140)", () => {
   it("shows the completed state (not the claim flow) when onboardingStep is 'done'", () => {
-    useQueryMock.mockReturnValue(gateState("done"))
+    walletStateMock.mockReturnValue(walletState("done"))
     render(<OnboardingPageClient />)
 
     expect(screen.getByText(/You're all set\./i)).toBeInTheDocument()
@@ -74,7 +85,7 @@ describe("OnboardingPageClient — already-onboarded wallet (issue #140)", () =>
   })
 
   it("still renders the claim flow for a wallet that has NOT onboarded", () => {
-    useQueryMock.mockReturnValue(gateState("wallet"))
+    walletStateMock.mockReturnValue(walletState("wallet"))
     render(<OnboardingPageClient />)
 
     expect(screen.getByText(/Fund my sandbox/i)).toBeInTheDocument()
