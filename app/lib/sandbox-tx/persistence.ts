@@ -94,12 +94,22 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
   const item = result.historyItem
   const positionId = item.positionId ?? Object.keys(result.state.positions).find((id) => result.state.positions[id]?.marketId === item.marketId)
   const position = positionId ? result.state.positions[positionId] : undefined
+  const marketSlug = position?.marketId ?? item.marketId
+
+  // A successful close DELETES the position from engine state (multiply-engine/actions.ts), so
+  // it can no longer be read back here. Without an explicit payload, recordTransaction skips its
+  // position-close branch and the server row stays status:"open" forever — a closed position
+  // that resurrects on reload / in a second tab, carrying stale debt and a phantom liquidation
+  // price. Emit an explicit closed payload so the server marks the row closed (sets closedAt)
+  // and releases the position's liquidity.
+  const closedByDelete = !position && item.status === "success" && item.kind === "close" && Boolean(marketSlug)
+
   return {
     wallet,
     intentId: item.intentId,
     product: "multiply",
     kind: item.kind,
-    marketSlug: position?.marketId ?? item.marketId,
+    marketSlug,
     requestedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
     executedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
     amountUsd: item.amountUsd,
@@ -117,7 +127,20 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
           liquidationPrice: position.liquidationPrice,
           netApyPct: position.netApy,
         }
-      : undefined,
+      : closedByDelete
+        ? {
+            status: "closed",
+            marketSlug,
+            collateralAmount: 0,
+            collateralValueUsd: 0,
+            debtValueUsd: 0,
+            multiplier: 1,
+            ltv: 0,
+            healthFactor: "infinity",
+            liquidationPrice: null,
+            netApyPct: 0,
+          }
+        : undefined,
   }
 }
 

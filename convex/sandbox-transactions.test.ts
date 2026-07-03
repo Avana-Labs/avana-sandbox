@@ -421,6 +421,56 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
     ).rejects.toThrow(/multiplier exceeds the protocol maximum/i)
   })
 
+  test("marks a multiply position closed when close records a zeroed payload (regression: C-1)", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    // Open a 2x loop.
+    const open = await asUser.mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("m-open", {
+        product: "multiply",
+        kind: "multiply",
+        marketSlug: "eth-usdc-loop",
+        position: {
+          status: "open",
+          marketSlug: "eth-usdc-loop",
+          collateralValueUsd: 2000,
+          debtValueUsd: 1000,
+          multiplier: 2,
+          ltv: 0.5,
+        },
+      }),
+    )
+    expect(open.positionId).toBeTruthy()
+
+    // Close it — the client now sends an explicit zeroed closed payload with kind "close".
+    await asUser.mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("m-close", {
+        product: "multiply",
+        kind: "close",
+        marketSlug: "eth-usdc-loop",
+        requestedAmountUsd6: "0",
+        executedAmountUsd6: "0",
+        amountUsd: 0,
+        expectedRevision: 0,
+        position: {
+          status: "closed",
+          marketSlug: "eth-usdc-loop",
+          collateralValueUsd: 0,
+          debtValueUsd: 0,
+          multiplier: 1,
+          ltv: 0,
+        },
+      }),
+    )
+
+    const positions = await t.run(async (ctx) => ctx.db.query("positions").collect())
+    expect(positions).toHaveLength(1)
+    expect(positions[0]?.status).toBe("closed")
+    expect(positions[0]?.closedAt).toBeTruthy()
+  })
+
   test("still accepts a healthy borrow (debt within liquidation value)", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })

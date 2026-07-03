@@ -143,7 +143,9 @@ function validateTransactionTransition(
   const allowedKinds = {
     borrow: new Set(["deposit", "withdraw", "borrow", "repay", "claim"]),
     lend: new Set(["deposit", "withdraw", "claim"]),
-    multiply: new Set(["multiply", "deleverage"]),
+    // "close" carries an explicit zeroed position payload (see multiplyResultToRecordArgs) so
+    // the server runs its position-close branch instead of leaving a resurrecting "open" row.
+    multiply: new Set(["multiply", "deleverage", "close"]),
   }
   if (!allowedKinds[args.product].has(args.kind)) {
     throw new Error(`INVALID_TRANSITION: ${args.kind} is not valid for ${args.product}.`)
