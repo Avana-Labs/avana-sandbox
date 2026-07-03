@@ -23,6 +23,7 @@ import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { CategoryChips } from "@/app/lib/ui/category-chips"
 import { CATEGORY_CHIPS, type CategoryChip } from "@/app/lib/markets/category"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -84,6 +85,7 @@ function SearchIcon({ className }: { className?: string } = {}) {
 }
 
 function ExpandableDesktopSearch({ value, onChange }: { value: string; onChange: (nextValue: string) => void }) {
+  const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
   const rootRef = React.useRef<HTMLDivElement | null>(null)
   const inputRef = React.useRef<HTMLInputElement | null>(null)
@@ -133,7 +135,7 @@ function ExpandableDesktopSearch({ value, onChange }: { value: string; onChange:
       >
         <button
           type="button"
-          aria-label="Search loops"
+          aria-label={t("Search loops")}
           className={cn(
             "flex shrink-0 items-center justify-center",
             isExpanded ? "pointer-events-none mr-2 size-5" : "size-10",
@@ -146,10 +148,10 @@ function ExpandableDesktopSearch({ value, onChange }: { value: string; onChange:
         {isExpanded ? (
           <input
             ref={inputRef}
-            aria-label="Search loops"
+            aria-label={t("Search loops")}
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            placeholder="Search loops"
+            placeholder={t("Search loops")}
             className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
           />
         ) : null}
@@ -194,6 +196,7 @@ function SingleSelectDropdown({
   onChange: (nextValue: string | null) => void
   ariaLabel: string
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
   const [openUpward, setOpenUpward] = React.useState(false)
   const [panelStyle, setPanelStyle] = React.useState<{
@@ -305,7 +308,7 @@ function SingleSelectDropdown({
         <>
           <button
             type="button"
-            aria-label={`Close ${ariaLabel}`}
+            aria-label={t("Close {name}").replace("{name}", ariaLabel)}
             onClick={() => setOpen(false)}
             className="fixed inset-0 z-10 cursor-default bg-transparent"
           />
@@ -399,6 +402,7 @@ export function ExploreLoopsMarketsTable({
   onOpenMultiply,
 }: ExploreLoopsMarketsTableProps) {
   const router = useRouter()
+  const { t } = useTranslation()
   const { compact } = useCurrency()
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
   const [search, setSearch] = React.useState("")
@@ -498,9 +502,9 @@ export function ExploreLoopsMarketsTable({
     <section className="mt-1 space-y-4">
       <div>
         <div>
-          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">Trending</h2>
+          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{t("Trending")}</h2>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            Highest max-leverage APY markets in the sandbox catalog.
+            {t("Highest max-leverage APY markets in the sandbox catalog.")}
           </p>
         </div>
       </div>
@@ -520,10 +524,10 @@ export function ExploreLoopsMarketsTable({
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <SingleSelectDropdown
-            allLabel="Sort by"
+            allLabel={t("Sort by")}
             value={`${sortKey}:${sortDirection}`}
             options={SORT_PRESETS.map((preset) => ({
-              label: preset.label,
+              label: t(preset.label),
               value: preset.value,
             }))}
             onChange={(nextValue) => {
@@ -532,7 +536,7 @@ export function ExploreLoopsMarketsTable({
               setSortKey(nextSortKey)
               setSortDirection(nextSortDirection)
             }}
-            ariaLabel="Sort loops"
+            ariaLabel={t("Sort loops")}
           />
           <ExpandableDesktopSearch value={search} onChange={setSearch} />
         </div>
@@ -557,7 +561,7 @@ export function ExploreLoopsMarketsTable({
             ))
           ) : (
             <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground shadow-elev-1">
-              No loops in this category yet.
+              {t("No loops in this category yet.")}
             </div>
           )}
         </div>
@@ -590,7 +594,7 @@ export function ExploreLoopsMarketsTable({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>COLLATERAL</span>
+                    <span>{t("COLLATERAL")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -605,7 +609,7 @@ export function ExploreLoopsMarketsTable({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>BORROWABLE</span>
+                    <span>{t("BORROWABLE")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -620,7 +624,7 @@ export function ExploreLoopsMarketsTable({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>MAX APY</span>
+                    <span>{t("MAX APY")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -635,7 +639,7 @@ export function ExploreLoopsMarketsTable({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>MAX LEVERAGE</span>
+                    <span>{t("MAX LEVERAGE")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -650,7 +654,7 @@ export function ExploreLoopsMarketsTable({
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
-                    <span>AVAILABLE</span>
+                    <span>{t("AVAILABLE")}</span>
                     <SortIcon />
                   </button>
                 </th>
@@ -692,7 +696,7 @@ export function ExploreLoopsMarketsTable({
                             {row.protocol}
                           </span>
                           <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
-                            <span className="text-muted-foreground dark:text-white/38">APY</span>
+                            <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
                             <span className="font-data tabular-nums text-success">
                               {getSupplyApy(row.protocol) ?? "—"}
                             </span>
@@ -718,7 +722,7 @@ export function ExploreLoopsMarketsTable({
                             {row.asset}
                           </span>
                           <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
-                            <span className="text-muted-foreground dark:text-white/38">APY</span>
+                            <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
                             <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">
                               {getBorrowApy(row.asset) ?? "—"}
                             </span>
@@ -777,7 +781,7 @@ export function ExploreLoopsMarketsTable({
                         <div className="inline-flex items-center">
                           <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
                             <a href={row.waitlistHref} target="_blank" rel="noreferrer">
-                              Join waitlist
+                              {t("Join waitlist")}
                             </a>
                           </Button>
                         </div>
@@ -809,7 +813,7 @@ export function ExploreLoopsMarketsTable({
                             router.push(actionPagePath("multiply", "multiply", { market: marketId, return: row.href }))
                           }}
                         >
-                          Multiply
+                          {t("Multiply")}
                         </Button>
                         <Button
                           type="button"
@@ -823,7 +827,7 @@ export function ExploreLoopsMarketsTable({
                             router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: row.href }))
                           }}
                         >
-                          Deleverage
+                          {t("Deleverage")}
                         </Button>
                       </HoverActionGroup>
                     </div>
@@ -836,7 +840,7 @@ export function ExploreLoopsMarketsTable({
                     colSpan={7}
                     className="px-6 py-10 text-center text-[14px] text-muted-foreground dark:text-white/38"
                   >
-                    No loops in this category yet.
+                    {t("No loops in this category yet.")}
                   </td>
                 </tr>
               )}
@@ -846,13 +850,13 @@ export function ExploreLoopsMarketsTable({
 
         <div className="flex items-center justify-end gap-3 border-t border-border px-3 py-2.5">
           <span className="text-[12px] text-muted-foreground">
-            {page + 1} of {pageCount}
+            {t("{page} of {count}").replace("{page}", String(page + 1)).replace("{count}", String(pageCount))}
           </span>
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Previous page"
+            aria-label={t("Previous page")}
             disabled={page === 0}
             onClick={() => setPage((current) => Math.max(0, current - 1))}
           >
@@ -862,7 +866,7 @@ export function ExploreLoopsMarketsTable({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Next page"
+            aria-label={t("Next page")}
             disabled={page >= pageCount - 1}
             onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
           >
@@ -892,6 +896,7 @@ function MobileLoopCard({
   availableLabel: string
   onOpenMultiply?: (href: string) => void
 }) {
+  const { t } = useTranslation()
   return (
     <Link href={row.href}>
       <MarketMobileCard clickable>
@@ -923,20 +928,20 @@ function MobileLoopCard({
           metric={
             <MarketMobileMetric
               value={row.apy || "—"}
-              label="Max APY"
+              label={t("Max APY")}
               valueClassName={row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-success") : undefined}
             />
           }
         />
 
         <MarketMobileStatList className="mt-4">
-          <MarketMobileStatRow label="Max Leverage" value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} />
-          <MarketMobileStatRow label="Liquidity" value={availableLabel} />
+          <MarketMobileStatRow label={t("Max Leverage")} value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} />
+          <MarketMobileStatRow label={t("Liquidity")} value={availableLabel} />
         </MarketMobileStatList>
 
         <MarketMobileInsetStats className="mt-3">
-          <MarketMobileInsetStat label="Supply APY" value={supplyApy ?? "—"} valueClassName="text-success" />
-          <MarketMobileInsetStat label="Borrow APY" value={borrowApy ?? "—"} valueClassName="text-rose-600 dark:text-rose-400" />
+          <MarketMobileInsetStat label={t("Supply APY")} value={supplyApy ?? "—"} valueClassName="text-success" />
+          <MarketMobileInsetStat label={t("Borrow APY")} value={borrowApy ?? "—"} valueClassName="text-rose-600 dark:text-rose-400" />
         </MarketMobileInsetStats>
 
         <MarketMobilePrimaryAction
@@ -945,7 +950,7 @@ function MobileLoopCard({
             onOpenMultiply?.(row.href)
           }}
         >
-          Multiply
+          {t("Multiply")}
         </MarketMobilePrimaryAction>
       </MarketMobileCard>
     </Link>
@@ -953,6 +958,7 @@ function MobileLoopCard({
 }
 
 function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSnapshots"][number] }) {
+  const { t } = useTranslation()
   const { compact } = useCurrency()
   const collateralSrc = resolveImageSrc(snapshot.collateralLogo)
   const borrowSrc = resolveImageSrc(snapshot.borrowLogo, snapshot.collateralLogo)
@@ -999,13 +1005,13 @@ function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSn
 
         <div className="space-y-2.5">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] leading-none text-muted-foreground">APY</span>
+            <span className="text-[12px] leading-none text-muted-foreground">{t("APY")}</span>
             <span className="font-data text-[14px] font-medium tabular-nums leading-none text-success">
               {snapshot.apyLabel}
             </span>
           </div>
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] leading-none text-muted-foreground">Available</span>
+            <span className="text-[12px] leading-none text-muted-foreground">{t("Available")}</span>
             <span className="font-data text-[14px] font-medium tabular-nums leading-none text-foreground dark:text-white/88">
               {compact(snapshot.availableUsd)}
             </span>
