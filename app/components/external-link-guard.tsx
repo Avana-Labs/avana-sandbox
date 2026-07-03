@@ -2,6 +2,7 @@
 
 import { ArrowUpRight, X } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -47,6 +48,7 @@ function shouldInterceptExternalLink(anchor: HTMLAnchorElement) {
 
 export function ExternalLinkGuard() {
   const [pendingLink, setPendingLink] = useState<PendingExternalLink | null>(null)
+  const { t } = useTranslation()
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
@@ -127,22 +129,22 @@ export function ExternalLinkGuard() {
         <div className="relative flex flex-col px-5 pb-5 pt-8 sm:px-7 sm:pb-6 sm:pt-7">
           <DialogClose
             className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            aria-label="Close dialog"
+            aria-label={t("Close dialog")}
           >
             <X className="h-4 w-4" aria-hidden />
           </DialogClose>
 
           <DialogHeader className="pb-5 text-left">
             <DialogTitle className="text-[20px] font-medium leading-tight tracking-[-0.02em] text-foreground sm:text-[22px]">
-              Third-Party Website
+              {t("Third-Party Website")}
             </DialogTitle>
           </DialogHeader>
 
           <div className="border-t border-border pt-5">
             <p className="max-w-[40rem] text-[14px] leading-6 text-muted-foreground sm:text-[15px]">
-              By clicking "Continue", you will leave the Avana website and access a website made available by an
-              independent third party. Avana is not responsible for the actions or content of any third-party
-              websites.
+              {t(
+                'By clicking "Continue", you will leave the Avana website and access a website made available by an independent third party. Avana is not responsible for the actions or content of any third-party websites.',
+              )}
             </p>
           </div>
 
@@ -152,7 +154,7 @@ export function ExternalLinkGuard() {
               onClick={openExternalLink}
               className="h-10 w-full rounded-radius-sm bg-brand text-[14px] font-medium text-white shadow-none hover:bg-[#009dbd]"
             >
-              Continue
+              {t("Continue")}
               <ArrowUpRight className="ml-2 h-4 w-4" aria-hidden />
             </Button>
           </div>

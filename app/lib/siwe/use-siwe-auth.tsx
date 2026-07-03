@@ -6,6 +6,7 @@ import { buildSiweMessage } from "./message"
 import { clearSiweToken, getSiweToken, setSiweToken, subscribeSiwe, type SiweToken } from "./auth-store"
 import { getJwtExpirySeconds, isJwtExpired } from "./token-expiry"
 import { IS_DEV_SHORTCUT_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /** Reactively read the current SIWE token (null when signed out). */
 export function useSiweToken(): SiweToken | null {
@@ -79,6 +80,7 @@ export function useSiweAuth() {
   const token = useLiveSiweToken()
   const { address, chainId, isConnected, isConnecting, isReconnecting } = useAccount()
   const { signMessageAsync } = useSignMessage()
+  const { t } = useTranslation()
 
   const authedWallet = token?.wallet ?? (IS_DEV_SHORTCUT_MODE ? TEST_MODE_WALLET_ADDRESS : null)
   const effectiveAddress = IS_DEV_SHORTCUT_MODE ? TEST_MODE_WALLET_ADDRESS : address
@@ -92,9 +94,9 @@ export function useSiweAuth() {
   const isRestoring = !IS_DEV_SHORTCUT_MODE && token != null && !isSignedIn && (isReconnecting || isConnecting)
 
   const signIn = useCallback(async (): Promise<string> => {
-    if (!address) throw new Error("Connect a wallet first.")
+    if (!address) throw new Error(t("Connect a wallet first."))
     const nonceRes = await fetch("/api/siwe/nonce", { cache: "no-store" })
-    if (!nonceRes.ok) throw new Error("Could not get a sign-in nonce.")
+    if (!nonceRes.ok) throw new Error(t("Could not get a sign-in nonce."))
     const { nonce } = (await nonceRes.json()) as { nonce: string }
     const message = buildSiweMessage({
       address,
@@ -114,7 +116,7 @@ export function useSiweAuth() {
       const err = (await verifyRes.json().catch(() => ({}))) as {
         error?: string
       }
-      throw new Error(err.error ?? "Sign-in verification failed.")
+      throw new Error(err.error ?? t("Sign-in verification failed."))
     }
     const { token: jwt, wallet } = (await verifyRes.json()) as {
       token: string
@@ -122,7 +124,7 @@ export function useSiweAuth() {
     }
     setSiweToken(jwt, wallet)
     return wallet
-  }, [address, chainId, signMessageAsync])
+  }, [address, chainId, signMessageAsync, t])
 
   const signOut = useCallback(() => clearSiweToken(), [])
 

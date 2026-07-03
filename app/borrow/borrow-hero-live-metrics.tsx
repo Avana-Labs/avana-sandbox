@@ -1,6 +1,7 @@
 "use client"
 
 import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 export type BorrowHeroMetrics = {
@@ -13,6 +14,7 @@ export type BorrowHeroMetrics = {
 
 function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
   const fc = useCurrency()
+  const { t } = useTranslation()
   const changeIsUp = metrics.totalTvlChangePct >= 0
   const changeLabel = `${changeIsUp ? "+" : ""}${metrics.totalTvlChangePct.toFixed(2)}%`
   return (
@@ -20,7 +22,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
       <div className="min-w-0">
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total TVL</p>
+            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">{t("Total TVL")}</p>
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
               {fc.compact(metrics.totalTvlUsd)}
             </p>
@@ -43,7 +45,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
         <div>
           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-hero-metric-emerald md:justify-end">
             <span className="h-1.5 w-1.5 rounded-full bg-[#7ec39f]" />
-            Total Collateral
+            {t("Total Collateral")}
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
             {fc.compact(metrics.totalCollateralUsd)}
@@ -53,7 +55,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
         <div>
           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-hero-metric-violet md:justify-end">
             <span className="h-1.5 w-1.5 rounded-full bg-[#a092ef]" />
-            Available Credit
+            {t("Available Credit")}
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
             {fc.compact(metrics.availableCreditUsd)}
@@ -63,7 +65,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
         <div>
           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-hero-metric-amber md:justify-end">
             <span className="h-1.5 w-1.5 rounded-full bg-[#c29f78]" />
-            Outstanding Loans
+            {t("Outstanding Loans")}
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
             {fc.compact(metrics.outstandingLoansUsd)}

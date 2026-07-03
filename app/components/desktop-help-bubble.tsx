@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { ArrowUpRight, BookOpen, CircleHelp, FileText, LifeBuoy, Mail, ShieldCheck } from "lucide-react"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 
 type HelpLink = {
@@ -50,11 +51,12 @@ const HELP_LINKS: HelpLink[] = [
 ]
 
 function HelpLinkItem({ href, label, icon: Icon, external, onActivate }: HelpLinkItemProps) {
+  const { t } = useTranslation()
   const content = (
     <>
       <span className="flex items-center gap-2">
         <Icon className="h-4 w-4 text-foreground/70" strokeWidth={1.8} />
-        <span>{label}</span>
+        <span>{t(label)}</span>
       </span>
       {external ? <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/70" aria-hidden /> : null}
     </>
@@ -94,6 +96,7 @@ export function DesktopHelpBubble() {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const shouldReduceMotion = useReducedMotion()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -168,8 +171,8 @@ export function DesktopHelpBubble() {
 
       <motion.button
         type="button"
-        aria-label="Open help menu"
-        title="Help"
+        aria-label={t("Open help menu")}
+        title={t("Help")}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
         whileHover={{ scale: 1.05 }}

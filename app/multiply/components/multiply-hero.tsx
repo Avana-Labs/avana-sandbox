@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { MultiplyHeroMetrics } from "@/app/lib/data/providers/multiply"
 
 const HIDDEN = "••••••"
@@ -10,11 +11,12 @@ const HIDDEN = "••••••"
 export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const fc = useCurrency()
+  const { t } = useTranslation()
 
   const stats = [
-    { label: "Loop Markets", tone: "emerald" as const, value: `${metrics.marketCount}`, sensitive: false },
-    { label: "Avg Max APY", tone: "emerald" as const, value: `${(metrics.averageMaxApy * 100).toFixed(2)}%`, sensitive: false },
-    { label: "Avg Max Leverage", tone: "amber" as const, value: `${metrics.averageMaxLeverage.toFixed(1)}x`, sensitive: false },
+    { label: t("Loop Markets"), tone: "emerald" as const, value: `${metrics.marketCount}`, sensitive: false },
+    { label: t("Avg Max APY"), tone: "emerald" as const, value: `${(metrics.averageMaxApy * 100).toFixed(2)}%`, sensitive: false },
+    { label: t("Avg Max Leverage"), tone: "amber" as const, value: `${metrics.averageMaxLeverage.toFixed(1)}x`, sensitive: false },
   ]
 
   return (
@@ -22,7 +24,7 @@ export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
       <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total Liquidity</p>
+            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">{t("Total Liquidity")}</p>
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
               {showDollarAmounts ? fc.compact(metrics.totalLiquidityUsd) : HIDDEN}
             </p>
