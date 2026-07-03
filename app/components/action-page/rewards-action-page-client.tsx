@@ -20,9 +20,11 @@ import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?: string }) {
   const descriptor = getActionDescriptor("rewards", "claim")
+  const { t } = useTranslation()
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const rewards = useRewardsSessionContext()
@@ -67,7 +69,7 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
       mapRewardsClaimPreviewToActionUi({
         allowed: claimSummary.claimUsd > 0,
         claimUsd: claimSummary.claimUsd,
-        marketLabel: "Avana rewards",
+        marketLabel: t("Avana rewards"),
         claimableTaskCount: claimSummary.claimableTaskCount,
         tokenBreakdown: claimSummary.tokenBreakdown,
         blockedReason: claimSummary.claimUsd > 0 ? null : "Nothing to claim",
@@ -138,7 +140,9 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
       setSuccessUi(
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
-          description: `${formatActionUsd(claimSummary.claimUsd)} in rewards claimed.`,
+          // Uses the "{amount} processed." success sink (translated via translate()),
+          // matching the borrow/lend/multiply confirmation copy.
+          description: `${formatActionUsd(claimSummary.claimUsd)} processed.`,
           receiptHash: claims.receipt.hash ?? null,
           metrics: previewUi.metrics,
           href: dashboardHrefForProduct("rewards"),

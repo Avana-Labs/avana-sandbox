@@ -2928,6 +2928,138 @@ Object.assign(RU, {
   APY: "APY",
 })
 
+// Phase 5 — Action-page amount card balance labels + Multiply close-position copy.
+// Keys are the English source strings; every locale below carries the same set so
+// `translate()` resolves each one directly instead of falling back to English.
+// `Max` is only added to the locales that don't already define it (ZH/ES do).
+Object.assign(ZH_CN, {
+  Balance: "余额",
+  "Available to borrow": "可借额度",
+  "Collateral supplied": "已提供抵押品",
+  "Avana rewards": "Avana 奖励",
+  "Position closed": "仓位已关闭",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "您的 {symbol} 仓位已全部平仓，抵押品已提取。",
+})
+
+Object.assign(ES, {
+  Balance: "Saldo",
+  "Available to borrow": "Disponible para pedir prestado",
+  "Collateral supplied": "Garantía aportada",
+  "Avana rewards": "Recompensas de Avana",
+  "Position closed": "Posición cerrada",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "Tu posición de {symbol} se cerró por completo y se retiró la garantía.",
+})
+
+Object.assign(AR, {
+  Max: "الحد الأقصى",
+  Balance: "الرصيد",
+  "Available to borrow": "المتاح للاقتراض",
+  "Collateral supplied": "الضمان المقدَّم",
+  "Avana rewards": "مكافآت Avana",
+  "Position closed": "تم إغلاق المركز",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "تم إغلاق مركز {symbol} بالكامل وسحب الضمان.",
+})
+
+Object.assign(DE, {
+  Max: "Max",
+  Balance: "Guthaben",
+  "Available to borrow": "Verfügbar zum Leihen",
+  "Collateral supplied": "Bereitgestellte Sicherheit",
+  "Avana rewards": "Avana-Prämien",
+  "Position closed": "Position geschlossen",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "Deine {symbol}-Position wurde vollständig aufgelöst und die Sicherheit abgezogen.",
+})
+
+Object.assign(HI, {
+  Max: "अधिकतम",
+  Balance: "बैलेंस",
+  "Available to borrow": "उधार लेने के लिए उपलब्ध",
+  "Collateral supplied": "आपूर्ति की गई कोलैटरल",
+  "Avana rewards": "Avana रिवॉर्ड्स",
+  "Position closed": "पोज़िशन बंद कर दी गई",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "आपकी {symbol} पोज़िशन पूरी तरह बंद कर दी गई और कोलैटरल निकाल लिया गया।",
+})
+
+Object.assign(TR, {
+  Max: "Maks",
+  Balance: "Bakiye",
+  "Available to borrow": "Borç alınabilir tutar",
+  "Collateral supplied": "Sağlanan teminat",
+  "Avana rewards": "Avana ödülleri",
+  "Position closed": "Pozisyon kapatıldı",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "{symbol} pozisyonunuz tamamen kapatıldı ve teminat çekildi.",
+})
+
+Object.assign(NL, {
+  Max: "Max",
+  Balance: "Saldo",
+  "Available to borrow": "Beschikbaar om te lenen",
+  "Collateral supplied": "Verstrekt onderpand",
+  "Avana rewards": "Avana-beloningen",
+  "Position closed": "Positie gesloten",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "Je {symbol}-positie is volledig afgebouwd en het onderpand is opgenomen.",
+})
+
+Object.assign(FR, {
+  Max: "Max",
+  Balance: "Solde",
+  "Available to borrow": "Disponible à emprunter",
+  "Collateral supplied": "Garantie fournie",
+  "Avana rewards": "Récompenses Avana",
+  "Position closed": "Position clôturée",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "Votre position {symbol} a été entièrement dénouée et la garantie retirée.",
+})
+
+Object.assign(ID, {
+  Max: "Maks",
+  Balance: "Saldo",
+  "Available to borrow": "Tersedia untuk dipinjam",
+  "Collateral supplied": "Jaminan yang disediakan",
+  "Avana rewards": "Hadiah Avana",
+  "Position closed": "Posisi ditutup",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "Posisi {symbol} Anda telah sepenuhnya ditutup dan jaminan ditarik.",
+})
+
+Object.assign(JA, {
+  Max: "最大",
+  Balance: "残高",
+  "Available to borrow": "借入可能額",
+  "Collateral supplied": "提供済み担保",
+  "Avana rewards": "Avana リワード",
+  "Position closed": "ポジションをクローズしました",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "{symbol} ポジションは完全に解消され、担保が引き出されました。",
+})
+
+Object.assign(KO, {
+  Max: "최대",
+  Balance: "잔액",
+  "Available to borrow": "대출 가능 금액",
+  "Collateral supplied": "공급된 담보",
+  "Avana rewards": "Avana 리워드",
+  "Position closed": "포지션이 종료됨",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "{symbol} 포지션이 완전히 청산되고 담보가 인출되었습니다.",
+})
+
+Object.assign(PT, {
+  Max: "Máx",
+  Balance: "Saldo",
+  "Available to borrow": "Disponível para pedir emprestado",
+  "Collateral supplied": "Garantia fornecida",
+  "Avana rewards": "Recompensas Avana",
+  "Position closed": "Posição encerrada",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "A sua posição de {symbol} foi totalmente desfeita e a garantia foi retirada.",
+})
+
+Object.assign(RU, {
+  Max: "Макс",
+  Balance: "Баланс",
+  "Available to borrow": "Доступно для займа",
+  "Collateral supplied": "Предоставленный залог",
+  "Avana rewards": "Награды Avana",
+  "Position closed": "Позиция закрыта",
+  "Your {symbol} position was fully unwound and collateral withdrawn.": "Ваша позиция {symbol} полностью закрыта, залог выведен.",
+})
+
 /** Map our language codes to a valid BCP-47 tag for the document `lang` attribute. */
 export const LANGUAGE_HTML_LANG: Record<LanguageCode, string> = {
   EN: "en",
