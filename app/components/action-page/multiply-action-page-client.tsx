@@ -36,6 +36,7 @@ import {
 import { formatActionAmount } from "@/app/lib/action-system/formatters"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function MultiplyActionPageClient({
   kind,
@@ -57,6 +58,7 @@ export function MultiplyActionPageClient({
   initialMultiplier?: string
 }) {
   const descriptor = getActionDescriptor("multiply", kind)
+  const { t } = useTranslation()
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useMultiplySessionContext()
@@ -445,8 +447,11 @@ export function MultiplyActionPageClient({
 
       setSuccessUi(
         mapBorrowSuccessToActionUi({
-          title: "Position closed",
-          description: `Your ${market.collateralAsset.symbol} position was fully unwound and collateral withdrawn.`,
+          title: t("Position closed"),
+          description: t("Your {symbol} position was fully unwound and collateral withdrawn.").replace(
+            "{symbol}",
+            market.collateralAsset.symbol,
+          ),
           receiptHash: result.receipt.hash ?? null,
           metrics: previewUi?.metrics ?? [],
           href: dashboardHrefForProduct("multiply"),
@@ -639,7 +644,7 @@ export function MultiplyActionPageClient({
           className="mt-3 w-full rounded-radius-lg border border-border/70 px-4 py-3 text-[15px] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           data-testid="multiply-close-position"
         >
-          Close position and withdraw collateral
+          {t("Close position and withdraw collateral")}
         </button>
       ) : null}
 
