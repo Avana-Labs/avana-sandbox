@@ -116,7 +116,13 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
     simulated: item.simulated,
     position: position
       ? {
-          status: position.multiplier <= 1 ? "closed" : "open",
+          // A multiply position that still exists in engine state is OPEN — including a fully
+          // deleveraged 1x/$0 position, which the engine intentionally keeps (see
+          // multiply-system sequence-consistency test). "Closed" is signalled by DELETION (the
+          // close action → closedByDelete above). Inferring "closed" from multiplier<=1 here
+          // diverged from local state: the dashboard showed an open 1x position while the server
+          // row was marked closed, flip-flopping on reload.
+          status: "open",
           marketSlug: position.marketId,
           collateralAmount: position.collateralAmount,
           collateralValueUsd: position.collateralValueUsd,
