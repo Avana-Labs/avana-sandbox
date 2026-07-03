@@ -8,7 +8,9 @@ describe("ActionHealthFactorBar", () => {
   it("renders zone bar and status label", () => {
     render(<ActionHealthFactorBar value={1.2} />)
     expect(screen.getByTestId("action-health-factor-bar")).toBeInTheDocument()
-    expect(screen.getAllByText("Caution").length).toBeGreaterThan(0)
+    // 1.2 falls in the "Watch" band (conservative 4-band scale); it appears as the status
+    // label and in the zone strip.
+    expect(screen.getAllByText("Watch").length).toBeGreaterThan(0)
   })
 })
 
