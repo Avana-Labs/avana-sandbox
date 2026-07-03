@@ -510,6 +510,8 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
         product: "multiply",
         kind: "multiply",
         marketSlug: "eth-usdc-loop",
+        multiplierBefore: 1,
+        multiplierAfter: 2,
         position: {
           status: "open",
           marketSlug: "eth-usdc-loop",
@@ -521,6 +523,12 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
       }),
     )
     expect(open.positionId).toBeTruthy()
+
+    // Per-transaction leverage round-trips through the schema (M-7): getSessionState exposes it.
+    const session = await asUser.query(api.sandbox.transactions.getSessionState, { wallet: WALLET })
+    const openTx = session.transactions.find((row) => row.intentId === "m-open")
+    expect(openTx?.multiplierBefore).toBe(1)
+    expect(openTx?.multiplierAfter).toBe(2)
 
     // Close it — the client now sends an explicit zeroed closed payload with kind "close".
     await asUser.mutation(

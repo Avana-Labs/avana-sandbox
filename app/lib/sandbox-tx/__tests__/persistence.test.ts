@@ -94,5 +94,8 @@ describe("multiplyResultToRecordArgs — close persistence (regression: C-1)", (
     expect(args.position).toBeDefined()
     expect(args.position?.status).toBe("open")
     expect(args.position?.multiplier).toBe(1)
+    // Per-transaction leverage is carried through so hydrated history shows 2.2x → 1x (M-7).
+    expect(args.multiplierBefore).toBe(2.2)
+    expect(args.multiplierAfter).toBe(1)
   })
 })
