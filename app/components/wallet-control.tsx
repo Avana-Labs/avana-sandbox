@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ConnectKitButton, useModal, useSIWE } from "connectkit"
+import { ConnectKitButton, useSIWE } from "connectkit"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 import {
@@ -34,15 +34,6 @@ export function WalletControl({ size = "desktop" }: { size?: "mobile" | "desktop
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
-  const { open: walletModalOpen } = useModal()
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("wallet-modal-open", walletModalOpen)
-    return () => {
-      document.documentElement.classList.remove("wallet-modal-open")
-    }
-  }, [walletModalOpen])
-
   const siwe = useSIWE()
   const isSignedIn = Boolean(siwe?.isSignedIn)
   const signingIn = Boolean(siwe?.isLoading)
