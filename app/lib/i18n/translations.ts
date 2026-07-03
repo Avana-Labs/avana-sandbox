@@ -45,6 +45,8 @@ const ZH_CN: TranslationDictionary = {
   "Share on X first": "先在 X 分享",
   "I posted it": "我已发布",
   "Open dashboard": "打开仪表盘",
+  Today: "今日",
+  Yesterday: "昨天",
 }
 
 const ES: TranslationDictionary = {
@@ -80,6 +82,8 @@ const ES: TranslationDictionary = {
   "Share on X first": "Compartir en X primero",
   "I posted it": "Ya lo publiqué",
   "Open dashboard": "Abrir panel",
+  Today: "Hoy",
+  Yesterday: "Ayer",
 }
 
 const DE: TranslationDictionary = {
@@ -124,6 +128,8 @@ const DE: TranslationDictionary = {
   "Share on X first": "Zuerst auf X teilen",
   "I posted it": "Ich habe es gepostet",
   "Open dashboard": "Dashboard öffnen",
+  Today: "Heute",
+  Yesterday: "Gestern",
 }
 
 const AR: TranslationDictionary = {
@@ -168,6 +174,8 @@ const AR: TranslationDictionary = {
   "Share on X first": "المشاركة على X أولًا",
   "I posted it": "لقد نشرته",
   "Open dashboard": "فتح لوحة التحكم",
+  Today: "اليوم",
+  Yesterday: "أمس",
 }
 
 const HI: TranslationDictionary = {
@@ -212,6 +220,8 @@ const HI: TranslationDictionary = {
   "Share on X first": "पहले X पर साझा करें",
   "I posted it": "मैंने पोस्ट कर दिया",
   "Open dashboard": "डैशबोर्ड खोलें",
+  Today: "आज",
+  Yesterday: "कल",
 }
 
 const TR: TranslationDictionary = {
@@ -256,6 +266,8 @@ const TR: TranslationDictionary = {
   "Share on X first": "Önce X'te paylaş",
   "I posted it": "Paylaştım",
   "Open dashboard": "Paneli aç",
+  Today: "Bugün",
+  Yesterday: "Dün",
 }
 
 const FR: TranslationDictionary = {
@@ -291,6 +303,8 @@ const FR: TranslationDictionary = {
   "Share on X first": "Partager sur X d'abord",
   "I posted it": "Je l'ai publié",
   "Open dashboard": "Ouvrir le tableau de bord",
+  Today: "Aujourd'hui",
+  Yesterday: "Hier",
 }
 
 const PT: TranslationDictionary = {
@@ -326,6 +340,8 @@ const PT: TranslationDictionary = {
   "Share on X first": "Compartilhar no X primeiro",
   "I posted it": "Já publiquei",
   "Open dashboard": "Abrir painel",
+  Today: "Hoje",
+  Yesterday: "Ontem",
 }
 
 const NL: TranslationDictionary = {
@@ -361,6 +377,8 @@ const NL: TranslationDictionary = {
   "Share on X first": "Eerst delen op X",
   "I posted it": "Ik heb het geplaatst",
   "Open dashboard": "Dashboard openen",
+  Today: "Vandaag",
+  Yesterday: "Gisteren",
 }
 
 const ID: TranslationDictionary = {
@@ -396,6 +414,8 @@ const ID: TranslationDictionary = {
   "Share on X first": "Bagikan di X dulu",
   "I posted it": "Sudah saya posting",
   "Open dashboard": "Buka dasbor",
+  Today: "Hari ini",
+  Yesterday: "Kemarin",
 }
 
 const JA: TranslationDictionary = {
@@ -431,6 +451,8 @@ const JA: TranslationDictionary = {
   "Share on X first": "まず X で共有",
   "I posted it": "投稿しました",
   "Open dashboard": "ダッシュボードを開く",
+  Today: "今日",
+  Yesterday: "昨日",
 }
 
 const KO: TranslationDictionary = {
@@ -466,6 +488,8 @@ const KO: TranslationDictionary = {
   "Share on X first": "먼저 X에 공유",
   "I posted it": "게시했어요",
   "Open dashboard": "대시보드 열기",
+  Today: "오늘",
+  Yesterday: "어제",
 }
 
 const RU: TranslationDictionary = {
@@ -501,6 +525,8 @@ const RU: TranslationDictionary = {
   "Share on X first": "Сначала поделиться в X",
   "I posted it": "Я опубликовал",
   "Open dashboard": "Открыть панель",
+  Today: "Сегодня",
+  Yesterday: "Вчера",
 }
 
 Object.assign(ZH_CN, {
