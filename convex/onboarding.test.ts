@@ -204,6 +204,30 @@ describe("sandbox onboarding + economy caps", () => {
     expect(state.economy.userCount).toBe(1)
   })
 
+  test("closes the economy atomically on the final allowed claim", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await seedStarterTestMarkets(ctx)
+      await ctx.db.insert("sandboxEconomy", {
+        userCap: 1,
+        totalGrantedUsdCap: 10_000_000_000,
+        perUserTargetUsd: 1_000_000,
+        minMultiplier: 0.8,
+        maxMultiplier: 1.2,
+        userCount: 0,
+        totalGrantedUsd: 0,
+        status: "open",
+      })
+    })
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    expect((await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })).status).toBe("done")
+
+    const economy = await t.run((ctx) => ctx.db.query("sandboxEconomy").first())
+    expect(economy?.status).toBe("closed")
+    expect(economy?.closedReason).toBe("userCap reached")
+  })
+
   // FIX 1 (B2): multiply `collateralAmount` is a TOKEN QUANTITY, not USD. The engine values
   // a position as collateralValueUsd = collateralAmount * price, so onboarding must store the
   // gross (leveraged) collateral in tokens; the USD it stores must equal amount * price.
