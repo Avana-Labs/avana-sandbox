@@ -40,7 +40,7 @@ export function mergeConvexLendSnapshots(
     if (!existing) continue
     const price = existing.assetPriceUsd || 1
     const supplyApy = snap.supplyApyPct / 100
-    markets[snap.slug] = {
+    const next = {
       ...existing,
       totalSupplied: snap.suppliedUsd / price,
       totalBorrowed: snap.borrowedUsd / price,
@@ -49,6 +49,19 @@ export function mergeConvexLendSnapshots(
       supplyApy,
       totalApy: supplyApy + existing.rewardsApy,
     }
+    // Skip when nothing changed: every emit re-sends every market, so an unconditional
+    // `changed = true` allocated a new state object per push and re-fired every page-live read.
+    if (
+      existing.totalSupplied === next.totalSupplied &&
+      existing.totalBorrowed === next.totalBorrowed &&
+      existing.availableLiquidity === next.availableLiquidity &&
+      existing.utilization === next.utilization &&
+      existing.supplyApy === next.supplyApy &&
+      existing.totalApy === next.totalApy
+    ) {
+      continue
+    }
+    markets[snap.slug] = next
     changed = true
   }
 

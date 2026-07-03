@@ -33,14 +33,18 @@ export function mergeConvexMultiplySnapshots(
     if (snap.scope !== "multiply") continue
     const existing = markets[snap.slug]
     if (!existing) continue
+    const availableLiquidityUsd = snap.suppliedUsd
+    const supplyApy = snap.supplyApyPct / 100
+    const borrowApy = snap.borrowAprPct / 100
+    const e = existing.economics
+    // Skip when nothing changed (see borrow/lend hydration): avoids allocating a new state
+    // object on every re-emit and re-firing the page-live async reads across all clients.
+    if (e.availableLiquidityUsd === availableLiquidityUsd && e.supplyApy === supplyApy && e.borrowApy === borrowApy) {
+      continue
+    }
     markets[snap.slug] = {
       ...existing,
-      economics: {
-        ...existing.economics,
-        availableLiquidityUsd: snap.suppliedUsd,
-        supplyApy: snap.supplyApyPct / 100,
-        borrowApy: snap.borrowAprPct / 100,
-      },
+      economics: { ...existing.economics, availableLiquidityUsd, supplyApy, borrowApy },
     }
     changed = true
   }
