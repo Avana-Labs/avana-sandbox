@@ -610,7 +610,7 @@ export const claim = mutation({
     const multiplyEquityUsd = allocation.multiply.reduce((sum, leg) => sum + leg.amountUsd, 0)
     const multiplyExposureUsd = multiplyEquityUsd * 2
     const multiplyDebtUsd = multiplyExposureUsd - multiplyEquityUsd
-    await ctx.db.insert("portfolioSnapshots", {
+    const initialPortfolio = {
       wallet,
       at: now,
       totalValueUsd:
@@ -620,7 +620,9 @@ export const claim = mutation({
       availableToBorrowUsd: collateralValueUsd * 0.7,
       totalMultiplyExposureUsd: multiplyExposureUsd,
       totalEarnedUsd: 0,
-    })
+    }
+    await ctx.db.insert("portfolioSnapshots", initialPortfolio)
+    await ctx.db.insert("portfolioCurrent", initialPortfolio)
     await ctx.db.insert("sandboxSessions", {
       wallet,
       authSubject: profile.authSubject,

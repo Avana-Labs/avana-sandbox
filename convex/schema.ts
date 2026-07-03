@@ -795,6 +795,18 @@ export default defineSchema({
     totalEarnedUsd: v.number(),
   }).index("by_wallet_at", ["wallet", "at"]),
 
+  /** One mutable current portfolio row per wallet; hot dashboard reads never scan history. */
+  portfolioCurrent: defineTable({
+    wallet: v.string(),
+    at: v.number(),
+    totalValueUsd: v.number(),
+    totalSuppliedUsd: v.number(),
+    totalBorrowedUsd: v.number(),
+    availableToBorrowUsd: v.number(),
+    totalMultiplyExposureUsd: v.number(),
+    totalEarnedUsd: v.number(),
+  }).index("by_wallet", ["wallet"]),
+
   /**
    * Optional per-wallet session metadata: which seed version provisioned this
    * wallet's starter state, when, and last-seen. The hourly transaction rate limit

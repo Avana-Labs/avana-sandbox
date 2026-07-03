@@ -26,6 +26,8 @@ import type { Doc } from "../_generated/dataModel"
 
 /** Hourly per-wallet transaction cap (anti-abuse). Exported for tests. */
 export const MAX_TX_PER_HOUR = 200
+const PORTFOLIO_HISTORY_INTERVAL_MS = 60 * 60 * 1000
+const MAX_PORTFOLIO_HISTORY_ROWS = 365
 
 /** Global multiply leverage ceiling, mirrors MULTIPLY_ACTION_MAX_LEVERAGE (client slider). */
 const MAX_MULTIPLIER = 10
@@ -278,7 +280,7 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
     .filter((position) => position.product === "multiply")
     .reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
 
-  await ctx.db.insert("portfolioSnapshots", {
+  const snapshot = {
     wallet,
     at: now,
     totalValueUsd: liquid + borrowCollateral - borrowDebt + lendSupplied + multiplyCollateral - multiplyDebt,
@@ -287,7 +289,31 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
     availableToBorrowUsd: Math.max(0, borrowCollateral * 0.7 - borrowDebt),
     totalMultiplyExposureUsd: multiplyCollateral,
     totalEarnedUsd: earned,
-  })
+  }
+
+  const current = await ctx.db
+    .query("portfolioCurrent")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .unique()
+  if (current) await ctx.db.replace(current._id, snapshot)
+  else await ctx.db.insert("portfolioCurrent", snapshot)
+
+  const latestHistory = await ctx.db
+    .query("portfolioSnapshots")
+    .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+    .order("desc")
+    .first()
+  if (!latestHistory || now - latestHistory.at >= PORTFOLIO_HISTORY_INTERVAL_MS) {
+    await ctx.db.insert("portfolioSnapshots", snapshot)
+    const history = await ctx.db
+      .query("portfolioSnapshots")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .order("desc")
+      .take(MAX_PORTFOLIO_HISTORY_ROWS + 1)
+    for (const expired of history.slice(MAX_PORTFOLIO_HISTORY_ROWS)) {
+      await ctx.db.delete(expired._id)
+    }
+  }
 }
 
 /**
@@ -705,9 +731,14 @@ export const getPortfolioPageState = query({
       }
     }
 
-    const [transactions, snapshots, risk, rewards, balances, starterAllocation, poolRows, marketRows] = await Promise.all([
+    const [transactions, snapshotRows, current, risk, rewards, balances, starterAllocation, poolRows, marketRows] = await Promise.all([
       ctx.db.query("transactions").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("desc").take(500),
-      ctx.db.query("portfolioSnapshots").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("asc").collect(),
+      ctx.db
+        .query("portfolioSnapshots")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+        .order("desc")
+        .take(MAX_PORTFOLIO_HISTORY_ROWS),
+      ctx.db.query("portfolioCurrent").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
       ctx.db.query("riskSnapshots").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("desc").first(),
       ctx.db.query("sandboxRewards").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
       ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
@@ -723,6 +754,8 @@ export const getPortfolioPageState = query({
     ])
     const pools = poolRows.filter((row): row is NonNullable<typeof row> => row !== null)
     const markets = marketRows.filter((row): row is NonNullable<typeof row> => row !== null)
+    const snapshots = snapshotRows.reverse()
+    if (current && snapshots.at(-1)?.at !== current.at) snapshots.push(current)
     return { positions: hydratedPositions, transactions, snapshots, risk, pools, markets, rewards, balances, starterAllocation }
   },
 })
@@ -732,18 +765,21 @@ export const getPortfolio = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const snapshots = await ctx.db
-      .query("portfolioSnapshots")
-      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-      .order("asc")
-      .collect()
-    const positions = await ctx.db
-      .query("positions")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .collect()
+    const [snapshotRows, current, positions] = await Promise.all([
+      ctx.db
+        .query("portfolioSnapshots")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+        .order("desc")
+        .take(MAX_PORTFOLIO_HISTORY_ROWS),
+      ctx.db.query("portfolioCurrent").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
+      ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+    ])
+    const snapshots = snapshotRows.reverse()
+    const latest = current ?? snapshots.at(-1) ?? null
+    if (current && snapshots.at(-1)?.at !== current.at) snapshots.push(current)
     return {
       snapshots,
-      latest: snapshots.length > 0 ? snapshots[snapshots.length - 1] : null,
+      latest,
       openPositions: positions.filter((p) => p.status === "open").length,
       positionCount: positions.length,
     }
