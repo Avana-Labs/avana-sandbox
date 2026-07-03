@@ -395,10 +395,16 @@ export const recordTransaction = mutation({
       .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))
       .first()
     if (prior) {
+      // Return the position's CURRENT revision so a client whose original response was lost can
+      // seed its optimistic-concurrency map from the replay. Without it, an idempotent CREATE
+      // replay left the client's map empty and its next write to this position sent no
+      // expectedRevision → REVISION_REQUIRED (M-12).
+      const priorPosition = prior.positionId ? await ctx.db.get(prior.positionId) : null
       return {
         idempotent: true,
         transactionId: prior._id,
         positionId: prior.positionId ?? null,
+        revision: priorPosition?.revision ?? null,
         receipt: { id: prior._id, hash: prior.syntheticTxHash, status: prior.status, simulated: prior.simulated, timestamp: prior.at },
       }
     }
@@ -422,6 +428,9 @@ export const recordTransaction = mutation({
     // Upsert the (wallet, product, market) position on success.
     let positionId: import("../_generated/dataModel").Id<"positions"> | undefined
     let existingPosition: Doc<"positions"> | undefined
+    // Revision actually written to the position this call, returned so the client seeds its
+    // optimistic-concurrency map from the server truth instead of inferring it (M-12).
+    let writtenRevision: number | undefined
     if (args.position && status === "success" && marketSlug) {
       validatePositionPayload(args.position)
       const existing =
@@ -469,6 +478,7 @@ export const recordTransaction = mutation({
         revision: existing ? currentRevision + 1 : 0,
         ...(args.position.status === "closed" ? { closedAt: now } : {}),
       }
+      writtenRevision = fields.revision
       if (existing) {
         await ctx.db.patch(existing._id, fields)
         positionId = existing._id
@@ -561,6 +571,7 @@ export const recordTransaction = mutation({
       idempotent: false,
       transactionId,
       positionId: positionId ?? null,
+      revision: writtenRevision ?? null,
       receipt: { id: transactionId, hash, status, simulated, timestamp: now },
     }
   },

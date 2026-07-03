@@ -558,6 +558,36 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
     expect(positions[0]?.closedAt).toBeTruthy()
   })
 
+  test("returns the position revision on create and on idempotent replay (regression: M-12)", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    const create = await asUser.mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("rev-open", {
+        product: "multiply",
+        kind: "multiply",
+        marketSlug: "eth-usdc-loop",
+        position: { status: "open", marketSlug: "eth-usdc-loop", collateralValueUsd: 2000, debtValueUsd: 1000, multiplier: 2, ltv: 0.5 },
+      }),
+    )
+    expect(create.idempotent).toBe(false)
+    expect(create.revision).toBe(0)
+
+    // Replaying the same intent (lost original response) must still surface the revision so the
+    // client can seed its map — otherwise its next write is rejected REVISION_REQUIRED.
+    const replay = await asUser.mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("rev-open", {
+        product: "multiply",
+        kind: "multiply",
+        marketSlug: "eth-usdc-loop",
+        position: { status: "open", marketSlug: "eth-usdc-loop", collateralValueUsd: 2000, debtValueUsd: 1000, multiplier: 2, ltv: 0.5 },
+      }),
+    )
+    expect(replay.idempotent).toBe(true)
+    expect(replay.revision).toBe(0)
+  })
+
   test("still accepts a healthy borrow (debt within liquidation value)", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
