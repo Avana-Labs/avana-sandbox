@@ -128,7 +128,7 @@ export function SpokeDot({ spoke, label, withLabel = true, className }: { spoke:
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       <span className={cn("size-1.5 shrink-0 rounded-full", spoke.dotClass)} aria-hidden />
-      {withLabel ? <span className="text-xs font-medium text-muted-foreground">{label ?? spoke.label.replace(" Spoke", "")}</span> : null}
+      {withLabel ? <span className="text-xs font-medium text-muted-foreground">{label ?? spoke.label}</span> : null}
     </span>
   )
 }
@@ -285,7 +285,7 @@ export function SpokeTag({ spoke }: { spoke: BorrowSpoke }) {
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-xs px-1.5 py-0.5 text-[11px] font-medium", spoke.pillBgClass, spoke.pillTextClass)}>
       <span className={cn("size-1.5 rounded-full", spoke.dotClass)} aria-hidden />
-      {spoke.label.replace(" Spoke", "")}
+      {spoke.label}
     </span>
   )
 }
