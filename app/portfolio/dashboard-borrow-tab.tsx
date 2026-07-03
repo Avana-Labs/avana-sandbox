@@ -9,12 +9,14 @@ import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-pos
 import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/components/borrow-tab/debts-table"
 import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/dashboard/components/borrow-tab/supplies-table"
 
-function averageHealthFactor(rows: Array<{ healthFactor: number | null }>): number | null {
-  const finite = rows
-    .map((row) => row.healthFactor)
-    .filter((value): value is number => value !== null && Number.isFinite(value))
-  if (finite.length === 0) return null
-  return finite.reduce((sum, value) => sum + value, 0) / finite.length
+// Aggregate wallet-wide health factor: total liquidation value / total debt — the same
+// definition used by the hero (map-portfolio-page / selectWalletBorrowSnapshot), rather
+// than averaging per-row ratios, so the summary cards agree with the hero.
+function aggregateHealthFactor(rows: Array<{ liquidationThresholdUsd: number; borrowedUsd: number }>): number | null {
+  const totalDebt = rows.reduce((sum, row) => sum + row.borrowedUsd, 0)
+  if (totalDebt <= 0) return null
+  const totalLiquidation = rows.reduce((sum, row) => sum + row.liquidationThresholdUsd, 0)
+  return totalLiquidation / totalDebt
 }
 
 function sortByCollateralDesc(rows: SupplyRowContext[]) {
@@ -53,7 +55,7 @@ export function DashboardBorrowTab({
     const borrowed = supplies.reduce((sum, row) => sum + row.borrowedUsd, 0)
     const available = supplies.reduce((sum, row) => sum + row.remainingBorrowPowerUsd, 0)
     const fees = supplies.reduce((sum, row) => sum + row.feesUsd, 0)
-    const averageHf = averageHealthFactor(supplies.filter((row) => row.borrowedUsd > 0))
+    const averageHf = aggregateHealthFactor(supplies.filter((row) => row.borrowedUsd > 0))
     return { collateral, borrowed, available, fees, averageHf }
   }, [supplies])
 
@@ -61,7 +63,7 @@ export function DashboardBorrowTab({
     const totalBorrowed = debtsRows.reduce((sum, row) => sum + row.borrowedUsd, 0)
     const totalCollateral = debtsRows.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
     const accruedInterest = debtsRows.reduce((sum, row) => sum + row.accruedInterestUsd, 0)
-    const averageHf = averageHealthFactor(debtsRows)
+    const averageHf = aggregateHealthFactor(debtsRows)
     const dailyInterest = debtsRows.reduce((sum, row) => sum + row.dailyInterestUsd, 0)
     return { totalBorrowed, totalCollateral, accruedInterest, averageHf, dailyInterest }
   }, [debtsRows])

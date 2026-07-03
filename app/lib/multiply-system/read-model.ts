@@ -147,6 +147,28 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
   }
 }
 
+/**
+ * The wallet's multiply health factor is the WORST (minimum) active-position HF, not the
+ * average. Multiply positions are isolated, so an average hides a position sitting near
+ * liquidation behind a safe one — the safety hero must reflect the closest-to-liquidation
+ * position. When positions exist but every one is debt-free the result is genuinely
+ * infinite (report ∞ so the hero agrees with the per-row table, which renders "∞"); only a
+ * wallet with no positions at all reports null.
+ */
+export function worstMultiplyHealthFactor(healthFactors: readonly number[], positionCount: number): number | null {
+  const finite = healthFactors.filter((healthFactor) => Number.isFinite(healthFactor))
+  if (finite.length > 0) return Math.min(...finite)
+  return positionCount === 0 ? null : Number.POSITIVE_INFINITY
+}
+
+/**
+ * Flat approximation of the blended liquidation threshold for the multiply credit-line
+ * card. Kept identical here and in the SSR live source (live-source.ts) so the value
+ * does not change on hydration. TODO(D3): derive per-market from each position's
+ * liquidation LTV instead of a single factor.
+ */
+export const MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR = 0.85
+
 export function buildPortfolioMultiplyData(
   walletId: string,
   state: MultiplySystemState,
@@ -155,26 +177,17 @@ export function buildPortfolioMultiplyData(
   const positions = Object.values(state.positions).filter((position) => position.walletId === walletId)
   const totalCollateralUsd = positions.reduce((sum, position) => sum + position.collateralValueUsd, 0)
   const totalDebtUsd = positions.reduce((sum, position) => sum + position.debtValueUsd, 0)
-  // Average only the leveraged (finite-HF) positions. A zero-debt position has an
-  // infinite health factor, so folding it in as a synthetic "99" produced an
-  // obviously-fake average. When positions exist but every one is debt-free the
-  // aggregate is genuinely infinite — report ∞ so the hero/credit-health card
-  // agrees with the per-row table (which renders those rows as "∞") instead of
-  // showing "—". Only a wallet with no positions at all reports null.
-  const finiteHealthFactors = positions
-    .map((position) => (position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor))
-    .filter((healthFactor) => Number.isFinite(healthFactor))
-  const averageHealthFactor =
-    finiteHealthFactors.length === 0
-      ? positions.length === 0
-        ? null
-        : Number.POSITIVE_INFINITY
-      : finiteHealthFactors.reduce((sum, healthFactor) => sum + healthFactor, 0) / finiteHealthFactors.length
+  const mappedHealthFactors = positions.map((position) =>
+    position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor,
+  )
+  // Worst-position, not average (see worstMultiplyHealthFactor). Field name kept as
+  // averageHealthFactor for now to avoid a repo-wide contract rename.
+  const averageHealthFactor = worstMultiplyHealthFactor(mappedHealthFactors, positions.length)
 
   return {
     creditLines: {
       approvedUsd: totalCollateralUsd,
-      liquidationThresholdUsd: totalCollateralUsd * 0.85,
+      liquidationThresholdUsd: totalCollateralUsd * MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR,
       averageHealthFactor,
       currentLtvPct: totalCollateralUsd > 0 ? (totalDebtUsd / totalCollateralUsd) * 100 : 0,
       totalBorrowedUsd: totalDebtUsd,

@@ -46,4 +46,28 @@ describe("multiply credit-health aggregate agrees with the per-row table", () =>
     const data = buildPortfolioMultiplyData("wallet-1", stateWith([]))
     expect(data.creditLines.averageHealthFactor).toBeNull()
   })
+
+  it("reports the WORST position HF (not the average) so a near-liquidation position isn't hidden", () => {
+    const [safeMarketId, riskyMarketId] = Object.keys(buildMultiplyCatalogMarketsRecord())
+    const safe = zeroDebtPosition(safeMarketId!) // ∞ (debt-free)
+    const risky: MultiplyPosition = {
+      id: `wallet-1:${riskyMarketId}`,
+      walletId: "wallet-1",
+      marketId: riskyMarketId!,
+      collateralAmount: 2,
+      collateralValueUsd: 10_000,
+      debtValueUsd: 7_500,
+      multiplier: 4,
+      ltv: 75,
+      healthFactor: 1.25,
+      liquidationPrice: 4_000,
+      netApy: 0,
+      openedAt: 1_700_000_000_000,
+      lastUpdatedAt: 1_700_000_000_000,
+    }
+    const data = buildPortfolioMultiplyData("wallet-1", stateWith([safe, risky]))
+    // An average would hide the risky position (behind the ∞ one); the wallet HF must be
+    // the closest-to-liquidation position.
+    expect(data.creditLines.averageHealthFactor).toBe(1.25)
+  })
 })

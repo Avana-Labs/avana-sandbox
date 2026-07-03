@@ -241,12 +241,13 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
     })),
   )
   const currentLtvPct = totalCollateralUsd ? (totalDebtUsd / totalCollateralUsd) * 100 : 0
-  const collateralHealthFactors = walletCollaterals
-    .map((row) => computeHealthFactor(row.pool.liquidationUsd, row.borrowedUsd))
-    .filter((value): value is number => value !== null && Number.isFinite(value))
-  const averageHealthFactor = collateralHealthFactors.length
-    ? collateralHealthFactors.reduce((sum, value) => sum + value, 0) / collateralHealthFactors.length
-    : null
+  // Aggregate wallet-wide borrow health factor: total liquidation value / total debt.
+  // This is the SAME definition the live credit-engine selector uses
+  // (dashboard-selectors → selectWalletBorrowSnapshot), so the hero no longer changes
+  // value on hydration. (The old behaviour averaged per-row HFs, producing a different
+  // number that flipped once the client session took over.) The field is still named
+  // averageHealthFactor to avoid a repo-wide contract rename.
+  const averageHealthFactor = totalDebtUsd > 0 ? liquidationThresholdUsd / totalDebtUsd : null
   const totalSuppliedUsd = walletSupplies.reduce((sum, row) => sum + row.suppliedUsd, 0)
   const totalEarnedUsd = walletSupplies.reduce((sum, row) => sum + row.earnedUsd, 0)
   const averageApyPct = walletSupplies.length ? walletSupplies.reduce((sum, row) => sum + row.apyPct, 0) / walletSupplies.length : 0
