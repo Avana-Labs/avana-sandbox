@@ -58,3 +58,16 @@ export function advanceRevisionOnSuccess(map: Map<string, number>, key: string |
   const prev = map.get(key)
   map.set(key, prev == null ? 0 : prev + 1)
 }
+
+/**
+ * Seed the tracked revision directly from a recordTransaction receipt's authoritative
+ * `revision`. Preferred over advanceRevisionOnSuccess because it works for BOTH fresh writes
+ * and idempotent replays: an idempotent CREATE replay (original response lost) leaves the map
+ * empty, and the client-side +1 inference skips idempotent results — so the next write sent no
+ * expectedRevision and the server rejected it with REVISION_REQUIRED (M-12). Seeding from the
+ * server value keeps the map correct in every case.
+ */
+export function seedRevisionFromReceipt(map: Map<string, number>, key: string | null, revision: number | null | undefined): void {
+  if (!key || revision == null) return
+  map.set(key, revision)
+}

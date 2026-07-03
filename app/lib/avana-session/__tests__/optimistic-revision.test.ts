@@ -3,6 +3,7 @@ import {
   advanceRevisionOnSuccess,
   captureHydratedRevisions,
   positionRevisionKey,
+  seedRevisionFromReceipt,
   withExpectedRevision,
 } from "@/app/lib/avana-session/optimistic-revision"
 
@@ -58,5 +59,25 @@ describe("optimistic-revision tracking", () => {
     // Idempotent replay must NOT advance (server revision unchanged).
     advanceRevisionOnSuccess(map, "lend:usdc", true)
     expect(map.get("lend:usdc")).toBe(1)
+  })
+
+  it("seeds the map from the receipt revision, including an idempotent replay (regression: M-12)", () => {
+    const map = new Map<string, number>()
+    // An idempotent CREATE replay: map is empty and the +1 inference would skip it, leaving
+    // the next write with no expectedRevision → REVISION_REQUIRED. Seeding from the receipt
+    // (server-authoritative revision 0) fixes it.
+    seedRevisionFromReceipt(map, "borrow:uni-v3", 0)
+    expect(map.get("borrow:uni-v3")).toBe(0)
+    const next = withExpectedRevision({ position: { marketSlug: "uni-v3" } }, "borrow", map)
+    expect((next.args as { expectedRevision?: number }).expectedRevision).toBe(0)
+
+    // A later write reports revision 1; the map tracks the server value exactly.
+    seedRevisionFromReceipt(map, "borrow:uni-v3", 1)
+    expect(map.get("borrow:uni-v3")).toBe(1)
+
+    // No key or no revision → no-op.
+    seedRevisionFromReceipt(map, null, 5)
+    seedRevisionFromReceipt(map, "borrow:uni-v3", null)
+    expect(map.get("borrow:uni-v3")).toBe(1)
   })
 })

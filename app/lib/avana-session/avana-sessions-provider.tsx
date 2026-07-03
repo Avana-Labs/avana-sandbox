@@ -24,6 +24,7 @@ import { pendingHydrationIntentIds, shouldApplyHydration } from "./wallet-hydrat
 import {
   advanceRevisionOnSuccess,
   captureHydratedRevisions,
+  seedRevisionFromReceipt,
   withExpectedRevision,
   type PositionRevisionSummary,
 } from "./optimistic-revision"
@@ -393,7 +394,10 @@ export function ConvexAvanaSessionsProvider({
     async (result: SandboxActionResult) => {
       const { args, key } = withExpectedRevision(borrowResultToRecordArgs(result, walletId), "borrow", revisionByKeyRef.current)
       const persisted = await recordTransaction(args)
-      advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
+      // Seed from the server-authoritative revision (works for idempotent replays too, M-12);
+      // fall back to the +1 inference only if the receipt carries no revision.
+      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -408,7 +412,10 @@ export function ConvexAvanaSessionsProvider({
     async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
       const { args, key } = withExpectedRevision(lendResultToRecordArgs(result, walletId), "lend", revisionByKeyRef.current)
       const persisted = await recordTransaction(args)
-      advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
+      // Seed from the server-authoritative revision (works for idempotent replays too, M-12);
+      // fall back to the +1 inference only if the receipt carries no revision.
+      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -424,7 +431,10 @@ export function ConvexAvanaSessionsProvider({
     async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
       const { args, key } = withExpectedRevision(multiplyResultToRecordArgs(result, walletId), "multiply", revisionByKeyRef.current)
       const persisted = await recordTransaction(args)
-      advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
+      // Seed from the server-authoritative revision (works for idempotent replays too, M-12);
+      // fall back to the +1 inference only if the receipt carries no revision.
+      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
