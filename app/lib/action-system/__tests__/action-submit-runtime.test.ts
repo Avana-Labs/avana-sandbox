@@ -23,4 +23,22 @@ describe("runActionSubmitFlow", () => {
     expect(result.receipt.hash).toBe("sim-test")
     vi.useRealTimers()
   })
+
+  it("rejects when execute() never settles instead of hanging on 'processing' (regression: M-8)", async () => {
+    vi.useFakeTimers()
+    const stages: string[] = []
+    const promise = runActionSubmitFlow({
+      simulated: false,
+      timeoutMs: 50,
+      onStage: (stage: string) => stages.push(stage),
+      // Simulates a stalled Convex socket / dropped connection mid-submit.
+      execute: () => new Promise<{ receipt: { status: string } }>(() => {}),
+    })
+    const expectation = expect(promise).rejects.toThrow(/timed out/i)
+    await vi.advanceTimersByTimeAsync(60)
+    await expectation
+    // It reached processing (so the caller can move that stage to error), not hung silently.
+    expect(stages).toContain("processing")
+    vi.useRealTimers()
+  })
 })
