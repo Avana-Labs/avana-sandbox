@@ -70,6 +70,7 @@ export const upsertMarkets = internalMutation({
         spokeId: v.optional(v.string()),
         feeTier: v.optional(v.string()),
         maxLtvPct: v.optional(v.number()),
+        priceUsd: v.optional(v.number()),
         visuals: v.optional(
           v.array(
             v.object({

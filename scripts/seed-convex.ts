@@ -21,6 +21,10 @@ function arg(name: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined
 }
 const dryRun = process.argv.includes("--dry-run")
+// Push ONLY the `markets` table (173 rows) and stop — for cheap idempotent updates to
+// market-level fields (e.g. the onboarding `priceUsd`) without re-pushing the 46k+ daily
+// rows. All other tables are unchanged by such updates.
+const marketsOnly = process.argv.includes("--markets-only")
 const days = Number(arg("days") ?? 365)
 
 function chunk<T>(rows: T[], size: number): T[][] {
@@ -63,6 +67,12 @@ async function main() {
     Object.assign(idsBySlug, res.idsBySlug)
   }
   console.log(`[seed] upserted ${Object.keys(idsBySlug).length} markets`)
+
+  if (marketsOnly) {
+    const counts = await client.action(api.seedAdmin.getCounts, { seedSecret })
+    console.log("[seed] --markets-only: done. Convex counts:", JSON.stringify(counts))
+    return
+  }
 
   const withMarketId = <T extends { slug: string }>(rows: T[]) =>
     rows
