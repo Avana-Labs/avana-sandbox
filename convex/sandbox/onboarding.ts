@@ -107,7 +107,13 @@ async function getOrSeedStarterCatalog(ctx: MutationCtx) {
       slug: market.slug,
       scope: market.scope,
       symbol: market.symbol,
-      priceUsd: livePrice.get(symbol) ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 0,
+      // Live oracle first (fresh bluechip prices), then the small static fallback, then the
+      // market's own seeded price. pool markets carry LP-pair symbols ("cbBTC/USDC") and
+      // long-tail lend markets carry chain-name symbols ("OP") that are NOT single-token
+      // oracle keys — without `markets.priceUsd` they resolve to 0 and the fail-closed claim
+      // gate (assertCatalogCanSatisfyStarter) rejects EVERY wallet. build-seed seeds priceUsd
+      // per scope (pool = USD-denominated 1; lend/multiply = their asset price).
+      priceUsd: livePrice.get(symbol) ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? market.priceUsd ?? 0,
     }
   })
 

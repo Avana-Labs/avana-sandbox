@@ -51,6 +51,14 @@ export type SeedMarketRow = {
     iconUrl?: string
   }>
   resources?: Array<{ label: string; href: string }>
+  /**
+   * Canonical USD price for the market, used by the onboarding starter-allocation gate.
+   * The live token oracle (convex/prices.ts) only covers single-token bluechip symbols, so
+   * pool markets (LP-pair symbols like "cbBTC/USDC") and long-tail lend markets (chain-name
+   * symbols like "OP") have no oracle price. Seeding it here lets the claim gate resolve a
+   * positive price for every market. Pool positions are USD-denominated, so their price is 1.
+   */
+  priceUsd?: number
   createdAt: number
 }
 
@@ -225,6 +233,10 @@ function poolMarketRow(pool: BorrowPoolRow, createdAt: number): SeedMarketRow {
       iconUrl: visual.iconUrl,
     })),
     resources: [{ label: "Open market", href: `/borrow/markets/${pool.id}` }],
+    // LP collateral positions are tracked in USD (shares are derived client-side from the
+    // live LP price at claim time), so a pool's onboarding price is a nominal $1 unit — an
+    // LP pair has no single-token oracle price to resolve against.
+    priceUsd: 1,
     createdAt,
   }
 }
@@ -265,6 +277,10 @@ function lendMarketRow(market: LendMarket, createdAt: number): SeedMarketRow {
     category: market.riskTier === "low" ? "stable" : "crypto",
     description: `Supply ${market.asset.symbol} to the Avana lending market.`,
     resources: [{ label: "Open market", href: `/lend/markets/${market.marketId}` }],
+    // Long-tail lend assets (OP, ARB, AERO, …) aren't in the single-token oracle, so carry
+    // the catalog's own USD price for the onboarding gate. Lend positions store USD, so this
+    // only needs to be positive.
+    priceUsd: market.assetPriceUsd,
     createdAt,
   }
 }
@@ -316,6 +332,9 @@ function multiplyMarketRow(market: MultiplyMarketRecord, createdAt: number): See
     category: market.risk.riskTier === "low" ? "stable" : "crypto",
     description: `Multiply ${market.collateralAsset.symbol} exposure against ${market.borrowAsset.symbol}.`,
     resources: [{ label: "Open market", href: `/multiply/markets/${market.id}` }],
+    // Collateral symbols are bluechips the oracle already covers; carry the catalog price
+    // too so the gate stays satisfied even if the oracle is briefly stale/unseeded.
+    priceUsd: market.collateralAsset.priceUsd,
     createdAt,
   }
 }

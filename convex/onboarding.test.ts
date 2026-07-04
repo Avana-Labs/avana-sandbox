@@ -357,6 +357,47 @@ describe("sandbox onboarding + economy caps", () => {
     expect(state.onboardingStep).not.toBe("done")
   })
 
+  // REGRESSION (prod claim never succeeded): pool markets carry LP-pair symbols ("cbBTC/USDC")
+  // and long-tail lend markets carry chain-name symbols ("OP") that are NOT single-token oracle
+  // keys, so they have no `tokenPrices` row. They must be priced via `markets.priceUsd` (seeded
+  // by build-seed: pool = USD-denominated 1) or the fail-closed price gate rejects every wallet.
+  test("claim succeeds when pool/lend markets are priced via markets.priceUsd (symbols absent from the oracle)", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await t.run(async (ctx) => {
+      // asset + multiply: single-token symbols the live oracle covers (tokenPrices rows).
+      for (let i = 0; i < 12; i++) {
+        const symbol = i === 0 ? "USDC" : `ASSET${i}`
+        await ctx.db.insert("markets", { scope: "asset", slug: `asset-${i}`, name: `Asset ${i}`, symbol, chainId: 1, createdAt: 0 })
+        await ctx.db.insert("tokenPrices", { symbol: symbol.toLowerCase(), llamaId: `t:${symbol}`, priceUsd: starterTestPriceFor(symbol), source: "test", updatedAt: 0 })
+      }
+      for (let i = 0; i < 6; i++) {
+        const symbol = `MULT${i}`
+        await ctx.db.insert("markets", { scope: "multiply", slug: `multiply-${i}`, name: `Multiply ${i}`, symbol, chainId: 1, createdAt: 0 })
+        await ctx.db.insert("tokenPrices", { symbol: symbol.toLowerCase(), llamaId: `t:${symbol}`, priceUsd: starterTestPriceFor(symbol), source: "test", updatedAt: 0 })
+      }
+      // pool: LP-PAIR symbols with NO tokenPrices row — priced only by markets.priceUsd.
+      for (let i = 0; i < 8; i++) {
+        await ctx.db.insert("markets", { scope: "pool", slug: `pool-${i}`, name: `Pool ${i}`, symbol: `TKA${i}/TKB${i}`, priceUsd: 1, chainId: 1, createdAt: 0 })
+      }
+      // lend: chain-name symbols with NO tokenPrices row — priced only by markets.priceUsd.
+      for (let i = 0; i < 8; i++) {
+        await ctx.db.insert("markets", { scope: "lend", slug: `lend-${i}`, name: `Lend ${i}`, symbol: `CHAIN${i}`, priceUsd: 1.42, chainId: 1, createdAt: 0 })
+      }
+    })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+
+    const result = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
+    expect(result.status).toBe("done")
+    expect(result.allocatedUsd).toBe(1_000_000)
+
+    const state = await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })
+    expect(state.onboardingStep).toBe("done")
+    // The allocation must span all four buckets (pool/lend included, not silently dropped).
+    const positions = await asUser.query(api.sandbox.transactions.getPositions, { wallet: WALLET })
+    expect(positions.length).toBeGreaterThan(0)
+  })
+
   // FIX 3 (C1): the steady-state gate query is wallet-only (no economy shard reads); the
   // economy status lives in a separate query used only while onboarding is in progress.
   test("getWalletOnboardingState returns wallet profile only (no economy); getEconomyStatus returns global counts", async () => {

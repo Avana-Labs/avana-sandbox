@@ -81,6 +81,13 @@ export default defineSchema({
     spokeId: v.optional(v.string()),
     feeTier: v.optional(v.string()),
     maxLtvPct: v.optional(v.number()),
+    /**
+     * Canonical USD price for the onboarding starter-allocation gate. The live token oracle
+     * (tokenPrices) only covers single-token bluechip symbols; pool markets carry LP-pair
+     * symbols and long-tail lend markets carry chain-name symbols with no oracle price. Seeded
+     * per market (pool = USD-denominated 1) so the claim gate can resolve a positive price.
+     */
+    priceUsd: v.optional(v.number()),
     visuals: v.optional(
       v.array(
         v.object({
