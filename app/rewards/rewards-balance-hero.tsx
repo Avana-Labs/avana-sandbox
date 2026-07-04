@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
-import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { cn } from "@/lib/utils"
 
 function formatBalanceAmount(value: number, locale: string) {

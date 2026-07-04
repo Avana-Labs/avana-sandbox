@@ -22,9 +22,11 @@ describe("resolveDataSourceMode", () => {
     expect(resolveDataSourceMode()).toBe("mock")
   })
 
-  it("uses mock market data on the local development server", () => {
+  it("uses mock market data when the dev open-gate flag is enabled", () => {
+    // The dev open-gate is now an explicit opt-in (NEXT_PUBLIC_DEV_OPEN_GATE), not automatic on
+    // NODE_ENV=development — a plain dev server uses live Convex data unless explicitly opted in.
     vi.stubEnv("AVANA_DATA_SOURCE", "live")
-    vi.stubEnv("NODE_ENV", "development")
+    vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "1")
     expect(resolveDataSourceMode()).toBe("mock")
   })
 })

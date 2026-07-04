@@ -4,7 +4,7 @@ import * as React from "react"
 import { BadgeCheck, Copy, Globe, MessageSquare, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
-import { MarketHeroChart } from "@/app/components/charts"
+import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
