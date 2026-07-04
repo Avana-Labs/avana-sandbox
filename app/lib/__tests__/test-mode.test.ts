@@ -6,16 +6,29 @@ describe("open gate test mode", () => {
     vi.resetModules()
   })
 
-  it("stays locked outside development unless the explicit public test flag is enabled", async () => {
+  it("NEVER opens in a production build, even if every flag is set (deploy safety)", async () => {
     vi.stubEnv("NODE_ENV", "production")
-    vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
-    const locked = await import("@/app/lib/test-mode")
-    expect(locked.IS_OPEN_GATE_TEST_MODE).toBe(false)
-    expect(locked.shouldUseOpenGateSession()).toBe(false)
-    expect(locked.shouldUseMockDataSource()).toBe(false)
-
-    vi.resetModules()
+    vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "1")
     vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "1")
+    const prod = await import("@/app/lib/test-mode")
+    expect(prod.IS_OPEN_GATE_TEST_MODE).toBe(false)
+    expect(prod.shouldUseOpenGateSession()).toBe(false)
+  })
+
+  it("stays locked in development by default — no auto-open", async () => {
+    vi.stubEnv("NODE_ENV", "development")
+    vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "0")
+    vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
+    const dev = await import("@/app/lib/test-mode")
+    expect(dev.IS_OPEN_GATE_TEST_MODE).toBe(false)
+    expect(dev.shouldUseOpenGateSession()).toBe(false)
+    expect(dev.shouldUseMockDataSource()).toBe(false)
+  })
+
+  it("opens in development when NEXT_PUBLIC_DEV_OPEN_GATE=1", async () => {
+    vi.stubEnv("NODE_ENV", "development")
+    vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "1")
+    vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
     const open = await import("@/app/lib/test-mode")
     expect(open.IS_OPEN_GATE_TEST_MODE).toBe(true)
     expect(open.shouldUseOpenGateSession()).toBe(true)
@@ -23,24 +36,22 @@ describe("open gate test mode", () => {
     expect(open.TEST_MODE_WALLET_ADDRESS).toMatch(/^0x[0-9a-f]{40}$/)
   })
 
-  it("opens automatically on the local development server", async () => {
+  it("opens in development for the Playwright e2e flag", async () => {
     vi.stubEnv("NODE_ENV", "development")
-    vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
-
-    const local = await import("@/app/lib/test-mode")
-    expect(local.IS_OPEN_GATE_TEST_MODE).toBe(true)
-    expect(local.shouldUseOpenGateSession()).toBe(true)
-    expect(local.shouldUseMockDataSource()).toBe(true)
+    vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "0")
+    vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "1")
+    const e2e = await import("@/app/lib/test-mode")
+    expect(e2e.IS_OPEN_GATE_TEST_MODE).toBe(true)
+    expect(e2e.shouldUseOpenGateSession()).toBe(true)
   })
 
-  it("keeps the data source mock override explicit outside open-gate mode", async () => {
+  it("keeps the mock data source override independent of the open gate", async () => {
     vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "0")
     vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
     vi.stubEnv("AVANA_DATA_SOURCE", "mock")
-
-    const local = await import("@/app/lib/test-mode")
-    expect(local.IS_OPEN_GATE_TEST_MODE).toBe(false)
-    expect(local.shouldUseOpenGateSession()).toBe(false)
-    expect(local.shouldUseMockDataSource()).toBe(true)
+    const m = await import("@/app/lib/test-mode")
+    expect(m.shouldUseOpenGateSession()).toBe(false)
+    expect(m.shouldUseMockDataSource()).toBe(true)
   })
 })

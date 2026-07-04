@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type TxStatus = "confirmed" | "pending"

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
-import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { setActiveCurrency } from "@/app/lib/currency/active-rate"
 
 const STORAGE_KEY = "avana-show-dollar-amounts"

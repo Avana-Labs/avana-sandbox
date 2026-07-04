@@ -9,7 +9,7 @@ import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { Series, TimeRangeId } from "@/app/lib/borrow-detail"
 import type { TokenChartHover } from "../TokenPriceChart"
 import { makeChartPalette, type ThemeMode } from "@/app/lib/chart-colors"
-import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 
