@@ -81,6 +81,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         enforceSupportedChains: false,
         reducedMotion: true,
         overlayBlur: 0,
+        // The root already reserves a stable scrollbar gutter. ConnectKit's default
+        // body padding adds a second scrollbar-width compensation and shifts the entire
+        // page horizontally whenever the wallet modal opens.
+        avoidLayoutShift: false,
         disclaimer: (
           <>
             By connecting your wallet you agree to the{" "}

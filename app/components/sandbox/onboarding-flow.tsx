@@ -411,11 +411,15 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const resumedFor = useRef<string | null>(null)
   useEffect(() => {
     const persisted = state?.onboardingStep
-    const stranded = busy === null && (persisted === "analyzing" || persisted === "claimPending")
-    if (!wallet || !stranded) {
-      if (!stranded) resumedFor.current = null
+    const resumable = persisted === "analyzing" || persisted === "claimPending"
+    if (!wallet || !resumable) {
+      resumedFor.current = null
       return
     }
+    // Preserve the guard while the resumed task is running. Clearing it when `busy`
+    // becomes non-null caused every failed claim to immediately auto-resume again,
+    // producing an endless beginClaim/claim loop instead of surfacing the error.
+    if (busy !== null) return
     if (resumedFor.current === persisted) return
     resumedFor.current = persisted
     resume()
