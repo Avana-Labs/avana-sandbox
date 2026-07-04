@@ -64,6 +64,33 @@ describe("sandbox onboarding + economy caps", () => {
     expect(activity.some((entry) => entry.kind === "onboardingClaim")).toBe(true)
   })
 
+  test("refreshes a stale starter catalog after canonical markets are seeded", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("sandboxStarterCatalog", {
+        singleton: "starter",
+        rows: [],
+        updatedAt: 0,
+      })
+      await seedStarterTestMarkets(ctx)
+    })
+
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    await expect(asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })).resolves.toMatchObject({
+      status: "done",
+    })
+
+    const catalog = await t.run((ctx) =>
+      ctx.db
+        .query("sandboxStarterCatalog")
+        .withIndex("by_singleton", (queryBuilder) => queryBuilder.eq("singleton", "starter"))
+        .unique(),
+    )
+    expect(catalog?.rows).toHaveLength(STARTER_TEST_MARKETS.length)
+  })
+
   test("X/tweet sub-flow: startTweet → xPending, confirmTweet → xConfirmed", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })

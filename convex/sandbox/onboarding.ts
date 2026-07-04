@@ -95,7 +95,6 @@ async function getOrSeedStarterCatalog(ctx: MutationCtx) {
     .query("sandboxStarterCatalog")
     .withIndex("by_singleton", (q) => q.eq("singleton", "starter"))
     .first()
-  if (existing) return existing.rows
 
   const [priceRows, markets] = await Promise.all([
     ctx.db.query("tokenPrices").collect(),
@@ -111,6 +110,15 @@ async function getOrSeedStarterCatalog(ctx: MutationCtx) {
       priceUsd: livePrice.get(symbol) ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 0,
     }
   })
+
+  // The market seed can land after the first onboarding attempt. Never keep the
+  // cold-start catalog forever: refresh the singleton from the canonical market tables
+  // so a previously empty/partial deployment becomes claimable after it is seeded.
+  if (existing) {
+    await ctx.db.patch(existing._id, { rows, updatedAt: Date.now() })
+    return rows
+  }
+
   const id = await ctx.db.insert("sandboxStarterCatalog", {
     singleton: "starter",
     rows,
