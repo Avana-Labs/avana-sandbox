@@ -5,7 +5,7 @@ import { useTheme } from "@/app/components/theme-provider"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { resolveChartAccent, toRgba, type ThemeMode } from "@/app/lib/chart-colors"
-import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 

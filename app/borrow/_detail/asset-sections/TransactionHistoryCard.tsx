@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
-import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/translations"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 

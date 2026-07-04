@@ -5283,23 +5283,9 @@ Object.assign(RU, {
   "Back to dashboard": "Вернуться на панель",
 })
 
-/** Map our language codes to a valid BCP-47 tag for the document `lang` attribute. */
-export const LANGUAGE_HTML_LANG: Record<LanguageCode, string> = {
-  EN: "en",
-  ZH: "zh-Hans",
-  ES: "es",
-  AR: "ar",
-  DE: "de",
-  HI: "hi",
-  TR: "tr",
-  NL: "nl",
-  FR: "fr",
-  ID: "id",
-  JA: "ja",
-  KO: "ko",
-  PT: "pt",
-  RU: "ru",
-}
+// LANGUAGE_HTML_LANG moved to ./language-html-lang.ts so importing the BCP-47 map does not
+// pull this ~288KB dictionary module into a caller's bundle. This module (dictionaries +
+// translate) is now reached ONLY via a dynamic import in use-translation.ts (non-English only).
 
 // Action processing-narration lines + receipt-only labels. Kept in its own map so the
 // receipt/processing feature localizes without touching the 13 inline chrome dicts.
