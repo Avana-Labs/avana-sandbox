@@ -37,12 +37,26 @@ export function getSigningKid(): string {
 }
 
 /**
- * Resolve the token issuer. Must equal the `domain` registered in
- * convex/auth.config.ts and be reachable by the Convex backend for the JWKS fetch.
- * Prefer the explicit env var; fall back to the request origin (local dev).
+ * Resolve the token issuer. Convex matches the token `iss` against the `domain` in
+ * convex/auth.config.ts by EXACT string, and must be able to fetch `${iss}/.well-known/jwks.json`.
+ *
+ * Prefer the pinned env var so `iss` is DETERMINISTIC regardless of which host the request
+ * arrived on — otherwise a user landing on a preview URL or a secondary Vercel alias mints a
+ * token whose `iss` (the request origin) won't match the Convex-registered issuer, and sign-in
+ * fails with UNAUTHENTICATED. Only fall back to the request origin for local dev; in a deployed
+ * environment an unset issuer is a misconfiguration, so surface it loudly. The trailing slash is
+ * stripped so a stray "…app/" here can never mismatch a "…app" registered on the Convex side.
  */
 export function resolveIssuer(requestOrigin: string): string {
-  return process.env.NEXT_PUBLIC_SIWE_ISSUER || requestOrigin
+  const configured = process.env.NEXT_PUBLIC_SIWE_ISSUER?.trim()
+  if (!configured && process.env.NODE_ENV === "production") {
+    console.warn(
+      "[siwe] NEXT_PUBLIC_SIWE_ISSUER is not set — issuer falls back to the request origin, so " +
+        "wallet sign-in will fail on any non-canonical domain (preview URL, alias). Pin it to the " +
+        "canonical origin and set the Convex SIWE_JWT_ISSUER env var to the SAME value.",
+    )
+  }
+  return (configured || requestOrigin).replace(/\/+$/, "")
 }
 
 /** Mint an ES256 JWT carrying the controlling wallet in `sub` (and a `wallet` claim). */
