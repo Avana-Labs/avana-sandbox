@@ -7,10 +7,14 @@
  * reachable by the Convex backend. Local dev defaults to the Next dev origin; set the
  * `SIWE_JWT_ISSUER` Convex env var in deployed environments (e.g. the Vercel URL).
  */
+// Strip any trailing slash so this EXACTLY matches the token `iss` minted by the app
+// (app/lib/siwe/jwt.ts also strips it) — Convex compares issuer to `domain` by exact string.
+const issuer = (process.env.SIWE_JWT_ISSUER ?? "http://localhost:3000").replace(/\/+$/, "")
+
 export default {
   providers: [
     {
-      domain: process.env.SIWE_JWT_ISSUER ?? "http://localhost:3000",
+      domain: issuer,
       applicationID: "convex",
     },
   ],
