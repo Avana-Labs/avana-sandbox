@@ -9,7 +9,6 @@ import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { useCurrency } from "@/app/lib/currency/use-currency"
 
 type BasketSlot = { tokenId: string; weight: number }
 type BasketClaim = { tokenId: string; amount: number; priceUsdAtClaim: number }
@@ -205,7 +204,7 @@ export function OnboardingUnavailable({
 /**
  * Persistent "you're all set" state for an ALREADY-onboarded wallet revisiting
  * /onboarding (issue #140). This is distinct from OnboardingFlow's `done` branch, which
- * is the one-time just-claimed celebration ("$1M is now in your wallet", spring
+ * is the one-time just-claimed celebration (practice funds landed, spring
  * checkmark). A returning user has no claim to make, so we show a calm completed state
  * that points them to the dashboard — never the re-runnable welcome/claim flow.
  */
@@ -238,7 +237,7 @@ const ANALYSIS_STEPS = [
   "Reading your wallet history",
   "Checking sandbox eligibility",
   "Selecting markets to fund",
-  "Sizing your $1M portfolio",
+  "Sizing your practice portfolio",
 ]
 const CLAIM_STEPS = [
   "Minting your practice funds",
@@ -288,38 +287,32 @@ function ThinkingSteps({ muted, active, steps }: { muted?: string; active: strin
 }
 
 function BasketPanel({
-  amount,
   busy,
   onClaim,
 }: {
-  amount: number
   busy: boolean
   onClaim: () => void
 }) {
-  const { exact } = useCurrency()
   const { t } = useTranslation()
   const buckets = [
-    { label: t("Liquid assets"), detail: t("12 assets"), amount: exact(100_000) },
-    { label: t("LP collateral"), detail: t("8 pools"), amount: exact(350_000) },
-    { label: t("Lending"), detail: t("8 markets"), amount: exact(300_000) },
-    { label: t("Multiply"), detail: t("6 positions"), amount: exact(250_000) },
+    { label: t("Liquid assets"), detail: t("Hold & swap tokens") },
+    { label: t("LP collateral"), detail: t("Borrow against LP") },
+    { label: t("Lending"), detail: t("Supply to earn") },
+    { label: t("Multiply"), detail: t("Leverage loops") },
   ]
   return (
     <div className="mt-8 w-full max-w-[460px]">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-[13px] text-muted-foreground">{t("You'll claim")}</p>
-          <div className="mt-1 text-4xl font-semibold tracking-[-0.03em] sm:text-[44px]">{exact(amount)}</div>
+      <div>
+        <p className="text-[13px] text-muted-foreground">{t("You'll get")}</p>
+        <div className="mt-1 text-2xl font-semibold tracking-[-0.02em] sm:text-[28px]">
+          {t("A full practice portfolio")}
         </div>
       </div>
       <ul className="mt-6 divide-y divide-border border-y border-border">
         {buckets.map((bucket) => (
           <li className="flex items-center justify-between py-3" key={bucket.label}>
             <span className="text-[15px] font-medium">{bucket.label}</span>
-            <span className="flex items-baseline gap-2 text-sm text-muted-foreground">
-              <span>{bucket.detail}</span>
-              <span className="font-data tabular-nums text-foreground">{bucket.amount}</span>
-            </span>
+            <span className="text-sm text-muted-foreground">{bucket.detail}</span>
           </li>
         ))}
       </ul>
@@ -343,7 +336,6 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const [error, setError] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
   const { t } = useTranslation()
-  const { exact } = useCurrency()
 
   // Drive the X composer + done-state resources from the live Convex config so the
   // fetched config never drifts from what the UI shows (issue #139: config was fetched
@@ -432,7 +424,6 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
     userCap: 0,
     perUserTargetUsd: 0,
   }
-  const previewUsd = 1_000_000
   const seatsLeft = Math.max(0, economy.userCap - economy.userCount)
 
   const phase =
@@ -465,7 +456,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             size="hero"
           />
           <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-            {t("This Avana risk-free Sandbox will lets you borrow against fake LP positions, lend, and loop strategies using fake practice funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.")}
+            {t("This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.")}
           </p>
           <ul className="mt-7 space-y-2.5">
             {["Unlimited practice funds", "No transactions to sign", "No real assets involved"].map((perk) => (
@@ -487,11 +478,11 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             <WalletControl size="desktop" />
           </div>
           <p className="mt-8 max-w-[430px] text-[13px] leading-5 text-muted-foreground">
-            By connecting your wallet, you agree to the{" "}
+            {t("By connecting your wallet, you agree to the")}{" "}
             <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.terms} target="_blank" rel="noreferrer">
               {t("Terms & Conditions")}
             </a>{" "}
-            and{" "}
+            {t("and")}{" "}
             <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer">
               {t("Privacy Policy")}
             </a>
@@ -507,7 +498,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         <>
           <Headline muted={t("Wallet connected.")} active={t("Fund your sandbox to start exploring.")} />
           <p className="mt-6 max-w-lg text-[15px] leading-6 text-muted-foreground">
-            {t("Every wallet gets $1M in practice funds, spread across markets so you can try every flow risk-free.").replace("$1M", exact(previewUsd))}
+            {t("Every wallet gets sandbox funds to practice with, spread across markets so you can try every flow risk-free.")}
           </p>
           <button className={`${PRIMARY} mt-7`} onClick={analyze} type="button">
             {t("Fund my sandbox")}
@@ -523,7 +514,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         <>
           <Headline
             muted={t("You're eligible.")}
-            active={t("A {amount} practice portfolio is ready.").replace("{amount}", exact(previewUsd))}
+            active={t("Your practice portfolio is ready.")}
           />
           <p className="mt-6 text-sm text-muted-foreground">{seatsLeft.toLocaleString()} {t("sandbox seats remain.")}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -554,7 +545,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           </div>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <a className={PRIMARY} href={intentHref} rel="noreferrer" target="_blank">
-              Open X <MoveUpRight className="ml-2 size-4" />
+              {t("Open X")} <MoveUpRight className="ml-2 size-4" />
             </a>
             <button
               className={SECONDARY}
@@ -579,9 +570,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         <>
           <Headline
             muted={t("Here's what you'll get.")}
-            active={t("$1M across assets, LP collateral, lending, and multiply.").replace("$1M", exact(previewUsd))}
+            active={t("Practice funds across assets, LP collateral, lending, and multiply.")}
           />
-          <BasketPanel amount={previewUsd} busy={busy === "claiming"} onClaim={claimAllocation} />
+          <BasketPanel busy={busy === "claiming"} onClaim={claimAllocation} />
           <ErrorMessage error={error} />
         </>
       ) : step === "claimPending" ? (
@@ -606,12 +597,12 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           </motion.div>
           <Headline muted={t("You're all set.")} active={t("Your Avana sandbox is ready to explore.")} />
           <p className="mt-4 max-w-md text-pretty text-[15px] leading-6 text-muted-foreground">
-            {t("$1M in practice funds is now in your wallet. Jump into the dashboard to start exploring.").replace("$1M", exact(previewUsd))}
+            {t("Your practice funds are now in your wallet. Jump into the dashboard to start exploring.")}
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link className={PRIMARY} href="/dashboard">{t("Open dashboard")}</Link>
             <a className={SECONDARY} href={intentHref} rel="noreferrer" target="_blank">
-              Share on X <MoveUpRight className="ml-2 size-4" />
+              {t("Share on X")} <MoveUpRight className="ml-2 size-4" />
             </a>
           </div>
           {resourcesLinks.length > 0 ? (
