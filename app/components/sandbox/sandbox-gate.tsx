@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api"
 import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
 
@@ -108,12 +109,15 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
-  const { authedWallet, isSignedIn, isRestoring } = useSiweAuth()
+  const { authedWallet, isSignedIn } = useSiweAuth()
+  const { active: walletActive } = useWalletGate()
   if (IS_DEV_SHORTCUT_MODE) return <>{children}</>
   if (!hasConvexClient) return <GateUnavailable variant="offline" />
-  if (isRestoring) {
-    // A persisted session is being restored (wagmi reconnecting on reload). Hold a
-    // neutral loading state so authed users don't flash the signed-out/onboarding screen.
+  // Signed-in from the persisted token, but the wallet SDK is still mounting (its chunk is
+  // deferred off the critical path). Hold a neutral loading state: rendering the authed app
+  // now would let action pages call wagmi hooks before the provider exists. This window is
+  // brief and only affects returning users — guests never mount the SDK here.
+  if (isSignedIn && !walletActive) {
     return (
       <LockedShell>
         <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Restoring your session" />

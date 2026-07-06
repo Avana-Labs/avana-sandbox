@@ -19,16 +19,48 @@ vi.mock("@/app/lib/web3/use-wrong-network", () => ({
   useWrongNetwork: () => state,
 }))
 
+// The banner only reaches wagmi (useWrongNetwork) once the wallet SDK is mounted. Drive the
+// gate's `active` flag per-test so we can assert both the mounted UI and the deferred no-op.
+const gate = { active: true }
+vi.mock("@/app/lib/web3/wallet-gate", () => ({
+  useWalletGate: () => gate,
+}))
+
 import { WrongNetworkBanner } from "../wrong-network-banner"
+import { WrongNetworkBannerInner } from "../wrong-network-banner-inner"
 
 function reset() {
   state.isWrongNetwork = false
   state.isSwitching = false
   state.switchError = null
   state.switchToTargetChain = vi.fn()
+  gate.active = true
 }
 
-describe("WrongNetworkBanner", () => {
+describe("WrongNetworkBanner (gate gating)", () => {
+  afterEach(() => {
+    cleanup()
+    reset()
+  })
+
+  it("renders nothing while the wallet SDK is not mounted (guest / deferred)", () => {
+    reset()
+    gate.active = false
+    state.isWrongNetwork = true
+    const { container } = render(<WrongNetworkBanner />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it("mounts the banner body once the wallet SDK is active and on the wrong network", async () => {
+    reset()
+    state.isWrongNetwork = true
+    render(<WrongNetworkBanner />)
+    // Body is dynamically imported — await it.
+    expect(await screen.findByRole("alert")).toBeInTheDocument()
+  })
+})
+
+describe("WrongNetworkBannerInner", () => {
   afterEach(() => {
     cleanup()
     reset()
@@ -36,14 +68,14 @@ describe("WrongNetworkBanner", () => {
 
   it("renders nothing on the correct network", () => {
     reset()
-    const { container } = render(<WrongNetworkBanner />)
+    const { container } = render(<WrongNetworkBannerInner />)
     expect(container.firstChild).toBeNull()
   })
 
   it("shows a switch prompt when on the wrong network", () => {
     reset()
     state.isWrongNetwork = true
-    render(<WrongNetworkBanner />)
+    render(<WrongNetworkBannerInner />)
     expect(screen.getByRole("alert")).toBeInTheDocument()
     expect(screen.getByText("Wrong network")).toBeInTheDocument()
     // {chain} placeholder is interpolated with the target chain name.
@@ -55,7 +87,7 @@ describe("WrongNetworkBanner", () => {
     state.isWrongNetwork = true
     const spy = vi.fn()
     state.switchToTargetChain = spy
-    render(<WrongNetworkBanner />)
+    render(<WrongNetworkBannerInner />)
     fireEvent.click(screen.getByRole("button", { name: "Switch to Ethereum" }))
     expect(spy).toHaveBeenCalledTimes(1)
   })
@@ -64,7 +96,7 @@ describe("WrongNetworkBanner", () => {
     reset()
     state.isWrongNetwork = true
     state.isSwitching = true
-    render(<WrongNetworkBanner />)
+    render(<WrongNetworkBannerInner />)
     const button = screen.getByRole("button")
     expect(button).toBeDisabled()
     expect(button).toHaveTextContent("Switching…")
@@ -74,7 +106,7 @@ describe("WrongNetworkBanner", () => {
     reset()
     state.isWrongNetwork = true
     state.switchError = "User rejected the request."
-    render(<WrongNetworkBanner />)
+    render(<WrongNetworkBannerInner />)
     expect(screen.getByText("User rejected the request.")).toBeInTheDocument()
   })
 })
