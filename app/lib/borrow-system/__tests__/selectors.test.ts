@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { calculateSpokeCreditMetrics } from "@/app/lib/credit-engine"
+import type { BorrowAssetVisual } from "@/app/lib/borrow-sim"
 import {
   selectAllAvailableCollateralPools,
   selectBorrowableAssets,
@@ -9,7 +10,16 @@ import {
   selectBorrowMarketSummaries,
   selectInitialBorrowDebts,
   selectWalletBorrowSnapshot,
+  toPairVisuals,
 } from "@/app/lib/borrow-system/selectors"
+
+const sampleVisual = (symbol: string): BorrowAssetVisual => ({
+  symbol,
+  shortLabel: symbol.slice(0, 3),
+  iconUrl: undefined,
+  bgClass: "bg-brand",
+  textClass: "text-brand-foreground",
+})
 
 describe("borrow system selectors", () => {
   it("projects canonical borrow state into borrow page rows", () => {
@@ -90,5 +100,42 @@ describe("borrow system selectors", () => {
     const available = selectAllAvailableCollateralPools(state, "no-such-wallet")
     expect(available.length).toBe(Object.keys(state.markets).length)
     expect(available.every((pool) => pool.collateralUsd === 0)).toBe(true)
+  })
+
+  // Regression: the collateral table renders every market as a two-token pair and
+  // dereferences visuals[0]/visuals[1] unguarded. A market with <2 visuals must not
+  // crash the client-rendered workspace — every row must expose a 2-tuple.
+  describe("toPairVisuals (crash guard for <2-leg markets)", () => {
+    it("pads a single-token market to a 2-tuple by reusing the sole leg", () => {
+      const pair = toPairVisuals([sampleVisual("MOG")])
+      expect(pair).toHaveLength(2)
+      expect(pair[0].symbol).toBe("MOG")
+      expect(pair[1].symbol).toBe("MOG")
+    })
+
+    it("returns a well-formed 2-tuple for an empty visuals array (no undefined access)", () => {
+      const pair = toPairVisuals([])
+      expect(pair).toHaveLength(2)
+      expect(pair[0]).toBeDefined()
+      expect(pair[1]).toBeDefined()
+      expect(() => `${pair[0].symbol} / ${pair[1].symbol}`).not.toThrow()
+    })
+
+    it("preserves both legs for a normal two-token market", () => {
+      const pair = toPairVisuals([sampleVisual("WBTC"), sampleVisual("USDC")])
+      expect(pair[0].symbol).toBe("WBTC")
+      expect(pair[1].symbol).toBe("USDC")
+    })
+  })
+
+  it("guarantees every market summary row exposes exactly two visuals", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const markets = selectBorrowMarketSummaries(state, "demo-wallet")
+    expect(markets.length).toBeGreaterThan(0)
+    for (const market of markets) {
+      expect(market.visuals).toHaveLength(2)
+      expect(market.visuals[0]?.symbol).toBeTruthy()
+      expect(market.visuals[1]?.symbol).toBeTruthy()
+    }
   })
 })

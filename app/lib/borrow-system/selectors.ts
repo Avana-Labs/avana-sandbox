@@ -28,6 +28,22 @@ function visualToUi(visual: BorrowSystemState["markets"][string]["display"]["vis
   }
 }
 
+const FALLBACK_VISUAL: BorrowAssetVisual = {
+  symbol: "—",
+  shortLabel: "—",
+  iconUrl: undefined,
+  bgClass: "bg-muted",
+  textClass: "text-muted-foreground",
+}
+
+// Market rows are rendered as a two-token pair (visuals[0]/visuals[1]). A market
+// that arrives with fewer than two visuals (single-token or malformed data from
+// hydration) would otherwise crash the entire client-rendered workspace on an
+// unguarded `visuals[1].symbol` access. Always return a well-formed 2-tuple.
+export function toPairVisuals(visuals: BorrowAssetVisual[]): [BorrowAssetVisual, BorrowAssetVisual] {
+  return [visuals[0] ?? FALLBACK_VISUAL, visuals[1] ?? visuals[0] ?? FALLBACK_VISUAL]
+}
+
 function venueChipLabel(venue: string) {
   if (venue.toLowerCase().includes("uniswap")) return "Uniswap"
   if (venue.toLowerCase().includes("curve")) return "Curve"
@@ -81,7 +97,7 @@ export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: 
       aprMax: feeApyPct + 0.6,
       availableUsd: fixedToNumber(market.snapshot.availableUsd6, 6),
       riskPremiumBps,
-      visuals: market.display.visuals.map(visualToUi) as [BorrowAssetVisual, BorrowAssetVisual],
+      visuals: toPairVisuals(market.display.visuals.map(visualToUi)),
       collateralExampleUsd: positionUsd,
       trendUp: feeApyPct >= 4,
       trendValues: [0.62, 0.66, 0.64, 0.7, 0.73].map((value) => value * feeApyPct),
