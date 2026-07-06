@@ -8,9 +8,7 @@ import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
-import { ResponsiveLendAction } from "@/app/components/action-page/responsive-lend-action"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
-import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { HomeAssetVisual, HomeCollateralPool } from "@/app/lib/borrow-system/home-contracts"
 import type { BorrowPoolRow } from "@/app/lib/data/borrow-domain"
@@ -20,7 +18,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = { detail: AssetDetail; className?: string }
 
-type SidebarTab = "deposit" | "withdraw" | "borrow" | "repay"
+type SidebarTab = "borrow" | "repay"
 
 export function AssetTokenSidebar({ detail, className }: Props) {
   const { t } = useTranslation()
@@ -51,7 +49,6 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
   // borrow flow — not the Lend deposit that the "deposit" tab launches.
   const [tab, setTab] = React.useState<SidebarTab>("borrow")
   const [depositPromptOpen, setDepositPromptOpen] = React.useState(false)
-  const lendMarketId = React.useMemo(() => resolveLendMarketId(detail.hero.symbol), [detail.hero.symbol])
   const closeHref = `/borrow/assets/${detail.row.id}`
   const session = useBorrowSessionContext()
   const fallbackMarket = React.useMemo(
@@ -76,10 +73,6 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
       <div className={cn("flex w-full flex-col", className)}>
         <ActionWorkspaceTabs
           items={[
-            // Deposit/withdraw here are LEND actions (ResponsiveLendAction); label the
-            // deposit tab "Lend" so it is not mistaken for borrow collateral supply.
-            { id: "deposit", label: t("Lend") },
-            { id: "withdraw", label: t("Withdraw") },
             { id: "borrow", label: t("Borrow") },
             { id: "repay", label: t("Repay") },
           ]}
@@ -89,22 +82,6 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
         />
 
         <div className="mt-3">
-            {tab === "deposit" ? (
-              embedActions ? (
-                <ResponsiveLendAction kind="deposit" market={lendMarketId} closeHref={closeHref} sidebar />
-              ) : (
-                <ActionPageLaunchCta product="lend" kind="deposit" market={lendMarketId} returnTo={closeHref} />
-              )
-            ) : null}
-
-            {tab === "withdraw" ? (
-              embedActions ? (
-                <ResponsiveLendAction kind="withdraw" market={lendMarketId} closeHref={closeHref} sidebar />
-              ) : (
-                <ActionPageLaunchCta product="lend" kind="withdraw" market={lendMarketId} returnTo={closeHref} />
-              )
-            ) : null}
-
             {tab === "borrow" ? (
               canBorrowFromSession && borrowContext ? (
                 embedActions ? (

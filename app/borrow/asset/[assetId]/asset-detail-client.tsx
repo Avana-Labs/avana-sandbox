@@ -5,7 +5,6 @@ import Link from "next/link"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import {
   AssetHero,
@@ -68,7 +67,6 @@ type Props = { detail: AssetDetail }
 
 export function AssetDetailClient({ detail }: Props) {
   const { t } = useTranslation()
-  const lendMarketId = resolveLendMarketId(detail.hero.symbol)
   const closeHref = `/borrow/assets/${detail.row.id}`
 
   return (
@@ -143,10 +141,10 @@ export function AssetDetailClient({ detail }: Props) {
           {t("Borrow")}
         </Link>
         <Link
-          href={actionPagePath("lend", "deposit", { market: lendMarketId, return: closeHref })}
+          href={actionPagePath("borrow", "repay", { asset: detail.row.id, return: closeHref })}
           className={secondaryCtaClass({ size: "compact" })}
         >
-          {t("Deposit")}
+          {t("Repay")}
         </Link>
       </MobileDetailActionBar>
     </div>

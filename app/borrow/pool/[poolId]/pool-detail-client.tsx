@@ -98,10 +98,10 @@ export function PoolDetailClient({ detail }: Props) {
           {t("Pledge")}
         </Link>
         <Link
-          href={actionPagePath("borrow", "borrow", { market: detail.id, return: `/borrow/markets/${detail.id}` })}
+          href={actionPagePath("borrow", "claim", { market: detail.id, return: `/borrow/markets/${detail.id}` })}
           className={secondaryCtaClass({ size: "compact" })}
         >
-          {t("Borrow")}
+          {t("Claim")}
         </Link>
       </MobileDetailActionBar>
     </div>
