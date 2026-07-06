@@ -46,7 +46,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   const { resolvedTheme, setTheme } = useTheme()
   const { language, setLanguage, currency, setCurrency } = useDisplayPreferences()
   const { t } = useTranslation()
-  const accentClass = "text-[#007a99]"
+  const accentClass = "text-[#01AACF]"
 
   useEffect(() => {
     setMounted(true)
@@ -282,7 +282,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                   >
                     {t(link.label)}
                   </span>
-                  <span className="shrink-0 pb-0.5 text-[0.88rem] font-medium tracking-[-0.02em] text-[#007a99]">
+                  <span className="shrink-0 pb-0.5 text-[0.88rem] font-medium tracking-[-0.02em] text-[#01AACF]">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                 </Link>
@@ -348,7 +348,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 <CircleHelp className={rootSettingsIconClass} />
                 <span>Help Center</span>
               </span>
-              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#007a99]" />
+              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
             </Link>
           </li>
           <li
@@ -366,7 +366,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 <Shield className={rootSettingsIconClass} />
                 <span>Security & privacy</span>
               </span>
-              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#007a99]" />
+              <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
             </a>
           </li>
         </ul>
@@ -493,7 +493,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       <button
         ref={menuButtonRef}
         type="button"
-        className="inline-flex h-10 w-10 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
+        className="inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
         aria-label="Toggle menu"
         aria-expanded={open}
         aria-controls="mobile-site-nav"
@@ -533,7 +533,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               <button
                 ref={closeButtonRef}
                 type="button"
-                className="inline-flex h-11 w-11 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+                className="inline-flex h-11 w-11 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
                 aria-label="Close menu"
                 onClick={onClose}
               >

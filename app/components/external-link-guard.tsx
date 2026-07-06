@@ -152,7 +152,7 @@ export function ExternalLinkGuard() {
             <Button
               type="button"
               onClick={openExternalLink}
-              className="h-10 w-full rounded-radius-sm bg-brand text-[14px] font-medium text-white shadow-none hover:bg-[#009dbd]"
+              className="h-10 w-full rounded-radius-sm bg-brand text-[14px] font-medium text-white shadow-none hover:bg-brand/90"
             >
               {t("Continue")}
               <ArrowUpRight className="ml-2 h-4 w-4" aria-hidden />
