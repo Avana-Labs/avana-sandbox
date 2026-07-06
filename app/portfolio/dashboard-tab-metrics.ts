@@ -1,4 +1,4 @@
-import { calculateCreditMetrics, formatFixed } from "@/app/lib/credit-engine"
+import { calculateCreditMetrics, usd6ToNumber } from "@/app/lib/credit-engine"
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import type { MultiplySystemState } from "@/app/lib/multiply-engine"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
@@ -29,10 +29,6 @@ const YEAR_MS = 365 * 24 * 60 * 60 * 1000
 
 function wadToPct(value: bigint) {
   return (Number(value) / Number(WAD)) * 100
-}
-
-function usd6ToNumber(value: bigint) {
-  return Number.parseFloat(formatFixed(value, 6))
 }
 
 export function buildBorrowDashboardMetricsFromSnapshot(
