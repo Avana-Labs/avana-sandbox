@@ -588,6 +588,7 @@ export function BorrowActionPageClient({
               remainingDebtUsd: repayPreview.remainingDebtUsd,
               yearlyInterestSavedUsd: repayPreview.yearlyInterestSavedUsd,
               creditScopeLabel: creditScopeLabel ?? undefined,
+              exceedsDebt: repayPreview.exceedsDebt,
             }),
           )
         })

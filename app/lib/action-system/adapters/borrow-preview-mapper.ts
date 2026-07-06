@@ -190,15 +190,21 @@ export function mapBorrowRepayPreviewToActionUi(
     remainingDebtUsd: number
     yearlyInterestSavedUsd: number
     creditScopeLabel?: string
+    exceedsDebt?: boolean
   },
 ): ActionPreviewUi {
   const beforeDebt = fixedToNumber(preview.before.totalBorrowedUsd6, 6)
   const afterDebt = fixedToNumber(preview.after.totalBorrowedUsd6, 6)
   const healthBefore = hfToNumber(preview.before.healthFactorWad)
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
+  // You cannot repay more than you owe. The engine silently caps an over-debt
+  // repay (so it never throws), which previously let an inflated amount through
+  // the CTA and get persisted as the "processed" amount. Block it here.
+  const exceedsDebt = options.exceedsDebt ?? false
+  const allowed = preview.allowed && !exceedsDebt
 
   return {
-    allowed: preview.allowed,
+    allowed,
     amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
     amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
@@ -235,7 +241,11 @@ export function mapBorrowRepayPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, healthAfter),
-    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
+    blockedReason: allowed
+      ? null
+      : exceedsDebt
+        ? "Amount exceeds outstanding debt"
+        : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }

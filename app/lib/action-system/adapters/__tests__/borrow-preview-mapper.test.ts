@@ -75,6 +75,34 @@ describe("borrow preview mappers", () => {
     ])
   })
 
+  it("blocks an over-repay (amount greater than outstanding debt)", () => {
+    const ui = mapBorrowRepayPreviewToActionUi(preview, {
+      symbol: "USDC",
+      amountUsd: 500,
+      marketLabel: "USDC · Core",
+      remainingDebtUsd: 0,
+      yearlyInterestSavedUsd: 0,
+      exceedsDebt: true,
+    })
+
+    expect(ui.allowed).toBe(false)
+    expect(ui.blockedReason).toBe("Amount exceeds outstanding debt")
+  })
+
+  it("allows a repay within the outstanding debt", () => {
+    const ui = mapBorrowRepayPreviewToActionUi(preview, {
+      symbol: "USDC",
+      amountUsd: 500,
+      marketLabel: "USDC · Core",
+      remainingDebtUsd: 2500,
+      yearlyInterestSavedUsd: 42,
+      exceedsDebt: false,
+    })
+
+    expect(ui.allowed).toBe(true)
+    expect(ui.blockedReason).toBeNull()
+  })
+
   it("maps supply metrics including borrowable assets", () => {
     const ui = mapBorrowSupplyPreviewToActionUi(preview, {
       symbol: "WETH / USDC",
