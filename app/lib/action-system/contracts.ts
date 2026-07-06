@@ -125,14 +125,14 @@ export const ACTION_DESCRIPTORS: Record<ActionProduct, Partial<Record<ActionKind
     supply: {
       product: "borrow",
       kind: "supply",
-      title: "Supply collateral",
-      subtitle: "Configure and review your collateral deposit.",
-      primaryVerb: "Supply",
+      title: "Pledge",
+      subtitle: "Configure and review your collateral pledge.",
+      primaryVerb: "Pledge",
     },
     remove: {
       product: "borrow",
       kind: "remove",
-      title: "Remove collateral",
+      title: "Remove",
       subtitle: "Configure and review your collateral removal.",
       primaryVerb: "Remove",
     },

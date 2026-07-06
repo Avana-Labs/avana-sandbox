@@ -524,7 +524,7 @@ function SpokeMobileSection({
                         onUseAsCollateral(pool)
                       }}
                     >
-                      {t("Supply")}
+                      {t("Pledge")}
                     </MarketMobilePrimaryAction>
                   </MarketMobileCard>
                 </li>
