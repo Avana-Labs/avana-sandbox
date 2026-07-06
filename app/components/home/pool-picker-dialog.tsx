@@ -1,14 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Check, TrendingUp } from "lucide-react"
+import { Check } from "lucide-react"
 import {
   getHealthStatus,
-  healthGaugePercent,
   type HomeCollateralPool,
 } from "@/app/lib/home-sim"
 import { PairVisual } from "@/app/components/home-workspace-primitives"
-import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -20,6 +17,10 @@ import { computeHealthFactor } from "./shared"
 import type { PoolDialogMode } from "./types"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+
+// Mirror the search-command popup exactly so the pickers share its look/feel.
+const PICKER_CONTENT_CLASS =
+  "flex max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] flex-col gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:max-w-[500px] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full"
 
 export function PoolPickerDialog({
   open,
@@ -38,49 +39,26 @@ export function PoolPickerDialog({
   pools: HomeCollateralPool[]
   debts: Record<string, number>
 }) {
-  const [focusedPoolId, setFocusedPoolId] = useState(selectedPoolId)
   const { compact } = useCurrency()
   const { t } = useTranslation()
 
-  useEffect(() => {
-    if (open) setFocusedPoolId(selectedPoolId)
-  }, [open, selectedPoolId])
-
-  const title = mode === "borrow" ? t("Select LP pool") : mode === "repay" ? t("Select debt position") : t("Select collateral position")
-
-  const focusedPool = useMemo(() => pools.find((pool) => pool.id === focusedPoolId) ?? pools[0], [focusedPoolId, pools])
-  if (!focusedPool) return null
-  const focusedDebt = debts[focusedPoolId] ?? 0
-  const focusedHf = computeHealthFactor(focusedPool, focusedDebt)
-  const focusedStatus = getHealthStatus(focusedHf)
-  const gaugePercent = healthGaugePercent(focusedHf)
-  const ltvUsedPercent = focusedPool.borrowPowerUsd > 0
-    ? Math.min(100, (focusedDebt / focusedPool.borrowPowerUsd) * 100)
-    : 0
-  const aaveFooterNote = (
-    <>
-      {t("Powered by Aave v4.")}{" "}
-      <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
-        {t("Learn More")}
-      </a>
-    </>
-  )
+  const title =
+    mode === "repay"
+      ? t("Select debt position")
+      : mode === "remove"
+        ? t("Select collateral position")
+        : t("Choose collateral")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 sm:max-w-[440px]">
+      <DialogContent className={PICKER_CONTENT_CLASS}>
         <DialogHeader className="border-b border-border px-5 pb-3 pt-4 text-left">
           <DialogTitle className="text-[13px] font-medium">{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex items-center gap-1.5 px-5 pb-1 pt-3 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-          <TrendingUp className="h-3 w-3" />
-          <span>{t("Positions")}</span>
-        </div>
-
-        <div className="max-h-[240px] overflow-y-auto">
+        <div className="flex-1 overflow-y-auto py-1.5">
           {pools.map((pool) => {
-            const isFocused = pool.id === focusedPoolId
+            const isSelected = pool.id === selectedPoolId
             const debtUsd = debts[pool.id] ?? 0
             const hf = computeHealthFactor(pool, debtUsd)
             const status = getHealthStatus(hf)
@@ -89,10 +67,10 @@ export function PoolPickerDialog({
               <button
                 key={pool.id}
                 type="button"
-                onClick={() => setFocusedPoolId(pool.id)}
+                onClick={() => onSelect(pool.id)}
                 className={cn(
-                  "flex w-full items-center gap-4 px-5 py-2.5 text-left transition-colors",
-                  isFocused ? "bg-surface-inset" : "hover:bg-surface-inset",
+                  "flex w-full items-center gap-4 px-5 py-2.5 text-left transition-colors hover:bg-surface-inset",
+                  isSelected && "bg-surface-inset",
                 )}
               >
                 <PairVisual visuals={pool.visuals} />
@@ -111,71 +89,10 @@ export function PoolPickerDialog({
                     {t("HF")} {Number.isFinite(hf) ? hf.toFixed(2) : "∞"}
                   </span>
                 </div>
-                {isFocused ? <Check className="ml-1 h-3.5 w-3.5 text-foreground" /> : null}
+                {isSelected ? <Check className="ml-1 h-3.5 w-3.5 text-foreground" /> : null}
               </button>
             )
           })}
-        </div>
-
-        <div className="mt-2 h-px bg-border" />
-
-        <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-4 pt-3">
-          <div className="rounded-radius-sm border border-border bg-surface-inset p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="font-data text-[26px] font-medium leading-none tracking-tight text-foreground">
-                  {Number.isFinite(focusedHf) ? focusedHf.toFixed(2) : "∞"}
-                </div>
-                <div className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  {t("Health factor")}
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] text-muted-foreground">
-                  <span className={cn("inline-block size-1.5 rounded-full", focusedStatus.dotClass)} />
-                  <span className={focusedStatus.textClass}>{t(focusedStatus.label)}</span>
-                </span>
-                <span className="text-[11px] text-muted-foreground">{focusedPool.name}</span>
-              </div>
-            </div>
-
-            <div className="relative mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className={cn("absolute inset-y-0 left-0 rounded-full", focusedStatus.barClass)}
-                style={{ width: `${gaugePercent}%` }}
-              />
-              <div
-                className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-raised"
-                style={{ left: `${gaugePercent}%` }}
-              />
-            </div>
-            <div className="mt-2 flex items-baseline justify-between gap-2">
-              <div className="flex items-baseline gap-1.5">
-                <span className="font-data text-[13px] font-medium tracking-tight text-foreground">
-                  {ltvUsedPercent.toFixed(0)}%
-                </span>
-                <span className="text-[11px] text-muted-foreground">{t("borrow power used")}</span>
-              </div>
-              <span className="text-[11px] text-muted-foreground">
-                <span className="font-medium text-foreground">{compact(focusedDebt)}</span>
-                <span className="mx-1">/</span>
-                <span>{compact(focusedPool.borrowPowerUsd)}</span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-border p-3">
-          <Button
-            type="button"
-            onClick={() => onSelect(focusedPool.id)}
-            className="h-11 w-full rounded-radius-sm bg-[hsl(var(--brand))] text-[13px] font-medium text-white shadow-elev-1 transition-colors hover:bg-[hsl(var(--brand))]/90"
-          >
-            {t("Use {pool}").replace("{pool}", focusedPool.name)}
-          </Button>
-          <div className="mt-3 text-center text-[12px] text-muted-foreground">
-            {aaveFooterNote}
-          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -67,6 +67,9 @@ type ActionConfigureStageProps = {
   amountPlacement?: "inline" | "stacked"
   assetPickerVariant?: "menu" | "dialog"
   pickerTokens?: import("@/app/lib/borrow-system/home-contracts").HomeBorrowToken[]
+  assetPickerDisabled?: boolean
+  assetPickerHint?: string
+  onAssetPickerBlocked?: () => void
 }
 
 export function ActionConfigureAmountSection({
@@ -87,6 +90,9 @@ export function ActionConfigureAmountSection({
   hideAssetSelector = false,
   assetPickerVariant = "menu",
   pickerTokens,
+  assetPickerDisabled,
+  assetPickerHint,
+  onAssetPickerBlocked,
   amountFooter,
   showBalance = false,
   onMax,
@@ -115,6 +121,9 @@ export function ActionConfigureAmountSection({
   | "hideAssetSelector"
   | "assetPickerVariant"
   | "pickerTokens"
+  | "assetPickerDisabled"
+  | "assetPickerHint"
+  | "onAssetPickerBlocked"
   | "amountFooter"
   | "showBalance"
   | "onMax"
@@ -151,6 +160,9 @@ export function ActionConfigureAmountSection({
       onAssetSelect={onAssetSelect}
       assetPickerVariant={assetPickerVariant}
       pickerTokens={pickerTokens}
+      assetPickerDisabled={assetPickerDisabled}
+      assetPickerHint={assetPickerHint}
+      onAssetPickerBlocked={onAssetPickerBlocked}
     />
   )
 }

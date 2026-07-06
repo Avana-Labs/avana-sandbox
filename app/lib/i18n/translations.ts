@@ -697,6 +697,86 @@ Object.assign(ES, {
   "Share on X": "Compartir en X",
 })
 
+// Home borrow collateral/asset picker (redesigned to mirror the search popup).
+Object.assign(ZH_CN, {
+  "Choose collateral": "选择抵押品",
+  "Choose asset to borrow": "选择借款资产",
+  "Choose collateral first": "请先选择抵押品",
+  "No borrowable assets for this collateral.": "该抵押品没有可借资产。",
+})
+Object.assign(ES, {
+  "Choose collateral": "Elige el colateral",
+  "Choose asset to borrow": "Elige el activo a pedir prestado",
+  "Choose collateral first": "Primero elige el colateral",
+  "No borrowable assets for this collateral.": "No hay activos para pedir prestado con este colateral.",
+})
+Object.assign(DE, {
+  "Choose collateral": "Sicherheit auswählen",
+  "Choose asset to borrow": "Zu leihenden Vermögenswert auswählen",
+  "Choose collateral first": "Zuerst Sicherheit auswählen",
+  "No borrowable assets for this collateral.": "Keine leihbaren Vermögenswerte für diese Sicherheit.",
+})
+Object.assign(AR, {
+  "Choose collateral": "اختر الضمان",
+  "Choose asset to borrow": "اختر الأصل المراد اقتراضه",
+  "Choose collateral first": "اختر الضمان أولاً",
+  "No borrowable assets for this collateral.": "لا توجد أصول قابلة للاقتراض لهذا الضمان.",
+})
+Object.assign(HI, {
+  "Choose collateral": "कोलैटरल चुनें",
+  "Choose asset to borrow": "उधार लेने के लिए एसेट चुनें",
+  "Choose collateral first": "पहले कोलैटरल चुनें",
+  "No borrowable assets for this collateral.": "इस कोलैटरल के लिए कोई उधार लेने योग्य एसेट नहीं है।",
+})
+Object.assign(TR, {
+  "Choose collateral": "Teminat seçin",
+  "Choose asset to borrow": "Borç alınacak varlığı seçin",
+  "Choose collateral first": "Önce teminat seçin",
+  "No borrowable assets for this collateral.": "Bu teminat için borç alınabilir varlık yok.",
+})
+Object.assign(FR, {
+  "Choose collateral": "Choisir la garantie",
+  "Choose asset to borrow": "Choisir l'actif à emprunter",
+  "Choose collateral first": "Choisissez d'abord la garantie",
+  "No borrowable assets for this collateral.": "Aucun actif empruntable pour cette garantie.",
+})
+Object.assign(PT, {
+  "Choose collateral": "Escolha a garantia",
+  "Choose asset to borrow": "Escolha o ativo para tomar emprestado",
+  "Choose collateral first": "Escolha a garantia primeiro",
+  "No borrowable assets for this collateral.": "Nenhum ativo para tomar emprestado com esta garantia.",
+})
+Object.assign(NL, {
+  "Choose collateral": "Kies onderpand",
+  "Choose asset to borrow": "Kies asset om te lenen",
+  "Choose collateral first": "Kies eerst onderpand",
+  "No borrowable assets for this collateral.": "Geen leenbare assets voor dit onderpand.",
+})
+Object.assign(ID, {
+  "Choose collateral": "Pilih jaminan",
+  "Choose asset to borrow": "Pilih aset untuk dipinjam",
+  "Choose collateral first": "Pilih jaminan terlebih dahulu",
+  "No borrowable assets for this collateral.": "Tidak ada aset yang bisa dipinjam untuk jaminan ini.",
+})
+Object.assign(JA, {
+  "Choose collateral": "担保を選択",
+  "Choose asset to borrow": "借り入れる資産を選択",
+  "Choose collateral first": "先に担保を選択してください",
+  "No borrowable assets for this collateral.": "この担保で借り入れ可能な資産はありません。",
+})
+Object.assign(KO, {
+  "Choose collateral": "담보 선택",
+  "Choose asset to borrow": "빌릴 자산 선택",
+  "Choose collateral first": "먼저 담보를 선택하세요",
+  "No borrowable assets for this collateral.": "이 담보로 빌릴 수 있는 자산이 없습니다.",
+})
+Object.assign(RU, {
+  "Choose collateral": "Выберите залог",
+  "Choose asset to borrow": "Выберите актив для займа",
+  "Choose collateral first": "Сначала выберите залог",
+  "No borrowable assets for this collateral.": "Нет активов для займа под этот залог.",
+})
+
 Object.assign(ZH_CN, {
   "More information": "更多信息",
   "More information about {topic}": "关于 {topic} 的更多信息",

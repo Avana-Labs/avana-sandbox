@@ -47,6 +47,12 @@ type ActionAmountCardProps = {
   hideAssetSelector?: boolean
   assetPickerVariant?: "menu" | "dialog"
   pickerTokens?: HomeBorrowToken[]
+  /** Gate the asset picker (e.g. no wallet connected, or no collateral chosen yet).
+   *  The pill dims and, when a blocked handler is provided, clicking runs it
+   *  (e.g. open the Connect flow) instead of opening the picker. */
+  assetPickerDisabled?: boolean
+  assetPickerHint?: string
+  onAssetPickerBlocked?: () => void
 }
 
 export function ActionAmountCard({
@@ -73,6 +79,9 @@ export function ActionAmountCard({
   hideAssetSelector = false,
   assetPickerVariant = "menu",
   pickerTokens,
+  assetPickerDisabled = false,
+  assetPickerHint,
+  onAssetPickerBlocked,
 }: ActionAmountCardProps) {
   const { t } = useTranslation()
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
@@ -83,6 +92,10 @@ export function ActionAmountCard({
       !readOnly &&
       (useDialogPicker ? pickerTokens!.length > 1 : assetOptions && assetOptions.length > 1),
   )
+  // When gated (no wallet / no collateral), the pill still renders as an interactive
+  // control so it can dim and route a click to the blocked handler (e.g. Connect).
+  const gated = assetPickerDisabled
+  const gatedClickable = gated && Boolean(onAssetPickerBlocked)
   const showAssetLabel = !(borrowSymbol && variant !== "card") || !switchable
   const [menuOpen, setMenuOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -168,22 +181,29 @@ export function ActionAmountCard({
             <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
               <span>{unitLabel}</span>
             </div>
-          ) : switchable ? (
+          ) : switchable || gated ? (
             <button
               type="button"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
+                if (gated) {
+                  onAssetPickerBlocked?.()
+                  return
+                }
                 if (useDialogPicker) setDialogOpen(true)
                 else setMenuOpen((open) => !open)
               }}
               // Deterministic across SSR/client: the options are a role="listbox"
               // in both the desktop popover and the mobile sheet, so don't key this
               // off the client-only viewport query (that caused a hydration mismatch).
-              aria-haspopup={useDialogPicker ? undefined : "listbox"}
-              aria-expanded={!useDialogPicker ? menuOpen : undefined}
+              aria-haspopup={!gated && !useDialogPicker ? "listbox" : undefined}
+              aria-expanded={!gated && !useDialogPicker ? menuOpen : undefined}
               aria-label={t("Change asset, current {asset}").replace("{asset}", assetLabel)}
-              disabled={readOnly}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground cursor-pointer hover:bg-surface-hover"
+              disabled={readOnly || (gated && !gatedClickable)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground hover:bg-surface-hover",
+                gated ? (gatedClickable ? "opacity-60" : "cursor-default opacity-60") : "cursor-pointer",
+              )}
             >
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
@@ -207,7 +227,7 @@ export function ActionAmountCard({
               {showAssetLabel ? <span>{assetLabel}</span> : null}
             </div>
           )}
-          {switchable && !useDialogPicker && menuOpen && !useMenuSheet ? (
+          {switchable && !gated && !useDialogPicker && menuOpen && !useMenuSheet ? (
             <div
               role="listbox"
               aria-label={t("Select asset")}
@@ -226,6 +246,11 @@ export function ActionAmountCard({
       <AnimatedTextValue text={approxUsdLabel} />
     </div>
   )
+
+  const gatedHintRow =
+    gated && assetPickerHint ? (
+      <div className="mt-1.5 text-[13px] text-muted-foreground">{t(assetPickerHint)}</div>
+    ) : null
 
   const balanceRow =
     balanceValue != null ? (
@@ -283,6 +308,7 @@ export function ActionAmountCard({
         >
           {amountRow}
           {usdRow}
+          {gatedHintRow}
           {balanceRow}
         {showReceiveWethToggle ? (
           <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
@@ -323,6 +349,7 @@ export function ActionAmountCard({
         <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
         {amountRow}
         {usdRow}
+        {gatedHintRow}
         {balanceRow}
       </div>
 
