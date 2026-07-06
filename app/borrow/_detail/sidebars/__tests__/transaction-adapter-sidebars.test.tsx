@@ -229,7 +229,8 @@ describe("detail sidebars", () => {
     expect(screen.getByTestId("action-launch-borrow")).toBeInTheDocument()
     expect(screen.queryByTestId("action-launch-deposit")).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("tab", { name: "Deposit" }))
+    // The lend-deposit tab is labelled "Lend" (disambiguated from borrow collateral).
+    fireEvent.click(screen.getByRole("tab", { name: "Lend" }))
     expect(screen.getByTestId("action-launch-deposit")).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("tab", { name: "Repay" }))

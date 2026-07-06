@@ -76,7 +76,9 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
       <div className={cn("flex w-full flex-col", className)}>
         <ActionWorkspaceTabs
           items={[
-            { id: "deposit", label: t("Deposit") },
+            // Deposit/withdraw here are LEND actions (ResponsiveLendAction); label the
+            // deposit tab "Lend" so it is not mistaken for borrow collateral supply.
+            { id: "deposit", label: t("Lend") },
             { id: "withdraw", label: t("Withdraw") },
             { id: "borrow", label: t("Borrow") },
             { id: "repay", label: t("Repay") },
@@ -135,7 +137,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
                     onClick={() => setDepositPromptOpen(true)}
                     disabled={!fallbackMarket}
                   >
-                    {t("Deposit collateral")}
+                    {t("Pledge")}
                   </Button>
                 </div>
               )
@@ -189,7 +191,7 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
                 }}
                 disabled={!fallbackMarket}
               >
-                {t("Deposit")}
+                {t("Pledge")}
               </Button>
               <Button type="button" variant="secondary" className="h-11 rounded-radius-lg" onClick={() => setDepositPromptOpen(false)}>
                 {t("Got it")}
