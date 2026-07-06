@@ -1,0 +1,71 @@
+"use client"
+
+import { useEffect } from "react"
+
+/**
+ * Captures INP *attribution* — the one thing the aggregate "2568ms" number can't tell you:
+ * which route, which DOM element, and which phase (input delay / processing / presentation)
+ * the slow interaction actually happened on. web-vitals is lazy-imported after mount so it
+ * never touches the critical path.
+ *
+ * - Dev: logs each new worst interaction to the console (interact with the app and read it).
+ * - Prod: beacons the same payload to /api/vitals (visible in Vercel function logs), so real
+ *   field culprits get recorded without a third-party service.
+ */
+export function InpReporter() {
+  useEffect(() => {
+    let cancelled = false
+    const isDev = process.env.NODE_ENV !== "production"
+
+    import("web-vitals/attribution")
+      .then(({ onINP }) => {
+        if (cancelled) return
+        onINP(
+          (metric) => {
+            const a = metric.attribution
+            const payload = {
+              metric: "INP",
+              value: Math.round(metric.value),
+              rating: metric.rating,
+              route: typeof location !== "undefined" ? location.pathname : "",
+              interactionType: a?.interactionType,
+              target: a?.interactionTarget,
+              inputDelay: Math.round(a?.inputDelay ?? 0),
+              processingDuration: Math.round(a?.processingDuration ?? 0),
+              presentationDelay: Math.round(a?.presentationDelay ?? 0),
+              loadState: a?.loadState,
+            }
+
+            if (isDev) {
+              // eslint-disable-next-line no-console
+              console.warn(
+                `[INP] ${payload.value}ms (${payload.rating}) on ${payload.route}\n` +
+                  `      target: ${payload.target}\n` +
+                  `      phases: input ${payload.inputDelay}ms · processing ${payload.processingDuration}ms · present ${payload.presentationDelay}ms`,
+                payload,
+              )
+            }
+
+            try {
+              // sendBeacon survives page unload; same-origin so it passes connect-src 'self'.
+              navigator.sendBeacon?.("/api/vitals", JSON.stringify(payload))
+            } catch {
+              // Telemetry is best-effort — never throw from the reporter.
+            }
+          },
+          // Report every new worst interaction in dev (live feedback); in prod report once at
+          // the end (the standard, low-volume behaviour).
+          { reportAllChanges: isDev },
+        )
+      })
+      .catch(() => {
+        // web-vitals is optional; ignore load failures.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return null
+}
