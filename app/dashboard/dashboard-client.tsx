@@ -10,6 +10,7 @@ import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selector
 import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
+import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import {
   buildBorrowDashboardMetrics,
@@ -128,7 +129,7 @@ export function DashboardClient({
   const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
   const hasMounted = useHasMounted()
-  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
+  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession, rewards: rewardsSession } = useAvanaSessions()
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
   const { data, error: portfolioError, isLoading: portfolioLoading, retry: retryPortfolioPage } = usePortfolioPage(
     { walletProfileId: resolvedWalletProfileId ?? "" },
@@ -223,9 +224,10 @@ export function DashboardClient({
         txHash: item.hash,
       })),
       ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory, lendSession.state),
+      ...buildRewardsActivityHistory(rewardsSession.walletId, rewardsSession.state.claims, rewardsSession.tasks),
       ...(pageData?.activity.rows ?? []),
     ],
-    [borrowSession.transactionHistory, lendSession.state, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows],
+    [borrowSession.transactionHistory, lendSession.state, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows, rewardsSession.state.claims, rewardsSession.tasks, rewardsSession.walletId],
   )
 
   const lendTabData = useMemo(() => {

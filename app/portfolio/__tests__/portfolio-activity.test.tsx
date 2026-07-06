@@ -48,6 +48,11 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
       state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, walletBalances: {}, transactions: [] },
       transactionHistory: [],
     },
+    rewards: {
+      walletId: "demo-wallet",
+      state: { claims: [] },
+      tasks: [],
+    },
   }),
 }))
 
