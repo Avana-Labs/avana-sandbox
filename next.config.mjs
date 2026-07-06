@@ -131,6 +131,9 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // /express was a client-rendered page that only ever did redirect("/"). Serve the
+      // same redirect at the edge instead — no React render, one fewer route in the bundle.
+      { source: "/express", destination: "/", permanent: true },
     ]
   },
   async rewrites() {
