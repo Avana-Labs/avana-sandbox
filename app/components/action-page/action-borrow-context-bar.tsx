@@ -23,6 +23,7 @@ export function ActionBorrowContextBar({
   variant = "card",
   workspace = false,
   amountField,
+  switchable = true,
 }: {
   kind: "borrow" | "repay" | "remove" | "claim"
   pool: HomeCollateralPool | null
@@ -32,6 +33,9 @@ export function ActionBorrowContextBar({
   variant?: "card" | "inset"
   workspace?: boolean
   amountField?: React.ReactNode
+  /** When false the collateral is fixed (no picker) — e.g. a market detail page
+   *  where the action is scoped to the market you're viewing. */
+  switchable?: boolean
 }) {
   const { t } = useTranslation()
   const [poolDialogOpen, setPoolDialogOpen] = useState(false)
@@ -47,6 +51,7 @@ export function ActionBorrowContextBar({
       variant={variant}
       workspace={workspace}
       label={t("Collateral")}
+      switchable={switchable}
     />
   )
 

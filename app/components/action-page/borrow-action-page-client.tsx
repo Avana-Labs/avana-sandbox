@@ -60,9 +60,11 @@ function resolveClaimPositions(marketId: string, claimPositionId?: string) {
     const selected = HOME_CLAIM_POSITIONS.find((position) => position.id === claimPositionId)
     if (selected) return [selected]
   }
+  // No market chosen yet → all claimable (the standalone "claim everything" default).
+  if (!marketId) return HOME_CLAIM_POSITIONS
+  // A market IS chosen → claim strictly its fees (empty ⇒ $0), never fall back to all.
   const poolId = Object.entries(HOME_POOL_TO_MARKET_ID).find(([, id]) => id === marketId)?.[0] ?? marketId
-  const scoped = HOME_CLAIM_POSITIONS.filter((position) => position.poolId === poolId || position.poolId === marketId)
-  return scoped.length > 0 ? scoped : HOME_CLAIM_POSITIONS
+  return HOME_CLAIM_POSITIONS.filter((position) => position.poolId === poolId || position.poolId === marketId)
 }
 
 function isHardBlock(reason: string | null) {
@@ -75,7 +77,7 @@ export function BorrowActionPageClient({
   kind,
   closeHref = "/borrow",
   embedded = false,
-  sidebar: _sidebar = false,
+  sidebar = false,
   layout = "default",
   initialAssetId,
   initialMarketId,
@@ -98,7 +100,11 @@ export function BorrowActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useBorrowSessionContext()
-  const isHomeBorrowZeroState = embedded && layout === "home" && kind === "borrow" && !initialMarketId && !initialAssetId
+  // Home Express starts every action from an unselected ("0") state so the user
+  // picks the collateral/position first, rather than auto-picking the first pool.
+  const isHomeZeroState =
+    embedded && layout === "home" && !initialMarketId && !initialAssetId && !initialDebtId && !initialPositionId
+  const isHomeBorrowZeroState = isHomeZeroState && kind === "borrow"
   // Borrow and supply can target ANY market in the catalog — you pledge collateral
   // as part of the flow — so their pool picker is the full available list (not just
   // the markets already pledged). Repay/remove/claim act on existing positions, so
@@ -149,7 +155,7 @@ export function BorrowActionPageClient({
   })
   const [assetId, setAssetId] = useState(resolvedInitialAsset)
   const [marketId, setMarketId] = useState(
-    isHomeBorrowZeroState ? "" : resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
+    isHomeZeroState ? "" : resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
   )
   const [amount, setAmount] = useState(initialAmount)
   const [percent, setPercent] = useState(() => (kind === "remove" ? initialAmount : "25"))
@@ -188,16 +194,19 @@ export function BorrowActionPageClient({
         null
       )
     }
-    // No explicit debt/market (e.g. the home express Repay tab): resolve to a real
-    // debt — the one in the currently selected market, else the sole/first debt.
-    // Never leave it null, which defaulted the repay asset to the market's first
-    // collateral token (e.g. WETH) instead of the asset actually owed (e.g. USDC).
+    // Home zero-state: don't auto-pick a debt until the user selects a collateral,
+    // so the field starts at "0" instead of jumping to the first position's market.
+    if (isHomeZeroState && !marketId) return null
+    // Otherwise resolve to a real debt — the one in the currently selected market,
+    // else the sole/first debt. Never leave it null off the zero-state, which
+    // defaulted the repay asset to the market's first collateral token (e.g. WETH)
+    // instead of the asset actually owed (e.g. USDC).
     return (
       debtPositions.find((position) => position.marketId === marketId) ?? debtPositions[0] ?? null
     )
-  }, [debtPositionId, debtPositions, initialMarketId, kind, marketId, session.state.markets])
+  }, [debtPositionId, debtPositions, initialMarketId, isHomeZeroState, kind, marketId, session.state.markets])
 
-  const activeMarketId = hasInvalidInitialMarket ? "" : marketId || (isHomeBorrowZeroState ? "" : session.collateralPools[0]?.id || "")
+  const activeMarketId = hasInvalidInitialMarket ? "" : marketId || (isHomeZeroState ? "" : session.collateralPools[0]?.id || "")
   const selectMarketId = activeMarketId
   const resolvedBorrowAssetId = useMemo(
     () => (kind === "borrow" && assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : ""),
@@ -207,12 +216,12 @@ export function BorrowActionPageClient({
   const activePool = useMemo(() => {
     const matched = collateralPoolOptions.find((pool) => pool.id === activeMarketId)
     if (matched) return matched
-    // In the home borrow zero-state we intentionally render no pre-selected pool
-    // (no collateral value, no health factor) until the user picks one — so don't
+    // In the home zero-state we intentionally render no pre-selected pool (no
+    // collateral value, no health factor) until the user picks one — so don't
     // fall back to the first pledged pool here.
-    if (isHomeBorrowZeroState) return null
+    if (isHomeZeroState) return null
     return collateralPoolOptions[0] ?? null
-  }, [activeMarketId, collateralPoolOptions, isHomeBorrowZeroState])
+  }, [activeMarketId, collateralPoolOptions, isHomeZeroState])
   const borrowTokens = useMemo(
     () =>
       activeMarketId
@@ -233,7 +242,7 @@ export function BorrowActionPageClient({
   const showCollateralContextBar =
     usesCollateralContext &&
     (isConfigureVisibleStage(stage) || stage === "review") &&
-    (activePool != null || isHomeBorrowZeroState)
+    (activePool != null || isHomeZeroState)
 
   const handlePoolChange = useCallback(
     (poolId: string) => {
@@ -448,10 +457,10 @@ export function BorrowActionPageClient({
   }, [embedded, initialMarketId, kind, marketId, session, walletId])
 
   useEffect(() => {
-    if (!embedded || usesCollateralContext === false || session.collateralPools.length === 0 || isHomeBorrowZeroState) return
+    if (!embedded || usesCollateralContext === false || session.collateralPools.length === 0 || isHomeZeroState) return
     if (marketId && session.collateralPools.some((pool) => pool.id === marketId)) return
     setMarketId(session.collateralPools[0]!.id)
-  }, [embedded, isHomeBorrowZeroState, marketId, session.collateralPools, usesCollateralContext])
+  }, [embedded, isHomeZeroState, marketId, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
     if (kind !== "supply" || !marketId || stage !== "configure" || dismissedLpBlock) return
@@ -649,6 +658,12 @@ export function BorrowActionPageClient({
     }
 
     if (kind === "claim") {
+      // Home zero-state: nothing selected yet, so show no claim summary until the
+      // user picks a collateral pool.
+      if (isHomeZeroState && !marketId) {
+        setPreviewUi(null)
+        return undefined
+      }
       const positions = resolveClaimPositions(marketId, claimPositionId)
       const selections = Object.fromEntries(positions.map((position) => [position.id, true]))
       const claimPreview = buildHomeClaimPreview(session.state, walletId, positions, selections, safeAmount || null)
@@ -663,7 +678,7 @@ export function BorrowActionPageClient({
       )
     }
     return undefined
-  }, [activeMarketId, amount, assetId, claimPositionId, creditScopeLabel, debtPosition, kind, marketId, marketLabel, percent, resolvedBorrowAssetId, session, walletId])
+  }, [activeMarketId, amount, assetId, claimPositionId, creditScopeLabel, debtPosition, isHomeZeroState, kind, marketId, marketLabel, percent, resolvedBorrowAssetId, session, walletId])
 
   useEffect(() => {
     if (!previewUi || previewUi.allowed || stage !== "configure") return
@@ -1004,6 +1019,7 @@ export function BorrowActionPageClient({
           variant={useWorkspaceFields ? "inset" : "card"}
           workspace={useWorkspaceFields}
           amountField={stackedAmountField}
+          switchable={!(sidebar && kind === "claim")}
         />
       ) : null}
 
@@ -1171,6 +1187,7 @@ export function BorrowActionPageClient({
           onMax={showBorrowMax ? handleBorrowMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}
           homeLayout={isHomeLayout}
+          claimSummary={kind === "claim"}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
         />

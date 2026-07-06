@@ -66,7 +66,7 @@ describe("BorrowActionPageClient", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Change asset, current USDC" }))
 
-    const dialog = await screen.findByRole("dialog", { name: "Select a token" })
+    const dialog = await screen.findByRole("dialog", { name: "Choose asset to borrow" })
     expect(within(dialog).getByRole("button", { name: /Tether USD USDT/ })).toBeInTheDocument()
 
     fireEvent.click(within(dialog).getByRole("button", { name: /Tether USD USDT/ }))

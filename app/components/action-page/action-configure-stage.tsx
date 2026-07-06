@@ -64,6 +64,9 @@ type ActionConfigureStageProps = {
   amountUnitLabel?: string
   hideAssetSelector?: boolean
   homeLayout?: boolean
+  /** Claim flow: surface the claimable total + market + token breakdown on the
+   *  home/sidebar configure screen (which otherwise hides preview detail cards). */
+  claimSummary?: boolean
   amountPlacement?: "inline" | "stacked"
   assetPickerVariant?: "menu" | "dialog"
   pickerTokens?: import("@/app/lib/borrow-system/home-contracts").HomeBorrowToken[]
@@ -199,6 +202,7 @@ export function ActionConfigureStage({
   amountVariant = "card",
   hideAssetSelector = false,
   homeLayout = false,
+  claimSummary = false,
   amountPlacement = "inline",
   assetPickerVariant = "menu",
   pickerTokens,
@@ -309,6 +313,18 @@ export function ActionConfigureStage({
           <ActionCard className="p-4" data-testid="action-health-factor-card">
             <ActionHealthFactorBar value={healthFactorValue} label={healthFactorRow?.label ?? "Health factor"} />
           </ActionCard>
+        </div>
+      ) : null}
+
+      {/* Claim: the compact home/sidebar layout hides the generic preview cards, so
+          surface the claim total + market + per-token breakdown here directly. */}
+      {homeLayout && claimSummary && preview ? (
+        <div className={cn(previewMotionClassName, "space-y-3")} data-testid="action-claim-summary">
+          <ActionCard>
+            {preview.rateLabel ? <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="fee" /> : null}
+            {preview.marketValue ? <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" /> : null}
+          </ActionCard>
+          {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
         </div>
       ) : null}
 
