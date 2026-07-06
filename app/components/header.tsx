@@ -19,7 +19,7 @@ import { personalDesktopHeaderLinks } from "./site-nav"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-controls"
-import { useModal } from "connectkit"
+import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 
 function SandboxWalletDialog({
   open,
@@ -93,7 +93,7 @@ function SandboxWalletDialog({
 export function Header() {
   const pathname = usePathname()
   const { t } = useTranslation()
-  const { open: walletModalOpen } = useModal()
+  const { modalOpen: walletModalOpen } = useWalletGate()
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)

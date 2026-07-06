@@ -1,14 +1,17 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { useTheme } from "@/app/components/theme-provider"
 import { WagmiProvider, createConfig, http } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { ConnectKitProvider, SIWEProvider, getDefaultConfig } from "connectkit"
+import { ConnectKitProvider, SIWEProvider, getDefaultConfig, useModal } from "connectkit"
 import { siweConfig } from "@/app/lib/siwe/connectkit-siwe"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { TARGET_CHAIN } from "@/app/lib/web3/target-chain"
+import { useWalletGate } from "@/app/lib/web3/wallet-gate"
+import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
+import { WrongNetworkStateProvider } from "@/app/lib/web3/wrong-network-context"
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
 // The headless QA harness seeds a SIWE token without a live wagmi connection, so the
@@ -67,6 +70,33 @@ const connectKitTheme = {
   "--ck-overlay-backdrop-filter": "none",
 } as const
 
+/**
+ * Mirrors ConnectKit's modal open/closed state out to the always-on wallet gate, so the
+ * header can read it without needing wagmi. (Auto-opening the modal after a "Connect" intent
+ * is handled in `ConnectedWalletControl` via ConnectKit's own `show`, which reliably routes
+ * to the connect screen — `useModal().setOpen(true)` does not.)
+ */
+function WalletGateBridge() {
+  const { open } = useModal()
+  const { setModalOpen } = useWalletGate()
+
+  useEffect(() => {
+    setModalOpen(open)
+  }, [open, setModalOpen])
+
+  return null
+}
+
+/**
+ * Publishes wagmi-backed wrong-network state into the wagmi-free context that the action-page
+ * submit guard reads. Runs only inside the mounted provider, so the guard stays wagmi-free
+ * (and inert) for guests who never load the wallet SDK.
+ */
+function WrongNetworkBridge({ children }: { children: ReactNode }) {
+  const state = useWrongNetwork()
+  return <WrongNetworkStateProvider value={state}>{children}</WrongNetworkStateProvider>
+}
+
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
   // Mirror the app's resolved theme (from our custom ThemeProvider — next-themes is NOT
@@ -99,7 +129,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         ),
       }}
     >
-      {children}
+      <WalletGateBridge />
+      <WrongNetworkBridge>{children}</WrongNetworkBridge>
     </ConnectKitProvider>
   )
 
