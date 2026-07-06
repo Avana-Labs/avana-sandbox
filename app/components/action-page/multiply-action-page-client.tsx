@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
@@ -134,6 +134,9 @@ export function MultiplyActionPageClient({
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
+  // Input stays bound to `amount`; the engine preview below keys off the deferred value so
+  // it runs on the settled input, not once per keystroke (the INP lever). See borrow client.
+  const deferredAmount = useDeferredValue(amount)
   const [multiplier, setMultiplier] = useState(() => initialMultiplier ?? (kind === "deleverage" ? "" : defaultMultiplyMultiplier))
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
   const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
@@ -185,7 +188,7 @@ export function MultiplyActionPageClient({
   useEffect(() => {
     if (!market) return
     let cancelled = false
-    const parsedAmount = kind === "deleverage" ? parsePositiveActionAmount(amount) : parsePositiveActionAmount(amount)
+    const parsedAmount = parsePositiveActionAmount(deferredAmount)
     const parsedMultiplier = parsePositiveActionAmount(multiplier)
     if (parsedMultiplier == null) {
       setPreviewUi(null)
@@ -296,7 +299,7 @@ export function MultiplyActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [amount, collateralPriceUsd, kind, market, maxCollateralAmount, multiplier, position, session, walletId])
+  }, [deferredAmount, collateralPriceUsd, kind, market, maxCollateralAmount, multiplier, position, session, walletId])
 
   useEffect(() => {
     if (kind === "multiply") return

@@ -50,6 +50,23 @@ const UTILITY_SYMBOLS = new Set(["AAVE", "UNI", "CRV", "LDO", "BAL", "AURA", "GN
 
 const CATEGORY_TABS = CATEGORY_CHIPS.multiply
 
+// Pure, row-only — hoisted out of the component so it isn't reallocated every render and
+// can be memoised per `rows` instead of recomputed for every row on every keystroke.
+function buildLoopSearchText(row: MultiplyPageData["lendRows"][number]): string {
+  return [
+    row.protocol,
+    row.asset,
+    row.kind,
+    row.apy,
+    row.apyLabel,
+    row.partnerRewards ?? "",
+    row.points ?? "",
+    ...(row.rewardRows?.flatMap((reward) => [reward.label, reward.value]) ?? []),
+  ]
+    .join(" ")
+    .toLowerCase()
+}
+
 const SORT_PRESETS = [
   { label: "Highest Leverage", value: "rewards:desc" },
   { label: "Highest APY", value: "apy:desc" },
@@ -410,47 +427,45 @@ export function ExploreLoopsMarketsTable({
   const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
   const searchQuery = search.trim().toLowerCase()
-  const buildSearchText = (row: (typeof rows)[number]) =>
-    [
-      row.protocol,
-      row.asset,
-      row.kind,
-      row.apy,
-      row.apyLabel,
-      row.partnerRewards ?? "",
-      row.points ?? "",
-      ...(row.rewardRows?.flatMap((reward) => [reward.label, reward.value]) ?? []),
-    ]
-      .join(" ")
-      .toLowerCase()
 
-  const filteredRows = React.useMemo(() => {
+  // Compute each row's searchable text ONCE per `rows` change (keyed by row identity),
+  // instead of rebuilding it for every row on every keystroke.
+  const searchTextByRow = React.useMemo(() => {
+    const map = new Map<(typeof rows)[number], string>()
+    for (const row of rows) map.set(row, buildLoopSearchText(row))
+    return map
+  }, [rows])
+
+  // Cheap category filter — recomputes only when the tab (or rows) change, so typing in
+  // search no longer re-runs it. The "all" tab short-circuits to the full list.
+  const categoryFilteredRows = React.useMemo(() => {
+    if (currentTab === "all") return rows
     const hasAnySymbol = (symbols: Set<string>, ...values: string[]) =>
       values.some((value) => symbols.has(value.toUpperCase()))
-
-    return rows
-      .filter((row) => {
-        const protocol = row.protocol.toUpperCase()
-        const asset = row.asset.toUpperCase()
-        const matchesBtc = hasAnySymbol(BTC_SYMBOLS, protocol, asset)
-        const matchesEth = hasAnySymbol(ETH_SYMBOLS, protocol, asset)
-        const matchesForex = hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)
-        const matchesUtility = hasAnySymbol(UTILITY_SYMBOLS, protocol, asset)
-        const matchesSmartLoop =
+    return rows.filter((row) => {
+      const protocol = row.protocol.toUpperCase()
+      const asset = row.asset.toUpperCase()
+      if (currentTab === "btc") return hasAnySymbol(BTC_SYMBOLS, protocol, asset)
+      if (currentTab === "eth") return hasAnySymbol(ETH_SYMBOLS, protocol, asset)
+      if (currentTab === "forex") return hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)
+      if (currentTab === "utility") return hasAnySymbol(UTILITY_SYMBOLS, protocol, asset)
+      if (currentTab === "smart") {
+        return (
           (hasAnySymbol(ETH_SYMBOLS, protocol) && hasAnySymbol(ETH_SYMBOLS, asset)) ||
           (hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)) ||
           (hasAnySymbol(BTC_SYMBOLS, protocol) && hasAnySymbol(BTC_SYMBOLS, asset))
+        )
+      }
+      return true
+    })
+  }, [currentTab, rows])
 
-        if (currentTab === "all") return true
-        if (currentTab === "btc") return matchesBtc
-        if (currentTab === "eth") return matchesEth
-        if (currentTab === "forex") return matchesForex
-        if (currentTab === "utility") return matchesUtility
-        if (currentTab === "smart") return matchesSmartLoop
-        return true
-      })
-      .filter((row) => searchQuery.length === 0 || buildSearchText(row).includes(searchQuery))
-  }, [currentTab, searchQuery])
+  // Search filter runs over the already-category-filtered set using the precomputed text —
+  // the only work a keystroke triggers now.
+  const filteredRows = React.useMemo(() => {
+    if (searchQuery.length === 0) return categoryFilteredRows
+    return categoryFilteredRows.filter((row) => (searchTextByRow.get(row) ?? "").includes(searchQuery))
+  }, [categoryFilteredRows, searchQuery, searchTextByRow])
 
   const sortedRows = React.useMemo(() => {
     const direction = sortDirection === "asc" ? 1 : -1

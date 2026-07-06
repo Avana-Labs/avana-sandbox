@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatFixed, parseFixed, currentDebtValueUsd6 } from "@/app/lib/credit-engine"
 import {
@@ -158,7 +158,14 @@ export function BorrowActionPageClient({
     isHomeZeroState ? "" : resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
   )
   const [amount, setAmount] = useState(initialAmount)
+  // The input stays bound to `amount` for instant typing feedback, but the expensive
+  // engine preview (previewTransaction) below keys off this deferred value so it runs
+  // on the settled value instead of once per keystroke — the main INP lever here.
+  const deferredAmount = useDeferredValue(amount)
   const [percent, setPercent] = useState(() => (kind === "remove" ? initialAmount : "25"))
+  // Same rationale as deferredAmount: the remove-collateral slider feeds the engine
+  // preview, so defer it too and drag stays smooth without an engine call per pointer move.
+  const deferredPercent = useDeferredValue(percent)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
@@ -481,7 +488,7 @@ export function BorrowActionPageClient({
 
   useEffect(() => {
     let cancelled = false
-    const safeAmount = parsePositiveActionAmount(amount) ?? 0
+    const safeAmount = parsePositiveActionAmount(deferredAmount) ?? 0
 
     if (kind === "borrow") {
       const resolvedAssetId = resolvedBorrowAssetId
@@ -618,7 +625,7 @@ export function BorrowActionPageClient({
     }
 
     if (kind === "remove") {
-      const percentBps = parseActionPercentBps(percent)
+      const percentBps = parseActionPercentBps(deferredPercent)
       const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === marketId)
       if (percentBps == null || !position) {
         setPreviewUi(null)
@@ -678,7 +685,7 @@ export function BorrowActionPageClient({
       )
     }
     return undefined
-  }, [activeMarketId, amount, assetId, claimPositionId, creditScopeLabel, debtPosition, isHomeZeroState, kind, marketId, marketLabel, percent, resolvedBorrowAssetId, session, walletId])
+  }, [activeMarketId, deferredAmount, assetId, claimPositionId, creditScopeLabel, debtPosition, isHomeZeroState, kind, marketId, marketLabel, deferredPercent, resolvedBorrowAssetId, session, walletId])
 
   useEffect(() => {
     if (!previewUi || previewUi.allowed || stage !== "configure") return
