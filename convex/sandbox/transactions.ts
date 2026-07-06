@@ -351,6 +351,39 @@ export async function applyLedgerDelta(
 }
 
 /**
+ * Persist the remaining claimable on each borrow LP-fee reward position after a claim.
+ * Stored as an absolute per-(wallet, rewardPositionId) value so hydration can reduce the
+ * seeded claimable to it. Idempotent by construction: replaying the same claim writes the
+ * same remaining value. (Top-level intentId short-circuit already prevents replays.)
+ */
+async function applyRewardClaims(
+  ctx: MutationCtx,
+  wallet: string,
+  claims: Array<{ rewardPositionId: string; remainingUsd6: string }>,
+  now: number,
+) {
+  for (const claim of claims) {
+    requireUnsignedInteger(claim.remainingUsd6, "remainingUsd6")
+    const existing = await ctx.db
+      .query("sandboxRewardClaims")
+      .withIndex("by_wallet_position", (q) =>
+        q.eq("wallet", wallet).eq("rewardPositionId", claim.rewardPositionId),
+      )
+      .unique()
+    if (existing) {
+      await ctx.db.patch(existing._id, { remainingUsd6: claim.remainingUsd6, updatedAt: now })
+    } else {
+      await ctx.db.insert("sandboxRewardClaims", {
+        wallet,
+        rewardPositionId: claim.rewardPositionId,
+        remainingUsd6: claim.remainingUsd6,
+        updatedAt: now,
+      })
+    }
+  }
+}
+
+/**
  * Persist one balance-changing sandbox action. Returns a synthetic receipt the UI
  * renders exactly like the in-browser adapter's (`{ id, hash, status, simulated }`).
  */
@@ -381,6 +414,11 @@ export const recordTransaction = mutation({
      * write is rejected (STALE_WRITE) instead of overwriting the concurrent change.
      */
     expectedRevision: v.optional(v.number()),
+    /** Remaining claimable per borrow LP-fee reward position after this claim (usd6 decimal
+     *  strings). Sent only for a borrow "claim"; persisted so claimable survives reload. */
+    rewardClaims: v.optional(
+      v.array(v.object({ rewardPositionId: v.string(), remainingUsd6: v.string() })),
+    ),
     // NOTE: there is intentionally no client `ledger` arg. The aggregate market-liquidity
     // delta is recomputed server-side (canonicalLedgerDelta) so a client can never dictate
     // the shared ledger.
@@ -564,6 +602,9 @@ export const recordTransaction = mutation({
           now,
         )
       }
+      if (args.product === "borrow" && args.kind === "claim" && args.rewardClaims?.length) {
+        await applyRewardClaims(ctx, wallet, args.rewardClaims, now)
+      }
       await appendPortfolioSnapshot(ctx, wallet, now)
     }
 
@@ -695,7 +736,7 @@ export const getSessionState = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const [positions, transactions, balances, starterAllocation] = await Promise.all([
+    const [positions, transactions, balances, starterAllocation, rewardClaims] = await Promise.all([
       ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
       ctx.db
         .query("transactions")
@@ -704,6 +745,7 @@ export const getSessionState = query({
         .take(500),
       ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
       ctx.db.query("starterAllocations").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
+      ctx.db.query("sandboxRewardClaims").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
     ])
     // Hydrate collateral/debt in parallel (was a sequential per-position await loop).
     const hydratedPositions = await Promise.all(
@@ -715,7 +757,16 @@ export const getSessionState = query({
         return { ...position, collateral, debt }
       }),
     )
-    return { positions: hydratedPositions, transactions, balances, starterAllocation }
+    return {
+      positions: hydratedPositions,
+      transactions,
+      balances,
+      starterAllocation,
+      rewardClaims: rewardClaims.map((row) => ({
+        rewardPositionId: row.rewardPositionId,
+        remainingUsd6: row.remainingUsd6,
+      })),
+    }
   },
 })
 

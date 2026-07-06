@@ -283,7 +283,7 @@ function debtPositionFromHomePool(
   }
 }
 
-function rewardPositionsFromHomeClaims(walletId: string, markets: Record<string, BorrowMarketRecord>): UserRewardPosition[] {
+export function rewardPositionsFromHomeClaims(walletId: string, markets: Record<string, BorrowMarketRecord>): UserRewardPosition[] {
   return HOME_CLAIM_POSITIONS.map((position) => {
     const marketId = HOME_POOL_TO_MARKET_ID[position.poolId]
     if (!marketId || !markets[marketId]) return null

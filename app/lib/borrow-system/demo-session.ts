@@ -1,6 +1,6 @@
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { serializeBorrowSystemState } from "./codec"
-import { buildMockBorrowSystemState } from "./mock"
+import { buildMockBorrowSystemState, rewardPositionsFromHomeClaims } from "./mock"
 
 export function getBorrowSessionWalletId() {
   return getDefaultWalletProfileId()
@@ -31,7 +31,9 @@ export function buildConvexBorrowSessionSeed(walletId: string) {
         lastUpdatedAt: state.now,
         collateralPositions: [],
         debtPositions: [],
-        rewardPositions: [],
+        // Seed the LP-fee reward positions so the Convex path shows a claim list; a
+        // wallet's prior claims are applied on top during hydration (reduced claimable).
+        rewardPositions: rewardPositionsFromHomeClaims(walletId, state.markets),
       },
     },
     transactions: [],
