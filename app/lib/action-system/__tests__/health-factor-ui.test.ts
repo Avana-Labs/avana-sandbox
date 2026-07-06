@@ -47,6 +47,23 @@ describe("health factor ui helpers", () => {
     expect(healthFactorBarPositionPct(1.2)).toBeGreaterThan(50)
   })
 
+  it("keeps moving the thumb across the whole safe range (repay keeps HF high)", () => {
+    // Regression: the safe zone previously pinned every HF >= 4 to the same spot,
+    // so the health bar never moved while repaying a comfortably-safe position
+    // (e.g. 6.59 -> 6.85 -> infinity). Distinct safe HF values must map to
+    // distinct, monotonically-decreasing positions (higher HF = further left).
+    const p659 = healthFactorBarPositionPct(6.59)
+    const p685 = healthFactorBarPositionPct(6.85)
+    const p9 = healthFactorBarPositionPct(9.08)
+    const pInf = healthFactorBarPositionPct(Number.POSITIVE_INFINITY)
+    expect(p685).toBeLessThan(p659) // repaying more -> safer -> thumb moves left
+    expect(p9).toBeLessThan(p685)
+    expect(pInf).toBeLessThan(p9)
+    // The movement is real, not a rounding artifact.
+    expect(p659 - p685).toBeGreaterThan(0)
+    expect(p659).not.toBe(p9)
+  })
+
   it("prefers health factor tone over generic default", () => {
     expect(resolveMetricTone("Health factor", "default", "1.60", "hf")).toBe("warning")
   })
