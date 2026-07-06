@@ -6,7 +6,7 @@ type BrandLogoProps = {
   className?: string
 }
 
-const HEADER_WORDMARK_PATH = "/avana-wordmark.svg"
+const HEADER_WORDMARK_PATH = "/avana-wordmark.png"
 const SITE_NAME = "Avana"
 
 export function BrandLogo({ mobileOnly = false, className }: BrandLogoProps) {
@@ -16,8 +16,8 @@ export function BrandLogo({ mobileOnly = false, className }: BrandLogoProps) {
       <img
         src={HEADER_WORDMARK_PATH}
         alt={`${SITE_NAME} logo`}
-        width={252}
-        height={56}
+        width={2464}
+        height={967}
         className={
           cn(
             mobileOnly
@@ -40,11 +40,11 @@ export function BrandIcon({ className }: BrandIconProps) {
     <span className="inline-flex items-center overflow-hidden">
       {/* Plain img avoids next/image SSR markup drift in the mobile header. */}
       <img
-        src="/avana-icon.svg"
+        src="/avana-icon.png"
         alt="Avana logo"
-        width={32}
-        height={32}
-        className={cn("block", className)}
+        width={1236}
+        height={1359}
+        className={cn("h-8 w-8 object-cover", className)}
       />
     </span>
   )

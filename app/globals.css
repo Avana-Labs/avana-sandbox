@@ -10,6 +10,32 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+
+  /*
+   * Stable header: never shift when a popover/dialog/wallet modal opens.
+   *
+   * The scroll gutter is permanently reserved above (scrollbar-gutter: stable),
+   * so the scrollbar hiding on scroll-lock does NOT reflow the page. But scroll-lock
+   * libraries (Radix `react-remove-scroll`, ConnectKit, etc.) still add a
+   * scrollbar-width `padding-right`/`margin-right` to <body> to "compensate" for a
+   * scrollbar removal that — thanks to the reserved gutter — never actually frees space.
+   * That extra padding double-counts and pushes the sticky header/content sideways.
+   *
+   * Neutralize every form of that compensation. Scroll stays locked (overflow: hidden
+   * is untouched); only the width compensation is cancelled, so the header stays put.
+   */
+  body {
+    --removed-body-scroll-bar-size: 0px !important;
+  }
+  body[data-scroll-locked],
+  body[style*="overflow: hidden"],
+  body[style*="overflow:hidden"],
+  html[data-scroll-locked],
+  html[style*="overflow: hidden"],
+  html[style*="overflow:hidden"] {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+  }
   :root {
     /* Light — bright neutral canvas */
     --background: 0 0% 100%; /* #FFFFFF page — Uniswap-parity */
@@ -54,10 +80,10 @@
     --surface-2: 0 0% 92.2%;
     --surface-hover: 0 0% 91.8%;
 
-    --brand: 191 99% 30%;
+    --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 191 100% 95%;
-    --brand-soft-foreground: 192 100% 26%;
+    --brand-soft-foreground: 191 99% 41%;
 
     --radius: 0.75rem;
     --radius-xs: 4px;
@@ -136,10 +162,10 @@
     --surface-2: 0 0% 13%;
     --surface-hover: 0 0% 22%;
 
-    --brand: 191 99% 30%;
+    --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 191 55% 18%;
-    --brand-soft-foreground: 191 92% 70%;
+    --brand-soft-foreground: 191 99% 41%;
 
     /* Dark elevation: a faint inset top-light hairline gives every raised card a
        crisp edge (so stacked cards stop merging) plus a deeper drop shadow. */

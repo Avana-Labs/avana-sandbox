@@ -392,7 +392,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   <Button
                     type="button"
                     onClick={handleReset}
-                    className="mt-6 h-10 rounded-xs bg-brand px-5 text-[14px] font-medium text-white hover:bg-[#009dbd]"
+                    className="mt-6 h-10 rounded-xs bg-brand px-5 text-[14px] font-medium text-white hover:bg-brand/90"
                   >
                     {t("Submit another request")}
                   </Button>
@@ -528,7 +528,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     variant="ghost"
                     onClick={handleBack}
                     disabled={sendStatus === "sending"}
-                    className="h-10 px-0 text-[14px] font-medium text-brand hover:bg-transparent hover:text-[#009dbd] sm:h-9"
+                    className="h-10 px-0 text-[14px] font-medium text-brand hover:bg-transparent hover:text-brand/80 sm:h-9"
                   >
                     {t("Back")}
                   </Button>
@@ -537,7 +537,7 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     type="button"
                     onClick={stage === 3 ? handleSend : handleContinue}
                     disabled={stage !== 3 ? !canContinue : !canSend}
-                    className="h-10 rounded-xs bg-brand px-5 text-[14px] font-medium text-white hover:bg-[#009dbd] disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
+                    className="h-10 rounded-xs bg-brand px-5 text-[14px] font-medium text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
                   >
                     {footerLabel}
                   </Button>

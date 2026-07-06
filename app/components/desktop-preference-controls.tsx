@@ -6,7 +6,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CurrencyFlag } from "./currency-flag"
@@ -22,7 +21,7 @@ type PreferencesView = "root" | "language" | "currency"
 
 export function DesktopPreferenceControls() {
   const { currency, language, setCurrency, setLanguage } = useDisplayPreferences()
-  const { theme, resolvedTheme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
@@ -64,17 +63,6 @@ export function DesktopPreferenceControls() {
                 <div className="flex items-center overflow-hidden rounded-full border border-border bg-surface p-1 dark:border-white/12 dark:bg-[#1a1a1a]">
                   <button
                     type="button"
-                    onClick={() => setTheme("system")}
-                    className={`rounded-full px-3 py-1.5 text-[13px] font-medium ${
-                      mounted && theme === "system"
-                        ? "bg-foreground text-background dark:bg-[#2a2a2a] dark:text-white"
-                        : "text-muted-foreground dark:text-white/64"
-                    }`}
-                  >
-                    {t("Auto")}
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setTheme("light")}
                     className={`rounded-full px-2.5 py-1.5 text-[13px] font-medium ${
                       mounted && resolvedTheme === "light"
@@ -98,7 +86,6 @@ export function DesktopPreferenceControls() {
                 </div>
               </div>
             </div>
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-[14px] text-foreground outline-none hover:bg-surface focus:bg-surface dark:text-white dark:hover:bg-[#1d1d1d] dark:focus:bg-[#1d1d1d]"
               onSelect={(event) => {

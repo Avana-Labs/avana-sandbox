@@ -39,7 +39,7 @@ const wagmiConfig = createConfig(
     appName: "Avana",
     appDescription: "Practice DeFi borrowing, lending, and looping in a live sandbox.",
     appUrl: appOrigin,
-    appIcon: `${appOrigin}/avana-icon.svg`,
+    appIcon: `${appOrigin}/avana-icon.png`,
     walletConnectProjectId,
     coinbaseWalletPreference: "smartWalletOnly",
     chains: [TARGET_CHAIN],
