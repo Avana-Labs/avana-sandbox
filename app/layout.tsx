@@ -6,6 +6,7 @@ import { Suspense } from "react"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { AnalyticsErrorSuppressor } from "./components/analytics-error-boundary"
+import { InpReporter } from "./components/inp-reporter"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { WalletGateProvider } from "./lib/web3/wallet-gate"
@@ -135,6 +136,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </WalletGateProvider>
           </DisplayPreferencesProvider>
         </ThemeProvider>
+        {/* INP attribution — dev console + field beacon; captures which interaction is slow. */}
+        <InpReporter />
         {enableProductionAnalytics ? <AnalyticsErrorSuppressor /> : null}
         {enableProductionAnalytics ? <Analytics /> : null}
         {enableProductionAnalytics ? <SpeedInsights /> : null}
