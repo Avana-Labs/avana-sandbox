@@ -905,6 +905,10 @@ export function BorrowActionPageClient({
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = isHomeLayout ? "home" : "default"
+  // Require a collateral pool before the borrow-asset picker opens, so the asset
+  // list is always scoped to the selected market (wallet-connection gating is
+  // already enforced upstream by the sandbox/connect onboarding flow).
+  const borrowNeedsCollateral = isHomeLayout && kind === "borrow" && !activeMarketId
   const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const useDialogAssetPicker = kind === "borrow" || kind === "repay"
   const pickerTokens = kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined
@@ -960,6 +964,8 @@ export function BorrowActionPageClient({
         hideAssetSelector={kind === "supply"}
         assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
         pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
+        assetPickerDisabled={borrowNeedsCollateral}
+        assetPickerHint="Choose collateral first"
         showBalance={showBorrowMax}
         onMax={showBorrowMax ? handleBorrowMax : undefined}
       />

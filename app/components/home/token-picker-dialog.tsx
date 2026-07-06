@@ -1,7 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Check, ChevronDown, Search, TrendingUp } from "lucide-react"
+import { Check } from "lucide-react"
 import { HOME_BORROW_TOKENS, type HomeBorrowToken } from "@/app/lib/home-sim"
 import { TokenBubble } from "@/app/components/home-workspace-primitives"
 import {
@@ -30,31 +29,9 @@ const TOKEN_ADDRESS_BY_SYMBOL: Record<string, string> = {
   FTM: "0x4E15...AAF8",
 }
 
-function ShortcutTokenButton({
-  visual,
-  symbol,
-  selected,
-  onClick,
-}: {
-  visual: HomeBorrowToken["visual"]
-  symbol: string
-  selected?: boolean
-  onClick?: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex flex-col items-center gap-1.5 rounded-xs px-2 py-2 transition-colors",
-        selected ? "bg-surface-inset" : "hover:bg-surface-inset",
-      )}
-    >
-      <TokenBubble visual={visual} />
-      <span className="text-[12px] font-medium text-foreground">{symbol}</span>
-    </button>
-  )
-}
+// Mirror the search-command popup exactly so the pickers share its look/feel.
+const PICKER_CONTENT_CLASS =
+  "flex max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] flex-col gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:max-w-[500px] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full"
 
 export function TokenPickerDialog({
   open,
@@ -70,123 +47,47 @@ export function TokenPickerDialog({
   tokens?: HomeBorrowToken[]
 }) {
   const { t } = useTranslation()
-  const [query, setQuery] = useState("")
-
-  const filteredTokens = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-
-    if (!normalizedQuery) {
-      return tokens
-    }
-
-    return tokens.filter(
-      (token) => token.symbol.toLowerCase().includes(normalizedQuery) || token.name.toLowerCase().includes(normalizedQuery),
-    )
-  }, [query, tokens])
-  const aaveFooterNote = (
-    <>
-      {t("Powered by Aave v4.")}{" "}
-      <a href="https://aave.com/docs/aave-v4" target="_blank" rel="noreferrer" className="text-accent-emphasis">
-        {t("Learn More")}
-      </a>
-    </>
-  )
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextValue) => {
-        onOpenChange(nextValue)
-        if (!nextValue) {
-          setQuery("")
-        }
-      }}
-    >
-      <DialogContent className="flex h-[640px] flex-col overflow-hidden rounded-radius-md border border-border bg-surface-raised p-0 shadow-elev-3 sm:max-w-[420px]">
-        <DialogHeader className="flex-row items-center justify-between border-b border-border px-5 pb-3 pt-4 text-left space-y-0">
-          <DialogTitle className="text-[13px] font-medium">{t("Select a token")}</DialogTitle>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={PICKER_CONTENT_CLASS}>
+        <DialogHeader className="border-b border-border px-5 pb-3 pt-4 text-left">
+          <DialogTitle className="text-[13px] font-medium">{t("Choose asset to borrow")}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-1 flex-col overflow-hidden pb-3">
-          <div className="px-4 pt-3">
-            <div className="flex items-center gap-2.5 rounded-radius-sm border border-border bg-surface-inset px-3 py-2 transition-colors focus-within:border-accent-emphasis/40">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={t("Search tokens")}
-                className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
-              />
+        <div className="flex-1 overflow-y-auto py-1.5">
+          {tokens.map((token) => {
+            const isSelected = token.id === selectedTokenId
+            const address = TOKEN_ADDRESS_BY_SYMBOL[token.symbol] ?? ""
+
+            return (
               <button
+                key={token.id}
                 type="button"
-                className="inline-flex items-center gap-1 rounded-xs border border-border bg-surface-raised px-1.5 py-0.5 transition-colors hover:bg-surface-hover"
-                aria-label={t("Filter networks")}
-              >
-                <span className="relative inline-flex">
-                  <span className="inline-block size-3.5 rounded-full bg-accent-emphasis" />
-                  <span className="absolute -right-1 inline-block size-3.5 rounded-full bg-indigo-500 ring-2 ring-surface-raised" />
-                </span>
-                <ChevronDown className="h-3 w-3 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-2 grid grid-cols-5 gap-1 px-3 pt-2">
-            {tokens.slice(0, 5).map((token) => (
-              <ShortcutTokenButton
-                key={`shortcut-${token.id}`}
-                visual={token.visual}
-                symbol={token.symbol}
-                selected={token.id === selectedTokenId}
                 onClick={() => onSelect(token.id)}
-              />
-            ))}
-          </div>
-
-          <div className="mt-2 flex items-center gap-1.5 border-t border-border px-5 pb-1 pt-3 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-            <TrendingUp className="h-3 w-3" />
-            <span>{t("Tokens by 24H volume")}</span>
-          </div>
-
-          <div className="flex flex-1 flex-col overflow-y-auto">
-            {filteredTokens.map((token) => {
-              const isSelected = token.id === selectedTokenId
-              const address = TOKEN_ADDRESS_BY_SYMBOL[token.symbol] ?? ""
-
-              return (
-                <button
-                  key={token.id}
-                  type="button"
-                  onClick={() => onSelect(token.id)}
-                  className={cn(
-                    "flex items-center gap-3 px-5 py-2 text-left transition-colors",
-                    isSelected ? "bg-surface-inset" : "hover:bg-surface-inset",
-                  )}
-                >
-                  <TokenBubble visual={token.visual} />
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-[13px] font-medium text-foreground">{token.name}</span>
-                    <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-                      <span>{token.symbol}</span>
-                      {address ? <span className="truncate font-data">{address}</span> : null}
-                    </div>
+                className={cn(
+                  "flex w-full items-center gap-3 px-5 py-2.5 text-left transition-colors hover:bg-surface-inset",
+                  isSelected && "bg-surface-inset",
+                )}
+              >
+                <TokenBubble visual={token.visual} />
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-[13px] font-medium text-foreground">{token.name}</span>
+                  <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                    <span>{token.symbol}</span>
+                    {address ? <span className="truncate font-data">{address}</span> : null}
                   </div>
-                  {isSelected ? <Check className="h-3.5 w-3.5 text-foreground" /> : null}
-                </button>
-              )
-            })}
+                </div>
+                {isSelected ? <Check className="h-3.5 w-3.5 text-foreground" /> : null}
+              </button>
+            )
+          })}
 
-            {filteredTokens.length === 0 ? (
-              <div className="mx-4 rounded-radius-sm border border-dashed border-border px-4 py-6 text-center text-[12px] text-muted-foreground">
-                {t("No tokens match that search.")}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="border-t border-border px-5 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 text-center text-[12px] text-muted-foreground">
-            {aaveFooterNote}
-          </div>
+          {tokens.length === 0 ? (
+            <div className="mx-4 my-3 rounded-radius-sm border border-dashed border-border px-4 py-6 text-center text-[12px] text-muted-foreground">
+              {t("No borrowable assets for this collateral.")}
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
