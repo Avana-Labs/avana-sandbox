@@ -71,9 +71,20 @@ export function healthFactorBarPositionPct(value: number | null): number {
   // falls toward the zone's lower bound, the thumb slides right.
   let fraction: number
   if (zone.id === "safe") {
-    const SAFE_LEFT_EDGE = 4
-    const clamped = Number.isFinite(value) ? Math.min(value, SAFE_LEFT_EDGE) : SAFE_LEFT_EDGE
-    fraction = 1 - Math.min((clamped - zone.min) / (SAFE_LEFT_EDGE - zone.min), 1)
+    // The safe zone is unbounded above (max = ∞). A hard cutoff pinned every
+    // HF above it to the same spot, so the thumb never moved while a position
+    // stayed comfortably safe (e.g. repaying 6.6 → 6.9 → ∞). Use an asymptotic
+    // curve instead: HF at the zone floor sits at the right edge (fraction 1),
+    // and higher HF slides continuously toward the left edge (fraction → 0),
+    // reaching 0 only at infinity (no debt). Movement stays visible across the
+    // entire safe range.
+    if (!Number.isFinite(value)) {
+      fraction = 0
+    } else {
+      const SAFE_SPAN = 7.5
+      const over = Math.max(0, value - zone.min)
+      fraction = SAFE_SPAN / (SAFE_SPAN + over)
+    }
   } else if (zone.id === "danger") {
     const LIQUIDATION = 1
     const clamped = Math.max(value, LIQUIDATION)
