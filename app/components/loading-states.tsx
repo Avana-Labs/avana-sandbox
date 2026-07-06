@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
 /**
@@ -27,7 +27,10 @@ type BlockProps = {
 
 function Page({ children, className }: BlockProps) {
   return (
-    <div className="bg-background" aria-busy="true" aria-label="Loading">
+    // A single polite status region announces the load once; the placeholder blocks inside
+    // are decorative (aria-hidden) so assistive tech isn't dragged across empty rectangles.
+    <div className="bg-background" role="status" aria-busy="true" aria-live="polite" aria-label="Loading">
+      <span className="sr-only">Loading…</span>
       <main className="container mx-auto px-4 py-8">
         <div className={cn("skeleton-enter mx-auto max-w-5xl", className)}>{children}</div>
       </main>
@@ -105,6 +108,12 @@ function MarketHeroSkeleton({ primaryWidth = "w-28" }: { primaryWidth?: string }
   )
 }
 
+// Real market names/values differ in length; varying the placeholder widths per row (rather
+// than a rigid identical grid) reads as data rather than a template — the "vary widths"
+// guidance from Marina Aisa's skeleton-screens article. Index-derived so SSR/client match.
+const ROW_NAME_WIDTHS = ["w-32", "w-24", "w-28", "w-36", "w-24", "w-28", "w-20"]
+const ROW_SUB_WIDTHS = ["w-20", "w-16", "w-24", "w-16", "w-24", "w-20", "w-16"]
+
 function MarketTableSkeleton({ prefix, rows = 6 }: { prefix: string; rows?: number }) {
   return (
     <Surface>
@@ -121,8 +130,8 @@ function MarketTableSkeleton({ prefix, rows = 6 }: { prefix: string; rows?: numb
               <Skeleton className="absolute left-5 size-8 rounded-full" />
             </div>
             <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-3 w-28 rounded-xs" />
-              <Skeleton className="h-2.5 w-20 rounded-xs" />
+              <Skeleton className={cn("h-3 rounded-xs", ROW_NAME_WIDTHS[index % ROW_NAME_WIDTHS.length])} />
+              <Skeleton className={cn("h-2.5 rounded-xs", ROW_SUB_WIDTHS[index % ROW_SUB_WIDTHS.length])} />
             </div>
             <Skeleton className="hidden h-3 w-14 rounded-xs sm:block" />
             <Skeleton className="hidden h-3 w-16 rounded-xs md:block" />
@@ -489,8 +498,7 @@ export function StakePageSkeleton() {
           <Skeleton className="mt-0.5 h-4 w-4 rounded-xs" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-3 w-32 rounded-xs" />
-            <Skeleton className="h-3 w-full max-w-xl rounded-xs" />
-            <Skeleton className="h-3 w-4/5 max-w-lg rounded-xs" />
+            <SkeletonText lines={2} className="max-w-xl" />
           </div>
         </div>
       </div>
@@ -579,8 +587,7 @@ export function RiskWarningPageSkeleton() {
       <div className="mb-8 rounded-radius-md border border-amber-500/25 bg-amber-500/5 p-4">
         <div className="space-y-2">
           <Skeleton className="h-3 w-64 rounded-xs" />
-          <Skeleton className="h-3 w-full rounded-xs" />
-          <Skeleton className="h-3 w-11/12 rounded-xs" />
+          <SkeletonText lines={2} />
         </div>
       </div>
 
