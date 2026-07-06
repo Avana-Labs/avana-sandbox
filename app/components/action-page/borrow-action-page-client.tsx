@@ -214,8 +214,16 @@ export function BorrowActionPageClient({
     return collateralPoolOptions[0] ?? null
   }, [activeMarketId, collateralPoolOptions, isHomeBorrowZeroState])
   const borrowTokens = useMemo(
-    () => (activeMarketId ? selectHomeBorrowTokensForMarket(session.state, walletId, activeMarketId) : []),
-    [activeMarketId, session.state, walletId],
+    () =>
+      activeMarketId
+        ? selectHomeBorrowTokensForMarket(session.state, walletId, activeMarketId)
+        : isHomeBorrowZeroState
+          ? // Zero-state (no collateral picked yet): expose the full borrowable set so the
+            // asset picker opens the SAME dialog as when collateral is selected, rather
+            // than degrading to a plain dropdown (empty market => all borrowable assets).
+            selectHomeBorrowTokensForMarket(session.state, walletId, "")
+          : [],
+    [activeMarketId, isHomeBorrowZeroState, session.state, walletId],
   )
   const repayTokens = useMemo(
     () => (activeMarketId ? selectHomeRepayTokensForMarket(session.state, walletId, activeMarketId) : []),
