@@ -180,46 +180,28 @@ export function DashboardClient({
     [hasMounted, pageData, portfolioMultiply],
   )
   const borrowSnapshot = useMemo<BorrowSnapshot>(() => {
-    if (!hasMounted) {
-      return {
-        approvedUsd: pageData?.borrow.creditLines.approvedUsd ?? 0,
-        liquidationThresholdUsd: pageData?.borrow.creditLines.liquidationThresholdUsd ?? 0,
-        totalBorrowedUsd: pageData?.borrow.creditLines.totalBorrowedUsd ?? 0,
-        totalCollateralUsd: pageData?.borrow.creditLines.totalCollateralUsd ?? 0,
-        averageHealthFactor: pageData?.borrow.creditLines.averageHealthFactor ?? null,
-        currentLtvPct: pageData?.borrow.creditLines.currentLtvPct ?? 0,
-      }
-    }
-
+    // Single source of truth: when a live wallet session exists, the hero reads
+    // ONLY the session snapshot — the same borrowSession.state that produces the
+    // position rows below — so the aggregate hero numbers (Total Borrowed, health
+    // factor, LTV) can never diverge from the listed positions. The one-shot
+    // Convex snapshot (pageData) is used solely before a session exists (SSR /
+    // pre-hydration / disconnected wallet), never blended in per-field.
     const sessionSnapshot =
-      walletId && borrowSession.state.accounts[walletId]
+      hasMounted && walletId && borrowSession.state.accounts[walletId]
         ? selectBorrowSnapshot(borrowSession.state, walletId)
         : null
+    if (sessionSnapshot) {
+      return sessionSnapshot
+    }
+
+    const fallback = (hasMounted ? liveBorrowTab?.creditLines : null) ?? pageData?.borrow.creditLines ?? null
     return {
-      approvedUsd: sessionSnapshot?.approvedUsd ?? liveBorrowTab?.creditLines.approvedUsd ?? pageData?.borrow.creditLines.approvedUsd ?? 0,
-      liquidationThresholdUsd:
-        sessionSnapshot?.liquidationThresholdUsd ??
-        liveBorrowTab?.creditLines.liquidationThresholdUsd ??
-        pageData?.borrow.creditLines.liquidationThresholdUsd ??
-        0,
-      totalBorrowedUsd:
-        sessionSnapshot?.totalBorrowedUsd ?? liveBorrowTab?.creditLines.totalBorrowedUsd ?? pageData?.borrow.creditLines.totalBorrowedUsd ?? 0,
-      totalCollateralUsd:
-        sessionSnapshot?.totalCollateralUsd ??
-        liveBorrowTab?.creditLines.totalCollateralUsd ??
-        pageData?.borrow.creditLines.totalCollateralUsd ??
-        0,
-      averageHealthFactor:
-        sessionSnapshot?.averageHealthFactor ??
-        liveBorrowTab?.creditLines.averageHealthFactor ??
-        pageData?.borrow.creditLines.averageHealthFactor ??
-        null,
-      currentLtvPct:
-        sessionSnapshot?.currentLtvPct ??
-        liveBorrowTab?.creditLines.currentLtvPct ??
-        pageData?.borrow.creditLines.currentLtvPct ??
-        0,
-      spokeBreakdown: sessionSnapshot?.spokeBreakdown,
+      approvedUsd: fallback?.approvedUsd ?? 0,
+      liquidationThresholdUsd: fallback?.liquidationThresholdUsd ?? 0,
+      totalBorrowedUsd: fallback?.totalBorrowedUsd ?? 0,
+      totalCollateralUsd: fallback?.totalCollateralUsd ?? 0,
+      averageHealthFactor: fallback?.averageHealthFactor ?? null,
+      currentLtvPct: fallback?.currentLtvPct ?? 0,
     }
   }, [borrowSession.state, hasMounted, liveBorrowTab, pageData, walletId])
 
