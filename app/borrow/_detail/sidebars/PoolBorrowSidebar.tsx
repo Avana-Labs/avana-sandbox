@@ -16,7 +16,7 @@ type Props = {
   className?: string
 }
 
-type SidebarTab = "pledge" | "remove" | "claim"
+type SidebarTab = "pledge" | "claim"
 
 export function PoolBorrowSidebar({ detail, className }: Props) {
   const { t } = useTranslation()
@@ -65,7 +65,6 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
         <ActionWorkspaceTabs
         items={[
           { id: "pledge", label: t("Pledge") },
-          { id: "remove", label: t("Remove") },
           { id: "claim", label: t("Claim") },
         ]}
         value={tab}
@@ -86,24 +85,6 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
               <ActionPageLaunchCta
                 product="borrow"
                 kind="supply"
-                market={pool.id}
-                returnTo={closeHref}
-              />
-            )
-          ) : null}
-
-          {tab === "remove" ? (
-            embedActions ? (
-              <ResponsiveBorrowAction
-                kind="remove"
-                market={pool.id}
-                closeHref={closeHref}
-                sidebar
-              />
-            ) : (
-              <ActionPageLaunchCta
-                product="borrow"
-                kind="remove"
                 market={pool.id}
                 returnTo={closeHref}
               />
