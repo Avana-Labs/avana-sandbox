@@ -2,7 +2,7 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { formatFixed, parseFixed, currentDebtValueUsd6 } from "@/app/lib/credit-engine"
+import { formatFixed, parseFixed, currentDebtValueUsd6, usd6ToNumber, wadToPercent } from "@/app/lib/credit-engine"
 import {
   buildClaimBorrowAction,
   buildHomeClaimPreview,
@@ -318,7 +318,7 @@ export function BorrowActionPageClient({
       .filter((position) => position.marketId === debtPosition.marketId)
       .map((position) => {
         const asset = session.state.assets[position.assetId]
-        const debtUsd = Number.parseFloat(formatFixed(currentDebtValueUsd6(position), 6))
+        const debtUsd = usd6ToNumber(currentDebtValueUsd6(position))
         return {
           id: position.id,
           label: asset?.symbol ?? "Asset",
@@ -511,11 +511,11 @@ export function BorrowActionPageClient({
           const token = session.getBorrowableAssetsForMarket(activeMarketId).find((entry) => entry.id === resolvedAssetId)
           const borrowMarket = session.state.markets[activeMarketId]
           const liquidationThresholdPct = borrowMarket
-            ? Math.round(Number.parseFloat(formatFixed(borrowMarket.riskConfig.liquidationThresholdWad, 18)) * 1000) / 10
+            ? wadToPercent(borrowMarket.riskConfig.liquidationThresholdWad)
             : undefined
           // Max borrow respects the collateral factor: pre-borrow available credit
           // is the safe cap the credit engine will allow.
-          const maxBorrowUsd = Number.parseFloat(formatFixed(preview.before.availableBorrowCapacityUsd6, 6))
+          const maxBorrowUsd = usd6ToNumber(preview.before.availableBorrowCapacityUsd6)
           setPreviewUi(
             mapBorrowTransactionPreviewToActionUi(preview, {
               symbol: token?.symbol ?? "Asset",
@@ -545,10 +545,10 @@ export function BorrowActionPageClient({
       }
       const market = session.state.markets[marketId]
       const collateralFactorPct = market
-        ? Math.round(Number.parseFloat(formatFixed(market.riskConfig.collateralFactorWad, 18)) * 1000) / 10
+        ? wadToPercent(market.riskConfig.collateralFactorWad)
         : 0
       const liquidationPct = market
-        ? Math.round(Number.parseFloat(formatFixed(market.riskConfig.liquidationThresholdWad, 18)) * 1000) / 10
+        ? wadToPercent(market.riskConfig.liquidationThresholdWad)
         : 0
       const borrowableAssets = session.getBorrowableAssetsForMarket(marketId)
       void session
@@ -749,7 +749,7 @@ export function BorrowActionPageClient({
 
     if (!matchingHistory) return
 
-    const executedAmount = Number.parseFloat(formatFixed(matchingHistory.executedAmountUsd6, 6))
+    const executedAmount = usd6ToNumber(matchingHistory.executedAmountUsd6)
     setSuccessUi(
       mapBorrowSuccessToActionUi({
         title: `${descriptor.primaryVerb} successful`,
@@ -874,7 +874,7 @@ export function BorrowActionPageClient({
       })
 
       if (result.receipt.status !== "success") throw new Error(humanizeBlockedReason(result.receipt.error) ?? "Transaction failed")
-      const executedAmountUsd = Number.parseFloat(formatFixed(result.historyItem.executedAmountUsd6, 6))
+      const executedAmountUsd = usd6ToNumber(result.historyItem.executedAmountUsd6)
 
       setSuccessUi(
         mapBorrowSuccessToActionUi({
