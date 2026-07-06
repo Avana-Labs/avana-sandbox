@@ -31,6 +31,7 @@ import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { buildLendSnapshotFromTabData } from "@/app/portfolio/lend-hero-state"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
+import { useRefetchOnTransaction } from "@/app/dashboard/use-refetch-on-transaction"
 import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-live"
 import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
@@ -350,6 +351,14 @@ export function DashboardClient({
     }, 1000)
     return () => window.clearTimeout(id)
   }, [pageData, portfolioError, portfolioLoading, retryPortfolioPage])
+
+  // Refetch the one-shot portfolio snapshot after any on-chain/sandbox action so the
+  // snapshot-backed surfaces (fallback rows, Lend/Multiply hero charts) never go stale.
+  const totalTransactionCount =
+    borrowSession.transactionHistory.length +
+    lendSession.transactionHistory.length +
+    multiplySession.transactionHistory.length
+  useRefetchOnTransaction(totalTransactionCount, retryPortfolioPage)
 
   const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab)
