@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -85,6 +85,9 @@ export function LendActionPageClient({
     return "configure"
   })
   const [amount, setAmount] = useState(initialAmount)
+  // Input stays bound to `amount`; the engine preview below keys off the deferred value so
+  // it runs on the settled input, not once per keystroke (the INP lever). See borrow client.
+  const deferredAmount = useDeferredValue(amount)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
@@ -158,7 +161,7 @@ export function LendActionPageClient({
   useEffect(() => {
     if (!market) return
     let cancelled = false
-    const parsed = parsePositiveActionAmount(amount)
+    const parsed = parsePositiveActionAmount(deferredAmount)
     if (parsed == null) {
       setPreviewUi(null)
       return
@@ -236,7 +239,7 @@ export function LendActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [amount, assetPriceUsd, kind, market, position, session, walletId])
+  }, [deferredAmount, assetPriceUsd, kind, market, position, session, walletId])
 
   useEffect(() => {
     if (!previewUi || previewUi.allowed || stage !== "configure") return
