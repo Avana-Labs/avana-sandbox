@@ -31,47 +31,4 @@ function Skeleton({
   )
 }
 
-/**
- * Multi-line text placeholder. Follows the classic skeleton-screen pattern
- * (Marina Aisa, "Design and code skeleton screens"): several full-width lines
- * where the last is short and the lines fade toward the background, so the block
- * reads as a paragraph of unknown length trailing off — not a solid rectangle.
- *
- * The fade lives on a wrapper element, not the Skeleton itself, because the base
- * `skeleton-pulse` animation drives `opacity` and would otherwise override an
- * inline value. Line widths/opacities are index-derived (deterministic) so the
- * server and client render identically.
- */
-function SkeletonText({
-  lines = 3,
-  className,
-  lineClassName,
-  lastLineWidth = "62%",
-}: {
-  lines?: number
-  className?: string
-  lineClassName?: string
-  /** Width of the trailing line (CSS length). Suggests text ending mid-line. */
-  lastLineWidth?: string
-}) {
-  const denominator = Math.max(1, lines - 1)
-  return (
-    <div className={cn("space-y-2", className)}>
-      {Array.from({ length: lines }).map((_, index) => {
-        const isLast = index === lines - 1
-        // 1 → ~0.45 across the block: later lines "merge into the background".
-        const fade = 1 - (index / denominator) * 0.55
-        return (
-          <div key={index} style={{ opacity: fade }}>
-            <Skeleton
-              className={cn("h-3 rounded-xs", isLast ? undefined : "w-full", lineClassName)}
-              style={isLast ? { width: lastLineWidth } : undefined}
-            />
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-export { Skeleton, SkeletonText }
+export { Skeleton }
