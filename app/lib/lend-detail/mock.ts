@@ -30,7 +30,6 @@ import type {
   CashflowCard,
   DeltaStat,
   QuickStat,
-  Series,
   TxHistoryRow,
 } from "@/app/lib/borrow-detail"
 import type {

@@ -22,7 +22,6 @@ import {
 } from "@/app/lib/borrow-sim"
 import { HOME_COLLATERAL_POOLS } from "@/app/lib/borrow-system/home-contracts"
 import { buildSeriesFamily, prngFromString } from "./prng"
-import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
 import { formatBpsAsPct, formatPct } from "./allocation"
 import { formatOraclePrice } from "./formatters"
