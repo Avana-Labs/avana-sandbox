@@ -7,47 +7,39 @@ import { formatApy } from "@/app/lib/format"
 import { HeroMarketCard } from "./borrow-hero-market-card"
 import { BorrowHeroLiveMetrics } from "./borrow-hero-live-metrics"
 
+type ExplorePool = BorrowPageData["explore"]["trendingCollateral"][number]
+
 function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => string) {
+  // Each card shows two markets, and no market repeats across the three cards, so the
+  // Explore row reads as six distinct pools rather than the same top markets echoed back.
+  const used = new Set<string>()
+  const pick = (pools: ReadonlyArray<ExplorePool>, count: number) => {
+    const chosen: ExplorePool[] = []
+    for (const pool of pools) {
+      if (used.has(pool.name)) continue
+      used.add(pool.name)
+      chosen.push(pool)
+      if (chosen.length === count) break
+    }
+    return chosen
+  }
+
+  const toRows = (pools: ReadonlyArray<ExplorePool>, prefix: string) =>
+    pools.map((pool) => ({
+      id: `${prefix}-${pool.id}`,
+      href: borrowMarketDetailPath(pool.id),
+      pool,
+      title: pool.name,
+      subtitle: `${compact(pool.tvlUsd)} TVL`,
+      value: `Avail. ${compact(pool.availableUsd)}`,
+      delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
+      deltaClassName: "text-apy-positive",
+    }))
+
   return [
-    {
-      title: "Trending Collateral",
-      rows: pageData.explore.trendingCollateral.map((pool) => ({
-        id: `trending-${pool.id}`,
-        href: borrowMarketDetailPath(pool.id),
-        pool,
-        title: pool.name,
-        subtitle: `${compact(pool.tvlUsd)} TVL`,
-        value: `Avail. ${compact(pool.availableUsd)}`,
-        delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
-        deltaClassName: "text-apy-positive",
-      })),
-    },
-    {
-      title: "Top Markets",
-      rows: pageData.explore.topMarkets.map((pool) => ({
-        id: `top-${pool.id}`,
-        href: borrowMarketDetailPath(pool.id),
-        pool,
-        title: pool.name,
-        subtitle: `${compact(pool.tvlUsd)} TVL`,
-        value: `Avail. ${compact(pool.availableUsd)}`,
-        delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
-        deltaClassName: "text-apy-positive",
-      })),
-    },
-    {
-      title: "High APY Pools",
-      rows: pageData.explore.highApyPools.map((pool) => ({
-        id: `apy-${pool.id}`,
-        href: borrowMarketDetailPath(pool.id),
-        pool,
-        title: pool.name,
-        subtitle: `${compact(pool.tvlUsd)} TVL`,
-        value: `Avail. ${compact(pool.availableUsd)}`,
-        delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
-        deltaClassName: "text-apy-positive",
-      })),
-    },
+    { id: "trending", rows: toRows(pick(pageData.explore.trendingCollateral, 2), "trending") },
+    { id: "top", rows: toRows(pick(pageData.explore.topMarkets, 2), "top") },
+    { id: "apy", rows: toRows(pick(pageData.explore.highApyPools, 2), "apy") },
   ]
 }
 
@@ -66,10 +58,10 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
           </div>
         </div>
 
-        <div className="overflow-x-auto pb-1">
-          <div className="flex min-w-max gap-3">
+        <div className="overflow-x-auto pb-1 md:overflow-visible">
+          <div className="flex min-w-max gap-3 md:grid md:min-w-0 md:grid-cols-3 md:gap-4">
             {heroCards.map((card) => (
-              <HeroMarketCard key={card.title} title={card.title} rows={card.rows} />
+              <HeroMarketCard key={card.id} rows={card.rows} className="md:min-w-0 md:max-w-none md:w-full" />
             ))}
           </div>
         </div>
