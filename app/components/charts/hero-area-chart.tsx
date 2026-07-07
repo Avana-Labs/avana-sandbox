@@ -6,7 +6,8 @@ import { useMediaQuery } from "@/app/lib/use-media-query"
 import type { ChartPoint, ChartRangeOption } from "./types"
 
 const TONE_COLORS = {
-  positive: { stroke: "#22C55E", fill: "#22C55E", cursor: "rgba(34, 197, 94, 0.2)" },
+  // Up trend uses the Avana brand cyan; down stays red.
+  positive: { stroke: "#01AACF", fill: "#01AACF", cursor: "rgba(1, 170, 207, 0.2)" },
   negative: { stroke: "#F0444C", fill: "#F0444C", cursor: "rgba(240, 68, 76, 0.2)" },
 } as const
 
