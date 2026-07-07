@@ -1,5 +1,4 @@
 import {
-  DataSourceError,
   executeSourceLoad,
   normalizeDataSourceError,
   type DataSourceRequestContext,

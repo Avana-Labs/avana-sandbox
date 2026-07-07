@@ -1,7 +1,7 @@
 import type { ActionBlockedUi, ActionKind, ActionProduct } from "./contracts"
 import { actionPagePath } from "./contracts"
 
-export function blockedUiForMissingWalletAsset(symbol: string, verb = "deposit"): ActionBlockedUi {
+export function blockedUiForMissingWalletAsset(symbol: string, _verb = "deposit"): ActionBlockedUi {
   return {
     title: `That's more practice ${symbol} than you hold`,
     description: `You've used all your sandbox ${symbol}. Lower the amount, or explore another asset — every market is available with your practice funds.`,

@@ -5,7 +5,7 @@ import tseslint from "typescript-eslint"
 
 export default tseslint.config(
   {
-    ignores: [".next/**", ".next-dev/**", ".next-prod/**", "node_modules/**", ".reports/**", "tailwind.config.js"],
+    ignores: [".next/**", ".next-dev/**", ".next-prod/**", "node_modules/**", ".reports/**", ".claude/**", "convex/_generated/**", "tailwind.config.js"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -15,7 +15,9 @@ export default tseslint.config(
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs["core-web-vitals"].rules,
-      "no-console": "warn",
+      // `console.error` / `console.warn` are legitimate diagnostics (error boundaries,
+      // caught-error handlers); only `console.log`/`debug`/`info` are flagged.
+      "no-console": ["warn", { allow: ["warn", "error"] }],
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -30,6 +32,13 @@ export default tseslint.config(
         ...globals.browser,
         ...globals.node,
       },
+    },
+  },
+  {
+    // CLI/seed scripts legitimately print progress to stdout.
+    files: ["scripts/**/*.{ts,tsx,js,mjs,cjs}"],
+    rules: {
+      "no-console": "off",
     },
   },
 )

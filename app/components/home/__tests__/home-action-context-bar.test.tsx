@@ -27,14 +27,14 @@ describe("HomeActionContextBar", () => {
   it("shows the selected collateral value in card mode", () => {
     render(<HomeActionContextBar pool={pool} onOpenPool={() => undefined} />)
 
-    expect(screen.getByText("≈ $4,200")).toBeInTheDocument()
+    expect(screen.getByText("$4,200")).toBeInTheDocument()
   })
 
   it("shows the selected collateral value in inset mode and keeps the picker interactive", () => {
     const onOpenPool = vi.fn()
     render(<HomeActionContextBar pool={pool} onOpenPool={onOpenPool} variant="inset" />)
 
-    expect(screen.getByText("≈ $4,200")).toBeInTheDocument()
+    expect(screen.getByText("$4,200")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: /WETH \/ USDC/i }))
     expect(onOpenPool).toHaveBeenCalledTimes(1)
   })

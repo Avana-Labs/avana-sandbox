@@ -40,7 +40,7 @@ function handleStorage(event: StorageEvent) {
   if (event.key !== null && event.key !== STORAGE_KEY) return
   // key === null means storage was cleared entirely (e.g. localStorage.clear()).
   const nextRaw = event.key === null ? null : event.newValue
-  let next: SiweToken | null = null
+  let next: SiweToken | null
   try {
     next = nextRaw ? (JSON.parse(nextRaw) as SiweToken) : null
   } catch {

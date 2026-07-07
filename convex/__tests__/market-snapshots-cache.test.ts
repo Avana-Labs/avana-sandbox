@@ -17,7 +17,7 @@ async function seedMarket(
   slug: string,
   overrides: Partial<{ suppliedUsd: number; borrowedUsd: number }> = {},
 ): Promise<Id<"markets">> {
-  return t.run(async (ctx: any) => {
+  return t.run(async (ctx: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     const marketId = await ctx.db.insert("markets", {
       scope: "asset" as const,
       slug,
@@ -54,7 +54,7 @@ describe("listMarketSnapshots reads a single precomputed cache doc", () => {
     await seedMarket(t, "usdc", { suppliedUsd: 1000, borrowedUsd: 400 })
 
     // No cache row written yet — the query must still return the computed snapshot.
-    const cacheBefore = await t.run(async (ctx: any) =>
+    const cacheBefore = await t.run(async (ctx: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
       ctx.db.query("marketSnapshotsCache").collect(),
     )
     expect(cacheBefore).toHaveLength(0)
@@ -74,7 +74,7 @@ describe("listMarketSnapshots reads a single precomputed cache doc", () => {
     expect(res.markets).toBe(2)
 
     // Exactly ONE cache document holds the whole folded array (O(1) subscribed read).
-    const cacheDocs = await t.run(async (ctx: any) =>
+    const cacheDocs = await t.run(async (ctx: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
       ctx.db.query("marketSnapshotsCache").collect(),
     )
     expect(cacheDocs).toHaveLength(1)
@@ -106,7 +106,7 @@ describe("listMarketSnapshots reads a single precomputed cache doc", () => {
     expect(fresh.map((r) => r.slug).sort()).toEqual(["dai", "usdc"])
 
     // Rebuild is idempotent — still exactly one cache row after a second run.
-    const cacheDocs = await t.run(async (ctx: any) =>
+    const cacheDocs = await t.run(async (ctx: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
       ctx.db.query("marketSnapshotsCache").collect(),
     )
     expect(cacheDocs).toHaveLength(1)

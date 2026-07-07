@@ -98,11 +98,11 @@ describe("BorrowActionPageClient", () => {
     )
 
     // The collateral context renders the unified card in its empty state — value "0"
-    // and "≈ $0.00", not a pre-selected pool (same card shown once collateral exists).
+    // and "$0.00", not a pre-selected pool (same card shown once collateral exists).
     await waitFor(() => {
       expect(screen.getAllByText("0").length).toBeGreaterThan(0)
     })
-    expect(screen.getAllByText("≈ $0.00").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("$0.00").length).toBeGreaterThan(0)
 
     // Nothing should auto-select a pledged pool or surface a health factor before
     // the user acts. Give effects a tick to (not) run, then assert the zero state held.
