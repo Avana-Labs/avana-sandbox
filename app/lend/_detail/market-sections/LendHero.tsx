@@ -108,7 +108,7 @@ export function LendHero({ detail, leading, actions, className, hideIdentity = f
       <div className="pt-4" data-testid="lend-hero-chart-card">
         <MarketHeroChart
           feed={feed}
-          defaultRange={detail.heroFeed ? "All" : "1D"}
+          defaultRange="1D"
           gradientId={`lendHeroFill-${detail.id}`}
           label={t("Total supplied")}
         />

@@ -385,7 +385,7 @@ function buildRangePoints(params: {
   earnedUsd: number
 }): ChartPoint[] {
   const labels = CHART_RANGE_LABELS[params.range]
-  const pointCount = params.range === "1H" ? 24 : 63
+  const pointCount = 63
   const points = Array.from({ length: pointCount }, (_, index) => ({
     time: index,
     value: params.startValue,

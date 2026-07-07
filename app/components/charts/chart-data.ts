@@ -2,28 +2,28 @@ import type { ChartPoint, ChartRangeData, ChartRangeOption } from "./types"
 import { CHART_RANGE_OPTIONS } from "./types"
 
 const RANGE_LENGTH: Record<ChartRangeOption, number> = {
-  "1H": 24,
   "1D": 63,
   "1W": 63,
   "1M": 63,
+  "3M": 63,
   "1Y": 63,
   All: 63,
 }
 
 export const CHART_RANGE_LABELS: Record<ChartRangeOption, string[]> = {
-  "1H": ["12:00 AM", "3:00 AM", "6:00 AM", "9:00 AM", "Now"],
-  "1D": ["11:00 AM", "2:00 PM", "5:00 PM", "Jun 10", "11:00 PM", "2:00 AM", "5:00 AM", "8:00 AM"],
+  "1D": ["11:00 AM", "2:00 PM", "5:00 PM", "8:00 PM", "11:00 PM", "2:00 AM", "5:00 AM", "8:00 AM"],
   "1W": ["Mon", "Tue", "Wed", "Thu", "Fri"],
   "1M": ["Week 1", "Week 2", "Week 3", "Week 4", "Now"],
+  "3M": ["Month 1", "Month 2", "Month 3", "Now"],
   "1Y": ["Jan", "Apr", "Jul", "Oct", "Now"],
   All: ["2022", "2023", "2024", "2025", "Now"],
 }
 
 const RANGE_SEED: Record<ChartRangeOption, number> = {
-  "1H": 11,
   "1D": 0,
   "1W": 73,
   "1M": 131,
+  "3M": 163,
   "1Y": 197,
   All: 251,
 }
