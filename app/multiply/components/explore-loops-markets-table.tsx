@@ -204,7 +204,7 @@ export function ExploreLoopsMarketsTable({
       </div>
 
       <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="grid min-w-max grid-flow-col gap-4 md:min-w-0 md:grid-flow-row md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid min-w-max grid-flow-col gap-4 md:min-w-0 md:grid-flow-row md:grid-cols-3">
           {trendingSnapshots.map((snapshot) => (
             <TrendingLoopCard key={snapshot.marketId} snapshot={snapshot} />
           ))}
@@ -626,24 +626,17 @@ function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSn
       <div className="pointer-events-none absolute inset-0 z-0 opacity-100 [background-image:radial-gradient(circle,rgba(148,163,184,0.28)_1px,transparent_1.15px)] [background-position:0_4px] [background-size:16px_16px] dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1.15px)]" />
       <div className="pointer-events-none absolute inset-0 z-0 rounded-radius-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
 
-      {collateralSrc ? (
-        <div className="pointer-events-none absolute -left-5 top-16 z-0 size-[274px] rounded-full opacity-10 blur-lg saturate-150">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={collateralSrc} alt="" aria-hidden="true" className="size-full rounded-full object-cover" />
-        </div>
-      ) : null}
-
       <div className="relative z-10 mb-3 flex items-start justify-between gap-3">
         <div className="flex items-center">
-          <div className="relative flex h-10 w-[62px] items-center">
+          <div className="relative flex h-12 w-[72px] items-center">
             {collateralSrc ? (
-              <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+              <div className="absolute left-0 top-0 z-10 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={collateralSrc} alt="" aria-hidden="true" className="size-full object-cover" />
               </div>
             ) : null}
             {borrowSrc ? (
-              <div className="absolute left-5 top-0 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+              <div className="absolute left-6 top-0 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={borrowSrc} alt="" aria-hidden="true" className="size-full object-cover" />
               </div>

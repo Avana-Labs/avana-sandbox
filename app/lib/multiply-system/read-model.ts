@@ -72,7 +72,7 @@ export function buildMultiplyTrendingSnapshots(markets: MultiplyMarketRecord[]):
     })
     .filter((entry) => entry.maxLeverageApy > 0)
     .sort((left, right) => right.maxLeverageApy - left.maxLeverageApy)
-    .slice(0, 4)
+    .slice(0, 3)
     .map((entry) => entry.snapshot)
 }
 

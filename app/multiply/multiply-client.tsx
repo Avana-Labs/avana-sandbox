@@ -61,9 +61,6 @@ export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
             if (market) handleOpenMultiply(market.id)
           }}
         />
-        <p className="mt-3 text-[12px] text-muted-foreground">
-          Showing {livePageData.lendRows.length} sandbox multiply markets from the unified catalog.
-        </p>
       </div>
     </main>
   )
