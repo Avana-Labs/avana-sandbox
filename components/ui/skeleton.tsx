@@ -21,9 +21,12 @@ function Skeleton({
       className={cn(
         "relative overflow-hidden rounded-md bg-muted/70",
         "motion-safe:animate-[skeleton-pulse_2.4s_ease-in-out_infinite]",
-        "before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/55 before:to-transparent before:content-['']",
-        "motion-safe:before:animate-[loading-shimmer_1.9s_cubic-bezier(0.4,0,0.2,1)_infinite]",
-        "dark:before:via-white/[0.07]",
+        // A slim bright streak (≈30% of the width) sweeps across. Tuned per theme:
+        // a clean light sweep in light mode, a luminous-but-restrained one in dark.
+        "before:absolute before:inset-0 before:-translate-x-full before:content-['']",
+        "before:bg-[linear-gradient(100deg,transparent_35%,rgba(255,255,255,0.6)_50%,transparent_65%)]",
+        "dark:before:bg-[linear-gradient(100deg,transparent_35%,rgba(255,255,255,0.14)_50%,transparent_65%)]",
+        "motion-safe:before:animate-[loading-shimmer_2s_cubic-bezier(0.4,0,0.2,1)_infinite]",
         className,
       )}
       {...props}

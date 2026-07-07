@@ -29,7 +29,7 @@ async function insertSnapshotRow(
   rows: Array<{ marketSlug: string; borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }>,
   updatedAt: number,
 ) {
-  await t.run(async (ctx: any) => {
+  await t.run(async (ctx: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     await ctx.db.insert("liquidityDeltasCache", {
       singleton: "deltas",
       rows,
@@ -118,9 +118,10 @@ describe("listDeltaSnapshot decouples the app-wide read from the hot write path 
     const res = await t.mutation(internal.liquidity.rebuildDeltaSnapshot, {})
     expect(res.markets).toBe(1)
 
-    const cacheDocs = await t.run(async (ctx: any) =>
+    const cacheDocs = await t.run(async (ctx: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
       ctx.db
         .query("liquidityDeltasCache")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .withIndex("by_singleton", (q: any) => q.eq("singleton", "deltas"))
         .collect(),
     )

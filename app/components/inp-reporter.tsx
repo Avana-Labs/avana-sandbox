@@ -37,7 +37,6 @@ export function InpReporter() {
             }
 
             if (isDev) {
-              // eslint-disable-next-line no-console
               console.warn(
                 `[INP] ${payload.value}ms (${payload.rating}) on ${payload.route}\n` +
                   `      target: ${payload.target}\n` +

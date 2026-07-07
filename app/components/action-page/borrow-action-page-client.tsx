@@ -2,7 +2,7 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { formatFixed, parseFixed, currentDebtValueUsd6, usd6ToNumber, wadToPercent } from "@/app/lib/credit-engine"
+import { parseFixed, currentDebtValueUsd6, usd6ToNumber, wadToPercent } from "@/app/lib/credit-engine"
 import {
   buildClaimBorrowAction,
   buildHomeClaimPreview,
