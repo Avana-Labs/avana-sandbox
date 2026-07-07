@@ -57,7 +57,7 @@ type FoldedDelta = { marketSlug: string; borrowedDeltaUsd: number; suppliedDelta
  * A delta row is summed here (raw) until `compactDeltas` folds it into a baseline row and
  * deletes it, after which the baseline carries it — exactly-once either way.
  */
-async function foldDeltas(ctx: QueryCtx): Promise<FoldedDelta[]> {
+export async function foldDeltas(ctx: QueryCtx | MutationCtx): Promise<FoldedDelta[]> {
   const byMarket = new Map<string, { borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }>()
 
   const accumulate = (marketSlug: string, borrowedDeltaUsd: number, suppliedDeltaUsd: number, updatedAt: number) => {
