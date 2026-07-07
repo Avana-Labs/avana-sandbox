@@ -92,10 +92,6 @@ function deltaUp(pct: number): DeltaStat {
   return { value: pct, direction: "up", label: `+${pct.toFixed(1)}%` }
 }
 
-function deltaDown(pct: number): DeltaStat {
-  return { value: -Math.abs(pct), direction: "down", label: `-${Math.abs(pct).toFixed(1)}%` }
-}
-
 function pickChain(collateral: string, borrowable: string) {
   const pair = `${collateral} ${borrowable}`.toLowerCase()
   if (pair.includes("wbtc") || pair.includes("cbbtc")) return "Bitcoin"
