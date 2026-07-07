@@ -43,8 +43,8 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
 
       <div className="grid grid-cols-3 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-hero-metric-emerald md:justify-end">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#7ec39f]" />
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
             {t("Total Collateral")}
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
@@ -53,8 +53,8 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
         </div>
 
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-hero-metric-violet md:justify-end">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#a092ef]" />
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
             {t("Available Credit")}
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
@@ -63,8 +63,8 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
         </div>
 
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-hero-metric-amber md:justify-end">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#c29f78]" />
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
             {t("Outstanding Loans")}
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
