@@ -103,6 +103,9 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   }, [currentTab, filteredPools])
 
   const poolGroups = useMemo(() => groupByDex(visiblePools), [visiblePools])
+  // The "Borrowable" tab in the UI (labelled "Assets"→"Borrowable") is fed from here:
+  // borrowAssetsBySpoke maps each spoke to its borrowable assets. To change what shows
+  // under "Borrowable", start at session.getBorrowableAssetsForMarket + BorrowableAssetsPanel.
   const borrowAssetsBySpoke = useMemo(() => {
     return Object.fromEntries(
       poolGroups.flatMap((group) =>
