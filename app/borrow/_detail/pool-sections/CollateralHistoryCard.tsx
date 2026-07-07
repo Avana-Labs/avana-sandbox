@@ -2,8 +2,22 @@
 
 import * as React from "react"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
+import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
+
+/** Relative time ("5m", "3h", "2d") from an ISO stamp — Convex rows carry `at`, not a label. */
+function formatRelativeTime(iso: string, locale: string) {
+  const elapsedMs = Math.max(0, Date.now() - new Date(iso).getTime())
+  const totalSeconds = Math.max(1, Math.floor(elapsedMs / 1000))
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "always", style: "narrow" })
+  if (totalSeconds < 60) return rtf.format(-totalSeconds, "second")
+  const totalMinutes = Math.floor(totalSeconds / 60)
+  if (totalMinutes < 60) return rtf.format(-totalMinutes, "minute")
+  const totalHours = Math.floor(totalMinutes / 60)
+  if (totalHours < 24) return rtf.format(-totalHours, "hour")
+  return rtf.format(-Math.floor(totalHours / 24), "day")
+}
 
 const KIND_LABEL: Record<TxHistoryRow["kind"], string> = {
   supply: "Pledge",
@@ -45,7 +59,8 @@ export function CollateralHistoryCard({
   tokenLabels,
   title = "Transactions",
 }: Props) {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
+  const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const [activeFilter, setActiveFilter] = React.useState<(typeof FILTERS)[number]["id"]>("all")
   const visibleTransactions =
     activeFilter === "all" ? transactions : transactions.filter((tx) => tx.kind === activeFilter)
@@ -113,7 +128,7 @@ export function CollateralHistoryCard({
                 {visibleTransactions.map((tx) => (
                   <tr key={tx.id} className="group transition-colors">
                     <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
-                      {tx.timeLabel}
+                      {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                       <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
@@ -187,7 +202,7 @@ export function CollateralHistoryCard({
                 {visibleTransactions.map((tx) => (
                   <tr key={tx.id} className="group transition-colors">
                     <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
-                      {tx.timeLabel}
+                      {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                       <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
