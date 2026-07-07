@@ -18,7 +18,6 @@ export function CashflowCard({ detail }: Props) {
   return (
     <SectionCard
       title={t("Cashflow breakdown")}
-      subtitle={t("{period} · fees, incentives and protocol revenue.").replace("{period}", cashflow.periodLabel)}
       chrome="plain"
       bodyClassName="p-0"
     >
