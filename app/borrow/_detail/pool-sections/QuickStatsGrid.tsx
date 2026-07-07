@@ -41,13 +41,18 @@ function splitQuickStats(stats: QuickStatLike[]) {
   return { market, risk }
 }
 
-function StatsGrid({ stats }: { stats: QuickStatLike[] }) {
+function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3 | 4 }) {
   const { ctx } = useCurrency()
   const { t } = useTranslation()
   if (stats.length === 0) return null
 
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 md:gap-x-10">
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-x-6 gap-y-6 md:gap-x-10",
+        columns === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3",
+      )}
+    >
       {stats.map((stat) => (
         <article key={stat.id} className="min-w-0">
           <div className="font-data text-[19px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[21px]">
@@ -73,7 +78,7 @@ export function QuickStatsGrid({ detail, className }: Props) {
       {risk.length > 0 ? (
         <section aria-label={t("Risk exposure")} className="space-y-5">
           <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{t("Risk exposure")}</h2>
-          <StatsGrid stats={risk} />
+          <StatsGrid stats={risk} columns={4} />
         </section>
       ) : null}
     </div>
