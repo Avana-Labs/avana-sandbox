@@ -39,7 +39,6 @@ const KIND_TONE: Record<TxHistoryRow["kind"], string> = {
 
 type Props = {
   transactions: TxHistoryRow[]
-  tokenLabels: [string, string]
   title?: string
 }
 
@@ -56,7 +55,6 @@ const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-radius-lg`
 
 export function CollateralHistoryCard({
   transactions,
-  tokenLabels,
   title = "Transactions",
 }: Props) {
   const { t, language } = useTranslation()
@@ -97,9 +95,7 @@ export function CollateralHistoryCard({
               <colgroup>
                 <col className="w-[96px]" />
                 <col className="w-[118px]" />
-                <col className="w-[112px]" />
-                <col className="w-[112px]" />
-                <col className="w-[112px]" />
+                <col className="w-[140px]" />
                 <col />
               </colgroup>
               <thead>
@@ -112,12 +108,6 @@ export function CollateralHistoryCard({
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     USD
-                  </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    {tokenLabels[0]}
-                  </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    {tokenLabels[1]}
                   </th>
                   <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Wallet")}
@@ -137,12 +127,6 @@ export function CollateralHistoryCard({
                     </td>
                     <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel.replace(/^\+/, "")}
-                    </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
-                      {tx.token0AmountLabel ?? "-"}
-                    </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
-                      {tx.token1AmountLabel ?? "-"}
                     </td>
                     <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
@@ -167,13 +151,11 @@ export function CollateralHistoryCard({
           </div>
 
           <div className="overflow-x-auto md:hidden">
-            <table className="w-full min-w-[760px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[480px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
                 <col className="w-[96px]" />
                 <col className="w-[118px]" />
-                <col className="w-[112px]" />
-                <col className="w-[112px]" />
-                <col className="w-[112px]" />
+                <col className="w-[140px]" />
                 <col />
               </colgroup>
               <thead>
@@ -186,12 +168,6 @@ export function CollateralHistoryCard({
                   </th>
                   <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     USD
-                  </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    {tokenLabels[0]}
-                  </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    {tokenLabels[1]}
                   </th>
                   <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Wallet")}
@@ -211,12 +187,6 @@ export function CollateralHistoryCard({
                     </td>
                     <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel.replace(/^\+/, "")}
-                    </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
-                      {tx.token0AmountLabel ?? "-"}
-                    </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
-                      {tx.token1AmountLabel ?? "-"}
                     </td>
                     <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
