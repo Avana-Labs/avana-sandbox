@@ -70,10 +70,7 @@ export function PoolDetailClient({ detail }: Props) {
                     title="General FAQs"
                     items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                   />
-                  <CollateralHistoryCard
-                    transactions={detail.transactions}
-                    tokenLabels={[detail.hero.visuals[0].symbol, detail.hero.visuals[1].symbol]}
-                  />
+                  <CollateralHistoryCard transactions={detail.transactions} />
                   <RelatedPoolsRow detail={detail} />
                 </section>
               </div>
