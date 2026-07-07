@@ -4,7 +4,6 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
@@ -21,19 +20,9 @@ type Props = { detail: AssetDetail; className?: string }
 type SidebarTab = "borrow" | "repay"
 
 export function AssetTokenSidebar({ detail, className }: Props) {
-  const { t } = useTranslation()
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
       <TokenRail detail={detail} className="mt-6" embedActions />
-      <AboutNewsSection
-        className="pt-4"
-        about={detail.about}
-        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
-        compactAboutTitle
-        newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
-        newsImageLabel={detail.hero.symbol}
-        mediaVariant="icon"
-      />
     </div>
   )
 }
