@@ -93,7 +93,7 @@ export function AssetDetailClient({ detail }: Props) {
                   newsImageLabel={detail.hero.symbol}
                 />
 
-                <section aria-label="Asset analytics" className="space-y-8 pt-8">
+                <section aria-label="Asset analytics" className="space-y-12 pt-12">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
                   <QuickStatsGrid detail={detail} />
                   <InterestRateModelCard detail={detail} />

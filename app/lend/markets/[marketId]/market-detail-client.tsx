@@ -88,7 +88,7 @@ export function LendMarketDetailClient({ detail }: Props) {
                   mediaVariant="icon"
                 />
 
-                <section aria-label="Lend market analytics" className="space-y-8 pt-8">
+                <section aria-label="Lend market analytics" className="space-y-12 pt-12">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Key Statistics</h2>
                   <QuickStatsGrid detail={detail} />
                   <SupplyCard detail={detail} />
