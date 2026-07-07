@@ -90,6 +90,13 @@ export function AssetDetailClient({ detail }: Props) {
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
                 <AssetHero detail={detail} hideIdentity className="mb-6" />
 
+                <AboutNewsSection
+                  about={detail.about}
+                  aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
+                  compactAboutTitle
+                  newsImageLabel={detail.hero.symbol}
+                />
+
                 <section aria-label="Asset analytics" className="space-y-8 pt-8">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
                   <QuickStatsGrid detail={detail} />
@@ -104,13 +111,6 @@ export function AssetDetailClient({ detail }: Props) {
                       accentClassName={detail.hero.visual.textClass}
                     />
                   </div>
-                  <AboutNewsSection
-                    className="lg:hidden"
-                    about={detail.about}
-                    newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
-                    newsImageLabel={detail.hero.symbol}
-                    mediaVariant="icon"
-                  />
                   <DetailFaqSection
                     title="General FAQs"
                     items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

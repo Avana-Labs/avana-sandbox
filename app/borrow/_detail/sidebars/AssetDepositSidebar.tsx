@@ -4,7 +4,6 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
@@ -87,15 +86,6 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
           </button>
         </div>
       </aside>
-
-      <AboutNewsSection
-        about={detail.about}
-        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
-        compactAboutTitle
-        newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
-        newsImageLabel={detail.hero.symbol}
-        mediaVariant="icon"
-      />
     </>
   )
 }
