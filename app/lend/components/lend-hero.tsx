@@ -70,20 +70,14 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
               {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
             </p>
-            <span className="inline-flex items-center gap-1 font-data text-[11px] font-medium tabular-nums text-success">
-              <span aria-hidden className="text-[10px] leading-none">
-                {metrics.weightedChange24h >= 0 ? "▲" : "▼"}
-              </span>
-              {showDollarAmounts ? `${metrics.weightedChange24h >= 0 ? "+" : ""}${metrics.weightedChange24h.toFixed(2)}% ${t("Today")}` : "••••••"}
-            </span>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
           {LEND_METRICS.map((metric) => (
             <div key={metric.key}>
-              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-foreground md:justify-end">
+                <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
                 {t(metric.label)}
               </div>
               <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
