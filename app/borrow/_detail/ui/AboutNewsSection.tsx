@@ -29,7 +29,7 @@ export function AboutNewsSection({
   newsImageLabel,
   aboutTitle = "About",
   compactAboutTitle = false,
-  newsTitle = "Parameter Changes",
+  newsTitle = "Risk Stewards",
   governanceUrl = GOVERNANCE_URL,
   className,
 }: Props) {

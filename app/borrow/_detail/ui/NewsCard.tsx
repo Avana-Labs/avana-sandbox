@@ -24,11 +24,11 @@ type Props = {
 }
 
 /**
- * A market's "news" feed — used here to surface Parameter Changes. Each row is a
- * headline + "source · date" with a thumbnail on the right, linking out to the
+ * A market's "news" feed — used here to surface Risk Stewards updates. Each row is
+ * a headline + "source · date" with a thumbnail on the right, linking out to the
  * governance thread where the change was made.
  */
-export function NewsCard({ items, title = "Parameter Changes", plain = false, viewAllHref, itemHrefFallback }: Props) {
+export function NewsCard({ items, title = "Risk Stewards", plain = false, viewAllHref, itemHrefFallback }: Props) {
   const { t } = useTranslation()
   return (
     <section className={plain ? "space-y-2" : "overflow-hidden rounded-radius-lg border border-border bg-surface-raised shadow-elev-1"}>
