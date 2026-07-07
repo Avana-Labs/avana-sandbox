@@ -71,7 +71,7 @@ export function LendMarketDetailClient({ detail }: Props) {
               <span className="font-normal text-foreground">{detail.hero.name}</span>
             </nav>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
               <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
                 <LendHeroIdentity detail={detail} className="pb-0" />
               </div>
