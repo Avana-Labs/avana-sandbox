@@ -113,7 +113,7 @@ export function MarketHero({ detail, leading, actions, className, hideIdentity =
       <div className="pt-4" data-testid="market-hero-chart-card">
         <MarketHeroChart
           feed={feed}
-          defaultRange={detail.heroFeed ? "All" : "1D"}
+          defaultRange="1D"
           gradientId={`multiplyHeroFill-${detail.id}`}
           label={t("Total value locked")}
         />

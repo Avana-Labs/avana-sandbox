@@ -120,8 +120,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
       {hideIdentity ? null : <AssetHeroIdentity detail={detail} leading={leading} actions={actions} />}
 
       <div className="pt-4" data-testid="asset-hero-chart-card">
-        {/* Convex feed carries the full daily history — open on it so the chart is rich. */}
-        <MarketHeroChart feed={feed} defaultRange={detail.heroFeed ? "All" : "1D"} gradientId={`assetHeroFill-${detail.id}`} label={t("Total borrows")} />
+        <MarketHeroChart feed={feed} defaultRange="1D" gradientId={`assetHeroFill-${detail.id}`} label={t("Total borrows")} />
       </div>
     </section>
   )

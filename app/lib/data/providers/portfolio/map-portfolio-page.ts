@@ -33,19 +33,19 @@ function computeHealthFactor(liquidationUsd: number, borrowedUsd: number) {
 }
 
 const RANGE_LENGTH: Record<ChartRangeOption, number> = {
-  "1H": 24,
   "1D": 63,
   "1W": 63,
   "1M": 63,
+  "3M": 63,
   "1Y": 63,
   All: 63,
 }
 
 const RANGE_SEED: Record<ChartRangeOption, number> = {
-  "1H": 11,
   "1D": 37,
   "1W": 73,
   "1M": 131,
+  "3M": 163,
   "1Y": 197,
   All: 251,
 }
@@ -94,7 +94,7 @@ function enrichInterpolatedSeries(anchorValues: number[], count: number, seedKey
     baseline.length > 1
       ? baseline.slice(1).reduce((sum, value, index) => sum + Math.abs(value - baseline[index]), 0) / (baseline.length - 1)
       : Math.max(Math.abs(baseline[0]) * 0.015, 12)
-  const noiseScale = Math.max(volatility * (range === "1H" ? 0.6 : range === "1D" ? 0.85 : 1.1), Math.abs(baseline[0]) * 0.004)
+  const noiseScale = Math.max(volatility * (range === "1D" ? 0.85 : 1.1), Math.abs(baseline[0]) * 0.004)
 
   let velocity = 0
   const enriched = baseline.map((value, index) => {
@@ -132,10 +132,10 @@ function attachLabels(values: number[], range: ChartRangeOption): ChartPoint[] {
 
 function pickAnchorValues(snapshots: PortfolioSnapshotRecord[], selector: (snapshot: PortfolioSnapshotRecord) => number, range: ChartRangeOption) {
   const values = snapshots.map(selector)
-  if (range === "1H") return values.slice(-4)
   if (range === "1D") return values.slice(-6)
   if (range === "1W") return values.slice(-8)
   if (range === "1M") return values.slice(-10)
+  if (range === "3M") return values.slice(-12)
   if (range === "1Y") return values
   return values
 }
@@ -169,10 +169,10 @@ function buildRangeDataFromSnapshots(
   seedKey: string,
 ): ChartRangeData {
   return {
-    "1H": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1H"), RANGE_LENGTH["1H"], seedKey, "1H"), "1H"),
     "1D": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1D"), RANGE_LENGTH["1D"], seedKey, "1D"), "1D"),
     "1W": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1W"), RANGE_LENGTH["1W"], seedKey, "1W"), "1W"),
     "1M": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1M"), RANGE_LENGTH["1M"], seedKey, "1M"), "1M"),
+    "3M": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "3M"), RANGE_LENGTH["3M"], seedKey, "3M"), "3M"),
     "1Y": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1Y"), RANGE_LENGTH["1Y"], seedKey, "1Y"), "1Y"),
     All: buildAllRangeFromSnapshots(snapshots, selector),
   }

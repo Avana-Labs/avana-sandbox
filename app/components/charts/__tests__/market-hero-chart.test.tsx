@@ -23,10 +23,10 @@ const feed: ChartFeed = {
   headlineDelta: "$1.0M (0.32%)",
   deltaTone: "positive",
   rangeData: {
-    "1H": [{ time: 0, value: 312_400_000, label: "" }],
     "1D": [{ time: 0, value: 312_400_000, label: "" }],
     "1W": [{ time: 0, value: 312_400_000, label: "" }],
     "1M": [{ time: 0, value: 312_400_000, label: "" }],
+    "3M": [{ time: 0, value: 312_400_000, label: "" }],
     "1Y": [{ time: 0, value: 312_400_000, label: "" }],
     All: [{ time: 0, value: 312_400_000, label: "" }],
   },
