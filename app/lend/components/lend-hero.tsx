@@ -1,16 +1,15 @@
 "use client"
 
 import { useMemo } from "react"
-import { cn } from "@/lib/utils"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const LEND_METRICS = [
-  { key: "averageApy", label: "Average APY", tone: "emerald" },
-  { key: "avgUtilization", label: "Avg Utilization", tone: "violet" },
-  { key: "activeMarkets", label: "Active Markets", tone: "amber" },
+  { key: "averageApy", label: "Average APY" },
+  { key: "avgUtilization", label: "Avg Utilization" },
+  { key: "activeMarkets", label: "Active Markets" },
 ] as const
 
 function parseMarketUsd(value: string) {
@@ -83,22 +82,8 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
         <div className="grid grid-cols-3 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
           {LEND_METRICS.map((metric) => (
             <div key={metric.key}>
-              <div
-                className={cn(
-                  "mb-1 flex items-center gap-1.5 text-[11px] font-medium md:justify-end",
-                  metric.tone === "emerald" && "text-hero-metric-emerald",
-                  metric.tone === "violet" && "text-hero-metric-violet",
-                  metric.tone === "amber" && "text-hero-metric-amber",
-                )}
-              >
-                <span
-                  className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    metric.tone === "emerald" && "bg-[#7ec39f]",
-                    metric.tone === "violet" && "bg-[#a092ef]",
-                    metric.tone === "amber" && "bg-[#c29f78]",
-                  )}
-                />
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                 {t(metric.label)}
               </div>
               <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
