@@ -4,7 +4,6 @@ import * as React from "react"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import { ResponsiveLendAction } from "@/app/components/action-page/responsive-lend-action"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
-import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -22,14 +21,6 @@ export function LendSidebar({ detail, className }: Props) {
   return (
     <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={t("Lend {name}").replace("{name}", detail.hero.name)}>
       <LendActionRail detail={detail} className="mt-6" />
-      <AboutNewsSection
-        about={detail.about}
-        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
-        compactAboutTitle
-        newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
-        newsImageLabel={detail.hero.symbol}
-        mediaVariant="icon"
-      />
     </aside>
   )
 }
