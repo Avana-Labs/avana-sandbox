@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
@@ -19,19 +18,9 @@ type Props = {
 type SidebarTab = "pledge" | "claim"
 
 export function PoolBorrowSidebar({ detail, className }: Props) {
-  const { t } = useTranslation()
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
       <PoolActionRail detail={detail} className="mt-6" embedActions />
-      <AboutNewsSection
-        className="pt-4"
-        about={detail.about}
-        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
-        compactAboutTitle
-        newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
-        newsImageLabel={detail.hero.name}
-        mediaVariant="icon"
-      />
     </div>
   )
 }
