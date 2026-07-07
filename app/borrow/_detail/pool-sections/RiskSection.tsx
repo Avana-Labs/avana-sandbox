@@ -30,7 +30,6 @@ export function RiskSection({ detail }: Props) {
   return (
     <SectionCard
       title={t("Risk assessment")}
-      subtitle={t("Composite rating combining volatility, depth, oracle and dependency risks.")}
       rightSlot={<RiskLevelPill level={risk.level} size="md" />}
     >
       <div className="space-y-6">
