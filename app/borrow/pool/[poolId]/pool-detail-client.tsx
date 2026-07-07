@@ -52,6 +52,15 @@ export function PoolDetailClient({ detail }: Props) {
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
                 <PoolHero detail={detail} hideIdentity className="mb-6" />
 
+                <AboutNewsSection
+                  about={detail.about}
+                  aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
+                  compactAboutTitle
+                  newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
+                  newsImageLabel={detail.hero.name}
+                  mediaVariant="icon"
+                />
+
                 <section aria-label="Pool analytics" className="space-y-8 pt-8">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Market data</h2>
                   <QuickStatsGrid detail={detail} />
@@ -63,13 +72,6 @@ export function PoolDetailClient({ detail }: Props) {
                     />
                   </div>
                   <RiskSection detail={detail} />
-                  <AboutNewsSection
-                    className="lg:hidden"
-                    about={detail.about}
-                    newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
-                    newsImageLabel={detail.hero.name}
-                    mediaVariant="icon"
-                  />
                   <DetailFaqSection
                     title="General FAQs"
                     items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
