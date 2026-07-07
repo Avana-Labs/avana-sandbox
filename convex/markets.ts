@@ -328,10 +328,13 @@ export const getAssetHeroSeries = query({
             : metric === "utilization"
               ? "utilizationPct"
               : "borrowAprPct"
+    const points = rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) }))
+    const delta = await liveMarketDelta(ctx, market.slug)
+    const deltaUsd = metric === "supply" ? delta.suppliedDeltaUsd : metric === "borrow" ? delta.borrowedDeltaUsd : 0
     return {
       id: `${market._id}:hero:${metric}:${range}`,
       label: metric,
-      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+      points: withLiveTip(points, deltaUsd),
     }
   },
 })
@@ -361,10 +364,13 @@ export const getPoolHeroSeries = query({
             : metric === "utilization"
               ? "utilizationPct"
               : "supplyApyPct"
+    const points = rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) }))
+    const delta = await liveMarketDelta(ctx, market.slug)
+    const deltaUsd = metric === "tvl" ? delta.suppliedDeltaUsd : 0
     return {
       id: `${market._id}:hero:${metric}:${range}`,
       label: metric,
-      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+      points: withLiveTip(points, deltaUsd),
     }
   },
 })
@@ -379,10 +385,13 @@ export const getLendHeroSeries = query({
     if (!market) return null
     const rows = await dailyRows(ctx, market._id, range)
     const field = metric === "supply" ? "suppliedUsd" : metric === "utilization" ? "utilizationPct" : "supplyApyPct"
+    const points = rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) }))
+    const delta = await liveMarketDelta(ctx, market.slug)
+    const deltaUsd = metric === "supply" ? delta.suppliedDeltaUsd : 0
     return {
       id: `${market._id}:hero:${metric}:${range}`,
       label: metric,
-      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+      points: withLiveTip(points, deltaUsd),
     }
   },
 })
@@ -397,10 +406,13 @@ export const getMultiplyHeroSeries = query({
     if (!market) return null
     const rows = await dailyRows(ctx, market._id, range)
     const field = metric === "supply" ? "suppliedUsd" : metric === "utilization" ? "utilizationPct" : "supplyApyPct"
+    const points = rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) }))
+    const delta = await liveMarketDelta(ctx, market.slug)
+    const deltaUsd = metric === "supply" ? delta.suppliedDeltaUsd : 0
     return {
       id: `${market._id}:hero:${metric}:${range}`,
       label: metric,
-      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+      points: withLiveTip(points, deltaUsd),
     }
   },
 })
@@ -447,6 +459,38 @@ async function resolveMarket(ctx: QueryCtx, scope: "asset" | "pool" | "lend" | "
     .query("markets")
     .withIndex("by_scope_slug", (q) => q.eq("scope", scope).eq("slug", slug))
     .unique()
+}
+
+/** Discriminator for the single liquidity-deltas cache row (see `convex/liquidity.ts`). */
+const DELTAS_SINGLETON = "deltas"
+
+/**
+ * Net live supplied/borrowed delta for a market slug, folded from the shared liquidity
+ * ledger (`marketLiquidityDeltas` → `liquidityDeltasCache`). This is the same aggregate
+ * every supply/borrow/withdraw/repay writes to, so it lets a chart's latest point track
+ * real cross-wallet activity instead of freezing at the seeded history.
+ */
+async function liveMarketDelta(ctx: QueryCtx, marketSlug: string) {
+  const cacheRows = await ctx.db
+    .query("liquidityDeltasCache")
+    .withIndex("by_singleton", (q) => q.eq("singleton", DELTAS_SINGLETON))
+    .collect()
+  const canonical = cacheRows.length ? cacheRows.reduce((a, b) => (b.updatedAt >= a.updatedAt ? b : a)) : null
+  const row = canonical?.rows.find((r) => r.marketSlug === marketSlug)
+  return { suppliedDeltaUsd: row?.suppliedDeltaUsd ?? 0, borrowedDeltaUsd: row?.borrowedDeltaUsd ?? 0 }
+}
+
+/**
+ * Add the net live delta to the most-recent series point so the chart tip (and the
+ * headline derived from it) moves with aggregate activity in real time. The seeded
+ * history is the starting point; recorded days are never rewritten.
+ */
+function withLiveTip(points: Array<{ t: string; v: number }>, deltaUsd: number) {
+  if (deltaUsd === 0 || points.length === 0) return points
+  const next = points.slice()
+  const tip = next[next.length - 1]
+  next[next.length - 1] = { t: tip.t, v: Math.max(0, tip.v + deltaUsd) }
+  return next
 }
 
 function toDelta(pct: number) {
