@@ -85,6 +85,10 @@ export function ActionAmountCard({
 }: ActionAmountCardProps) {
   const { t } = useTranslation()
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
+  // No asset picked yet: the default label is the literal word "Asset". Show a clear
+  // "Select Asset" call-to-action (and drop the neutral "?" glyph) instead.
+  const isAssetPlaceholder = /^asset$/i.test(assetLabel.trim())
+  const displayAssetLabel = isAssetPlaceholder ? t("Select Asset") : assetLabel
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(
     !hideAssetSelector &&
@@ -207,10 +211,10 @@ export function ActionAmountCard({
             >
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
-              ) : (
+              ) : isAssetPlaceholder ? null : (
                 <ActionTokenIcon symbol={symbol} />
               )}
-              {showAssetLabel ? <span>{assetLabel}</span> : null}
+              {showAssetLabel ? <span>{displayAssetLabel}</span> : null}
               <span className="text-muted-foreground" aria-hidden>
                 ▾
               </span>
@@ -221,10 +225,10 @@ export function ActionAmountCard({
             >
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
-              ) : (
+              ) : isAssetPlaceholder ? null : (
                 <ActionTokenIcon symbol={symbol} />
               )}
-              {showAssetLabel ? <span>{assetLabel}</span> : null}
+              {showAssetLabel ? <span>{displayAssetLabel}</span> : null}
             </div>
           )}
           {switchable && !gated && !useDialogPicker && menuOpen && !useMenuSheet ? (

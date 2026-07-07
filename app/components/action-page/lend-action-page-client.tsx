@@ -171,7 +171,7 @@ export function LendActionPageClient({
       setPreviewUi({
         allowed: false,
         amountLabel: `${parsed} ${market.asset.symbol}`,
-        amountUsdLabel: `≈ ${exact(0)}`,
+        amountUsdLabel: exact(0),
         rateLabel: t("Withdrawal"),
         rateValue: "—",
         marketLabel: t("Market"),

@@ -143,7 +143,7 @@ export function ActionConfigureAmountSection({
       label={inputLabel ?? verb}
       amount={amount}
       onAmountChange={onAmountChange}
-      approxUsdLabel={preview?.amountUsdLabel ?? `≈ ${exact(0)}`}
+      approxUsdLabel={preview?.amountUsdLabel ?? exact(0)}
       assetLabel={pillLabel}
       unitLabel={amountUnitLabel}
       footer={amountFooter}

@@ -777,6 +777,21 @@ Object.assign(RU, {
   "No borrowable assets for this collateral.": "Нет активов для займа под этот залог.",
 })
 
+// Home borrow card placeholders — empty collateral/asset pills (mirror "Select token").
+Object.assign(ZH_CN, { "Select Pool": "选择资金池", "Select Asset": "选择资产" })
+Object.assign(ES, { "Select Pool": "Seleccionar pool", "Select Asset": "Seleccionar activo" })
+Object.assign(DE, { "Select Pool": "Pool auswählen", "Select Asset": "Asset auswählen" })
+Object.assign(AR, { "Select Pool": "اختر المجمع", "Select Asset": "اختر الأصل" })
+Object.assign(HI, { "Select Pool": "पूल चुनें", "Select Asset": "एसेट चुनें" })
+Object.assign(TR, { "Select Pool": "Havuz seçin", "Select Asset": "Varlık seçin" })
+Object.assign(FR, { "Select Pool": "Choisir le pool", "Select Asset": "Choisir l'actif" })
+Object.assign(PT, { "Select Pool": "Escolher pool", "Select Asset": "Escolher ativo" })
+Object.assign(NL, { "Select Pool": "Kies pool", "Select Asset": "Kies asset" })
+Object.assign(ID, { "Select Pool": "Pilih pool", "Select Asset": "Pilih aset" })
+Object.assign(JA, { "Select Pool": "プールを選択", "Select Asset": "資産を選択" })
+Object.assign(KO, { "Select Pool": "풀 선택", "Select Asset": "자산 선택" })
+Object.assign(RU, { "Select Pool": "Выберите пул", "Select Asset": "Выберите актив" })
+
 Object.assign(ZH_CN, {
   "More information": "更多信息",
   "More information about {topic}": "关于 {topic} 的更多信息",
