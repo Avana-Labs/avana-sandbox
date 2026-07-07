@@ -222,6 +222,8 @@ export type PoolDetailHero = {
   name: string
   /** Short venue label, e.g. "Uniswap v3 · 0.3%". */
   venue: string
+  /** Concise market-type label shown in the identity row, e.g. "Uniswap v3 Blue-Chip LPs". */
+  marketLabel?: string
   /** Detailed description line shown under the name. */
   subtitle: string
   /** Fee tier label when applicable (e.g. "0.3%" or "Stable"). */
