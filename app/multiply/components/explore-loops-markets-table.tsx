@@ -15,7 +15,7 @@ import {
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -67,13 +67,6 @@ function buildLoopSearchText(row: MultiplyPageData["lendRows"][number]): string 
     .toLowerCase()
 }
 
-const SORT_PRESETS = [
-  { label: "Highest Leverage", value: "rewards:desc" },
-  { label: "Highest APY", value: "apy:desc" },
-  { label: "Most Available", value: "points:desc" },
-  { label: "Collateral A-Z", value: "protocol:asc" },
-] as const
-
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type MultiplyCategoryTabId = CategoryChip["id"]
@@ -101,301 +94,22 @@ function SearchIcon({ className }: { className?: string } = {}) {
   )
 }
 
-function ExpandableDesktopSearch({ value, onChange }: { value: string; onChange: (nextValue: string) => void }) {
+// Desktop search: expanded by default, styled to match the header search bar
+// (rounded-full, soft off-white / dark surface, muted icon) in both themes.
+function DesktopSearchBar({ value, onChange }: { value: string; onChange: (nextValue: string) => void }) {
   const { t } = useTranslation()
-  const [open, setOpen] = React.useState(false)
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
-  const inputRef = React.useRef<HTMLInputElement | null>(null)
-  const isExpanded = open || value.length > 0
-
-  React.useEffect(() => {
-    if (open) {
-      inputRef.current?.focus()
-    }
-  }, [open])
-
-  React.useEffect(() => {
-    if (!open) return
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false)
-      }
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false)
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown, true)
-    document.addEventListener("keydown", handleKeyDown)
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown, true)
-      document.removeEventListener("keydown", handleKeyDown)
-    }
-  }, [open])
 
   return (
-    <div ref={rootRef} className="relative hidden md:block">
-      <div
-        className={cn(
-          "flex h-10 items-center overflow-hidden border shadow-elev-1 transition-[width,border-radius,background-color,border-color] duration-200",
-          isExpanded ? "w-[240px] rounded-radius-md px-3" : "w-10 cursor-pointer justify-center rounded-radius-md",
-          "border-border bg-card text-foreground dark:border-border/60 dark:text-[#e6f8fb]",
-        )}
-        onClick={() => {
-          if (!isExpanded) setOpen(true)
-        }}
-      >
-        <button
-          type="button"
-          aria-label={t("Search loops")}
-          className={cn(
-            "flex shrink-0 items-center justify-center",
-            isExpanded ? "pointer-events-none mr-2 size-5" : "size-10",
-          )}
-          onClick={() => setOpen(true)}
-        >
-          <SearchIcon className={cn(isExpanded ? "size-5" : "size-6", "dark:text-brand")} />
-        </button>
-
-        {isExpanded ? (
-          <input
-            ref={inputRef}
-            aria-label={t("Search loops")}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder={t("Search loops")}
-            className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/65 dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
-          />
-        ) : null}
-      </div>
-    </div>
-  )
-}
-
-function FilterCheckIcon({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className={cn(
-        "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-        checked
-          ? "border-brand bg-brand text-white"
-          : "border-black/35 bg-transparent text-transparent dark:border-white/55",
-      )}
-    >
-      <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" className="size-3">
-        <path
-          d="M2.5 6.2 4.8 8.5 9.5 3.5"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
-  )
-}
-
-function SingleSelectDropdown({
-  allLabel,
-  value,
-  options,
-  onChange,
-  ariaLabel,
-}: {
-  allLabel: string
-  value: string | null
-  options: Array<{ label: string; value: string }>
-  onChange: (nextValue: string | null) => void
-  ariaLabel: string
-}) {
-  const { t } = useTranslation()
-  const [open, setOpen] = React.useState(false)
-  const [openUpward, setOpenUpward] = React.useState(false)
-  const [panelStyle, setPanelStyle] = React.useState<{
-    left: number
-    top: number
-    width: number
-    maxHeight: number
-  } | null>(null)
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
-  const panelRef = React.useRef<HTMLDivElement | null>(null)
-
-  const triggerLabel = options.find((option) => option.value === value)?.label ?? allLabel
-
-  React.useEffect(() => {
-    if (!open) return
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node
-      if (rootRef.current?.contains(target) || panelRef.current?.contains(target)) {
-        return
-      }
-      setOpen(false)
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.stopPropagation()
-        setOpen(false)
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown, true)
-    document.addEventListener("keydown", handleKeyDown, true)
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown, true)
-      document.removeEventListener("keydown", handleKeyDown, true)
-    }
-  }, [open])
-
-  React.useEffect(() => {
-    if (!open) return
-
-    const updatePanelPosition = () => {
-      if (!rootRef.current || !panelRef.current) return
-
-      const triggerRect = rootRef.current.getBoundingClientRect()
-      const panelHeight = panelRef.current.offsetHeight
-      const spaceBelow = window.innerHeight - triggerRect.bottom
-      const spaceAbove = triggerRect.top
-      const nextOpenUpward = spaceBelow < panelHeight + 12 && spaceAbove > spaceBelow
-      const width = Math.min(216, window.innerWidth - 16)
-      const left = Math.max(8, triggerRect.right - width)
-      const maxHeight = Math.max(140, Math.min(220, (nextOpenUpward ? spaceAbove : spaceBelow) - 12))
-      const top = nextOpenUpward
-        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
-        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
-
-      setOpenUpward(nextOpenUpward)
-      setPanelStyle({ left, top, width, maxHeight })
-    }
-
-    updatePanelPosition()
-
-    const updateAnchoredPosition = () => {
-      if (!rootRef.current || !panelRef.current) return
-
-      const triggerRect = rootRef.current.getBoundingClientRect()
-      const panelHeight = panelRef.current.offsetHeight
-      const width = Math.min(216, window.innerWidth - 16)
-      const left = Math.max(8, triggerRect.right - width)
-      const availableSpace = openUpward ? triggerRect.top : window.innerHeight - triggerRect.bottom
-      const maxHeight = Math.max(140, Math.min(220, availableSpace - 12))
-      const top = openUpward
-        ? Math.max(8, triggerRect.top - Math.min(panelHeight, maxHeight) - 8)
-        : Math.min(window.innerHeight - Math.min(panelHeight, maxHeight) - 8, triggerRect.bottom + 8)
-
-      setPanelStyle({ left, top, width, maxHeight })
-    }
-
-    window.addEventListener("resize", updateAnchoredPosition)
-    window.addEventListener("scroll", updateAnchoredPosition, true)
-
-    return () => {
-      window.removeEventListener("resize", updateAnchoredPosition)
-      window.removeEventListener("scroll", updateAnchoredPosition, true)
-    }
-  }, [open, openUpward, options.length])
-
-  return (
-    <div ref={rootRef} className="relative z-20">
-      <button
-        type="button"
-        aria-label={triggerLabel}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-        className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-radius-md px-3.5 text-[13px] font-medium tracking-[-0.03em] shadow-elev-1 outline-none transition-colors focus-visible:ring-2 md:h-10 md:px-4 md:text-[14px]",
-          "border border-border bg-card text-foreground hover:bg-neutral-50 focus-visible:ring-black/10 dark:border-white/8 dark:text-white dark:hover:bg-[#262626] dark:focus-visible:ring-white/10",
-        )}
-      >
-        <span className="whitespace-nowrap">{triggerLabel}</span>
-        <span className="text-foreground/70 dark:text-white/80">
-          <ChevronDown className="size-3.5" />
-        </span>
-      </button>
-
-      {open ? (
-        <>
-          <button
-            type="button"
-            aria-label={t("Close {name}").replace("{name}", ariaLabel)}
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-10 cursor-default bg-transparent"
-          />
-
-          <div
-            ref={panelRef}
-            className={cn(
-              "fixed z-30 overflow-hidden rounded-radius-md border shadow-[0_22px_44px_rgba(0,0,0,0.24)]",
-              "border-border bg-popover text-foreground dark:border-white/8 dark:bg-surface-inset dark:text-white",
-            )}
-            style={
-              panelStyle
-                ? {
-                    left: panelStyle.left,
-                    top: panelStyle.top,
-                    width: panelStyle.width,
-                    maxHeight: panelStyle.maxHeight,
-                  }
-                : undefined
-            }
-          >
-            <button
-              type="button"
-              onClick={() => {
-                onChange(null)
-                setOpen(false)
-              }}
-              className={cn(
-                "flex h-10 w-full items-center gap-3 px-3.5 text-left text-[13px] font-medium tracking-[-0.03em] transition-colors md:h-11 md:px-4 md:text-[14px]",
-                "text-foreground hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-card/5",
-              )}
-            >
-              <FilterCheckIcon checked={value === null} />
-              <span>{allLabel}</span>
-            </button>
-
-            <div className="w-full border-t border-black/12 dark:border-white/20" />
-
-            <div
-              className="overflow-y-auto py-1 pb-3"
-              style={panelStyle ? { maxHeight: panelStyle.maxHeight - 41 } : undefined}
-            >
-              {options.map((option) => {
-                const checked = value === option.value
-
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      onChange(option.value)
-                      setOpen(false)
-                    }}
-                    className={cn(
-                      "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors md:h-10 md:px-4 md:text-[14px]",
-                      checked
-                        ? "bg-black/[0.05] font-medium text-foreground dark:bg-card/6 dark:text-white"
-                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-card/5",
-                    )}
-                  >
-                    <FilterCheckIcon checked={checked} />
-                    <span className="truncate">{option.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </>
-      ) : null}
-    </div>
+    <label className="hidden h-9 w-[240px] items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-[#767676] shadow-none transition-colors focus-within:border-foreground/20 hover:bg-[#f3f3f3] md:flex lg:h-10 lg:w-[280px] lg:gap-3 lg:px-4 dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground dark:hover:bg-surface-hover dark:focus-within:border-brand/30">
+      <SearchIcon className="size-[18px] shrink-0 text-[#8a8a8a] dark:text-muted-foreground/80" />
+      <input
+        aria-label={t("Search loops")}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={t("Search loops")}
+        className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.01em] outline-none placeholder:text-[#767676] dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/70 lg:text-[15px]"
+      />
+    </label>
   )
 }
 
@@ -538,22 +252,7 @@ export function ExploreLoopsMarketsTable({
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <SingleSelectDropdown
-            allLabel={t("Sort by")}
-            value={`${sortKey}:${sortDirection}`}
-            options={SORT_PRESETS.map((preset) => ({
-              label: t(preset.label),
-              value: preset.value,
-            }))}
-            onChange={(nextValue) => {
-              if (!nextValue) return
-              const [nextSortKey, nextSortDirection] = nextValue.split(":") as [typeof sortKey, typeof sortDirection]
-              setSortKey(nextSortKey)
-              setSortDirection(nextSortDirection)
-            }}
-            ariaLabel={t("Sort loops")}
-          />
-          <ExpandableDesktopSearch value={search} onChange={setSearch} />
+          <DesktopSearchBar value={search} onChange={setSearch} />
         </div>
       </div>
 

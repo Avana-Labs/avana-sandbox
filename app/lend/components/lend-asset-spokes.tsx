@@ -51,17 +51,15 @@ type AssetGroup = LendPageData["assetGroups"][number]
 const DEFAULT_ASSET_GROUPS: AssetGroup[] = LEND_ASSET_GROUPS
 const STABLE_SYMBOLS = new Set(DEFAULT_ASSET_GROUPS[0]?.rows.map((row) => row.symbol) ?? [])
 const ALL_HUBS_LABEL = "All Hubs"
-const ALL_MARKETS_LABEL = "All Markets"
 const HUB_OPTIONS = ["Stable", "Volatile"]
-const MARKET_OPTIONS = DEFAULT_ASSET_GROUPS.map((group) => group.title)
 
 function getHubBucket(row: AssetRow) {
   return STABLE_SYMBOLS.has(row.symbol) ? "Stable" : "Volatile"
 }
 
-function SearchIcon() {
+function SearchIcon({ className }: { className?: string } = {}) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-6 text-brand">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-brand", className)}>
       <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
     </svg>
@@ -682,38 +680,35 @@ export function LendAssetSpokes({
   const { t } = useTranslation()
   const [search, setSearch] = useState("")
   const [selectedHubs, setSelectedHubs] = useState<string[]>([])
-  const [selectedMarkets, setSelectedMarkets] = useState<string[]>([])
 
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase()
 
     return groups.map((group) => {
-      const matchesMarketGroup = selectedMarkets.length === 0 || selectedMarkets.includes(group.title)
       const rows = group.rows.filter((row) => {
         const matchesSearch =
           query.length === 0 ||
           row.name.toLowerCase().includes(query) ||
           row.symbol.toLowerCase().includes(query)
         const matchesHub = selectedHubs.length === 0 || selectedHubs.includes(getHubBucket(row))
-        const matchesMarket = matchesMarketGroup
-        return matchesSearch && matchesHub && matchesMarket
+        return matchesSearch && matchesHub
       })
 
       return { ...group, rows }
     }).filter((group) => group.rows.length > 0)
-  }, [groups, search, selectedHubs, selectedMarkets])
+  }, [groups, search, selectedHubs])
 
   return (
     <section className="mt-16 space-y-8" style={{ overflowAnchor: "none" }}>
       <div className="hidden items-center gap-2 py-2.5 md:flex">
-        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-card px-3 text-foreground shadow-elev-1 transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:text-[#e6f8fb] dark:focus-within:border-brand/30 md:flex-none md:w-[280px]">
-          <SearchIcon />
+        <label className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-[#767676] shadow-none transition-colors focus-within:border-foreground/20 hover:bg-[#f3f3f3] md:flex-none md:w-[280px] md:gap-3 md:px-4 dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground dark:hover:bg-surface-hover dark:focus-within:border-brand/30">
+          <SearchIcon className="size-[18px] shrink-0 text-[#8a8a8a] dark:text-muted-foreground/80" />
           <input
             aria-label={t("Filter assets")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t("Search assets")}
-            className="lend-filter-input w-full bg-transparent text-[13px] font-normal tracking-[-0.03em] outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground/45 md:text-[15px] md:font-normal"
+            className="lend-filter-input w-full bg-transparent text-[14px] font-normal tracking-[-0.01em] outline-none placeholder:text-[#767676] dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/70 md:text-[15px]"
           />
         </label>
 
@@ -725,15 +720,6 @@ export function LendAssetSpokes({
             selectedValues={selectedHubs}
             onChange={setSelectedHubs}
             ariaLabel={t("Filter hubs")}
-          />
-
-          <MultiSelectDropdown
-            allLabel={ALL_MARKETS_LABEL}
-            countLabel={t("Markets")}
-            options={MARKET_OPTIONS}
-            selectedValues={selectedMarkets}
-            onChange={setSelectedMarkets}
-            ariaLabel={t("Filter markets")}
           />
         </div>
       </div>
@@ -758,15 +744,6 @@ export function LendAssetSpokes({
             selectedValues={selectedHubs}
             onChange={setSelectedHubs}
             ariaLabel={t("Filter hubs")}
-          />
-
-          <MultiSelectDropdown
-            allLabel={ALL_MARKETS_LABEL}
-            countLabel={t("Markets")}
-            options={MARKET_OPTIONS}
-            selectedValues={selectedMarkets}
-            onChange={setSelectedMarkets}
-            ariaLabel={t("Filter markets")}
           />
         </div>
       </div>
