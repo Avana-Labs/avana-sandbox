@@ -2,7 +2,6 @@
 
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { cn } from "@/lib/utils"
 
 export type BorrowHeroMetrics = {
   totalTvlUsd: number
@@ -15,8 +14,6 @@ export type BorrowHeroMetrics = {
 function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
   const fc = useCurrency()
   const { t } = useTranslation()
-  const changeIsUp = metrics.totalTvlChangePct >= 0
-  const changeLabel = `${changeIsUp ? "+" : ""}${metrics.totalTvlChangePct.toFixed(2)}%`
   return (
     <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
       <div className="min-w-0">
@@ -26,25 +23,14 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
               {fc.compact(metrics.totalTvlUsd)}
             </p>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 font-data text-[11px] font-medium tabular-nums",
-                changeIsUp ? "text-apy-positive" : "text-rose-700",
-              )}
-            >
-              <span aria-hidden className="text-[10px] leading-none">
-                {changeIsUp ? "▲" : "▼"}
-              </span>
-              {changeLabel}
-            </span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
-            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-foreground md:justify-end">
+            <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
             {t("Total Collateral")}
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
@@ -53,8 +39,8 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
         </div>
 
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
-            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-foreground md:justify-end">
+            <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
             {t("Available Credit")}
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
@@ -63,8 +49,8 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
         </div>
 
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
-            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-foreground md:justify-end">
+            <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
             {t("Outstanding Loans")}
           </div>
           <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
