@@ -54,7 +54,7 @@ export function PoolHeroIdentity({
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px] text-muted-foreground">
               <span className="inline-flex items-center rounded-full bg-surface-inset px-2.5 py-[3px] text-[12px] font-medium leading-none text-foreground">
-                {detail.hero.feeTier || detail.hero.venue}
+                {detail.hero.marketLabel || detail.hero.venue}
               </span>
               <button
                 type="button"

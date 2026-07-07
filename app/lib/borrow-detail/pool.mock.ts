@@ -309,6 +309,8 @@ function buildHero(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Po
     visuals,
     name: row.name,
     venue,
+    // Concise market-type label, e.g. "Uniswap v3 Blue-Chip LPs".
+    marketLabel: getSpokeById(row.spoke).label,
     subtitle: fixture?.subtitle ?? `${row.name} accepted as LP collateral. Supply to unlock borrow power.`,
     feeTier: fixture?.feeTier,
     chain: fixture?.chain ?? pickChain(row),
