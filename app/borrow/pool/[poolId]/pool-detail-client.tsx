@@ -5,7 +5,7 @@ import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection, DetailFaqSection } from "@/app/borrow/_detail/ui"
 import {
   PoolHero,
   PoolHeroIdentity,
@@ -64,13 +64,7 @@ export function PoolDetailClient({ detail }: Props) {
                 <section aria-label="Pool analytics" className="space-y-8 pt-8">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Market data</h2>
                   <QuickStatsGrid detail={detail} />
-                  <div className="space-y-6">
-                    <CashflowCard detail={detail} />
-                    <EngagementTrendsCard
-                      engagement={detail.engagement}
-                      accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
-                    />
-                  </div>
+                  <CashflowCard detail={detail} />
                   <RiskSection detail={detail} />
                   <DetailFaqSection
                     title="General FAQs"

@@ -22,10 +22,6 @@ const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui").then((m
   ssr: false,
   loading: () => <DeferredBlock className="h-[380px]" />,
 })
-const EngagementTrendsCard = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.EngagementTrendsCard), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[260px]" />,
-})
 const InterestRateModelCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
@@ -104,13 +100,7 @@ export function AssetDetailClient({ detail }: Props) {
                   <AllocationBreakdownCard detail={detail} />
                   <AssetCashflowCard detail={detail} />
                   <RiskSection detail={detail} />
-                  <div className="space-y-6">
-                    <CashflowTrendCard detail={detail} />
-                    <EngagementTrendsCard
-                      engagement={detail.engagement}
-                      accentClassName={detail.hero.visual.textClass}
-                    />
-                  </div>
+                  <CashflowTrendCard detail={detail} />
                   <DetailFaqSection
                     title="General FAQs"
                     items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

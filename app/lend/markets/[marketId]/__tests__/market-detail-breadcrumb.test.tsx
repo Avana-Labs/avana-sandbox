@@ -18,7 +18,6 @@ vi.mock("@/app/lend/_detail", () => ({
 }))
 vi.mock("@/app/borrow/_detail/ui", () => ({
   AboutNewsSection: () => <div data-testid="about" />,
-  EngagementTrendsCard: () => <div data-testid="engagement" />,
   DetailFaqSection: () => <div data-testid="faqs" />,
 }))
 vi.mock("@/app/borrow/_detail/pool-sections", () => ({

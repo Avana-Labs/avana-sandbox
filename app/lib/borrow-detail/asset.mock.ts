@@ -33,7 +33,6 @@ import type {
   CashflowCard,
   CashflowTrend,
   DeltaStat,
-  EngagementTrend,
   KeyMetricId,
   PerfPeriod,
   PerfTabDataset,
@@ -385,46 +384,6 @@ function buildCashflowTrend(asset: SpokeBorrowableRecord, _supplied: number, bor
   }
 }
 
-function buildAssetEngagement(asset: SpokeBorrowableRecord, supplied: number): EngagementTrend {
-  const rand = prngFromString(`${asset.id}:engagement`)
-  const base = Math.max(800, Math.round(Math.sqrt(supplied) * 1.6))
-  const now = SANDBOX_NOW
-  const samples = 12
-  const points: Series["points"] = []
-  for (let i = samples - 1; i >= 0; i--) {
-    const d = new Date(now - i * 86_400_000)
-    const t = d.toISOString().slice(0, 10)
-    const wave = 1 + Math.sin(((samples - 1 - i) / samples) * Math.PI * 2) * 0.22
-    const noise = 1 + (rand() - 0.5) * 0.25
-    const v = Math.max(0, Math.round(base * wave * noise))
-    points.push({ t, v })
-  }
-  const last = points[points.length - 1].v
-  const total = points.reduce((a, p) => a + p.v, 0)
-  const repayRate = Math.max(40, Math.min(96, asset.utilization * 0.95 + rand() * 4))
-  const active = deltaFromPct(Math.round((rand() * 14 + 3) * 10) / 10)
-  const repay = deltaFromPct(Math.round((rand() * 4 - 1) * 10) / 10)
-  return {
-    title: "User Engagement Trends",
-    primary: {
-      label: "Active wallets",
-      valueLabel: last.toLocaleString(),
-      delta: active,
-    },
-    secondary: {
-      label: "Repay conversion",
-      valueLabel: `${repayRate.toFixed(1)}%`,
-      delta: repay,
-    },
-    series: {
-      id: `${asset.id}:engagement`,
-      label: "Active wallets",
-      points,
-      aggregate: total / samples,
-    },
-  }
-}
-
 function buildAssetRisk(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): RiskAssessment {
   if (fixture?.risk) return fixture.risk
   // Single source of truth shared with the Convex seed (build-seed.ts) so the
@@ -571,7 +530,6 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
     allocation,
     keyMetrics: buildAssetKeyMetrics(asset, supplied, borrowed),
     cashflow: buildAssetCashflow(asset, supplied, borrowed),
-    engagement: buildAssetEngagement(asset, supplied),
     risk: buildAssetRisk(asset, fixture),
     about: buildAssetAbout(asset, fixture),
     faqs: buildAssetFaqs(asset.symbol, asset.name),

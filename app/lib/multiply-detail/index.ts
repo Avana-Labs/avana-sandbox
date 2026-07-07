@@ -8,7 +8,6 @@ import {
   type AboutCard,
   type CashflowCard,
   type DeltaStat,
-  type EngagementTrend,
   type Point,
   type QuickStat,
   type RiskAssessment,
@@ -70,7 +69,6 @@ export type MultiplyMarketDetail = {
   cashflow: CashflowCard
   transactions: MultiplyTxHistoryRow[]
   quickStats: QuickStat[]
-  engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
   faqs: FaqContent[]
@@ -207,26 +205,6 @@ function buildCashflow(seedBase: string, liquidityUsd: number, borrowApy: number
       { label: "Rewards distributed", reported: formatCompactUsd(rewards) },
       { label: "Net to suppliers", reported: formatCompactUsd(toSuppliers + rewards), highlighted: true },
     ],
-  }
-}
-
-function buildEngagement(row: MultiplyMarketRow): EngagementTrend {
-  const seedKey = `multiply:${row.protocol}-${row.asset}:engagement`
-  const primarySeries = buildSeries(seedKey, 12_000, 1_600)
-  const secondarySeries = buildSeries(`${seedKey}:secondary`, 4_200, 650)
-  return {
-    title: "User Engagement Trends",
-    primary: {
-      label: "Active loops",
-      valueLabel: String(primarySeries.points.at(-1)?.v ?? 0),
-      delta: deltaUp(2.8),
-    },
-    secondary: {
-      label: "New positions",
-      valueLabel: String(secondarySeries.points.at(-1)?.v ?? 0),
-      delta: deltaDown(1.1),
-    },
-    series: primarySeries,
   }
 }
 
@@ -390,7 +368,6 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
     cashflow: buildCashflow(`multiply:${row.protocol}-${row.asset}`, liquidityUsd, borrowApy),
     transactions: buildTransactions(row),
     quickStats: buildQuickStats(row),
-    engagement: buildEngagement(row),
     risk: buildRisk(row),
     about: buildAbout(row),
     faqs: buildMultiplyFaqs(row.protocol, row.asset),

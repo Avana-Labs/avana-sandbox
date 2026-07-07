@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection, DetailFaqSection } from "@/app/borrow/_detail/ui"
 import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
@@ -73,10 +73,6 @@ export function MarketDetailClient({ detail }: Props) {
                   <QuickStatsGrid detail={detail} />
                   <SupplyBorrowCard detail={detail} />
                   <CashflowCard detail={detail} />
-                  <EngagementTrendsCard
-                    engagement={detail.engagement}
-                    accentClassName={[detail.hero.visuals[0]?.textClass ?? "", detail.hero.visuals[1]?.textClass ?? ""]}
-                  />
                   <RiskSection detail={detail} />
                   <DetailFaqSection
                     title="Multiply FAQs"
