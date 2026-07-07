@@ -189,7 +189,7 @@ function FeaturedCard({
         aria-hidden="true"
         width={274}
         height={274}
-        className="pointer-events-none absolute -left-5 top-16 size-[274px] rounded-full object-cover opacity-10 blur-2xl saturate-150"
+        className="pointer-events-none absolute -left-5 top-16 size-[274px] rounded-full object-cover opacity-10 blur-lg saturate-150"
         loading="lazy"
         decoding="async"
         unoptimized
