@@ -288,7 +288,9 @@ function AssetSection({
 
   return (
     <section className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      {/* Sticky like the Borrow spoke headers: each asset-group title hangs under the
+          site header while its own table scrolls, then the next group's title takes over. */}
+      <div className="sticky top-16 z-20 flex flex-col gap-3 bg-background py-2 md:flex-row md:items-end md:justify-between">
         <div>
           <h2
             className={cn(
