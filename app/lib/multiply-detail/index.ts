@@ -26,7 +26,6 @@ import {
 } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG, getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
-import { buildLiquidationRiskQuickStats } from "@/app/lib/borrow-detail/quick-stats-risk"
 
 export type MultiplyMarketHero = {
   visuals: [MultiplyTokenVisual, MultiplyTokenVisual]
@@ -106,8 +105,6 @@ function buildQuickStats(row: MultiplyMarketRow): QuickStat[] {
   const availableUsd = MULTIPLY_TOKEN_AVAILABLE_USD[row.asset as keyof typeof MULTIPLY_TOKEN_AVAILABLE_USD] ?? 0
   const available = row.points ?? formatCompactUsd(availableUsd)
   const maxLeverage = row.rewardRows?.[0]?.value ?? "—"
-  const estimatedBorrowedUsd = availableUsd * 0.62 * Math.max(row.collateralFactor, 0.5)
-  const marketId = row.href.replace("/multiply/markets/", "")
 
   return [
     { id: "collateral", label: "Collateral", value: row.protocol },
@@ -118,7 +115,6 @@ function buildQuickStats(row: MultiplyMarketRow): QuickStat[] {
     { id: "collateralFactor", label: "Collateral factor", value: `${Math.round(row.collateralFactor * 100)}%` },
     { id: "supplyApy", label: "Supply APY", value: supplyApy },
     { id: "borrowApy", label: "Borrow APY", value: borrowApy },
-    ...buildLiquidationRiskQuickStats(marketId, estimatedBorrowedUsd),
   ]
 }
 

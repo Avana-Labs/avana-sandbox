@@ -22,7 +22,6 @@ import {
 } from "@/app/lib/borrow-sim"
 import { HOME_COLLATERAL_POOLS } from "@/app/lib/borrow-system/home-contracts"
 import { buildSeriesFamily, prngFromString } from "./prng"
-import { buildLiquidationRiskQuickStats } from "./quick-stats-risk"
 import { formatBpsAsPct, formatPct } from "./allocation"
 import { formatOraclePrice } from "./formatters"
 import { buildPoolRiskAssessment } from "./risk-model"
@@ -292,7 +291,6 @@ function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
     { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
     { id: "maxLtv", label: "Max LTV", value: formatPct(row.ltv, 1) },
     { id: "available", label: "Available to borrow", value: formatCompactUsd(row.availableUsd) },
-    ...buildLiquidationRiskQuickStats(row.id, totalBorrowed),
   ]
 }
 
