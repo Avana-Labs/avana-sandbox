@@ -3,11 +3,6 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { TabsBar } from "@/app/borrow/components/tabs-bar"
 import { CATEGORY_CHIPS } from "@/app/lib/markets/category"
 
-// The DEX dropdown reads the theme; stub it so the test targets the chip filter.
-vi.mock("@/app/components/theme-provider", () => ({
-  useTheme: () => ({ resolvedTheme: "light" }),
-}))
-
 afterEach(() => cleanup())
 
 function renderTabsBar(overrides: Partial<Parameters<typeof TabsBar>[0]> = {}) {
@@ -18,9 +13,6 @@ function renderTabsBar(overrides: Partial<Parameters<typeof TabsBar>[0]> = {}) {
       onTabChange={onTabChange}
       search=""
       onSearchChange={() => {}}
-      dexes={[]}
-      selectedDexes={new Set()}
-      onDexChange={() => {}}
       {...overrides}
     />,
   )
