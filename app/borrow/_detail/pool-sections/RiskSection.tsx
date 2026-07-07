@@ -31,6 +31,8 @@ export function RiskSection({ detail }: Props) {
     <SectionCard
       title={t("Risk assessment")}
       rightSlot={<RiskLevelPill level={risk.level} size="md" />}
+      chrome="plain"
+      bodyClassName="p-0"
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-6">
@@ -42,7 +44,6 @@ export function RiskSection({ detail }: Props) {
               </span>
               <span className="text-[12px] text-muted-foreground">({risk.premiumBps} bps)</span>
             </div>
-            <p className="mt-2 max-w-prose text-[13px] leading-6 text-foreground">{risk.headline}</p>
           </div>
           <div className="flex flex-col items-center">
             <RiskGauge
@@ -59,10 +60,7 @@ export function RiskSection({ detail }: Props) {
           </div>
         </div>
 
-        <p className="text-[13px] leading-6 text-foreground">{risk.summary}</p>
-
         <div>
-          <div className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{t("Breakdown")}</div>
           <ul className="divide-y divide-border rounded-radius-sm border border-border bg-surface-inset">
             {risk.breakdown.map((item) => {
               const open = expanded.has(item.id)
