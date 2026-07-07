@@ -68,7 +68,7 @@ export function HomeWorkspaceCard({
                 {t(mode)}
               </span>
             </div>
-            <p className="text-[13px] leading-5 text-foreground/80">
+            <p className="text-[13px] leading-5 text-foreground">
               {t("Use the mode tabs to switch between Borrow, Repay, Claim, and Remove. The header Connect button opens the sandbox wallet details.")}
             </p>
           </div>

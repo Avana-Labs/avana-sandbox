@@ -217,7 +217,7 @@ function MultiSelectDropdown({
         )}
       >
         <span className="whitespace-nowrap">{triggerLabel}</span>
-        <span className="text-foreground/70 dark:text-white/80">
+        <span className="text-foreground/70 dark:text-white">
           <ChevronDownIcon />
         </span>
       </button>
@@ -283,7 +283,7 @@ function MultiSelectDropdown({
                       "flex h-9 w-full items-center gap-3 px-3.5 text-left text-[13px] tracking-[-0.03em] transition-colors",
                       checked
                         ? "bg-black/[0.05] font-medium text-foreground dark:bg-card/6 dark:text-white"
-                        : "text-foreground/82 hover:bg-black/[0.04] dark:text-white/82 dark:hover:bg-card/5",
+                        : "text-foreground hover:bg-black/[0.04] dark:text-white dark:hover:bg-card/5",
                     )}
                   >
                     <FilterCheckIcon checked={checked} />
@@ -342,7 +342,7 @@ function AssetRowView({
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} />
           <div className="min-w-0">
-            <div className="truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88 md:text-[14px]">
+            <div className="truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[14px]">
               {row.name}
             </div>
             <div className="mt-0.5 text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[12px]">
@@ -352,12 +352,12 @@ function AssetRowView({
         </div>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.supplyApyLabel ?? row.apy}</span>
       </td>
 
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
+        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[14px]">
           <span className="tabular-nums">{row.totalDepositsLabel ?? row.totalDepositsPrimary}</span>
         </div>
         <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
@@ -365,12 +365,12 @@ function AssetRowView({
         </div>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
       </td>
 
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[14px]">
+        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[14px]">
           <span className="tabular-nums">{row.availableLiquidityLabel ?? row.availableLiquidityPrimary}</span>
         </div>
         <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
@@ -434,7 +434,7 @@ function AssetCardView({
           <div className="flex min-w-0 items-center gap-3">
             <AssetIcon row={row} />
             <div className="min-w-0">
-              <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.name}</div>
+              <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.name}</div>
               <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
                 <AssetSubLabel symbol={row.symbol} />
               </div>
@@ -579,7 +579,7 @@ function AssetSection({
                     className={cn(
                       "flex items-center gap-2 transition-colors",
                       sortKey === "asset"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
@@ -594,7 +594,7 @@ function AssetSection({
                     className={cn(
                       "flex items-center gap-2 transition-colors",
                       sortKey === "supplyApy"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
@@ -609,7 +609,7 @@ function AssetSection({
                     className={cn(
                       "flex items-center gap-2 transition-colors",
                       sortKey === "totalDeposits"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
@@ -624,7 +624,7 @@ function AssetSection({
                     className={cn(
                       "flex items-center gap-2 transition-colors",
                       sortKey === "utilization"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
@@ -639,7 +639,7 @@ function AssetSection({
                     className={cn(
                       "flex items-center gap-2 transition-colors",
                       sortKey === "availableLiquidity"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >

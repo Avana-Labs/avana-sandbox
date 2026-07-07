@@ -55,7 +55,7 @@ export function MarketMobileMetric({
 }) {
   return (
     <>
-      <div className={cn("font-data text-[18px] font-medium tabular-nums text-foreground dark:text-white/88", valueClassName)}>{value}</div>
+      <div className={cn("font-data text-[18px] font-medium tabular-nums text-foreground dark:text-white", valueClassName)}>{value}</div>
       <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
     </>
   )

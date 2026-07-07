@@ -260,7 +260,7 @@ export function ActionAmountCard({
     balanceValue != null ? (
       <div className="mt-3 flex items-center justify-between gap-2 text-[13px] text-muted-foreground">
         <span className="min-w-0 truncate">
-          {t(balanceLabel ?? "Balance")}: <span className="text-foreground/80">{balanceValue}</span>
+          {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceValue}</span>
         </span>
         {onMax && !readOnly ? (
           <button

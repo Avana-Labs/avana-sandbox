@@ -223,7 +223,7 @@ function LoanAssetsSection({
                     className={cn(
                       "flex items-center gap-2 transition-colors",
                       sortKey === "asset"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
@@ -238,7 +238,7 @@ function LoanAssetsSection({
                     className={cn(
                       "flex items-center gap-2 transition-colors",
                       sortKey === "apy"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
@@ -253,7 +253,7 @@ function LoanAssetsSection({
                     className={cn(
                       "flex items-center gap-2 transition-colors",
                       sortKey === "borrows"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
@@ -268,7 +268,7 @@ function LoanAssetsSection({
                     className={cn(
                       "flex w-full items-center gap-2 transition-colors",
                       sortKey === "liquidity"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-muted-foreground/70 dark:text-white/42",
                     )}
                   >
@@ -295,7 +295,7 @@ function LoanAssetsSection({
                     <div className="flex min-w-0 items-center gap-4">
                       <TokenBubble visual={asset.visual} size="table" ring={false} className="bg-transparent" />
                       <div className="min-w-0">
-                        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88 md:text-[15px]">
+                        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
                           {asset.name}
                         </div>
                         <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
@@ -307,18 +307,18 @@ function LoanAssetsSection({
                       </div>
                     </div>
                   </td>
-                  <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px] ${TABLE_ROW_HOVER_BG}`}>
+                  <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}>
                     <div className="flex items-center gap-2">
                       <span className="tabular-nums">{asset.borrowApr.toFixed(2)}%</span>
                     </div>
                   </td>
                   <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
+                    <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
                       {compact(asset.totalBorrowedUsd)}
                     </div>
                   </td>
                   <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 md:text-[15px]">
+                    <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
                       {compact(asset.availableUsd)}
                     </div>
                   </td>

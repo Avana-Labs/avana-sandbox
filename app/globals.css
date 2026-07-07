@@ -39,7 +39,7 @@
   :root {
     /* Light — bright neutral canvas */
     --background: 0 0% 100%; /* #FFFFFF page — Uniswap-parity */
-    --foreground: 0 0% 17.3%; /* #2C2C2C primary labels */
+    --foreground: 0 0% 0%; /* pure black — crisp primary text */
 
     --card: 0 0% 97.6%; /* #F9F9F9 — subtle card on white */
     --card-foreground: 0 0% 17.3%;
@@ -121,7 +121,7 @@
   .dark {
     /* Dark — sampled Cursor reference */
     --background: 0 0% 7%; /* #121212 page — neutral near-black (Uniswap-parity) */
-    --foreground: 0 0% 96%; /* high-emphasis text */
+    --foreground: 0 0% 100%; /* pure white — crisp primary text */
 
     --card: 0 0% 11%; /* #1C1C1C — subtle layered surface */
     --card-foreground: 0 0% 96%;
