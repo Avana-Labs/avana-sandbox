@@ -8,7 +8,6 @@ import {
   fetchCashflowBreakdown,
   fetchContent,
   fetchConvexMarketSnapshots,
-  fetchEngagement,
   fetchPoolTvlSeries,
   fetchQuickStats,
   fetchRecentTransactions,
@@ -165,9 +164,8 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
   const detail = resolvePoolDetailFromState(hydrated, detailWalletId, normalizeBorrowMarketRouteId(id))
   if (!detail) return null
 
-  const [tvlPoints, engagement, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
+  const [tvlPoints, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
     fetchPoolTvlSeries(detail.row.id),
-    fetchEngagement("pool", detail.row.id),
     fetchCashflowBreakdown("pool", detail.row.id),
     fetchRecentTransactions("pool", detail.row.id),
     fetchRisk("pool", detail.row.id),
@@ -186,7 +184,6 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     ),
     related: syncRelatedAvailable(detail.related, snapshots),
     heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? detail.heroFeed,
-    engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
     risk: effectiveRisk,
@@ -218,9 +215,8 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   )
   if (!detail) return null
 
-  const [borrowPoints, engagement, cashflow, cashflowTrend, transactions, allocation, risk, quickStats, prices, content] = await Promise.all([
+  const [borrowPoints, cashflow, cashflowTrend, transactions, allocation, risk, quickStats, prices, content] = await Promise.all([
     fetchAssetBorrowSeries(slug),
-    fetchEngagement("asset", slug),
     fetchCashflowBreakdown("asset", slug),
     fetchAssetCashflowTrend(slug),
     fetchRecentTransactions("asset", slug),
@@ -238,7 +234,6 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
       record.marketIds,
     ),
     heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? detail.heroFeed,
-    engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     cashflowTrend: (cashflowTrend as typeof detail.cashflowTrend) ?? detail.cashflowTrend,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,

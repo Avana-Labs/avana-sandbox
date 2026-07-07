@@ -25,7 +25,6 @@ vi.mock("@/app/lend/_detail", () => ({
 }))
 vi.mock("@/app/borrow/_detail/ui", () => ({
   AboutNewsSection: () => <div data-testid="about" />,
-  EngagementTrendsCard: () => <div data-testid="engagement" />,
   DetailFaqSection: ({ items }: { items: unknown[] }) => <div data-testid="faqs">{items.length}</div>,
 }))
 vi.mock("@/app/borrow/_detail/pool-sections", () => ({
@@ -59,7 +58,6 @@ describe("LendMarketDetailClient", () => {
     expect(screen.getByTestId("quickstats")).toHaveTextContent(String(detail.quickStats.length))
     expect(screen.getByTestId("supply-card")).toBeInTheDocument()
     expect(screen.getByTestId("cashflow")).toBeInTheDocument()
-    expect(screen.getByTestId("engagement")).toBeInTheDocument()
     expect(screen.getByTestId("risk")).toBeInTheDocument()
     expect(screen.getByTestId("faqs")).toHaveTextContent(String(detail.faqs.length))
     expect(screen.getByTestId("transactions")).toHaveTextContent(`USDC:${detail.transactions.length}`)

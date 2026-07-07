@@ -3,7 +3,6 @@ import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import {
   fetchMultiplyCashflowBreakdown,
   fetchMultiplyContent,
-  fetchMultiplyEngagement,
   fetchMultiplyQuickStats,
   fetchMultiplyRisk,
   fetchMultiplySupplySeries,
@@ -45,9 +44,8 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
   if (!detail) return null
   const slug = detail.id
 
-  const [supplyPoints, engagement, cashflow, risk, quickStats, content] = await Promise.all([
+  const [supplyPoints, cashflow, risk, quickStats, content] = await Promise.all([
     fetchMultiplySupplySeries(slug),
-    fetchMultiplyEngagement(slug),
     fetchMultiplyCashflowBreakdown(slug),
     fetchMultiplyRisk(slug),
     fetchMultiplyQuickStats(slug),
@@ -58,7 +56,6 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
     ...detail,
     quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
     heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
-    engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     risk: (risk as typeof detail.risk) ?? detail.risk,
   }, content)

@@ -29,7 +29,6 @@ import type {
   AboutCard,
   CashflowCard,
   DeltaStat,
-  EngagementTrend,
   QuickStat,
   Series,
   TxHistoryRow,
@@ -205,43 +204,6 @@ function buildCashflow(market: LendMarket, ref: Reference): CashflowCard {
   }
 }
 
-function buildEngagement(market: LendMarket, ref: Reference): EngagementTrend {
-  const rand = prngFromString(`lend:${market.marketId}:engagement`)
-  const base = Math.max(600, Math.round(Math.sqrt(ref.suppliedUsd) * 1.4))
-  const samples = 12
-  const points: Series["points"] = []
-  for (let i = samples - 1; i >= 0; i--) {
-    const d = new Date(HERO_ANCHOR - i * 86_400_000)
-    const t = d.toISOString().slice(0, 10)
-    const wave = 1 + Math.sin(((samples - 1 - i) / samples) * Math.PI * 2) * 0.22
-    const noise = 1 + (rand() - 0.5) * 0.25
-    points.push({ t, v: Math.max(0, Math.round(base * wave * noise)) })
-  }
-  const last = points[points.length - 1]!.v
-  const total = points.reduce((a, p) => a + p.v, 0)
-  // Supply retention: higher when the market is calmer (lower utilization).
-  const retention = Math.max(55, Math.min(96, 100 - ref.utilizationPct * 0.35 + rand() * 4))
-  return {
-    title: "User Engagement Trends",
-    primary: {
-      label: "Active wallets",
-      valueLabel: last.toLocaleString(),
-      delta: deltaFromPct(Math.round((rand() * 12 + 2) * 10) / 10),
-    },
-    secondary: {
-      label: "Supply retention",
-      valueLabel: `${retention.toFixed(1)}%`,
-      delta: deltaFromPct(Math.round((rand() * 4 - 1) * 10) / 10),
-    },
-    series: {
-      id: `lend:${market.marketId}:engagement`,
-      label: "Active wallets",
-      points,
-      aggregate: total / samples,
-    },
-  }
-}
-
 function buildTransactions(market: LendMarket): TxHistoryRow[] {
   const rand = prngFromString(`lend:${market.marketId}:tx`)
   const kinds: TxHistoryRow["kind"][] = ["supply", "withdraw", "rewards", "supply", "withdraw", "supply"]
@@ -349,7 +311,6 @@ export function buildLendMarketDetail(market: LendMarket, overrides?: LendDetail
     quickStats: buildQuickStats(market, ref),
     supplyBorrow: buildSupplyBorrow(market, ref),
     cashflow: buildCashflow(market, ref),
-    engagement: buildEngagement(market, ref),
     risk: buildLendRiskAssessment(market),
     about: buildAbout(market),
     faqs: buildLendFaqs(market.asset.symbol, market.asset.name),
