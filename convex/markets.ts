@@ -17,6 +17,8 @@
 import { v } from "convex/values"
 import { internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import type { Doc, Id } from "./_generated/dataModel"
+import { internal } from "./_generated/api"
+import { foldDeltas } from "./liquidity"
 
 /** Single cache row discriminator (see `marketSnapshotsCache` in schema.ts). */
 const SNAPSHOTS_SINGLETON = "markets"
@@ -300,6 +302,95 @@ export const rebuildMarketSnapshots = internalMutation({
     if (existing) await ctx.db.replace(existing._id, doc)
     else await ctx.db.insert("marketSnapshotsCache", doc)
     return { markets: rows.length }
+  },
+})
+
+/**
+ * Daily aggregator: flush the running liquidity delta into a persistent daily
+ * snapshot so the chart series lengthens over calendar time with REAL activity —
+ * the seed is just the starting history.
+ *
+ * For each market it folds the net supply/borrow delta accumulated since the last
+ * flush, writes (or patches) today's `marketDailyStats` row to the resulting
+ * absolute value, then appends a counter-delta that rebases the ledger to zero.
+ * That keeps the invariant every consumer relies on — `latest daily row + current
+ * folded delta = live value` — unchanged: before the flush it's `prevRow + D`,
+ * after it's `(prevRow + D) + 0`. No double count, no schema change, and the
+ * read-path tip overlay keeps working (it just adds ~0 right after a flush and the
+ * fresh intraday delta between flushes). Idempotent within a day: a second run the
+ * same day patches today's row and counters only the delta since the first run.
+ *
+ * Runs in one transaction (≈ #markets reads/writes, well within Convex limits) and
+ * schedules the shared-cache rebuilds so every surface immediately reads the
+ * flushed snapshot + zeroed delta.
+ */
+export const rollupDailyStats = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const today = new Date().toISOString().slice(0, 10)
+    const now = Date.now()
+
+    const deltaBySlug = new Map<string, { supplied: number; borrowed: number }>()
+    for (const d of await foldDeltas(ctx)) {
+      deltaBySlug.set(d.marketSlug, { supplied: d.suppliedDeltaUsd, borrowed: d.borrowedDeltaUsd })
+    }
+
+    const markets = await ctx.db.query("markets").collect()
+    let written = 0
+    let rebased = 0
+    for (const market of markets) {
+      if (market.scope !== "pool" && market.scope !== "asset" && market.scope !== "lend" && market.scope !== "multiply") {
+        continue
+      }
+      const latest = await ctx.db
+        .query("marketDailyStats")
+        .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
+        .order("desc")
+        .first()
+      if (!latest) continue
+
+      const d = deltaBySlug.get(market.slug) ?? { supplied: 0, borrowed: 0 }
+      const suppliedUsd = Math.max(0, latest.suppliedUsd + d.supplied)
+      const borrowedUsd = Math.max(0, latest.borrowedUsd + d.borrowed)
+      const utilizationPct = suppliedUsd > 0 ? Math.min(100, (borrowedUsd / suppliedUsd) * 100) : 0
+      const tvlUsd = market.scope === "pool" ? suppliedUsd : Math.max(0, latest.tvlUsd + d.supplied)
+      const snapshot = {
+        suppliedUsd,
+        borrowedUsd,
+        utilizationPct,
+        supplyApyPct: latest.supplyApyPct,
+        borrowAprPct: latest.borrowAprPct,
+        tvlUsd,
+        volumeUsd: latest.volumeUsd,
+        feesUsd: latest.feesUsd,
+        priceUsd: latest.priceUsd,
+        supplyCapUsd: latest.supplyCapUsd,
+        borrowCapUsd: latest.borrowCapUsd,
+      }
+
+      if (latest.day === today) await ctx.db.patch(latest._id, snapshot)
+      else await ctx.db.insert("marketDailyStats", { marketId: market._id, day: today, ...snapshot })
+      written++
+
+      // Rebase the running ledger to zero for this market: the delta is now baked into
+      // the persisted daily row, so the accumulator restarts from the fresh snapshot.
+      if (d.supplied !== 0 || d.borrowed !== 0) {
+        await ctx.db.insert("marketLiquidityDeltas", {
+          marketSlug: market.slug,
+          borrowedDeltaUsd: -d.borrowed,
+          suppliedDeltaUsd: -d.supplied,
+          updatedAt: now,
+        })
+        rebased++
+      }
+    }
+
+    // Refresh the shared caches so every surface reads the flushed snapshot + zeroed
+    // delta right away instead of waiting for the 5-minute rebuild crons.
+    await ctx.scheduler.runAfter(0, internal.liquidity.rebuildDeltaSnapshot, {})
+    await ctx.scheduler.runAfter(0, internal.markets.rebuildMarketSnapshots, {})
+
+    return { day: today, written, rebased }
   },
 })
 
