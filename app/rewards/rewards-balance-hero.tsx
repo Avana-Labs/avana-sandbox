@@ -98,7 +98,7 @@ export function RewardsBalanceHero({
                   <Info className="h-3 w-3" />
                 </span>
                 {claimableAmount > 0 ? (
-                  <span className="text-foreground/80">
+                  <span className="text-foreground">
                     +{showDollarAmounts ? formatClaimAmount(claimableAmount, locale) : "••••"} {t("AVA ready to claim")}
                   </span>
                 ) : null}

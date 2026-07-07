@@ -58,7 +58,7 @@ export function MetricChipRow<T extends string>({
                 <span
                   className={cn(
                     "font-data text-[14px] font-medium tabular-nums",
-                    active ? "text-foreground" : "text-foreground/80",
+                    active ? "text-foreground" : "text-foreground",
                   )}
                 >
                   {chip.hint}

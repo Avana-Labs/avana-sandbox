@@ -238,7 +238,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   }
 
   const rootSettingsClass =
-    "flex w-full items-center justify-between gap-4 text-left text-[1.2rem] font-medium leading-[1.14] text-foreground/92"
+    "flex w-full items-center justify-between gap-4 text-left text-[1.2rem] font-medium leading-[1.14] text-foreground"
   const rootSettingsLabelClass = "flex items-center gap-3"
   const rootSettingsIconClass = `h-[1.15rem] w-[1.15rem] stroke-[1.9] ${accentClass}`
   const dividerClass = "border-brand/25 dark:border-brand/35"
@@ -277,7 +277,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 >
                   <span
                     className={`text-[clamp(1.5rem,6.1vw,2.1rem)] font-[560] leading-[1.02] tracking-[-0.04em] ${
-                      isActive ? "text-foreground" : "text-foreground/95"
+                      isActive ? "text-foreground" : "text-foreground"
                     }`}
                   >
                     {t(link.label)}

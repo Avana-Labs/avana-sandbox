@@ -304,7 +304,7 @@ export function ExploreLoopsMarketsTable({
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "protocol"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
@@ -319,7 +319,7 @@ export function ExploreLoopsMarketsTable({
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "asset"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
@@ -334,7 +334,7 @@ export function ExploreLoopsMarketsTable({
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "apy"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
@@ -349,7 +349,7 @@ export function ExploreLoopsMarketsTable({
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "rewards"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
@@ -364,7 +364,7 @@ export function ExploreLoopsMarketsTable({
                     className={cn(
                       "flex items-center gap-2 whitespace-nowrap transition-colors",
                       sortKey === "points"
-                        ? "text-foreground dark:text-white/90"
+                        ? "text-foreground dark:text-white"
                         : "text-foreground/70 dark:text-white/70",
                     )}
                   >
@@ -406,7 +406,7 @@ export function ExploreLoopsMarketsTable({
                           </>
                         ) : null}
                         <span className="min-w-0">
-                          <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
+                          <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                             {row.protocol}
                           </span>
                           <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
@@ -432,7 +432,7 @@ export function ExploreLoopsMarketsTable({
                           </>
                         ) : null}
                         <span className="min-w-0">
-                          <span className="block text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
+                          <span className="block text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                             {row.asset}
                           </span>
                           <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
@@ -463,7 +463,7 @@ export function ExploreLoopsMarketsTable({
                       <CellLink href={row.href} className="text-foreground">
                         {row.rewardRows?.[1] ? (
                           <span className="block">
-                            <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                            <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                               {row.rewardRows[1].value}
                             </span>
                             <span className="mt-0.5 block text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
@@ -472,7 +472,7 @@ export function ExploreLoopsMarketsTable({
                           </span>
                         ) : row.rewardRows?.[0] ? (
                           <span className="block">
-                            <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                            <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                               {row.rewardRows[0].value}
                             </span>
                             <span className="mt-0.5 block text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
@@ -480,7 +480,7 @@ export function ExploreLoopsMarketsTable({
                             </span>
                           </span>
                         ) : row.partnerRewards ? (
-                          <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                          <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {row.partnerRewards}
                           </span>
                         ) : (
@@ -502,7 +502,7 @@ export function ExploreLoopsMarketsTable({
                       ) : (
                         <CellLink
                           href={row.href}
-                          className="inline-flex items-center text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84"
+                          className="inline-flex items-center text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white"
                         >
                           <span>
                             {parseCompactUsdLabel(row.points) == null
@@ -633,7 +633,7 @@ function MobileLoopCard({
                   ) : null}
                 </div>
                 <div className="min-w-0">
-                  <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">{row.protocol}</div>
+                  <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.protocol}</div>
                   <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{row.asset}</div>
                 </div>
               </div>
@@ -726,7 +726,7 @@ function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSn
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[12px] leading-none text-muted-foreground">{t("Available")}</span>
-            <span className="font-data text-[14px] font-medium tabular-nums leading-none text-foreground dark:text-white/88">
+            <span className="font-data text-[14px] font-medium tabular-nums leading-none text-foreground dark:text-white">
               {compact(snapshot.availableUsd)}
             </span>
           </div>
