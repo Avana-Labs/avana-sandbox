@@ -196,14 +196,14 @@ export function ExploreLoopsMarketsTable({
   const getBorrowApy = (asset: string) => tokenBorrowApys[asset as keyof typeof tokenBorrowApys]
 
   return (
-    <section className="mt-1 space-y-4">
+    <section className="mt-7">
       <div>
         <div>
           <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{t("Trending")}</h2>
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mt-5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="grid min-w-max grid-flow-col gap-4 md:min-w-0 md:grid-flow-row md:grid-cols-3">
           {trendingSnapshots.map((snapshot) => (
             <TrendingLoopCard key={snapshot.marketId} snapshot={snapshot} />
@@ -212,6 +212,7 @@ export function ExploreLoopsMarketsTable({
       </div>
 
       <MarketFilterBar
+        className="mt-11"
         chips={CATEGORY_TABS}
         tab={currentTab}
         onTabChange={setCurrentTab}
@@ -220,7 +221,7 @@ export function ExploreLoopsMarketsTable({
         searchPlaceholder={t("Search loops")}
       />
 
-      <DesktopTableSurface className="rounded-radius-md">
+      <DesktopTableSurface className="mt-[68px] rounded-radius-md">
         <div className="space-y-4 md:hidden">
           {visibleRows.length ? (
             visibleRows.map((row, index) => (

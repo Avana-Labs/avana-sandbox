@@ -458,7 +458,7 @@ export function LendAssetSpokes({
   }, [groups, search, currentTab])
 
   return (
-    <section className="mt-16 space-y-8" style={{ overflowAnchor: "none" }}>
+    <section className="mt-[38px] space-y-[58px]" style={{ overflowAnchor: "none" }}>
       <div className="py-2.5">
         <MarketFilterBar
           chips={CATEGORY_CHIPS.lend}
