@@ -26,7 +26,7 @@ export function formatActionUsd(usdValue: number, options?: { compact?: boolean 
 }
 
 export function formatActionApproxUsd(value: number) {
-  return `≈ ${formatActionUsd(value)}`
+  return formatActionUsd(value)
 }
 
 export function formatActionPercent(value: number, digits = 2) {

@@ -987,7 +987,6 @@ export function BorrowActionPageClient({
         assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
         pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
         assetPickerDisabled={borrowNeedsCollateral}
-        assetPickerHint="Choose collateral first"
         showBalance={showBorrowMax}
         onMax={showBorrowMax ? handleBorrowMax : undefined}
       />
