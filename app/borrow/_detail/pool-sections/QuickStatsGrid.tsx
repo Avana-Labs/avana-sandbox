@@ -19,8 +19,6 @@ type Props = {
 }
 
 const RISK_STAT_IDS = new Set([
-  "collateralsAtRisk",
-  "eligibleForLiquidations",
   "riskPremium",
   "maxLtv",
   "collateralFactor",
