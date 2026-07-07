@@ -86,8 +86,13 @@ function SectionTabs({
   return (
     <div className="flex flex-wrap gap-8 border-b border-border/50 md:border-b-0">
       {[
-        { id: "collateral", label: t("Markets") },
-        { id: "borrow", label: t("Assets") },
+        // UI labels only. The tab `id`s are the backend/routing terms and MUST stay
+        // "collateral" / "borrow": the "collateral" tab lists the LP *markets* (see
+        // CollateralDesktopTable) and the "borrow" tab lists the *borrowable* assets
+        // (see BorrowableAssetsPanel / borrowAssetsBySpoke). If you're looking for the
+        // "Borrowable" assets, that's the `id: "borrow"` tab below.
+        { id: "collateral", label: t("Collateral") },
+        { id: "borrow", label: t("Borrowable") },
       ].map((tab) => (
         <button
           key={tab.id}
@@ -395,12 +400,16 @@ function SpokeDesktopSection({
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
-  // Each spoke/category owns its own Markets/Assets toggle.
+  // Each spoke/category owns its own Collateral/Borrowable toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
+  // NOTE: no `overflow-hidden` / `cv-section` here — both would trap the sticky
+  // section header. The header below is `sticky top-16` so each spoke title (+ its
+  // Collateral/Borrowable tabs) hangs under the site header while its own table
+  // scrolls, then the next spoke's header takes over.
   return (
-    <section className="cv-section mb-2">
-      <div className="mt-4 overflow-hidden rounded-radius-xl bg-transparent md:shadow-none">
-        <div className="flex items-center justify-between gap-3 rounded-t-radius-xl bg-transparent px-1 py-2 md:px-4 md:py-3">
+    <section className="mb-2">
+      <div className="mt-4 rounded-radius-xl bg-transparent md:shadow-none">
+        <div className="sticky top-16 z-20 flex items-center justify-between gap-3 rounded-t-radius-xl bg-background px-1 py-2 md:px-4 md:py-3">
           <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
           <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
@@ -461,7 +470,7 @@ function SpokeMobileSection({
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
-  // Each spoke/category owns its own Markets/Assets toggle.
+  // Each spoke/category owns its own Collateral/Borrowable toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
   const priceFor = usePriceFor()
@@ -470,9 +479,12 @@ function SpokeMobileSection({
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
+  // No `cv-section` here — content-visibility traps the sticky header. The title row
+  // is `sticky top-16` so it hangs under the site header while this spoke's cards
+  // scroll, then the next spoke's title takes over.
   return (
-    <section className="cv-section space-y-2">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <section className="space-y-2">
+      <div className="sticky top-16 z-20 -mx-1 flex items-center justify-between gap-3 bg-background px-1 pb-3 pt-2">
         <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
         <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
