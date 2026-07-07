@@ -101,7 +101,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-  generator: "v0.app",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
