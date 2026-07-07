@@ -7,10 +7,7 @@ import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
-  MarketMobileInsetStat,
-  MarketMobileInsetStats,
   MarketMobileMetric,
-  MarketMobilePrimaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
@@ -21,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
 import { useCurrency } from "@/app/lib/currency/use-currency"
-import { CategoryChips } from "@/app/lib/ui/category-chips"
+import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, type CategoryChip } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -85,34 +82,6 @@ function resolveMarketIdFromHref(href: string) {
   return href.split("/").pop() ?? ""
 }
 
-function SearchIcon({ className }: { className?: string } = {}) {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-6 text-brand", className)}>
-      <path d="m21 21-4.2-4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  )
-}
-
-// Desktop search: expanded by default, styled to match the header search bar
-// (rounded-full, soft off-white / dark surface, muted icon) in both themes.
-function DesktopSearchBar({ value, onChange }: { value: string; onChange: (nextValue: string) => void }) {
-  const { t } = useTranslation()
-
-  return (
-    <label className="hidden h-9 w-[240px] items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-[#767676] shadow-none transition-colors focus-within:border-foreground/20 hover:bg-[#f3f3f3] md:flex lg:h-10 lg:w-[280px] lg:gap-3 lg:px-4 dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground dark:hover:bg-surface-hover dark:focus-within:border-brand/30">
-      <SearchIcon className="size-[18px] shrink-0 text-[#8a8a8a] dark:text-muted-foreground/80" />
-      <input
-        aria-label={t("Search loops")}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={t("Search loops")}
-        className="min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.01em] outline-none placeholder:text-[#767676] dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/70 lg:text-[15px]"
-      />
-    </label>
-  )
-}
-
 type ExploreLoopsMarketsTableProps = {
   rows: MultiplyPageData["lendRows"]
   trendingSnapshots: MultiplyPageData["trendingSnapshots"]
@@ -130,7 +99,6 @@ export function ExploreLoopsMarketsTable({
   tokenBorrowApys,
   tokenLogos,
   tokenSupplyApys,
-  onOpenMultiply,
 }: ExploreLoopsMarketsTableProps) {
   const router = useRouter()
   const { t } = useTranslation()
@@ -232,9 +200,6 @@ export function ExploreLoopsMarketsTable({
       <div>
         <div>
           <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{t("Trending")}</h2>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            {t("Highest max-leverage APY markets in the sandbox catalog.")}
-          </p>
         </div>
       </div>
 
@@ -246,18 +211,17 @@ export function ExploreLoopsMarketsTable({
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="min-w-0 flex-1">
-          <CategoryChips chips={CATEGORY_TABS} value={currentTab} onChange={setCurrentTab} />
-        </div>
-
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <DesktopSearchBar value={search} onChange={setSearch} />
-        </div>
-      </div>
+      <MarketFilterBar
+        chips={CATEGORY_TABS}
+        tab={currentTab}
+        onTabChange={setCurrentTab}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t("Search loops")}
+      />
 
       <DesktopTableSurface className="rounded-radius-md">
-        <div className="space-y-3 md:hidden">
+        <div className="space-y-4 md:hidden">
           {visibleRows.length ? (
             visibleRows.map((row, index) => (
               <MobileLoopCard
@@ -265,12 +229,9 @@ export function ExploreLoopsMarketsTable({
                 row={row}
                 protocolLogo={getResolvedLogo(row.protocolLogo)}
                 assetLogo={getResolvedLogo(getAssetLogo(row.asset))}
-                supplyApy={getSupplyApy(row.protocol)}
-                borrowApy={getBorrowApy(row.asset)}
                 availableLabel={
                   parseCompactUsdLabel(row.points) == null ? (row.points ?? "—") : compact(parseCompactUsdLabel(row.points) as number)
                 }
-                onOpenMultiply={onOpenMultiply}
               />
             ))
           ) : (
@@ -597,18 +558,12 @@ function MobileLoopCard({
   row,
   protocolLogo,
   assetLogo,
-  supplyApy,
-  borrowApy,
   availableLabel,
-  onOpenMultiply,
 }: {
   row: MultiplyPageData["lendRows"][number]
   protocolLogo?: string | null
   assetLogo?: string | null
-  supplyApy?: string
-  borrowApy?: string
   availableLabel: string
-  onOpenMultiply?: (href: string) => void
 }) {
   const { t } = useTranslation()
   return (
@@ -652,20 +607,6 @@ function MobileLoopCard({
           <MarketMobileStatRow label={t("Max Leverage")} value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} />
           <MarketMobileStatRow label={t("Liquidity")} value={availableLabel} />
         </MarketMobileStatList>
-
-        <MarketMobileInsetStats className="mt-3">
-          <MarketMobileInsetStat label={t("Supply APY")} value={supplyApy ?? "—"} valueClassName="text-success" />
-          <MarketMobileInsetStat label={t("Borrow APY")} value={borrowApy ?? "—"} valueClassName="text-rose-600 dark:text-rose-400" />
-        </MarketMobileInsetStats>
-
-        <MarketMobilePrimaryAction
-          onClick={(event) => {
-            event.preventDefault()
-            onOpenMultiply?.(row.href)
-          }}
-        >
-          {t("Multiply")}
-        </MarketMobilePrimaryAction>
       </MarketMobileCard>
     </Link>
   )
@@ -686,7 +627,7 @@ function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSn
       <div className="pointer-events-none absolute inset-0 z-0 rounded-radius-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
 
       {collateralSrc ? (
-        <div className="pointer-events-none absolute -left-5 top-16 z-0 size-[274px] rounded-full opacity-10 blur-2xl saturate-150">
+        <div className="pointer-events-none absolute -left-5 top-16 z-0 size-[274px] rounded-full opacity-10 blur-lg saturate-150">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={collateralSrc} alt="" aria-hidden="true" className="size-full rounded-full object-cover" />
         </div>
