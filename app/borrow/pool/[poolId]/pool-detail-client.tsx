@@ -62,7 +62,7 @@ export function PoolDetailClient({ detail }: Props) {
                 />
 
                 <section aria-label="Pool analytics" className="space-y-8 pt-8">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Market data</h2>
+                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Key Statistics</h2>
                   <QuickStatsGrid detail={detail} />
                   <CashflowCard detail={detail} />
                   <RiskSection detail={detail} />
