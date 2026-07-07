@@ -7,20 +7,35 @@ import { formatApy } from "@/app/lib/format"
 import { HeroMarketCard } from "./borrow-hero-market-card"
 import { BorrowHeroLiveMetrics } from "./borrow-hero-live-metrics"
 
-type ExplorePool = BorrowPageData["explore"]["trendingCollateral"][number]
+type ExplorePool = BorrowPageData["poolCatalog"][number]
+
+const averageApr = (pool: ExplorePool) => (pool.aprMin + pool.aprMax) / 2
 
 function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => string) {
-  // Each card shows two markets, and no market repeats across the three cards, so the
-  // Explore row reads as six distinct pools rather than the same top markets echoed back.
+  // Draw each card's two markets from the FULL pool catalog (re-sorted per ranking)
+  // rather than the pre-sliced 3-item explore lists — those three lists overlap so
+  // heavily that they only yield ~5 distinct names, leaving a card short. Sourcing
+  // from the catalog guarantees six distinct markets across the three cards.
+  const catalog = pageData.poolCatalog
+  const byAvailable = [...catalog].sort((a, b) => b.availableUsd - a.availableUsd)
+  const byTvl = [...catalog].sort((a, b) => b.tvlUsd - a.tvlUsd)
+  const byApr = [...catalog].sort((a, b) => averageApr(b) - averageApr(a))
+
   const used = new Set<string>()
-  const pick = (pools: ReadonlyArray<ExplorePool>, count: number) => {
+  const pick = (ranked: ReadonlyArray<ExplorePool>, count: number) => {
     const chosen: ExplorePool[] = []
-    for (const pool of pools) {
-      if (used.has(pool.name)) continue
-      used.add(pool.name)
-      chosen.push(pool)
-      if (chosen.length === count) break
+    const take = (list: ReadonlyArray<ExplorePool>) => {
+      for (const pool of list) {
+        if (chosen.length === count) break
+        if (used.has(pool.name)) continue
+        used.add(pool.name)
+        chosen.push(pool)
+      }
     }
+    take(ranked)
+    // Fallback so every card fills to `count` even if this ranking's leaders were
+    // already claimed by an earlier card.
+    if (chosen.length < count) take(byTvl)
     return chosen
   }
 
@@ -31,15 +46,17 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
       pool,
       title: pool.name,
       subtitle: `${compact(pool.tvlUsd)} TVL`,
-      value: `Avail. ${compact(pool.availableUsd)}`,
-      delta: `${formatApy((pool.aprMin + pool.aprMax) / 2)} APY`,
+      // LTV is the headline (more important than availability); the line below is the
+      // pool's own trading-fee APR — label it "Fees", not "APY" (it isn't our yield).
+      value: `${pool.ltv}% LTV`,
+      delta: `${formatApy(averageApr(pool))} Fees`,
       deltaClassName: "text-apy-positive",
     }))
 
   return [
-    { id: "trending", rows: toRows(pick(pageData.explore.trendingCollateral, 2), "trending") },
-    { id: "top", rows: toRows(pick(pageData.explore.topMarkets, 2), "top") },
-    { id: "apy", rows: toRows(pick(pageData.explore.highApyPools, 2), "apy") },
+    { id: "trending", rows: toRows(pick(byAvailable, 2), "trending") },
+    { id: "top", rows: toRows(pick(byTvl, 2), "top") },
+    { id: "apy", rows: toRows(pick(byApr, 2), "apy") },
   ]
 }
 
