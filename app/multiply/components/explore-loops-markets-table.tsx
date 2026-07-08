@@ -374,10 +374,10 @@ export function ExploreLoopsMarketsTable({
                           </>
                         ) : null}
                         <span className="min-w-0">
-                          <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                          <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                             {row.protocol}
                           </span>
-                          <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
+                          <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
                             <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
                             <span className="font-data tabular-nums text-success">
                               {getSupplyApy(row.protocol) ?? "—"}
@@ -400,10 +400,10 @@ export function ExploreLoopsMarketsTable({
                           </>
                         ) : null}
                         <span className="min-w-0">
-                          <span className="block text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                          <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                             {row.asset}
                           </span>
-                          <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-normal tracking-[-0.03em]">
+                          <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
                             <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
                             <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">
                               {getBorrowApy(row.asset) ?? "—"}
@@ -416,7 +416,7 @@ export function ExploreLoopsMarketsTable({
                       <CellLink
                         href={row.href}
                         className={cn(
-                          "font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums",
+                          "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
                           row.apy
                             ? row.apy.startsWith("-")
                               ? "text-rose-600 dark:text-rose-400"
@@ -431,28 +431,28 @@ export function ExploreLoopsMarketsTable({
                       <CellLink href={row.href} className="text-foreground">
                         {row.rewardRows?.[1] ? (
                           <span className="block">
-                            <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                               {row.rewardRows[1].value}
                             </span>
-                            <span className="mt-0.5 block text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+                            <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
                               {row.rewardRows[1].label}
                             </span>
                           </span>
                         ) : row.rewardRows?.[0] ? (
                           <span className="block">
-                            <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                               {row.rewardRows[0].value}
                             </span>
-                            <span className="mt-0.5 block text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+                            <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
                               {row.rewardRows[0].label}
                             </span>
                           </span>
                         ) : row.partnerRewards ? (
-                          <span className="block text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                          <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {row.partnerRewards}
                           </span>
                         ) : (
-                          <span className="block text-[14px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+                          <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
                             —
                           </span>
                         )}
@@ -470,7 +470,7 @@ export function ExploreLoopsMarketsTable({
                       ) : (
                         <CellLink
                           href={row.href}
-                          className="inline-flex items-center text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white"
+                          className="inline-flex items-center text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white"
                         >
                           <span>
                             {parseCompactUsdLabel(row.points) == null
