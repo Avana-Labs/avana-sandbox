@@ -33,7 +33,7 @@ export function ResponsiveBorrowAction({
         kind={kind}
         embedded
         sidebar={sidebar}
-        layout={sidebar ? "home" : "default"}
+        layout="default"
         closeHref={closeHref}
         initialMarketId={market}
         initialAssetId={asset}

@@ -885,7 +885,7 @@ export function BorrowActionPageClient({
         : descriptor.subtitle
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
-  const shellDensity = isHomeLayout ? "home" : "default"
+  const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   // Require a collateral pool before the borrow-asset picker opens, so the asset
   // list is always scoped to the selected market (wallet-connection gating is
   // already enforced upstream by the sandbox/connect onboarding flow).
@@ -1143,6 +1143,7 @@ export function BorrowActionPageClient({
           onMax={showBorrowMax ? handleBorrowMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}
           homeLayout={isHomeLayout}
+          singlePrimaryCta={sidebar}
           claimSummary={kind === "claim"}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
