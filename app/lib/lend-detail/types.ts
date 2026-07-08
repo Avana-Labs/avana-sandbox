@@ -22,7 +22,6 @@ import type { LendMarket } from "@/app/lib/lend-engine/types"
 import type {
   AboutCard,
   CashflowCard,
-  EngagementTrend,
   QuickStat,
   RiskAssessment,
   Series,
@@ -75,7 +74,6 @@ export type LendMarketDetail = {
     utilization: Series
   }
   cashflow: CashflowCard
-  engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
   /** General FAQs (plain-text answers). */

@@ -6,7 +6,6 @@ import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-la
 import { ResponsiveMultiplyAction } from "@/app/components/action-page/responsive-multiply-action"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
-import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -28,16 +27,6 @@ export function MarketSidebar({ detail, className, hideActions = false }: Props)
   return (
     <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={t("Multiply {name}").replace("{name}", detail.hero.name)}>
       {hideActions ? null : <MarketActionRail detail={detail} className="mt-6" embedActions />}
-      {hideActions ? null : (
-        <AboutNewsSection
-          about={detail.about}
-          aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
-          compactAboutTitle
-          newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
-          newsImageLabel={detail.hero.name}
-          mediaVariant="icon"
-        />
-      )}
     </aside>
   )
 }

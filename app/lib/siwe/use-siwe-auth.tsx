@@ -1,12 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react"
-import { useAccount, useSignMessage } from "wagmi"
-import { buildSiweMessage } from "./message"
-import { clearSiweToken, getSiweToken, setSiweToken, subscribeSiwe, type SiweToken } from "./auth-store"
+import { clearSiweToken, getSiweToken, subscribeSiwe, type SiweToken } from "./auth-store"
 import { getJwtExpirySeconds, isJwtExpired } from "./token-expiry"
 import { IS_DEV_SHORTCUT_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
-import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /** Reactively read the current SIWE token (null when signed out). */
 export function useSiweToken(): SiweToken | null {
@@ -71,70 +68,27 @@ export function useConvexSiweAuth() {
 export type SiweAuthStatus = "signed-out" | "signing" | "signed-in"
 
 /**
- * Sign-in controller bound to the connected wagmi wallet. `signIn` runs the SIWE
- * nonce → sign → verify → store-JWT flow; `signOut` clears the token.
+ * Read-only auth state, derived purely from the persisted SIWE token — NO wagmi. This is
+ * what keeps the wallet SDK off the critical path: the app can answer "who is signed in?"
+ * from the JWT alone, which is exactly the token `ConvexProviderWithAuth` verifies on every
+ * authed call (see `useConvexSiweAuth`). Signing in / connecting a wallet goes through
+ * ConnectKit's own flow in `WalletControl`, so this hook has no wagmi dependency.
+ *
+ * The wallet-match check that previously gated `isSignedIn` on a live wagmi connection was
+ * UI-only defense in depth; Convex is the real authority and rejects a token whose wallet
+ * doesn't match. Dropping it lets a returning user's session read as signed-in immediately
+ * from storage, with no wallet-reconnect flash.
  */
 export function useSiweAuth() {
   // Live token: an expired JWT reads as signed-out, so the gate shows the sign-in
   // recovery path rather than crashing into the generic error boundary.
   const token = useLiveSiweToken()
-  const { address, chainId, isConnected, isConnecting, isReconnecting } = useAccount()
-  const { signMessageAsync } = useSignMessage()
-  const { t } = useTranslation()
 
   const authedWallet = token?.wallet ?? (IS_DEV_SHORTCUT_MODE ? TEST_MODE_WALLET_ADDRESS : null)
-  const effectiveAddress = IS_DEV_SHORTCUT_MODE ? TEST_MODE_WALLET_ADDRESS : address
-  const effectiveConnected = IS_DEV_SHORTCUT_MODE || isConnected
-  // "Signed in" only counts when the SIWE wallet matches the connected wallet.
-  const isSignedIn = effectiveConnected && authedWallet != null && effectiveAddress?.toLowerCase() === authedWallet
-  // On reload wagmi restores the session asynchronously (status === "reconnecting"),
-  // so a persisted SIWE token is present before the wallet is. Treat that window as
-  // "restoring" so the gate can hold a neutral loading state instead of flashing the
-  // signed-out/onboarding screen. No token means genuinely signed out — nothing to wait for.
-  const isRestoring = !IS_DEV_SHORTCUT_MODE && token != null && !isSignedIn && (isReconnecting || isConnecting)
-
-  const signIn = useCallback(async (): Promise<string> => {
-    if (!address) throw new Error(t("Connect a wallet first."))
-    const nonceRes = await fetch("/api/siwe/nonce", { cache: "no-store" })
-    if (!nonceRes.ok) throw new Error(t("Could not get a sign-in nonce."))
-    const { nonce } = (await nonceRes.json()) as { nonce: string }
-    const message = buildSiweMessage({
-      address,
-      domain: window.location.host,
-      uri: window.location.origin,
-      nonce,
-      issuedAt: new Date().toISOString(),
-      chainId: chainId ?? 1,
-    })
-    const signature = await signMessageAsync({ message })
-    const verifyRes = await fetch("/api/siwe/verify", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ message, signature }),
-    })
-    if (!verifyRes.ok) {
-      const err = (await verifyRes.json().catch(() => ({}))) as {
-        error?: string
-      }
-      throw new Error(err.error ?? t("Sign-in verification failed."))
-    }
-    const { token: jwt, wallet } = (await verifyRes.json()) as {
-      token: string
-      wallet: string
-    }
-    setSiweToken(jwt, wallet)
-    return wallet
-  }, [address, chainId, signMessageAsync, t])
-
-  const signOut = useCallback(() => clearSiweToken(), [])
+  const isSignedIn = IS_DEV_SHORTCUT_MODE || (token != null && authedWallet != null)
 
   return {
     authedWallet,
     isSignedIn,
-    isRestoring,
-    isConnected: effectiveConnected,
-    address: effectiveAddress ?? null,
-    signIn,
-    signOut,
   }
 }

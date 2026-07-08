@@ -1,9 +1,7 @@
 "use client"
 
-import { useMediaQuery } from "@/app/lib/use-media-query"
-import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
-import { DetailSidebarActionCard } from "@/app/components/action-page/detail-sidebar-action-card"
+import { ResponsiveDetailAction } from "@/app/components/action-page/responsive-detail-action"
 import type { ActionKind } from "@/app/lib/action-system/contracts"
 
 type BorrowActionKind = Extract<ActionKind, "borrow" | "repay" | "supply" | "remove" | "claim">
@@ -25,38 +23,27 @@ export function ResponsiveBorrowAction({
   label?: string
   sidebar?: boolean
 }) {
-  const isDesktop = useMediaQuery("(min-width: 768px)", true)
-
-  if (isDesktop) {
-    const action = (
-      <BorrowActionPageClient
-        kind={kind}
-        embedded
-        sidebar={sidebar}
-        layout={sidebar ? "home" : "default"}
-        closeHref={closeHref}
-        initialMarketId={market}
-        initialAssetId={asset}
-        initialAmount={amount}
-      />
-    )
-
-    if (sidebar) {
-      return <DetailSidebarActionCard>{action}</DetailSidebarActionCard>
-    }
-
-    return action
-  }
-
   return (
-    <ActionPageLaunchCta
+    <ResponsiveDetailAction
       product="borrow"
       kind={kind}
       market={market}
       asset={asset}
       amount={amount}
-      returnTo={closeHref}
+      closeHref={closeHref}
       label={label}
-    />
+      sidebar={sidebar}
+    >
+      <BorrowActionPageClient
+        kind={kind}
+        embedded
+        sidebar={sidebar}
+        layout="default"
+        closeHref={closeHref}
+        initialMarketId={market}
+        initialAssetId={asset}
+        initialAmount={amount}
+      />
+    </ResponsiveDetailAction>
   )
 }

@@ -54,7 +54,7 @@ export function PoolHeroIdentity({
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px] text-muted-foreground">
               <span className="inline-flex items-center rounded-full bg-surface-inset px-2.5 py-[3px] text-[12px] font-medium leading-none text-foreground">
-                {detail.hero.feeTier || detail.hero.venue}
+                {detail.hero.marketLabel || detail.hero.venue}
               </span>
               <button
                 type="button"
@@ -115,8 +115,7 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
       {hideIdentity ? null : <PoolHeroIdentity detail={detail} leading={leading} actions={actions} />}
 
       <div className="pt-4" data-testid="pool-hero-chart-card">
-        {/* Convex feed carries the full daily history — open on it so the chart is rich. */}
-        <MarketHeroChart feed={feed} defaultRange={detail.heroFeed ? "All" : "1D"} gradientId={`poolHeroFill-${detail.id}`} label={t("Total supplied")} />
+        <MarketHeroChart feed={feed} defaultRange="1D" gradientId={`poolHeroFill-${detail.id}`} label={t("Total supplied")} />
       </div>
     </section>
   )
@@ -141,7 +140,7 @@ function HeroIcon({ label, onClick, children }: { label: string; onClick: () => 
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+      className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
     >
       {children}
     </button>

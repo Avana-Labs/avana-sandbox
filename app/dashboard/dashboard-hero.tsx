@@ -43,10 +43,10 @@ const HeroChartSection = dynamic(
 const DEFAULT_RANGE_DATA = buildRangeData(880, 14)
 
 const RANGE_PERIOD_WORD: Record<ChartRangeOption, string> = {
-  "1H": "past hour",
   "1D": "today",
   "1W": "this week",
   "1M": "this month",
+  "3M": "past 3 months",
   "1Y": "this year",
   All: "all time",
 }
@@ -163,7 +163,7 @@ function buildActions({
     // (Replaces the ad-hoc mix of hardcoded blue/green/red/black hexes.)
     const normalized = label.toLowerCase()
     const chrome =
-      "!border-border/70 !bg-background hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
+      "!border-border/70 !bg-background hover:!bg-surface-hover dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
     if (normalized.includes("deposit") || normalized.includes("supply")) return `${chrome} !text-success`
     if (normalized.includes("withdraw") || normalized.includes("unwind")) return `${chrome} !text-danger`
     return `${chrome} !text-foreground`

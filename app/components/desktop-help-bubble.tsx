@@ -72,7 +72,7 @@ function HelpLinkItem({ href, label, icon: Icon, external, onActivate }: HelpLin
         whileTap={{ scale: 0.98 }}
         transition={{ duration: 0.15 }}
         onClick={onActivate}
-        className="flex items-center justify-between gap-3 rounded-radius-sm px-2.5 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+        className="flex items-center justify-between gap-3 rounded-radius-sm px-2.5 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:bg-hover"
       >
         {content}
       </motion.a>
@@ -84,7 +84,7 @@ function HelpLinkItem({ href, label, icon: Icon, external, onActivate }: HelpLin
       <Link
         href={href}
         onClick={onActivate}
-        className="flex items-center justify-between gap-3 rounded-radius-sm px-2.5 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+        className="flex items-center justify-between gap-3 rounded-radius-sm px-2.5 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:bg-hover"
       >
         {content}
       </Link>

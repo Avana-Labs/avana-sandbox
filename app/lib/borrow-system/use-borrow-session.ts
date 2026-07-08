@@ -91,6 +91,8 @@ export type ConvexBorrowWalletData = {
     simulated: boolean
     at: number
   }>
+  /** Remaining claimable per reward position from prior claims (usd6 strings). */
+  rewardClaims?: Array<{ rewardPositionId: string; remainingUsd6: string }>
 }
 
 export function useBorrowSession({
@@ -293,6 +295,18 @@ export function useBorrowSession({
                   principalBorrowedUsd6: BigInt(debt.principalBorrowedUsd6),
                 })),
               ),
+              // Reduce each seeded reward position's claimable to the persisted remaining
+              // from prior claims, so claimable does not reset to full on reload. Wallets
+              // with no persisted claims keep the seeded (full) claimable.
+              rewardPositions: (account.rewardPositions ?? []).map((position) => {
+                const claim = (data.rewardClaims ?? []).find((entry) => entry.rewardPositionId === position.id)
+                if (!claim) return position
+                const remaining = BigInt(claim.remainingUsd6)
+                return {
+                  ...position,
+                  claimableUsd6: remaining < position.claimableUsd6 ? remaining : position.claimableUsd6,
+                }
+              }),
               lastUpdatedAt: Math.max(account.lastUpdatedAt, ...nextHistory.map((item) => item.timestamp), 0),
             },
           },

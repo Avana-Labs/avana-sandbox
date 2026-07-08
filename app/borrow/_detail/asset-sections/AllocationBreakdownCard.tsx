@@ -40,7 +40,7 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
           </thead>
           <tbody>
             {detail.allocation.map((row) => (
-              <tr key={row.id} className="border-t border-border transition-colors hover:bg-surface-inset/60">
+              <tr key={row.id} className="border-t border-border transition-colors hover:bg-hover">
                 <td className="px-4 py-2.5 sm:pl-5">
                   <TokenPairCell visuals={row.visuals} name={row.poolName} subtitle={row.venueLabel} size="md" />
                 </td>

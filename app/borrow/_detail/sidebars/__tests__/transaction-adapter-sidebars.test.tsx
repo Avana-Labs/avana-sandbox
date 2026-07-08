@@ -224,25 +224,24 @@ describe("detail sidebars", () => {
   it("links asset sidebar tabs to action pages", () => {
     render(<AssetTokenActions detail={assetDetail} />)
 
-    // On a Borrow-section asset detail page the primary (default) CTA must open a
-    // borrow flow, not the Lend deposit flow.
+    // A Borrow-section asset detail page exposes only the two borrow actions —
+    // Borrow and Repay. The Lend deposit/withdraw actions live in the Lend section.
     expect(screen.getByTestId("action-launch-borrow")).toBeInTheDocument()
-    expect(screen.queryByTestId("action-launch-deposit")).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole("tab", { name: "Deposit" }))
-    expect(screen.getByTestId("action-launch-deposit")).toBeInTheDocument()
+    expect(screen.queryByRole("tab", { name: "Lend" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("tab", { name: "Withdraw" })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("tab", { name: "Repay" }))
     expect(screen.getByTestId("action-launch-repay")).toBeInTheDocument()
   })
 
-  it("links pool sidebar pledge and remove tabs to action pages", () => {
+  it("links pool sidebar pledge and claim tabs to action pages", () => {
     render(<PoolBorrowActions detail={poolDetail} />)
 
+    // A collateral market detail page exposes only Pledge (supply) and Claim (fees).
     expect(screen.getByTestId("action-launch-supply")).toBeInTheDocument()
+    expect(screen.queryByRole("tab", { name: "Remove" })).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("tab", { name: "Remove" }))
-    expect(screen.getByTestId("action-launch-remove")).toBeInTheDocument()
-    expect(screen.getByTestId("action-launch-remove")).toHaveAttribute("data-amount", "")
+    fireEvent.click(screen.getByRole("tab", { name: "Claim" }))
+    expect(screen.getByTestId("action-launch-claim")).toBeInTheDocument()
   })
 })

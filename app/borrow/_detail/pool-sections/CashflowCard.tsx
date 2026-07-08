@@ -18,7 +18,6 @@ export function CashflowCard({ detail }: Props) {
   return (
     <SectionCard
       title={t("Cashflow breakdown")}
-      subtitle={t("{period} · fees, incentives and protocol revenue.").replace("{period}", cashflow.periodLabel)}
       chrome="plain"
       bodyClassName="p-0"
     >
@@ -36,12 +35,12 @@ export function CashflowCard({ detail }: Props) {
               <tr
                 key={i}
                 className={cn(
-                  "transition-colors hover:bg-surface-inset/60",
+                  "transition-colors hover:bg-hover",
                   row.highlighted ? "bg-surface-inset/40" : undefined,
                 )}
               >
                 <th scope="row" className="py-2.5 pl-5 text-left font-medium text-foreground">
-                  {row.label}
+                  {t(row.label)}
                 </th>
                 <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">
                   {row.reported}

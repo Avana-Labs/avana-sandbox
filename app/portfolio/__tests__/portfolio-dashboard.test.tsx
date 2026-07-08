@@ -109,6 +109,11 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
       state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, transactions: [] },
       transactionHistory: [],
     },
+    rewards: {
+      walletId: "demo-wallet",
+      state: { claims: [] },
+      tasks: [],
+    },
   }),
 }))
 
@@ -125,10 +130,6 @@ vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
   DashboardPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
   DashboardLendPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
 }))
-vi.mock("@/app/portfolio/portfolio-lending-opportunities", () => ({
-  PortfolioLendingOpportunities: () => <div>Lending Opportunities</div>,
-}))
-
 vi.mock("@/app/portfolio/dashboard-borrow-tab", () => ({
   DashboardBorrowTab: ({
     collateralPositions,

@@ -57,19 +57,6 @@ export async function fetchAssetBorrowSeries(slug: string): Promise<ConvexSeries
   }
 }
 
-/** User engagement trend (active wallets/sessions) for a pool or asset. */
-export async function fetchEngagement(scope: "pool" | "asset", slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return scope === "pool"
-      ? await client.query(api.engagement.getForPool, { slug })
-      : await client.query(api.engagement.getForAsset, { slug })
-  } catch {
-    return null
-  }
-}
-
 /** Cashflow breakdown card (rows + monthly bars) from seeded revenue. */
 export async function fetchCashflowBreakdown(scope: "pool" | "asset", slug: string) {
   const client = convexClient()

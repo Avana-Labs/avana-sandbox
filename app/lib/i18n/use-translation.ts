@@ -2,33 +2,53 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react"
 import { useOptionalDisplayPreferences, type LanguageCode } from "@/app/components/display-preferences"
+import { translateWith } from "@/app/lib/i18n/translate-core"
+import type { TranslationDictionary } from "@/app/lib/i18n/types"
 
 /**
- * The 13-locale dictionary module (~288KB) is loaded ON DEMAND — only when a non-English
- * language is active — so the default English experience ships zero locale data (English is the
- * source language, so `t(key) === key`). Until the bundle lands, a non-English string falls back
- * to its English key — exactly what the app already does for any untranslated string — and when
- * the bundle lands every mounted `useTranslation` re-renders and swaps in the real translation.
- * SSR renders English (no preferences), the client hydrates English, then upgrades: no mismatch.
+ * Per-locale lazy loading. Each language is its own chunk (see ./locales/*), so a
+ * viewer downloads ONLY their active language (~1/13th of the old ~1MB monolith).
+ * English is the source language (t(key) === key), so it ships zero locale data.
+ * Until a non-English chunk lands, keys fall back to their English source — exactly
+ * what the app already does for any untranslated string — and when it lands every
+ * mounted useTranslation re-renders and swaps in the real translation. SSR renders
+ * English, the client hydrates English, then upgrades: no mismatch.
  */
-type TranslateFn = (language: LanguageCode, key: string) => string
+const LOADERS: Partial<Record<LanguageCode, () => Promise<{ default: TranslationDictionary }>>> = {
+  ZH: () => import("@/app/lib/i18n/locales/zh"),
+  ES: () => import("@/app/lib/i18n/locales/es"),
+  AR: () => import("@/app/lib/i18n/locales/ar"),
+  DE: () => import("@/app/lib/i18n/locales/de"),
+  HI: () => import("@/app/lib/i18n/locales/hi"),
+  TR: () => import("@/app/lib/i18n/locales/tr"),
+  NL: () => import("@/app/lib/i18n/locales/nl"),
+  FR: () => import("@/app/lib/i18n/locales/fr"),
+  ID: () => import("@/app/lib/i18n/locales/id"),
+  JA: () => import("@/app/lib/i18n/locales/ja"),
+  KO: () => import("@/app/lib/i18n/locales/ko"),
+  PT: () => import("@/app/lib/i18n/locales/pt"),
+  RU: () => import("@/app/lib/i18n/locales/ru"),
+}
 
-let translateFn: TranslateFn | null = null
-let loadPromise: Promise<void> | null = null
+const loaded: Partial<Record<LanguageCode, TranslationDictionary>> = {}
+const loading = new Set<LanguageCode>()
 let version = 0
 const listeners = new Set<() => void>()
 
-function ensureLocaleLoaded(language: string) {
-  if (language === "EN" || translateFn || loadPromise) return
-  loadPromise = import("@/app/lib/i18n/translations")
-    .then((m) => {
-      translateFn = m.translate
+function ensureLocaleLoaded(language: LanguageCode) {
+  if (language === "EN" || loaded[language] || loading.has(language)) return
+  const loader = LOADERS[language]
+  if (!loader) return
+  loading.add(language)
+  loader()
+    .then((mod) => {
+      loaded[language] = mod.default
       version += 1
       listeners.forEach((notify) => notify())
     })
     .catch(() => {
       // Keep the English fallback and allow a later retry rather than hard-failing the UI.
-      loadPromise = null
+      loading.delete(language)
     })
 }
 
@@ -42,12 +62,12 @@ function subscribe(notify: () => void) {
 /**
  * Returns a `t(englishString)` translator bound to the user's selected language (from the header
  * switcher). English renders synchronously with no locale download; other languages fall back to
- * English until the dictionary bundle loads, then re-render translated.
+ * English until their dictionary chunk loads, then re-render translated.
  */
 export function useTranslation() {
   const preferences = useOptionalDisplayPreferences()
   const language = preferences?.language ?? "EN"
-  // Re-render when the lazily-loaded dictionary lands (module-level version bump).
+  // Re-render when the active locale's chunk lands (module-level version bump).
   const loadedVersion = useSyncExternalStore(
     subscribe,
     () => version,
@@ -57,7 +77,7 @@ export function useTranslation() {
     ensureLocaleLoaded(language)
   }, [language])
   const t = useCallback(
-    (key: string) => (language === "EN" || !translateFn ? key : translateFn(language, key)),
+    (key: string) => (language === "EN" ? key : translateWith(loaded[language], key)),
     [language, loadedVersion],
   )
   return { t, language }

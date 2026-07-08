@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import {
   filterPools,
   groupByDex,
-  type BorrowDexId,
   type BorrowPoolRow,
   type BorrowableAsset,
 } from "@/app/lib/data/borrow-domain"
@@ -79,12 +78,11 @@ export type BorrowWorkspaceProps = {
 export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps) {
   const router = useRouter()
   const isDesktop = useMediaQuery("(min-width: 768px)", true)
-  const { pendingRows, dexes } = pageData
+  const { pendingRows } = pageData
   const session = useBorrowSessionContext()
   const { deltas: liquidityDeltas } = useMarketLiquidity()
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all")
   const [search, setSearch] = useState("")
-  const [selectedDexes, setSelectedDexes] = useState<Set<BorrowDexId>>(() => new Set())
   const marketSpokeById = useMemo(
     () => new Map(session.marketSummaries.map((market) => [market.id, market.spoke])),
     [session.marketSummaries],
@@ -96,8 +94,8 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   }, [pageData.walletId, session.state])
 
   const filteredPools = useMemo(() => {
-    return filterPools([...session.marketSummaries], { text: search, dexes: selectedDexes })
-  }, [search, selectedDexes, session.marketSummaries])
+    return filterPools([...session.marketSummaries], { text: search })
+  }, [search, session.marketSummaries])
 
   const visiblePools = useMemo(() => {
     if (!isPoolTab(currentTab)) return []
@@ -105,6 +103,9 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   }, [currentTab, filteredPools])
 
   const poolGroups = useMemo(() => groupByDex(visiblePools), [visiblePools])
+  // The "Borrowable" tab in the UI (labelled "Assets"→"Borrowable") is fed from here:
+  // borrowAssetsBySpoke maps each spoke to its borrowable assets. To change what shows
+  // under "Borrowable", start at session.getBorrowableAssetsForMarket + BorrowableAssetsPanel.
   const borrowAssetsBySpoke = useMemo(() => {
     return Object.fromEntries(
       poolGroups.flatMap((group) =>
@@ -125,10 +126,9 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
     onTabChange?.(currentTab)
   }, [currentTab, onTabChange])
 
-  const hasActiveFilters = search.trim().length > 0 || selectedDexes.size > 0
+  const hasActiveFilters = search.trim().length > 0
   const clearFilters = useCallback(() => {
     setSearch("")
-    setSelectedDexes(new Set())
   }, [])
 
   const handlePoolsSupply = useCallback(
@@ -192,9 +192,6 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
         onTabChange={(tab) => setCurrentTab(tab)}
         search={search}
         onSearchChange={setSearch}
-        dexes={dexes}
-        selectedDexes={selectedDexes}
-        onDexChange={(dex) => setSelectedDexes(dex ? new Set([dex]) : new Set())}
       />
 
       <div className="pt-3 pb-6">
@@ -255,7 +252,7 @@ function NoMarketsState({
         <button
           type="button"
           onClick={onClear}
-          className="mt-1 rounded-full border border-border px-4 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-raised/60"
+          className="mt-1 rounded-full border border-border px-4 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-hover"
         >
           {t("Clear search")}
         </button>

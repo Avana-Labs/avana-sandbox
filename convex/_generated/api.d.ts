@@ -12,7 +12,6 @@ import type * as allocation from "../allocation.js";
 import type * as cashflow from "../cashflow.js";
 import type * as content from "../content.js";
 import type * as crons from "../crons.js";
-import type * as engagement from "../engagement.js";
 import type * as liquidity from "../liquidity.js";
 import type * as markets from "../markets.js";
 import type * as prices from "../prices.js";
@@ -39,7 +38,6 @@ declare const fullApi: ApiFromModules<{
   cashflow: typeof cashflow;
   content: typeof content;
   crons: typeof crons;
-  engagement: typeof engagement;
   liquidity: typeof liquidity;
   markets: typeof markets;
   prices: typeof prices;

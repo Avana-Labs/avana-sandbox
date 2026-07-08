@@ -112,14 +112,13 @@ describe("BorrowPageHero", () => {
 
     expect(screen.getByText("Total TVL")).toBeInTheDocument()
     expect(screen.getByText("$327.4M")).toBeInTheDocument()
-    expect(screen.getByText("$315.7M")).toBeInTheDocument()
+    // "Total Collateral" ($315.7M) was dropped in the one-stat-per-page hero refactor.
     expect(screen.getByText("$92.7M")).toBeInTheDocument()
     expect(screen.getByText("$159.8M")).toBeInTheDocument()
-    expect(screen.getByText("+2.03%")).toBeInTheDocument()
-    expect(screen.getByText("Top Markets")).toBeInTheDocument()
     expect(screen.getByText("WETH / USDC")).toBeInTheDocument()
     expect(screen.getByText("$100.0M TVL")).toBeInTheDocument()
-    expect(screen.getByText("5.30% APY")).toBeInTheDocument()
+    expect(screen.getByText("5.30% Fees")).toBeInTheDocument()
+    expect(screen.getByText("78% LTV")).toBeInTheDocument()
   })
 
   it("formats billion-scale hero metrics with compact suffix", () => {

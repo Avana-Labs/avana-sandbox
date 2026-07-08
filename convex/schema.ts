@@ -572,6 +572,22 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_wallet", ["wallet"]),
 
+  /**
+   * Per-wallet remaining claimable on each borrow LP-fee reward position. One row per
+   * (wallet, rewardPositionId). `remainingUsd6` is the claimable left AFTER the wallet's
+   * claims (decimal usd6 string), so hydration reduces the statically-seeded claimable to
+   * this value instead of resetting it to full on reload. Additive + backward compatible:
+   * wallets with no rows simply keep the seeded (full) claimable, i.e. today's behavior.
+   */
+  sandboxRewardClaims: defineTable({
+    wallet: v.string(),
+    rewardPositionId: v.string(),
+    remainingUsd6: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_position", ["wallet", "rewardPositionId"]),
+
   // ── Phase 2 (cont.): wallet-scoped FINANCIAL state (synthetic; never prod truth) ──
   //
   // ENCODING CONTRACT: the credit-/multiply-engines work in bigint fixed-point —

@@ -24,7 +24,7 @@ describe("lend preview mappers", () => {
       "Rewards earned",
       "Total earned",
     ])
-    expect(ui.amountUsdLabel).toBe("≈ $50.00")
+    expect(ui.amountUsdLabel).toBe("$50.00")
   })
 
   it("maps withdraw-specific metrics", () => {
@@ -49,7 +49,7 @@ describe("lend preview mappers", () => {
 
     expect(ui.metrics.map((row) => row.label)).toEqual(["Supplied remaining", "APY impact", "Total earned"])
     expect(ui.rateLabel).toBe("Remaining supply")
-    expect(ui.amountUsdLabel).toBe("≈ $25.00")
+    expect(ui.amountUsdLabel).toBe("$25.00")
     expect(ui.maxAmount).toBe(10)
   })
 })

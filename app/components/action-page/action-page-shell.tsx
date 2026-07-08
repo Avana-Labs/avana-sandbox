@@ -70,9 +70,9 @@ export function ActionPageShell({
             type="button"
             aria-label={t("Close")}
             onClick={handleClose}
-            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex size-11 items-center justify-center rounded-full border border-border/60 bg-surface-2/60 text-muted-foreground shadow-elev-1 backdrop-blur-md transition-colors hover:bg-hover hover:text-foreground"
           >
-            <X className="size-4" />
+            <X className="size-5" />
           </button>
         </div>
       ) : null}
@@ -80,8 +80,9 @@ export function ActionPageShell({
       <div
         className={cn(
           "mx-auto flex w-full flex-1 flex-col",
-          density === "home" ? "max-w-none gap-2 px-0 pb-0" : "max-w-[560px] gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
-          mode === "embedded" && density === "sidebar" && "gap-4 py-5",
+          density === "home" && "max-w-none gap-2 px-0 pb-0",
+          density === "sidebar" && "max-w-none gap-4 px-0 pb-0",
+          density === "default" && "max-w-[560px] gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
         )}
       >
         {showTitleBlock ? (

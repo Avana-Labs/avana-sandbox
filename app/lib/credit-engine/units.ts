@@ -52,6 +52,23 @@ export function formatFixed(value: bigint, decimals: number) {
   return negative ? `-${formatted}` : formatted
 }
 
+/**
+ * A 6-decimal USD amount (the on-chain/engine representation) as a plain JS number for
+ * display/formatting. Centralises the `Number.parseFloat(formatFixed(x, 6))` idiom that was
+ * copy-pasted across the borrow client, read-models and context resolvers.
+ */
+export function usd6ToNumber(value6: bigint): number {
+  return Number.parseFloat(formatFixed(value6, USD_DECIMALS))
+}
+
+/**
+ * A WAD (1e18) risk parameter (collateral factor, liquidation threshold) as a percentage
+ * rounded to one decimal — e.g. 0.825e18 → 82.5. Single home for the risk-config → % idiom.
+ */
+export function wadToPercent(valueWad: bigint): number {
+  return Math.round(Number.parseFloat(formatFixed(valueWad, WAD_DECIMALS)) * 1000) / 10
+}
+
 export function mulDiv(a: bigint, b: bigint, denominator: bigint) {
   if (denominator === 0n) throw new Error("mulDiv denominator cannot be zero")
   return (a * b) / denominator

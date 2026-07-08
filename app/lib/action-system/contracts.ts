@@ -22,7 +22,6 @@ export type ActionStage =
   | "processing"
   | "success"
   | "error"
-  | "blocked"
 
 export type ActionMetricTone = "default" | "positive" | "warning" | "danger"
 
@@ -90,14 +89,6 @@ export type ActionSuccessUi = {
   }
 }
 
-export type ActionBlockedUi = {
-  title: string
-  description: string
-  primaryCtaLabel: string | null
-  primaryCtaHref: string | null
-  secondaryCtaLabel: string
-}
-
 export type ActionPageDescriptor = {
   product: ActionProduct
   kind: ActionKind
@@ -125,14 +116,14 @@ export const ACTION_DESCRIPTORS: Record<ActionProduct, Partial<Record<ActionKind
     supply: {
       product: "borrow",
       kind: "supply",
-      title: "Supply collateral",
-      subtitle: "Configure and review your collateral deposit.",
-      primaryVerb: "Supply",
+      title: "Pledge",
+      subtitle: "Configure and review your collateral pledge.",
+      primaryVerb: "Pledge",
     },
     remove: {
       product: "borrow",
       kind: "remove",
-      title: "Remove collateral",
+      title: "Remove",
       subtitle: "Configure and review your collateral removal.",
       primaryVerb: "Remove",
     },

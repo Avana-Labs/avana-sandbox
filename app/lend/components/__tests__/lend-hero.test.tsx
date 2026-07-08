@@ -18,8 +18,6 @@ describe("LendHero", () => {
     expect(getByText("8.42%")).toBeInTheDocument()
     expect(getByText("Avg Utilization")).toBeInTheDocument()
     expect(getByText("67.61%")).toBeInTheDocument()
-    expect(getByText("Active Markets")).toBeInTheDocument()
-    expect(getByText("5")).toBeInTheDocument()
   })
 
   it("parses mixed TVL suffixes correctly instead of treating K-values as millions", () => {

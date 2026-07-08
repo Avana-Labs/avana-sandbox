@@ -1,9 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import type { ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
+import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
 import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
@@ -13,11 +13,9 @@ import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/compon
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
-import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
-import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
@@ -43,7 +41,7 @@ export function MultiplyActionPageClient({
   kind,
   closeHref = "/multiply",
   embedded = false,
-  sidebar: _sidebar = false,
+  sidebar = false,
   layout = "default",
   initialMarketId,
   initialAmount = "",
@@ -134,9 +132,10 @@ export function MultiplyActionPageClient({
 
   const [stage, setStage] = useState<ActionStage>("configure")
   const [amount, setAmount] = useState(initialAmount)
+  // Input stays bound to `amount`; the engine preview below keys off the deferred value so
+  // it runs on the settled input, not once per keystroke (the INP lever). See borrow client.
+  const deferredAmount = useDeferredValue(amount)
   const [multiplier, setMultiplier] = useState(() => initialMultiplier ?? (kind === "deleverage" ? "" : defaultMultiplyMultiplier))
-  const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
-  const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
   const [hasUserInput, setHasUserInput] = useState(() => Boolean(initialAmount || initialMultiplier))
 
   useEffect(() => {
@@ -185,7 +184,7 @@ export function MultiplyActionPageClient({
   useEffect(() => {
     if (!market) return
     let cancelled = false
-    const parsedAmount = kind === "deleverage" ? parsePositiveActionAmount(amount) : parsePositiveActionAmount(amount)
+    const parsedAmount = parsePositiveActionAmount(deferredAmount)
     const parsedMultiplier = parsePositiveActionAmount(multiplier)
     if (parsedMultiplier == null) {
       setPreviewUi(null)
@@ -296,22 +295,9 @@ export function MultiplyActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [amount, collateralPriceUsd, kind, market, maxCollateralAmount, multiplier, position, session, walletId])
+  }, [deferredAmount, collateralPriceUsd, kind, market, maxCollateralAmount, multiplier, position, session, walletId])
 
   useEffect(() => {
-    if (kind === "multiply") return
-    if (!previewUi || previewUi.allowed || stage !== "configure") return
-    if (!previewUi.blockedReason) return
-    if (previewUi.blockedReason === dismissedBlockedReason) return
-    const blocked = mapPreviewToBlockedUi({ product: "multiply", kind, blockedReason: previewUi.blockedReason })
-    if (blocked) {
-      setBlockedUi(blocked)
-      if (!embedded) setStage("blocked")
-    }
-  }, [dismissedBlockedReason, kind, previewUi, stage])
-
-  useEffect(() => {
-    setDismissedBlockedReason(null)
     // Editing inputs after a failed submit clears the stale error banner and returns to
     // configure so the CTA is actionable again instead of stuck showing the old error.
     setOutcome(null)
@@ -510,10 +496,9 @@ export function MultiplyActionPageClient({
   // including a fully-unwound 1.0x/$0 position that deleverage itself can no longer act on.
   const canClosePosition = kind === "deleverage" && position != null
 
-  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
-  const shellDensity = isHomeLayout ? "home" : "default"
-  const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
+  const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   // The loop mechanics are documented in the market's "About" section — no inline
   // explainer filler in the action widget.
   const loopHint = null
@@ -522,7 +507,7 @@ export function MultiplyActionPageClient({
       ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
       : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
   const useWorkspaceFields =
-    embedded && isHomeLayout && market != null && isConfigureVisibleStage(stage) && !showInlineBlocked
+    embedded && isHomeLayout && isConfigureVisibleStage(stage)
   // Surface the market-liquidity cap as the collateral input balance, with a Max button.
   const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
   const collateralBalanceLabel = showCollateralBalance ? "Balance" : undefined
@@ -606,19 +591,7 @@ export function MultiplyActionPageClient({
 
       {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
 
-      {showInlineBlocked && blockedUi ? (
-        <ActionBlockedDialog
-          variant="inline"
-          blocked={blockedUi}
-          open
-          onClose={() => {
-            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
-            setBlockedUi(null)
-          }}
-        />
-      ) : null}
-
-      {isConfigureVisibleStage(stage) && !showInlineBlocked ? (
+      {isConfigureVisibleStage(stage) ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
@@ -658,11 +631,12 @@ export function MultiplyActionPageClient({
           hideAmountInput={useWorkspaceFields}
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           homeLayout={isHomeLayout}
+          singlePrimaryCta={sidebar}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
         />
       ) : null}
 
-      {canClosePosition && isConfigureVisibleStage(stage) && !showInlineBlocked ? (
+      {canClosePosition && isConfigureVisibleStage(stage) ? (
         <button
           type="button"
           onClick={() => void handleClose()}
@@ -672,17 +646,6 @@ export function MultiplyActionPageClient({
         >
           {t("Close position and withdraw collateral")}
         </button>
-      ) : null}
-
-      {blockedUi && !embedded ? (
-        <ActionBlockedDialog
-          blocked={blockedUi}
-          open={stage === "blocked"}
-          onClose={() => {
-            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
-            setStage("configure")
-          }}
-        />
       ) : null}
     </ActionPageShell>
   )

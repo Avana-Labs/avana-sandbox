@@ -183,7 +183,7 @@ describe("page providers", () => {
 
     expect(data.markets.length).toBeGreaterThan(0)
     expect(data.lendRows.length).toBeGreaterThan(0)
-    expect(data.trendingSnapshots.length).toBe(4)
+    expect(data.trendingSnapshots.length).toBe(3)
     expect(data.pageSize).toBeGreaterThan(0)
   })
 

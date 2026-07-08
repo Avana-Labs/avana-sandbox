@@ -29,7 +29,7 @@ export function ActionSupplyContextBar({
     <>
       <SwapStyleFieldStack>
         <HomeActionContextBar
-          label={t("Supply")}
+          label={t("Collateral")}
           pool={pool}
           onOpenPool={() => setPoolDialogOpen(true)}
           variant="inset"

@@ -1,10 +1,14 @@
 "use client"
 
-import { ArrowUpRight } from "lucide-react"
+import * as React from "react"
+import { ArrowUpRight, Info } from "lucide-react"
 import type { AboutCard as AboutCardData } from "@/app/lib/borrow-detail"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = { about: AboutCardData; title?: string; compact?: boolean; plain?: boolean }
+
+/** Collapsed description length before a "read more" toggle appears. */
+const DESCRIPTION_CLAMP = 280
 
 function translateAboutDescription(description: string, t: (key: string) => string) {
   const lendMatch = description.match(
@@ -26,6 +30,12 @@ function translateAboutDescription(description: string, t: (key: string) => stri
 
 export function AboutCard({ about, title = "About", compact = false, plain = false }: Props) {
   const { t } = useTranslation()
+  const [expanded, setExpanded] = React.useState(false)
+
+  const description = translateAboutDescription(about.description, t)
+  const isLong = typeof description === "string" && description.length > DESCRIPTION_CLAMP
+  const shownDescription = !isLong || expanded ? description : `${description.slice(0, DESCRIPTION_CLAMP).trimEnd()}… `
+
   return (
     <section
       className={
@@ -43,28 +53,29 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
           {t(title)}
         </h2>
       </div>
-      <div
-        className="
-          text-[14px] text-text-high leading-[1.5]
-          [&>p]:mb-4 [&>p:last-child]:mb-0
-          [&>br]:block [&>br]:mb-2
-          [&_a]:text-text-high [&_a]:underline [&_a]:underline-offset-2
-          [&_a:hover]:text-text-extra-high
-          [&_strong]:font-semibold [&_b]:font-semibold
-          [&_em]:italic [&_i]:italic
-          [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4
-          [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4
-          [&_li]:mb-1
-        "
-      >
-        {translateAboutDescription(about.description, t)}
-      </div>
+
+      <p className={plain ? "text-[14px] leading-[1.55] text-text-high" : "px-4 text-[14px] leading-[1.55] text-text-high"}>
+        {shownDescription}
+        {isLong ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="font-medium text-sky-500 transition-colors hover:text-sky-400 focus-visible:outline-none focus-visible:underline"
+          >
+            {expanded ? t("show less") : t("read more")}
+          </button>
+        ) : null}
+      </p>
+
       {about.stats.length > 0 ? (
-        <dl className={plain ? "space-y-1.5 text-[12.5px]" : "mt-4 space-y-1.5 text-[12.5px]"}>
+        <dl className={plain ? "text-[13.5px]" : "px-4 pb-2 text-[13.5px]"}>
           {about.stats.map((s) => (
-            <div key={s.label} className="flex items-center justify-between gap-4 border-b border-border/70 py-2 last:border-b-0">
-              <dt className={s.href ? "min-w-0 flex-1 text-text-low" : "shrink-0 text-text-low"}>{t(s.label)}</dt>
-              <dd className={s.href ? "min-w-0" : "min-w-0 truncate text-right font-data font-medium tabular-nums text-text-extra-high"}>
+            <div key={s.label} className="flex items-center justify-between gap-4 py-2.5">
+              <dt className="flex min-w-0 items-center gap-1.5 text-text-low">
+                <span className={s.href ? "min-w-0 truncate" : "truncate"}>{t(s.label)}</span>
+                <Info className="size-3.5 shrink-0 text-text-low/60" aria-hidden />
+              </dt>
+              <dd className="min-w-0 truncate text-right font-data font-medium tabular-nums text-text-extra-high">
                 {s.href ? (
                   <a
                     href={s.href}

@@ -86,17 +86,6 @@ export async function fetchMultiplySupplySeries(slug: string): Promise<ConvexSer
   }
 }
 
-/** User engagement trend (active wallets + loop conversion) for a multiply market. */
-export async function fetchMultiplyEngagement(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.engagement.getForMultiply, { slug })
-  } catch {
-    return null
-  }
-}
-
 /** Cashflow breakdown card (rows + monthly bars) for a multiply market. */
 export async function fetchMultiplyCashflowBreakdown(slug: string) {
   const client = convexClient()

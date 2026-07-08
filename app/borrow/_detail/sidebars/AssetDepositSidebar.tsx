@@ -4,7 +4,6 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
@@ -81,21 +80,12 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
             type="button"
             onClick={() => router.push(actionPagePath("lend", "withdraw", { market: marketId, return: returnHref }))}
             disabled={!position}
-            className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t("Withdraw")}
           </button>
         </div>
       </aside>
-
-      <AboutNewsSection
-        about={detail.about}
-        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
-        compactAboutTitle
-        newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
-        newsImageLabel={detail.hero.symbol}
-        mediaVariant="icon"
-      />
     </>
   )
 }

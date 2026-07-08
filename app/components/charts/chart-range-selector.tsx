@@ -1,5 +1,7 @@
 "use client"
 
+import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { CHART_RANGE_OPTIONS, type ChartRangeOption } from "./types"
 
 type ChartRangeSelectorProps = {
@@ -10,28 +12,44 @@ type ChartRangeSelectorProps = {
   ranges?: readonly ChartRangeOption[]
 }
 
+/** "All" renders as "ALL" to match the uppercase tick labels. */
+function formatRangeLabel(range: ChartRangeOption): string {
+  return range === "All" ? "ALL" : range
+}
+
 export function ChartRangeSelector({ activeRange, onRangeChange, className, ranges = CHART_RANGE_OPTIONS }: ChartRangeSelectorProps) {
+  const { t } = useTranslation()
   return (
     <div
-      className={
-        className ??
-        "flex w-full items-center justify-between gap-0.5 rounded-full border border-border bg-card p-0.5 sm:inline-flex sm:w-auto sm:justify-start"
-      }
+      role="tablist"
+      aria-label={t("Time range")}
+      className={cn("flex w-full items-stretch justify-start gap-5 border-b border-border sm:gap-6", className)}
     >
-      {ranges.map((range) => (
-        <button
-          key={range}
-          type="button"
-          onClick={() => onRangeChange(range)}
-          className={`flex min-h-10 flex-1 items-center justify-center rounded-full px-2.5 py-2 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-0 sm:flex-none sm:px-3.5 sm:py-1 sm:text-[13px] ${
-            activeRange === range
-              ? "bg-[#ececec] text-[#313131] sm:bg-[#e9e9e9] sm:shadow-none dark:bg-slate-100 dark:text-slate-950"
-              : "text-[#6a6a6a] hover:text-[#313131] dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-          }`}
-        >
-          {range}
-        </button>
-      ))}
+      {ranges.map((range) => {
+        const active = activeRange === range
+        return (
+          <button
+            key={range}
+            role="tab"
+            aria-selected={active}
+            type="button"
+            onClick={() => onRangeChange(range)}
+            className={cn(
+              "relative flex min-h-10 flex-none items-center justify-center pb-2.5 pt-1 text-[13px] font-semibold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-0 sm:text-sm",
+              active ? "text-sky-400" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {formatRangeLabel(range)}
+            <span
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute -bottom-px left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-full bg-sky-400 transition-opacity",
+                active ? "opacity-100" : "opacity-0",
+              )}
+            />
+          </button>
+        )
+      })}
     </div>
   )
 }

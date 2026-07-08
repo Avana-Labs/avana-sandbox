@@ -10,7 +10,12 @@ import {
 } from "@/app/lib/credit-engine"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
-import { selectBorrowCollateralPools, selectInitialBorrowDebts, selectWalletBorrowSnapshot } from "@/app/lib/borrow-system/selectors"
+import {
+  selectAllAvailableCollateralPools,
+  selectBorrowCollateralPools,
+  selectInitialBorrowDebts,
+  selectWalletBorrowSnapshot,
+} from "@/app/lib/borrow-system/selectors"
 
 function fixedToNumber(value: bigint, decimals: number) {
   return Number.parseFloat(formatFixed(value, decimals))
@@ -46,14 +51,38 @@ export function selectPortfolioSupplyRows(state: BorrowSystemState, walletId: st
   }))
 }
 
+// Health factor for a debt row. Uses the debt position's OWN spoke — which
+// provably contains this debt — rather than a matched collateral pool's spoke.
+// Falls back to the wallet-wide health factor if the debt has no resolvable
+// spoke, so a debt row can never falsely read ∞ ("safe") while the wallet owes.
+function debtHealthFactor(
+  state: BorrowSystemState,
+  walletId: string,
+  position: BorrowSystemState["accounts"][string]["debtPositions"][number],
+  walletHealthFactor: number | null,
+): number | null {
+  const spokeId = position.spokeId ?? (position.marketId ? state.markets[position.marketId]?.spokeId : undefined)
+  if (spokeId) {
+    const healthFactorWad = calculateHealthFactorWad(state, walletId, spokeId)
+    if (healthFactorWad != null) return fixedToNumber(healthFactorWad, 18)
+  }
+  return walletHealthFactor
+}
+
 export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: string): DebtRowContext[] {
   const account = state.accounts[walletId]
   if (!account) return []
-  const poolById = new Map(selectBorrowCollateralPools(state, walletId).map((pool) => [pool.id, pool]))
+  // Resolve against the FULL market catalog, not just pledged pools. A debt can
+  // exist against a market the wallet has not pledged collateral in (borrowed
+  // against spoke-shared collateral); keying on pledged pools only would silently
+  // drop that debt from the table while "Total Borrowed" still counts it.
+  const poolById = new Map(selectAllAvailableCollateralPools(state, walletId).map((pool) => [pool.id, pool]))
+  const walletHealthFactor = selectWalletBorrowSnapshot(state, walletId).healthFactor
   const rows: DebtRowContext[] = []
 
   for (const position of account.debtPositions) {
-    const pool = position.marketId ? poolById.get(position.marketId) : null
+    if (currentDebtValueUsd6(position) <= 0n) continue
+    const pool = position.marketId ? poolById.get(position.marketId) : undefined
     if (!pool) continue
     const borrowedUsd = fixedToNumber(currentDebtValueUsd6(position), 6)
     // Single-source the borrow APR to the current market rate (base + risk premium),
@@ -69,7 +98,7 @@ export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: stri
       debtAssetSymbol: asset?.symbol ?? "",
       borrowedUsd,
       liquidationThresholdUsd: pool.liquidationUsd,
-      healthFactor: spokeHealthFactor(state, walletId, pool.id),
+      healthFactor: debtHealthFactor(state, walletId, position, walletHealthFactor),
       borrowApr: fixedToNumber(borrowRateWad, 18) * 100,
       accruedInterestUsd: fixedToNumber(debtInterestOwedUsd6(position), 6),
       dailyInterestUsd: (borrowedUsd * fixedToNumber(borrowRateWad, 18)) / 365,

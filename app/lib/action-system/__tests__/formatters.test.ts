@@ -39,6 +39,6 @@ describe("action formatters", () => {
   })
 
   it("formats approx usd under amount input", () => {
-    expect(formatActionApproxUsd(1)).toBe("≈ $1.00")
+    expect(formatActionApproxUsd(1)).toBe("$1.00")
   })
 })

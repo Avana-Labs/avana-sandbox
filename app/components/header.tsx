@@ -19,7 +19,7 @@ import { personalDesktopHeaderLinks } from "./site-nav"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-controls"
-import { useModal } from "connectkit"
+import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 
 function SandboxWalletDialog({
   open,
@@ -29,6 +29,7 @@ function SandboxWalletDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { walletId, walletAddress, sandboxMode } = useAvanaSessions()
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
   return (
@@ -44,18 +45,18 @@ function SandboxWalletDialog({
       <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
           <DialogTitle className="text-[20px] font-medium tracking-[-0.02em] text-foreground">
-            Sandbox wallet
+            {t("Sandbox wallet")}
           </DialogTitle>
           <DialogDescription className="text-[13px] leading-5 text-muted-foreground">
-            This workspace uses a built-in demo wallet. There is no external wallet connection yet.
+            {t("This workspace uses a built-in demo wallet. There is no external wallet connection yet.")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 rounded-radius-md border border-border bg-surface-inset p-4">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Wallet</span>
+            <span className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">{t("Wallet")}</span>
             <span className="rounded-full bg-brand/10 px-2.5 py-1 text-[12px] font-medium text-brand">
-              {sandboxMode ? "Sandbox active" : "Connected"}
+              {sandboxMode ? t("Sandbox active") : t("Connected")}
             </span>
           </div>
           <div>
@@ -67,7 +68,7 @@ function SandboxWalletDialog({
         <DialogFooter className="gap-2 sm:gap-2">
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center rounded-radius-sm border border-border px-4 text-[14px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+            className="inline-flex h-10 items-center justify-center rounded-radius-sm border border-border px-4 text-[14px] font-medium text-foreground transition-colors hover:bg-hover"
             onClick={async () => {
               if (typeof navigator === "undefined" || !navigator.clipboard) return
               await navigator.clipboard.writeText(walletAddress)
@@ -75,14 +76,14 @@ function SandboxWalletDialog({
               window.setTimeout(() => setCopied(false), 1500)
             }}
           >
-            {copied ? "Copied" : "Copy address"}
+            {copied ? t("Copied") : t("Copy address")}
           </button>
           <button
             type="button"
             className="inline-flex h-10 items-center justify-center rounded-radius-sm bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
             onClick={() => onOpenChange(false)}
           >
-            Close
+            {t("Close")}
           </button>
         </DialogFooter>
       </DialogContent>
@@ -93,7 +94,7 @@ function SandboxWalletDialog({
 export function Header() {
   const pathname = usePathname()
   const { t } = useTranslation()
-  const { open: walletModalOpen } = useModal()
+  const { modalOpen: walletModalOpen } = useWalletGate()
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)
@@ -152,13 +153,13 @@ export function Header() {
       }`}
     >
       <div className="hidden lg:block">
-        <div className="grid h-[72px] w-full grid-cols-[minmax(0,1fr)_minmax(220px,320px)_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 lg:px-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,420px)_minmax(0,1fr)] xl:gap-4 xl:px-6 2xl:px-8">
+        <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(220px,320px)_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 lg:px-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] xl:gap-4 xl:px-6 2xl:px-8">
           <div className="flex min-w-0 items-center gap-4 overflow-hidden xl:gap-5">
-            <Link href="/" aria-label="Home" title="Home" className="flex shrink-0 items-center">
-              <BrandLogo className="h-[50px] md:h-[50px]" />
+            <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
+              <BrandLogo className="h-[44px] md:h-[44px]" />
             </Link>
 
-            <nav aria-label="Primary" className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <nav aria-label={t("Primary")} className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {desktopLinks.slice(0, 4).map((link) => {
                 const isActive = mounted && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href))
 
@@ -166,8 +167,8 @@ export function Header() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-medium leading-[1.1] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
-                      isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
+                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
+                      isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     <span>{t(link.label)}</span>
@@ -178,7 +179,7 @@ export function Header() {
           </div>
 
           <div className="flex min-w-0 justify-center px-1 xl:px-2">
-            <div className="w-full">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
+            <div className="w-full max-w-[280px] xl:max-w-[360px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
           </div>
 
           <div className="flex min-w-0 items-center justify-end gap-2 xl:gap-2.5">
@@ -191,11 +192,15 @@ export function Header() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-medium leading-[1.1] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
-                      isActive ? "bg-surface-inset text-foreground dark:bg-[#171717]" : "text-muted-foreground hover:text-foreground"
+                    className={`group inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
+                      isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {Icon ? <Icon className="mr-2 h-[16px] w-[16px] shrink-0" strokeWidth={2} /> : null}
+                    {Icon ? (
+                      <span className="mr-2 inline-flex h-6 w-6 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
+                        <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
+                      </span>
+                    ) : null}
                     <span>{t(link.label)}</span>
                   </Link>
                 )
@@ -215,7 +220,7 @@ export function Header() {
       <div className="lg:hidden">
         <div className="relative flex h-16 w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/" aria-label="Home" title="Home" className="inline-flex items-center">
+            <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex items-center">
               {renderMobileBrand()}
             </Link>
 

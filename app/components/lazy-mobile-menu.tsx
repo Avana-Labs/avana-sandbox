@@ -3,19 +3,25 @@
 import dynamic from "next/dynamic"
 import { Menu } from "lucide-react"
 import type { ReactNode } from "react"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-const MobileMenu = dynamic(() => import("./mobile-menu").then((mod) => mod.MobileMenu), {
-  ssr: false,
-  loading: () => (
+function MobileMenuFallback() {
+  const { t } = useTranslation()
+  return (
     <button
       type="button"
-      aria-label="Toggle menu"
+      aria-label={t("Toggle menu")}
       aria-expanded={false}
-      className="inline-flex h-10 w-10 items-center justify-center text-[#007a99] transition hover:text-[#00627a] focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
+      className="inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
     >
       <Menu className="h-7 w-7" strokeWidth={1.8} />
     </button>
-  ),
+  )
+}
+
+const MobileMenu = dynamic(() => import("./mobile-menu").then((mod) => mod.MobileMenu), {
+  ssr: false,
+  loading: () => <MobileMenuFallback />,
 })
 
 export function LazyMobileMenu({ actions, brand }: { actions?: ReactNode; brand?: ReactNode }) {

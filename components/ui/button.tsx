@@ -14,10 +14,10 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         outline:
-          'border border-border bg-surface-raised text-foreground hover:bg-surface-inset',
+          'border border-border bg-surface-raised text-foreground hover:bg-surface-hover',
         secondary:
           'border border-border bg-surface-inset text-foreground hover:bg-surface-hover',
-        ghost: 'text-muted-foreground hover:bg-surface-inset hover:text-foreground',
+        ghost: 'text-muted-foreground hover:bg-hover hover:text-foreground',
         link: 'text-foreground underline-offset-2 hover:underline',
         // Canonical action CTA (Uniswap-style solid brand fill). Disabled falls back
         // to the soft brand tint instead of a low-contrast dimmed fill.

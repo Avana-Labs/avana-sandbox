@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import type { HomeMode } from "@/app/lib/home-sim"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { HomeWorkspaceSkeleton } from "@/app/components/loading-states"
 import { AvanaSessionsProvider, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
@@ -39,20 +39,11 @@ function HomePageWorkspace() {
   // pledged pools — a freshly onboarded wallet with no positions still renders
   // the card instead of hanging on the loading skeleton forever.
   if (!isClientReady || session.availableCollateralPools.length === 0) {
-    return (
-      <div className="bg-background">
-        <section className="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-8">
-          <Skeleton
-            className="skeleton-enter h-[360px] w-full max-w-[480px] rounded-radius-xl"
-            data-testid="home-workspace-loading"
-          />
-        </section>
-      </div>
-    )
+    return <HomeWorkspaceSkeleton />
   }
 
   return (
-    <div className="bg-background">
+    <div className="reveal-in bg-background">
       <HomeWorkspaceCard mode={mode} onModeChange={setMode}>
         {mode === "borrow" ? (
           <BorrowActionPageClient kind="borrow" embedded layout="home" closeHref="/" />

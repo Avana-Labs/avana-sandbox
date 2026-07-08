@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection, DetailFaqSection } from "@/app/borrow/_detail/ui"
 import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
 import { TransactionHistoryCard } from "@/app/borrow/_detail/asset-sections"
 import { LendHero, LendHeroIdentity, SupplyCard, RelatedMarketsRow, LendSidebar } from "@/app/lend/_detail"
@@ -61,7 +61,7 @@ export function LendMarketDetailClient({ detail }: Props) {
       <main className="pb-24 pt-8 md:pb-12">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
-            <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
+            <nav aria-label={t("Breadcrumb")} className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
               <Link href="/lend" className="transition-colors hover:text-foreground">
                 {t("Lend")}
               </Link>
@@ -71,7 +71,7 @@ export function LendMarketDetailClient({ detail }: Props) {
               <span className="font-normal text-foreground">{detail.hero.name}</span>
             </nav>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
               <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
                 <LendHeroIdentity detail={detail} className="pb-0" />
               </div>
@@ -79,22 +79,23 @@ export function LendMarketDetailClient({ detail }: Props) {
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
                 <LendHero detail={detail} hideIdentity className="mb-6" />
 
-                <section aria-label="Lend market analytics" className="space-y-8 pt-8">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Market data</h2>
+                <AboutNewsSection
+                  about={detail.about}
+                  aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
+                  compactAboutTitle
+                  newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
+                  newsImageLabel={detail.hero.symbol}
+                  mediaVariant="icon"
+                />
+
+                <section aria-label={t("Lend market analytics")} className="space-y-12 pt-12">
+                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Key Statistics</h2>
                   <QuickStatsGrid detail={detail} />
                   <SupplyCard detail={detail} />
                   <CashflowCard detail={detail} />
-                  <EngagementTrendsCard engagement={detail.engagement} accentClassName={detail.hero.visual.textClass} />
                   <RiskSection detail={detail} />
-                  <AboutNewsSection
-                    className="lg:hidden"
-                    about={detail.about}
-                    newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
-                    newsImageLabel={detail.hero.symbol}
-                    mediaVariant="icon"
-                  />
                   <DetailFaqSection
-                    title="General FAQs"
+                    title={t("General FAQs")}
                     items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                   />
                   <TransactionHistoryCard

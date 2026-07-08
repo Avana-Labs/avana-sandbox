@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react"
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { clearSiweToken, setSiweToken } from "@/app/lib/siwe/auth-store"
 
@@ -13,54 +13,35 @@ function jwtWithExp(expSeconds: number): string {
 
 const nowSec = () => Math.floor(Date.now() / 1000)
 
-// Mutable wagmi account state driven per-test to simulate reload/reconnect.
-type Account = {
-  address?: string
-  chainId?: number
-  isConnected: boolean
-  isConnecting: boolean
-  isReconnecting: boolean
-}
-let account: Account = { isConnected: false, isConnecting: false, isReconnecting: false }
-
-vi.mock("wagmi", () => ({
-  useAccount: () => account,
-  useSignMessage: () => ({ signMessageAsync: vi.fn() }),
-}))
-
-describe("useSiweAuth (reload reconnect state)", () => {
-  beforeEach(() => {
-    clearSiweToken()
-    account = { isConnected: false, isConnecting: false, isReconnecting: false }
-  })
+// useSiweAuth is now purely token-driven (no wagmi) — signed-in state is read straight from
+// the persisted SIWE JWT, which is the same token Convex verifies. There is no wallet-reconnect
+// window to wait on anymore, so "restoring" is handled by the wallet gate, not this hook.
+describe("useSiweAuth (token-driven auth state)", () => {
+  beforeEach(() => clearSiweToken())
   afterEach(() => clearSiweToken())
 
-  it("reports isRestoring while wagmi reconnects a persisted session (avoids signed-out flash)", () => {
-    setSiweToken(jwtWithExp(nowSec() + 3600), WALLET)
-    account = { isConnected: false, isConnecting: false, isReconnecting: true }
-
+  it("reports signed-out with no persisted token", () => {
     const { result } = renderHook(() => useSiweAuth())
 
-    expect(result.current.isRestoring).toBe(true)
     expect(result.current.isSignedIn).toBe(false)
+    expect(result.current.authedWallet).toBe(null)
   })
 
-  it("does not report isRestoring when there is no persisted session (genuinely signed out)", () => {
-    account = { isConnected: false, isConnecting: false, isReconnecting: true }
-
-    const { result } = renderHook(() => useSiweAuth())
-
-    expect(result.current.isRestoring).toBe(false)
-    expect(result.current.isSignedIn).toBe(false)
-  })
-
-  it("clears isRestoring and reports signed-in once the wallet reconnects", () => {
+  it("reports signed-in immediately from a valid persisted token (no reconnect needed)", () => {
     setSiweToken(jwtWithExp(nowSec() + 3600), WALLET)
-    account = { address: WALLET, chainId: 1, isConnected: true, isConnecting: false, isReconnecting: false }
 
     const { result } = renderHook(() => useSiweAuth())
 
-    expect(result.current.isRestoring).toBe(false)
     expect(result.current.isSignedIn).toBe(true)
+    expect(result.current.authedWallet).toBe(WALLET)
+  })
+
+  it("reports signed-out for an expired token", () => {
+    setSiweToken(jwtWithExp(nowSec() - 3600), WALLET)
+
+    const { result } = renderHook(() => useSiweAuth())
+
+    expect(result.current.isSignedIn).toBe(false)
+    expect(result.current.authedWallet).toBe(null)
   })
 })

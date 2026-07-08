@@ -91,17 +91,6 @@ export async function fetchLendSupplySeries(slug: string): Promise<ConvexSeriesP
   }
 }
 
-/** User engagement trend (active wallets + supply retention) for a lend market. */
-export async function fetchLendEngagement(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.engagement.getForLend, { slug })
-  } catch {
-    return null
-  }
-}
-
 /** Cashflow breakdown card (rows + monthly bars) for a lend market. */
 export async function fetchLendCashflowBreakdown(slug: string) {
   const client = convexClient()

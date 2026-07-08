@@ -94,7 +94,6 @@ function PreferencesProfileSyncConnected() {
       void savePreferences({ wallet, preferences: localPreferences }).catch((error: unknown) => {
         lastSavedKeyRef.current = null
         if (process.env.NODE_ENV !== "production") {
-          // eslint-disable-next-line no-console
           console.warn("[preferences-sync] failed to persist initial preferences to Convex:", error)
         }
       })
@@ -118,7 +117,6 @@ function PreferencesProfileSyncConnected() {
       void savePreferences({ wallet, preferences: nextPreferences }).catch((error: unknown) => {
         lastSavedKeyRef.current = null
         if (process.env.NODE_ENV !== "production") {
-          // eslint-disable-next-line no-console
           console.warn("[preferences-sync] failed to persist display preferences to Convex:", error)
         }
       })

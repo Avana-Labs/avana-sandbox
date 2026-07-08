@@ -66,7 +66,7 @@ describe("BorrowActionPageClient", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Change asset, current USDC" }))
 
-    const dialog = await screen.findByRole("dialog", { name: "Select a token" })
+    const dialog = await screen.findByRole("dialog", { name: "Choose asset to borrow" })
     expect(within(dialog).getByRole("button", { name: /Tether USD USDT/ })).toBeInTheDocument()
 
     fireEvent.click(within(dialog).getByRole("button", { name: /Tether USD USDT/ }))
@@ -97,10 +97,12 @@ describe("BorrowActionPageClient", () => {
       </AvanaSessionsProvider>,
     )
 
-    // The collateral context renders the empty selector card, not a pre-selected pool.
-    const selector = await screen.findByTestId("action-context-selector-card")
-    expect(within(selector).getByText("0")).toBeInTheDocument()
-    expect(within(selector).getByText("≈ $0")).toBeInTheDocument()
+    // The collateral context renders the unified card in its empty state — value "0"
+    // and "$0.00", not a pre-selected pool (same card shown once collateral exists).
+    await waitFor(() => {
+      expect(screen.getAllByText("0").length).toBeGreaterThan(0)
+    })
+    expect(screen.getAllByText("$0.00").length).toBeGreaterThan(0)
 
     // Nothing should auto-select a pledged pool or surface a health factor before
     // the user acts. Give effects a tick to (not) run, then assert the zero state held.

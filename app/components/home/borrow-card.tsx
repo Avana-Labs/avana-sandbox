@@ -87,7 +87,7 @@ export function CompactBorrowCard({
               <button
                 type="button"
                 onClick={onSetMax}
-                className="inline-flex min-h-10 items-center rounded-full px-2 text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:bg-surface-inset hover:text-foreground hover:underline"
+                className="inline-flex min-h-10 items-center rounded-full px-2 text-[11.5px] font-medium text-foreground/70 underline-offset-2 transition-colors hover:bg-hover hover:text-foreground hover:underline"
               >
                 {t("Max")}
               </button>
@@ -101,6 +101,12 @@ export function CompactBorrowCard({
                 aria-label={t("Borrow amount")}
                 type="text"
                 inputMode="decimal"
+                // Numbers-only: numeric keypad on mobile, no autofill/spellcheck
+                // injecting letters; sanitizeNumericInput strips any non-digit.
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 value={amount}
                 onChange={(event) => onAmountChange(sanitizeNumericInput(event.target.value))}
                 placeholder="0"

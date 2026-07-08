@@ -163,7 +163,7 @@ export function supplySelectItemsForWallet(session: BorrowContextSession, wallet
 export function borrowSelectItemsForMarket(
   session: BorrowContextSession,
   marketId: string | undefined,
-  walletId: string,
+  _walletId: string,
 ) {
   const assets = marketId ? session.getBorrowableAssetsForMarket(marketId) : session.borrowableAssets
   return assets.map((asset) => {

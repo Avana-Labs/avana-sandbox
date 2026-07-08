@@ -40,7 +40,7 @@ describe("multiply preview mappers", () => {
     ])
     expect(ui.amountLabel).toBe("2 WETH")
     expect(ui.amountValue).toBe("2")
-    expect(ui.amountUsdLabel).toBe("≈ $7,000")
+    expect(ui.amountUsdLabel).toBe("$7,000")
     expect(ui.balanceLabel).toBe("Selected leverage")
     expect(ui.metrics.find((row) => row.id === "looped-exposure")?.value).toBe("$2,000")
     expect(ui.metrics.find((row) => row.id === "borrow-capacity")?.value).toBe("$2,100")
@@ -62,7 +62,7 @@ describe("multiply preview mappers", () => {
       maxLtv: 0.5,
     })
 
-    expect(ui.amountUsdLabel).toBe("≈ $280")
+    expect(ui.amountUsdLabel).toBe("$280")
     expect(ui.metrics.find((row) => row.id === "collateral-value")?.value).toBe("$280")
     expect(ui.metrics.find((row) => row.id === "looped-exposure")?.value).toBe("$1,000")
   })
