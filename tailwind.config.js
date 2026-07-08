@@ -91,6 +91,8 @@ module.exports = {
         "surface-raised": "hsl(var(--surface-raised))",
         "surface-inset": "hsl(var(--surface-inset))",
         hover: "hsl(var(--hover-overlay))",
+        "field-top": "hsl(var(--field-top))",
+        "field-bottom": "hsl(var(--field-bottom))",
         brand: {
           DEFAULT: "hsl(var(--brand))",
           foreground: "hsl(var(--brand-foreground))",

@@ -80,6 +80,8 @@
     --surface-2: 0 0% 92.2%;
     --surface-hover: 0 0% 93.5%; /* solid hover step for filled controls */
     --hover-overlay: 0 0% 0% / 0.04; /* canonical hover wash for transparent-resting items */
+    --field-top: 0 0% 100%; /* Uniswap-style emphasized top input — page-matching + border */
+    --field-bottom: 0 0% 96.1%; /* #F5F5F5 — filled bottom input, no border */
 
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
@@ -163,6 +165,8 @@
     --surface-2: 0 0% 13%;
     --surface-hover: 0 0% 17%; /* solid hover step for filled controls */
     --hover-overlay: 0 0% 100% / 0.04; /* canonical hover wash for transparent-resting items */
+    --field-top: 0 0% 8.6%; /* #161616 — emphasized top input, subtle lift + border */
+    --field-bottom: 0 0% 12.2%; /* #1F1F1F — filled bottom input, no border */
 
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;

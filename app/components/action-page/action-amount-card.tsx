@@ -346,7 +346,7 @@ export function ActionAmountCard({
   return (
     <>
       <div
-        className="rounded-radius-xl border border-border/80 bg-card text-card-foreground"
+        className="rounded-radius-xl border border-transparent bg-field-bottom text-card-foreground"
         data-testid="action-amount-card"
       >
       <div className="px-4 pb-4 pt-4">
