@@ -110,38 +110,38 @@ function AssetRowView({
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} />
           <div className="min-w-0">
-            <div className="truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[14px]">
+            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
               {row.name}
             </div>
-            <div className="mt-0.5 text-[12px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[12px]">
+            <div className="mt-0.5 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
               <AssetSubLabel symbol={row.symbol} />
             </div>
           </div>
         </div>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.supplyApyLabel ?? row.apy}</span>
       </td>
 
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[14px]">
+        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
           <span className="tabular-nums">{row.totalDepositsLabel ?? row.totalDepositsPrimary}</span>
         </div>
-        <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
           {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
         </div>
       </td>
 
-      <td className={`py-3 px-4 text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[14px] ${TABLE_ROW_HOVER_BG}`}>
+      <td className={`py-3 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}>
         <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
       </td>
 
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[14px]">
+        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
           <span className="tabular-nums">{row.availableLiquidityLabel ?? row.availableLiquidityPrimary}</span>
         </div>
-        <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
           {row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary}
         </div>
       </td>
