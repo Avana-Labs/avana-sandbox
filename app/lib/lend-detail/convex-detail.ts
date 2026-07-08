@@ -4,7 +4,6 @@ import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import {
   fetchLendCashflowBreakdown,
   fetchLendContent,
-  fetchLendEngagement,
   fetchLendMarketSnapshot,
   fetchLendQuickStats,
   fetchLendRecentTransactions,
@@ -77,9 +76,8 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
       : undefined,
   )
 
-  const [supplyPoints, engagement, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
+  const [supplyPoints, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
     fetchLendSupplySeries(slug),
-    fetchLendEngagement(slug),
     fetchLendCashflowBreakdown(slug),
     fetchLendRecentTransactions(slug),
     fetchLendRisk(slug),
@@ -96,7 +94,6 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
       market.asset.symbol,
     ),
     heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
-    engagement: (engagement as typeof detail.engagement) ?? detail.engagement,
     cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
     transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
     risk: (risk as typeof detail.risk) ?? detail.risk,

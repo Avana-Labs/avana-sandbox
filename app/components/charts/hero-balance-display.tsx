@@ -12,7 +12,7 @@ type HeroBalanceDisplayProps = {
 function HeroDeltaText({ value, tone, meta }: { value: string; tone: "positive" | "negative"; meta?: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={tone === "positive" ? "flex items-center gap-1 text-[#40B66B]" : "flex items-center gap-1 text-rose-500"}>
+      <div className={tone === "positive" ? "flex items-center gap-1 text-[#01AACF]" : "flex items-center gap-1 text-rose-500"}>
         <span className="text-[10px] leading-none">{tone === "positive" ? "▲" : "▼"}</span>
         <span className="text-[12px] font-normal tabular-nums">{value}</span>
       </div>

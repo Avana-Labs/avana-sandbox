@@ -68,7 +68,7 @@ describe("MultiplyActionPageClient", () => {
 
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-risk-banner")).not.toBeInTheDocument()
-    expect(screen.getByText("≈ $0.00")).toBeInTheDocument()
+    expect(screen.getByText("$0.00")).toBeInTheDocument()
   })
 
   it("clamps the leverage multiplier to the selected market public maximum", async () => {
@@ -126,17 +126,17 @@ describe("MultiplyActionPageClient", () => {
     const input = await screen.findByLabelText("Collateral supplied amount")
     fireEvent.change(input, { target: { value: "999999999" } })
 
-    // No crash, no projected metrics, and a clear over-liquidity rejection message.
-    // The primary CTA is disabled (labelled "Adjust amount" when blocked).
-    await waitFor(() => expect(screen.getByText(/exceeds your available balance/i)).toBeInTheDocument())
+    // No crash, no projected metrics. The block lives on the CTA itself: it is
+    // disabled and names the shortfall ("Insufficient ETH") instead of "Review".
+    await waitFor(() => expect(screen.getByRole("button", { name: "Insufficient ETH" })).toBeInTheDocument())
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Adjust amount" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Insufficient ETH" })).toBeDisabled()
 
     // A within-cap amount is accepted and produces a live preview.
     fireEvent.change(input, { target: { value: "0.01" } })
     await waitFor(() => expect(screen.getByTestId("action-metrics-block")).toBeInTheDocument())
-    expect(screen.queryByText(/exceeds your available balance/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Insufficient ETH" })).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Review" })).not.toBeDisabled()
   })
 

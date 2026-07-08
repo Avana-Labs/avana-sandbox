@@ -59,8 +59,10 @@ describe("borrow architecture final gate", () => {
     expect(homeSource).toContain("BorrowActionPageClient")
     expect(homeSource).toContain('embedded')
     expect(homeSource).not.toContain("EmbeddedActionPage")
+    // Asset details (/borrow/assets) are scoped to Borrow + Repay only — the Lend/Withdraw
+    // tabs (and ResponsiveLendAction) were intentionally removed in aa8b4269 ("scope
+    // detail-page actions to two correct buttons"), so only ResponsiveBorrowAction is expected here.
     expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8")).toContain("ResponsiveBorrowAction")
-    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8")).toContain("ResponsiveLendAction")
     expect(readFileSync(path.join(process.cwd(), "app/portfolio/dashboard-borrow-tab.tsx"), "utf8")).toContain("actionPagePath")
     expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")).toContain("ResponsiveBorrowAction")
     expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")).toContain("embedActions")

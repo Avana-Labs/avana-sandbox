@@ -1,16 +1,14 @@
 "use client"
 
 import { useMemo } from "react"
-import { cn } from "@/lib/utils"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const LEND_METRICS = [
-  { key: "averageApy", label: "Average APY", tone: "emerald" },
-  { key: "avgUtilization", label: "Avg Utilization", tone: "violet" },
-  { key: "activeMarkets", label: "Active Markets", tone: "amber" },
+  { key: "averageApy", label: "Average APY" },
+  { key: "avgUtilization", label: "Avg Utilization" },
 ] as const
 
 function parseMarketUsd(value: string) {
@@ -63,7 +61,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
   }, [markets])
 
   return (
-    <section className="mb-4 px-1 md:px-2">
+    <section className="mb-4">
       <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -71,43 +69,21 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
               {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
             </p>
-            <span className="inline-flex items-center gap-1 font-data text-[11px] font-medium tabular-nums text-success">
-              <span aria-hidden className="text-[10px] leading-none">
-                {metrics.weightedChange24h >= 0 ? "▲" : "▼"}
-              </span>
-              {showDollarAmounts ? `${metrics.weightedChange24h >= 0 ? "+" : ""}${metrics.weightedChange24h.toFixed(2)}% ${t("Today")}` : "••••••"}
-            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
           {LEND_METRICS.map((metric) => (
             <div key={metric.key}>
-              <div
-                className={cn(
-                  "mb-1 flex items-center gap-1.5 text-[11px] font-medium md:justify-end",
-                  metric.tone === "emerald" && "text-hero-metric-emerald",
-                  metric.tone === "violet" && "text-hero-metric-violet",
-                  metric.tone === "amber" && "text-hero-metric-amber",
-                )}
-              >
-                <span
-                  className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    metric.tone === "emerald" && "bg-[#7ec39f]",
-                    metric.tone === "violet" && "bg-[#a092ef]",
-                    metric.tone === "amber" && "bg-[#c29f78]",
-                  )}
-                />
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                 {t(metric.label)}
               </div>
               <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
                 {showDollarAmounts
                   ? metric.key === "averageApy"
                     ? `${metrics.weightedApy.toFixed(2)}%`
-                    : metric.key === "avgUtilization"
-                      ? `${metrics.weightedUtilization.toFixed(2)}%`
-                      : metrics.activeMarkets.toString()
+                    : `${metrics.weightedUtilization.toFixed(2)}%`
                   : "••••••••"}
               </p>
             </div>

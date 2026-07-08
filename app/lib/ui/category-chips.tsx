@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import type { CategoryChip } from "@/app/lib/markets/category"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /**
  * Horizontal, single-select category filter chips (BTC / ETH / Forex / Utility / Smart
@@ -19,11 +20,12 @@ export function CategoryChips({
   onChange: (id: CategoryChip["id"]) => void
   className?: string
 }) {
+  const { t } = useTranslation()
   return (
     <div
       role="tablist"
-      aria-label="Filter by category"
-      className={cn("flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}
+      aria-label={t("Filter by category")}
+      className={cn("flex items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}
     >
       {chips.map((chip) => {
         const active = chip.id === value
@@ -35,13 +37,13 @@ export function CategoryChips({
             aria-selected={active}
             onClick={() => onChange(chip.id)}
             className={cn(
-              "shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
+              "shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[14px] font-medium transition-colors",
               active
-                ? "bg-foreground text-background"
-                : "bg-surface-inset text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+                ? "border-transparent bg-surface-inset text-foreground dark:bg-[#2c2c2c] dark:text-white"
+                : "border-border bg-card text-muted-foreground hover:bg-surface-hover hover:text-foreground dark:border-transparent dark:bg-[#1d1d1d] dark:text-white/65 dark:hover:text-white",
             )}
           >
-            {chip.label}
+            {t(chip.label)}
           </button>
         )
       })}

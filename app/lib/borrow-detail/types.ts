@@ -215,40 +215,6 @@ export type CashflowTrend = {
   series: Series
 }
 
-/**
- * Daily engagement card: two headline KPIs above a smooth line chart.
- * Used on both pool and asset detail pages.
- *
- * @convex-source All fields derive from `walletEvents`:
- *   - `series.points[i].v`   distinct wallets emitting any event on day `i`
- *                            (count of `walletEvents.wallet` per UTC day).
- *   - `primary.valueLabel`   today's value of `series.points[last].v`.
- *   - `primary.delta`        today vs. yesterday % change.
- *   - `secondary.valueLabel` conversion %:
- *       * asset scope: borrowers who emitted a `repay` within 30 days
- *         of their latest `borrow`.
- *       * pool scope : suppliers who emitted a `borrow` within 24h of
- *         their latest `supply`.
- * @convex-query  `engagement.getForAsset({ slug })`
- * @convex-query  `engagement.getForPool({ slug })`
- */
-export type EngagementTrend = {
-  /** Title rendered in the card header (e.g. "User Engagement Trends"). */
-  title: string
-  primary: {
-    label: string
-    valueLabel: string
-    delta: DeltaStat
-  }
-  secondary: {
-    label: string
-    valueLabel: string
-    delta: DeltaStat
-  }
-  /** Daily series plotted as a smooth area-line. Points are ISO date + count. */
-  series: Series
-}
-
 export type PoolDetailHero = {
   /** Token A/B visuals used for the big double-logo. */
   visuals: [BorrowAssetVisual, BorrowAssetVisual]
@@ -256,6 +222,8 @@ export type PoolDetailHero = {
   name: string
   /** Short venue label, e.g. "Uniswap v3 · 0.3%". */
   venue: string
+  /** Concise market-type label shown in the identity row, e.g. "Uniswap v3 Blue-Chip LPs". */
+  marketLabel?: string
   /** Detailed description line shown under the name. */
   subtitle: string
   /** Fee tier label when applicable (e.g. "0.3%" or "Stable"). */
@@ -305,7 +273,6 @@ export type PoolDetail = {
   performance: Record<PerfTab, Record<PerfPeriod, PerfTabDataset>>
   keyMetrics: Record<KeyMetricId, Record<TimeRangeId, Series>>
   cashflow: CashflowCard
-  engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
   /** General FAQs (plain-text answers). @convex-query content.getContent */
@@ -416,7 +383,6 @@ export type AssetDetail = {
   allocation: AllocationRow[]
   keyMetrics: Record<KeyMetricId, Record<TimeRangeId, Series>>
   cashflow: CashflowCard
-  engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
   /** General FAQs (plain-text answers). @convex-query content.getContent */

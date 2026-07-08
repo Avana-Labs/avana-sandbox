@@ -19,8 +19,6 @@ type Props = {
 }
 
 const RISK_STAT_IDS = new Set([
-  "collateralsAtRisk",
-  "eligibleForLiquidations",
   "riskPremium",
   "maxLtv",
   "collateralFactor",
@@ -41,19 +39,24 @@ function splitQuickStats(stats: QuickStatLike[]) {
   return { market, risk }
 }
 
-function StatsGrid({ stats }: { stats: QuickStatLike[] }) {
+function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3 | 4 }) {
   const { ctx } = useCurrency()
   const { t } = useTranslation()
   if (stats.length === 0) return null
 
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 md:gap-x-10 md:gap-y-9">
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-x-6 gap-y-6 md:gap-x-10",
+        columns === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3",
+      )}
+    >
       {stats.map((stat) => (
         <article key={stat.id} className="min-w-0">
-          <div className="font-data text-[26px] font-semibold leading-none tracking-[-0.04em] text-foreground md:text-[28px]">
+          <div className="font-data text-[19px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[21px]">
             {redenominateCompactUsd(stat.value, ctx)}
           </div>
-          <div className="mt-2 flex items-center gap-1">
+          <div className="mt-1.5 flex items-center gap-1">
             <span className="text-[13px] font-normal leading-snug text-muted-foreground">{t(stat.label)}</span>
             {stat.tooltip ? <ActionMetricHelp text={stat.tooltip} topic={stat.label} /> : null}
           </div>
@@ -69,16 +72,11 @@ export function QuickStatsGrid({ detail, className }: Props) {
 
   return (
     <div className={cn("space-y-10", className)}>
-      {market.length > 0 ? (
-        <section aria-label={t("Market overview")}>
-          <h3 className="mb-5 text-[15px] font-medium tracking-[-0.02em] text-foreground">{t("Market overview")}</h3>
-          <StatsGrid stats={market} />
-        </section>
-      ) : null}
+      {market.length > 0 ? <StatsGrid stats={market} /> : null}
       {risk.length > 0 ? (
-        <section aria-label={t("Risk exposure")}>
-          <h3 className="mb-5 text-[15px] font-medium tracking-[-0.02em] text-foreground">{t("Risk exposure")}</h3>
-          <StatsGrid stats={risk} />
+        <section aria-label={t("Risk exposure")} className="space-y-5">
+          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{t("Risk exposure")}</h2>
+          <StatsGrid stats={risk} columns={4} />
         </section>
       ) : null}
     </div>

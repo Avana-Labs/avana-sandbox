@@ -1,8 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { formatFixed, parseFixed, currentDebtValueUsd6 } from "@/app/lib/credit-engine"
+import { parseFixed, currentDebtValueUsd6, usd6ToNumber, wadToPercent } from "@/app/lib/credit-engine"
 import {
   buildClaimBorrowAction,
   buildHomeClaimPreview,
@@ -15,7 +15,7 @@ import { HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
 import { useAvanaSessions, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
+import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
 import {
   mapBorrowSuccessToActionUi,
@@ -32,16 +32,13 @@ import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/compon
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
-import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
-import { mapPreviewToBlockedUi, blockedUiForMissingWalletLp } from "@/app/lib/action-system/blocked-ui"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { formatBorrowLpSymbolLabel, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
-import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
 import {
   borrowSelectItemsForMarket,
   claimSelectItemsForWallet,
@@ -60,22 +57,18 @@ function resolveClaimPositions(marketId: string, claimPositionId?: string) {
     const selected = HOME_CLAIM_POSITIONS.find((position) => position.id === claimPositionId)
     if (selected) return [selected]
   }
+  // No market chosen yet → all claimable (the standalone "claim everything" default).
+  if (!marketId) return HOME_CLAIM_POSITIONS
+  // A market IS chosen → claim strictly its fees (empty ⇒ $0), never fall back to all.
   const poolId = Object.entries(HOME_POOL_TO_MARKET_ID).find(([, id]) => id === marketId)?.[0] ?? marketId
-  const scoped = HOME_CLAIM_POSITIONS.filter((position) => position.poolId === poolId || position.poolId === marketId)
-  return scoped.length > 0 ? scoped : HOME_CLAIM_POSITIONS
-}
-
-function isHardBlock(reason: string | null) {
-  if (!reason) return false
-  const lower = reason.toLowerCase()
-  return lower.includes("insufficient") || lower.includes("deposit") || lower.includes("unavailable") || lower.includes("disabled")
+  return HOME_CLAIM_POSITIONS.filter((position) => position.poolId === poolId || position.poolId === marketId)
 }
 
 export function BorrowActionPageClient({
   kind,
   closeHref = "/borrow",
   embedded = false,
-  sidebar: _sidebar = false,
+  sidebar = false,
   layout = "default",
   initialAssetId,
   initialMarketId,
@@ -98,7 +91,11 @@ export function BorrowActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaSessions()
   const session = useBorrowSessionContext()
-  const isHomeBorrowZeroState = embedded && layout === "home" && kind === "borrow" && !initialMarketId && !initialAssetId
+  // Home Express starts every action from an unselected ("0") state so the user
+  // picks the collateral/position first, rather than auto-picking the first pool.
+  const isHomeZeroState =
+    embedded && layout === "home" && !initialMarketId && !initialAssetId && !initialDebtId && !initialPositionId
+  const isHomeBorrowZeroState = isHomeZeroState && kind === "borrow"
   // Borrow and supply can target ANY market in the catalog — you pledge collateral
   // as part of the flow — so their pool picker is the full available list (not just
   // the markets already pledged). Repay/remove/claim act on existing positions, so
@@ -149,15 +146,19 @@ export function BorrowActionPageClient({
   })
   const [assetId, setAssetId] = useState(resolvedInitialAsset)
   const [marketId, setMarketId] = useState(
-    isHomeBorrowZeroState ? "" : resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
+    isHomeZeroState ? "" : resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
   )
   const [amount, setAmount] = useState(initialAmount)
+  // The input stays bound to `amount` for instant typing feedback, but the expensive
+  // engine preview (previewTransaction) below keys off this deferred value so it runs
+  // on the settled value instead of once per keystroke — the main INP lever here.
+  const deferredAmount = useDeferredValue(amount)
   const [percent, setPercent] = useState(() => (kind === "remove" ? initialAmount : "25"))
+  // Same rationale as deferredAmount: the remove-collateral slider feeds the engine
+  // preview, so defer it too and drag stays smooth without an engine call per pointer move.
+  const deferredPercent = useDeferredValue(percent)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
-  const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
-  const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
-  const [dismissedLpBlock, setDismissedLpBlock] = useState(false)
   const [claimPositionId, setClaimPositionId] = useState(initialPositionId ?? "")
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   // Wrong-network submit gate. Read through a ref inside handlePrimary so the (heavily-memoised)
@@ -188,16 +189,19 @@ export function BorrowActionPageClient({
         null
       )
     }
-    // No explicit debt/market (e.g. the home express Repay tab): resolve to a real
-    // debt — the one in the currently selected market, else the sole/first debt.
-    // Never leave it null, which defaulted the repay asset to the market's first
-    // collateral token (e.g. WETH) instead of the asset actually owed (e.g. USDC).
+    // Home zero-state: don't auto-pick a debt until the user selects a collateral,
+    // so the field starts at "0" instead of jumping to the first position's market.
+    if (isHomeZeroState && !marketId) return null
+    // Otherwise resolve to a real debt — the one in the currently selected market,
+    // else the sole/first debt. Never leave it null off the zero-state, which
+    // defaulted the repay asset to the market's first collateral token (e.g. WETH)
+    // instead of the asset actually owed (e.g. USDC).
     return (
       debtPositions.find((position) => position.marketId === marketId) ?? debtPositions[0] ?? null
     )
-  }, [debtPositionId, debtPositions, initialMarketId, kind, marketId, session.state.markets])
+  }, [debtPositionId, debtPositions, initialMarketId, isHomeZeroState, kind, marketId, session.state.markets])
 
-  const activeMarketId = hasInvalidInitialMarket ? "" : marketId || (isHomeBorrowZeroState ? "" : session.collateralPools[0]?.id || "")
+  const activeMarketId = hasInvalidInitialMarket ? "" : marketId || (isHomeZeroState ? "" : session.collateralPools[0]?.id || "")
   const selectMarketId = activeMarketId
   const resolvedBorrowAssetId = useMemo(
     () => (kind === "borrow" && assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : ""),
@@ -207,15 +211,23 @@ export function BorrowActionPageClient({
   const activePool = useMemo(() => {
     const matched = collateralPoolOptions.find((pool) => pool.id === activeMarketId)
     if (matched) return matched
-    // In the home borrow zero-state we intentionally render no pre-selected pool
-    // (no collateral value, no health factor) until the user picks one — so don't
+    // In the home zero-state we intentionally render no pre-selected pool (no
+    // collateral value, no health factor) until the user picks one — so don't
     // fall back to the first pledged pool here.
-    if (isHomeBorrowZeroState) return null
+    if (isHomeZeroState) return null
     return collateralPoolOptions[0] ?? null
-  }, [activeMarketId, collateralPoolOptions, isHomeBorrowZeroState])
+  }, [activeMarketId, collateralPoolOptions, isHomeZeroState])
   const borrowTokens = useMemo(
-    () => (activeMarketId ? selectHomeBorrowTokensForMarket(session.state, walletId, activeMarketId) : []),
-    [activeMarketId, session.state, walletId],
+    () =>
+      activeMarketId
+        ? selectHomeBorrowTokensForMarket(session.state, walletId, activeMarketId)
+        : isHomeBorrowZeroState
+          ? // Zero-state (no collateral picked yet): expose the full borrowable set so the
+            // asset picker opens the SAME dialog as when collateral is selected, rather
+            // than degrading to a plain dropdown (empty market => all borrowable assets).
+            selectHomeBorrowTokensForMarket(session.state, walletId, "")
+          : [],
+    [activeMarketId, isHomeBorrowZeroState, session.state, walletId],
   )
   const repayTokens = useMemo(
     () => (activeMarketId ? selectHomeRepayTokensForMarket(session.state, walletId, activeMarketId) : []),
@@ -225,7 +237,7 @@ export function BorrowActionPageClient({
   const showCollateralContextBar =
     usesCollateralContext &&
     (isConfigureVisibleStage(stage) || stage === "review") &&
-    (activePool != null || isHomeBorrowZeroState)
+    (activePool != null || isHomeZeroState)
 
   const handlePoolChange = useCallback(
     (poolId: string) => {
@@ -294,7 +306,7 @@ export function BorrowActionPageClient({
       .filter((position) => position.marketId === debtPosition.marketId)
       .map((position) => {
         const asset = session.state.assets[position.assetId]
-        const debtUsd = Number.parseFloat(formatFixed(currentDebtValueUsd6(position), 6))
+        const debtUsd = usd6ToNumber(currentDebtValueUsd6(position))
         return {
           id: position.id,
           label: asset?.symbol ?? "Asset",
@@ -440,31 +452,14 @@ export function BorrowActionPageClient({
   }, [embedded, initialMarketId, kind, marketId, session, walletId])
 
   useEffect(() => {
-    if (!embedded || usesCollateralContext === false || session.collateralPools.length === 0 || isHomeBorrowZeroState) return
+    if (!embedded || usesCollateralContext === false || session.collateralPools.length === 0 || isHomeZeroState) return
     if (marketId && session.collateralPools.some((pool) => pool.id === marketId)) return
     setMarketId(session.collateralPools[0]!.id)
-  }, [embedded, isHomeBorrowZeroState, marketId, session.collateralPools, usesCollateralContext])
-
-  useEffect(() => {
-    if (kind !== "supply" || !marketId || stage !== "configure" || dismissedLpBlock) return
-    const walletLpUsd = getWalletLpBalanceUsd(session.state, walletId, marketId)
-    if (walletLpUsd > 0) {
-      setBlockedUi(null)
-      return
-    }
-    const market = session.state.markets[marketId]
-    const label = market ? formatBorrowMarketLabel({ name: market.display.name }) : "this pool"
-    setBlockedUi(blockedUiForMissingWalletLp(label))
-    if (!embedded) setStage("blocked")
-  }, [dismissedLpBlock, embedded, kind, marketId, session.state.markets, stage, walletId])
-
-  useEffect(() => {
-    setDismissedLpBlock(false)
-  }, [marketId])
+  }, [embedded, isHomeZeroState, marketId, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
     let cancelled = false
-    const safeAmount = parsePositiveActionAmount(amount) ?? 0
+    const safeAmount = parsePositiveActionAmount(deferredAmount) ?? 0
 
     if (kind === "borrow") {
       const resolvedAssetId = resolvedBorrowAssetId
@@ -487,11 +482,11 @@ export function BorrowActionPageClient({
           const token = session.getBorrowableAssetsForMarket(activeMarketId).find((entry) => entry.id === resolvedAssetId)
           const borrowMarket = session.state.markets[activeMarketId]
           const liquidationThresholdPct = borrowMarket
-            ? Math.round(Number.parseFloat(formatFixed(borrowMarket.riskConfig.liquidationThresholdWad, 18)) * 1000) / 10
+            ? wadToPercent(borrowMarket.riskConfig.liquidationThresholdWad)
             : undefined
           // Max borrow respects the collateral factor: pre-borrow available credit
           // is the safe cap the credit engine will allow.
-          const maxBorrowUsd = Number.parseFloat(formatFixed(preview.before.availableBorrowCapacityUsd6, 6))
+          const maxBorrowUsd = usd6ToNumber(preview.before.availableBorrowCapacityUsd6)
           setPreviewUi(
             mapBorrowTransactionPreviewToActionUi(preview, {
               symbol: token?.symbol ?? "Asset",
@@ -521,10 +516,10 @@ export function BorrowActionPageClient({
       }
       const market = session.state.markets[marketId]
       const collateralFactorPct = market
-        ? Math.round(Number.parseFloat(formatFixed(market.riskConfig.collateralFactorWad, 18)) * 1000) / 10
+        ? wadToPercent(market.riskConfig.collateralFactorWad)
         : 0
       const liquidationPct = market
-        ? Math.round(Number.parseFloat(formatFixed(market.riskConfig.liquidationThresholdWad, 18)) * 1000) / 10
+        ? wadToPercent(market.riskConfig.liquidationThresholdWad)
         : 0
       const borrowableAssets = session.getBorrowableAssetsForMarket(marketId)
       void session
@@ -588,6 +583,7 @@ export function BorrowActionPageClient({
               remainingDebtUsd: repayPreview.remainingDebtUsd,
               yearlyInterestSavedUsd: repayPreview.yearlyInterestSavedUsd,
               creditScopeLabel: creditScopeLabel ?? undefined,
+              exceedsDebt: repayPreview.exceedsDebt,
             }),
           )
         })
@@ -600,7 +596,7 @@ export function BorrowActionPageClient({
     }
 
     if (kind === "remove") {
-      const percentBps = parseActionPercentBps(percent)
+      const percentBps = parseActionPercentBps(deferredPercent)
       const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === marketId)
       if (percentBps == null || !position) {
         setPreviewUi(null)
@@ -640,6 +636,12 @@ export function BorrowActionPageClient({
     }
 
     if (kind === "claim") {
+      // Home zero-state: nothing selected yet, so show no claim summary until the
+      // user picks a collateral pool.
+      if (isHomeZeroState && !marketId) {
+        setPreviewUi(null)
+        return undefined
+      }
       const positions = resolveClaimPositions(marketId, claimPositionId)
       const selections = Object.fromEntries(positions.map((position) => [position.id, true]))
       const claimPreview = buildHomeClaimPreview(session.state, walletId, positions, selections, safeAmount || null)
@@ -654,21 +656,9 @@ export function BorrowActionPageClient({
       )
     }
     return undefined
-  }, [activeMarketId, amount, assetId, claimPositionId, creditScopeLabel, debtPosition, kind, marketId, marketLabel, percent, resolvedBorrowAssetId, session, walletId])
+  }, [activeMarketId, deferredAmount, assetId, claimPositionId, creditScopeLabel, debtPosition, isHomeZeroState, kind, marketId, marketLabel, deferredPercent, resolvedBorrowAssetId, session, walletId])
 
   useEffect(() => {
-    if (!previewUi || previewUi.allowed || stage !== "configure") return
-    if (!isHardBlock(previewUi.blockedReason)) return
-    if (previewUi.blockedReason === dismissedBlockedReason) return
-    const blocked = mapPreviewToBlockedUi({ product: "borrow", kind, blockedReason: previewUi.blockedReason })
-    if (blocked) {
-      setBlockedUi(blocked)
-      if (!embedded) setStage("blocked")
-    }
-  }, [dismissedBlockedReason, embedded, kind, previewUi, stage])
-
-  useEffect(() => {
-    setDismissedBlockedReason(null)
     // Editing inputs after a failed submit clears the stale error banner and drops back to
     // configure, so the CTA is actionable again instead of stuck showing the old error.
     setOutcome(null)
@@ -718,7 +708,7 @@ export function BorrowActionPageClient({
 
     if (!matchingHistory) return
 
-    const executedAmount = Number.parseFloat(formatFixed(matchingHistory.executedAmountUsd6, 6))
+    const executedAmount = usd6ToNumber(matchingHistory.executedAmountUsd6)
     setSuccessUi(
       mapBorrowSuccessToActionUi({
         title: `${descriptor.primaryVerb} successful`,
@@ -843,7 +833,7 @@ export function BorrowActionPageClient({
       })
 
       if (result.receipt.status !== "success") throw new Error(humanizeBlockedReason(result.receipt.error) ?? "Transaction failed")
-      const executedAmountUsd = Number.parseFloat(formatFixed(result.historyItem.executedAmountUsd6, 6))
+      const executedAmountUsd = usd6ToNumber(result.historyItem.executedAmountUsd6)
 
       setSuccessUi(
         mapBorrowSuccessToActionUi({
@@ -893,10 +883,19 @@ export function BorrowActionPageClient({
       : stage === "success" || stage === "processing" || stage === "review"
         ? undefined
         : descriptor.subtitle
-  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
-  const shellDensity = isHomeLayout ? "home" : "default"
-  const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
+  const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
+  // Require a collateral pool before the borrow-asset picker opens, so the asset
+  // list is always scoped to the selected market (wallet-connection gating is
+  // already enforced upstream by the sandbox/connect onboarding flow).
+  const borrowNeedsCollateral = isHomeLayout && kind === "borrow" && !activeMarketId
+  // A borrow blocked for lack of collateral turns the CTA into a redirect that
+  // sends the user to pledge collateral for this market (no dead-end, no modal).
+  const blockedRedirectHref =
+    kind === "borrow" && previewUi?.blockedReason && !previewUi.allowed
+      ? actionPagePath("borrow", "supply", activeMarketId ? { market: activeMarketId } : {})
+      : null
   const useDialogAssetPicker = kind === "borrow" || kind === "repay"
   const pickerTokens = kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined
   const pickerSelectedTokenId =
@@ -914,12 +913,11 @@ export function BorrowActionPageClient({
     isHomeLayout &&
     kind === "supply" &&
     activePool != null &&
-    isConfigureVisibleStage(stage) &&
-    !showInlineBlocked
+    isConfigureVisibleStage(stage)
   const useWorkspaceFields =
     embedded && isHomeLayout && (showCollateralContextBar || (kind === "supply" && activePool != null))
   const stackedAmountField =
-    useWorkspaceFields && isConfigureVisibleStage(stage) && !showInlineBlocked && kind !== "claim" ? (
+    useWorkspaceFields && isConfigureVisibleStage(stage) && kind !== "claim" ? (
       <ActionConfigureAmountSection
         verb={descriptor.primaryVerb}
         amount={kind === "remove" ? percent : amount}
@@ -951,6 +949,7 @@ export function BorrowActionPageClient({
         hideAssetSelector={kind === "supply"}
         assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
         pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
+        assetPickerDisabled={borrowNeedsCollateral}
         showBalance={showBorrowMax}
         onMax={showBorrowMax ? handleBorrowMax : undefined}
       />
@@ -989,6 +988,7 @@ export function BorrowActionPageClient({
           variant={useWorkspaceFields ? "inset" : "card"}
           workspace={useWorkspaceFields}
           amountField={stackedAmountField}
+          switchable={!(sidebar && kind === "claim")}
         />
       ) : null}
 
@@ -1073,20 +1073,7 @@ export function BorrowActionPageClient({
 
       {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
 
-      {showInlineBlocked && blockedUi ? (
-        <ActionBlockedDialog
-          variant="inline"
-          blocked={blockedUi}
-          open
-          onClose={() => {
-            if (kind === "supply") setDismissedLpBlock(true)
-            setBlockedUi(null)
-            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
-          }}
-        />
-      ) : null}
-
-      {isConfigureVisibleStage(stage) && !showInlineBlocked ? (
+      {isConfigureVisibleStage(stage) ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
@@ -1156,20 +1143,11 @@ export function BorrowActionPageClient({
           onMax={showBorrowMax ? handleBorrowMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}
           homeLayout={isHomeLayout}
+          singlePrimaryCta={sidebar}
+          claimSummary={kind === "claim"}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
-        />
-      ) : null}
-
-      {blockedUi && !embedded ? (
-        <ActionBlockedDialog
-          variant="modal"
-          blocked={blockedUi}
-          open={stage === "blocked"}
-          onClose={() => {
-            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
-            setStage("configure")
-          }}
+          blockedRedirectHref={blockedRedirectHref}
         />
       ) : null}
     </ActionPageShell>

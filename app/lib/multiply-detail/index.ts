@@ -8,7 +8,6 @@ import {
   type AboutCard,
   type CashflowCard,
   type DeltaStat,
-  type EngagementTrend,
   type Point,
   type QuickStat,
   type RiskAssessment,
@@ -27,7 +26,6 @@ import {
 } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG, getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
-import { buildLiquidationRiskQuickStats } from "@/app/lib/borrow-detail/quick-stats-risk"
 
 export type MultiplyMarketHero = {
   visuals: [MultiplyTokenVisual, MultiplyTokenVisual]
@@ -70,7 +68,6 @@ export type MultiplyMarketDetail = {
   cashflow: CashflowCard
   transactions: MultiplyTxHistoryRow[]
   quickStats: QuickStat[]
-  engagement: EngagementTrend
   risk: RiskAssessment
   about: AboutCard
   faqs: FaqContent[]
@@ -94,10 +91,6 @@ function deltaUp(pct: number): DeltaStat {
   return { value: pct, direction: "up", label: `+${pct.toFixed(1)}%` }
 }
 
-function deltaDown(pct: number): DeltaStat {
-  return { value: -Math.abs(pct), direction: "down", label: `-${Math.abs(pct).toFixed(1)}%` }
-}
-
 function pickChain(collateral: string, borrowable: string) {
   const pair = `${collateral} ${borrowable}`.toLowerCase()
   if (pair.includes("wbtc") || pair.includes("cbbtc")) return "Bitcoin"
@@ -112,8 +105,6 @@ function buildQuickStats(row: MultiplyMarketRow): QuickStat[] {
   const availableUsd = MULTIPLY_TOKEN_AVAILABLE_USD[row.asset as keyof typeof MULTIPLY_TOKEN_AVAILABLE_USD] ?? 0
   const available = row.points ?? formatCompactUsd(availableUsd)
   const maxLeverage = row.rewardRows?.[0]?.value ?? "—"
-  const estimatedBorrowedUsd = availableUsd * 0.62 * Math.max(row.collateralFactor, 0.5)
-  const marketId = row.href.replace("/multiply/markets/", "")
 
   return [
     { id: "collateral", label: "Collateral", value: row.protocol },
@@ -124,7 +115,6 @@ function buildQuickStats(row: MultiplyMarketRow): QuickStat[] {
     { id: "collateralFactor", label: "Collateral factor", value: `${Math.round(row.collateralFactor * 100)}%` },
     { id: "supplyApy", label: "Supply APY", value: supplyApy },
     { id: "borrowApy", label: "Borrow APY", value: borrowApy },
-    ...buildLiquidationRiskQuickStats(marketId, estimatedBorrowedUsd),
   ]
 }
 
@@ -207,26 +197,6 @@ function buildCashflow(seedBase: string, liquidityUsd: number, borrowApy: number
       { label: "Rewards distributed", reported: formatCompactUsd(rewards) },
       { label: "Net to suppliers", reported: formatCompactUsd(toSuppliers + rewards), highlighted: true },
     ],
-  }
-}
-
-function buildEngagement(row: MultiplyMarketRow): EngagementTrend {
-  const seedKey = `multiply:${row.protocol}-${row.asset}:engagement`
-  const primarySeries = buildSeries(seedKey, 12_000, 1_600)
-  const secondarySeries = buildSeries(`${seedKey}:secondary`, 4_200, 650)
-  return {
-    title: "User Engagement Trends",
-    primary: {
-      label: "Active loops",
-      valueLabel: String(primarySeries.points.at(-1)?.v ?? 0),
-      delta: deltaUp(2.8),
-    },
-    secondary: {
-      label: "New positions",
-      valueLabel: String(secondarySeries.points.at(-1)?.v ?? 0),
-      delta: deltaDown(1.1),
-    },
-    series: primarySeries,
   }
 }
 
@@ -390,7 +360,6 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
     cashflow: buildCashflow(`multiply:${row.protocol}-${row.asset}`, liquidityUsd, borrowApy),
     transactions: buildTransactions(row),
     quickStats: buildQuickStats(row),
-    engagement: buildEngagement(row),
     risk: buildRisk(row),
     about: buildAbout(row),
     faqs: buildMultiplyFaqs(row.protocol, row.asset),

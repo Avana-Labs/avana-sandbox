@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
@@ -16,22 +15,12 @@ type Props = {
   className?: string
 }
 
-type SidebarTab = "pledge" | "remove" | "claim"
+type SidebarTab = "pledge" | "claim"
 
 export function PoolBorrowSidebar({ detail, className }: Props) {
-  const { t } = useTranslation()
   return (
     <div className={cn("flex w-full flex-col gap-12", className)}>
       <PoolActionRail detail={detail} className="mt-6" embedActions />
-      <AboutNewsSection
-        className="pt-4"
-        about={detail.about}
-        aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
-        compactAboutTitle
-        newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
-        newsImageLabel={detail.hero.name}
-        mediaVariant="icon"
-      />
     </div>
   )
 }
@@ -65,7 +54,6 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
         <ActionWorkspaceTabs
         items={[
           { id: "pledge", label: t("Pledge") },
-          { id: "remove", label: t("Remove") },
           { id: "claim", label: t("Claim") },
         ]}
         value={tab}
@@ -86,24 +74,6 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
               <ActionPageLaunchCta
                 product="borrow"
                 kind="supply"
-                market={pool.id}
-                returnTo={closeHref}
-              />
-            )
-          ) : null}
-
-          {tab === "remove" ? (
-            embedActions ? (
-              <ResponsiveBorrowAction
-                kind="remove"
-                market={pool.id}
-                closeHref={closeHref}
-                sidebar
-              />
-            ) : (
-              <ActionPageLaunchCta
-                product="borrow"
-                kind="remove"
                 market={pool.id}
                 returnTo={closeHref}
               />

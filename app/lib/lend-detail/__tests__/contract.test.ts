@@ -65,7 +65,6 @@ describe("lend detail contract", () => {
     expect(detail.cashflow.bars.length).toBeGreaterThan(0)
     expect(detail.risk.breakdown.length).toBeGreaterThan(0)
     expect(detail.risk.metrics.length).toBeGreaterThan(0)
-    expect(detail.engagement.series.points.length).toBeGreaterThan(0)
     expect(detail.faqs.length).toBeGreaterThanOrEqual(5)
     expect(detail.transactions.length).toBeGreaterThan(0)
     expect(detail.about.stats.length).toBeGreaterThan(0)

@@ -579,16 +579,16 @@ export function calculateClaimPreview(
   const selectedTotalUsd = selectedPositionIds.reduce((sum, positionId) => sum + (claimableTotals[positionId] ?? 0), 0)
   const hasCustomAmount = partialAmountUsd !== null && partialAmountUsd > 0
   const effectiveClaimUsd = hasCustomAmount ? Math.min(partialAmountUsd ?? 0, selectedTotalUsd) : selectedTotalUsd
+  // Include every breakdown line (tokens AND the "Fees" line). Dropping "Fees"
+  // made the itemized rows sum to less than the headline claim total — a claim of
+  // $142 showed only $111.10 of tokens. Claim harvests LP fees, so the fee line
+  // belongs in the breakdown and must reconcile with the headline.
   const tokenTotals = positions.reduce<Record<string, number>>((accumulator, position) => {
     if (!selections[position.id]) {
       return accumulator
     }
 
     position.breakdown.forEach((item) => {
-      if (item.symbol === "Fees") {
-        return
-      }
-
       accumulator[item.symbol] = (accumulator[item.symbol] ?? 0) + item.usdValue
     })
 

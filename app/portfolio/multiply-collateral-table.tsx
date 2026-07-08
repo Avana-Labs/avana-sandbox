@@ -90,7 +90,7 @@ export function MultiplyCollateralTable({
                       <div className="flex items-center gap-2.5">
                         <TokenIcon symbol={row.collateralToken} size="table" />
                         <span className="min-w-0">
-                          <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
+                          <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                             {row.label}
                           </span>
                           <span className="mt-0.5 block truncate text-[12px] text-muted-foreground dark:text-white/38">
@@ -99,13 +99,13 @@ export function MultiplyCollateralTable({
                         </span>
                       </div>
                     </td>
-                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
+                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
                       {usd(row.collateralUsd)}
                     </td>
-                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
+                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
                       {row.multiplier.toFixed(2)}x
                     </td>
-                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
+                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
                       {usd(row.debtUsd)}
                     </td>
                     <td
@@ -113,7 +113,7 @@ export function MultiplyCollateralTable({
                     >
                       {formatHealthFactor(row.healthFactor)}
                     </td>
-                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
+                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
                       {formatPct(row.netApyPct)}
                     </td>
                     <td className={`px-4 py-3 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -167,7 +167,7 @@ export function MultiplyCollateralTable({
                     </span>
                     <TokenIcon symbol={row.collateralToken} size="table" />
                     <div className="min-w-0">
-                      <div className="text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
+                      <div className="text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                         {row.label}
                       </div>
                       <div className="truncate text-[12px] text-muted-foreground dark:text-white/38">
@@ -180,7 +180,7 @@ export function MultiplyCollateralTable({
                   <MarketMobileMetric
                     value={`${row.multiplier.toFixed(2)}x`}
                     label={t("Multiplier")}
-                    valueClassName="text-foreground dark:text-white/88"
+                    valueClassName="text-foreground dark:text-white"
                   />
                 }
               />

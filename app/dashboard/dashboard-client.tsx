@@ -10,6 +10,7 @@ import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selector
 import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
+import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import {
   buildBorrowDashboardMetrics,
@@ -26,11 +27,11 @@ import {
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
 import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
 import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
-import { PortfolioLendingOpportunities } from "@/app/portfolio/portfolio-lending-opportunities"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { buildLendSnapshotFromTabData } from "@/app/portfolio/lend-hero-state"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
+import { useRefetchOnTransaction } from "@/app/dashboard/use-refetch-on-transaction"
 import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-live"
 import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
@@ -96,8 +97,9 @@ function DashboardSection({
 
 /** Shown while the authenticated portfolio is loading from Convex (was a blank screen). */
 function DashboardLoadingState() {
+  const { t } = useTranslation()
   return (
-    <div className="skeleton-enter space-y-8" aria-busy="true" aria-label="Loading your portfolio">
+    <div className="skeleton-enter space-y-8" aria-busy="true" aria-label={t("Loading your portfolio")}>
       <div className="space-y-3">
         <Skeleton className="h-8 w-44 rounded-radius-sm" />
         <Skeleton className="h-10 w-72 rounded-radius-sm" />
@@ -127,7 +129,7 @@ export function DashboardClient({
   const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
   const hasMounted = useHasMounted()
-  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
+  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession, rewards: rewardsSession } = useAvanaSessions()
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
   const { data, error: portfolioError, isLoading: portfolioLoading, retry: retryPortfolioPage } = usePortfolioPage(
     { walletProfileId: resolvedWalletProfileId ?? "" },
@@ -179,46 +181,28 @@ export function DashboardClient({
     [hasMounted, pageData, portfolioMultiply],
   )
   const borrowSnapshot = useMemo<BorrowSnapshot>(() => {
-    if (!hasMounted) {
-      return {
-        approvedUsd: pageData?.borrow.creditLines.approvedUsd ?? 0,
-        liquidationThresholdUsd: pageData?.borrow.creditLines.liquidationThresholdUsd ?? 0,
-        totalBorrowedUsd: pageData?.borrow.creditLines.totalBorrowedUsd ?? 0,
-        totalCollateralUsd: pageData?.borrow.creditLines.totalCollateralUsd ?? 0,
-        averageHealthFactor: pageData?.borrow.creditLines.averageHealthFactor ?? null,
-        currentLtvPct: pageData?.borrow.creditLines.currentLtvPct ?? 0,
-      }
-    }
-
+    // Single source of truth: when a live wallet session exists, the hero reads
+    // ONLY the session snapshot — the same borrowSession.state that produces the
+    // position rows below — so the aggregate hero numbers (Total Borrowed, health
+    // factor, LTV) can never diverge from the listed positions. The one-shot
+    // Convex snapshot (pageData) is used solely before a session exists (SSR /
+    // pre-hydration / disconnected wallet), never blended in per-field.
     const sessionSnapshot =
-      walletId && borrowSession.state.accounts[walletId]
+      hasMounted && walletId && borrowSession.state.accounts[walletId]
         ? selectBorrowSnapshot(borrowSession.state, walletId)
         : null
+    if (sessionSnapshot) {
+      return sessionSnapshot
+    }
+
+    const fallback = (hasMounted ? liveBorrowTab?.creditLines : null) ?? pageData?.borrow.creditLines ?? null
     return {
-      approvedUsd: sessionSnapshot?.approvedUsd ?? liveBorrowTab?.creditLines.approvedUsd ?? pageData?.borrow.creditLines.approvedUsd ?? 0,
-      liquidationThresholdUsd:
-        sessionSnapshot?.liquidationThresholdUsd ??
-        liveBorrowTab?.creditLines.liquidationThresholdUsd ??
-        pageData?.borrow.creditLines.liquidationThresholdUsd ??
-        0,
-      totalBorrowedUsd:
-        sessionSnapshot?.totalBorrowedUsd ?? liveBorrowTab?.creditLines.totalBorrowedUsd ?? pageData?.borrow.creditLines.totalBorrowedUsd ?? 0,
-      totalCollateralUsd:
-        sessionSnapshot?.totalCollateralUsd ??
-        liveBorrowTab?.creditLines.totalCollateralUsd ??
-        pageData?.borrow.creditLines.totalCollateralUsd ??
-        0,
-      averageHealthFactor:
-        sessionSnapshot?.averageHealthFactor ??
-        liveBorrowTab?.creditLines.averageHealthFactor ??
-        pageData?.borrow.creditLines.averageHealthFactor ??
-        null,
-      currentLtvPct:
-        sessionSnapshot?.currentLtvPct ??
-        liveBorrowTab?.creditLines.currentLtvPct ??
-        pageData?.borrow.creditLines.currentLtvPct ??
-        0,
-      spokeBreakdown: sessionSnapshot?.spokeBreakdown,
+      approvedUsd: fallback?.approvedUsd ?? 0,
+      liquidationThresholdUsd: fallback?.liquidationThresholdUsd ?? 0,
+      totalBorrowedUsd: fallback?.totalBorrowedUsd ?? 0,
+      totalCollateralUsd: fallback?.totalCollateralUsd ?? 0,
+      averageHealthFactor: fallback?.averageHealthFactor ?? null,
+      currentLtvPct: fallback?.currentLtvPct ?? 0,
     }
   }, [borrowSession.state, hasMounted, liveBorrowTab, pageData, walletId])
 
@@ -240,9 +224,10 @@ export function DashboardClient({
         txHash: item.hash,
       })),
       ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory, lendSession.state),
+      ...buildRewardsActivityHistory(rewardsSession.walletId, rewardsSession.state.claims, rewardsSession.tasks),
       ...(pageData?.activity.rows ?? []),
     ],
-    [borrowSession.transactionHistory, lendSession.state, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows],
+    [borrowSession.transactionHistory, lendSession.state, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows, rewardsSession.state.claims, rewardsSession.tasks, rewardsSession.walletId],
   )
 
   const lendTabData = useMemo(() => {
@@ -351,6 +336,14 @@ export function DashboardClient({
     return () => window.clearTimeout(id)
   }, [pageData, portfolioError, portfolioLoading, retryPortfolioPage])
 
+  // Refetch the one-shot portfolio snapshot after any on-chain/sandbox action so the
+  // snapshot-backed surfaces (fallback rows, Lend/Multiply hero charts) never go stale.
+  const totalTransactionCount =
+    borrowSession.transactionHistory.length +
+    lendSession.transactionHistory.length +
+    multiplySession.transactionHistory.length
+  useRefetchOnTransaction(totalTransactionCount, retryPortfolioPage)
+
   const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab)
     if (typeof window !== "undefined") {
@@ -370,8 +363,8 @@ export function DashboardClient({
             portfolioRetriesRef.current = 0
             retryPortfolioPage()
           }}
-          title="We couldn't load your portfolio"
-          message="The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard."
+          title={t("We couldn't load your portfolio")}
+          message={t("The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.")}
         />
       )
     }
@@ -404,8 +397,8 @@ export function DashboardClient({
 
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-10">
-          <DashboardOverviewSection title="Credit Overview" metrics={borrowDashboardMetrics.overview} />
-          <DashboardSection title="Credit Positions">
+          <DashboardOverviewSection title={t("Credit Overview")} metrics={borrowDashboardMetrics.overview} />
+          <DashboardSection title={t("Credit Positions")}>
             <DashboardBorrowTab
               section="all"
               collateralPositions={collateralPositions}
@@ -414,12 +407,12 @@ export function DashboardClient({
               returnHref={dashboardReturnHref}
             />
           </DashboardSection>
-          <DashboardPerformanceSection title="Credit Performance" metrics={borrowDashboardMetrics.performance} />
+          <DashboardPerformanceSection title={t("Credit Performance")} metrics={borrowDashboardMetrics.performance} />
         </div>
       ) : null}
       {activeTab === "lending" ? (
         <div className="mt-12 space-y-10">
-          <DashboardSection title="Lending Positions">
+          <DashboardSection title={t("Lending Positions")}>
             <PortfolioInvestments
               investments={lendTabData.investments}
               rewardsSummary={lendTabData.rewardsSummary}
@@ -428,8 +421,7 @@ export function DashboardClient({
               showHeading={false}
             />
           </DashboardSection>
-          <DashboardLendPerformanceSection title="Lending Performance" metrics={lendDashboardMetrics} />
-          <PortfolioLendingOpportunities buckets={lendTabData.strategyBuckets} returnHref={dashboardReturnHref} />
+          <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} />
         </div>
       ) : null}
       {activeTab === "looping" ? (
@@ -442,8 +434,8 @@ export function DashboardClient({
           </div>
         ) : (
           <div className="mt-12 space-y-10">
-            <DashboardOverviewSection title="Looping Overview" metrics={multiplyDashboardMetrics.overview} />
-            <DashboardSection title="Looping Positions">
+            <DashboardOverviewSection title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
+            <DashboardSection title={t("Looping Positions")}>
               <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} />
             </DashboardSection>
           </div>

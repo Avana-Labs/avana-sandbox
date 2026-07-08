@@ -135,9 +135,10 @@ export function getLendMarketHeroFeed(marketId: string): ChartFeed {
 /**
  * Build a hero `ChartFeed` from a Convex daily series (points `{t: "YYYY-MM-DD", v}`).
  * Used for the borrow pool hero (TVL / total supplied) and asset hero (total
- * borrows). The daily granularity means short ranges (1H/1D) are necessarily
- * sparse. Returns null when there's no data so callers can fall back to the
- * local mock feed.
+ * borrows). Daily granularity can't carry a real intraday `1D` window, so the
+ * `1D` range is synthesized around the latest value (the chart defaults to it);
+ * every other range slices the real history. Returns null when there's no data
+ * so callers can fall back to the local mock feed.
  */
 export function buildHeroFeedFromConvexSeries(
   points: ReadonlyArray<{ t: string; v: number }>,
@@ -148,16 +149,19 @@ export function buildHeroFeedFromConvexSeries(
   const toChartPoints = (slice: ReadonlyArray<{ t: string; v: number }>): ChartPoint[] =>
     slice.map((p) => ({ time: Date.parse(`${p.t}T00:00:00Z`), value: p.v, label: p.t }))
   const lastN = (n: number) => sorted.slice(Math.max(0, sorted.length - n))
+  const last = sorted[sorted.length - 1]?.v ?? 0
+  const first = sorted[0]?.v ?? last
+  // Synthetic intraday 1D anchored on the latest value so the default range is
+  // a rich line rather than a two-point stub from daily samples.
+  const intradayBase = last || first || 1
   const rangeData: ChartRangeData = {
-    "1H": toChartPoints(lastN(2)),
-    "1D": toChartPoints(lastN(2)),
+    "1D": buildRangeData(intradayBase, Math.max(1, Math.abs(intradayBase) * 0.02))["1D"],
     "1W": toChartPoints(lastN(7)),
     "1M": toChartPoints(lastN(30)),
+    "3M": toChartPoints(lastN(90)),
     "1Y": toChartPoints(lastN(365)),
     All: toChartPoints(sorted),
   }
-  const last = sorted[sorted.length - 1]?.v ?? 0
-  const first = sorted[0]?.v ?? last
   const pct = first ? ((last - first) / first) * 100 : 0
   return {
     headlineValue: formatChartValue(valueFormat, last),

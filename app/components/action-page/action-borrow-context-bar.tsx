@@ -5,7 +5,6 @@ import type { HomeCollateralPool } from "@/app/lib/borrow-system/home-contracts"
 import { HomeActionContextBar } from "@/app/components/home/home-action-context-bar"
 import { PoolPickerDialog } from "@/app/components/home/pool-picker-dialog"
 import { SwapStyleFieldStack } from "@/app/components/action-page/swap-style-field"
-import { ActionContextSelectorCard } from "@/app/components/action-page/action-context-selector-card"
 import type { PoolDialogMode } from "@/app/components/home/types"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -24,6 +23,7 @@ export function ActionBorrowContextBar({
   variant = "card",
   workspace = false,
   amountField,
+  switchable = true,
 }: {
   kind: "borrow" | "repay" | "remove" | "claim"
   pool: HomeCollateralPool | null
@@ -33,30 +33,26 @@ export function ActionBorrowContextBar({
   variant?: "card" | "inset"
   workspace?: boolean
   amountField?: React.ReactNode
+  /** When false the collateral is fixed (no picker) — e.g. a market detail page
+   *  where the action is scoped to the market you're viewing. */
+  switchable?: boolean
 }) {
   const { t } = useTranslation()
   const [poolDialogOpen, setPoolDialogOpen] = useState(false)
   const poolDialogMode = poolDialogModeForKind(kind)
 
+  // One collateral card in every state (pool selected or not) so the input does
+  // not visibly switch between two different card layouts. HomeActionContextBar
+  // handles the null-pool placeholder itself.
   const poolField = (
-    pool ? (
-      <HomeActionContextBar
-        pool={pool}
-        onOpenPool={() => setPoolDialogOpen(true)}
-        variant={variant}
-        workspace={workspace}
-        label={t("Collateral")}
-      />
-    ) : (
-      <ActionContextSelectorCard
-        label="Collateral"
-        value="0"
-        approxUsdLabel={t("≈ $0")}
-        collateralSymbol="LP"
-        onClick={() => setPoolDialogOpen(true)}
-        workspace={workspace}
-      />
-    )
+    <HomeActionContextBar
+      pool={pool}
+      onOpenPool={() => setPoolDialogOpen(true)}
+      variant={variant}
+      workspace={workspace}
+      label={t("Collateral")}
+      switchable={switchable}
+    />
   )
 
   return (

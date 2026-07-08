@@ -86,8 +86,13 @@ function SectionTabs({
   return (
     <div className="flex flex-wrap gap-8 border-b border-border/50 md:border-b-0">
       {[
-        { id: "collateral", label: t("Markets") },
-        { id: "borrow", label: t("Assets") },
+        // UI labels only. The tab `id`s are the backend/routing terms and MUST stay
+        // "collateral" / "borrow": the "collateral" tab lists the LP *markets* (see
+        // CollateralDesktopTable) and the "borrow" tab lists the *borrowable* assets
+        // (see BorrowableAssetsPanel / borrowAssetsBySpoke). If you're looking for the
+        // "Borrowable" assets, that's the `id: "borrow"` tab below.
+        { id: "collateral", label: t("Collateral") },
+        { id: "borrow", label: t("Borrowable") },
       ].map((tab) => (
         <button
           key={tab.id}
@@ -95,7 +100,7 @@ function SectionTabs({
           onClick={() => onTabChange(tab.id as SectionTabId)}
             className={[
             "border-b-2 pb-2 text-left text-[15px] font-normal tracking-[-0.03em] transition-colors md:text-[17px]",
-            activeTab === tab.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground/80",
+            activeTab === tab.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
           ].join(" ")}
         >
           {tab.label}
@@ -134,7 +139,7 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
         </span>
       </div>
       <div className="min-w-0">
-        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white/88">
+        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
           {pool.visuals[0].symbol} / {pool.visuals[1].symbol}
         </div>
         <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
@@ -208,7 +213,7 @@ function CollateralDesktopTable({
                   onClick={() => toggleSort("asset")}
                   className={cn(
                     "flex items-center gap-2 transition-colors",
-                    sortKey === "asset" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    sortKey === "asset" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
                   <span>{t("ASSET")}</span>
@@ -221,7 +226,7 @@ function CollateralDesktopTable({
                   onClick={() => toggleSort("apy")}
                   className={cn(
                     "flex items-center gap-2 transition-colors",
-                    sortKey === "apy" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
                   <span>{t("FEES")}</span>
@@ -234,7 +239,7 @@ function CollateralDesktopTable({
                   onClick={() => toggleSort("ltv")}
                   className={cn(
                     "flex items-center gap-2 transition-colors",
-                    sortKey === "ltv" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    sortKey === "ltv" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
                   <span>{t("MAX LTV")}</span>
@@ -247,7 +252,7 @@ function CollateralDesktopTable({
                   onClick={() => toggleSort("risk")}
                   className={cn(
                     "flex items-center gap-2 transition-colors",
-                    sortKey === "risk" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    sortKey === "risk" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
                   <span>{t("RISK PREMIUM")}</span>
@@ -260,7 +265,7 @@ function CollateralDesktopTable({
                   onClick={() => toggleSort("supplied")}
                   className={cn(
                     "flex w-full items-center gap-2 transition-colors",
-                    sortKey === "supplied" ? "text-foreground dark:text-white/90" : "text-muted-foreground/70 dark:text-white/42",
+                    sortKey === "supplied" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
                   )}
                 >
                   <span>{t("AVAILABLE")}</span>
@@ -284,17 +289,17 @@ function CollateralDesktopTable({
                 <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                   <CollateralAssetCell pool={pool} />
                 </td>
-                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
+                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
                 </td>
-                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
+                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{pool.ltv}%</span>
                 </td>
-                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84 ${TABLE_ROW_HOVER_BG}`}>
+                <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
                   <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
                 </td>
                 <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                  <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white/84">
+                  <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                     <span className="tabular-nums">{compact(pool.availableUsd)}</span>
                   </div>
                 </td>
@@ -395,12 +400,16 @@ function SpokeDesktopSection({
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
-  // Each spoke/category owns its own Markets/Assets toggle.
+  // Each spoke/category owns its own Collateral/Borrowable toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
+  // NOTE: no `overflow-hidden` / `cv-section` here — both would trap the sticky
+  // section header. The header below is `sticky top-16` so each spoke title (+ its
+  // Collateral/Borrowable tabs) hangs under the site header while its own table
+  // scrolls, then the next spoke's header takes over.
   return (
-    <section className="cv-section mb-2">
-      <div className="mt-4 overflow-hidden rounded-radius-xl bg-transparent md:shadow-none">
-        <div className="flex items-center justify-between gap-3 rounded-t-radius-xl bg-transparent px-1 py-2 md:px-4 md:py-3">
+    <section className="mb-2">
+      <div className="mt-4 rounded-radius-xl bg-transparent md:shadow-none">
+        <div className="sticky top-16 z-20 flex items-center justify-between gap-3 rounded-t-radius-xl bg-background px-1 py-2 md:px-4 md:py-3">
           <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
           <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
@@ -461,7 +470,7 @@ function SpokeMobileSection({
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
 }) {
-  // Each spoke/category owns its own Markets/Assets toggle.
+  // Each spoke/category owns its own Collateral/Borrowable toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
   const priceFor = usePriceFor()
@@ -470,9 +479,12 @@ function SpokeMobileSection({
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
 
+  // No `cv-section` here — content-visibility traps the sticky header. The title row
+  // is `sticky top-16` so it hangs under the site header while this spoke's cards
+  // scroll, then the next spoke's title takes over.
   return (
-    <section className="cv-section space-y-2">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <section className="space-y-2">
+      <div className="sticky top-16 z-20 -mx-1 flex items-center justify-between gap-3 bg-background px-1 pb-3 pt-2">
         <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
         <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
@@ -524,7 +536,7 @@ function SpokeMobileSection({
                         onUseAsCollateral(pool)
                       }}
                     >
-                      {t("Supply")}
+                      {t("Pledge")}
                     </MarketMobilePrimaryAction>
                   </MarketMobileCard>
                 </li>
@@ -545,7 +557,7 @@ function SpokeMobileSection({
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+                className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-hover"
               >
                 {t("View {count} more {spoke} markets")
                   .replace("{count}", String(hiddenRowCount))

@@ -30,8 +30,9 @@ export function RiskSection({ detail }: Props) {
   return (
     <SectionCard
       title={t("Risk assessment")}
-      subtitle={t("Composite rating combining volatility, depth, oracle and dependency risks.")}
       rightSlot={<RiskLevelPill level={risk.level} size="md" />}
+      chrome="plain"
+      bodyClassName="p-0"
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-6">
@@ -43,7 +44,6 @@ export function RiskSection({ detail }: Props) {
               </span>
               <span className="text-[12px] text-muted-foreground">({risk.premiumBps} bps)</span>
             </div>
-            <p className="mt-2 max-w-prose text-[13px] leading-6 text-foreground/80">{risk.headline}</p>
           </div>
           <div className="flex flex-col items-center">
             <RiskGauge
@@ -60,10 +60,7 @@ export function RiskSection({ detail }: Props) {
           </div>
         </div>
 
-        <p className="text-[13px] leading-6 text-foreground/80">{risk.summary}</p>
-
         <div>
-          <div className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{t("Breakdown")}</div>
           <ul className="divide-y divide-border rounded-radius-sm border border-border bg-surface-inset">
             {risk.breakdown.map((item) => {
               const open = expanded.has(item.id)
@@ -74,10 +71,10 @@ export function RiskSection({ detail }: Props) {
                     type="button"
                     aria-expanded={open}
                     onClick={() => toggle(item.id)}
-                    className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-raised/60"
+                    className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-hover"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="truncate text-[13px] font-medium text-foreground">{item.label}</span>
+                      <span className="truncate text-[13px] font-medium text-foreground">{t(item.label)}</span>
                       <RiskLevelPill level={item.level} withDot={false} />
                     </div>
                     <div className="flex shrink-0 items-center gap-2.5">
@@ -100,10 +97,10 @@ export function RiskSection({ detail }: Props) {
                   </button>
                   {open ? (
                     <div className="px-3.5 pb-3 text-[11.5px] leading-5 text-muted-foreground">
-                      {item.description}
+                      {t(item.description)}
                       {relatedMetric ? (
                         <div className="mt-2 inline-flex items-center gap-2 rounded-xs border border-border bg-surface-raised px-2 py-1 font-data text-[11px] tabular-nums text-foreground">
-                          {item.label}: {relatedMetric}
+                          {t(item.label)}: {relatedMetric}
                         </div>
                       ) : null}
                     </div>

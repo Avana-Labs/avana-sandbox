@@ -47,6 +47,12 @@ type ActionAmountCardProps = {
   hideAssetSelector?: boolean
   assetPickerVariant?: "menu" | "dialog"
   pickerTokens?: HomeBorrowToken[]
+  /** Gate the asset picker (e.g. no wallet connected, or no collateral chosen yet).
+   *  The pill dims and, when a blocked handler is provided, clicking runs it
+   *  (e.g. open the Connect flow) instead of opening the picker. */
+  assetPickerDisabled?: boolean
+  assetPickerHint?: string
+  onAssetPickerBlocked?: () => void
 }
 
 export function ActionAmountCard({
@@ -73,9 +79,16 @@ export function ActionAmountCard({
   hideAssetSelector = false,
   assetPickerVariant = "menu",
   pickerTokens,
+  assetPickerDisabled = false,
+  assetPickerHint,
+  onAssetPickerBlocked,
 }: ActionAmountCardProps) {
   const { t } = useTranslation()
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
+  // No asset picked yet: the default label is the literal word "Asset". Show a clear
+  // "Select Asset" call-to-action (and drop the neutral "?" glyph) instead.
+  const isAssetPlaceholder = /^asset$/i.test(assetLabel.trim())
+  const displayAssetLabel = isAssetPlaceholder ? t("Select Asset") : assetLabel
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(
     !hideAssetSelector &&
@@ -83,6 +96,10 @@ export function ActionAmountCard({
       !readOnly &&
       (useDialogPicker ? pickerTokens!.length > 1 : assetOptions && assetOptions.length > 1),
   )
+  // When gated (no wallet / no collateral), the pill still renders as an interactive
+  // control so it can dim and route a click to the blocked handler (e.g. Connect).
+  const gated = assetPickerDisabled
+  const gatedClickable = gated && Boolean(onAssetPickerBlocked)
   const showAssetLabel = !(borrowSymbol && variant !== "card") || !switchable
   const [menuOpen, setMenuOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -130,8 +147,8 @@ export function ActionAmountCard({
         setMenuOpen(false)
       }}
       className={cn(
-        "flex w-full items-start gap-2 rounded-radius-md px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-surface-hover",
-        option.id === selectedAssetId && "bg-surface-hover",
+        "flex w-full items-start gap-2 rounded-radius-md px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-hover",
+        option.id === selectedAssetId && "bg-surface-inset",
       )}
     >
       {option.borrowSymbol ? (
@@ -154,7 +171,15 @@ export function ActionAmountCard({
         <label className="min-w-0 flex-1 max-[360px]:w-full">
           <span className="sr-only">{t("{label} amount").replace("{label}", t(label))}</span>
           <input
+            type="text"
             inputMode="decimal"
+            // Numbers-only: numeric keypad on mobile (never the alphabet), and no
+            // OS autofill/spellcheck that could inject letters. Any non-digit is
+            // stripped on change (covers typing AND paste) by sanitizeDecimalInput.
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             value={amount}
             onChange={(event) => onAmountChange(sanitizeDecimalInput(event.target.value))}
             className="w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none placeholder:text-muted-foreground/60"
@@ -168,29 +193,36 @@ export function ActionAmountCard({
             <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
               <span>{unitLabel}</span>
             </div>
-          ) : switchable ? (
+          ) : switchable || gated ? (
             <button
               type="button"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
+                if (gated) {
+                  onAssetPickerBlocked?.()
+                  return
+                }
                 if (useDialogPicker) setDialogOpen(true)
                 else setMenuOpen((open) => !open)
               }}
               // Deterministic across SSR/client: the options are a role="listbox"
               // in both the desktop popover and the mobile sheet, so don't key this
               // off the client-only viewport query (that caused a hydration mismatch).
-              aria-haspopup={useDialogPicker ? undefined : "listbox"}
-              aria-expanded={!useDialogPicker ? menuOpen : undefined}
+              aria-haspopup={!gated && !useDialogPicker ? "listbox" : undefined}
+              aria-expanded={!gated && !useDialogPicker ? menuOpen : undefined}
               aria-label={t("Change asset, current {asset}").replace("{asset}", assetLabel)}
-              disabled={readOnly}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground cursor-pointer hover:bg-surface-hover"
+              disabled={readOnly || (gated && !gatedClickable)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground hover:bg-surface-hover",
+                gated ? (gatedClickable ? "opacity-60" : "cursor-default opacity-60") : "cursor-pointer",
+              )}
             >
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
-              ) : (
+              ) : isAssetPlaceholder ? null : (
                 <ActionTokenIcon symbol={symbol} />
               )}
-              {showAssetLabel ? <span>{assetLabel}</span> : null}
+              {showAssetLabel ? <span>{displayAssetLabel}</span> : null}
               <span className="text-muted-foreground" aria-hidden>
                 ▾
               </span>
@@ -201,13 +233,13 @@ export function ActionAmountCard({
             >
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
-              ) : (
+              ) : isAssetPlaceholder ? null : (
                 <ActionTokenIcon symbol={symbol} />
               )}
-              {showAssetLabel ? <span>{assetLabel}</span> : null}
+              {showAssetLabel ? <span>{displayAssetLabel}</span> : null}
             </div>
           )}
-          {switchable && !useDialogPicker && menuOpen && !useMenuSheet ? (
+          {switchable && !gated && !useDialogPicker && menuOpen && !useMenuSheet ? (
             <div
               role="listbox"
               aria-label={t("Select asset")}
@@ -227,11 +259,16 @@ export function ActionAmountCard({
     </div>
   )
 
+  const gatedHintRow =
+    gated && assetPickerHint ? (
+      <div className="mt-1.5 text-[13px] text-muted-foreground">{t(assetPickerHint)}</div>
+    ) : null
+
   const balanceRow =
     balanceValue != null ? (
       <div className="mt-3 flex items-center justify-between gap-2 text-[13px] text-muted-foreground">
         <span className="min-w-0 truncate">
-          {t(balanceLabel ?? "Balance")}: <span className="text-foreground/80">{balanceValue}</span>
+          {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceValue}</span>
         </span>
         {onMax && !readOnly ? (
           <button
@@ -283,6 +320,7 @@ export function ActionAmountCard({
         >
           {amountRow}
           {usdRow}
+          {gatedHintRow}
           {balanceRow}
         {showReceiveWethToggle ? (
           <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
@@ -316,13 +354,14 @@ export function ActionAmountCard({
   return (
     <>
       <div
-        className="rounded-radius-xl border border-border/80 bg-card text-card-foreground"
+        className="rounded-radius-xl border border-transparent bg-field-bottom text-card-foreground"
         data-testid="action-amount-card"
       >
       <div className="px-4 pb-4 pt-4">
         <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
         {amountRow}
         {usdRow}
+        {gatedHintRow}
         {balanceRow}
       </div>
 
@@ -361,6 +400,7 @@ export function ActionAmountCard({
 
 export function ActionFooter({
   primaryLabel,
+  primaryLabelSymbol,
   secondaryLabel = "Cancel",
   onPrimary,
   onSecondary,
@@ -372,6 +412,9 @@ export function ActionFooter({
   className,
 }: {
   primaryLabel: string
+  /** Token ticker for the "Insufficient {symbol}" CTA — interpolated after
+   *  translation so the label localizes while the ticker stays verbatim. */
+  primaryLabelSymbol?: string
   secondaryLabel?: string
   onPrimary?: () => void
   onSecondary?: () => void
@@ -387,6 +430,7 @@ export function ActionFooter({
   const { t } = useTranslation()
   const primaryClassName = primaryCtaClass({ disabled: primaryDisabled, pending: primaryPending })
   const secondaryClassName = SECONDARY_CTA_CLASS
+  const primaryText = t(primaryLabel).replace("{symbol}", primaryLabelSymbol ?? "")
 
   return (
     <div
@@ -409,11 +453,11 @@ export function ActionFooter({
       )}
       {primaryHref && !onPrimary ? (
         <Link href={primaryHref} className={primaryClassName}>
-          {primaryPending ? t("Processing…") : t(primaryLabel)}
+          {primaryPending ? t("Processing…") : primaryText}
         </Link>
       ) : (
         <button type="button" onClick={onPrimary} disabled={primaryDisabled || primaryPending} className={primaryClassName}>
-          {primaryPending ? t("Processing…") : t(primaryLabel)}
+          {primaryPending ? t("Processing…") : primaryText}
         </button>
       )}
     </div>

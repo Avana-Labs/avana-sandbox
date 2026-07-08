@@ -36,7 +36,11 @@ const modeConfig = isCI
       dev: {
         distDir: ".next-dev",
         lockFile: ".next-dev.lock.json",
-        cleanTargets: [".next-dev", ".next"],
+        // Keep .next-dev so Turbopack's persistent filesystem cache survives restarts —
+        // wiping it forced a full cold recompile (15-28s per route) on every `npm run dev`.
+        // Only clear the stray default `.next` dir a non-scripted `next` invocation may leave.
+        // Need a truly clean slate (branch switch, upgrade)? `rm -rf .next-dev` by hand.
+        cleanTargets: [".next"],
       },
       build: {
         distDir: ".next-prod",

@@ -1,54 +1,53 @@
 import { describe, expect, it } from "vitest"
-import { mapPreviewToBlockedUi } from "@/app/lib/action-system/blocked-ui"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { blockedCtaLabel } from "@/app/lib/action-system/blocked-ui"
 
-describe("mapPreviewToBlockedUi", () => {
-  it("maps insufficient balance to deposit CTA for borrow", () => {
-    const blocked = mapPreviewToBlockedUi({
-      product: "borrow",
-      kind: "borrow",
-      blockedReason: "Insufficient balance to borrow",
+describe("blockedCtaLabel", () => {
+  it("uses a {symbol} placeholder on insufficient-balance blocks", () => {
+    // The ticker is interpolated at render (after translation), so the label is a key.
+    expect(blockedCtaLabel("Insufficient wallet balance.", { symbol: "USDC" })).toEqual({
+      label: "Insufficient {symbol}",
     })
-
-    expect(blocked?.title).toBe("No balance available")
-    expect(blocked?.primaryCtaHref).toBe(actionPagePath("borrow", "supply"))
+    expect(blockedCtaLabel("You don't have enough balance to repay this amount.", { symbol: "ETH" })).toEqual({
+      label: "Insufficient {symbol}",
+    })
+    // Without a symbol it falls back to a generic balance label.
+    expect(blockedCtaLabel("Insufficient balance").label).toBe("Insufficient balance")
   })
 
-  it("maps collateral deposit requirement to supply route", () => {
-    const blocked = mapPreviewToBlockedUi({
-      product: "borrow",
-      kind: "borrow",
-      blockedReason: "Deposit collateral before borrowing",
+  it("flags the no-collateral block as a redirect", () => {
+    expect(blockedCtaLabel("You have no collateral in this market yet.")).toEqual({
+      label: "Deposit collateral first",
+      redirect: true,
     })
-
-    expect(blocked?.title).toContain("deposit an asset")
-    expect(blocked?.primaryCtaHref).toBe(actionPagePath("borrow", "supply"))
+    expect(blockedCtaLabel("Deposit collateral before borrowing")).toEqual({
+      label: "Deposit collateral first",
+      redirect: true,
+    })
   })
 
-  it("shows an exceeds-balance message when the wallet holds the asset", () => {
-    const blocked = mapPreviewToBlockedUi({
-      product: "lend",
-      kind: "deposit",
-      blockedReason: "Insufficient wallet balance.",
-      hasWalletBalance: true,
-    })
-
-    expect(blocked?.title).toBe("Amount exceeds your balance")
-    expect(blocked?.description).toContain("more than you hold")
+  it("maps liquidity, borrowing power, and market-state blocks to short labels", () => {
+    expect(blockedCtaLabel("There isn't enough liquidity for this amount right now.").label).toBe(
+      "Insufficient liquidity",
+    )
+    expect(blockedCtaLabel("You don't have enough borrowing power for this amount.").label).toBe(
+      "Try a smaller amount",
+    )
+    expect(blockedCtaLabel("Borrowing unavailable").label).toBe("Borrowing unavailable")
+    expect(blockedCtaLabel("Market is paused.").label).toBe("Market paused")
+    expect(blockedCtaLabel("Deposit would exceed the market supply cap.").label).toBe("Supply cap reached")
+    expect(blockedCtaLabel("You don't have enough LP in your wallet for this deposit.").label).toBe(
+      "Insufficient LP",
+    )
   })
 
-  it("shows the no-asset message when the wallet holds none of the asset", () => {
-    const blocked = mapPreviewToBlockedUi({
-      product: "lend",
-      kind: "deposit",
-      blockedReason: "Insufficient wallet balance.",
-      hasWalletBalance: false,
-    })
-
-    expect(blocked?.title).toBe("You don't have this asset in your wallet")
+  it("handles claim and empty-amount reasons", () => {
+    expect(blockedCtaLabel("Nothing to claim").label).toBe("Nothing to claim")
+    expect(blockedCtaLabel("Select rewards to claim").label).toBe("Select rewards")
+    expect(blockedCtaLabel("Amount must be positive.").label).toBe("Enter an amount")
   })
 
-  it("returns null when there is no blocked reason", () => {
-    expect(mapPreviewToBlockedUi({ product: "lend", kind: "deposit", blockedReason: null })).toBeNull()
+  it("only redirects for the no-collateral case", () => {
+    expect(blockedCtaLabel("Insufficient wallet balance.").redirect).toBeUndefined()
+    expect(blockedCtaLabel("Borrowing unavailable").redirect).toBeUndefined()
   })
 })

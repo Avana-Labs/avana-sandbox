@@ -16,6 +16,7 @@ import {
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
@@ -57,6 +58,7 @@ export function PortfolioInvestments({
   showIndexColumn?: boolean
 }) {
   const router = useRouter()
+  const { t } = useTranslation()
   const { showDollarAmounts } = useDisplayPreferences()
   const claimableUsd = rewardsSummary?.claimableUsd ?? 0
   const m = (value: string) => (showDollarAmounts ? value : MASK)
@@ -228,7 +230,7 @@ export function PortfolioInvestments({
                   />
                   <MarketMobileStatList>
                     <MarketMobileStatRow
-                      label="Deposited"
+                      label={t("Deposited")}
                       value={
                         <span>
                           {m(formatTokenAmount(token.balance, token.symbol))}
@@ -239,7 +241,7 @@ export function PortfolioInvestments({
                       }
                     />
                     <MarketMobileStatRow
-                      label="Earnings"
+                      label={t("Earnings")}
                       value={
                         <span>
                           {m(`+${formatUsdExact(token.earnedUsd)}`)}

@@ -1,3 +1,4 @@
+export * from "./activity"
 export * from "./contracts"
 export * from "./demo-session"
 export * from "./sandbox-action-adapter"

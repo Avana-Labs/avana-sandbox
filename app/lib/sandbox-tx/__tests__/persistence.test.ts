@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { multiplyResultToRecordArgs } from "@/app/lib/sandbox-tx/persistence"
+import { borrowResultToRecordArgs, multiplyResultToRecordArgs } from "@/app/lib/sandbox-tx/persistence"
 import type { MultiplySandboxActionResult } from "@/app/lib/multiply-system/contracts"
+import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
 
 const WALLET = "0xabc0000000000000000000000000000000000001"
 
@@ -29,6 +30,60 @@ function closeResult(overrides: { positions?: Record<string, unknown> } = {}): M
     state: { positions: overrides.positions ?? {} },
   } as unknown as MultiplySandboxActionResult
 }
+
+function claimResult(rewardPositions: Array<{ id: string; claimableUsd6: bigint }>): SandboxActionResult {
+  return {
+    historyItem: {
+      id: "rc1",
+      intentId: "intent-claim-1",
+      walletId: WALLET,
+      marketId: undefined,
+      assetId: undefined,
+      kind: "claim",
+      status: "success",
+      requestedAmountUsd6: 0n,
+      executedAmountUsd6: 0n,
+      simulated: true,
+      timestamp: 1,
+      hash: "0xsimclaim",
+    },
+    state: {
+      accounts: {
+        [WALLET]: {
+          rewardPositions: rewardPositions.map((position) => ({
+            id: position.id,
+            marketId: "m",
+            claimableUsd6: position.claimableUsd6,
+            earnedUsd6: position.claimableUsd6,
+          })),
+        },
+      },
+    },
+  } as unknown as SandboxActionResult
+}
+
+describe("borrowResultToRecordArgs — claim persistence", () => {
+  it("emits the post-claim remaining claimable per reward position", () => {
+    const args = borrowResultToRecordArgs(
+      claimResult([
+        { id: "claim-eth-usdc", claimableUsd6: 0n }, // fully claimed
+        { id: "claim-wbtc-weth", claimableUsd6: 50_000000n }, // partially claimed → $50 left
+      ]),
+      WALLET,
+    )
+    expect(args.kind).toBe("claim")
+    expect(args.rewardClaims).toEqual([
+      { rewardPositionId: "claim-eth-usdc", remainingUsd6: "0" },
+      { rewardPositionId: "claim-wbtc-weth", remainingUsd6: "50000000" },
+    ])
+  })
+
+  it("omits rewardClaims when the wallet has no reward positions", () => {
+    const args = borrowResultToRecordArgs(claimResult([]), WALLET)
+    expect(args.kind).toBe("claim")
+    expect(args.rewardClaims).toBeUndefined()
+  })
+})
 
 describe("multiplyResultToRecordArgs — close persistence (regression: C-1)", () => {
   it("emits an explicit closed position payload when a successful close deleted the position", () => {

@@ -3,11 +3,11 @@
 import { useMemo } from "react"
 import { Area, AreaChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
 import { useMediaQuery } from "@/app/lib/use-media-query"
-import { getChartTickIndexes } from "./chart-data"
 import type { ChartPoint, ChartRangeOption } from "./types"
 
 const TONE_COLORS = {
-  positive: { stroke: "#22C55E", fill: "#22C55E", cursor: "rgba(34, 197, 94, 0.2)" },
+  // Up trend uses the Avana brand cyan; down stays red.
+  positive: { stroke: "#01AACF", fill: "#01AACF", cursor: "rgba(1, 170, 207, 0.2)" },
   negative: { stroke: "#F0444C", fill: "#F0444C", cursor: "rgba(240, 68, 76, 0.2)" },
 } as const
 
@@ -37,12 +37,15 @@ export function HeroAreaChart({
   onActiveIndexChange,
 }: HeroAreaChartProps) {
   const isMobile = useMediaQuery("(max-width: 639px)")
+  // Axis labels (both value and date/time) are intentionally hidden. The
+  // formatter and active range stay in the prop contract for callers but no
+  // longer drive any rendered ticks.
+  void formatYAxis
+  void activeRange
 
   const resolvedTone: "positive" | "negative" =
     tone ?? (data.length >= 2 && data[data.length - 1].value < data[0].value ? "negative" : "positive")
   const color = TONE_COLORS[resolvedTone]
-
-  const xTickIndexes = useMemo(() => getChartTickIndexes(activeRange, data.length), [activeRange, data.length])
 
   const yTickValues = useMemo(() => {
     if (isMobile || data.length === 0) {
@@ -62,18 +65,6 @@ export function HeroAreaChart({
     return Array.from({ length: tickCount }, (_, index) => Math.round((min + step * index) * 100) / 100)
   }, [data, isMobile])
 
-  // On mobile, thin the x-axis labels so they don't collide while keeping the middle ones
-  // (first, two evenly spaced middles, last).
-  const visibleXTicks = useMemo(() => {
-    const maxTicks = 5
-    if (!isMobile || xTickIndexes.length <= maxTicks) {
-      return xTickIndexes
-    }
-    const step = (xTickIndexes.length - 1) / (maxTicks - 1)
-    const picked = Array.from({ length: maxTicks }, (_, i) => xTickIndexes[Math.round(i * step)])
-    return Array.from(new Set(picked))
-  }, [isMobile, xTickIndexes])
-
   const chartShellClassName =
     className ??
     "relative h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.06)_1px,transparent_0)] [background-size:18px_18px] dark:bg-none sm:h-[240px]"
@@ -83,7 +74,7 @@ export function HeroAreaChart({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
-          margin={{ top: 12, right: isMobile ? 8 : 4, bottom: 30, left: 0 }}
+          margin={{ top: 12, right: isMobile ? 8 : 16, bottom: 8, left: 0 }}
           onMouseMove={
             onActiveIndexChange
               ? (state: { activeTooltipIndex?: number; isTooltipActive?: boolean }) => {
@@ -99,33 +90,17 @@ export function HeroAreaChart({
               <stop offset="100%" stopColor={color.fill} stopOpacity={0.03} />
             </linearGradient>
           </defs>
-          <XAxis
-            dataKey="time"
-            axisLine={false}
-            tickLine={false}
-            ticks={visibleXTicks}
-            interval={0}
-            tick={(tickProps) => {
-              const { x, y, payload } = tickProps
-              const label = data[payload.value]?.label ?? ""
-              const isFirst = payload.value === visibleXTicks[0]
-              const isLast = payload.value === visibleXTicks[visibleXTicks.length - 1]
-              const anchor = isFirst ? "start" : isLast ? "end" : "middle"
-              return (
-                <text x={x} y={y} dy={12} textAnchor={anchor} fill="hsl(var(--muted-foreground))" fontSize={11}>
-                  {label}
-                </text>
-              )
-            }}
-          />
+          {/* Axis kept for the categorical scale, but its date/time labels are
+              hidden for a clean, minimal chart. */}
+          <XAxis dataKey="time" axisLine={false} tickLine={false} tick={false} height={0} />
+          {/* No visible value labels: `tick={false}` + width 0 render nothing,
+              while the axis still defines the domain padding / vertical scaling. */}
           <YAxis
             orientation="right"
-            hide={isMobile}
+            width={0}
             axisLine={false}
             tickLine={false}
-            width={isMobile ? 0 : 52}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-            tickFormatter={formatYAxis}
+            tick={false}
             ticks={yTickValues}
             domain={[(dataMin: number) => dataMin - 4, (dataMax: number) => dataMax + 4]}
           />

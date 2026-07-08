@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -21,6 +22,7 @@ import {
   shouldShowWalletToast,
   walletToastMessage,
 } from "@/app/lib/action-system/stage-machine"
+import { blockedCtaLabel } from "@/app/lib/action-system/blocked-ui"
 
 type ActionConfigureStageProps = {
   stage: ActionStage
@@ -64,9 +66,23 @@ type ActionConfigureStageProps = {
   amountUnitLabel?: string
   hideAssetSelector?: boolean
   homeLayout?: boolean
+  /** Render a single primary CTA (no Cancel/secondary) without adopting the rest
+   *  of the compact home layout. Used by the detail-page sidebar rail, which is a
+   *  pre-loaded full-page action and has no select stage to cancel back to. */
+  singlePrimaryCta?: boolean
+  /** Claim flow: surface the claimable total + market + token breakdown on the
+   *  home/sidebar configure screen (which otherwise hides preview detail cards). */
+  claimSummary?: boolean
   amountPlacement?: "inline" | "stacked"
   assetPickerVariant?: "menu" | "dialog"
   pickerTokens?: import("@/app/lib/borrow-system/home-contracts").HomeBorrowToken[]
+  assetPickerDisabled?: boolean
+  assetPickerHint?: string
+  onAssetPickerBlocked?: () => void
+  /** When the current block should route the user elsewhere (e.g. pledge
+   *  collateral before borrowing), the primary CTA stays active and navigates
+   *  here instead of sitting disabled. */
+  blockedRedirectHref?: string | null
 }
 
 export function ActionConfigureAmountSection({
@@ -87,6 +103,9 @@ export function ActionConfigureAmountSection({
   hideAssetSelector = false,
   assetPickerVariant = "menu",
   pickerTokens,
+  assetPickerDisabled,
+  assetPickerHint,
+  onAssetPickerBlocked,
   amountFooter,
   showBalance = false,
   onMax,
@@ -115,6 +134,9 @@ export function ActionConfigureAmountSection({
   | "hideAssetSelector"
   | "assetPickerVariant"
   | "pickerTokens"
+  | "assetPickerDisabled"
+  | "assetPickerHint"
+  | "onAssetPickerBlocked"
   | "amountFooter"
   | "showBalance"
   | "onMax"
@@ -131,7 +153,7 @@ export function ActionConfigureAmountSection({
       label={inputLabel ?? verb}
       amount={amount}
       onAmountChange={onAmountChange}
-      approxUsdLabel={preview?.amountUsdLabel ?? `≈ ${exact(0)}`}
+      approxUsdLabel={preview?.amountUsdLabel ?? exact(0)}
       assetLabel={pillLabel}
       unitLabel={amountUnitLabel}
       footer={amountFooter}
@@ -151,6 +173,9 @@ export function ActionConfigureAmountSection({
       onAssetSelect={onAssetSelect}
       assetPickerVariant={assetPickerVariant}
       pickerTokens={pickerTokens}
+      assetPickerDisabled={assetPickerDisabled}
+      assetPickerHint={assetPickerHint}
+      onAssetPickerBlocked={onAssetPickerBlocked}
     />
   )
 }
@@ -187,6 +212,8 @@ export function ActionConfigureStage({
   amountVariant = "card",
   hideAssetSelector = false,
   homeLayout = false,
+  singlePrimaryCta = false,
+  claimSummary = false,
   amountPlacement = "inline",
   assetPickerVariant = "menu",
   pickerTokens,
@@ -198,17 +225,41 @@ export function ActionConfigureStage({
   assetLabel,
   amountUnitLabel,
   inputLabel,
+  blockedRedirectHref,
 }: ActionConfigureStageProps) {
   const { t } = useTranslation()
+  const router = useRouter()
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
+  const blockedReason = preview?.blockedReason ?? null
+  // Only reasons the label mapper flags as "redirect" (e.g. no collateral) turn
+  // the CTA into an active navigation; every other block leaves it disabled.
+  const blockedRedirects = blockedReason ? Boolean(blockedCtaLabel(blockedReason, { symbol: assetSymbol }).redirect) : false
+  const isRedirectBlock = Boolean(blockedReason && blockedRedirectHref && blockedRedirects)
   const primaryLabel = primaryCtaLabel({
     stage: configureStage,
     verb,
-    blockedReason: preview?.blockedReason ?? null,
+    blockedReason,
     isValid,
     amountEntered: parsePositiveActionAmount(amount) != null,
+    blockedSymbol: assetSymbol,
   })
+  const primaryDisabled = shouldDisablePrimaryCta({
+    stage: configureStage,
+    isValid,
+    isPending,
+    blockedReason,
+    blockedRedirect: isRedirectBlock,
+  })
+  // A redirect block (e.g. "Deposit collateral first") sends the tap to the flow
+  // that unblocks the user instead of running the normal submit handler.
+  const handlePrimary = () => {
+    if (isRedirectBlock && blockedRedirectHref) {
+      router.push(blockedRedirectHref)
+      return
+    }
+    onPrimary?.()
+  }
   const secondaryLabel = secondaryCtaLabel(stage, { canGoBack })
   const walletStage = stage === "approve_allowance" || stage === "wallet_sign" ? stage : null
   const showStackedAmount = amountPlacement === "stacked"
@@ -300,6 +351,18 @@ export function ActionConfigureStage({
         </div>
       ) : null}
 
+      {/* Claim: the compact home/sidebar layout hides the generic preview cards, so
+          surface the claim total + market + per-token breakdown here directly. */}
+      {homeLayout && claimSummary && preview ? (
+        <div className={cn(previewMotionClassName, "space-y-3")} data-testid="action-claim-summary">
+          <ActionCard>
+            {preview.rateLabel ? <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="fee" /> : null}
+            {preview.marketValue ? <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" /> : null}
+          </ActionCard>
+          {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
+        </div>
+      ) : null}
+
       {preview && showHomeDetails ? (
         <div className={cn(previewMotionClassName, "space-y-3")}>
           {preview.rateLabel || preview.marketValue || preview.marketBreakdown ? (
@@ -331,10 +394,6 @@ export function ActionConfigureStage({
           {preview?.risk?.title && preview.risk.message ? (
             <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
           ) : null}
-
-          {preview?.blockedReason && !preview.allowed ? (
-            <ActionOutcomeBanner tone="error" title="Action unavailable" message={preview.blockedReason} />
-          ) : null}
         </div>
       ) : null}
 
@@ -347,43 +406,31 @@ export function ActionConfigureStage({
       {outcome ? <ActionOutcomeBanner tone={outcome.tone} title={outcome.title} message={outcome.message} /> : null}
 
       {isConfigureVisibleStage(stage) ? (
-        homeLayout ? (
+        homeLayout || singlePrimaryCta ? (
           <button
             type="button"
-            onClick={onPrimary}
-            disabled={shouldDisablePrimaryCta({
-              stage: configureStage,
-              isValid,
-              isPending,
-              blockedReason: preview?.blockedReason ?? null,
-            })}
+            onClick={handlePrimary}
+            disabled={primaryDisabled}
             className={primaryCtaClass({
-              disabled: shouldDisablePrimaryCta({
-                stage: configureStage,
-                isValid,
-                isPending,
-                blockedReason: preview?.blockedReason ?? null,
-              }),
+              disabled: primaryDisabled,
               pending: isPending || stage === "wallet_sign" || stage === "approve_allowance",
               className: "mt-1",
             })}
             data-testid="action-footer-primary"
           >
-            {isPending || stage === "wallet_sign" || stage === "approve_allowance" ? t("Processing…") : t(primaryLabel)}
+            {isPending || stage === "wallet_sign" || stage === "approve_allowance"
+              ? t("Processing…")
+              : t(primaryLabel).replace("{symbol}", assetSymbol ?? "")}
           </button>
         ) : (
           <ActionFooter
             primaryLabel={primaryLabel}
+            primaryLabelSymbol={assetSymbol}
             secondaryLabel={secondaryLabel}
-            onPrimary={onPrimary}
+            onPrimary={handlePrimary}
             onSecondary={onSecondary}
             secondaryHref={secondaryHref}
-            primaryDisabled={shouldDisablePrimaryCta({
-              stage: configureStage,
-              isValid,
-              isPending,
-              blockedReason: preview?.blockedReason ?? null,
-            })}
+            primaryDisabled={primaryDisabled}
             primaryPending={isPending || stage === "wallet_sign" || stage === "approve_allowance"}
             sticky
           />

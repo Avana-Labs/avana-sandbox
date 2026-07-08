@@ -1,4 +1,5 @@
 import type { ActionStage } from "./contracts"
+import { blockedCtaLabel } from "./blocked-ui"
 
 export type ActionStageEvent =
   | "continue"
@@ -11,23 +12,19 @@ export type ActionStageEvent =
   | "error"
   | "reset"
   | "back"
-  | "block"
 
 export function nextActionStage(stage: ActionStage, event: ActionStageEvent): ActionStage {
   switch (stage) {
     case "select":
       if (event === "continue") return "configure"
-      if (event === "block") return "blocked"
       return stage
     case "configure":
       if (event === "review") return "review"
-      if (event === "block") return "blocked"
       if (event === "back" || event === "reset") return "select"
       return stage
     case "review":
       if (event === "submit") return "wallet_sign"
       if (event === "back" || event === "reset") return "configure"
-      if (event === "block") return "blocked"
       return stage
     case "approve_allowance":
       if (event === "allowance_complete") return "wallet_sign"
@@ -45,7 +42,6 @@ export function nextActionStage(stage: ActionStage, event: ActionStageEvent): Ac
       return stage
     case "success":
     case "error":
-    case "blocked":
       if (event === "reset") return "configure"
       return stage
     default:
@@ -74,13 +70,17 @@ export function primaryCtaLabel(options: {
   blockedReason: string | null
   isValid: boolean
   amountEntered?: boolean
+  /** Asset spent by the action, used for "Insufficient {SYMBOL}" labels. */
+  blockedSymbol?: string
 }) {
   if (options.stage === "success") return "View dashboard"
   if (options.stage === "processing") return "Processing…"
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return options.verb
   if (options.stage === "error") return options.verb
   if (options.stage === "review") return options.verb
-  if (options.blockedReason) return "Adjust amount"
+  // The button IS the gate: a blocked action shows a short reason in-place
+  // instead of a pop-up. See blockedCtaLabel for the full mapping.
+  if (options.blockedReason) return blockedCtaLabel(options.blockedReason, { symbol: options.blockedSymbol }).label
   if (!options.isValid) {
     if (options.amountEntered) return "Enter a valid amount"
     return "Enter an amount"
@@ -94,11 +94,14 @@ export function shouldDisablePrimaryCta(options: {
   isValid: boolean
   isPending: boolean
   blockedReason?: string | null
+  /** When the block routes the user elsewhere (e.g. pledge collateral) the CTA
+   *  stays active so the tap can navigate — don't disable it. */
+  blockedRedirect?: boolean
 }) {
   if (options.isPending) return true
   if (options.stage === "processing") return true
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return true
-  if (options.blockedReason) return true
+  if (options.blockedReason && !options.blockedRedirect) return true
   if (options.stage === "configure" && !options.isValid) return true
   if (options.stage === "review" && !options.isValid) return true
   return false

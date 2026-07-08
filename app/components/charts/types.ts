@@ -1,4 +1,4 @@
-export const CHART_RANGE_OPTIONS = ["1H", "1D", "1W", "1M", "1Y", "All"] as const
+export const CHART_RANGE_OPTIONS = ["1D", "1W", "1M", "3M", "1Y", "All"] as const
 
 export type ChartRangeOption = (typeof CHART_RANGE_OPTIONS)[number]
 

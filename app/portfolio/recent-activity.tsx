@@ -26,6 +26,7 @@ const PRODUCT_OPTIONS: Array<{
   { id: "pool", label: "Pools" },
   { id: "lend", label: "Lend" },
   { id: "multiply", label: "Multiply" },
+  { id: "rewards", label: "Rewards" },
 ]
 
 const ACTION_OPTIONS: Array<{
@@ -84,6 +85,17 @@ function formatSignedUsd(amountUsd: number) {
   return amountUsd > 0 ? `+${formatted}` : amountUsd < 0 ? `-${formatted}` : formatted
 }
 
+// Reward claims are denominated in AVA points, not USD, so the amount column
+// shows "+25 AVA" rather than a misleading "$" figure.
+function formatSignedAva(amount: number) {
+  const formatted = `${Math.abs(amount).toLocaleString()} AVA`
+  return amount > 0 ? `+${formatted}` : amount < 0 ? `-${formatted}` : formatted
+}
+
+function formatRowAmount(row: PortfolioActivityRow) {
+  return row.product === "rewards" ? formatSignedAva(row.amountUsd) : formatSignedUsd(row.amountUsd)
+}
+
 function shortHash(txHash: string) {
   return `${txHash.slice(0, 6)}…${txHash.slice(-4)}`
 }
@@ -136,7 +148,7 @@ function matchesSearch(row: PortfolioActivityRow, query: string) {
   if (!query) return true
   const needle = query.toLowerCase()
   return [
-    formatSignedUsd(row.amountUsd),
+    formatRowAmount(row),
     row.kind,
     row.primaryLabel,
     row.product,
@@ -185,7 +197,7 @@ const FilterTrigger = React.forwardRef<HTMLButtonElement, FilterTriggerProps>(fu
         "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
         active
           ? "bg-foreground text-background"
-          : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
+          : "bg-slate-100 text-slate-600 hover:bg-surface-hover hover:text-foreground dark:bg-slate-800 dark:text-slate-300",
         className,
       )}
       {...props}
@@ -234,7 +246,7 @@ function FilterMenu<T extends string>({
 export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
-  const amount = (value: number) => (showDollarAmounts ? formatSignedUsd(value) : MASK)
+  const amount = (row: PortfolioActivityRow) => (showDollarAmounts ? formatRowAmount(row) : MASK)
   const [search, setSearch] = React.useState("")
   const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])
   const [kinds, setKinds] = React.useState<PortfolioActivityRow["kind"][]>([])
@@ -268,7 +280,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             className={cn(
               "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
               hasFilters
-                ? "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+                ? "bg-slate-100 text-slate-600 hover:bg-surface-hover hover:text-foreground dark:bg-slate-800 dark:text-slate-300"
                 : "bg-foreground text-background",
             )}
           >
@@ -302,7 +314,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
               </div>
               <div className="mt-2.5 flex items-center justify-between gap-3">
                 <span className="font-data text-[14px] font-medium tabular-nums text-foreground">
-                  {amount(row.amountUsd)}
+                  {amount(row)}
                 </span>
                 <div className="flex items-center gap-2.5">
                   <span
@@ -355,7 +367,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             <tbody>
               {visibleItems.length ? (
                 visibleItems.map((row) => (
-                  <tr key={row.id} className="transition-colors hover:bg-muted/80 dark:hover:bg-slate-900/70">
+                  <tr key={row.id} className="transition-colors hover:bg-hover">
                     <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
                       {formatRelativeTime(row.at)}
                     </td>
@@ -376,7 +388,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                       </div>
                     </td>
                     <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">
-                      {amount(row.amountUsd)}
+                      {amount(row)}
                     </td>
                     <td className="px-5 py-4 align-middle">
                       <span

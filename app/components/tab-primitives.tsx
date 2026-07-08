@@ -46,7 +46,7 @@ export function PillTabStrip<T extends string>({
             transition={{ type: "spring", stiffness: 500, damping: 28 }}
             className={cn(
               "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[14px] font-medium leading-none transition-colors sm:px-3 sm:text-[15px]",
-              active ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
+              active ? "bg-field-bottom text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {item.label}

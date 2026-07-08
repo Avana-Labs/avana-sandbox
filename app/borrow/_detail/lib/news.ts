@@ -11,7 +11,7 @@ export type NewsCardItem = {
 
 export function buildNewsItems(
   about: AboutCard,
-  imageUrl?: string,
+  _imageUrl?: string,
   imageLabel?: string,
 ): NewsCardItem[] {
   const items =
@@ -23,9 +23,10 @@ export function buildNewsItems(
       time: entry.date,
     }))
 
-  return items.map((item) => ({
+  return items.map((item, index) => ({
     ...item,
-    imageUrl,
+    // Free placeholder art (distinct per item) — swap for real news images later.
+    imageUrl: `https://picsum.photos/seed/avana-news-${index}/240/240`,
     imageLabel,
   }))
 }

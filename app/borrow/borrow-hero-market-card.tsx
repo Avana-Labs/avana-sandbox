@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { TokenPairCell } from "./components/atoms"
 
 export type HeroMarketCardProps = {
-  title: string
+  title?: string
   subtitle?: string
   hideTitleOnMobile?: boolean
   className?: string
@@ -30,24 +30,26 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
         className,
       )}
     >
-      <div className="mb-3">
-        <h3
-          className={cn(
-            "text-[14px] tracking-tight text-foreground md:text-[15px]",
-            hideTitleOnMobile ? "hidden md:block" : "",
-          )}
-        >
-          {title}
-        </h3>
-        {subtitle ? <p className="mt-0.5 text-[11.5px] leading-4 text-muted-foreground">{subtitle}</p> : null}
-      </div>
+      {title ? (
+        <div className="mb-3">
+          <h3
+            className={cn(
+              "text-[14px] tracking-tight text-foreground md:text-[15px]",
+              hideTitleOnMobile ? "hidden md:block" : "",
+            )}
+          >
+            {title}
+          </h3>
+          {subtitle ? <p className="mt-0.5 text-[11.5px] leading-4 text-muted-foreground">{subtitle}</p> : null}
+        </div>
+      ) : null}
 
       <div className="space-y-3.5">
         {rows.map((row) => (
           <Link
             key={row.id}
             href={row.href}
-            className="flex items-center gap-3 rounded-xs px-1 py-1 transition-colors hover:bg-surface-inset"
+            className="flex items-center gap-3 rounded-xs px-1 py-1 transition-colors hover:bg-hover"
           >
             <div className="min-w-0 flex-1">
               <TokenPairCell visuals={row.pool.visuals} name={row.title} subtitle={row.subtitle} size="md" />

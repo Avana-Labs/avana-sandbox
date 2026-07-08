@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { calculateHealthFactorWad, formatFixed, parseFixed } from "@/app/lib/credit-engine"
+import { calculateHealthFactorWad, currentDebtValueUsd6, formatFixed, parseFixed } from "@/app/lib/credit-engine"
 import { applyBorrowAction } from "@/app/lib/credit-engine/actions"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { selectBorrowableAssets } from "@/app/lib/borrow-system/selectors"
@@ -55,6 +55,38 @@ describe("borrow dashboard selectors", () => {
         Number.parseFloat(formatFixed(position.borrowRateWad, 18)) * 100,
       )
     }
+  })
+
+  it("does not drop debt in an unpledged market, and never shows a false ∞ health factor while owing", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    // Simulate hydrated data where a debt's market is NOT one of the wallet's
+    // pledged pools (the debt is backed by spoke-shared collateral pledged in a
+    // different market). "uni-v3-bluechip-weth-usdt" is a real bluechip market the
+    // demo wallet has not pledged. The old selector keyed debt rows on pledged
+    // pools only, so this debt vanished from the table while "Total Borrowed"
+    // still counted it, and per-row HF read ∞ ("safe").
+    const account = state.accounts["demo-wallet"]!
+    const bluechipDebt = account.debtPositions.find((position) => position.spokeId === "uni-v3-bluechip")!
+    bluechipDebt.marketId = "uni-v3-bluechip-weth-usdt"
+
+    const debts = selectPortfolioDebtRows(state, "demo-wallet")
+    const snapshot = selectBorrowSnapshot(state, "demo-wallet")
+
+    // The debt in the unpledged market is present (not silently dropped).
+    const orphan = debts.find((row) => row.pool.id === "uni-v3-bluechip-weth-usdt")
+    expect(orphan).toBeDefined()
+
+    // Its debt is counted, and no debt row falsely reads ∞ ("safe") while owing.
+    expect(orphan!.borrowedUsd).toBeGreaterThan(0)
+    expect(snapshot.totalBorrowedUsd).toBeGreaterThan(0)
+    for (const row of debts) {
+      expect(row.healthFactor).not.toBe(Number.POSITIVE_INFINITY)
+      expect(Number.isFinite(row.healthFactor ?? 0)).toBe(true)
+    }
+
+    // Every outstanding debt position is represented — rows never hide debt the total counts.
+    const outstanding = account.debtPositions.filter((position) => currentDebtValueUsd6(position) > 0n)
+    expect(debts).toHaveLength(outstanding.length)
   })
 
   it("reflects shared-session borrow activity in debt and collateral rows", () => {

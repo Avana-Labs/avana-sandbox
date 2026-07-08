@@ -40,7 +40,6 @@ export type {
   AboutCard,
   CashflowCard,
   CashflowTrend,
-  EngagementTrend,
   ChartMetricId,
   KeyMetricId,
   PerfTab,

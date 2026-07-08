@@ -6,9 +6,11 @@ import { Suspense } from "react"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { AnalyticsErrorSuppressor } from "./components/analytics-error-boundary"
+import { InpReporter } from "./components/inp-reporter"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
-import { Web3Provider } from "./lib/web3/web3-provider"
+import { WalletGateProvider } from "./lib/web3/wallet-gate"
+import { Web3ProviderBoundary } from "./lib/web3/web3-provider-boundary"
 import { AvanaSessionProviders } from "./components/avana-session-providers"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
@@ -99,7 +101,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-  generator: "v0.app",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -112,26 +113,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <DisplayPreferencesProvider>
-            <Web3Provider>
+            <WalletGateProvider>
               <AvanaSessionProviders>
                 <PreferencesProfileSync />
                 <TokenPricesProvider>
                   <CurrencyDisplayBoundary>
-                    <SandboxGate>
-                      <ConditionalSiteChrome>
-                        <Suspense fallback={null}>
-                          <PageLoadingBar />
-                        </Suspense>
-                        {children}
-                      </ConditionalSiteChrome>
-                    </SandboxGate>
+                    <Web3ProviderBoundary>
+                      <SandboxGate>
+                        <ConditionalSiteChrome>
+                          <Suspense fallback={null}>
+                            <PageLoadingBar />
+                          </Suspense>
+                          {children}
+                        </ConditionalSiteChrome>
+                      </SandboxGate>
+                    </Web3ProviderBoundary>
                     <DeferredGlobalChrome />
                   </CurrencyDisplayBoundary>
                 </TokenPricesProvider>
               </AvanaSessionProviders>
-            </Web3Provider>
+            </WalletGateProvider>
           </DisplayPreferencesProvider>
         </ThemeProvider>
+        {/* INP attribution — dev console + field beacon; captures which interaction is slow. */}
+        <InpReporter />
         {enableProductionAnalytics ? <AnalyticsErrorSuppressor /> : null}
         {enableProductionAnalytics ? <Analytics /> : null}
         {enableProductionAnalytics ? <SpeedInsights /> : null}

@@ -4,20 +4,9 @@ import { useCallback, useState } from "react"
 import { useAccount, useSwitchChain } from "wagmi"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { TARGET_CHAIN_ID, TARGET_CHAIN_NAME } from "@/app/lib/web3/target-chain"
+import type { WrongNetworkState } from "@/app/lib/web3/wrong-network-context"
 
-export type WrongNetworkState = {
-  /** True only when a wallet is connected AND on a chain other than the target. */
-  isWrongNetwork: boolean
-  /** The chain the app requires (e.g. "Ethereum"). */
-  targetChainName: string
-  targetChainId: number
-  /** A switch request is in flight (wallet prompt open). */
-  isSwitching: boolean
-  /** Human-readable reason the last switch attempt failed, or null. */
-  switchError: string | null
-  /** Ask the wallet to switch to the target chain; resolves true on success. */
-  switchToTargetChain: () => Promise<boolean>
-}
+export type { WrongNetworkState }
 
 /**
  * Detects when the connected wallet is on the wrong chain and exposes a switch

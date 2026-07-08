@@ -33,7 +33,7 @@ export function LendClient({ pageData }: { pageData: LendPageData }) {
             <div className="mx-auto max-w-[1152px]">
               <LendHero markets={markets} />
 
-              <div className="mt-12 space-y-8">
+              <div className="mt-7">
                 <HotMarkets assets={featuredAssets} sequence={featuredSequence} snapshots={featuredSnapshots} />
               </div>
 

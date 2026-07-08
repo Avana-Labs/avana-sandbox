@@ -5,7 +5,7 @@ import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection, DetailFaqSection, EngagementTrendsCard } from "@/app/borrow/_detail/ui"
+import { AboutNewsSection, DetailFaqSection } from "@/app/borrow/_detail/ui"
 import {
   PoolHero,
   PoolHeroIdentity,
@@ -36,7 +36,7 @@ export function PoolDetailClient({ detail }: Props) {
       <main className="pb-24 pt-8 md:pb-12">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
-            <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
+            <nav aria-label={t("Breadcrumb")} className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
               <Link href="/borrow" className="transition-colors hover:text-foreground">
                 {t("Borrow")}
               </Link>
@@ -44,7 +44,7 @@ export function PoolDetailClient({ detail }: Props) {
               <span className="font-normal text-foreground">{detail.hero.name}</span>
             </nav>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
               <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
                 <PoolHeroIdentity detail={detail} className="pb-0" />
               </div>
@@ -52,32 +52,25 @@ export function PoolDetailClient({ detail }: Props) {
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
                 <PoolHero detail={detail} hideIdentity className="mb-6" />
 
-                <section aria-label="Pool analytics" className="space-y-8 pt-8">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Market data</h2>
+                <AboutNewsSection
+                  about={detail.about}
+                  aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
+                  compactAboutTitle
+                  newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
+                  newsImageLabel={detail.hero.name}
+                  mediaVariant="icon"
+                />
+
+                <section aria-label={t("Pool analytics")} className="space-y-12 pt-12">
+                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Key Statistics</h2>
                   <QuickStatsGrid detail={detail} />
-                  <div className="space-y-6">
-                    <CashflowCard detail={detail} />
-                    <EngagementTrendsCard
-                      engagement={detail.engagement}
-                      accentClassName={[detail.hero.visuals[0].textClass, detail.hero.visuals[1].textClass]}
-                    />
-                  </div>
+                  <CashflowCard detail={detail} />
                   <RiskSection detail={detail} />
-                  <AboutNewsSection
-                    className="lg:hidden"
-                    about={detail.about}
-                    newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
-                    newsImageLabel={detail.hero.name}
-                    mediaVariant="icon"
-                  />
                   <DetailFaqSection
-                    title="General FAQs"
+                    title={t("General FAQs")}
                     items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                   />
-                  <CollateralHistoryCard
-                    transactions={detail.transactions}
-                    tokenLabels={[detail.hero.visuals[0].symbol, detail.hero.visuals[1].symbol]}
-                  />
+                  <CollateralHistoryCard transactions={detail.transactions} />
                   <RelatedPoolsRow detail={detail} />
                 </section>
               </div>
@@ -98,10 +91,10 @@ export function PoolDetailClient({ detail }: Props) {
           {t("Pledge")}
         </Link>
         <Link
-          href={actionPagePath("borrow", "borrow", { market: detail.id, return: `/borrow/markets/${detail.id}` })}
+          href={actionPagePath("borrow", "claim", { market: detail.id, return: `/borrow/markets/${detail.id}` })}
           className={secondaryCtaClass({ size: "compact" })}
         >
-          {t("Borrow")}
+          {t("Claim")}
         </Link>
       </MobileDetailActionBar>
     </div>

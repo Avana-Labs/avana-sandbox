@@ -29,6 +29,9 @@ export type RecordTransactionArgs = {
    *  before→after (e.g. "3.00x → 2.00x") instead of a constant 1 × current multiplier. */
   multiplierBefore?: number
   multiplierAfter?: number
+  /** Remaining claimable per borrow LP-fee reward position after a claim (usd6 strings),
+   *  so claimable survives reload instead of resetting to the seeded full amount. */
+  rewardClaims?: Array<{ rewardPositionId: string; remainingUsd6: string }>
   position?: {
     status: "open" | "closed"
     marketSlug?: string
@@ -185,6 +188,18 @@ export function borrowHistoryItemToRecordArgs(item: TransactionHistoryItem, wall
 export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: string): RecordTransactionArgs {
   const base = borrowHistoryItemToRecordArgs(result.historyItem, wallet)
   const account = result.state.accounts[wallet]
+
+  // Claim carries no market position — persist the post-claim remaining claimable per
+  // reward position instead, so claimable survives reload (hydration reduces the seeded
+  // claimable to this). Sent as absolute usd6 remaining, not a delta.
+  if (result.historyItem.kind === "claim") {
+    const rewardClaims = (account?.rewardPositions ?? []).map((position) => ({
+      rewardPositionId: position.id,
+      remainingUsd6: position.claimableUsd6.toString(),
+    }))
+    return rewardClaims.length > 0 ? { ...base, rewardClaims } : base
+  }
+
   const marketSlug = result.historyItem.marketId
   if (!account || !marketSlug) return base
 
