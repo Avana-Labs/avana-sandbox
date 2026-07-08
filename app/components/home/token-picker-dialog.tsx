@@ -66,7 +66,7 @@ export function TokenPickerDialog({
                 type="button"
                 onClick={() => onSelect(token.id)}
                 className={cn(
-                  "flex w-full items-center gap-3 px-5 py-2.5 text-left transition-colors hover:bg-surface-inset",
+                  "flex w-full items-center gap-3 px-5 py-2.5 text-left transition-colors hover:bg-hover",
                   isSelected && "bg-surface-inset",
                 )}
               >

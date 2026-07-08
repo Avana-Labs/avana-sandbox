@@ -44,7 +44,7 @@ export function ActionProcessingStage({
       {closeHref ? (
         <Link
           href={closeHref}
-          className="flex h-12 w-full items-center justify-center rounded-full border border-border bg-surface-raised text-[15px] font-medium text-foreground transition-colors hover:bg-muted"
+          className="flex h-12 w-full items-center justify-center rounded-full border border-border bg-surface-raised text-[15px] font-medium text-foreground transition-colors hover:bg-surface-hover"
         >
           {t("Close")}
         </Link>
@@ -52,7 +52,7 @@ export function ActionProcessingStage({
         <button
           type="button"
           onClick={onClose}
-          className="h-12 w-full rounded-full border border-border bg-surface-raised text-[15px] font-medium text-foreground transition-colors hover:bg-muted"
+          className="h-12 w-full rounded-full border border-border bg-surface-raised text-[15px] font-medium text-foreground transition-colors hover:bg-surface-hover"
         >
           {t("Close")}
         </button>

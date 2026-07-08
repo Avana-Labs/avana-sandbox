@@ -76,7 +76,7 @@ export function HomeWorkspaceCard({
           <div className="flex items-center justify-between gap-3">
             <Link
               href="/support-center"
-              className="inline-flex h-10 items-center justify-center rounded-radius-sm border border-border px-4 text-[14px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+              className="inline-flex h-10 items-center justify-center rounded-radius-sm border border-border px-4 text-[14px] font-medium text-foreground transition-colors hover:bg-hover"
             >
               {t("Open support")}
             </Link>

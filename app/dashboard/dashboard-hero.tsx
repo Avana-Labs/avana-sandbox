@@ -163,7 +163,7 @@ function buildActions({
     // (Replaces the ad-hoc mix of hardcoded blue/green/red/black hexes.)
     const normalized = label.toLowerCase()
     const chrome =
-      "!border-border/70 !bg-background hover:!bg-surface-inset dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
+      "!border-border/70 !bg-background hover:!bg-surface-hover dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
     if (normalized.includes("deposit") || normalized.includes("supply")) return `${chrome} !text-success`
     if (normalized.includes("withdraw") || normalized.includes("unwind")) return `${chrome} !text-danger`
     return `${chrome} !text-foreground`

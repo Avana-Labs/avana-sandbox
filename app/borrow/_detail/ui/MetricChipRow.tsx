@@ -50,7 +50,7 @@ export function MetricChipRow<T extends string>({
                 "flex flex-col items-start gap-1 rounded-radius-sm border p-3 text-left transition-colors",
                 active
                   ? "border-border bg-surface-inset"
-                  : "border-transparent bg-transparent hover:bg-surface-inset/60",
+                  : "border-transparent bg-transparent hover:bg-hover",
               )}
             >
               <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{chip.label}</span>
@@ -90,7 +90,7 @@ export function MetricChipRow<T extends string>({
               "flex h-7 shrink-0 items-center gap-1.5 rounded-xs border px-2.5 text-[12px] font-medium transition-colors",
               active
                 ? "border-border bg-surface-inset text-foreground"
-                : "border-border bg-surface-raised text-muted-foreground hover:bg-surface-inset hover:text-foreground",
+                : "border-border bg-surface-raised text-muted-foreground hover:bg-hover hover:text-foreground",
             )}
           >
             <span>{chip.label}</span>

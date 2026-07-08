@@ -24,7 +24,7 @@ function CloseIcon({ className }: { className?: string }) {
 }
 
 const FIELD_CLASSES =
-  "flex h-9 items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-[#767676] shadow-none transition-colors focus-within:border-foreground/20 hover:bg-[#f3f3f3] dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground dark:hover:bg-surface-hover dark:focus-within:border-brand/30"
+  "flex h-9 items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-[#767676] shadow-none transition-colors focus-within:border-foreground/20 dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground dark:focus-within:border-brand/30"
 
 const INPUT_CLASSES =
   "min-w-0 flex-1 bg-transparent text-[14px] font-normal tracking-[-0.01em] outline-none placeholder:text-[#767676] dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/70"

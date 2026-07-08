@@ -73,7 +73,7 @@ export function AssetHeroIdentity({
                 onClick={async () => {
                   await navigator.clipboard.writeText(detail.hero.contractAddress ?? metaLabel)
                 }}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2 py-1 text-[13px] font-normal leading-none text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2 py-1 text-[13px] font-normal leading-none text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <Copy className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
                 <span>{metaLabel}</span>
@@ -132,7 +132,7 @@ function HeroIcon({ label, onClick, children }: { label: string; onClick: () => 
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground md:size-7"
+      className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-hover hover:text-foreground md:size-7"
     >
       {children}
     </button>

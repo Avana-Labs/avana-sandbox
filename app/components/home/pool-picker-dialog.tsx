@@ -69,7 +69,7 @@ export function PoolPickerDialog({
                 type="button"
                 onClick={() => onSelect(pool.id)}
                 className={cn(
-                  "flex w-full items-center gap-4 px-5 py-2.5 text-left transition-colors hover:bg-surface-inset",
+                  "flex w-full items-center gap-4 px-5 py-2.5 text-left transition-colors hover:bg-hover",
                   isSelected && "bg-surface-inset",
                 )}
               >

@@ -15,7 +15,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useEffect, useState } from "react"
 
 const triggerClassName =
-  "inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground outline-none transition-colors hover:bg-surface-inset hover:text-foreground focus:outline-none focus-visible:outline-none dark:bg-[#181818] dark:text-white/72 dark:hover:bg-[#222222] dark:hover:text-white [-webkit-tap-highlight-color:transparent]"
+  "inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground outline-none transition-colors hover:bg-hover hover:text-foreground focus:outline-none focus-visible:outline-none dark:bg-[#181818] dark:text-white/72 dark:hover:bg-surface-hover dark:hover:text-white [-webkit-tap-highlight-color:transparent]"
 
 type PreferencesView = "root" | "language" | "currency"
 
@@ -87,7 +87,7 @@ export function DesktopPreferenceControls() {
               </div>
             </div>
             <DropdownMenuItem
-              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-[14px] text-foreground outline-none hover:bg-surface focus:bg-surface dark:text-white dark:hover:bg-[#1d1d1d] dark:focus:bg-[#1d1d1d]"
+              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
               onSelect={(event) => {
                 event.preventDefault()
                 setView("language")
@@ -103,7 +103,7 @@ export function DesktopPreferenceControls() {
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-[14px] text-foreground outline-none hover:bg-surface focus:bg-surface dark:text-white dark:hover:bg-[#1d1d1d] dark:focus:bg-[#1d1d1d]"
+              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
               onSelect={(event) => {
                 event.preventDefault()
                 setView("currency")
@@ -127,7 +127,7 @@ export function DesktopPreferenceControls() {
               <button
                 type="button"
                 onClick={() => setView("root")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground transition hover:bg-surface dark:text-white dark:hover:bg-[#1d1d1d]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground transition hover:bg-hover dark:text-white"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -137,7 +137,7 @@ export function DesktopPreferenceControls() {
               {LANGUAGE_OPTIONS.map((option) => (
                 <DropdownMenuItem
                   key={option.code}
-                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-surface focus:bg-surface dark:text-white dark:hover:bg-[#1d1d1d] dark:focus:bg-[#1d1d1d]"
+                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
                   onSelect={(event) => {
                     event.preventDefault()
                     setLanguage(option.code)
@@ -158,7 +158,7 @@ export function DesktopPreferenceControls() {
               <button
                 type="button"
                 onClick={() => setView("root")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground transition hover:bg-surface dark:text-white dark:hover:bg-[#1d1d1d]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground transition hover:bg-hover dark:text-white"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -168,7 +168,7 @@ export function DesktopPreferenceControls() {
               {CURRENCY_OPTIONS.map((option) => (
                 <DropdownMenuItem
                   key={option.code}
-                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-surface focus:bg-surface dark:text-white dark:hover:bg-[#1d1d1d] dark:focus:bg-[#1d1d1d]"
+                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
                   onSelect={(event) => {
                     event.preventDefault()
                     setCurrency(option.code)

@@ -70,7 +70,7 @@ export function ActionBlockedDialog({
           type="button"
           aria-label={t("Close")}
           onClick={onClose}
-          className="absolute right-4 top-4 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="absolute right-4 top-4 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
           <X className="size-4" />
         </button>

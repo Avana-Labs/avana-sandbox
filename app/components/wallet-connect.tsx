@@ -149,7 +149,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
               "flex size-8 appearance-none select-none items-center justify-center rounded-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25",
               isResourcesActive
                 ? "text-foreground"
-                : "text-muted-foreground hover:bg-surface-inset/60 hover:text-foreground",
+                : "text-muted-foreground hover:bg-hover hover:text-foreground",
             )}
           >
             <AppsGridIcon className="h-4 w-4" />
@@ -235,7 +235,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
         type="button"
         aria-label={t("Sign in")}
         title={t("Sign in")}
-        className="inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-surface-inset/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25"
+        className="inline-flex size-8 items-center justify-center rounded-xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25"
       >
         <CircleUserRound className="h-4 w-4" strokeWidth={1.5} />
       </button>

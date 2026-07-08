@@ -386,7 +386,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             }
             setView(backView)
           }}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-surface-inset"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-hover"
           aria-label="Back to menu"
         >
           <ChevronLeft className="h-6 w-6" />

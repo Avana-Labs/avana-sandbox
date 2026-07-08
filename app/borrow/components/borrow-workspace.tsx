@@ -252,7 +252,7 @@ function NoMarketsState({
         <button
           type="button"
           onClick={onClear}
-          className="mt-1 rounded-full border border-border px-4 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-raised/60"
+          className="mt-1 rounded-full border border-border px-4 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-hover"
         >
           {t("Clear search")}
         </button>

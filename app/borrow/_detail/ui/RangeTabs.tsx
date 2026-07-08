@@ -42,7 +42,7 @@ export function RangeTabs({ value, onChange, ranges = ALL, className, ariaLabel 
               "min-h-10 rounded-xs px-2.5 text-[11px] font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-6 sm:px-2",
               active
                 ? "bg-surface-raised text-foreground shadow-elev-1 dark:bg-slate-100 dark:text-slate-950"
-                : "text-muted-foreground hover:text-foreground dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+                : "text-muted-foreground hover:bg-hover hover:text-foreground dark:text-slate-300",
             )}
           >
             {formatRangeLabel(r)}

@@ -140,7 +140,7 @@ function HeroIcon({ label, onClick, children }: { label: string; onClick: () => 
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground"
+      className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
     >
       {children}
     </button>

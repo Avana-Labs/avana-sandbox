@@ -52,7 +52,7 @@ const FILTERS = [
   { id: "rebalance", label: "Rebalance" },
 ] as const
 
-const ROW_HOVER_BG = "transition-colors group-hover:bg-table-header/40 dark:group-hover:bg-[#131820]"
+const ROW_HOVER_BG = "transition-colors group-hover:bg-hover"
 const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-radius-lg`
 const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-radius-lg`
 
@@ -79,7 +79,7 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
                   "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
                   active
                     ? "bg-foreground text-background"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
+                    : "bg-slate-100 text-slate-600 hover:bg-surface-hover hover:text-foreground dark:bg-slate-800 dark:text-slate-300",
                 )}
               >
                 {t(filter.label)}

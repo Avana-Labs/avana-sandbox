@@ -32,7 +32,7 @@ export function AssetCashflowCard({ detail }: Props) {
               <tr
                 key={i}
                 className={cn(
-                  "transition-colors hover:bg-surface-inset/60",
+                  "transition-colors hover:bg-hover",
                   row.highlighted ? "bg-surface-inset/40" : undefined,
                 )}
               >

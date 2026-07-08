@@ -253,7 +253,7 @@ export function DropdownChip({
         "inline-flex h-7 items-center gap-1 rounded-xs border px-2 text-[12px] font-medium transition-colors",
         active
           ? "border-transparent bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary-hover"
-          : "border-border bg-surface-raised text-foreground hover:bg-surface-inset",
+          : "border-border bg-surface-raised text-foreground hover:bg-surface-hover",
         className,
       )}
     >

@@ -80,7 +80,7 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
             type="button"
             onClick={() => router.push(actionPagePath("lend", "withdraw", { market: marketId, return: returnHref }))}
             disabled={!position}
-            className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 rounded-radius-sm border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t("Withdraw")}
           </button>

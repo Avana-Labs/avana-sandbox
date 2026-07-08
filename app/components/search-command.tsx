@@ -297,7 +297,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
         className={
           iconOnly
             ? "inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
-            : "flex h-9 w-full items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-left text-[14px] font-normal tracking-[-0.01em] text-[#767676] shadow-none transition-colors hover:bg-[#f3f3f3] lg:h-10 lg:gap-3 lg:px-4 lg:text-[15px] dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground dark:hover:bg-surface-hover"
+            : "flex h-9 w-full items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-left text-[14px] font-normal tracking-[-0.01em] text-[#767676] shadow-none lg:h-10 lg:gap-3 lg:px-4 lg:text-[15px] dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground"
         }
         >
         {iconOnly ? (
@@ -386,7 +386,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
                         onClick={() => goToResult(result.href)}
                         onMouseMove={() => setActiveIndex(flatIndex)}
                         className={cn(
-                          "group flex w-full items-center gap-3 rounded-radius-md px-3 py-2 text-left transition-colors hover:bg-surface-inset",
+                          "group flex w-full items-center gap-3 rounded-radius-md px-3 py-2 text-left transition-colors hover:bg-hover",
                           isActive && "bg-surface-inset",
                         )}
                       >

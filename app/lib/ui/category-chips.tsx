@@ -38,7 +38,7 @@ export function CategoryChips({
               "shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[14px] font-medium transition-colors",
               active
                 ? "border-transparent bg-surface-inset text-foreground dark:bg-[#2c2c2c] dark:text-white"
-                : "border-border bg-card text-muted-foreground hover:bg-surface-hover hover:text-foreground dark:border-transparent dark:bg-[#1d1d1d] dark:text-white/65 dark:hover:bg-[#262626] dark:hover:text-white",
+                : "border-border bg-card text-muted-foreground hover:bg-surface-hover hover:text-foreground dark:border-transparent dark:bg-[#1d1d1d] dark:text-white/65 dark:hover:text-white",
             )}
           >
             {chip.label}
