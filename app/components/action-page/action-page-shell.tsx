@@ -80,8 +80,9 @@ export function ActionPageShell({
       <div
         className={cn(
           "mx-auto flex w-full flex-1 flex-col",
-          density === "home" ? "max-w-none gap-2 px-0 pb-0" : "max-w-[560px] gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
-          mode === "embedded" && density === "sidebar" && "gap-4 py-5",
+          density === "home" && "max-w-none gap-2 px-0 pb-0",
+          density === "sidebar" && "max-w-none gap-4 px-0 pb-0",
+          density === "default" && "max-w-[560px] gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
         )}
       >
         {showTitleBlock ? (
