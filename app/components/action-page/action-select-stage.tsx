@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Search } from "lucide-react"
+import { ChevronRight, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
@@ -72,8 +72,8 @@ export function ActionSelectStage({
               type="button"
               onClick={() => onSelect(item.id)}
               className={cn(
-                "flex w-full items-center justify-between gap-4 rounded-radius-md px-3 py-3 text-left transition-colors",
-                "hover:bg-surface-hover",
+                "group flex w-full items-center justify-between gap-4 rounded-radius-md px-3 py-3 text-left transition-colors",
+                "hover:bg-hover",
               )}
             >
               <div className="flex min-w-0 items-center gap-3">
@@ -87,11 +87,17 @@ export function ActionSelectStage({
                   <div className="truncate text-[13px] text-muted-foreground">{item.sublabel ?? item.symbol}</div>
                 </div>
               </div>
-              <div className="shrink-0 text-right">
-                <div className="text-[14px] font-medium text-foreground">{item.trailingLabel}</div>
-                {item.trailingSublabel ? (
-                  <div className="mt-0.5 text-[13px] text-muted-foreground">{item.trailingSublabel}</div>
-                ) : null}
+              <div className="flex shrink-0 items-center gap-2.5">
+                <div className="text-right">
+                  <div className="text-[14px] font-medium text-foreground">{item.trailingLabel}</div>
+                  {item.trailingSublabel ? (
+                    <div className="mt-0.5 text-[13px] text-muted-foreground">{item.trailingSublabel}</div>
+                  ) : null}
+                </div>
+                <ChevronRight
+                  className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-hidden
+                />
               </div>
             </button>
           ))
