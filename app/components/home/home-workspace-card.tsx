@@ -24,7 +24,7 @@ export function HomeWorkspaceCard({
   const { t } = useTranslation()
 
   return (
-    <section className="flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-8 md:pb-16 md:pt-14">
+    <section className="flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-16 md:pb-16 md:pt-24">
       <div className="w-full max-w-[480px]" data-testid="home-workspace-card">
         <div className="flex items-center justify-between gap-2">
           <ActionWorkspaceTabs
