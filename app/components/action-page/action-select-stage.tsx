@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
@@ -45,13 +46,17 @@ export function ActionSelectStage({
 
   return (
     <div data-testid="action-select-stage">
-      <label className="block">
+      <label className="relative block">
         <span className="sr-only">{t(searchPlaceholder)}</span>
+        <Search
+          className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t(searchPlaceholder)}
-          className="h-11 w-full rounded-radius-sm border border-border bg-surface-inset px-4 text-[14px] outline-none placeholder:text-muted-foreground"
+          className="h-11 w-full rounded-full border border-[#e6e6e6] bg-[#fafafa] pl-11 pr-4 text-[14px] font-normal tracking-[-0.01em] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/20 dark:border-border/60 dark:bg-surface-2 dark:focus:border-brand/30"
         />
       </label>
 
