@@ -71,7 +71,7 @@ export function HomeWorkspaceSkeleton() {
       data-testid="home-workspace-loading"
     >
       <span className="sr-only">Loading…</span>
-      <section className="skeleton-enter flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-16 md:pb-16 md:pt-24">
+      <section className="skeleton-enter flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-14 md:pb-16 md:pt-20">
         <div className="w-full max-w-[480px]">
           {/* header: mode tab strip */}
           <div className="flex items-center justify-between gap-2">
