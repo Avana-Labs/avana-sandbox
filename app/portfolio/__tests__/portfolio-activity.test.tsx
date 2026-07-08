@@ -79,9 +79,6 @@ vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
   DashboardPerformanceSection: () => null,
   DashboardLendPerformanceSection: () => null,
 }))
-vi.mock("@/app/portfolio/portfolio-lending-opportunities", () => ({
-  PortfolioLendingOpportunities: () => null,
-}))
 vi.mock("@/app/portfolio/dashboard-borrow-tab", () => ({ DashboardBorrowTab: () => null }))
 vi.mock("@/app/portfolio/portfolio-investments", () => ({ PortfolioInvestments: () => null }))
 vi.mock("@/app/portfolio/multiply-collateral-table", () => ({ MultiplyCollateralTable: () => null }))

@@ -27,7 +27,6 @@ import {
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
 import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
 import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
-import { PortfolioLendingOpportunities } from "@/app/portfolio/portfolio-lending-opportunities"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { buildLendSnapshotFromTabData } from "@/app/portfolio/lend-hero-state"
@@ -422,7 +421,6 @@ export function DashboardClient({
             />
           </DashboardSection>
           <DashboardLendPerformanceSection title="Lending Performance" metrics={lendDashboardMetrics} />
-          <PortfolioLendingOpportunities buckets={lendTabData.strategyBuckets} returnHref={dashboardReturnHref} />
         </div>
       ) : null}
       {activeTab === "looping" ? (
