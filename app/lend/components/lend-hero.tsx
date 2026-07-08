@@ -9,7 +9,6 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 const LEND_METRICS = [
   { key: "averageApy", label: "Average APY" },
   { key: "avgUtilization", label: "Avg Utilization" },
-  { key: "activeMarkets", label: "Active Markets" },
 ] as const
 
 function parseMarketUsd(value: string) {
@@ -73,7 +72,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
           {LEND_METRICS.map((metric) => (
             <div key={metric.key}>
               <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
@@ -84,9 +83,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
                 {showDollarAmounts
                   ? metric.key === "averageApy"
                     ? `${metrics.weightedApy.toFixed(2)}%`
-                    : metric.key === "avgUtilization"
-                      ? `${metrics.weightedUtilization.toFixed(2)}%`
-                      : metrics.activeMarkets.toString()
+                    : `${metrics.weightedUtilization.toFixed(2)}%`
                   : "••••••••"}
               </p>
             </div>
