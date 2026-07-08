@@ -125,19 +125,19 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
                       {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {t(KIND_LABEL[tx.kind])}
                       </span>
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel}
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right text-[12px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right text-[13px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
                       <span className="inline-block whitespace-nowrap">
                         {describeTransaction(tx.kind, collateralSymbol, borrowableSymbol)}
                       </span>
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}
@@ -194,19 +194,19 @@ export function TransactionHistoryCard({ transactions, collateralSymbol, borrowa
                       {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {t(KIND_LABEL[tx.kind])}
                       </span>
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel}
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right text-[12px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right text-[13px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
                       <span className="inline-block whitespace-nowrap">
                         {describeTransaction(tx.kind, collateralSymbol, borrowableSymbol)}
                       </span>
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}
