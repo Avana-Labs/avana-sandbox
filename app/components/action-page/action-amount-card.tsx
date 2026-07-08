@@ -171,7 +171,15 @@ export function ActionAmountCard({
         <label className="min-w-0 flex-1 max-[360px]:w-full">
           <span className="sr-only">{t("{label} amount").replace("{label}", t(label))}</span>
           <input
+            type="text"
             inputMode="decimal"
+            // Numbers-only: numeric keypad on mobile (never the alphabet), and no
+            // OS autofill/spellcheck that could inject letters. Any non-digit is
+            // stripped on change (covers typing AND paste) by sanitizeDecimalInput.
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             value={amount}
             onChange={(event) => onAmountChange(sanitizeDecimalInput(event.target.value))}
             className="w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none placeholder:text-muted-foreground/60"
