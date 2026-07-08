@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { HIGHLIGHT_CARD_CLASS, HighlightCardBackdrop, HighlightCarousel } from "@/app/components/highlight-carousel"
 import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
@@ -203,13 +204,18 @@ export function ExploreLoopsMarketsTable({
         </div>
       </div>
 
-      <div className="mt-5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="grid min-w-max grid-flow-col gap-4 md:min-w-0 md:grid-flow-row md:grid-cols-3">
-          {trendingSnapshots.map((snapshot) => (
-            <TrendingLoopCard key={snapshot.marketId} snapshot={snapshot} />
-          ))}
-        </div>
-      </div>
+      <HighlightCarousel
+        className="mt-5 h-[104px]"
+        renderSequence={(interactive) =>
+          trendingSnapshots.map((snapshot, index) => (
+            <TrendingLoopCard
+              key={`${interactive ? "a" : "b"}-${snapshot.marketId}-${index}`}
+              snapshot={snapshot}
+              interactive={interactive}
+            />
+          ))
+        }
+      />
 
       <MarketFilterBar
         className="mt-11"
@@ -613,60 +619,69 @@ function MobileLoopCard({
   )
 }
 
-function TrendingLoopCard({ snapshot }: { snapshot: MultiplyPageData["trendingSnapshots"][number] }) {
+function TrendingLoopCard({
+  snapshot,
+  interactive = true,
+}: {
+  snapshot: MultiplyPageData["trendingSnapshots"][number]
+  interactive?: boolean
+}) {
   const { t } = useTranslation()
-  const { compact } = useCurrency()
   const collateralSrc = resolveImageSrc(snapshot.collateralLogo)
   const borrowSrc = resolveImageSrc(snapshot.borrowLogo, snapshot.collateralLogo)
 
-  return (
-    <Link
-      href={snapshot.href}
-      className="group relative block w-full overflow-hidden rounded-radius-lg border border-border bg-surface-raised p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:border-border/80 hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)]"
-    >
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-100 [background-image:radial-gradient(circle,rgba(148,163,184,0.28)_1px,transparent_1.15px)] [background-position:0_4px] [background-size:16px_16px] dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1.15px)]" />
-      <div className="pointer-events-none absolute inset-0 z-0 rounded-radius-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
+  const cardClassName = cn(HIGHLIGHT_CARD_CLASS, "h-[104px] w-[372px] p-5")
 
-      <div className="relative z-10 mb-3 flex items-start justify-between gap-3">
-        <div className="flex items-center">
-          <div className="relative flex h-12 w-[72px] items-center">
-            {collateralSrc ? (
-              <div className="absolute left-0 top-0 z-10 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={collateralSrc} alt="" aria-hidden="true" className="size-full object-cover" />
-              </div>
-            ) : null}
-            {borrowSrc ? (
-              <div className="absolute left-6 top-0 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={borrowSrc} alt="" aria-hidden="true" className="size-full object-cover" />
-              </div>
-            ) : null}
-          </div>
+  const content = (
+    <>
+      <HighlightCardBackdrop />
+
+      <div className="relative z-10 flex h-full items-center gap-3">
+        {/* Overlapping collateral → borrow icon pair, sized to match the big
+            single icon on the Lend "Featured" cards. */}
+        <div className="relative flex h-14 w-[84px] shrink-0 items-center">
+          {collateralSrc ? (
+            <span className="absolute left-0 top-1/2 z-10 flex size-14 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={collateralSrc} alt="" aria-hidden="true" className="size-full object-cover" />
+            </span>
+          ) : null}
+          {borrowSrc ? (
+            <span className="absolute left-7 top-1/2 flex size-14 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={borrowSrc} alt="" aria-hidden="true" className="size-full object-cover" />
+            </span>
+          ) : null}
         </div>
-        <span className="inline-flex h-8 items-center rounded-full bg-[hsl(var(--brand-soft))] px-3 text-[13px] font-medium text-brand-readable dark:bg-[hsl(var(--brand-soft))]/20">
+
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">{snapshot.label}</div>
+          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("Loop market")}</div>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <div className="font-data text-[15px] font-medium tracking-[-0.03em] text-success">{snapshot.apyLabel}</div>
+          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("APY")}</div>
+        </div>
+
+        <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-[hsl(var(--brand-soft))] px-3 text-[13px] font-medium text-brand-readable dark:bg-[hsl(var(--brand-soft))]/20">
           {snapshot.maxLeverageLabel}
         </span>
       </div>
+    </>
+  )
 
-      <div className="relative z-10 space-y-3">
-        <h3 className="font-compact text-[15px] font-medium tracking-tight text-foreground">{snapshot.label}</h3>
-
-        <div className="space-y-2.5">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] leading-none text-muted-foreground">{t("APY")}</span>
-            <span className="font-data text-[14px] font-medium tabular-nums leading-none text-success">
-              {snapshot.apyLabel}
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] leading-none text-muted-foreground">{t("Available")}</span>
-            <span className="font-data text-[14px] font-medium tabular-nums leading-none text-foreground dark:text-white">
-              {compact(snapshot.availableUsd)}
-            </span>
-          </div>
-        </div>
+  if (!interactive) {
+    return (
+      <div aria-hidden="true" className={cardClassName}>
+        {content}
       </div>
+    )
+  }
+
+  return (
+    <Link href={snapshot.href} className={cardClassName}>
+      {content}
     </Link>
   )
 }
