@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useMemo, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
-import { HIGHLIGHT_CARD_CLASS, HighlightCardBackdrop, HighlightCarousel } from "@/app/components/highlight-carousel"
+import { HIGHLIGHT_CARD_CLASS, HighlightCarousel } from "@/app/components/highlight-carousel"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type HoverState = {
@@ -179,8 +179,6 @@ function FeaturedCard({
   const isHovered = hover?.cardKey === cardKey
   const cardContent = (
     <>
-      <HighlightCardBackdrop />
-
       <div className="absolute left-6 right-6 top-6 z-10 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <AssetIcon asset={asset} />
