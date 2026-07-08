@@ -65,7 +65,7 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
   const heroCards = buildHeroCards(pageData, compact)
 
   return (
-    <section className="mb-4 px-1 md:px-2">
+    <section className="mb-4">
       <BorrowHeroLiveMetrics metrics={pageData.heroMetrics} />
 
       <div className="mt-6 space-y-3">
