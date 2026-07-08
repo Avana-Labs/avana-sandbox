@@ -400,6 +400,7 @@ export function ActionAmountCard({
 
 export function ActionFooter({
   primaryLabel,
+  primaryLabelSymbol,
   secondaryLabel = "Cancel",
   onPrimary,
   onSecondary,
@@ -411,6 +412,9 @@ export function ActionFooter({
   className,
 }: {
   primaryLabel: string
+  /** Token ticker for the "Insufficient {symbol}" CTA — interpolated after
+   *  translation so the label localizes while the ticker stays verbatim. */
+  primaryLabelSymbol?: string
   secondaryLabel?: string
   onPrimary?: () => void
   onSecondary?: () => void
@@ -426,6 +430,7 @@ export function ActionFooter({
   const { t } = useTranslation()
   const primaryClassName = primaryCtaClass({ disabled: primaryDisabled, pending: primaryPending })
   const secondaryClassName = SECONDARY_CTA_CLASS
+  const primaryText = t(primaryLabel).replace("{symbol}", primaryLabelSymbol ?? "")
 
   return (
     <div
@@ -448,11 +453,11 @@ export function ActionFooter({
       )}
       {primaryHref && !onPrimary ? (
         <Link href={primaryHref} className={primaryClassName}>
-          {primaryPending ? t("Processing…") : t(primaryLabel)}
+          {primaryPending ? t("Processing…") : primaryText}
         </Link>
       ) : (
         <button type="button" onClick={onPrimary} disabled={primaryDisabled || primaryPending} className={primaryClassName}>
-          {primaryPending ? t("Processing…") : t(primaryLabel)}
+          {primaryPending ? t("Processing…") : primaryText}
         </button>
       )}
     </div>

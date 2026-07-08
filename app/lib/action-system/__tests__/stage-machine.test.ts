@@ -89,7 +89,8 @@ describe("primaryCtaLabel", () => {
       }),
     ).toBe("Insufficient balance")
 
-    // With the spent asset's symbol the balance label names it (Uniswap-style).
+    // With a symbol present the label is a {symbol} placeholder key — the ticker is
+    // interpolated at render (after translation) so the label localizes.
     expect(
       primaryCtaLabel({
         stage: "configure",
@@ -98,7 +99,7 @@ describe("primaryCtaLabel", () => {
         isValid: true,
         blockedSymbol: "USDC",
       }),
-    ).toBe("Insufficient USDC")
+    ).toBe("Insufficient {symbol}")
 
     expect(
       primaryCtaLabel({

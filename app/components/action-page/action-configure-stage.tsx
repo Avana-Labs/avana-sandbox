@@ -413,11 +413,14 @@ export function ActionConfigureStage({
             })}
             data-testid="action-footer-primary"
           >
-            {isPending || stage === "wallet_sign" || stage === "approve_allowance" ? t("Processing…") : t(primaryLabel)}
+            {isPending || stage === "wallet_sign" || stage === "approve_allowance"
+              ? t("Processing…")
+              : t(primaryLabel).replace("{symbol}", assetSymbol ?? "")}
           </button>
         ) : (
           <ActionFooter
             primaryLabel={primaryLabel}
+            primaryLabelSymbol={assetSymbol}
             secondaryLabel={secondaryLabel}
             onPrimary={handlePrimary}
             onSecondary={onSecondary}
