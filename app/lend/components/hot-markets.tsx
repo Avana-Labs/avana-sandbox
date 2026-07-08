@@ -2,10 +2,10 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from "framer-motion"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
+import { HIGHLIGHT_CARD_CLASS, HighlightCardBackdrop, HighlightCarousel } from "@/app/components/highlight-carousel"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type HoverState = {
@@ -17,7 +17,6 @@ type HoverState = {
 type FeaturedAsset = LendPageData["featuredAssets"][keyof LendPageData["featuredAssets"]]
 type FeaturedSnapshot = LendPageData["featuredSnapshots"][number]
 const TIME_LABELS = ["12:00 AM", "1:00 AM", "2:00 AM", "3:00 AM", "4:00 AM", "5:00 AM", "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM"]
-const MARQUEE_DURATION_SECONDS = 38
 const GRAPH_WIDTH = 396
 const GRAPH_HEIGHT = 72
 const GRAPH_PADDING_Y = 8
@@ -180,8 +179,7 @@ function FeaturedCard({
   const isHovered = hover?.cardKey === cardKey
   const cardContent = (
     <>
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-100 [background-image:radial-gradient(circle,rgba(148,163,184,0.28)_1px,transparent_1.15px)] [background-position:0_4px] [background-size:16px_16px] dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1.15px)]" />
-      <div className="pointer-events-none absolute inset-0 z-0 rounded-radius-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
+      <HighlightCardBackdrop />
 
       <div className="absolute left-6 right-6 top-6 z-10 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
@@ -205,11 +203,7 @@ function FeaturedCard({
     </>
   )
 
-  const cardClassName = cn(
-    "relative block h-[176px] w-[372px] shrink-0 overflow-hidden rounded-radius-lg border text-left",
-    "border-[#e1e4e8] bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-    "dark:border-[#26272a] dark:bg-[#1b1b1c] dark:shadow-none",
-  )
+  const cardClassName = cn(HIGHLIGHT_CARD_CLASS, "h-[176px] w-[372px]")
 
   if (!interactive) {
     return (
@@ -249,35 +243,6 @@ export function HotMarkets({
 }) {
   const { t } = useTranslation()
   const [hover, setHover] = useState<HoverState | null>(null)
-  const [carouselHovered, setCarouselHovered] = useState(false)
-  const [sequenceWidth, setSequenceWidth] = useState(0)
-  const sequenceRef = useRef<HTMLDivElement | null>(null)
-  const x = useMotionValue(0)
-  const reduceMotion = useReducedMotion()
-  const marqueePaused = hover !== null || carouselHovered || reduceMotion
-
-  useEffect(() => {
-    const sequence = sequenceRef.current
-    if (!sequence) return
-
-    const updateWidth = () => {
-      setSequenceWidth(sequence.offsetWidth)
-      x.set(0)
-    }
-
-    updateWidth()
-    const observer = new ResizeObserver(updateWidth)
-    observer.observe(sequence)
-    return () => observer.disconnect()
-  }, [x])
-
-  useAnimationFrame((_, delta) => {
-    if (marqueePaused || sequenceWidth === 0) return
-
-    const speed = sequenceWidth / MARQUEE_DURATION_SECONDS
-    const nextX = x.get() - speed * (delta / 1000)
-    x.set(nextX <= -sequenceWidth ? nextX + sequenceWidth : nextX)
-  })
 
   const snapshotForAsset = (assetId: (typeof sequence)[number]) => {
     const asset = assets[assetId]
@@ -286,9 +251,9 @@ export function HotMarkets({
     )
   }
 
-  const renderSequence = (copy: "a" | "b", interactive = true) =>
+  const renderSequence = (interactive: boolean) =>
     sequence.map((assetId, index) => {
-      const cardKey = `${copy}-${assetId}-${index}`
+      const cardKey = `${interactive ? "a" : "b"}-${assetId}-${index}`
       const snapshot = snapshotForAsset(assetId)
       return (
         <FeaturedCard
@@ -312,32 +277,13 @@ export function HotMarkets({
           {t("Featured")}
         </h2>
 
-        <div
-          data-featured-carousel
-          className="relative h-[176px] w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_1rem,black_calc(100%-1rem),transparent_100%)]"
-          onMouseEnter={() => setCarouselHovered(true)}
-          onMouseLeave={() => {
-            setCarouselHovered(false)
-            setHover(null)
+        <HighlightCarousel
+          className="h-[176px]"
+          renderSequence={renderSequence}
+          onHoverChange={(hovered) => {
+            if (!hovered) setHover(null)
           }}
-          onPointerEnter={() => setCarouselHovered(true)}
-          onPointerLeave={() => {
-            setCarouselHovered(false)
-            setHover(null)
-          }}
-        >
-          {/* Left padding offsets the mask's left fade zone so the leading card is
-              fully visible at rest; it sits outside the measured sequence so the
-              marquee loop width (sequenceRef) is unaffected. */}
-          <motion.div style={{ x }} className="flex w-max items-start pl-4 sm:pl-6">
-            <div ref={sequenceRef} className="flex shrink-0 items-start gap-3 pr-3">
-              {renderSequence("a")}
-            </div>
-            <div aria-hidden="true" className="flex shrink-0 items-start gap-3 pr-3">
-              {renderSequence("b", false)}
-            </div>
-          </motion.div>
-        </div>
+        />
       </div>
     </section>
   )
