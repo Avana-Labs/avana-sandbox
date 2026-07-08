@@ -101,6 +101,12 @@ export function CompactBorrowCard({
                 aria-label={t("Borrow amount")}
                 type="text"
                 inputMode="decimal"
+                // Numbers-only: numeric keypad on mobile, no autofill/spellcheck
+                // injecting letters; sanitizeNumericInput strips any non-digit.
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 value={amount}
                 onChange={(event) => onAmountChange(sanitizeNumericInput(event.target.value))}
                 placeholder="0"
