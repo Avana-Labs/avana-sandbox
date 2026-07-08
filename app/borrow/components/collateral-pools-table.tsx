@@ -557,7 +557,7 @@ function SpokeMobileSection({
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+                className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-hover"
               >
                 {t("View {count} more {spoke} markets")
                   .replace("{count}", String(hiddenRowCount))

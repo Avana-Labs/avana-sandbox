@@ -27,7 +27,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      'flex cursor-default select-none items-center gap-2 rounded-xs px-2 py-1.5 font-compact text-[13px] outline-none focus:bg-surface-inset focus:text-foreground data-[state=open]:bg-surface-inset [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0',
+      'flex cursor-default select-none items-center gap-2 rounded-xs px-2 py-1.5 font-compact text-[13px] outline-none focus:bg-hover focus:text-foreground data-[state=open]:bg-hover [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0',
       inset && 'pl-8',
       className,
     )}
@@ -99,7 +99,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      'relative flex cursor-default select-none items-center rounded-xs py-1.5 pl-8 pr-2 font-compact text-[13px] outline-none transition-colors focus:bg-surface-inset focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      'relative flex cursor-default select-none items-center rounded-xs py-1.5 pl-8 pr-2 font-compact text-[13px] outline-none transition-colors focus:bg-hover focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className,
     )}
     checked={checked}
@@ -123,7 +123,7 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      'relative flex cursor-default select-none items-center rounded-xs py-1.5 pl-8 pr-2 font-compact text-[13px] outline-none transition-colors focus:bg-surface-inset focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      'relative flex cursor-default select-none items-center rounded-xs py-1.5 pl-8 pr-2 font-compact text-[13px] outline-none transition-colors focus:bg-hover focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className,
     )}
     {...props}

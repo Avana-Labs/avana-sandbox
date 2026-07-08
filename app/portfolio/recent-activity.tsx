@@ -197,7 +197,7 @@ const FilterTrigger = React.forwardRef<HTMLButtonElement, FilterTriggerProps>(fu
         "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
         active
           ? "bg-foreground text-background"
-          : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
+          : "bg-slate-100 text-slate-600 hover:bg-surface-hover hover:text-foreground dark:bg-slate-800 dark:text-slate-300",
         className,
       )}
       {...props}
@@ -280,7 +280,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             className={cn(
               "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
               hasFilters
-                ? "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+                ? "bg-slate-100 text-slate-600 hover:bg-surface-hover hover:text-foreground dark:bg-slate-800 dark:text-slate-300"
                 : "bg-foreground text-background",
             )}
           >
@@ -367,7 +367,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             <tbody>
               {visibleItems.length ? (
                 visibleItems.map((row) => (
-                  <tr key={row.id} className="transition-colors hover:bg-muted/80 dark:hover:bg-slate-900/70">
+                  <tr key={row.id} className="transition-colors hover:bg-hover">
                     <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
                       {formatRelativeTime(row.at)}
                     </td>

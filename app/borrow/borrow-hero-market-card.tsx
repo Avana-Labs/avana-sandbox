@@ -49,7 +49,7 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
           <Link
             key={row.id}
             href={row.href}
-            className="flex items-center gap-3 rounded-xs px-1 py-1 transition-colors hover:bg-surface-inset"
+            className="flex items-center gap-3 rounded-xs px-1 py-1 transition-colors hover:bg-hover"
           >
             <div className="min-w-0 flex-1">
               <TokenPairCell visuals={row.pool.visuals} name={row.title} subtitle={row.subtitle} size="md" />

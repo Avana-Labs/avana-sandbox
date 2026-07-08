@@ -70,7 +70,7 @@ export function ActionPageShell({
             type="button"
             aria-label={t("Close")}
             onClick={handleClose}
-            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
           >
             <X className="size-4" />
           </button>

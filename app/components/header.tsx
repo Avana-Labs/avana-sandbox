@@ -67,7 +67,7 @@ function SandboxWalletDialog({
         <DialogFooter className="gap-2 sm:gap-2">
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center rounded-radius-sm border border-border px-4 text-[14px] font-medium text-foreground transition-colors hover:bg-surface-inset"
+            className="inline-flex h-10 items-center justify-center rounded-radius-sm border border-border px-4 text-[14px] font-medium text-foreground transition-colors hover:bg-hover"
             onClick={async () => {
               if (typeof navigator === "undefined" || !navigator.clipboard) return
               await navigator.clipboard.writeText(walletAddress)

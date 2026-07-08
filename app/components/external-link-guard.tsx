@@ -128,7 +128,7 @@ export function ExternalLinkGuard() {
       <DialogContent className="overflow-hidden rounded-radius-lg border-border bg-background p-0 shadow-elev-3 sm:max-w-[600px]">
         <div className="relative flex flex-col px-5 pb-5 pt-8 sm:px-7 sm:pb-6 sm:pt-7">
           <DialogClose
-            className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-inset hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             aria-label={t("Close dialog")}
           >
             <X className="h-4 w-4" aria-hidden />

@@ -101,7 +101,7 @@ export function MarketsTable({
               </thead>
               <tbody className="divide-y divide-border">
                 {markets.map((m) => (
-                  <tr key={m.symbol} className="transition-colors hover:bg-surface-inset/60">
+                  <tr key={m.symbol} className="transition-colors hover:bg-hover">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">
                         <TokenIcon symbol={m.symbol} size="table" />

@@ -78,7 +78,8 @@
 
     --surface-1: 0 0% 100%;
     --surface-2: 0 0% 92.2%;
-    --surface-hover: 0 0% 91.8%;
+    --surface-hover: 0 0% 93.5%; /* solid hover step for filled controls */
+    --hover-overlay: 0 0% 0% / 0.04; /* canonical hover wash for transparent-resting items */
 
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
@@ -160,7 +161,8 @@
 
     --surface-1: 0 0% 7%;
     --surface-2: 0 0% 13%;
-    --surface-hover: 0 0% 22%;
+    --surface-hover: 0 0% 17%; /* solid hover step for filled controls */
+    --hover-overlay: 0 0% 100% / 0.04; /* canonical hover wash for transparent-resting items */
 
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 100%;
