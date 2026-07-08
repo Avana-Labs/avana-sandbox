@@ -71,16 +71,15 @@ export function HomeWorkspaceSkeleton() {
       data-testid="home-workspace-loading"
     >
       <span className="sr-only">Loading…</span>
-      <section className="skeleton-enter flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-8 md:pb-16 md:pt-14">
+      <section className="skeleton-enter flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-16 md:pb-16 md:pt-24">
         <div className="w-full max-w-[480px]">
-          {/* header: mode tab strip + settings button */}
+          {/* header: mode tab strip */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-0.5 sm:gap-1">
               {["w-14", "w-14", "w-12", "w-16"].map((width, index) => (
                 <Skeleton key={`home-mode-${index}`} className={cn("h-7 rounded-full", width)} />
               ))}
             </div>
-            <Skeleton className="size-9 shrink-0 rounded-full" />
           </div>
 
           {/* collateral → amount field stack + primary CTA */}
