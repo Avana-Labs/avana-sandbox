@@ -638,16 +638,16 @@ function TrendingLoopCard({
 
       <div className="relative z-10 flex h-full items-center gap-3">
         {/* Overlapping collateral → borrow icon pair, sized to match the big
-            single icon on the Lend "Featured" cards. */}
-        <div className="relative flex h-14 w-[84px] shrink-0 items-center">
+            single icon on the Lend "Featured" cards (64px). */}
+        <div className="relative flex h-16 w-[96px] shrink-0 items-center">
           {collateralSrc ? (
-            <span className="absolute left-0 top-1/2 z-10 flex size-14 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+            <span className="absolute left-0 top-1/2 z-10 flex size-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={collateralSrc} alt="" aria-hidden="true" className="size-full object-cover" />
             </span>
           ) : null}
           {borrowSrc ? (
-            <span className="absolute left-7 top-1/2 flex size-14 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+            <span className="absolute left-8 top-1/2 flex size-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={borrowSrc} alt="" aria-hidden="true" className="size-full object-cover" />
             </span>
@@ -663,10 +663,6 @@ function TrendingLoopCard({
           <div className="font-data text-[15px] font-medium tracking-[-0.03em] text-success">{snapshot.apyLabel}</div>
           <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("APY")}</div>
         </div>
-
-        <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-[hsl(var(--brand-soft))] px-3 text-[13px] font-medium text-brand-readable dark:bg-[hsl(var(--brand-soft))]/20">
-          {snapshot.maxLeverageLabel}
-        </span>
       </div>
     </>
   )
