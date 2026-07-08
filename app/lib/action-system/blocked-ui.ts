@@ -36,7 +36,9 @@ export function blockedCtaLabel(reason: string, options?: { symbol?: string }): 
     r.includes("balance") &&
     (r.includes("insufficient") || r.includes("enough") || r.includes("exceed"))
   ) {
-    return { label: symbol ? `Insufficient ${symbol}` : "Insufficient balance" }
+    // Return a translation key with a {symbol} placeholder (interpolated at render)
+    // so the label localizes — token tickers themselves are never translated.
+    return { label: symbol ? "Insufficient {symbol}" : "Insufficient balance" }
   }
   if (
     r.includes("borrowing power") ||

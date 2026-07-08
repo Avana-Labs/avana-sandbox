@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest"
 import { blockedCtaLabel } from "@/app/lib/action-system/blocked-ui"
 
 describe("blockedCtaLabel", () => {
-  it("names the asset on insufficient-balance blocks", () => {
+  it("uses a {symbol} placeholder on insufficient-balance blocks", () => {
+    // The ticker is interpolated at render (after translation), so the label is a key.
     expect(blockedCtaLabel("Insufficient wallet balance.", { symbol: "USDC" })).toEqual({
-      label: "Insufficient USDC",
+      label: "Insufficient {symbol}",
     })
     expect(blockedCtaLabel("You don't have enough balance to repay this amount.", { symbol: "ETH" })).toEqual({
-      label: "Insufficient ETH",
+      label: "Insufficient {symbol}",
     })
     // Without a symbol it falls back to a generic balance label.
     expect(blockedCtaLabel("Insufficient balance").label).toBe("Insufficient balance")

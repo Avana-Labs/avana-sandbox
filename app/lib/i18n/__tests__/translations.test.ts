@@ -41,3 +41,34 @@ describe("action translations", () => {
     expect(translate("JA", "Multiply successful")).toBe("レバレッジ 成功")
   })
 })
+
+describe("action CTA gate labels", () => {
+  const CTA_KEYS = [
+    "Insufficient {symbol}",
+    "Insufficient balance",
+    "Insufficient liquidity",
+    "Insufficient LP",
+    "Deposit collateral first",
+    "Borrowing unavailable",
+    "Try a smaller amount",
+    "Supply cap reached",
+    "Market paused",
+    "Price unavailable",
+    "Not available here",
+    "Nothing to claim",
+    "Select rewards",
+    "Nothing to withdraw",
+  ]
+
+  it.each(ONBOARDING_LANGS)("localizes every blocked-CTA label in %s", (language) => {
+    for (const key of CTA_KEYS) {
+      expect(translate(language, key)).not.toBe(key)
+    }
+  })
+
+  it("keeps the {symbol} placeholder intact for interpolation", () => {
+    expect(translate("ES", "Insufficient {symbol}")).toContain("{symbol}")
+    expect(translate("JA", "Insufficient {symbol}")).toContain("{symbol}")
+    expect(translate("RU", "Insufficient {symbol}")).toContain("{symbol}")
+  })
+})
