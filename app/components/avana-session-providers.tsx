@@ -6,9 +6,11 @@ import { AvanaSessionsProvider, ConvexAvanaSessionsProvider } from "@/app/lib/av
 import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { shouldUseOpenGateSession, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 function ConvexSessionProvider({ walletId, children }: { walletId: string; children: ReactNode }) {
   const { isAuthenticated } = useConvexAuth()
+  const { t } = useTranslation()
 
   // A SIWE token is available before Convex has accepted it over the websocket.
   // Do not mount auth-gated wallet queries during that transition: they fail once with
@@ -16,7 +18,7 @@ function ConvexSessionProvider({ walletId, children }: { walletId: string; child
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Authenticating wallet session" />
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Authenticating wallet session")} />
       </div>
     )
   }

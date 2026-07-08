@@ -40,7 +40,10 @@ const TABS: Array<{ id: SearchTab; label: string }> = [
   { id: "lend", label: "Lend" },
 ]
 
-async function getSearchResults(formatCompactCurrency: (usd: number) => string): Promise<SearchResult[]> {
+async function getSearchResults(
+  formatCompactCurrency: (usd: number) => string,
+  t: (key: string) => string,
+): Promise<SearchResult[]> {
   const [{ BORROWABLE_ASSETS, BORROW_POOL_CATALOG }, { MARKETS, TOKENS }] = await Promise.all([
     import("@/app/lib/borrow-sim"),
     import("@/app/lend/components/data"),
@@ -53,7 +56,7 @@ async function getSearchResults(formatCompactCurrency: (usd: number) => string):
     id: `pool-${pool.id}`,
     tab: "pools" as const,
     title: pool.name,
-    subtitle: `${pool.venue} / ${pool.feeTier} / ${formatCompactCurrency(pool.availableUsd)} available`,
+    subtitle: `${pool.venue} / ${pool.feeTier} / ${formatCompactCurrency(pool.availableUsd)} ${t("available")}`,
     eyebrow: "Collateral pool",
     metric: `${pool.ltv}% LTV`,
     href: `/borrow/markets/${pool.id}`,
@@ -67,7 +70,7 @@ async function getSearchResults(formatCompactCurrency: (usd: number) => string):
     id: `borrow-${asset.id}`,
     tab: "borrow" as const,
     title: asset.name,
-    subtitle: `${asset.symbol} / ${asset.subtitle} / ${formatCompactCurrency(asset.availableUsd)} available`,
+    subtitle: `${asset.symbol} / ${asset.subtitle} / ${formatCompactCurrency(asset.availableUsd)} ${t("available")}`,
     eyebrow: "Borrow asset",
     metric: `${asset.borrowApr.toFixed(1)}% APR`,
     href: borrowAssetDetailPath(asset.id),
@@ -81,7 +84,7 @@ async function getSearchResults(formatCompactCurrency: (usd: number) => string):
       id: `lend-${asset.id}`,
       tab: "lend" as const,
       title: asset.name,
-      subtitle: `${asset.symbol} lending market / ${asset.utilization}% utilization`,
+      subtitle: `${asset.symbol} ${t("lending market")} / ${asset.utilization}% ${t("utilization")}`,
       eyebrow: "Lend asset",
       metric: `${Math.max(asset.borrowApr - 0.8, 0.1).toFixed(1)}% APY`,
       href: borrowAssetDetailPath(asset.id),
@@ -183,11 +186,11 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
     setLoadingResults(true)
 
     try {
-      setResults(await getSearchResults(compact))
+      setResults(await getSearchResults(compact, t))
     } finally {
       setLoadingResults(false)
     }
-  }, [compact, loadingResults, results])
+  }, [compact, loadingResults, results, t])
 
   useEffect(() => {
     setResults(null)
@@ -397,7 +400,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
                               {result.title}
                             </span>
                             <span className="hidden shrink-0 rounded-full bg-surface-inset px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-flex">
-                              {result.eyebrow}
+                              {t(result.eyebrow)}
                             </span>
                           </span>
                           <span className="block truncate text-[12px] leading-5 text-muted-foreground">

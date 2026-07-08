@@ -61,7 +61,7 @@ export function LendMarketDetailClient({ detail }: Props) {
       <main className="pb-24 pt-8 md:pb-12">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
-            <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
+            <nav aria-label={t("Breadcrumb")} className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
               <Link href="/lend" className="transition-colors hover:text-foreground">
                 {t("Lend")}
               </Link>
@@ -88,14 +88,14 @@ export function LendMarketDetailClient({ detail }: Props) {
                   mediaVariant="icon"
                 />
 
-                <section aria-label="Lend market analytics" className="space-y-12 pt-12">
+                <section aria-label={t("Lend market analytics")} className="space-y-12 pt-12">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Key Statistics</h2>
                   <QuickStatsGrid detail={detail} />
                   <SupplyCard detail={detail} />
                   <CashflowCard detail={detail} />
                   <RiskSection detail={detail} />
                   <DetailFaqSection
-                    title="General FAQs"
+                    title={t("General FAQs")}
                     items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                   />
                   <TransactionHistoryCard

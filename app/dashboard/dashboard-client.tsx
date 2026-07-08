@@ -97,8 +97,9 @@ function DashboardSection({
 
 /** Shown while the authenticated portfolio is loading from Convex (was a blank screen). */
 function DashboardLoadingState() {
+  const { t } = useTranslation()
   return (
-    <div className="skeleton-enter space-y-8" aria-busy="true" aria-label="Loading your portfolio">
+    <div className="skeleton-enter space-y-8" aria-busy="true" aria-label={t("Loading your portfolio")}>
       <div className="space-y-3">
         <Skeleton className="h-8 w-44 rounded-radius-sm" />
         <Skeleton className="h-10 w-72 rounded-radius-sm" />
@@ -362,8 +363,8 @@ export function DashboardClient({
             portfolioRetriesRef.current = 0
             retryPortfolioPage()
           }}
-          title="We couldn't load your portfolio"
-          message="The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard."
+          title={t("We couldn't load your portfolio")}
+          message={t("The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.")}
         />
       )
     }
@@ -396,8 +397,8 @@ export function DashboardClient({
 
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-10">
-          <DashboardOverviewSection title="Credit Overview" metrics={borrowDashboardMetrics.overview} />
-          <DashboardSection title="Credit Positions">
+          <DashboardOverviewSection title={t("Credit Overview")} metrics={borrowDashboardMetrics.overview} />
+          <DashboardSection title={t("Credit Positions")}>
             <DashboardBorrowTab
               section="all"
               collateralPositions={collateralPositions}
@@ -406,12 +407,12 @@ export function DashboardClient({
               returnHref={dashboardReturnHref}
             />
           </DashboardSection>
-          <DashboardPerformanceSection title="Credit Performance" metrics={borrowDashboardMetrics.performance} />
+          <DashboardPerformanceSection title={t("Credit Performance")} metrics={borrowDashboardMetrics.performance} />
         </div>
       ) : null}
       {activeTab === "lending" ? (
         <div className="mt-12 space-y-10">
-          <DashboardSection title="Lending Positions">
+          <DashboardSection title={t("Lending Positions")}>
             <PortfolioInvestments
               investments={lendTabData.investments}
               rewardsSummary={lendTabData.rewardsSummary}
@@ -420,7 +421,7 @@ export function DashboardClient({
               showHeading={false}
             />
           </DashboardSection>
-          <DashboardLendPerformanceSection title="Lending Performance" metrics={lendDashboardMetrics} />
+          <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} />
         </div>
       ) : null}
       {activeTab === "looping" ? (
@@ -433,8 +434,8 @@ export function DashboardClient({
           </div>
         ) : (
           <div className="mt-12 space-y-10">
-            <DashboardOverviewSection title="Looping Overview" metrics={multiplyDashboardMetrics.overview} />
-            <DashboardSection title="Looping Positions">
+            <DashboardOverviewSection title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
+            <DashboardSection title={t("Looping Positions")}>
               <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} />
             </DashboardSection>
           </div>
