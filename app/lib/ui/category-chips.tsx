@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import type { CategoryChip } from "@/app/lib/markets/category"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /**
  * Horizontal, single-select category filter chips (BTC / ETH / Forex / Utility / Smart
@@ -19,10 +20,11 @@ export function CategoryChips({
   onChange: (id: CategoryChip["id"]) => void
   className?: string
 }) {
+  const { t } = useTranslation()
   return (
     <div
       role="tablist"
-      aria-label="Filter by category"
+      aria-label={t("Filter by category")}
       className={cn("flex items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}
     >
       {chips.map((chip) => {
@@ -41,7 +43,7 @@ export function CategoryChips({
                 : "border-border bg-card text-muted-foreground hover:bg-surface-hover hover:text-foreground dark:border-transparent dark:bg-[#1d1d1d] dark:text-white/65 dark:hover:text-white",
             )}
           >
-            {chip.label}
+            {t(chip.label)}
           </button>
         )
       })}
