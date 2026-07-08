@@ -22,7 +22,6 @@ export type ActionStage =
   | "processing"
   | "success"
   | "error"
-  | "blocked"
 
 export type ActionMetricTone = "default" | "positive" | "warning" | "danger"
 
@@ -88,14 +87,6 @@ export type ActionSuccessUi = {
     rateValue: string
     marketValue: string
   }
-}
-
-export type ActionBlockedUi = {
-  title: string
-  description: string
-  primaryCtaLabel: string | null
-  primaryCtaHref: string | null
-  secondaryCtaLabel: string
 }
 
 export type ActionPageDescriptor = {

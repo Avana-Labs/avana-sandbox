@@ -15,7 +15,7 @@ import { HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
 import { useAvanaSessions, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi, ActionBlockedUi } from "@/app/lib/action-system/contracts"
+import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
 import {
   mapBorrowSuccessToActionUi,
@@ -32,16 +32,13 @@ import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/compon
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
-import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
-import { mapPreviewToBlockedUi, blockedUiForMissingWalletLp } from "@/app/lib/action-system/blocked-ui"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { formatBorrowLpSymbolLabel, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
-import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
 import {
   borrowSelectItemsForMarket,
   claimSelectItemsForWallet,
@@ -65,12 +62,6 @@ function resolveClaimPositions(marketId: string, claimPositionId?: string) {
   // A market IS chosen → claim strictly its fees (empty ⇒ $0), never fall back to all.
   const poolId = Object.entries(HOME_POOL_TO_MARKET_ID).find(([, id]) => id === marketId)?.[0] ?? marketId
   return HOME_CLAIM_POSITIONS.filter((position) => position.poolId === poolId || position.poolId === marketId)
-}
-
-function isHardBlock(reason: string | null) {
-  if (!reason) return false
-  const lower = reason.toLowerCase()
-  return lower.includes("insufficient") || lower.includes("deposit") || lower.includes("unavailable") || lower.includes("disabled")
 }
 
 export function BorrowActionPageClient({
@@ -168,9 +159,6 @@ export function BorrowActionPageClient({
   const deferredPercent = useDeferredValue(percent)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
-  const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
-  const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
-  const [dismissedLpBlock, setDismissedLpBlock] = useState(false)
   const [claimPositionId, setClaimPositionId] = useState(initialPositionId ?? "")
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   // Wrong-network submit gate. Read through a ref inside handlePrimary so the (heavily-memoised)
@@ -470,23 +458,6 @@ export function BorrowActionPageClient({
   }, [embedded, isHomeZeroState, marketId, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
-    if (kind !== "supply" || !marketId || stage !== "configure" || dismissedLpBlock) return
-    const walletLpUsd = getWalletLpBalanceUsd(session.state, walletId, marketId)
-    if (walletLpUsd > 0) {
-      setBlockedUi(null)
-      return
-    }
-    const market = session.state.markets[marketId]
-    const label = market ? formatBorrowMarketLabel({ name: market.display.name }) : "this pool"
-    setBlockedUi(blockedUiForMissingWalletLp(label))
-    if (!embedded) setStage("blocked")
-  }, [dismissedLpBlock, embedded, kind, marketId, session.state.markets, stage, walletId])
-
-  useEffect(() => {
-    setDismissedLpBlock(false)
-  }, [marketId])
-
-  useEffect(() => {
     let cancelled = false
     const safeAmount = parsePositiveActionAmount(deferredAmount) ?? 0
 
@@ -688,18 +659,6 @@ export function BorrowActionPageClient({
   }, [activeMarketId, deferredAmount, assetId, claimPositionId, creditScopeLabel, debtPosition, isHomeZeroState, kind, marketId, marketLabel, deferredPercent, resolvedBorrowAssetId, session, walletId])
 
   useEffect(() => {
-    if (!previewUi || previewUi.allowed || stage !== "configure") return
-    if (!isHardBlock(previewUi.blockedReason)) return
-    if (previewUi.blockedReason === dismissedBlockedReason) return
-    const blocked = mapPreviewToBlockedUi({ product: "borrow", kind, blockedReason: previewUi.blockedReason })
-    if (blocked) {
-      setBlockedUi(blocked)
-      if (!embedded) setStage("blocked")
-    }
-  }, [dismissedBlockedReason, embedded, kind, previewUi, stage])
-
-  useEffect(() => {
-    setDismissedBlockedReason(null)
     // Editing inputs after a failed submit clears the stale error banner and drops back to
     // configure, so the CTA is actionable again instead of stuck showing the old error.
     setOutcome(null)
@@ -924,14 +883,19 @@ export function BorrowActionPageClient({
       : stage === "success" || stage === "processing" || stage === "review"
         ? undefined
         : descriptor.subtitle
-  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = isHomeLayout ? "home" : "default"
   // Require a collateral pool before the borrow-asset picker opens, so the asset
   // list is always scoped to the selected market (wallet-connection gating is
   // already enforced upstream by the sandbox/connect onboarding flow).
   const borrowNeedsCollateral = isHomeLayout && kind === "borrow" && !activeMarketId
-  const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
+  // A borrow blocked for lack of collateral turns the CTA into a redirect that
+  // sends the user to pledge collateral for this market (no dead-end, no modal).
+  const blockedRedirectHref =
+    kind === "borrow" && previewUi?.blockedReason && !previewUi.allowed
+      ? actionPagePath("borrow", "supply", activeMarketId ? { market: activeMarketId } : {})
+      : null
   const useDialogAssetPicker = kind === "borrow" || kind === "repay"
   const pickerTokens = kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined
   const pickerSelectedTokenId =
@@ -949,12 +913,11 @@ export function BorrowActionPageClient({
     isHomeLayout &&
     kind === "supply" &&
     activePool != null &&
-    isConfigureVisibleStage(stage) &&
-    !showInlineBlocked
+    isConfigureVisibleStage(stage)
   const useWorkspaceFields =
     embedded && isHomeLayout && (showCollateralContextBar || (kind === "supply" && activePool != null))
   const stackedAmountField =
-    useWorkspaceFields && isConfigureVisibleStage(stage) && !showInlineBlocked && kind !== "claim" ? (
+    useWorkspaceFields && isConfigureVisibleStage(stage) && kind !== "claim" ? (
       <ActionConfigureAmountSection
         verb={descriptor.primaryVerb}
         amount={kind === "remove" ? percent : amount}
@@ -1110,20 +1073,7 @@ export function BorrowActionPageClient({
 
       {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
 
-      {showInlineBlocked && blockedUi ? (
-        <ActionBlockedDialog
-          variant="inline"
-          blocked={blockedUi}
-          open
-          onClose={() => {
-            if (kind === "supply") setDismissedLpBlock(true)
-            setBlockedUi(null)
-            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
-          }}
-        />
-      ) : null}
-
-      {isConfigureVisibleStage(stage) && !showInlineBlocked ? (
+      {isConfigureVisibleStage(stage) ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
@@ -1196,18 +1146,7 @@ export function BorrowActionPageClient({
           claimSummary={kind === "claim"}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
-        />
-      ) : null}
-
-      {blockedUi && !embedded ? (
-        <ActionBlockedDialog
-          variant="modal"
-          blocked={blockedUi}
-          open={stage === "blocked"}
-          onClose={() => {
-            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
-            setStage("configure")
-          }}
+          blockedRedirectHref={blockedRedirectHref}
         />
       ) : null}
     </ActionPageShell>
