@@ -1,9 +1,7 @@
 "use client"
 
-import { useMediaQuery } from "@/app/lib/use-media-query"
-import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { LendActionPageClient } from "@/app/components/action-page/lend-action-page-client"
-import { DetailSidebarActionCard } from "@/app/components/action-page/detail-sidebar-action-card"
+import { ResponsiveDetailAction } from "@/app/components/action-page/responsive-detail-action"
 
 export function ResponsiveLendAction({
   kind,
@@ -18,10 +16,8 @@ export function ResponsiveLendAction({
   label?: string
   sidebar?: boolean
 }) {
-  const isDesktop = useMediaQuery("(min-width: 768px)", true)
-
-  if (isDesktop) {
-    const action = (
+  return (
+    <ResponsiveDetailAction product="lend" kind={kind} market={market} closeHref={closeHref} label={label} sidebar={sidebar}>
       <LendActionPageClient
         kind={kind}
         embedded
@@ -30,16 +26,6 @@ export function ResponsiveLendAction({
         closeHref={closeHref}
         initialMarketId={market}
       />
-    )
-
-    if (sidebar) {
-      return <DetailSidebarActionCard>{action}</DetailSidebarActionCard>
-    }
-
-    return action
-  }
-
-  return (
-    <ActionPageLaunchCta product="lend" kind={kind} market={market} returnTo={closeHref} label={label} />
+    </ResponsiveDetailAction>
   )
 }
