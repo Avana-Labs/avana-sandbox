@@ -59,7 +59,7 @@ export function ActionSelectStage({
         />
       </label>
 
-      <div className="mt-3 divide-y divide-border/80 overflow-hidden rounded-radius-md border border-border/80 bg-card">
+      <div className="mt-3 flex flex-col gap-0.5">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <div className="text-[14px] font-medium">{t(emptyTitle)}</div>
@@ -72,7 +72,7 @@ export function ActionSelectStage({
               type="button"
               onClick={() => onSelect(item.id)}
               className={cn(
-                "flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left transition-colors",
+                "flex w-full items-center justify-between gap-4 rounded-radius-md px-3 py-3 text-left transition-colors",
                 "hover:bg-surface-hover",
               )}
             >
