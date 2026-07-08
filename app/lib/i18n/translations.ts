@@ -535,12 +535,6 @@ Object.assign(ZH_CN, {
   Auto: "自动",
   Preferences: "偏好设置",
   "Open preferences": "打开偏好设置",
-  "Workspace settings": "工作区设置",
-  "This is the sandbox workspace for the selected action mode. Wallet, network, and transaction state are simulated in-app.": "这是所选操作模式的沙盒工作区。钱包、网络和交易状态都在应用内模拟。",
-  "Current mode": "当前模式",
-  "Use the mode tabs to switch between Borrow, Repay, Claim, and Remove. The header Connect button opens the sandbox wallet details.":
-    "使用模式标签在 Borrow、Repay、Claim 和 Remove 之间切换。顶部 Connect 按钮会打开沙盒钱包详情。",
-  "Open support": "打开支持中心",
   "Select a token": "选择代币",
   "Search tokens": "搜索代币",
   "Filter networks": "筛选网络",
@@ -617,13 +611,6 @@ Object.assign(ES, {
   Auto: "Auto",
   Preferences: "Preferencias",
   "Open preferences": "Abrir preferencias",
-  "Workspace settings": "Configuración del espacio de trabajo",
-  "This is the sandbox workspace for the selected action mode. Wallet, network, and transaction state are simulated in-app.":
-    "Este es el espacio sandbox para el modo de acción seleccionado. La billetera, la red y el estado de las transacciones se simulan dentro de la app.",
-  "Current mode": "Modo actual",
-  "Use the mode tabs to switch between Borrow, Repay, Claim, and Remove. The header Connect button opens the sandbox wallet details.":
-    "Usa las pestañas de modo para cambiar entre Borrow, Repay, Claim y Remove. El botón Connect del encabezado abre los detalles de la billetera sandbox.",
-  "Open support": "Abrir soporte",
   "Select a token": "Selecciona un token",
   "Search tokens": "Buscar tokens",
   "Filter networks": "Filtrar redes",
