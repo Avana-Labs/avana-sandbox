@@ -1,93 +1,66 @@
-import type { ActionBlockedUi, ActionKind, ActionProduct } from "./contracts"
-import { actionPagePath } from "./contracts"
-
-export function blockedUiForMissingWalletAsset(symbol: string, _verb = "deposit"): ActionBlockedUi {
-  return {
-    title: `That's more practice ${symbol} than you hold`,
-    description: `You've used all your sandbox ${symbol}. Lower the amount, or explore another asset — every market is available with your practice funds.`,
-    primaryCtaLabel: null,
-    primaryCtaHref: null,
-    secondaryCtaLabel: "Got it",
-  }
+export type BlockedCta = {
+  /** Short, button-sized label describing why the action can't proceed. */
+  label: string
+  /** When true the CTA stays active and should navigate the user somewhere that
+   *  unblocks them (e.g. pledge collateral) instead of sitting disabled. */
+  redirect?: boolean
 }
 
-export function blockedUiForMissingWalletLp(marketLabel: string): ActionBlockedUi {
-  return {
-    title: "That's more practice LP than you hold here",
-    description: `You've used all your sandbox ${marketLabel} LP. Lower the amount, or open another pool — every market stays available with your practice funds.`,
-    primaryCtaLabel: null,
-    primaryCtaHref: null,
-    secondaryCtaLabel: "Got it",
-  }
-}
+/**
+ * Map a block reason — raw engine text or a humanized string from
+ * `humanizeBlockedReason` — to a short primary-button label (Uniswap-style).
+ * The gate lives entirely on the CTA: a disabled button that says why, or an
+ * active "redirect" button that moves the user forward. No modal, no banner.
+ *
+ * `symbol` is the asset the action spends, used for balance messages.
+ */
+export function blockedCtaLabel(reason: string, options?: { symbol?: string }): BlockedCta {
+  const r = reason.toLowerCase()
+  const symbol = options?.symbol?.trim()
 
-export function mapPreviewToBlockedUi(options: {
-  product: ActionProduct
-  kind: ActionKind
-  blockedReason: string | null
-  /** Whether the wallet holds any of the target asset — distinguishes an
-   * over-balance amount ("exceeds balance") from a true zero-holding. */
-  hasWalletBalance?: boolean
-}): ActionBlockedUi | null {
-  if (!options.blockedReason) return null
-
-  const reason = options.blockedReason.toLowerCase()
-
-  if (reason.includes("insufficient") && reason.includes("balance")) {
-    const lendOverBalance = options.product === "lend" && options.hasWalletBalance
-    return {
-      title: lendOverBalance
-        ? "Amount exceeds your balance"
-        : options.product === "lend"
-          ? "You don't have this asset in your wallet"
-          : "No balance available",
-      description: lendOverBalance
-        ? "You're trying to deposit more than you hold. Lower the amount or tap Max to deposit your full balance."
-        : options.blockedReason,
-      primaryCtaLabel: options.product === "borrow" && options.kind === "borrow" ? "Deposit" : null,
-      primaryCtaHref:
-        options.product === "borrow" && options.kind === "borrow" ? actionPagePath("borrow", "supply") : null,
-      secondaryCtaLabel: "Got it",
-    }
+  // The only redirect case: you can't borrow without collateral, so send the
+  // button to the pledge flow instead of dead-ending it.
+  if (
+    r.includes("no collateral") ||
+    (r.includes("deposit") && (r.includes("before") || r.includes("collateral")))
+  ) {
+    return { label: "Deposit collateral first", redirect: true }
   }
 
-  if (reason.includes("borrowing unavailable") || (reason.includes("borrow") && reason.includes("unavailable"))) {
-    return {
-      title: "Borrowing unavailable",
-      description:
-        options.blockedReason ??
-        "Assets in this market may be unavailable because borrowing is disabled, borrow caps have been reached, or no liquidity is available. Try a different market or check back later.",
-      primaryCtaLabel: null,
-      primaryCtaHref: null,
-      secondaryCtaLabel: "Got it",
-    }
+  if (r.includes("borrowing unavailable") || (r.includes("borrow") && r.includes("unavailable"))) {
+    return { label: "Borrowing unavailable" }
   }
+  if (r.includes("liquidity")) return { label: "Insufficient liquidity" }
+  if (/\blp\b/.test(r)) return { label: "Insufficient LP" }
+  if (
+    r.includes("balance") &&
+    (r.includes("insufficient") || r.includes("enough") || r.includes("exceed"))
+  ) {
+    return { label: symbol ? `Insufficient ${symbol}` : "Insufficient balance" }
+  }
+  if (
+    r.includes("borrowing power") ||
+    r.includes("available credit") ||
+    r.includes("safely support") ||
+    r.includes("at risk") ||
+    r.includes("liquidation") ||
+    r.includes("insolvent")
+  ) {
+    return { label: "Try a smaller amount" }
+  }
+  if (r.includes("supply cap")) return { label: "Supply cap reached" }
+  if (r.includes("paused")) return { label: "Market paused" }
+  if (r.includes("price")) return { label: "Price unavailable" }
+  if (r.includes("not supported") || r.includes("unavailable") || r.includes("disabled")) {
+    return { label: "Not available here" }
+  }
+  if (r.includes("nothing to claim")) return { label: "Nothing to claim" }
+  if (r.includes("select rewards")) return { label: "Select rewards" }
+  if (r.includes("no deposited position") || r.includes("position does not exist")) {
+    return { label: "Nothing to withdraw" }
+  }
+  if (r.includes("positive") || r.includes("greater than zero")) return { label: "Enter an amount" }
 
-  if (reason.includes("deposit") && (reason.includes("before") || reason.includes("collateral"))) {
-    return {
-      title: "You need to deposit an asset before you can borrow.",
-      description: "To borrow you need to deposit a compatible asset to be used as collateral for your loan.",
-      primaryCtaLabel: "Deposit",
-      primaryCtaHref: actionPagePath("borrow", "supply"),
-      secondaryCtaLabel: "Got it",
-    }
-  }
-
-  if (reason.includes("unavailable") || reason.includes("disabled") || reason.includes("liquidity")) {
-    return {
-      title: "Action unavailable",
-      description: options.blockedReason,
-      primaryCtaLabel: null,
-      primaryCtaHref: null,
-      secondaryCtaLabel: "Got it",
-    }
-  }
-
-  return {
-    title: "Action unavailable",
-    description: options.blockedReason,
-    primaryCtaLabel: null,
-    primaryCtaHref: null,
-    secondaryCtaLabel: "Got it",
-  }
+  // Non-alarming catch-all — most remaining blocks are "amount is too big".
+  return { label: "Try a smaller amount" }
 }

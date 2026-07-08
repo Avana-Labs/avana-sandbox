@@ -22,8 +22,7 @@ describe("nextActionStage", () => {
     expect(nextActionStage("approve_allowance", "allowance_complete")).toBe("wallet_sign")
   })
 
-  it("routes hard blocks and errors", () => {
-    expect(nextActionStage("configure", "block")).toBe("blocked")
+  it("routes errors", () => {
     expect(nextActionStage("wallet_sign", "error")).toBe("error")
     expect(nextActionStage("processing", "error")).toBe("error")
   })
@@ -37,7 +36,6 @@ describe("nextActionStage", () => {
   it("resets from terminal stages back to configure", () => {
     expect(nextActionStage("success", "reset")).toBe("configure")
     expect(nextActionStage("error", "reset")).toBe("configure")
-    expect(nextActionStage("blocked", "reset")).toBe("configure")
   })
 })
 
@@ -50,7 +48,6 @@ describe("configure visibility", () => {
     expect(isConfigureVisibleStage("review")).toBe(false)
     expect(isConfigureVisibleStage("processing")).toBe(false)
     expect(isConfigureVisibleStage("success")).toBe(false)
-    expect(isConfigureVisibleStage("blocked")).toBe(false)
   })
 
   it("identifies review stage", () => {
@@ -82,7 +79,7 @@ describe("primaryCtaLabel", () => {
     ).toBe("Borrow")
   })
 
-  it("never uses blocked reason as the footer CTA label", () => {
+  it("turns a block into a short, in-place CTA label", () => {
     expect(
       primaryCtaLabel({
         stage: "configure",
@@ -90,16 +87,27 @@ describe("primaryCtaLabel", () => {
         blockedReason: "Insufficient balance",
         isValid: false,
       }),
-    ).toBe("Adjust amount")
+    ).toBe("Insufficient balance")
 
+    // With the spent asset's symbol the balance label names it (Uniswap-style).
     expect(
       primaryCtaLabel({
         stage: "configure",
         verb: "Deposit",
         blockedReason: "Insufficient wallet balance.",
         isValid: true,
+        blockedSymbol: "USDC",
       }),
-    ).toBe("Adjust amount")
+    ).toBe("Insufficient USDC")
+
+    expect(
+      primaryCtaLabel({
+        stage: "configure",
+        verb: "Borrow",
+        blockedReason: "You have no collateral in this market yet.",
+        isValid: false,
+      }),
+    ).toBe("Deposit collateral first")
   })
 
   it("shows validation label for invalid entered amounts", () => {

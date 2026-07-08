@@ -69,7 +69,7 @@ describe("ActionConfigureStage", () => {
     expect(onMax).toHaveBeenCalledTimes(1)
   })
 
-  it("hides projected metrics for a blocked action and shows the block reason", () => {
+  it("hides projected metrics for a blocked action and surfaces the block on the CTA", () => {
     render(
       <ActionConfigureStage
         stage="configure"
@@ -91,8 +91,10 @@ describe("ActionConfigureStage", () => {
     // No misleading SAFE health-factor card / metrics block for a blocked action.
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-health-factor-card")).not.toBeInTheDocument()
-    // The block reason is surfaced instead.
-    expect(screen.getByText("This borrow exceeds your available credit.")).toBeInTheDocument()
+    // The gate is the CTA itself: a disabled button with a short in-place reason.
+    const cta = screen.getByRole("button", { name: "Try a smaller amount" })
+    expect(cta).toBeInTheDocument()
+    expect(cta).toBeDisabled()
   })
 
   it("shows receive WETH toggle when enabled", () => {

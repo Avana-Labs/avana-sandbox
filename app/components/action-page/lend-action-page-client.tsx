@@ -7,7 +7,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useLendSessionContext, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { getLendMarketById } from "@/app/lib/lend-system/catalog"
-import type { ActionBlockedUi, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
+import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
 import { mapLendDepositPreviewToActionUi, mapLendWithdrawPreviewToActionUi } from "@/app/lib/action-system/adapters/lend-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
@@ -15,12 +15,10 @@ import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
-import { ActionBlockedDialog } from "@/app/components/action-page/action-blocked-dialog"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
-import { mapPreviewToBlockedUi, blockedUiForMissingWalletAsset } from "@/app/lib/action-system/blocked-ui"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { lendDepositSelectItems, lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/app/lib/lend-system/market-labels"
@@ -29,12 +27,6 @@ import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-syst
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
-
-function isHardBlock(reason: string | null) {
-  if (!reason) return false
-  const lower = reason.toLowerCase()
-  return lower.includes("insufficient") || lower.includes("balance") || lower.includes("unavailable")
-}
 
 export function LendActionPageClient({
   kind,
@@ -90,9 +82,6 @@ export function LendActionPageClient({
   const deferredAmount = useDeferredValue(amount)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
-  const [blockedUi, setBlockedUi] = useState<ActionBlockedUi | null>(null)
-  const [dismissedBlockedReason, setDismissedBlockedReason] = useState<string | null>(null)
-  const [dismissedWalletBlock, setDismissedWalletBlock] = useState(false)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   // Wrong-network submit gate (read via ref inside handlePrimary; see borrow client).
   const networkGuard = useActionNetworkGuard()
@@ -134,21 +123,6 @@ export function LendActionPageClient({
     setMarketId(validInitialMarketId)
     setStage("configure")
   }, [embedded, validInitialMarketId])
-
-  useEffect(() => {
-    if (kind !== "deposit" || !market || stage !== "configure" || dismissedWalletBlock) return
-    const walletBalance = getWalletBalanceForLendMarket(session.state, walletId, market)
-    if (walletBalance > 0) {
-      setBlockedUi(null)
-      return
-    }
-    setBlockedUi(blockedUiForMissingWalletAsset(market.asset.symbol, "deposit"))
-    if (!embedded) setStage("blocked")
-  }, [dismissedWalletBlock, embedded, kind, market, session.state, stage, walletId])
-
-  useEffect(() => {
-    setDismissedWalletBlock(false)
-  }, [marketId])
 
   const position = useMemo(
     () =>
@@ -242,20 +216,6 @@ export function LendActionPageClient({
   }, [deferredAmount, assetPriceUsd, kind, market, position, session, walletId])
 
   useEffect(() => {
-    if (!previewUi || previewUi.allowed || stage !== "configure") return
-    if (!isHardBlock(previewUi.blockedReason)) return
-    if (previewUi.blockedReason === dismissedBlockedReason) return
-    const hasWalletBalance =
-      kind === "deposit" && market ? getWalletBalanceForLendMarket(session.state, walletId, market) > 0 : false
-    const blocked = mapPreviewToBlockedUi({ product: "lend", kind, blockedReason: previewUi.blockedReason, hasWalletBalance })
-    if (blocked) {
-      setBlockedUi(blocked)
-      if (!embedded) setStage("blocked")
-    }
-  }, [dismissedBlockedReason, embedded, kind, market, previewUi, session.state, stage, walletId])
-
-  useEffect(() => {
-    setDismissedBlockedReason(null)
     // Editing inputs after a failed submit clears the stale error banner and returns to
     // configure so the CTA is actionable again instead of stuck showing the old error.
     setOutcome(null)
@@ -379,9 +339,8 @@ export function LendActionPageClient({
   // case and renders nothing rather than an error card.
   if (!market && stage !== "select") return null
 
-  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "blocked" || stage === "review"
+  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
-  const showInlineBlocked = embedded && Boolean(blockedUi) && isConfigureVisibleStage(stage)
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
       ? t("Choose the market to withdraw from.")
@@ -438,20 +397,7 @@ export function LendActionPageClient({
 
       {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
 
-      {showInlineBlocked && blockedUi ? (
-        <ActionBlockedDialog
-          variant="inline"
-          blocked={blockedUi}
-          open
-          onClose={() => {
-            setDismissedWalletBlock(true)
-            setBlockedUi(null)
-            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
-          }}
-        />
-      ) : null}
-
-      {isConfigureVisibleStage(stage) && market && !showInlineBlocked ? (
+      {isConfigureVisibleStage(stage) && market ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
@@ -475,19 +421,6 @@ export function LendActionPageClient({
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
           showBalance
           onMax={handleMax}
-        />
-      ) : null}
-
-      {blockedUi && !embedded ? (
-        <ActionBlockedDialog
-          variant="modal"
-          blocked={blockedUi}
-          open={stage === "blocked"}
-          onClose={() => {
-            setDismissedWalletBlock(true)
-            setDismissedBlockedReason(previewUi?.blockedReason ?? null)
-            setStage("configure")
-          }}
         />
       ) : null}
     </ActionPageShell>
