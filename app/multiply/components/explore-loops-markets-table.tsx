@@ -12,7 +12,6 @@ import {
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -20,7 +19,7 @@ import { HIGHLIGHT_CARD_CLASS, HighlightCarousel } from "@/app/components/highli
 import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
-import { CATEGORY_CHIPS, type CategoryChip } from "@/app/lib/markets/category"
+import { CATEGORY_CHIPS, categorizeMarket, type CategoryChip } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
@@ -48,6 +47,23 @@ const UTILITY_SYMBOLS = new Set(["AAVE", "UNI", "CRV", "LDO", "BAL", "AURA", "GN
 
 const CATEGORY_TABS = CATEGORY_CHIPS.multiply
 
+// Loop markets are grouped by their collateral asset's family, mirroring the Lend
+// page's grouped asset tables (Stablecoins → Ethereum → Bitcoin → Other). Utility
+// and Smart collateral both fall into "Other Assets".
+type LoopGroupKey = "forex" | "eth" | "btc" | "other"
+
+const LOOP_GROUP_ORDER: Array<{ key: LoopGroupKey; title: string }> = [
+  { key: "forex", title: "Stablecoins" },
+  { key: "eth", title: "Ethereum-Based" },
+  { key: "btc", title: "Bitcoin Based" },
+  { key: "other", title: "Other Assets" },
+]
+
+function loopGroupKey(collateralSymbol: string): LoopGroupKey {
+  const category = categorizeMarket(collateralSymbol)
+  return category === "forex" || category === "eth" || category === "btc" ? category : "other"
+}
+
 // Pure, row-only — hoisted out of the component so it isn't reallocated every render and
 // can be memoised per `rows` instead of recomputed for every row on every keystroke.
 function buildLoopSearchText(row: MultiplyPageData["lendRows"][number]): string {
@@ -68,6 +84,8 @@ function buildLoopSearchText(row: MultiplyPageData["lendRows"][number]): string 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type MultiplyCategoryTabId = CategoryChip["id"]
+
+type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "points"
 
 function parseCompactUsdLabel(value?: string) {
   if (!value) return null
@@ -96,19 +114,13 @@ type ExploreLoopsMarketsTableProps = {
 export function ExploreLoopsMarketsTable({
   rows,
   trendingSnapshots,
-  pageSize,
   tokenBorrowApys,
   tokenLogos,
   tokenSupplyApys,
 }: ExploreLoopsMarketsTableProps) {
-  const router = useRouter()
   const { t } = useTranslation()
-  const { compact } = useCurrency()
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
   const [search, setSearch] = React.useState("")
-  const [page, setPage] = React.useState(0)
-  const [sortKey, setSortKey] = React.useState<"protocol" | "asset" | "apy" | "rewards" | "points">("protocol")
-  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
   const searchQuery = search.trim().toLowerCase()
 
   // Compute each row's searchable text ONCE per `rows` change (keyed by row identity),
@@ -150,51 +162,21 @@ export function ExploreLoopsMarketsTable({
     return categoryFilteredRows.filter((row) => (searchTextByRow.get(row) ?? "").includes(searchQuery))
   }, [categoryFilteredRows, searchQuery, searchTextByRow])
 
-  const sortedRows = React.useMemo(() => {
-    const direction = sortDirection === "asc" ? 1 : -1
-    const parseValue = (value?: string) => {
-      if (!value) return Number.NEGATIVE_INFINITY
-      const numeric = Number.parseFloat(value.replace(/[^0-9.-]/g, ""))
-      return Number.isFinite(numeric) ? numeric : Number.NEGATIVE_INFINITY
+  // Bucket the filtered rows into the ordered collateral-family groups, dropping
+  // any empty group — the same grouped-table treatment the Lend page uses. No
+  // pagination: every market in a group is shown under its own sortable table.
+  const groupedSections = React.useMemo(() => {
+    const buckets: Record<LoopGroupKey, Array<MultiplyPageData["lendRows"][number]>> = {
+      forex: [],
+      eth: [],
+      btc: [],
+      other: [],
     }
-
-    return [...filteredRows].sort((a, b) => {
-      switch (sortKey) {
-        case "asset":
-          return a.asset.localeCompare(b.asset) * direction
-        case "apy":
-          return (parseValue(a.apy) - parseValue(b.apy)) * direction
-        case "rewards":
-          return (
-            (parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
-              parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)) *
-            direction
-          )
-        case "points":
-          return (parseValue(a.points) - parseValue(b.points)) * direction
-        case "protocol":
-        default:
-          return a.protocol.localeCompare(b.protocol) * direction
-      }
-    })
-  }, [filteredRows, sortDirection, sortKey])
-
-  const pageCount = Math.max(1, Math.ceil(sortedRows.length / pageSize))
-  const visibleRows = sortedRows.slice(page * pageSize, page * pageSize + pageSize)
-
-  const toggleSort = (nextKey: typeof sortKey) => {
-    if (sortKey === nextKey) {
-      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
-      return
-    }
-
-    setSortKey(nextKey)
-    setSortDirection(nextKey === "protocol" || nextKey === "asset" ? "asc" : "desc")
-  }
-
-  const getAssetLogo = (asset: string) => tokenLogos[asset as keyof typeof tokenLogos]
-  const getSupplyApy = (asset: string) => tokenSupplyApys[asset as keyof typeof tokenSupplyApys]
-  const getBorrowApy = (asset: string) => tokenBorrowApys[asset as keyof typeof tokenBorrowApys]
+    for (const row of filteredRows) buckets[loopGroupKey(row.protocol)].push(row)
+    return LOOP_GROUP_ORDER.map((group) => ({ title: group.title, rows: buckets[group.key] })).filter(
+      (group) => group.rows.length > 0,
+    )
+  }, [filteredRows])
 
   return (
     <section className="mt-7">
@@ -227,17 +209,116 @@ export function ExploreLoopsMarketsTable({
         searchPlaceholder={t("Search loops")}
       />
 
-      <DesktopTableSurface className="mt-[68px] rounded-radius-md">
+      <div className="mt-[68px] space-y-14">
+        {groupedSections.length > 0 ? (
+          groupedSections.map((group) => (
+            <div key={group.title} className="space-y-8">
+              <LoopMarketsSection
+                title={group.title}
+                rows={group.rows}
+                tokenLogos={tokenLogos}
+                tokenSupplyApys={tokenSupplyApys}
+                tokenBorrowApys={tokenBorrowApys}
+              />
+              {group.title === "Ethereum-Based" ? (
+                <div className="flex justify-center">
+                  <div className="h-px w-full max-w-[980px] bg-gradient-to-r from-transparent via-border/80 to-transparent dark:via-white/10" />
+                </div>
+              ) : null}
+            </div>
+          ))
+        ) : (
+          <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-[13px] text-muted-foreground shadow-none">
+            {t("No loops in this category yet.")}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function LoopMarketsSection({
+  title,
+  rows,
+  tokenLogos,
+  tokenSupplyApys,
+  tokenBorrowApys,
+}: {
+  title: string
+  rows: MultiplyPageData["lendRows"]
+  tokenLogos: MultiplyPageData["tokenLogos"]
+  tokenSupplyApys: MultiplyPageData["tokenSupplyApys"]
+  tokenBorrowApys: MultiplyPageData["tokenBorrowApys"]
+}) {
+  const { t } = useTranslation()
+  const { compact } = useCurrency()
+  const [sortKey, setSortKey] = React.useState<LoopSortKey>("protocol")
+  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
+
+  const toggleSort = (nextKey: LoopSortKey) => {
+    if (sortKey === nextKey) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
+      return
+    }
+
+    setSortKey(nextKey)
+    setSortDirection(nextKey === "protocol" || nextKey === "asset" ? "asc" : "desc")
+  }
+
+  const sortedRows = React.useMemo(() => {
+    const direction = sortDirection === "asc" ? 1 : -1
+    const parseValue = (value?: string) => {
+      if (!value) return Number.NEGATIVE_INFINITY
+      const numeric = Number.parseFloat(value.replace(/[^0-9.-]/g, ""))
+      return Number.isFinite(numeric) ? numeric : Number.NEGATIVE_INFINITY
+    }
+
+    return [...rows].sort((a, b) => {
+      switch (sortKey) {
+        case "asset":
+          return a.asset.localeCompare(b.asset) * direction
+        case "apy":
+          return (parseValue(a.apy) - parseValue(b.apy)) * direction
+        case "rewards":
+          return (
+            (parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
+              parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)) *
+            direction
+          )
+        case "points":
+          return (parseValue(a.points) - parseValue(b.points)) * direction
+        case "protocol":
+        default:
+          return a.protocol.localeCompare(b.protocol) * direction
+      }
+    })
+  }, [rows, sortDirection, sortKey])
+
+  return (
+    <section className="space-y-5">
+      {/* Sticky like the Lend spoke headers: each group title hangs under the site
+          header while its own table scrolls, then the next group's title takes over. */}
+      <div className="sticky top-16 z-20 flex flex-col gap-3 bg-background py-2 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+            {t(title)}
+          </h2>
+        </div>
+      </div>
+
+      <DesktopTableSurface className="rounded-radius-md">
         <div className="space-y-4 md:hidden">
-          {visibleRows.length ? (
-            visibleRows.map((row, index) => (
+          {sortedRows.length ? (
+            sortedRows.map((row, index) => (
               <MobileLoopCard
                 key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
                 row={row}
                 protocolLogo={getResolvedLogo(row.protocolLogo)}
-                assetLogo={getResolvedLogo(getAssetLogo(row.asset))}
+                assetLogo={getResolvedLogo(tokenLogos[row.asset as keyof typeof tokenLogos])}
                 availableLabel={
-                  parseCompactUsdLabel(row.points) == null ? (row.points ?? "—") : compact(parseCompactUsdLabel(row.points) as number)
+                  parseCompactUsdLabel(row.points) == null
+                    ? (row.points ?? "—")
+                    : compact(parseCompactUsdLabel(row.points) as number)
                 }
               />
             ))
@@ -249,315 +330,302 @@ export function ExploreLoopsMarketsTable({
         </div>
 
         <div className="hidden md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
-            <colgroup>
-              <col className="w-[5%]" />
-              <col className="w-[20%]" />
-              <col className="w-[18%]" />
-              <col className="w-[15%]" />
-              <col className="w-[15%]" />
-              <col className="w-[15%]" />
-              <col className="w-[12%]" />
-            </colgroup>
-            <thead>
-              <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  #
-                </th>
-                <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("protocol")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "protocol"
-                        ? "text-foreground dark:text-white"
-                        : "text-foreground/70 dark:text-white/70",
-                    )}
-                  >
-                    <span>{t("COLLATERAL")}</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("asset")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "asset"
-                        ? "text-foreground dark:text-white"
-                        : "text-foreground/70 dark:text-white/70",
-                    )}
-                  >
-                    <span>{t("BORROWABLE")}</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("apy")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "apy"
-                        ? "text-foreground dark:text-white"
-                        : "text-foreground/70 dark:text-white/70",
-                    )}
-                  >
-                    <span>{t("MAX APY")}</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("rewards")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "rewards"
-                        ? "text-foreground dark:text-white"
-                        : "text-foreground/70 dark:text-white/70",
-                    )}
-                  >
-                    <span>{t("MAX LEVERAGE")}</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="bg-table-header px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("points")}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap transition-colors",
-                      sortKey === "points"
-                        ? "text-foreground dark:text-white"
-                        : "text-foreground/70 dark:text-white/70",
-                    )}
-                  >
-                    <span>{t("AVAILABLE")}</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <SilentActionHeader />
-              </tr>
-            </thead>
-            <tbody
-              key={`multiply-${sortKey}-${sortDirection}-${visibleRows.length}`}
-              className="divide-y divide-border dark:divide-white/6"
-            >
-              {visibleRows.length ? (
-                visibleRows.map((row, index) => (
-                  <tr
-                    key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
-                    className="group asset-swap cursor-pointer transition-colors"
-                    onClick={() => router.push(row.href)}
-                    style={{ animationDelay: `${index * 40}ms` }}
-                  >
-                    <td
-                      className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
-                    >
-                      {page * pageSize + index + 1}
-                    </td>
-                    <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
-                      <CellLink href={row.href} className="flex items-center gap-2.5">
-                        {hasImageSrc(row.protocolLogo) ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={row.protocolLogo}
-                              alt=""
-                              aria-hidden="true"
-                              className="size-10 shrink-0 rounded-full bg-card object-cover"
-                            />
-                          </>
-                        ) : null}
-                        <span className="min-w-0">
-                          <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                            {row.protocol}
-                          </span>
-                          <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-                            <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
-                            <span className="font-data tabular-nums text-success">
-                              {getSupplyApy(row.protocol) ?? "—"}
-                            </span>
-                          </span>
-                        </span>
-                      </CellLink>
-                    </td>
-                    <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                      <CellLink href={row.href} className="flex min-w-0 items-center gap-2.5">
-                        {getAssetLogo(row.asset) ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={getAssetLogo(row.asset)}
-                              alt=""
-                              aria-hidden="true"
-                              className="size-10 shrink-0 rounded-full bg-card object-cover"
-                            />
-                          </>
-                        ) : null}
-                        <span className="min-w-0">
-                          <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                            {row.asset}
-                          </span>
-                          <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-                            <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
-                            <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">
-                              {getBorrowApy(row.asset) ?? "—"}
-                            </span>
-                          </span>
-                        </span>
-                      </CellLink>
-                    </td>
-                    <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                      <CellLink
-                        href={row.href}
-                        className={cn(
-                          "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
-                          row.apy
-                            ? row.apy.startsWith("-")
-                              ? "text-rose-600 dark:text-rose-400"
-                              : "text-success"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {row.apy || "—"}
-                      </CellLink>
-                    </td>
-                    <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                      <CellLink href={row.href} className="text-foreground">
-                        {row.rewardRows?.[1] ? (
-                          <span className="block">
-                            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                              {row.rewardRows[1].value}
-                            </span>
-                            <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-                              {row.rewardRows[1].label}
-                            </span>
-                          </span>
-                        ) : row.rewardRows?.[0] ? (
-                          <span className="block">
-                            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                              {row.rewardRows[0].value}
-                            </span>
-                            <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-                              {row.rewardRows[0].label}
-                            </span>
-                          </span>
-                        ) : row.partnerRewards ? (
-                          <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                            {row.partnerRewards}
-                          </span>
-                        ) : (
-                          <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-                            —
-                          </span>
-                        )}
-                      </CellLink>
-                    </td>
-                    <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
-                      {row.waitlistHref ? (
-                        <div className="inline-flex items-center">
-                          <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
-                            <a href={row.waitlistHref} target="_blank" rel="noreferrer">
-                              {t("Join waitlist")}
-                            </a>
-                          </Button>
-                        </div>
-                      ) : (
-                        <CellLink
-                          href={row.href}
-                          className="inline-flex items-center text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white"
-                        >
-                          <span>
-                            {parseCompactUsdLabel(row.points) == null
-                              ? (row.points ?? "—")
-                              : compact(parseCompactUsdLabel(row.points) as number)}
-                          </span>
-                        </CellLink>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
+              <colgroup>
+                <col className="w-[5%]" />
+                <col className="w-[20%]" />
+                <col className="w-[18%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
+                <col className="w-[12%]" />
+              </colgroup>
+              <thead>
+                <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+                  <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    #
+                  </th>
+                  <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("protocol")}
+                      className={cn(
+                        "flex items-center gap-2 whitespace-nowrap transition-colors",
+                        sortKey === "protocol"
+                          ? "text-foreground dark:text-white"
+                          : "text-foreground/70 dark:text-white/70",
                       )}
-                    </td>
-                  <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <div className="flex justify-end">
-                      <HoverActionGroup className="gap-2">
-                        <Button
-                          type="button"
-                          size="table"
-                          variant="brand-secondary"
-                          className="w-auto"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            const marketId = resolveMarketIdFromHref(row.href)
-                            if (!marketId) return
-                            router.push(actionPagePath("multiply", "multiply", { market: marketId, return: row.href }))
-                          }}
-                        >
-                          {t("Multiply")}
-                        </Button>
-                        <Button
-                          type="button"
-                          size="table"
-                          variant="brand"
-                          className="w-auto"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            const marketId = resolveMarketIdFromHref(row.href)
-                            if (!marketId) return
-                            router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: row.href }))
-                          }}
-                        >
-                          {t("Deleverage")}
-                        </Button>
-                      </HoverActionGroup>
-                    </div>
-                  </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-10 text-center text-[14px] text-muted-foreground dark:text-white/38"
-                  >
-                    {t("No loops in this category yet.")}
-                  </td>
+                    >
+                      <span>{t("COLLATERAL")}</span>
+                      <SortIcon />
+                    </button>
+                  </th>
+                  <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("asset")}
+                      className={cn(
+                        "flex items-center gap-2 whitespace-nowrap transition-colors",
+                        sortKey === "asset"
+                          ? "text-foreground dark:text-white"
+                          : "text-foreground/70 dark:text-white/70",
+                      )}
+                    >
+                      <span>{t("BORROWABLE")}</span>
+                      <SortIcon />
+                    </button>
+                  </th>
+                  <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("apy")}
+                      className={cn(
+                        "flex items-center gap-2 whitespace-nowrap transition-colors",
+                        sortKey === "apy"
+                          ? "text-foreground dark:text-white"
+                          : "text-foreground/70 dark:text-white/70",
+                      )}
+                    >
+                      <span>{t("MAX APY")}</span>
+                      <SortIcon />
+                    </button>
+                  </th>
+                  <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("rewards")}
+                      className={cn(
+                        "flex items-center gap-2 whitespace-nowrap transition-colors",
+                        sortKey === "rewards"
+                          ? "text-foreground dark:text-white"
+                          : "text-foreground/70 dark:text-white/70",
+                      )}
+                    >
+                      <span>{t("MAX LEVERAGE")}</span>
+                      <SortIcon />
+                    </button>
+                  </th>
+                  <th className="bg-table-header px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("points")}
+                      className={cn(
+                        "flex items-center gap-2 whitespace-nowrap transition-colors",
+                        sortKey === "points"
+                          ? "text-foreground dark:text-white"
+                          : "text-foreground/70 dark:text-white/70",
+                      )}
+                    >
+                      <span>{t("AVAILABLE")}</span>
+                      <SortIcon />
+                    </button>
+                  </th>
+                  <SilentActionHeader />
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
+                {sortedRows.map((row, index) => (
+                  <LoopTableRow
+                    key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
+                    row={row}
+                    index={index}
+                    tokenLogos={tokenLogos}
+                    tokenSupplyApys={tokenSupplyApys}
+                    tokenBorrowApys={tokenBorrowApys}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        <div className="flex items-center justify-end gap-3 border-t border-border px-3 py-2.5">
-          <span className="text-[12px] text-muted-foreground">
-            {t("{page} of {count}").replace("{page}", String(page + 1)).replace("{count}", String(pageCount))}
-          </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label={t("Previous page")}
-            disabled={page === 0}
-            onClick={() => setPage((current) => Math.max(0, current - 1))}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label={t("Next page")}
-            disabled={page >= pageCount - 1}
-            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
       </DesktopTableSurface>
     </section>
+  )
+}
+
+function LoopTableRow({
+  row,
+  index,
+  tokenLogos,
+  tokenSupplyApys,
+  tokenBorrowApys,
+}: {
+  row: MultiplyPageData["lendRows"][number]
+  index: number
+  tokenLogos: MultiplyPageData["tokenLogos"]
+  tokenSupplyApys: MultiplyPageData["tokenSupplyApys"]
+  tokenBorrowApys: MultiplyPageData["tokenBorrowApys"]
+}) {
+  const router = useRouter()
+  const { t } = useTranslation()
+  const { compact } = useCurrency()
+  const assetLogo = tokenLogos[row.asset as keyof typeof tokenLogos]
+  const supplyApy = tokenSupplyApys[row.protocol as keyof typeof tokenSupplyApys]
+  const borrowApy = tokenBorrowApys[row.asset as keyof typeof tokenBorrowApys]
+
+  return (
+    <tr
+      className="group asset-swap cursor-pointer transition-colors"
+      onClick={() => router.push(row.href)}
+      style={{ animationDelay: `${index * 40}ms` }}
+    >
+      <td
+        className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+      >
+        {index + 1}
+      </td>
+      <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CellLink href={row.href} className="flex items-center gap-2.5">
+          {hasImageSrc(row.protocolLogo) ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={row.protocolLogo}
+                alt=""
+                aria-hidden="true"
+                className="size-10 shrink-0 rounded-full bg-card object-cover"
+              />
+            </>
+          ) : null}
+          <span className="min-w-0">
+            <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+              {row.protocol}
+            </span>
+            <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
+              <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
+              <span className="font-data tabular-nums text-success">{supplyApy ?? "—"}</span>
+            </span>
+          </span>
+        </CellLink>
+      </td>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CellLink href={row.href} className="flex min-w-0 items-center gap-2.5">
+          {assetLogo ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={assetLogo}
+                alt=""
+                aria-hidden="true"
+                className="size-10 shrink-0 rounded-full bg-card object-cover"
+              />
+            </>
+          ) : null}
+          <span className="min-w-0">
+            <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+              {row.asset}
+            </span>
+            <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
+              <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
+              <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">{borrowApy ?? "—"}</span>
+            </span>
+          </span>
+        </CellLink>
+      </td>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CellLink
+          href={row.href}
+          className={cn(
+            "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
+            row.apy
+              ? row.apy.startsWith("-")
+                ? "text-rose-600 dark:text-rose-400"
+                : "text-success"
+              : "text-muted-foreground",
+          )}
+        >
+          {row.apy || "—"}
+        </CellLink>
+      </td>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CellLink href={row.href} className="text-foreground">
+          {row.rewardRows?.[1] ? (
+            <span className="block">
+              <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                {row.rewardRows[1].value}
+              </span>
+              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+                {row.rewardRows[1].label}
+              </span>
+            </span>
+          ) : row.rewardRows?.[0] ? (
+            <span className="block">
+              <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                {row.rewardRows[0].value}
+              </span>
+              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+                {row.rewardRows[0].label}
+              </span>
+            </span>
+          ) : row.partnerRewards ? (
+            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+              {row.partnerRewards}
+            </span>
+          ) : (
+            <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+              —
+            </span>
+          )}
+        </CellLink>
+      </td>
+      <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+        {row.waitlistHref ? (
+          <div className="inline-flex items-center">
+            <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
+              <a href={row.waitlistHref} target="_blank" rel="noreferrer">
+                {t("Join waitlist")}
+              </a>
+            </Button>
+          </div>
+        ) : (
+          <CellLink
+            href={row.href}
+            className="inline-flex items-center text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white"
+          >
+            <span>
+              {parseCompactUsdLabel(row.points) == null
+                ? (row.points ?? "—")
+                : compact(parseCompactUsdLabel(row.points) as number)}
+            </span>
+          </CellLink>
+        )}
+      </td>
+      <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
+        <div className="flex justify-end">
+          <HoverActionGroup className="gap-2">
+            <Button
+              type="button"
+              size="table"
+              variant="brand-secondary"
+              className="w-auto"
+              onClick={(event) => {
+                event.stopPropagation()
+                const marketId = resolveMarketIdFromHref(row.href)
+                if (!marketId) return
+                router.push(actionPagePath("multiply", "multiply", { market: marketId, return: row.href }))
+              }}
+            >
+              {t("Multiply")}
+            </Button>
+            <Button
+              type="button"
+              size="table"
+              variant="brand"
+              className="w-auto"
+              onClick={(event) => {
+                event.stopPropagation()
+                const marketId = resolveMarketIdFromHref(row.href)
+                if (!marketId) return
+                router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: row.href }))
+              }}
+            >
+              {t("Deleverage")}
+            </Button>
+          </HoverActionGroup>
+        </div>
+      </td>
+    </tr>
   )
 }
 
