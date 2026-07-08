@@ -29,6 +29,8 @@ export type CurrencyFormatter = {
 export function useCurrency(): CurrencyFormatter {
   const preferences = useOptionalDisplayPreferences()
   const currency = preferences?.currency ?? "USD"
+  // Recompute when live FX rates are (re)applied, not just on a currency switch.
+  const ratesVersion = preferences?.ratesVersion ?? 0
   return useMemo(() => {
     const ctx = currencyContext(currency)
     return {
@@ -38,5 +40,6 @@ export function useCurrency(): CurrencyFormatter {
       convert: (usd: number) => convertFromUsd(usd, ctx),
       isUsd: currency === "USD",
     }
-  }, [currency])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ratesVersion invalidates the cached ctx
+  }, [currency, ratesVersion])
 }

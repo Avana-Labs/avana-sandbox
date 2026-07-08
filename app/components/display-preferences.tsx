@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { setActiveCurrency } from "@/app/lib/currency/active-rate"
+import { applyCachedLiveRates, fetchLiveRates } from "@/app/lib/currency/exchange-rates"
 
 const STORAGE_KEY = "avana-show-dollar-amounts"
 const LANGUAGE_STORAGE_KEY = "avana-language"
@@ -54,6 +55,8 @@ type DisplayPreferencesContextValue = {
   setLanguage: (value: LanguageCode) => void
   currency: CurrencyCode
   setCurrency: (value: CurrencyCode) => void
+  /** Bumps whenever live FX rates are (re)applied, so consumers re-denominate. */
+  ratesVersion: number
 }
 
 const DisplayPreferencesContext = createContext<DisplayPreferencesContextValue | null>(null)
@@ -62,7 +65,11 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
   const [showDollarAmounts, setShowDollarAmountsState] = useState(true)
   const [language, setLanguageState] = useState<LanguageCode>("EN")
   const [currency, setCurrencyState] = useState<CurrencyCode>("USD")
+  const [ratesVersion, setRatesVersion] = useState(0)
   const hydratedRef = useRef(false)
+  // Mirrors the current currency for the async live-rate callback, which resolves
+  // after the user may have switched again.
+  const currencyRef = useRef<CurrencyCode>("USD")
 
   useEffect(() => {
     const storedValue = window.localStorage.getItem(STORAGE_KEY)
@@ -80,14 +87,30 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
     if (migratedLanguage && LANGUAGE_OPTIONS.some((option) => option.code === migratedLanguage)) {
       setLanguageState(migratedLanguage as LanguageCode)
     }
+    // Apply any cached live rates before pinning the active rate, so a repeat
+    // visitor renders at the last-known live rate with no baseline flash.
+    applyCachedLiveRates()
     if (storedCurrency && CURRENCY_OPTIONS.some((option) => option.code === storedCurrency)) {
       // Update the module-level rate first so the shared USD formatters convert on the
       // very next render (no one-frame lag in the wrong currency).
       setActiveCurrency(storedCurrency)
       setCurrencyState(storedCurrency)
+      currencyRef.current = storedCurrency
     }
 
     hydratedRef.current = true
+
+    // Refresh live FX rates from the network; re-pin the active rate and bump the
+    // version so every amount re-denominates once fresh rates land.
+    let cancelled = false
+    fetchLiveRates().then((updated) => {
+      if (cancelled || !updated) return
+      setActiveCurrency(currencyRef.current)
+      setRatesVersion((version) => version + 1)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -136,6 +159,7 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
     // Sync the shared formatters' rate before the state-driven re-render.
     setActiveCurrency(value)
     setCurrencyState(value)
+    currencyRef.current = value
   }, [])
 
   const value = useMemo(
@@ -147,8 +171,18 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
       setLanguage,
       currency,
       setCurrency,
+      ratesVersion,
     }),
-    [currency, language, setCurrency, setLanguage, setShowDollarAmounts, showDollarAmounts, toggleShowDollarAmounts],
+    [
+      currency,
+      language,
+      ratesVersion,
+      setCurrency,
+      setLanguage,
+      setShowDollarAmounts,
+      showDollarAmounts,
+      toggleShowDollarAmounts,
+    ],
   )
 
   return <DisplayPreferencesContext.Provider value={value}>{children}</DisplayPreferencesContext.Provider>
