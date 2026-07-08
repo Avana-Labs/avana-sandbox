@@ -16,7 +16,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { HIGHLIGHT_CARD_CLASS, HighlightCardBackdrop, HighlightCarousel } from "@/app/components/highlight-carousel"
+import { HIGHLIGHT_CARD_CLASS, HighlightCarousel } from "@/app/components/highlight-carousel"
 import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
@@ -634,8 +634,6 @@ function TrendingLoopCard({
 
   const content = (
     <>
-      <HighlightCardBackdrop />
-
       <div className="relative z-10 flex h-full items-center gap-3">
         {/* Overlapping collateral → borrow icon pair, sized to match the big
             single icon on the Lend "Featured" cards (64px). */}

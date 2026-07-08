@@ -6,22 +6,12 @@ import { cn } from "@/lib/utils"
 
 /**
  * Shared surface styling for the Lend "Featured" and Multiply "Trending"
- * highlight cards: a rounded, bordered card with the dotted texture + top
- * gradient supplied by {@link HighlightCardBackdrop}. Card dimensions are left
- * to the caller so each surface can size to its own content.
+ * highlight cards: a flat `bg-card` panel with no border, shadow, or sheen —
+ * matching the Borrow "Explore" cards. Card dimensions are left to the caller
+ * so each surface can size to its own content.
  */
-export const HIGHLIGHT_CARD_CLASS = cn(
-  "relative block shrink-0 overflow-hidden rounded-radius-lg border text-left",
-  "border-[#e1e4e8] bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-  "dark:border-[#26272a] dark:bg-[#1b1b1c] dark:shadow-none",
-)
-
-/** Top gradient sheen shared by every highlight card. */
-export function HighlightCardBackdrop() {
-  return (
-    <div className="pointer-events-none absolute inset-0 z-0 rounded-radius-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
-  )
-}
+export const HIGHLIGHT_CARD_CLASS =
+  "relative block shrink-0 overflow-hidden rounded-radius-md border-0 bg-card text-left shadow-none"
 
 const DEFAULT_MARQUEE_DURATION_SECONDS = 38
 
