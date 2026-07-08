@@ -70,7 +70,7 @@ export function AssetDetailClient({ detail }: Props) {
       <main className="pb-24 pt-8 md:pb-12">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
-            <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
+            <nav aria-label={t("Breadcrumb")} className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
               <Link href="/borrow" className="transition-colors hover:text-foreground">
                 {t("Borrow")}
               </Link>
@@ -93,7 +93,7 @@ export function AssetDetailClient({ detail }: Props) {
                   newsImageLabel={detail.hero.symbol}
                 />
 
-                <section aria-label="Asset analytics" className="space-y-12 pt-12">
+                <section aria-label={t("Asset analytics")} className="space-y-12 pt-12">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
                   <QuickStatsGrid detail={detail} />
                   <InterestRateModelCard detail={detail} />
@@ -102,7 +102,7 @@ export function AssetDetailClient({ detail }: Props) {
                   <RiskSection detail={detail} />
                   <CashflowTrendCard detail={detail} />
                   <DetailFaqSection
-                    title="General FAQs"
+                    title={t("General FAQs")}
                     items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                   />
                   <TransactionHistoryCard

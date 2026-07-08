@@ -1,6 +1,9 @@
+"use client"
+
 import type { ReactNode } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /**
  * Client-gated loading skeletons.
@@ -28,11 +31,12 @@ type BlockProps = {
  * lets the route override the padding to match its own main.
  */
 function Page({ children, className, mainClassName }: BlockProps & { mainClassName?: string }) {
+  const { t } = useTranslation()
   return (
     // A single polite status region announces the load once; the placeholder blocks inside
     // are decorative (aria-hidden) so assistive tech isn't dragged across empty rectangles.
-    <div className="bg-background" role="status" aria-busy="true" aria-live="polite" aria-label="Loading">
-      <span className="sr-only">Loading…</span>
+    <div className="bg-background" role="status" aria-busy="true" aria-live="polite" aria-label={t("Loading")}>
+      <span className="sr-only">{t("Loading…")}</span>
       <main className={cn("container mx-auto", mainClassName ?? "px-4 py-8")}>
         <div className={cn("skeleton-enter mx-auto max-w-[1152px]", className)}>{children}</div>
       </main>
@@ -59,6 +63,7 @@ function HomeFieldSkeleton({ children }: { children: ReactNode }) {
 }
 
 export function HomeWorkspaceSkeleton() {
+  const { t } = useTranslation()
   return (
     // Keep the loading testid on the root so the initial-HTML shell assertion in
     // tests/e2e/route-performance.spec.ts still finds it.
@@ -67,10 +72,10 @@ export function HomeWorkspaceSkeleton() {
       role="status"
       aria-busy="true"
       aria-live="polite"
-      aria-label="Loading"
+      aria-label={t("Loading")}
       data-testid="home-workspace-loading"
     >
-      <span className="sr-only">Loading…</span>
+      <span className="sr-only">{t("Loading…")}</span>
       <section className="skeleton-enter flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-14 md:pb-16 md:pt-20">
         <div className="w-full max-w-[480px]">
           {/* header: mode tab strip */}

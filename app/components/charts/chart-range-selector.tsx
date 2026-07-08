@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { CHART_RANGE_OPTIONS, type ChartRangeOption } from "./types"
 
 type ChartRangeSelectorProps = {
@@ -17,10 +18,11 @@ function formatRangeLabel(range: ChartRangeOption): string {
 }
 
 export function ChartRangeSelector({ activeRange, onRangeChange, className, ranges = CHART_RANGE_OPTIONS }: ChartRangeSelectorProps) {
+  const { t } = useTranslation()
   return (
     <div
       role="tablist"
-      aria-label="Time range"
+      aria-label={t("Time range")}
       className={cn("flex w-full items-stretch justify-start gap-5 border-b border-border sm:gap-6", className)}
     >
       {ranges.map((range) => {

@@ -329,12 +329,12 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             <div className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <SunMedium className={rootSettingsIconClass} />
-                <span>Light Mode</span>
+                <span>{t("Light Mode")}</span>
               </span>
               <Switch
                 checked={lightModeEnabled}
                 onCheckedChange={(checked) => setTheme(checked ? "light" : "dark")}
-                aria-label="Toggle light mode"
+                aria-label={t("Toggle light mode")}
                 className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-brand/35"
               />
             </div>
@@ -346,7 +346,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             <Link href="/support-center" prefetch={false} onClick={onClose} className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <CircleHelp className={rootSettingsIconClass} />
-                <span>Help Center</span>
+                <span>{t("Help Center")}</span>
               </span>
               <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
             </Link>
@@ -364,7 +364,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             >
               <span className={rootSettingsLabelClass}>
                 <Shield className={rootSettingsIconClass} />
-                <span>Security & privacy</span>
+                <span>{t("Security & privacy")}</span>
               </span>
               <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
             </a>
@@ -387,11 +387,11 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             setView(backView)
           }}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-hover"
-          aria-label="Back to menu"
+          aria-label={t("Back to menu")}
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
-        <h2 className="text-[1.9rem] font-medium leading-none tracking-[-0.04em] text-foreground">{title}</h2>
+        <h2 className="text-[1.9rem] font-medium leading-none tracking-[-0.04em] text-foreground">{t(title)}</h2>
       </div>
     )
   }
@@ -401,7 +401,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       <>
         <button
           type="button"
-          aria-label={`Close ${title.toLowerCase()} sheet`}
+          aria-label={t("Close {title} sheet").replace("{title}", title.toLowerCase())}
           onClick={closeSelectorSheet}
           className={`absolute inset-0 bg-black/40 backdrop-blur-xl transition-opacity duration-200 ${
             isSelectorSheetOpen ? "opacity-100" : "opacity-0"
@@ -417,7 +417,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
           style={sheetDragOffset ? { transform: `translateY(${sheetDragOffset}px)` } : undefined}
           role="dialog"
           aria-modal="true"
-          aria-label={title}
+          aria-label={t(title)}
         >
           <div
             className="mobile-bottom-sheet-handle absolute inset-x-0 top-0 z-10 flex h-10 items-start justify-center pt-3"
@@ -494,7 +494,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
         ref={menuButtonRef}
         type="button"
         className="inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
-        aria-label="Toggle menu"
+        aria-label={t("Toggle menu")}
         aria-expanded={open}
         aria-controls="mobile-site-nav"
         onClick={() => {
@@ -506,7 +506,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
         }}
       >
         <Menu className="h-7 w-7" strokeWidth={1.8} />
-        <span className="sr-only">Toggle menu</span>
+        <span className="sr-only">{t("Toggle menu")}</span>
       </button>
 
       {renderMenu ? (
@@ -516,7 +516,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
           }`}
           role="dialog"
           aria-modal="true"
-          aria-label="Mobile menu"
+          aria-label={t("Mobile menu")}
         >
           <div className="flex h-16 items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-3">
@@ -534,7 +534,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 ref={closeButtonRef}
                 type="button"
                 className="inline-flex h-11 w-11 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
-                aria-label="Close menu"
+                aria-label={t("Close menu")}
                 onClick={onClose}
               >
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
@@ -549,7 +549,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
           <nav
             id="mobile-site-nav"
-            aria-label="Mobile navigation"
+            aria-label={t("Mobile navigation")}
             className={`h-[calc(100dvh-4rem)] overflow-y-auto px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
               isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
             } ${isSelectorSheetOpen ? "pointer-events-none opacity-35 blur-[1px]" : ""}`}

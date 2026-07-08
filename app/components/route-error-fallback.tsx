@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /**
  * Branded recovery UI shared by route-level error boundaries. Rendered when a
@@ -22,13 +23,14 @@ export function RouteErrorFallback({
   message?: string
   error?: Error
 }) {
+  const { t } = useTranslation()
   const isAuth = error ? /UNAUTHENTICATED|WALLET_MISMATCH|Not authenticated/i.test(error.message) : false
-  const resolvedTitle = isAuth ? "Your session needs a refresh" : title
+  const resolvedTitle = isAuth ? t("Your session needs a refresh") : t(title)
   const resolvedMessage =
     message ??
     (isAuth
-      ? "Reconnect your wallet to continue. Authenticated sessions stay locked until access is confirmed."
-      : "This is on our side, not your wallet. Try again, and let us know if it keeps happening.")
+      ? t("Reconnect your wallet to continue. Authenticated sessions stay locked until access is confirmed.")
+      : t("This is on our side, not your wallet. Try again, and let us know if it keeps happening."))
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col items-start justify-center px-5 py-16">
@@ -41,13 +43,13 @@ export function RouteErrorFallback({
           onClick={onRetry}
           className="inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition hover:opacity-90"
         >
-          Try again
+          {t("Try again")}
         </button>
         <Link
           href={homeHref}
           className="inline-flex rounded-full bg-muted px-6 py-3 text-sm font-semibold text-foreground transition hover:opacity-90"
         >
-          {homeLabel}
+          {t(homeLabel)}
         </Link>
       </div>
     </main>

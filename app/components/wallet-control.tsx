@@ -39,6 +39,7 @@ export function WalletControl({ size = "desktop" }: { size?: WalletControlSize }
 
 /** Test mode: no wallet states to align with, so size to content and never clip the label. */
 function TestWalletControl({ size }: { size: WalletControlSize }) {
+  const { t } = useTranslation()
   return (
     <div
       className={cn(
@@ -54,7 +55,7 @@ function TestWalletControl({ size }: { size: WalletControlSize }) {
         style={{ background: walletGradient(TEST_MODE_WALLET_ADDRESS) }}
       />
       <span className="whitespace-nowrap font-data text-[12px] font-semibold uppercase tracking-wide text-amber-500">
-        Test wallet
+        {t("Test wallet")}
       </span>
     </div>
   )

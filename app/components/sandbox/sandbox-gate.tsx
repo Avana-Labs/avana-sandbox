@@ -8,6 +8,7 @@ import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
 
 class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
@@ -56,6 +57,7 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
 type WalletOnlyState = Omit<OnboardingGateState, "economy">
 
 function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode }) {
+  const { t } = useTranslation()
   // Steady-state subscription: wallet profile/step ONLY. This does NOT read the global
   // economy shard counters, so a claim by any other wallet no longer invalidates every
   // authed wallet's gate subscription (the 10k-concurrency hazard). The economy status is
@@ -86,7 +88,7 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
     if (timedOut) return <GateUnavailable variant="offline" />
     return (
       <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Verifying onboarding access")} />
       </LockedShell>
     )
   }
@@ -96,7 +98,7 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
   if (economy === undefined) {
     return (
       <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Verifying onboarding access")} />
       </LockedShell>
     )
   }
@@ -109,6 +111,7 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
+  const { t } = useTranslation()
   const { authedWallet, isSignedIn } = useSiweAuth()
   const { active: walletActive } = useWalletGate()
   if (IS_DEV_SHORTCUT_MODE) return <>{children}</>
@@ -120,7 +123,7 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   if (isSignedIn && !walletActive) {
     return (
       <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Restoring your session" />
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Restoring your session")} />
       </LockedShell>
     )
   }
