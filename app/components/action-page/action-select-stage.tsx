@@ -19,7 +19,6 @@ export type ActionSelectItem = {
 export function ActionSelectStage({
   items,
   onSelect,
-  sectionLabel = "Available assets",
   searchPlaceholder = "Find an asset",
   emptyTitle = "No assets found",
   emptyDescription = "Try adjusting your search",
@@ -60,9 +59,7 @@ export function ActionSelectStage({
         />
       </label>
 
-      <div className="mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{t(sectionLabel)}</div>
-
-      <div className="mt-2 divide-y divide-border/80 overflow-hidden rounded-radius-md border border-border/80 bg-card">
+      <div className="mt-3 divide-y divide-border/80 overflow-hidden rounded-radius-md border border-border/80 bg-card">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <div className="text-[14px] font-medium">{t(emptyTitle)}</div>
