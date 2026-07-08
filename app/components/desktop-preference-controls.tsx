@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, ChevronLeft, ChevronRight, Coins, Globe2, MoonStar, MoreHorizontal, SunMedium } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, MoonStar, MoreHorizontal, SunMedium } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,10 +93,7 @@ export function DesktopPreferenceControls() {
                 setView("language")
               }}
             >
-              <span className="flex items-center gap-2 text-muted-foreground dark:text-white/64">
-                <Globe2 className="h-4 w-4" />
-                <span>{t("Language")}</span>
-              </span>
+              <span className="text-muted-foreground dark:text-white/64">{t("Language")}</span>
               <span className="flex items-center gap-2 font-medium text-foreground dark:text-white">
                 {currentLanguage.label}
                 <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-white/52" />
@@ -109,10 +106,7 @@ export function DesktopPreferenceControls() {
                 setView("currency")
               }}
             >
-              <span className="flex items-center gap-2 text-muted-foreground dark:text-white/64">
-                <Coins className="h-4 w-4" />
-                <span>{t("Currency")}</span>
-              </span>
+              <span className="text-muted-foreground dark:text-white/64">{t("Currency")}</span>
               <span className="flex items-center gap-2 font-medium text-foreground dark:text-white">
                 {currentCurrency.code}
                 <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-white/52" />
