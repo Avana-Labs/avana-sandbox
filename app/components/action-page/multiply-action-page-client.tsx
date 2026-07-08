@@ -507,7 +507,7 @@ export function MultiplyActionPageClient({
       ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
       : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
   const useWorkspaceFields =
-    embedded && isHomeLayout && market != null && isConfigureVisibleStage(stage)
+    embedded && isHomeLayout && isConfigureVisibleStage(stage)
   // Surface the market-liquidity cap as the collateral input balance, with a Max button.
   const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
   const collateralBalanceLabel = showCollateralBalance ? "Balance" : undefined
