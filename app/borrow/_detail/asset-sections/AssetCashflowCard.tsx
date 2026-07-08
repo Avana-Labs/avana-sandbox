@@ -37,7 +37,7 @@ export function AssetCashflowCard({ detail }: Props) {
                 )}
               >
                 <th scope="row" className="py-2.5 pl-5 text-left font-medium text-foreground">
-                  {row.label}
+                  {t(row.label)}
                 </th>
                 <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">
                   {row.reported}

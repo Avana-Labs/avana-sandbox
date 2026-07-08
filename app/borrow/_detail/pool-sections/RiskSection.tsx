@@ -74,7 +74,7 @@ export function RiskSection({ detail }: Props) {
                     className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-hover"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="truncate text-[13px] font-medium text-foreground">{item.label}</span>
+                      <span className="truncate text-[13px] font-medium text-foreground">{t(item.label)}</span>
                       <RiskLevelPill level={item.level} withDot={false} />
                     </div>
                     <div className="flex shrink-0 items-center gap-2.5">
@@ -97,10 +97,10 @@ export function RiskSection({ detail }: Props) {
                   </button>
                   {open ? (
                     <div className="px-3.5 pb-3 text-[11.5px] leading-5 text-muted-foreground">
-                      {item.description}
+                      {t(item.description)}
                       {relatedMetric ? (
                         <div className="mt-2 inline-flex items-center gap-2 rounded-xs border border-border bg-surface-raised px-2 py-1 font-data text-[11px] tabular-nums text-foreground">
-                          {item.label}: {relatedMetric}
+                          {t(item.label)}: {relatedMetric}
                         </div>
                       ) : null}
                     </div>
