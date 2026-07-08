@@ -147,8 +147,8 @@ export function ActionAmountCard({
         setMenuOpen(false)
       }}
       className={cn(
-        "flex w-full items-start gap-2 rounded-radius-md px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-surface-hover",
-        option.id === selectedAssetId && "bg-surface-hover",
+        "flex w-full items-start gap-2 rounded-radius-md px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-hover",
+        option.id === selectedAssetId && "bg-surface-inset",
       )}
     >
       {option.borrowSymbol ? (
