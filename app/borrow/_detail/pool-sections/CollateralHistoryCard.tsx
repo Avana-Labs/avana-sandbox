@@ -100,16 +100,16 @@ export function CollateralHistoryCard({
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Time")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Type")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     USD
                   </th>
-                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Wallet")}
                   </th>
                 </tr>
@@ -121,14 +121,14 @@ export function CollateralHistoryCard({
                       {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {t(KIND_LABEL[tx.kind])}
                       </span>
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel.replace(/^\+/, "")}
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}
@@ -160,16 +160,16 @@ export function CollateralHistoryCard({
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Time")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Type")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     USD
                   </th>
-                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Wallet")}
                   </th>
                 </tr>
@@ -181,14 +181,14 @@ export function CollateralHistoryCard({
                       {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {t(KIND_LABEL[tx.kind])}
                       </span>
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel.replace(/^\+/, "")}
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}

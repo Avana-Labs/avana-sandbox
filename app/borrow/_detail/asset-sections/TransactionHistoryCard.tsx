@@ -113,19 +113,19 @@ export function TransactionHistoryCard({
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Time")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Type")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Amount")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("For")}
                   </th>
-                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Wallet")}
                   </th>
                 </tr>
@@ -137,17 +137,17 @@ export function TransactionHistoryCard({
                       {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {t(kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind])}
                       </span>
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel}
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right text-[12px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right text-[13px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
                       <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol, t)}</span>
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}
@@ -180,19 +180,19 @@ export function TransactionHistoryCard({
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Time")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Type")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Amount")}
                   </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("For")}
                   </th>
-                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Wallet")}
                   </th>
                 </tr>
@@ -204,17 +204,17 @@ export function TransactionHistoryCard({
                       {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                     </td>
                     <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("inline-block whitespace-nowrap text-[14px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
+                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
                         {t(kindLabelMap?.[tx.kind] ?? KIND_LABEL[tx.kind])}
                       </span>
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
                       {tx.amountLabel}
                     </td>
-                    <td className={`px-3 py-3 align-middle text-right text-[12px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
+                    <td className={`px-3 py-3 align-middle text-right text-[13px] font-normal tracking-[-0.03em] text-muted-foreground ${ROW_HOVER_BG}`}>
                       <span className="inline-block whitespace-nowrap">{describeTransaction(tx.kind, assetSymbol, t)}</span>
                     </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[14px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
+                    <td className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
                       {tx.walletHref ? (
                         <a
                           href={tx.walletHref}
