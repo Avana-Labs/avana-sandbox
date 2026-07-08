@@ -66,6 +66,10 @@ type ActionConfigureStageProps = {
   amountUnitLabel?: string
   hideAssetSelector?: boolean
   homeLayout?: boolean
+  /** Render a single primary CTA (no Cancel/secondary) without adopting the rest
+   *  of the compact home layout. Used by the detail-page sidebar rail, which is a
+   *  pre-loaded full-page action and has no select stage to cancel back to. */
+  singlePrimaryCta?: boolean
   /** Claim flow: surface the claimable total + market + token breakdown on the
    *  home/sidebar configure screen (which otherwise hides preview detail cards). */
   claimSummary?: boolean
@@ -208,6 +212,7 @@ export function ActionConfigureStage({
   amountVariant = "card",
   hideAssetSelector = false,
   homeLayout = false,
+  singlePrimaryCta = false,
   claimSummary = false,
   amountPlacement = "inline",
   assetPickerVariant = "menu",
@@ -401,7 +406,7 @@ export function ActionConfigureStage({
       {outcome ? <ActionOutcomeBanner tone={outcome.tone} title={outcome.title} message={outcome.message} /> : null}
 
       {isConfigureVisibleStage(stage) ? (
-        homeLayout ? (
+        homeLayout || singlePrimaryCta ? (
           <button
             type="button"
             onClick={handlePrimary}

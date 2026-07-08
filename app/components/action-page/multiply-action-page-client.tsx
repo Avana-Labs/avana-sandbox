@@ -41,7 +41,7 @@ export function MultiplyActionPageClient({
   kind,
   closeHref = "/multiply",
   embedded = false,
-  sidebar: _sidebar = false,
+  sidebar = false,
   layout = "default",
   initialMarketId,
   initialAmount = "",
@@ -498,7 +498,7 @@ export function MultiplyActionPageClient({
 
   const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
   const isHomeLayout = embedded && layout === "home"
-  const shellDensity = isHomeLayout ? "home" : "default"
+  const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   // The loop mechanics are documented in the market's "About" section — no inline
   // explainer filler in the action widget.
   const loopHint = null
@@ -631,6 +631,7 @@ export function MultiplyActionPageClient({
           hideAmountInput={useWorkspaceFields}
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           homeLayout={isHomeLayout}
+          singlePrimaryCta={sidebar}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
         />
       ) : null}

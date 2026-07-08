@@ -32,7 +32,7 @@ export function LendActionPageClient({
   kind,
   closeHref = "/lend",
   embedded = false,
-  sidebar: _sidebar = false,
+  sidebar = false,
   layout = "default",
   initialMarketId,
   initialAmount = "",
@@ -353,7 +353,7 @@ export function LendActionPageClient({
   return (
     <ActionPageShell
       mode={embedded ? "embedded" : "page"}
-      density={isHomeLayout ? "home" : "default"}
+      density={sidebar ? "sidebar" : isHomeLayout ? "home" : "default"}
       title={descriptor.title}
       subtitle={shellSubtitle}
       hideTitle={hideTitle}
@@ -418,6 +418,7 @@ export function LendActionPageClient({
           isPending={isPending}
           outcome={outcome}
           homeLayout={isHomeLayout}
+          singlePrimaryCta={sidebar}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
           showBalance
           onMax={handleMax}
