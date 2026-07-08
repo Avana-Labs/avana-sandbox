@@ -5,6 +5,8 @@ import type { PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio
 
 vi.mock("@/app/components/display-preferences", () => ({
   useDisplayPreferences: () => ({ showDollarAmounts: true }),
+  // useTranslation() reads this; the component renders in English (t(key) === key).
+  useOptionalDisplayPreferences: () => ({ language: "EN" }),
 }))
 
 afterEach(() => cleanup())
