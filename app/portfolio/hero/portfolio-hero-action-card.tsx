@@ -15,7 +15,7 @@ export function PortfolioHeroActionCard({ label, icon: Icon, href, onClick, clas
   if (href) {
     return (
       <Link href={href} className={classNameValue}>
-        <Icon className="h-6 w-6 fill-current text-current" />
+        <Icon className="h-6 w-6 text-current" />
         <span className="text-[14px] font-semibold tracking-[-0.02em] text-current">{label}</span>
       </Link>
     )
