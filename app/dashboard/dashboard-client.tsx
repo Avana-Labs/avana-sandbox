@@ -8,7 +8,8 @@ import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
 import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
-import type { PortfolioLendTabData, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import type { PortfolioLendTabData, PortfolioMultiplyCollateral, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
@@ -59,6 +60,35 @@ export function mergeLendTabData(
     history: liveData.history,
     rewardsSummary: liveData.rewardsSummary ?? staticData.rewardsSummary,
   }
+}
+
+// DEV-ONLY scaffold: the live test wallet has no multiply loops, so the Looping
+// tab renders an empty state and its table/flow can't be exercised. When the dev
+// open gate is on (never in a production build — hard-guarded in test-mode.ts),
+// seed one fake open loop so we can iterate on the table and action flow. Remove
+// once a real multiply position exists on the test wallet.
+const DEV_MULTIPLY_FIXTURE: PortfolioMultiplyCollateral = {
+  id: "dev-fixture-wsteth-eth",
+  marketId: "wstETH-ETH",
+  label: "wstETH / ETH Loop",
+  collateralToken: "wstETH",
+  borrowableToken: "ETH",
+  multiplier: 4.2,
+  protocol: "Aave v4",
+  healthFactor: 1.85,
+  collateralUsd: 42_000,
+  borrowPowerUsd: 31_500,
+  debtUsd: 31_800,
+  ltvPct: 75.7,
+  liquidationPriceUsd: null,
+  netApyPct: 6.42,
+  status: "open",
+}
+
+function withDevMultiplyFixtures(data: PortfolioMultiplyTabData): PortfolioMultiplyTabData {
+  if (!shouldUseOpenGateSession()) return data
+  if (data.lpCollaterals.length > 0) return data
+  return { ...data, lpCollaterals: [DEV_MULTIPLY_FIXTURE] }
 }
 
 export function mergeMultiplyTabData(
@@ -248,7 +278,7 @@ export function DashboardClient({
     }
   }
 
-  const multiplyTabData = useMemo(() => {
+  const multiplyTabDataRaw = useMemo(() => {
     if (!pageData) {
       return hasMounted
         ? (portfolioMultiply ?? {
@@ -284,6 +314,8 @@ export function DashboardClient({
     }
     return mergeMultiplyTabData(pageData.multiply, hasMounted ? portfolioMultiply : null)
   }, [hasMounted, pageData, portfolioMultiply])
+
+  const multiplyTabData = useMemo(() => withDevMultiplyFixtures(multiplyTabDataRaw), [multiplyTabDataRaw])
 
   const borrowDashboardMetrics = useMemo<DashboardTabMetrics>(() => {
     if (hasMounted && walletId && borrowSession.state.accounts[walletId]) {
