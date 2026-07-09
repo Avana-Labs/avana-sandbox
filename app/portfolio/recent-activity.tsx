@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronDown, Search } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -144,40 +144,6 @@ function toggleValue<T extends string>(values: T[], value: T) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value]
 }
 
-function matchesSearch(row: PortfolioActivityRow, query: string) {
-  if (!query) return true
-  const needle = query.toLowerCase()
-  return [
-    formatRowAmount(row),
-    row.kind,
-    row.primaryLabel,
-    row.product,
-    row.secondaryLabel,
-    row.status,
-    row.txHash,
-    shortHash(row.txHash),
-  ]
-    .join(" ")
-    .toLowerCase()
-    .includes(needle)
-}
-
-function SearchPill({ value, onChange }: { value: string; onChange: (nextValue: string) => void }) {
-  const { t } = useTranslation()
-  return (
-    <label className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-full border border-border bg-card px-4 text-[13px] shadow-none">
-      <Search className="h-4 w-4 shrink-0 text-brand" />
-      <input
-        type="search"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={t("Search transactions")}
-        className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground/70 dark:text-[#e6f8fb] dark:placeholder:text-muted-foreground/45"
-      />
-    </label>
-  )
-}
-
 type FilterTriggerProps = React.ComponentPropsWithoutRef<"button"> & {
   label: string
   count: number
@@ -247,7 +213,6 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
   const amount = (row: PortfolioActivityRow) => (showDollarAmounts ? formatRowAmount(row) : MASK)
-  const [search, setSearch] = React.useState("")
   const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])
   const [kinds, setKinds] = React.useState<PortfolioActivityRow["kind"][]>([])
   const [statuses, setStatuses] = React.useState<PortfolioActivityRow["status"][]>([])
@@ -259,10 +224,9 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
         .filter((row) => (products.length ? products.includes(row.product) : true))
         .filter((row) => (kinds.length ? kinds.includes(row.kind) : true))
         .filter((row) => (statuses.length ? statuses.includes(row.status) : true))
-        .filter((row) => matchesSearch(row, search))
         // Newest first so a just-completed action lands at the top immediately.
         .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
-    [kinds, products, rows, search, statuses],
+    [kinds, products, rows, statuses],
   )
 
   return (
@@ -270,29 +234,26 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
       <h2 className="mb-4 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
         {t("All Transactions")}
       </h2>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <SearchPill value={search} onChange={setSearch} />
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setProducts([])
-              setKinds([])
-              setStatuses([])
-            }}
-            className={cn(
-              "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
-              hasFilters
-                ? "bg-slate-100 text-slate-600 hover:bg-surface-hover hover:text-foreground dark:bg-slate-800 dark:text-slate-300"
-                : "bg-foreground text-background",
-            )}
-          >
-            {t("All")}
-          </button>
-          <FilterMenu label={t("Product")} options={PRODUCT_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={products} onChange={setProducts} />
-          <FilterMenu label={t("Action")} options={ACTION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={kinds} onChange={setKinds} />
-          <FilterMenu label={t("Status")} options={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={statuses} onChange={setStatuses} />
-        </div>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setProducts([])
+            setKinds([])
+            setStatuses([])
+          }}
+          className={cn(
+            "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
+            hasFilters
+              ? "bg-slate-100 text-slate-600 hover:bg-surface-hover hover:text-foreground dark:bg-slate-800 dark:text-slate-300"
+              : "bg-foreground text-background",
+          )}
+        >
+          {t("All")}
+        </button>
+        <FilterMenu label={t("Product")} options={PRODUCT_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={products} onChange={setProducts} />
+        <FilterMenu label={t("Action")} options={ACTION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={kinds} onChange={setKinds} />
+        <FilterMenu label={t("Status")} options={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={statuses} onChange={setStatuses} />
       </div>
 
       {/* Mobile: card list (the wide table is unusable on phones) */}
