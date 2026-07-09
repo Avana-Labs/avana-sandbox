@@ -21,9 +21,9 @@ import {
   type DashboardTabMetrics,
 } from "@/app/portfolio/dashboard-tab-metrics"
 import {
+  DashboardCreditOverviewSection,
   DashboardLendPerformanceSection,
   DashboardOverviewSection,
-  DashboardPerformanceSection,
 } from "@/app/portfolio/dashboard-metric-section"
 import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
 import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
@@ -430,7 +430,13 @@ export function DashboardClient({
 
       {activeTab === "overview" ? (
         <div className="mt-12 space-y-10">
-          <DashboardOverviewSection title={t("Credit Overview")} metrics={borrowDashboardMetrics.overview} />
+          <DashboardCreditOverviewSection
+            title={t("Credit Overview")}
+            approvedCreditUsd={borrowSnapshot.approvedUsd}
+            totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
+            netApyPct={borrowDashboardMetrics.performance.netApyPct}
+            totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
+          />
           <DashboardSection title={t("Credit Positions")}>
             <DashboardBorrowTab
               section="all"
@@ -440,7 +446,6 @@ export function DashboardClient({
               returnHref={dashboardReturnHref}
             />
           </DashboardSection>
-          <DashboardPerformanceSection title={t("Credit Performance")} metrics={borrowDashboardMetrics.performance} />
         </div>
       ) : null}
       {activeTab === "lending" ? (
