@@ -20,7 +20,7 @@ type MetricItem = {
 
 function MetricGrid({ metrics, labelOnTop = false }: { metrics: MetricItem[]; labelOnTop?: boolean }) {
   return (
-    <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-x-8">
+    <div className="grid w-full grid-cols-2 gap-5 xl:grid-cols-4 xl:gap-x-8">
       {metrics.map((metric) => {
         const value = (
           <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
