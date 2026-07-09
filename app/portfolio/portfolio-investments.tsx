@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { ActionIcon } from "@/app/components/action-icon"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import {
@@ -174,14 +175,14 @@ export function PortfolioInvestments({
                           <Button
                             type="button"
                             size="table"
-                            variant="brand"
+                            variant="table-primary"
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               router.push(actionPagePath("lend", "deposit", { market: marketId, return: detailHref }))
                             }}
                           >
-                            Deposit
+                            <ActionIcon label="Deposit" />Deposit
                           </Button>
                           <Button
                             type="button"
@@ -193,7 +194,7 @@ export function PortfolioInvestments({
                               router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailHref }))
                             }}
                           >
-                            Withdraw
+                            <ActionIcon label="Withdraw" />Withdraw
                           </Button>
                         </HoverActionGroup>
                         </td>
@@ -262,7 +263,7 @@ export function PortfolioInvestments({
                         router.push(actionPagePath("lend", "deposit", { market: marketId, return: detailHref }))
                       }}
                     >
-                      Deposit
+                      <ActionIcon label="Deposit" />Deposit
                     </Button>
                     <Button
                       type="button"
@@ -273,7 +274,7 @@ export function PortfolioInvestments({
                         router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailHref }))
                       }}
                     >
-                      Withdraw
+                      <ActionIcon label="Withdraw" />Withdraw
                     </Button>
                   </div>
                 </MarketMobileCard>
