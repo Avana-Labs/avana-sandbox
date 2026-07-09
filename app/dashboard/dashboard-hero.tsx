@@ -86,10 +86,7 @@ const HERO_UI_CONFIG: Record<DashboardHeroProps["tab"], HeroUiConfig> = {
     // ("Total supplied") instead of a single portfolio total that flip-flops.
     headlineMeta: "Total supplied",
     actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
-    statOneLabel: "Average APY",
-    statOneHelpText: "Weighted average APY across supplied assets in the wallet.",
-    statTwoLabel: "Earned",
-    statTwoHelpText: "Total yield already accrued by the portfolio.",
+    hideStats: true,
   },
   looping: {
     headlineMeta: "Multiply value",
