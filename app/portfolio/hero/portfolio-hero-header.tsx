@@ -14,7 +14,7 @@ export function PortfolioHeroHeader() {
   const { showDollarAmounts, toggleShowDollarAmounts } = useDisplayPreferences()
 
   return (
-    <div className="mb-4 sm:mb-6">
+    <div className="mb-8 mt-4 sm:mb-10 sm:mt-6">
       {/* Kept for screen readers / internal recognition; hidden visually per design. */}
       <span className="sr-only">{t("User Avana balance")}</span>
       <HeroBalanceDisplay
