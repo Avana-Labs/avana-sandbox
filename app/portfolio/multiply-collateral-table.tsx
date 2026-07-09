@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { ActionIcon } from "@/app/components/action-icon"
 import { TokenIcon } from "@/app/components/token-icon"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -121,26 +122,26 @@ export function MultiplyCollateralTable({
                         <Button
                           type="button"
                           size="table"
-                          variant="table-secondary"
+                          variant="table-primary"
                           className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
                             router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
                           }}
                         >
-                          {t("Multiply")}
+                          <ActionIcon label="Multiply" />{t("Multiply")}
                         </Button>
                         <Button
                           type="button"
                           size="table"
-                          variant="brand"
+                          variant="table-secondary"
                           className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
                             router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
                           }}
                         >
-                          {t("Deleverage")}
+                          <ActionIcon label="Deleverage" />{t("Deleverage")}
                         </Button>
                       </HoverActionGroup>
                     </td>
@@ -216,7 +217,7 @@ export function MultiplyCollateralTable({
                     router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
                   }}
                 >
-                  {t("Multiply")}
+                  <ActionIcon label="Multiply" />{t("Multiply")}
                 </Button>
                 <Button
                   type="button"
@@ -227,7 +228,7 @@ export function MultiplyCollateralTable({
                     router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
                   }}
                 >
-                  {t("Deleverage")}
+                  <ActionIcon label="Deleverage" />{t("Deleverage")}
                 </Button>
               </div>
             </MarketMobileCard>

@@ -27,8 +27,14 @@ const buttonVariants = cva(
         'brand-secondary':
           'w-full border border-border bg-surface-raised font-medium text-foreground hover:bg-surface-hover',
         // Muted pill that pairs with `brand` inside desktop table action columns.
+        // Rests muted, then jumps to a solid mid-gray on row hover — a clear step
+        // (not the near-identical surface tokens) so it reads plainly "on".
         'table-secondary':
-          'w-auto bg-muted font-medium text-foreground hover:bg-muted/70',
+          'w-auto bg-muted font-medium text-foreground group-hover:bg-neutral-300 group-focus-within:bg-neutral-300 dark:group-hover:bg-neutral-700 dark:group-focus-within:bg-neutral-700',
+        // Primary table pill: rests muted (matching `table-secondary`) so both
+        // chips read identical when faded, then fills brand on row hover/focus.
+        'table-primary':
+          'w-auto bg-muted font-medium text-foreground group-hover:bg-brand group-hover:text-brand-foreground group-focus-within:bg-brand group-focus-within:text-brand-foreground',
       },
       size: {
         default: 'h-9 px-3',

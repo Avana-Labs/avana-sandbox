@@ -1,6 +1,7 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
@@ -132,26 +133,26 @@ export function SuppliesPanel({
                           <Button
                             type="button"
                             size="table"
-                            variant="table-secondary"
+                            variant="table-primary"
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }))
                             }}
                           >
-                            {t("Pledge")}
+                            <ActionIcon label="Pledge" />{t("Pledge")}
                           </Button>
                           <Button
                             type="button"
                             size="table"
-                            variant="brand"
+                            variant="table-secondary"
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               onBorrowMore(row)
                             }}
                           >
-                            {t("Borrow")}
+                            <ActionIcon label="Borrow" />{t("Borrow")}
                           </Button>
                         </HoverActionGroup>
                       </td>
@@ -260,7 +261,7 @@ export function SuppliesPanel({
                     router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: `/borrow/markets/${row.pool.id}` }))
                   }}
                 >
-                  {t("Pledge")}
+                  <ActionIcon label="Pledge" />{t("Pledge")}
                 </Button>
                 <Button
                   type="button"
@@ -271,7 +272,7 @@ export function SuppliesPanel({
                     onBorrowMore(row)
                   }}
                 >
-                  {t("Borrow")}
+                  <ActionIcon label="Borrow" />{t("Borrow")}
                 </Button>
               </div>
             </MarketMobileCard>

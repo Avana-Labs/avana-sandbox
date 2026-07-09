@@ -1,6 +1,7 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -137,26 +138,26 @@ export function DebtsPanel({
                           <Button
                             type="button"
                             size="table"
-                            variant="table-secondary"
+                            variant="table-primary"
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               onRepay(row)
                             }}
                           >
-                            {t("Repay")}
+                            <ActionIcon label="Repay" />{t("Repay")}
                           </Button>
                           <Button
                             type="button"
                             size="table"
-                            variant="brand"
+                            variant="table-secondary"
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               onManage(row)
                             }}
                           >
-                            {t("Borrow")}
+                            <ActionIcon label="Borrow" />{t("Borrow")}
                           </Button>
                         </HoverActionGroup>
                       </td>
@@ -224,7 +225,7 @@ export function DebtsPanel({
                     onRepay(row)
                   }}
                 >
-                  {t("Repay")}
+                  <ActionIcon label="Repay" />{t("Repay")}
                 </Button>
                 <Button
                   type="button"
@@ -235,7 +236,7 @@ export function DebtsPanel({
                     onManage(row)
                   }}
                 >
-                  {t("Borrow")}
+                  <ActionIcon label="Borrow" />{t("Borrow")}
                 </Button>
               </div>
             </li>
