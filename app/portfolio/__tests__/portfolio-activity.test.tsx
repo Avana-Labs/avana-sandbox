@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { parseFixed } from "@/app/lib/credit-engine"
 import { DashboardClient } from "@/app/dashboard/dashboard-client"
@@ -67,11 +67,7 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
 }))
 
 vi.mock("@/app/dashboard/dashboard-tabs", () => ({
-  DashboardTabs: ({ onTabChange }: { onTabChange: (tab: string) => void }) => (
-    <button type="button" onClick={() => onTabChange("activity")}>
-      Activity tab
-    </button>
-  ),
+  DashboardTabs: () => <div>dashboard-hero</div>,
 }))
 
 vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
@@ -166,11 +162,9 @@ describe("DashboardClient activity", () => {
     )
 
     await waitFor(() => expect(readPortfolioBorrow).toHaveBeenCalled())
-    await waitFor(() => expect(screen.getByText("Activity tab")).toBeInTheDocument())
 
-    fireEvent.click(screen.getByText("Activity tab"))
-
-    expect(screen.getByText("sim_abc123")).toBeInTheDocument()
+    // Activity now renders inline on the dashboard (no separate tab to click).
+    await waitFor(() => expect(screen.getByText("sim_abc123")).toBeInTheDocument())
     expect(screen.getByText("Simulated transaction")).toBeInTheDocument()
     expect(screen.getByText("0xmultiply")).toBeInTheDocument()
     expect(screen.getByText("1250")).toBeInTheDocument()

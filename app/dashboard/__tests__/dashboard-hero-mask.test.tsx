@@ -33,7 +33,7 @@ vi.mock("@/app/portfolio/hero/portfolio-hero-actions", () => ({
 }))
 
 describe("DashboardHero privacy mask (lending tab)", () => {
-  it("masks the EARNED stat and the chart axis/tooltip when dollar amounts are hidden", () => {
+  it("masks the chart axis/tooltip when dollar amounts are hidden", () => {
     render(
       <DashboardHero
         tab="lending"
@@ -43,9 +43,9 @@ describe("DashboardHero privacy mask (lending tab)", () => {
       />,
     )
 
-    // The EARNED stat (and the sibling APY stat) must not leak the raw value.
+    // The lending hero no longer renders stat tiles or a balance headline, so the
+    // raw stat value must never appear.
     expect(screen.queryByText("+$12.46")).not.toBeInTheDocument()
-    expect(screen.getAllByText("••••••••").length).toBeGreaterThan(0)
 
     // Chart axis ticks and tooltip values are masked, not real dollars.
     expect(screen.getByText("chart-axis:••")).toBeInTheDocument()
