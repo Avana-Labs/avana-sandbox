@@ -33,7 +33,7 @@ export function DebtPositionsPanel({
 }) {
   const { t } = useTranslation()
   const router = useRouter()
-  const { exact, compact } = useCurrency()
+  const { exact } = useCurrency()
   const { summary, rows } = getDashboardDebtData()
   const m = (value: string) => (showBalance ? value : MASK)
 
@@ -75,14 +75,13 @@ export function DebtPositionsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="rounded-radius-md">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[24%]" />
-                <col className="w-[16%]" />
-                <col className="w-[10%]" />
-                <col className="w-[16%]" />
-                <col className="w-[16%]" />
+                <col className="w-[28%]" />
                 <col className="w-[18%]" />
+                <col className="w-[12%]" />
+                <col className="w-[18%]" />
+                <col className="w-[24%]" />
               </colgroup>
               <thead>
                 <tr className="text-left">
@@ -90,7 +89,6 @@ export function DebtPositionsPanel({
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("Borrowed")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("APY")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("Fees Paid")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("Available Liquidity")}</th>
                   <th className={cn(HEADER_CLASS, "rounded-r-radius-lg pr-5")} />
                 </tr>
               </thead>
@@ -112,9 +110,6 @@ export function DebtPositionsPanel({
                     </td>
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.feesToken)} usd={m(exact(row.feesUsd))} />
-                    </td>
-                    <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
-                      <TokenUsdCell token={m(row.availableLiquidityToken)} usd={m(compact(row.availableLiquidityUsd))} />
                     </td>
                     <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
                       <HoverActionGroup className="gap-2">
@@ -162,7 +157,6 @@ export function DebtPositionsPanel({
             row={row}
             mask={m}
             exact={exact}
-            compact={compact}
             onBorrow={() => goBorrow(row.marketId)}
             onRepay={() => goRepay(row.marketId)}
             onOpen={() => router.push(detailHref(row.marketId))}
@@ -198,7 +192,6 @@ function DebtMobileCard({
   row,
   mask,
   exact,
-  compact,
   onBorrow,
   onRepay,
   onOpen,
@@ -206,7 +199,6 @@ function DebtMobileCard({
   row: DebtAssetRow
   mask: (v: string) => string
   exact: (usd: number) => string
-  compact: (usd: number) => string
   onBorrow: () => void
   onRepay: () => void
   onOpen: () => void
@@ -242,15 +234,6 @@ function DebtMobileCard({
             <span>
               {mask(row.feesToken)}
               <span className="ml-2 text-[12px] text-muted-foreground">{mask(exact(row.feesUsd))}</span>
-            </span>
-          }
-        />
-        <MarketMobileStatRow
-          label={t("Available Liquidity")}
-          value={
-            <span>
-              {mask(row.availableLiquidityToken)}
-              <span className="ml-2 text-[12px] text-muted-foreground">{mask(compact(row.availableLiquidityUsd))}</span>
             </span>
           }
         />
