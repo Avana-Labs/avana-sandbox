@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { DashboardClient } from "@/app/dashboard/dashboard-client"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
@@ -208,10 +208,7 @@ describe("DashboardClient", () => {
 
     await waitFor(() => expect(readPortfolioBorrow).toHaveBeenCalledWith("demo-wallet"))
     expect(screen.getByLabelText("Dollar amounts")).toBeInTheDocument()
-    await waitFor(() => expect(screen.getByText("Borrow tab")).toBeInTheDocument())
-
-    fireEvent.click(screen.getByText("Borrow tab"))
-    // Borrow tab now splits into Credit Overview / Collateral / Debt sub-tabs.
+    // Borrow + Multiply sections now live under the Lend (default) tab as sub-tab strips.
     await waitFor(() => expect(screen.getByText("Collateral Positions")).toBeInTheDocument())
     expect(screen.getByText("Debt Positions")).toBeInTheDocument()
   })

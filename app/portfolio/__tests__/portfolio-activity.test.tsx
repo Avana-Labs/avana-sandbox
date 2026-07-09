@@ -76,6 +76,7 @@ vi.mock("@/app/dashboard/dashboard-tabs", () => ({
 
 vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
   DashboardOverviewSection: () => null,
+  DashboardCreditOverviewSection: () => null,
   DashboardPerformanceSection: () => null,
   DashboardLendPerformanceSection: () => null,
 }))

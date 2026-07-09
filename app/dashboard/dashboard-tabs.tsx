@@ -17,8 +17,6 @@ type TabConfig = {
 
 const DASHBOARD_TABS: TabConfig[] = [
   { value: "lending", label: "Lend" },
-  { value: "overview", label: "Borrow" },
-  { value: "looping", label: "Multiply" },
   { value: "activity", label: "Activity" },
 ]
 
