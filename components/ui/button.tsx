@@ -26,6 +26,9 @@ const buttonVariants = cva(
         // Secondary CTA that pairs with `brand` (matched height/radius).
         'brand-secondary':
           'w-full border border-border bg-surface-raised font-medium text-foreground hover:bg-surface-hover',
+        // Muted pill that pairs with `brand` inside desktop table action columns.
+        'table-secondary':
+          'w-auto bg-muted font-medium text-foreground hover:bg-muted/70',
       },
       size: {
         default: 'h-9 px-3',
@@ -35,7 +38,7 @@ const buttonVariants = cva(
         // Full-height action-flow CTAs.
         cta: 'h-14 rounded-radius-xl px-4 text-[16px]',
         compact: 'h-12 rounded-radius-xl px-4 text-[15px]',
-        table: 'h-[2.625rem] rounded-radius-lg px-3.5 text-[13px]',
+        table: 'h-auto rounded-full px-3 py-1.5 text-[13px] font-medium',
       },
     },
     defaultVariants: {

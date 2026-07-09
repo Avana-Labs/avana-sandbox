@@ -597,7 +597,7 @@ function LoopTableRow({
             <Button
               type="button"
               size="table"
-              variant="brand-secondary"
+              variant="table-secondary"
               className="w-auto"
               onClick={(event) => {
                 event.stopPropagation()
