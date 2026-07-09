@@ -10,6 +10,28 @@ export function useSiweToken(): SiweToken | null {
   return useSyncExternalStore(subscribeSiwe, getSiweToken, () => null)
 }
 
+const noopSubscribe = () => () => {}
+
+/**
+ * `false` on the server and on the FIRST client (hydration) render, then `true`.
+ * The SIWE token is read from a client-only store whose server snapshot is `null`,
+ * so during hydration every gate reads as "signed out". This flag lets the gate
+ * hold a neutral placeholder in that window instead of flashing the onboarding
+ * screen at an already-signed-in user before their session resolves.
+ *
+ * Unlike a `useState`+`useEffect` mounted flag, this returns `true` immediately on
+ * any later remount (only the true hydration pass uses the server snapshot), so it
+ * does NOT re-introduce a placeholder flash when a parent boundary remounts the
+ * gate (e.g. the currency switcher).
+ */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  )
+}
+
 /**
  * A valid (unexpired) SIWE token, or null. React re-renders when the token changes AND
  * when it crosses its own expiry boundary, so a tab left open past the JWT TTL flips to
