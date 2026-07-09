@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
 import { Button } from "@/components/ui/button"
@@ -18,8 +17,8 @@ import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
-import { AssetSummaryStrip, OpportunitiesToggle, type SummaryMetric } from "./asset-positions-shared"
-import { getDashboardDebtData, type BorrowOpportunity, type DebtAssetRow } from "./asset-positions-data"
+import { AssetSummaryStrip, type SummaryMetric } from "./asset-positions-shared"
+import { getDashboardDebtData, type DebtAssetRow } from "./asset-positions-data"
 
 const MASK = "••••"
 const HEADER_CLASS =
@@ -35,8 +34,7 @@ export function DebtPositionsPanel({
   const { t } = useTranslation()
   const router = useRouter()
   const { exact, compact } = useCurrency()
-  const [showOpportunities, setShowOpportunities] = useState(false)
-  const { summary, rows, opportunities } = getDashboardDebtData()
+  const { summary, rows } = getDashboardDebtData()
   const m = (value: string) => (showBalance ? value : MASK)
 
   const summaryMetrics: SummaryMetric[] = [
@@ -150,33 +148,6 @@ export function DebtPositionsPanel({
                     </td>
                   </tr>
                 ))}
-
-                {opportunities.length > 0 ? (
-                  <>
-                    <tr>
-                      <td colSpan={6} className="border-t border-border p-0 dark:border-white/6">
-                        <OpportunitiesToggle
-                          expanded={showOpportunities}
-                          onToggle={() => setShowOpportunities((v) => !v)}
-                          showLabel="Show Main borrow opportunities"
-                          hideLabel="Hide Main borrow opportunities"
-                        />
-                      </td>
-                    </tr>
-                    {showOpportunities
-                      ? opportunities.map((opp) => (
-                          <BorrowOpportunityRow
-                            key={opp.id}
-                            opp={opp}
-                            mask={m}
-                            compact={compact}
-                            onBorrow={() => goBorrow(opp.marketId)}
-                            onRowClick={() => router.push(detailHref(opp.marketId))}
-                          />
-                        ))
-                      : null}
-                  </>
-                ) : null}
               </tbody>
             </table>
           </div>
@@ -197,26 +168,6 @@ export function DebtPositionsPanel({
             onOpen={() => router.push(detailHref(row.marketId))}
           />
         ))}
-        {opportunities.length > 0 ? (
-          <OpportunitiesToggle
-            expanded={showOpportunities}
-            onToggle={() => setShowOpportunities((v) => !v)}
-            showLabel="Show Main borrow opportunities"
-            hideLabel="Hide Main borrow opportunities"
-          />
-        ) : null}
-        {showOpportunities
-          ? opportunities.map((opp) => (
-              <BorrowOpportunityMobileCard
-                key={opp.id}
-                opp={opp}
-                mask={m}
-                compact={compact}
-                onBorrow={() => goBorrow(opp.marketId)}
-                onOpen={() => router.push(detailHref(opp.marketId))}
-              />
-            ))
-          : null}
       </div>
     </section>
   )
@@ -240,58 +191,6 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
       <span className="font-data text-[13px] font-medium tabular-nums text-foreground">{token}</span>
       <span className="font-data text-[11px] tabular-nums text-muted-foreground">{usd}</span>
     </div>
-  )
-}
-
-function BorrowOpportunityRow({
-  opp,
-  mask,
-  compact,
-  onBorrow,
-  onRowClick,
-}: {
-  opp: BorrowOpportunity
-  mask: (v: string) => string
-  compact: (usd: number) => string
-  onBorrow: () => void
-  onRowClick: () => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <tr className="group cursor-pointer transition-colors" onClick={onRowClick}>
-      <td className={cn("py-3.5 pl-5", TABLE_ROW_HOVER_LEFT)}>
-        <AssetIdentity symbol={opp.symbol} name={opp.name} />
-      </td>
-      <td className={cn("py-3.5 pr-4 text-right font-data text-[13px] tabular-nums text-muted-foreground", TABLE_ROW_HOVER_BG)}>
-        —
-      </td>
-      <td className={cn("py-3.5 text-right font-data text-[13px] font-medium tabular-nums text-foreground", TABLE_ROW_HOVER_BG)}>
-        {opp.apyPct.toFixed(2)}%
-      </td>
-      <td className={cn("py-3.5 pr-4 text-right font-data text-[13px] tabular-nums text-muted-foreground", TABLE_ROW_HOVER_BG)}>
-        —
-      </td>
-      <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
-        <TokenUsdCell token={mask(opp.availableLiquidityToken)} usd={mask(compact(opp.availableLiquidityUsd))} />
-      </td>
-      <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
-        <HoverActionGroup className="gap-2">
-          <Button
-            type="button"
-            size="table"
-            variant="table-primary"
-            className="w-auto"
-            onClick={(event) => {
-              event.stopPropagation()
-              onBorrow()
-            }}
-          >
-            <ActionIcon label="Borrow" />
-            {t("Borrow")}
-          </Button>
-        </HoverActionGroup>
-      </td>
-    </tr>
   )
 }
 
@@ -382,61 +281,6 @@ function DebtMobileCard({
           {t("Repay")}
         </Button>
       </div>
-    </MarketMobileCard>
-  )
-}
-
-function BorrowOpportunityMobileCard({
-  opp,
-  mask,
-  compact,
-  onBorrow,
-  onOpen,
-}: {
-  opp: BorrowOpportunity
-  mask: (v: string) => string
-  compact: (usd: number) => string
-  onBorrow: () => void
-  onOpen: () => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <MarketMobileCard clickable className="space-y-2" onClick={onOpen}>
-      <MarketMobileCardHeader
-        identity={
-          <div className="flex min-w-0 items-center gap-2.5">
-            <TokenIcon symbol={opp.symbol} size="table" />
-            <div className="min-w-0">
-              <div className="text-[13px] font-medium text-foreground">{opp.name}</div>
-              <div className="text-[11px] text-muted-foreground">{opp.symbol}</div>
-            </div>
-          </div>
-        }
-        metric={<MarketMobileMetric value={`${opp.apyPct.toFixed(2)}%`} label="APY" />}
-      />
-      <MarketMobileStatList>
-        <MarketMobileStatRow
-          label={t("Available Liquidity")}
-          value={
-            <span>
-              {mask(opp.availableLiquidityToken)}
-              <span className="ml-2 text-[12px] text-muted-foreground">{mask(compact(opp.availableLiquidityUsd))}</span>
-            </span>
-          }
-        />
-      </MarketMobileStatList>
-      <Button
-        type="button"
-        variant="brand"
-        className="h-10 w-full rounded-radius-sm px-4 text-[13px]"
-        onClick={(event) => {
-          event.stopPropagation()
-          onBorrow()
-        }}
-      >
-        <ActionIcon label="Borrow" />
-        {t("Borrow")}
-      </Button>
     </MarketMobileCard>
   )
 }
