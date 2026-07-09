@@ -69,6 +69,35 @@ export type DashboardDebtData = {
   rows: DebtAssetRow[]
 }
 
+/** A concentrated-liquidity LP position earning trading fees (Uniswap-style). */
+export type TradingFeeRow = {
+  id: string
+  marketId: string
+  poolLabel: string
+  token0: string
+  token1: string
+  protocol: string
+  /** Whether the current price sits inside the position's range (still earning fees). */
+  inRange: boolean
+  depositedToken: string
+  depositedUsd: number
+  apyPct: number
+  feesEarnedToken: string
+  feesEarnedUsd: number
+}
+
+export type TradingFeesSummary = {
+  unclaimedFeesUsd: number
+  feesClaimedUsd: number
+  unrealizedPlUsd: number
+  unrealizedPlPct: number
+}
+
+export type DashboardTradingFeesData = {
+  summary: TradingFeesSummary
+  rows: TradingFeeRow[]
+}
+
 const DEV_COLLATERAL: DashboardCollateralData = {
   summary: { depositedUsd: 5.8, collateralUsd: 4.8, netDepositApyPct: 1.43, interestEarnedUsd: 0.02 },
   rows: [
@@ -109,6 +138,40 @@ const DEV_DEBT: DashboardDebtData = {
   ],
 }
 
+const DEV_TRADING_FEES: DashboardTradingFeesData = {
+  summary: { unclaimedFeesUsd: 33.8, feesClaimedUsd: 12.4, unrealizedPlUsd: 150.55, unrealizedPlPct: 23.06 },
+  rows: [
+    {
+      id: "fees-usdc-usdt",
+      marketId: "usdc-usdt",
+      poolLabel: "USDC / USDT",
+      token0: "USDC",
+      token1: "USDT",
+      protocol: "Uniswap v3",
+      inRange: true,
+      depositedToken: "2,140.00 LP",
+      depositedUsd: 2_140,
+      apyPct: 8.42,
+      feesEarnedToken: "18.30 USDC",
+      feesEarnedUsd: 18.3,
+    },
+    {
+      id: "fees-weth-usdc",
+      marketId: "weth-usdc",
+      poolLabel: "WETH / USDC",
+      token0: "WETH",
+      token1: "USDC",
+      protocol: "Uniswap v3",
+      inRange: false,
+      depositedToken: "0.85 LP",
+      depositedUsd: 1_980,
+      apyPct: 12.1,
+      feesEarnedToken: "<0.01 WETH",
+      feesEarnedUsd: 15.5,
+    },
+  ],
+}
+
 const EMPTY_COLLATERAL: DashboardCollateralData = {
   summary: { depositedUsd: 0, collateralUsd: 0, netDepositApyPct: 0, interestEarnedUsd: 0 },
   rows: [],
@@ -119,10 +182,19 @@ const EMPTY_DEBT: DashboardDebtData = {
   rows: [],
 }
 
+const EMPTY_TRADING_FEES: DashboardTradingFeesData = {
+  summary: { unclaimedFeesUsd: 0, feesClaimedUsd: 0, unrealizedPlUsd: 0, unrealizedPlPct: 0 },
+  rows: [],
+}
+
 export function getDashboardCollateralData(): DashboardCollateralData {
   return shouldUseOpenGateSession() ? DEV_COLLATERAL : EMPTY_COLLATERAL
 }
 
 export function getDashboardDebtData(): DashboardDebtData {
   return shouldUseOpenGateSession() ? DEV_DEBT : EMPTY_DEBT
+}
+
+export function getDashboardTradingFeesData(): DashboardTradingFeesData {
+  return shouldUseOpenGateSession() ? DEV_TRADING_FEES : EMPTY_TRADING_FEES
 }

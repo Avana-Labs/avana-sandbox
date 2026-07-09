@@ -40,6 +40,7 @@ import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/
 import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
 import { CollateralPositionsPanel } from "@/app/dashboard/components/borrow-tab/collateral-positions-panel"
 import { DebtPositionsPanel } from "@/app/dashboard/components/borrow-tab/debt-positions-panel"
+import { TradingFeesPanel } from "@/app/dashboard/components/borrow-tab/trading-fees-panel"
 import { LendLearnSection } from "./components/lend-learn-section"
 import { cn } from "@/lib/utils"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
@@ -130,11 +131,12 @@ function DashboardSection({
   )
 }
 
-type CreditSubTab = "overview" | "collateral" | "debt"
+type CreditSubTab = "overview" | "collateral" | "debt" | "fees"
 const CREDIT_SUB_TABS: readonly { id: CreditSubTab; label: string }[] = [
   { id: "overview", label: "Borrow Overview" },
   { id: "collateral", label: "Collateral Positions" },
   { id: "debt", label: "Debt Positions" },
+  { id: "fees", label: "Trading Fees" },
 ]
 
 type LendSubTab = "positions" | "performance"
@@ -523,8 +525,10 @@ export function DashboardClient({
               </div>
             ) : creditSubTab === "collateral" ? (
               <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
-            ) : (
+            ) : creditSubTab === "debt" ? (
               <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+            ) : (
+              <TradingFeesPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
             )}
           </div>
         </div>
