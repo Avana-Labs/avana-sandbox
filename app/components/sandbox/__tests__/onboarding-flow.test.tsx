@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { OnboardingFlow, type OnboardingGateState } from "../onboarding-flow"
 
@@ -129,5 +129,48 @@ describe("OnboardingFlow — Convex config drives the UI (issue #139)", () => {
     )
     expect(screen.getByRole("link", { name: /Read the docs/i })).toHaveAttribute("href", "/docs")
     expect(screen.getByRole("link", { name: /Explore markets/i })).toHaveAttribute("href", "/borrow")
+  })
+})
+
+describe("OnboardingFlow — personalize + liquidity-source steps", () => {
+  it("runs personalize → liquidity → funding, capping the name and saving DEX sources", async () => {
+    render(<OnboardingFlow wallet={WALLET} state={stateWithStep("wallet")} />)
+
+    // A fresh wallet lands on the personalize step first (not the funding card).
+    expect(screen.getByText(/Help us personalize your experience/i)).toBeInTheDocument()
+    const nameInput = screen.getByPlaceholderText(/Your name/i)
+    expect(nameInput).toHaveAttribute("maxLength", "10")
+    fireEvent.change(nameInput, { target: { value: "ElizabethAlexandra" } })
+    fireEvent.click(screen.getByRole("button", { name: /^Continue$/i }))
+
+    // The save is capped at 10 chars regardless of the raw input length.
+    await waitFor(() =>
+      expect(noop).toHaveBeenCalledWith(
+        expect.objectContaining({ wallet: WALLET, preferences: expect.objectContaining({ name: "ElizabethA" }) }),
+      ),
+    )
+
+    // Advances to the liquidity-source multi-select.
+    await screen.findByText(/Where does your liquidity come from/i)
+    fireEvent.click(screen.getByRole("button", { name: /Uniswap/i }))
+    fireEvent.click(screen.getByRole("button", { name: /^Continue$/i }))
+
+    await waitFor(() =>
+      expect(noop).toHaveBeenCalledWith(
+        expect.objectContaining({ wallet: WALLET, preferences: { dexSources: ["uniswap"] } }),
+      ),
+    )
+
+    // Then the original funding card.
+    await screen.findByText(/Fund your sandbox to start exploring/i)
+  })
+
+  it("skips both steps for a wallet that has already saved preferences", () => {
+    const state = stateWithStep("wallet")
+    state.profile = { ...state.profile, preferences: { name: "Sam", dexSources: ["uniswap"] } }
+    render(<OnboardingFlow wallet={WALLET} state={state} />)
+
+    expect(screen.getByText(/Fund your sandbox to start exploring/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Help us personalize/i)).not.toBeInTheDocument()
   })
 })

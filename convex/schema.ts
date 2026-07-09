@@ -521,6 +521,10 @@ export default defineSchema({
         language: v.optional(v.string()),
         currency: v.optional(v.string()),
         showDollarAmounts: v.optional(v.boolean()),
+        /** Short display name captured at onboarding (≤10 chars). */
+        name: v.optional(v.string()),
+        /** Which DEX(es) the user brings LP liquidity from — research signal. */
+        dexSources: v.optional(v.array(v.string())),
       }),
     ),
   })
