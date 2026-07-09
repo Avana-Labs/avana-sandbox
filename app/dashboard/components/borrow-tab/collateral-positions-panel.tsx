@@ -81,24 +81,20 @@ export function CollateralPositionsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="rounded-radius-md">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
+                <col className="w-[28%]" />
                 <col className="w-[18%]" />
-                <col className="w-[13%]" />
-                <col className="w-[13%]" />
-                <col className="w-[8%]" />
-                <col className="w-[13%]" />
-                <col className="w-[16%]" />
-                <col className="w-[19%]" />
+                <col className="w-[12%]" />
+                <col className="w-[18%]" />
+                <col className="w-[24%]" />
               </colgroup>
               <thead>
                 <tr className="text-left">
                   <th className={cn(HEADER_CLASS, "rounded-l-radius-lg pl-5")}>{t("Asset")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("Wallet Balance")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("Deposited")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("APY")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("Earnings")}</th>
-                  <th className={cn(HEADER_CLASS)}>{t("Use as Collateral")}</th>
                   <th className={cn(HEADER_CLASS, "rounded-r-radius-lg pr-5")} />
                 </tr>
               </thead>
@@ -113,9 +109,6 @@ export function CollateralPositionsPanel({
                       <AssetIdentity symbol={row.symbol} name={row.name} />
                     </td>
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
-                      <TokenUsdCell token={m(row.walletBalanceToken)} usd={m(exact(row.walletBalanceUsd))} />
-                    </td>
-                    <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.depositedToken)} usd={m(exact(row.depositedUsd))} />
                     </td>
                     <td className={cn("py-3.5 text-right font-data text-[13px] font-medium tabular-nums text-foreground", TABLE_ROW_HOVER_BG)}>
@@ -123,9 +116,6 @@ export function CollateralPositionsPanel({
                     </td>
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.earningsToken)} usd={m(exact(row.earningsUsd))} />
-                    </td>
-                    <td className={cn("py-3.5 pl-4", TABLE_ROW_HOVER_BG)}>
-                      <CollateralStatus enabled={row.collateralEnabled} cfPct={row.collateralFactorPct} />
                     </td>
                     <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
                       <HoverActionGroup className="gap-2">
@@ -163,7 +153,7 @@ export function CollateralPositionsPanel({
                 {opportunities.length > 0 ? (
                   <>
                     <tr>
-                      <td colSpan={7} className="border-t border-border p-0 dark:border-white/6">
+                      <td colSpan={5} className="border-t border-border p-0 dark:border-white/6">
                         <OpportunitiesToggle
                           expanded={showOpportunities}
                           onToggle={() => setShowOpportunities((v) => !v)}
@@ -177,8 +167,6 @@ export function CollateralPositionsPanel({
                           <DepositOpportunityRow
                             key={opp.id}
                             opp={opp}
-                            mask={m}
-                            exact={exact}
                             onDeposit={() => goDeposit(opp.marketId)}
                             onRowClick={() => router.push(detailHref(opp.marketId))}
                           />
@@ -251,30 +239,12 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   )
 }
 
-function CollateralStatus({ enabled, cfPct }: { enabled: boolean; cfPct: number }) {
-  const { t } = useTranslation()
-  return (
-    <div className="flex flex-col">
-      <span className={cn("text-[13px] font-medium", enabled ? "text-foreground" : "text-muted-foreground")}>
-        {enabled ? t("Enabled") : t("Disabled")}
-      </span>
-      {enabled ? (
-        <span className="font-data text-[11px] tabular-nums text-muted-foreground">CF {cfPct.toFixed(2)}%</span>
-      ) : null}
-    </div>
-  )
-}
-
 function DepositOpportunityRow({
   opp,
-  mask,
-  exact,
   onDeposit,
   onRowClick,
 }: {
   opp: DepositOpportunity
-  mask: (v: string) => string
-  exact: (usd: number) => string
   onDeposit: () => void
   onRowClick: () => void
 }) {
@@ -284,9 +254,6 @@ function DepositOpportunityRow({
       <td className={cn("py-3.5 pl-5", TABLE_ROW_HOVER_LEFT)}>
         <AssetIdentity symbol={opp.symbol} name={opp.name} />
       </td>
-      <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
-        <TokenUsdCell token={mask(opp.walletBalanceToken)} usd={mask(exact(opp.walletBalanceUsd))} />
-      </td>
       <td className={cn("py-3.5 pr-4 text-right font-data text-[13px] tabular-nums text-muted-foreground", TABLE_ROW_HOVER_BG)}>
         —
       </td>
@@ -295,9 +262,6 @@ function DepositOpportunityRow({
       </td>
       <td className={cn("py-3.5 pr-4 text-right font-data text-[13px] tabular-nums text-muted-foreground", TABLE_ROW_HOVER_BG)}>
         —
-      </td>
-      <td className={cn("py-3.5 pl-4", TABLE_ROW_HOVER_BG)}>
-        <span className="font-data text-[11px] tabular-nums text-muted-foreground">CF {opp.collateralFactorPct.toFixed(2)}%</span>
       </td>
       <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
         <HoverActionGroup className="gap-2">
@@ -366,17 +330,6 @@ function CollateralMobileCard({
             <span>
               {mask(row.earningsToken)}
               <span className="ml-2 text-[12px] text-muted-foreground">{mask(exact(row.earningsUsd))}</span>
-            </span>
-          }
-        />
-        <MarketMobileStatRow
-          label={t("Use as Collateral")}
-          value={
-            <span>
-              {row.collateralEnabled ? t("Enabled") : t("Disabled")}
-              {row.collateralEnabled ? (
-                <span className="ml-2 text-[12px] text-muted-foreground">CF {row.collateralFactorPct.toFixed(2)}%</span>
-              ) : null}
             </span>
           }
         />
