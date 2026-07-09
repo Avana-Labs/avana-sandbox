@@ -216,6 +216,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
   const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])
   const [kinds, setKinds] = React.useState<PortfolioActivityRow["kind"][]>([])
   const [statuses, setStatuses] = React.useState<PortfolioActivityRow["status"][]>([])
+  const [showAll, setShowAll] = React.useState(false)
 
   const hasFilters = products.length > 0 || kinds.length > 0 || statuses.length > 0
   const visibleItems = React.useMemo(
@@ -229,11 +230,27 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
     [kinds, products, rows, statuses],
   )
 
+  // Show a short preview by default; "View all" expands to the full history.
+  const COLLAPSED_COUNT = 5
+  const displayItems = showAll ? visibleItems : visibleItems.slice(0, COLLAPSED_COUNT)
+  const hasMore = visibleItems.length > COLLAPSED_COUNT
+
   return (
     <section className="min-w-0">
-      <h2 className="mb-4 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
-        {t("All Transactions")}
-      </h2>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
+          {t("All Transactions")}
+        </h2>
+        {hasMore ? (
+          <button
+            type="button"
+            onClick={() => setShowAll((prev) => !prev)}
+            className="shrink-0 text-[13px] font-medium text-brand transition-colors hover:text-brand/80"
+          >
+            {showAll ? t("Show less") : t("View all")}
+          </button>
+        ) : null}
+      </div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -259,7 +276,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
       {/* Mobile: card list (the wide table is unusable on phones) */}
       <div className="space-y-2 md:hidden">
         {visibleItems.length ? (
-          visibleItems.map((row) => (
+          displayItems.map((row) => (
             <div key={row.id} className="rounded-radius-lg border border-border bg-card p-3.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-baseline gap-1.5">
@@ -330,7 +347,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             </thead>
             <tbody>
               {visibleItems.length ? (
-                visibleItems.map((row) => (
+                displayItems.map((row) => (
                   <tr key={row.id} className="transition-colors hover:bg-hover">
                     <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
                       {formatRelativeTime(row.at)}
