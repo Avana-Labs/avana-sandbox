@@ -50,6 +50,7 @@ export function PortfolioInvestments({
   isClaimingRewards = false,
   showHeading = true,
   showIndexColumn = false,
+  returnHref,
 }: {
   investments: PortfolioSupplyPosition[]
   rewardsSummary?: PortfolioLendTabData["rewardsSummary"]
@@ -57,6 +58,9 @@ export function PortfolioInvestments({
   isClaimingRewards?: boolean
   showHeading?: boolean
   showIndexColumn?: boolean
+  // Where the action flow's close button should land. Defaults to the market
+  // detail page; the dashboard passes its own URL so closing returns you here.
+  returnHref?: string
 }) {
   const router = useRouter()
   const { t } = useTranslation()
@@ -94,14 +98,14 @@ export function PortfolioInvestments({
         <>
           <div className="hidden overflow-x-auto md:block">
             <DesktopTableSurface>
-              <table className="w-full min-w-[840px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
                 <colgroup>
                   {showIndexColumn ? <col className="w-[6%]" /> : null}
-                  <col className={showIndexColumn ? "w-[28%]" : "w-[34%]"} />
-                  <col className="w-[20%]" />
-                  <col className="w-[14%]" />
+                  <col className={showIndexColumn ? "w-[26%]" : "w-[30%]"} />
                   <col className="w-[18%]" />
-                  <col className={showIndexColumn ? "w-[14%]" : "w-[14%]"} />
+                  <col className="w-[12%]" />
+                  <col className={showIndexColumn ? "w-[14%]" : "w-[16%]"} />
+                  <col className="w-[24%]" />
                 </colgroup>
                 <thead>
                   <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -179,7 +183,7 @@ export function PortfolioInvestments({
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
-                              router.push(actionPagePath("lend", "deposit", { market: marketId, return: detailHref }))
+                              router.push(actionPagePath("lend", "deposit", { market: marketId, return: returnHref ?? detailHref }))
                             }}
                           >
                             <ActionIcon label="Deposit" />Deposit
@@ -191,7 +195,7 @@ export function PortfolioInvestments({
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
-                              router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailHref }))
+                              router.push(actionPagePath("lend", "withdraw", { market: marketId, return: returnHref ?? detailHref }))
                             }}
                           >
                             <ActionIcon label="Withdraw" />Withdraw
@@ -260,7 +264,7 @@ export function PortfolioInvestments({
                       className="h-10 rounded-radius-sm px-4 text-[13px]"
                       onClick={(event) => {
                         event.stopPropagation()
-                        router.push(actionPagePath("lend", "deposit", { market: marketId, return: detailHref }))
+                        router.push(actionPagePath("lend", "deposit", { market: marketId, return: returnHref ?? detailHref }))
                       }}
                     >
                       <ActionIcon label="Deposit" />Deposit
@@ -271,7 +275,7 @@ export function PortfolioInvestments({
                       className="h-10 rounded-radius-sm px-4 text-[13px]"
                       onClick={(event) => {
                         event.stopPropagation()
-                        router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailHref }))
+                        router.push(actionPagePath("lend", "withdraw", { market: marketId, return: returnHref ?? detailHref }))
                       }}
                     >
                       <ActionIcon label="Withdraw" />Withdraw

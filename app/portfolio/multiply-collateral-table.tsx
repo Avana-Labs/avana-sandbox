@@ -32,8 +32,12 @@ function formatHealthFactor(value: number) {
 
 export function MultiplyCollateralTable({
   rows,
+  returnHref,
 }: {
   rows: PortfolioMultiplyCollateral[]
+  // Close-button destination for the launched action flow. Defaults to the
+  // market detail page; the dashboard passes its own URL so close returns here.
+  returnHref?: string
 }) {
   const router = useRouter()
   const { showDollarAmounts } = useDisplayPreferences()
@@ -47,15 +51,15 @@ export function MultiplyCollateralTable({
       <div className="rounded-radius-md bg-transparent dark:bg-transparent">
         <div className="hidden overflow-x-auto md:block">
           <DesktopTableSurface className="rounded-radius-md">
-            <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[30%]" />
-                <col className="w-[18%]" />
+                <col className="w-[22%]" />
                 <col className="w-[12%]" />
-                <col className="w-[16%]" />
+                <col className="w-[10%]" />
                 <col className="w-[12%]" />
-                <col className="w-[12%]" />
-                <col className="w-[12%]" />
+                <col className="w-[9%]" />
+                <col className="w-[9%]" />
+                <col className="w-[26%]" />
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -126,7 +130,7 @@ export function MultiplyCollateralTable({
                           className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
-                            router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
+                            router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
                           }}
                         >
                           <ActionIcon label="Multiply" />{t("Multiply")}
@@ -138,7 +142,7 @@ export function MultiplyCollateralTable({
                           className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
-                            router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
+                            router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
                           }}
                         >
                           <ActionIcon label="Deleverage" />{t("Deleverage")}
@@ -214,7 +218,7 @@ export function MultiplyCollateralTable({
                   className="h-10 rounded-radius-sm px-4 text-[13px]"
                   onClick={(event) => {
                     event.stopPropagation()
-                    router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
+                    router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
                   }}
                 >
                   <ActionIcon label="Multiply" />{t("Multiply")}
@@ -225,7 +229,7 @@ export function MultiplyCollateralTable({
                   className="h-10 rounded-radius-sm px-4 text-[13px]"
                   onClick={(event) => {
                     event.stopPropagation()
-                    router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
+                    router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
                   }}
                 >
                   <ActionIcon label="Deleverage" />{t("Deleverage")}

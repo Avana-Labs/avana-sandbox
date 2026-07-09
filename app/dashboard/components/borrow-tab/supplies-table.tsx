@@ -47,6 +47,7 @@ export function SuppliesPanel({
   rows,
   totals,
   onBorrowMore,
+  onAddCollateral,
   showBalance = true,
   showSummary = true,
   showHeading = true,
@@ -76,13 +77,13 @@ export function SuppliesPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="rounded-radius-md">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[30%]" />
-                <col className="w-[20%]" />
-                <col className="w-[20%]" />
-                <col className="w-[18%]" />
-                <col className="w-[12%]" />
+                <col className="w-[28%]" />
+                <col className="w-[16%]" />
+                <col className="w-[16%]" />
+                <col className="w-[16%]" />
+                <col className="w-[24%]" />
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -137,7 +138,11 @@ export function SuppliesPanel({
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
-                              router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }))
+                              // Route through the parent callback so the close button returns to
+                              // wherever the panel was launched from (e.g. the dashboard), not the
+                              // market detail page. Fall back to the detail page if unwired.
+                              if (onAddCollateral) onAddCollateral(row)
+                              else router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }))
                             }}
                           >
                             <ActionIcon label="Pledge" />{t("Pledge")}
@@ -258,7 +263,8 @@ export function SuppliesPanel({
                   className="h-10 flex-1 rounded-radius-sm px-4 text-[13px]"
                   onClick={(event) => {
                     event.stopPropagation()
-                    router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: `/borrow/markets/${row.pool.id}` }))
+                    if (onAddCollateral) onAddCollateral(row)
+                    else router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: `/borrow/markets/${row.pool.id}` }))
                   }}
                 >
                   <ActionIcon label="Pledge" />{t("Pledge")}

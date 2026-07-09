@@ -76,13 +76,13 @@ export function DebtsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="rounded-radius-md">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[32%]" />
-                <col className="w-[20%]" />
-                <col className="w-[18%]" />
-                <col className="w-[18%]" />
-                <col className="w-[12%]" />
+                <col className="w-[28%]" />
+                <col className="w-[16%]" />
+                <col className="w-[16%]" />
+                <col className="w-[16%]" />
+                <col className="w-[24%]" />
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">

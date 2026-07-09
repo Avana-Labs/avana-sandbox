@@ -420,6 +420,7 @@ export function DashboardClient({
               onClaimRewards={handleClaimLendRewards}
               isClaimingRewards={isClaimingLendRewards}
               showHeading={false}
+              returnHref={dashboardReturnHref}
             />
           </DashboardSection>
           <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} />
@@ -438,7 +439,7 @@ export function DashboardClient({
           <div className="mt-12 space-y-10">
             <DashboardOverviewSection title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
             <DashboardSection title={t("Looping Positions")}>
-              <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} />
+              <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
             </DashboardSection>
           </div>
         )
