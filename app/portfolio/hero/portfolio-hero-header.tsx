@@ -14,24 +14,27 @@ export function PortfolioHeroHeader() {
   const { showDollarAmounts, toggleShowDollarAmounts } = useDisplayPreferences()
 
   return (
-    <div className="mb-4 flex items-start gap-3 sm:mb-6">
+    <div className="mb-4 sm:mb-6">
+      {/* Kept for screen readers / internal recognition; hidden visually per design. */}
+      <span className="sr-only">{t("User Avana balance")}</span>
       <HeroBalanceDisplay
-        label="User Avana balance"
         value={AVANA_BALANCE}
         delta={AVANA_BALANCE_DELTA}
         deltaTone="negative"
         meta="Today"
         hidden={!showDollarAmounts}
+        valueSuffix={
+          <button
+            type="button"
+            onClick={toggleShowDollarAmounts}
+            aria-label={t("Dollar amounts")}
+            aria-pressed={showDollarAmounts}
+            className="inline-flex shrink-0 items-center text-brand-readable transition-opacity hover:opacity-80"
+          >
+            {showDollarAmounts ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+          </button>
+        }
       />
-      <button
-        type="button"
-        onClick={toggleShowDollarAmounts}
-        aria-label={t("Dollar amounts")}
-        aria-pressed={showDollarAmounts}
-        className="mt-6 inline-flex shrink-0 items-center text-brand-readable transition-opacity hover:opacity-80"
-      >
-        {showDollarAmounts ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-      </button>
     </div>
   )
 }
