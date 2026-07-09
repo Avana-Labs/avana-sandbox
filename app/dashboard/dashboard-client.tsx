@@ -12,7 +12,6 @@ import type { PortfolioLendTabData, PortfolioMultiplyCollateral, PortfolioMultip
 import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
-import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 import {
   buildBorrowDashboardMetrics,
   buildBorrowDashboardMetricsFromSnapshot,
@@ -39,7 +38,10 @@ import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
 import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/supplies-table"
 import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
+import { CollateralPositionsPanel } from "@/app/dashboard/components/borrow-tab/collateral-positions-panel"
+import { DebtPositionsPanel } from "@/app/dashboard/components/borrow-tab/debt-positions-panel"
 import { LendLearnSection } from "./components/lend-learn-section"
+import { cn } from "@/lib/utils"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { Eye, EyeOff } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
@@ -128,6 +130,54 @@ function DashboardSection({
   )
 }
 
+type CreditSubTab = "overview" | "collateral" | "debt"
+
+const CREDIT_SUB_TABS: { id: CreditSubTab; label: string }[] = [
+  { id: "overview", label: "Credit Overview" },
+  { id: "collateral", label: "Collateral Positions" },
+  { id: "debt", label: "Debt Positions" },
+]
+
+/**
+ * Underline tab strip for the Borrow tab's three sections. Same visual treatment as
+ * the primary Lend/Borrow/Multiply tabs (active underline + bottom border) but kept
+ * at the section-heading text size.
+ */
+function CreditSectionTabs({
+  value,
+  onChange,
+}: {
+  value: CreditSubTab
+  onChange: (value: CreditSubTab) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div role="tablist" aria-label={t("Credit sections")} className="flex w-max min-w-max gap-8">
+        {CREDIT_SUB_TABS.map((tab) => {
+          const active = tab.id === value
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(tab.id)}
+              data-state={active ? "active" : "inactive"}
+              className={cn(
+                "relative shrink-0 whitespace-nowrap border-0 px-0 pb-3 text-[19px] font-medium tracking-[-0.03em] transition-colors md:text-[20px] after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:rounded-full after:bg-transparent",
+                active ? "text-foreground after:bg-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t(tab.label)}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 /** Shown while the authenticated portfolio is loading from Convex (was a blank screen). */
 function DashboardLoadingState() {
   const { t } = useTranslation()
@@ -174,6 +224,7 @@ export function DashboardClient({
     return parseDashboardTab(new URLSearchParams(window.location.search).get("tab")) ?? "lending"
   }, [])
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
+  const [creditSubTab, setCreditSubTab] = useState<CreditSubTab>("overview")
   const dashboardReturnHref = dashboardHrefForTab(activeTab)
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
@@ -431,31 +482,34 @@ export function DashboardClient({
       />
 
       {activeTab === "overview" ? (
-        <div className="mt-12 space-y-10">
-          <DashboardCreditOverviewSection
-            title={t("Credit Overview")}
-            approvedCreditUsd={borrowSnapshot.approvedUsd}
-            totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
-            netApyPct={borrowDashboardMetrics.performance.netApyPct}
-            totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
-          />
-          <div className="grid gap-4 xl:grid-cols-2">
-            <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
-            <CurrentLtvCard
-              borrowedUsd={borrowSnapshot.totalBorrowedUsd}
-              collateralUsd={borrowSnapshot.totalCollateralUsd}
-              showBalance={showDollarAmounts}
-            />
+        <div className="mt-12">
+          <CreditSectionTabs value={creditSubTab} onChange={setCreditSubTab} />
+          <div className="mt-8">
+            {creditSubTab === "overview" ? (
+              <div className="space-y-8">
+                <DashboardCreditOverviewSection
+                  hideHeading
+                  title={t("Credit Overview")}
+                  approvedCreditUsd={borrowSnapshot.approvedUsd}
+                  totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
+                  netApyPct={borrowDashboardMetrics.performance.netApyPct}
+                  totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
+                />
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+                  <CurrentLtvCard
+                    borrowedUsd={borrowSnapshot.totalBorrowedUsd}
+                    collateralUsd={borrowSnapshot.totalCollateralUsd}
+                    showBalance={showDollarAmounts}
+                  />
+                </div>
+              </div>
+            ) : creditSubTab === "collateral" ? (
+              <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+            ) : (
+              <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+            )}
           </div>
-          <DashboardSection>
-            <DashboardBorrowTab
-              section="all"
-              collateralPositions={collateralPositions}
-              debtPositions={debtPositions}
-              showSummary={false}
-              returnHref={dashboardReturnHref}
-            />
-          </DashboardSection>
         </div>
       ) : null}
       {activeTab === "lending" ? (
