@@ -1,14 +1,15 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/components/borrow-tab/debts-table"
 import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/dashboard/components/borrow-tab/supplies-table"
+import { CollateralPositionsPanel } from "@/app/dashboard/components/borrow-tab/collateral-positions-panel"
+import { DebtPositionsPanel } from "@/app/dashboard/components/borrow-tab/debt-positions-panel"
 
 // Aggregate wallet-wide health factor: total liquidation value / total debt — the same
 // definition used by the hero (map-portfolio-page / selectWalletBorrowSnapshot), rather
@@ -44,7 +45,6 @@ export function DashboardBorrowTab({
   const router = useRouter()
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
-  const [marketsTab, setMarketsTab] = useState<"supplies" | "debts">(section === "debts" ? "debts" : "supplies")
   const supplies = collateralPositions
   const debtsRows = useMemo(() => debtPositions.filter((row) => row.borrowedUsd > 0), [debtPositions])
   const returnParams = returnHref ? { return: returnHref } : undefined
@@ -116,41 +116,18 @@ export function DashboardBorrowTab({
             </div>
           ) : null}
 
-          <Tabs value={marketsTab} onValueChange={(value) => setMarketsTab(value as "supplies" | "debts")}>
-            <TabsList className="inline-flex w-max min-w-max justify-start">
-              <TabsTrigger value="supplies" className="shrink-0 text-[14px] font-normal">
-                {t("Collateral Positions")}
-              </TabsTrigger>
-              <TabsTrigger value="debts" className="shrink-0 text-[14px] font-normal">
-                {t("Debt Positions")}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <div>
-            {marketsTab === "supplies" ? (
-              <SuppliesPanel
-                rows={sortedSupplies}
-                totals={supplyTotals}
-                onBorrowMore={handleSupplyBorrowMore}
-                onAddCollateral={handleSupplyAddCollateral}
-                onRemove={handleSupplyRemove}
-                showBalance={showDollarAmounts}
-                showSummary={false}
-                showHeading={false}
-              />
-            ) : null}
-            {marketsTab === "debts" ? (
-              <DebtsPanel
-                rows={sortedDebts}
-                totals={debtTotals}
-                onRepay={handleDebtRepay}
-                onManage={handleDebtManage}
-                showBalance={showDollarAmounts}
-                showSummary={false}
-                showHeading={false}
-              />
-            ) : null}
+          {/* Two distinct stacked tables (no tab switcher): asset-based Collateral
+              (deposit-style) and Debt (loans-style), each with its own inline summary
+              and expandable opportunities. */}
+          <div className="space-y-10">
+            <div>
+              <h3 className="mb-4 text-[16px] font-medium tracking-tight text-foreground">{t("Collateral Positions")}</h3>
+              <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
+            </div>
+            <div>
+              <h3 className="mb-4 text-[16px] font-medium tracking-tight text-foreground">{t("Debt Positions")}</h3>
+              <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
+            </div>
           </div>
         </>
       ) : (
