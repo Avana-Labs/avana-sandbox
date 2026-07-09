@@ -947,6 +947,15 @@ const dict: TranslationDictionary = {
   "Deposit": "Setoran",
   "Withdraw": "Penarikan",
   "Deleverage": "Kurangi leverage",
+  "Learn": "Pelajari",
+  "Guide": "Panduan",
+  "Strategy": "Strategi",
+  "A Beginner's Guide to LP Collateral": "Panduan pemula untuk jaminan LP",
+  "What LP Collateral Makes Possible": "Apa yang dimungkinkan oleh jaminan LP",
+  "Thinking Clearly About Yield Looping": "Berpikir jernih tentang yield looping",
+  "How to Hedge an LP Position": "Cara melindungi posisi LP",
+  "Making LP Collateral Usable": "Membuat jaminan LP dapat digunakan",
+  "Avana and the Next Step for Liquidity Providers": "Avana dan langkah berikutnya bagi penyedia likuiditas",
 }
 
 export default dict

@@ -991,6 +991,15 @@ const dict: TranslationDictionary = {
   "Block": "ブロック",
   "Explorer": "エクスプローラー",
   "Transaction date": "取引日",
+  "Learn": "学ぶ",
+  "Guide": "ガイド",
+  "Strategy": "戦略",
+  "A Beginner's Guide to LP Collateral": "LP担保の初心者ガイド",
+  "What LP Collateral Makes Possible": "LP担保が可能にすること",
+  "Thinking Clearly About Yield Looping": "イールドループを明確に考える",
+  "How to Hedge an LP Position": "LPポジションのヘッジ方法",
+  "Making LP Collateral Usable": "LP担保を使えるようにする",
+  "Avana and the Next Step for Liquidity Providers": "Avanaと流動性提供者の次のステップ",
 }
 
 export default dict

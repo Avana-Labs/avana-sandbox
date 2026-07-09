@@ -947,6 +947,15 @@ const dict: TranslationDictionary = {
   "Deposit": "예치",
   "Withdraw": "출금",
   "Deleverage": "레버리지 축소",
+  "Learn": "배우기",
+  "Guide": "가이드",
+  "Strategy": "전략",
+  "A Beginner's Guide to LP Collateral": "LP 담보 초보자 가이드",
+  "What LP Collateral Makes Possible": "LP 담보가 가능하게 하는 것",
+  "Thinking Clearly About Yield Looping": "이자 루핑에 대해 명확하게 생각하기",
+  "How to Hedge an LP Position": "LP 포지션을 헤지하는 방법",
+  "Making LP Collateral Usable": "LP 담보를 사용 가능하게 만들기",
+  "Avana and the Next Step for Liquidity Providers": "Avana와 유동성 공급자를 위한 다음 단계",
 }
 
 export default dict

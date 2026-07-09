@@ -947,6 +947,15 @@ const dict: TranslationDictionary = {
   "Deposit": "Storting",
   "Withdraw": "Opname",
   "Deleverage": "Hefboom verlagen",
+  "Learn": "Leren",
+  "Guide": "Gids",
+  "Strategy": "Strategie",
+  "A Beginner's Guide to LP Collateral": "Een beginnersgids voor LP-onderpand",
+  "What LP Collateral Makes Possible": "Wat LP-onderpand mogelijk maakt",
+  "Thinking Clearly About Yield Looping": "Helder nadenken over yield looping",
+  "How to Hedge an LP Position": "Hoe een LP-positie af te dekken",
+  "Making LP Collateral Usable": "LP-onderpand bruikbaar maken",
+  "Avana and the Next Step for Liquidity Providers": "Avana en de volgende stap voor liquiditeitsverschaffers",
 }
 
 export default dict

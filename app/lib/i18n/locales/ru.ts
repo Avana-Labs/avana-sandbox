@@ -947,6 +947,15 @@ const dict: TranslationDictionary = {
   "Deposit": "Депозит",
   "Withdraw": "Вывод",
   "Deleverage": "Снижение плеча",
+  "Learn": "Обучение",
+  "Guide": "Руководство",
+  "Strategy": "Стратегия",
+  "A Beginner's Guide to LP Collateral": "Руководство для начинающих по LP-обеспечению",
+  "What LP Collateral Makes Possible": "Что делает возможным LP-обеспечение",
+  "Thinking Clearly About Yield Looping": "Ясное мышление о зацикливании доходности",
+  "How to Hedge an LP Position": "Как хеджировать LP-позицию",
+  "Making LP Collateral Usable": "Как сделать LP-обеспечение пригодным для использования",
+  "Avana and the Next Step for Liquidity Providers": "Avana и следующий шаг для поставщиков ликвидности",
 }
 
 export default dict

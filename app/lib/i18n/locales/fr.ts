@@ -991,6 +991,15 @@ const dict: TranslationDictionary = {
   "Block": "Bloc",
   "Explorer": "Explorateur",
   "Transaction date": "Date de la transaction",
+  "Learn": "Apprendre",
+  "Guide": "Guide",
+  "Strategy": "Stratégie",
+  "A Beginner's Guide to LP Collateral": "Guide du débutant sur la garantie LP",
+  "What LP Collateral Makes Possible": "Ce que la garantie LP rend possible",
+  "Thinking Clearly About Yield Looping": "Penser clairement au yield looping",
+  "How to Hedge an LP Position": "Comment couvrir une position LP",
+  "Making LP Collateral Usable": "Rendre la garantie LP utilisable",
+  "Avana and the Next Step for Liquidity Providers": "Avana et la prochaine étape pour les fournisseurs de liquidité",
 }
 
 export default dict
