@@ -98,33 +98,29 @@ export function PortfolioInvestments({
         <>
           <div className="hidden overflow-x-auto md:block">
             <DesktopTableSurface>
-              <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <table className="w-full min-w-[500px] table-fixed border-separate border-spacing-0 text-[13px]">
                 <colgroup>
                   {showIndexColumn ? <col className="w-[6%]" /> : null}
-                  <col className={showIndexColumn ? "w-[26%]" : "w-[30%]"} />
+                  <col className={showIndexColumn ? "w-[24%]" : "w-[26%]"} />
                   <col className="w-[18%]" />
-                  <col className="w-[12%]" />
-                  <col className={showIndexColumn ? "w-[14%]" : "w-[16%]"} />
-                  <col className="w-[24%]" />
+                  <col className="w-[16%]" />
+                  <col className={showIndexColumn ? "w-[36%]" : "w-[40%]"} />
                 </colgroup>
                 <thead>
                   <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
                     {showIndexColumn ? (
-                      <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                      <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                         #
                       </th>
                     ) : null}
-                    <th className={`${showIndexColumn ? "" : "rounded-l-radius-lg"} bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground`}>
+                    <th className={`${showIndexColumn ? "" : "rounded-l-radius-lg"} bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70`}>
                       Asset
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                       Deposited
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                       APY
-                    </th>
-                    <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                      Earnings
                     </th>
                     <SilentActionHeader className="pr-5" />
                   </tr>
@@ -148,34 +144,29 @@ export function PortfolioInvestments({
                           <div className="flex items-center gap-2.5">
                             <TokenIcon symbol={token.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="truncate text-[13px] font-medium text-foreground">{token.name}</span>
-                              <span className="text-[11px] text-muted-foreground">{token.symbol}</span>
+                              <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{token.name}</span>
+                              <span className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">{token.symbol}</span>
                             </div>
                           </div>
                         </td>
                         <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="font-data text-[13px] font-medium tabular-nums text-foreground">
+                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {m(formatTokenAmount(token.balance, token.symbol))}
                           </div>
-                          <div className="font-data text-[11px] tabular-nums text-muted-foreground">
+                          <div className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
                             {m(formatUsdExact(token.suppliedUsd))}
                           </div>
                         </td>
                         <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <span className="font-data text-[13px] font-medium tabular-nums text-foreground">
+                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {token.apyPct.toFixed(2)}%
-                          </span>
-                        </td>
-                        <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="font-data text-[13px] font-medium tabular-nums text-foreground">
-                            {m(`+${formatUsdExact(token.earnedUsd)}`)}
                           </div>
-                          <div className="font-data text-[11px] tabular-nums text-muted-foreground">
-                            {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
+                          <div className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                            {m(`+${formatUsdExact(token.earnedUsd)}`)}
                           </div>
                         </td>
                         <td className={`py-3.5 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
-                        <HoverActionGroup className="gap-2">
+                        <HoverActionGroup className="justify-end gap-2">
                           <Button
                             type="button"
                             size="table"

@@ -22,7 +22,7 @@ import { getDashboardCollateralData, type CollateralAssetRow } from "./asset-pos
 
 const MASK = "••••"
 const HEADER_CLASS =
-  "whitespace-nowrap bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground"
+  "whitespace-nowrap bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70"
 
 export function CollateralPositionsPanel({
   showBalance = true,
@@ -104,7 +104,7 @@ export function CollateralPositionsPanel({
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.depositedToken)} usd={m(exact(row.depositedUsd))} />
                     </td>
-                    <td className={cn("py-3.5 text-right font-data text-[13px] font-medium tabular-nums text-foreground", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn("py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white", TABLE_ROW_HOVER_BG)}>
                       {row.apyPct.toFixed(2)}%
                     </td>
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
@@ -171,7 +171,7 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
     <div className="flex items-center gap-2.5">
       <TokenIcon symbol={symbol} size="table" />
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[13px] font-medium text-foreground">{name}</span>
+        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{name}</span>
         <span className="text-[11px] text-muted-foreground">{symbol}</span>
       </div>
     </div>
@@ -181,8 +181,8 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
-      <span className="font-data text-[13px] font-medium tabular-nums text-foreground">{token}</span>
-      <span className="font-data text-[11px] tabular-nums text-muted-foreground">{usd}</span>
+      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
+      <span className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{usd}</span>
     </div>
   )
 }
@@ -210,7 +210,7 @@ function CollateralMobileCard({
           <div className="flex min-w-0 items-center gap-2.5">
             <TokenIcon symbol={row.symbol} size="table" />
             <div className="min-w-0">
-              <div className="text-[13px] font-medium text-foreground">{row.name}</div>
+              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.name}</div>
               <div className="text-[11px] text-muted-foreground">{row.symbol}</div>
             </div>
           </div>

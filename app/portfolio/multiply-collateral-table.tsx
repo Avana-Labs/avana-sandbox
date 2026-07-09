@@ -63,22 +63,22 @@ export function MultiplyCollateralTable({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Market")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Exposure")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Multiplier")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Debt")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Health")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Net APY")}
                   </th>
                   <SilentActionHeader className="pr-5" />
@@ -167,7 +167,7 @@ export function MultiplyCollateralTable({
               <MarketMobileCardHeader
                 identity={
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="font-data text-[13px] tabular-nums text-muted-foreground dark:text-white/42">
+                    <span className="text-[13px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
                       {index + 1}
                     </span>
                     <TokenIcon symbol={row.collateralToken} size="table" />
