@@ -18,20 +18,37 @@ type MetricItem = {
   description: string
 }
 
-function MetricGrid({ metrics }: { metrics: MetricItem[] }) {
+function MetricGrid({ metrics, labelOnTop = false }: { metrics: MetricItem[]; labelOnTop?: boolean }) {
   return (
     <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-x-8">
-      {metrics.map((metric) => (
-        <article key={metric.label} className="min-w-0 space-y-1.5">
+      {metrics.map((metric) => {
+        const value = (
           <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
             {metric.value}
           </div>
+        )
+        const label = (
           <div className="flex items-center gap-1.5">
             <span className="text-[12px] font-medium tracking-tight text-muted-foreground">{metric.label}</span>
             <ActionMetricHelp text={metric.description} topic={metric.label} />
           </div>
-        </article>
-      ))}
+        )
+        return (
+          <article key={metric.label} className="min-w-0 space-y-1.5">
+            {labelOnTop ? (
+              <>
+                {label}
+                {value}
+              </>
+            ) : (
+              <>
+                {value}
+                {label}
+              </>
+            )}
+          </article>
+        )
+      })}
     </div>
   )
 }
@@ -99,6 +116,7 @@ export function DashboardCreditOverviewSection({
     <section className="space-y-4">
       <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       <MetricGrid
+        labelOnTop
         metrics={[
           {
             label: t("Approved credit"),
