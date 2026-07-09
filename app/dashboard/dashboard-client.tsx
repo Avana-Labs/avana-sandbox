@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -217,7 +216,6 @@ export function DashboardClient({
   initialData?: PortfolioPageData
   walletProfileId?: string
 }) {
-  const router = useRouter()
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
   const hasMounted = useHasMounted()
@@ -442,16 +440,6 @@ export function DashboardClient({
     multiplySession.transactionHistory.length
   useRefetchOnTransaction(totalTransactionCount, retryPortfolioPage)
 
-  const handleTabChange = (tab: DashboardTab) => {
-    setActiveTab(tab)
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href)
-      url.searchParams.set("tab", tab)
-      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}`)
-    }
-    router.replace(`/dashboard?tab=${tab}`, { scroll: false })
-  }
-
   if (!pageData) {
     if (portfolioError && !portfolioLoading && portfolioRetriesRef.current >= 8) {
       return (
@@ -473,7 +461,6 @@ export function DashboardClient({
     <>
       <DashboardTabs
         activeTab={activeTab}
-        onTabChange={handleTabChange}
         pageData={pageData}
         borrowSnapshot={borrowSnapshot}
         multiplySnapshot={multiplySnapshot}

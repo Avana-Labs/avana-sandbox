@@ -5,23 +5,11 @@ import { DashboardHero } from "./dashboard-hero"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { buildBorrowHeroData } from "@/app/portfolio/borrow-hero-state"
 import { buildLendHeroData, type LendSnapshot } from "@/app/portfolio/lend-hero-state"
-import { UnderlineTabStrip } from "@/app/components/tab-primitives"
-import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export type DashboardTab = PortfolioTabKey
 
-type TabConfig = {
-  value: DashboardTab
-  label: string
-}
-
-const DASHBOARD_TABS: TabConfig[] = [
-  { value: "lending", label: "Lend" },
-]
-
 type DashboardTabsProps = {
   activeTab: DashboardTab
-  onTabChange: (tab: DashboardTab) => void
   pageData: PortfolioPageData
   borrowSnapshot: BorrowSnapshot
   multiplySnapshot: BorrowSnapshot
@@ -32,7 +20,6 @@ type DashboardTabsProps = {
 
 export function DashboardTabs({
   activeTab,
-  onTabChange,
   pageData,
   borrowSnapshot,
   multiplySnapshot,
@@ -40,7 +27,6 @@ export function DashboardTabs({
   multiplyHero,
   multiplyPositionTarget,
 }: DashboardTabsProps) {
-  const { t } = useTranslation()
   const activeHero =
     activeTab === "overview"
       ? buildBorrowHeroData(pageData.heroByTab.overview, borrowSnapshot)
@@ -50,21 +36,10 @@ export function DashboardTabs({
         ? multiplyHero
       : pageData.heroByTab[activeTab]
 
-  const tabBar = (
-    <UnderlineTabStrip
-      items={DASHBOARD_TABS.map((tab) => ({ id: tab.value, label: t(tab.label) }))}
-      value={activeTab}
-      onChange={onTabChange}
-      ariaLabel={t("Portfolio views")}
-      listClassName="sm:gap-9"
-    />
-  )
-
   return (
     <section className="mb-6 sm:mb-8">
       <DashboardHero
         tab={activeTab}
-        tabs={tabBar}
         headlineValue={activeHero.headlineValue}
         headlineDelta={activeHero.headlineDelta}
         statOneValue={activeHero.statOneValue}
