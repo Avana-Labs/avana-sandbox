@@ -131,30 +131,39 @@ function DashboardSection({
 }
 
 type CreditSubTab = "overview" | "collateral" | "debt"
-
-const CREDIT_SUB_TABS: { id: CreditSubTab; label: string }[] = [
+const CREDIT_SUB_TABS: readonly { id: CreditSubTab; label: string }[] = [
   { id: "overview", label: "Credit Overview" },
   { id: "collateral", label: "Collateral Positions" },
   { id: "debt", label: "Debt Positions" },
 ]
 
+type LendSubTab = "positions" | "performance"
+const LEND_SUB_TABS: readonly { id: LendSubTab; label: string }[] = [
+  { id: "positions", label: "Lending Positions" },
+  { id: "performance", label: "Lending Performance" },
+]
+
 /**
- * Underline tab strip for the Borrow tab's three sections. Same visual treatment as
- * the primary Lend/Borrow/Multiply tabs (active underline + bottom border) but kept
- * at the section-heading text size.
+ * Underline tab strip for a main tab's sections. Same visual treatment as the primary
+ * Lend/Borrow/Multiply tabs (active underline + bottom border) but kept at the
+ * section-heading text size.
  */
-function CreditSectionTabs({
+function SectionTabStrip<T extends string>({
+  items,
   value,
   onChange,
+  ariaLabel,
 }: {
-  value: CreditSubTab
-  onChange: (value: CreditSubTab) => void
+  items: readonly { id: T; label: string }[]
+  value: T
+  onChange: (value: T) => void
+  ariaLabel: string
 }) {
   const { t } = useTranslation()
   return (
     <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-      <div role="tablist" aria-label={t("Credit sections")} className="flex w-max min-w-max gap-8">
-        {CREDIT_SUB_TABS.map((tab) => {
+      <div role="tablist" aria-label={ariaLabel} className="flex w-max min-w-max gap-8">
+        {items.map((tab) => {
           const active = tab.id === value
           return (
             <button
@@ -225,6 +234,7 @@ export function DashboardClient({
   }, [])
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const [creditSubTab, setCreditSubTab] = useState<CreditSubTab>("overview")
+  const [lendSubTab, setLendSubTab] = useState<LendSubTab>("positions")
   const dashboardReturnHref = dashboardHrefForTab(activeTab)
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
@@ -483,7 +493,7 @@ export function DashboardClient({
 
       {activeTab === "overview" ? (
         <div className="mt-12">
-          <CreditSectionTabs value={creditSubTab} onChange={setCreditSubTab} />
+          <SectionTabStrip items={CREDIT_SUB_TABS} value={creditSubTab} onChange={setCreditSubTab} ariaLabel={t("Credit sections")} />
           <div className="mt-8">
             {creditSubTab === "overview" ? (
               <div className="space-y-8">
@@ -513,19 +523,25 @@ export function DashboardClient({
         </div>
       ) : null}
       {activeTab === "lending" ? (
-        <div className="mt-12 space-y-10">
-          <DashboardSection title={t("Lending Positions")}>
-            <PortfolioInvestments
-              investments={lendTabData.investments}
-              rewardsSummary={lendTabData.rewardsSummary}
-              onClaimRewards={handleClaimLendRewards}
-              isClaimingRewards={isClaimingLendRewards}
-              showHeading={false}
-              returnHref={dashboardReturnHref}
-            />
-          </DashboardSection>
-          <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} />
-          <LendLearnSection />
+        <div className="mt-12">
+          <SectionTabStrip items={LEND_SUB_TABS} value={lendSubTab} onChange={setLendSubTab} ariaLabel={t("Lending sections")} />
+          <div className="mt-8">
+            {lendSubTab === "positions" ? (
+              <PortfolioInvestments
+                investments={lendTabData.investments}
+                rewardsSummary={lendTabData.rewardsSummary}
+                onClaimRewards={handleClaimLendRewards}
+                isClaimingRewards={isClaimingLendRewards}
+                showHeading={false}
+                returnHref={dashboardReturnHref}
+              />
+            ) : (
+              <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} hideHeading />
+            )}
+          </div>
+          <div className="mt-10">
+            <LendLearnSection />
+          </div>
         </div>
       ) : null}
       {activeTab === "looping" ? (

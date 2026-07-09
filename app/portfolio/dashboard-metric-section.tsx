@@ -191,9 +191,11 @@ export type DashboardLendPerformanceMetrics = {
 export function DashboardLendPerformanceSection({
   title,
   metrics,
+  hideHeading = false,
 }: {
   title: string
   metrics: DashboardLendPerformanceMetrics
+  hideHeading?: boolean
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
@@ -201,7 +203,9 @@ export function DashboardLendPerformanceSection({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      {hideHeading ? null : (
+        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      )}
       <MetricGrid
         metrics={[
           {
