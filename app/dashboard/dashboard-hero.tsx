@@ -270,7 +270,6 @@ export function DashboardHero({
     : undefined
   const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
   const resolvedHeadlineDelta = headlineDelta ?? displayDelta
-  const overviewDelta = headlineDelta ?? undefined
 
   const actions = showActions
     ? buildActions({
@@ -290,19 +289,7 @@ export function DashboardHero({
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-      {isBorrowOverview ? (
-        <div className="mt-5">
-          <HeroBalanceDisplay
-            value={resolvedDisplayValue}
-            delta={headlineDelta ?? overviewDelta ?? ""}
-            deltaTone="positive"
-            meta={uiConfig.headlineMeta ? t(uiConfig.headlineMeta) : undefined}
-            hidden={!showDollarAmounts}
-          />
-          {/* Credit Health / Borrowing Power cards render under the Credit Overview
-              section in dashboard-client, not in the hero. */}
-        </div>
-      ) : showBalance ? (
+      {isBorrowOverview ? null : showBalance ? (
         <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
             <HeroBalanceDisplay
