@@ -279,7 +279,7 @@ export function DashboardHero({
         </div>
       ) : null}
 
-      {/* Credit Health / Borrowing Power cards render under the Looping Overview
+      {/* Credit Health / Borrowing Power cards render under the Multiply Overview
           section in dashboard-client, not in the hero. */}
     </section>
   )

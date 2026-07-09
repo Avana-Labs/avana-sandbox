@@ -139,8 +139,8 @@ const CREDIT_SUB_TABS: readonly { id: CreditSubTab; label: string }[] = [
 
 type LoopingSubTab = "overview" | "positions"
 const LOOPING_SUB_TABS: readonly { id: LoopingSubTab; label: string }[] = [
-  { id: "overview", label: "Looping Overview" },
-  { id: "positions", label: "Looping Positions" },
+  { id: "overview", label: "Multiply Overview" },
+  { id: "positions", label: "Multiply Positions" },
 ]
 
 /**
@@ -539,11 +539,11 @@ export function DashboardClient({
             </div>
           ) : (
             <div>
-              <SectionTabStrip items={LOOPING_SUB_TABS} value={loopingSubTab} onChange={setLoopingSubTab} ariaLabel={t("Looping sections")} />
+              <SectionTabStrip items={LOOPING_SUB_TABS} value={loopingSubTab} onChange={setLoopingSubTab} ariaLabel={t("Multiply sections")} />
               <div className="mt-8">
                 {loopingSubTab === "overview" ? (
                   <div className="space-y-8">
-                    <DashboardOverviewSection hideHeading title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
+                    <DashboardOverviewSection hideHeading title={t("Multiply Overview")} metrics={multiplyDashboardMetrics.overview} />
                     <div className="grid gap-4 xl:grid-cols-2">
                       <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
                       <CurrentLtvCard
