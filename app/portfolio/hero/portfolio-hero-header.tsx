@@ -1,29 +1,21 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
 
-function resolveGreeting(date = new Date()) {
-  const hour = date.getHours()
-
-  if (hour < 12) return "Good morning"
-  if (hour < 18) return "Good afternoon"
-  return "Good evening"
-}
+// TODO(backend): wire these to the user's real Avana balance.
+const AVANA_BALANCE = "$14,400.00"
+const AVANA_BALANCE_DELTA = "-$312.96 (-3.80%)"
 
 export function PortfolioHeroHeader() {
-  const { t } = useTranslation()
-  const [title, setTitle] = useState("Good morning")
-
-  useEffect(() => {
-    setTitle(resolveGreeting())
-  }, [])
-
   return (
     <div className="mb-4 sm:mb-6">
-      <h1 className="text-[24px] font-medium tracking-[-0.04em] text-foreground sm:text-[30px]" suppressHydrationWarning>
-        {t(title)}
-      </h1>
+      <HeroBalanceDisplay
+        label="User Avana balance"
+        value={AVANA_BALANCE}
+        delta={AVANA_BALANCE_DELTA}
+        deltaTone="negative"
+        meta="Today"
+      />
     </div>
   )
 }
