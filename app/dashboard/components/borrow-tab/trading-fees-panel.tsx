@@ -22,7 +22,7 @@ import { getDashboardTradingFeesData, type TradingFeeRow } from "./asset-positio
 
 const MASK = "••••"
 const HEADER_CLASS =
-  "whitespace-nowrap bg-table-header px-4 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground"
+  "whitespace-nowrap bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70"
 
 export function TradingFeesPanel({
   showBalance = true,
@@ -117,7 +117,7 @@ export function TradingFeesPanel({
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.depositedToken)} usd={m(exact(row.depositedUsd))} />
                     </td>
-                    <td className={cn("py-3.5 text-right font-data text-[13px] font-medium tabular-nums text-foreground", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn("py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white", TABLE_ROW_HOVER_BG)}>
                       {row.apyPct.toFixed(2)}%
                     </td>
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
@@ -199,7 +199,7 @@ function PoolIdentity({
         </span>
       </span>
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[13px] font-medium text-foreground">{label}</span>
+        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{label}</span>
         <span className="text-[11px] text-muted-foreground">{protocol}</span>
       </div>
     </div>
@@ -224,8 +224,8 @@ function RangeStatus({ inRange }: { inRange: boolean }) {
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
-      <span className="font-data text-[13px] font-medium tabular-nums text-foreground">{token}</span>
-      <span className="font-data text-[11px] tabular-nums text-muted-foreground">{usd}</span>
+      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
+      <span className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{usd}</span>
     </div>
   )
 }
@@ -258,7 +258,7 @@ function TradingFeeMobileCard({
               </span>
             </span>
             <div className="min-w-0">
-              <div className="text-[13px] font-medium text-foreground">{row.poolLabel}</div>
+              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.poolLabel}</div>
               <div className="text-[11px] text-muted-foreground">{row.protocol}</div>
             </div>
           </div>
