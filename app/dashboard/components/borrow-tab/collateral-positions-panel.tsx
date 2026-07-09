@@ -39,7 +39,6 @@ export function CollateralPositionsPanel({
 
   const summaryMetrics: SummaryMetric[] = [
     { label: "Deposited", value: m(exact(summary.depositedUsd)), help: "Total value you've supplied across assets." },
-    { label: "Collateral", value: m(exact(summary.collateralUsd)), help: "Portion of your deposits enabled as collateral." },
     {
       label: "Net Deposit APY",
       value: `${summary.netDepositApyPct.toFixed(2)}%`,

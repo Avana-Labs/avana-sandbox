@@ -46,7 +46,6 @@ export function DebtPositionsPanel({
       valueClassName: "text-brand",
     },
     { label: "Interest Owed", value: m(exact(summary.interestOwedUsd)), help: "Total interest accrued on your outstanding loans." },
-    { label: "Borrowing Power", value: m(exact(summary.borrowingPowerUsd)), help: "How much more you can borrow against your collateral." },
   ]
 
   const detailHref = (marketId: string) => `/borrow/markets/${marketId}`
