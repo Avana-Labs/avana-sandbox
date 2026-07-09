@@ -132,7 +132,7 @@ function DashboardSection({
 
 type CreditSubTab = "overview" | "collateral" | "debt"
 const CREDIT_SUB_TABS: readonly { id: CreditSubTab; label: string }[] = [
-  { id: "overview", label: "Credit Overview" },
+  { id: "overview", label: "Borrow Overview" },
   { id: "collateral", label: "Collateral Positions" },
   { id: "debt", label: "Debt Positions" },
 ]
@@ -506,7 +506,7 @@ export function DashboardClient({
               <div className="space-y-8">
                 <DashboardCreditOverviewSection
                   hideHeading
-                  title={t("Credit Overview")}
+                  title={t("Borrow Overview")}
                   approvedCreditUsd={borrowSnapshot.approvedUsd}
                   totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
                   netApyPct={borrowDashboardMetrics.performance.netApyPct}
