@@ -493,41 +493,9 @@ export function DashboardClient({
         multiplyPositionTarget={multiplyPositionTarget}
       />
 
-      {activeTab === "overview" ? (
-        <div className="mt-12">
-          <SectionTabStrip items={CREDIT_SUB_TABS} value={creditSubTab} onChange={setCreditSubTab} ariaLabel={t("Credit sections")} />
-          <div className="mt-8">
-            {creditSubTab === "overview" ? (
-              <div className="space-y-8">
-                <DashboardCreditOverviewSection
-                  hideHeading
-                  title={t("Borrow Overview")}
-                  approvedCreditUsd={borrowSnapshot.approvedUsd}
-                  totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
-                  netApyPct={borrowDashboardMetrics.performance.netApyPct}
-                  totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
-                />
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
-                  <CurrentLtvCard
-                    borrowedUsd={borrowSnapshot.totalBorrowedUsd}
-                    collateralUsd={borrowSnapshot.totalCollateralUsd}
-                    showBalance={showDollarAmounts}
-                  />
-                </div>
-              </div>
-            ) : creditSubTab === "collateral" ? (
-              <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
-            ) : creditSubTab === "debt" ? (
-              <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
-            ) : (
-              <TradingFeesPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
-            )}
-          </div>
-        </div>
-      ) : null}
-      {activeTab === "lending" ? (
-        <div className="mt-12 space-y-10">
+      {activeTab !== "activity" ? (
+        <div className="mt-12 space-y-12">
+          {/* Lending Positions */}
           <section className="space-y-5">
             <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Lending Positions")}</h2>
             <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} hideHeading />
@@ -540,39 +508,72 @@ export function DashboardClient({
               returnHref={dashboardReturnHref}
             />
           </section>
-          <LendLearnSection />
-        </div>
-      ) : null}
-      {activeTab === "looping" ? (
-        multiplyTabData.lpCollaterals.length === 0 ? (
-          // Real empty state — no fabricated health/risk metrics computed over $0.
-          <div className="mt-12">
-            <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
-              {t("No multiply positions yet. Open a loop to leverage your collateral.")}
-            </div>
-          </div>
-        ) : (
-          <div className="mt-12">
-            <SectionTabStrip items={LOOPING_SUB_TABS} value={loopingSubTab} onChange={setLoopingSubTab} ariaLabel={t("Looping sections")} />
+
+          {/* Borrow sections (moved from the former Borrow tab) */}
+          <div>
+            <SectionTabStrip items={CREDIT_SUB_TABS} value={creditSubTab} onChange={setCreditSubTab} ariaLabel={t("Credit sections")} />
             <div className="mt-8">
-              {loopingSubTab === "overview" ? (
+              {creditSubTab === "overview" ? (
                 <div className="space-y-8">
-                  <DashboardOverviewSection hideHeading title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
+                  <DashboardCreditOverviewSection
+                    hideHeading
+                    title={t("Borrow Overview")}
+                    approvedCreditUsd={borrowSnapshot.approvedUsd}
+                    totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
+                    netApyPct={borrowDashboardMetrics.performance.netApyPct}
+                    totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
+                  />
                   <div className="grid gap-4 xl:grid-cols-2">
-                    <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+                    <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
                     <CurrentLtvCard
-                      borrowedUsd={multiplySnapshot.totalBorrowedUsd}
-                      collateralUsd={multiplySnapshot.totalCollateralUsd}
+                      borrowedUsd={borrowSnapshot.totalBorrowedUsd}
+                      collateralUsd={borrowSnapshot.totalCollateralUsd}
                       showBalance={showDollarAmounts}
                     />
                   </div>
                 </div>
+              ) : creditSubTab === "collateral" ? (
+                <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+              ) : creditSubTab === "debt" ? (
+                <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
               ) : (
-                <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
+                <TradingFeesPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
               )}
             </div>
           </div>
-        )
+
+          {/* Multiply sections (moved from the former Multiply tab) */}
+          {multiplyTabData.lpCollaterals.length === 0 ? (
+            // Real empty state — no fabricated health/risk metrics computed over $0.
+            <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+              {t("No multiply positions yet. Open a loop to leverage your collateral.")}
+            </div>
+          ) : (
+            <div>
+              <SectionTabStrip items={LOOPING_SUB_TABS} value={loopingSubTab} onChange={setLoopingSubTab} ariaLabel={t("Looping sections")} />
+              <div className="mt-8">
+                {loopingSubTab === "overview" ? (
+                  <div className="space-y-8">
+                    <DashboardOverviewSection hideHeading title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
+                    <div className="grid gap-4 xl:grid-cols-2">
+                      <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+                      <CurrentLtvCard
+                        borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+                        collateralUsd={multiplySnapshot.totalCollateralUsd}
+                        showBalance={showDollarAmounts}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Learn */}
+          <LendLearnSection />
+        </div>
       ) : null}
       {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
     </>
