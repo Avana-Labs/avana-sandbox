@@ -130,19 +130,6 @@ function buildActions({
     return null
   }
 
-  const resolveClasses = (label: string) => {
-    // One consistent button chrome for every quick action, with a deliberate,
-    // theme-aware money-flow semantic on top: inflows (deposit) read success,
-    // outflows (withdraw/unwind) read danger, everything else stays neutral.
-    // (Replaces the ad-hoc mix of hardcoded blue/green/red/black hexes.)
-    const normalized = label.toLowerCase()
-    const chrome =
-      "!border-border/70 !bg-background hover:!bg-surface-hover dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
-    if (normalized.includes("deposit") || normalized.includes("supply")) return `${chrome} !text-success`
-    if (normalized.includes("withdraw") || normalized.includes("unwind")) return `${chrome} !text-danger`
-    return `${chrome} !text-foreground`
-  }
-
   // Reuse the directional glyphs from the lend/borrow tables (see action-icon.tsx):
   // deposit/supply flow down-into, borrow/increase up-out, repay is money back in,
   // withdraw/unwind is money out.
@@ -166,7 +153,6 @@ function buildActions({
       icon: resolveIcon(label),
       href: actionHref ?? undefined,
       onClick: actionHref && onNavigate ? () => onNavigate(actionHref) : undefined,
-      className: resolveClasses(label),
     }
   })
 }
