@@ -37,6 +37,8 @@ import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-liv
 import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
+import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/supplies-table"
+import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
 import { LendLearnSection } from "./components/lend-learn-section"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { Eye, EyeOff } from "lucide-react"
@@ -437,6 +439,14 @@ export function DashboardClient({
             netApyPct={borrowDashboardMetrics.performance.netApyPct}
             totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
           />
+          <div className="grid gap-4 xl:grid-cols-2">
+            <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+            <CurrentLtvCard
+              borrowedUsd={borrowSnapshot.totalBorrowedUsd}
+              collateralUsd={borrowSnapshot.totalCollateralUsd}
+              showBalance={showDollarAmounts}
+            />
+          </div>
           <DashboardSection title={t("Credit Positions")}>
             <DashboardBorrowTab
               section="all"
