@@ -127,6 +127,7 @@ vi.mock("@/app/dashboard/dashboard-tabs", () => ({
 
 vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
   DashboardOverviewSection: ({ title }: { title: string }) => <div>{title}</div>,
+  DashboardCreditOverviewSection: ({ title }: { title: string }) => <div>{title}</div>,
   DashboardPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
   DashboardLendPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
 }))
@@ -226,7 +227,6 @@ describe("DashboardClient", () => {
 
     fireEvent.click(screen.getByText("Borrow tab"))
     await waitFor(() => expect(screen.getByText("Credit Overview")).toBeInTheDocument())
-    expect(screen.getByText("Credit Performance")).toBeInTheDocument()
     expect(screen.getByText("collateral:pool-a")).toBeInTheDocument()
     expect(screen.getByText("debt:debt-a")).toBeInTheDocument()
   })

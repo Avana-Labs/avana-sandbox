@@ -72,6 +72,60 @@ export function DashboardOverviewSection({ title, metrics }: { title: string; me
   )
 }
 
+/**
+ * Credit (Borrow) overview — a dedicated variant of the overview grid. Unlike the
+ * shared DashboardOverviewSection (still used by the Looping tab), this surfaces
+ * Approved credit + Net APY + Total Collateral, folding in what used to live in the
+ * separate "Credit Performance" section.
+ */
+export function DashboardCreditOverviewSection({
+  title,
+  approvedCreditUsd,
+  totalBorrowedUsd,
+  netApyPct,
+  totalCollateralUsd,
+}: {
+  title: string
+  approvedCreditUsd: number
+  totalBorrowedUsd: number
+  netApyPct: number
+  totalCollateralUsd: number
+}) {
+  const { showDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
+  const m = (value: string) => (showDollarAmounts ? value : MASK)
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      <MetricGrid
+        metrics={[
+          {
+            label: t("Approved credit"),
+            value: m(formatUsdExact(approvedCreditUsd)),
+            description: t("Total borrowing capacity approved against your collateral"),
+          },
+          {
+            label: t("Total Borrowed"),
+            value: m(formatUsdExact(totalBorrowedUsd)),
+            description: t("Current outstanding loan balance"),
+          },
+          {
+            label: t("Net APY"),
+            value: showDollarAmounts ? formatPct(netApyPct) : MASK,
+            description: t("Weighted average APY across all active positions"),
+          },
+          {
+            label: t("Total Collateral"),
+            value: m(formatUsdExact(totalCollateralUsd)),
+            description: t("LP positions currently securing your loans"),
+          },
+        ]}
+      />
+    </section>
+  )
+}
+
 export function DashboardPerformanceSection({
   title,
   metrics,
