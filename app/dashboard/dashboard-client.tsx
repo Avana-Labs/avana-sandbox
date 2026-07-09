@@ -447,7 +447,7 @@ export function DashboardClient({
               showBalance={showDollarAmounts}
             />
           </div>
-          <DashboardSection title={t("Credit Positions")}>
+          <DashboardSection>
             <DashboardBorrowTab
               section="all"
               collateralPositions={collateralPositions}
