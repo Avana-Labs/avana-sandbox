@@ -17,7 +17,6 @@ type TabConfig = {
 
 const DASHBOARD_TABS: TabConfig[] = [
   { value: "lending", label: "Lend" },
-  { value: "activity", label: "Activity" },
 ]
 
 type DashboardTabsProps = {

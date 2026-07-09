@@ -230,7 +230,9 @@ export function DashboardClient({
   const pageData = data ?? initialData
   const readTabFromLocation = useCallback((): DashboardTab => {
     if (typeof window === "undefined") return "lending"
-    return parseDashboardTab(new URLSearchParams(window.location.search).get("tab")) ?? "lending"
+    const parsed = parseDashboardTab(new URLSearchParams(window.location.search).get("tab")) ?? "lending"
+    // The Activity tab was merged into the Lend tab; treat any lingering ?tab=activity as Lend.
+    return parsed === "activity" ? "lending" : parsed
   }, [])
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const [creditSubTab, setCreditSubTab] = useState<CreditSubTab>("overview")
@@ -560,9 +562,14 @@ export function DashboardClient({
 
           {/* Learn */}
           <LendLearnSection />
+
+          {/* Activity (merged in from the former Activity tab) */}
+          <section className="space-y-5">
+            <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Activity")}</h2>
+            <RecentActivity rows={activityRows} />
+          </section>
         </div>
       ) : null}
-      {activeTab === "activity" ? <RecentActivity rows={activityRows} /> : null}
     </>
   )
 }

@@ -16,11 +16,8 @@ import {
 } from "@fluentui/react-icons"
 import {
   buildRangeData,
-  resolveSeriesChange,
   resolveSeriesTone,
 } from "@/app/components/charts/chart-data"
-import { formatChartValue } from "@/app/components/charts/format"
-import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
 import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/types"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
@@ -40,15 +37,6 @@ const HeroChartSection = dynamic(
 )
 
 const DEFAULT_RANGE_DATA = buildRangeData(880, 14)
-
-const RANGE_PERIOD_WORD: Record<ChartRangeOption, string> = {
-  "1D": "today",
-  "1W": "this week",
-  "1M": "this month",
-  "3M": "past 3 months",
-  "1Y": "this year",
-  All: "all time",
-}
 
 type DashboardHeroProps = {
   tab: "overview" | "lending" | "looping" | "activity"
@@ -216,19 +204,14 @@ function StatCard({ label, value, helpText, hidden = false }: { label: string; v
 export function DashboardHero({
   tab,
   tabs,
-  headlineValue,
-  headlineDelta,
   rangeData = DEFAULT_RANGE_DATA,
   statOneValue = "4.92%",
   statTwoValue = "+$12.46",
-  borrowSnapshot,
-  multiplySnapshot,
   multiplyPositionTarget,
 }: DashboardHeroProps) {
   const router = useRouter()
   const { t } = useTranslation()
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const { showDollarAmounts } = useDisplayPreferences()
 
   const uiConfig = HERO_UI_CONFIG[tab]
@@ -241,31 +224,9 @@ export function DashboardHero({
   const showStats = !uiConfig.hideStats
   const displayRangeData = showChart ? rangeData ?? DEFAULT_RANGE_DATA : null
 
-  // Delta + color track the active range's real trend, so a dip turns red.
+  // Chart color tracks the active range's real trend, so a dip turns red.
   const activePoints = displayRangeData?.[activeRange] ?? []
   const trendTone = showChart ? resolveSeriesTone(activePoints) : "positive"
-  const trendChange = showChart ? resolveSeriesChange(activePoints) : null
-  const hoverPoint = showChart && hoverIndex != null ? activePoints[hoverIndex] ?? null : null
-  const firstPoint = activePoints[0]
-  const displayPoint = hoverPoint ?? activePoints[activePoints.length - 1]
-  const displayTone = hoverPoint
-    ? hoverPoint.value >= (firstPoint?.value ?? hoverPoint.value)
-      ? "positive"
-      : "negative"
-    : trendTone
-  const resolvedHeadlineValue = headlineValue ?? (displayPoint ? formatChartValue("usd", displayPoint.value) : formatChartValue("usd", 0))
-  const displayDelta = showChart && trendChange
-    ? hoverPoint
-      ? (() => {
-          const baseValue = firstPoint?.value ?? hoverPoint.value
-          const changeAbs = Math.abs(hoverPoint.value - baseValue)
-          const pct = baseValue ? ((hoverPoint.value - baseValue) / baseValue) * 100 : 0
-          return `${formatChartValue("usd", changeAbs)} (${Math.abs(pct).toFixed(2)}%) ${t(RANGE_PERIOD_WORD[activeRange])}`
-        })()
-      : `${formatChartValue("usd", trendChange.changeAbs)} (${Math.abs(trendChange.pct).toFixed(2)}%) ${t(RANGE_PERIOD_WORD[activeRange])}`
-    : undefined
-  const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
-  const resolvedHeadlineDelta = headlineDelta ?? displayDelta
 
   const actions = showActions
     ? buildActions({
@@ -290,22 +251,11 @@ export function DashboardHero({
       {isBorrowOverview || isLoopingOverview ? null : showBalance ? (
         <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
-            <HeroBalanceDisplay
-              value={resolvedDisplayValue}
-              delta={resolvedHeadlineDelta ?? ""}
-              deltaTone={displayTone}
-              meta={uiConfig.headlineMeta ? t(uiConfig.headlineMeta) : undefined}
-              hidden={!showDollarAmounts}
-            />
             {showChart ? (
               <HeroChartSection
                 rangeData={displayRangeData ?? DEFAULT_RANGE_DATA}
                 activeRange={activeRange}
-                onRangeChange={(range) => {
-                  setHoverIndex(null)
-                  setActiveRange(range)
-                }}
-                onActiveIndexChange={setHoverIndex}
+                onRangeChange={setActiveRange}
                 gradientId="portfolioHeroFill"
                 tone={trendTone}
                 // Mask keeps the trend shape but hides every dollar value: axis ticks and tooltip.
