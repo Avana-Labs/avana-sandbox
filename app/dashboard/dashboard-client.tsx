@@ -139,12 +139,6 @@ const CREDIT_SUB_TABS: readonly { id: CreditSubTab; label: string }[] = [
   { id: "fees", label: "Trading Fees" },
 ]
 
-type LendSubTab = "positions" | "performance"
-const LEND_SUB_TABS: readonly { id: LendSubTab; label: string }[] = [
-  { id: "positions", label: "Lending Positions" },
-  { id: "performance", label: "Lending Performance" },
-]
-
 type LoopingSubTab = "overview" | "positions"
 const LOOPING_SUB_TABS: readonly { id: LoopingSubTab; label: string }[] = [
   { id: "overview", label: "Looping Overview" },
@@ -242,7 +236,6 @@ export function DashboardClient({
   }, [])
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const [creditSubTab, setCreditSubTab] = useState<CreditSubTab>("overview")
-  const [lendSubTab, setLendSubTab] = useState<LendSubTab>("positions")
   const [loopingSubTab, setLoopingSubTab] = useState<LoopingSubTab>("overview")
   const dashboardReturnHref = dashboardHrefForTab(activeTab)
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
@@ -534,25 +527,20 @@ export function DashboardClient({
         </div>
       ) : null}
       {activeTab === "lending" ? (
-        <div className="mt-12">
-          <SectionTabStrip items={LEND_SUB_TABS} value={lendSubTab} onChange={setLendSubTab} ariaLabel={t("Lending sections")} />
-          <div className="mt-8">
-            {lendSubTab === "positions" ? (
-              <PortfolioInvestments
-                investments={lendTabData.investments}
-                rewardsSummary={lendTabData.rewardsSummary}
-                onClaimRewards={handleClaimLendRewards}
-                isClaimingRewards={isClaimingLendRewards}
-                showHeading={false}
-                returnHref={dashboardReturnHref}
-              />
-            ) : (
-              <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} hideHeading />
-            )}
-          </div>
-          <div className="mt-10">
-            <LendLearnSection />
-          </div>
+        <div className="mt-12 space-y-10">
+          <section className="space-y-5">
+            <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Lending Positions")}</h2>
+            <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} hideHeading />
+            <PortfolioInvestments
+              investments={lendTabData.investments}
+              rewardsSummary={lendTabData.rewardsSummary}
+              onClaimRewards={handleClaimLendRewards}
+              isClaimingRewards={isClaimingLendRewards}
+              showHeading={false}
+              returnHref={dashboardReturnHref}
+            />
+          </section>
+          <LendLearnSection />
         </div>
       ) : null}
       {activeTab === "looping" ? (
