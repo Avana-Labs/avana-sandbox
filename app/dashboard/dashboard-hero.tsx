@@ -26,6 +26,7 @@ import { useDisplayPreferences } from "@/app/components/display-preferences"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
 import { PortfolioHeroHeader } from "@/app/portfolio/hero/portfolio-hero-header"
+import { DashboardQuickActions } from "@/app/dashboard/components/dashboard-quick-actions"
 import type { PortfolioHeroAction } from "@/app/portfolio/hero/types"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { dashboardHrefForTab } from "@/app/lib/action-system/dashboard-routing"
@@ -284,6 +285,8 @@ export function DashboardHero({
   return (
     <section className="mb-8">
       <PortfolioHeroHeader />
+
+      <DashboardQuickActions returnHref={dashboardHrefForTab(tab)} />
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
