@@ -4,16 +4,7 @@ import dynamic from "next/dynamic"
 import type { ReactNode } from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Info } from "lucide-react"
-import {
-  ArrowCircleDown24Filled,
-  ArrowCircleUp24Filled,
-  ArrowDownload24Filled,
-  BuildingBank24Filled,
-  ClipboardMore24Filled,
-  Receipt24Filled,
-  Wallet24Filled,
-} from "@fluentui/react-icons"
+import { CircleArrowDown, CircleArrowUp, Download, HandCoins, Info, LogIn, LogOut, Receipt } from "lucide-react"
 import {
   buildRangeData,
   resolveSeriesTone,
@@ -153,15 +144,18 @@ function buildActions({
     return `${chrome} !text-foreground`
   }
 
+  // Reuse the directional glyphs from the lend/borrow tables (see action-icon.tsx):
+  // deposit/supply flow down-into, borrow/increase up-out, repay is money back in,
+  // withdraw/unwind is money out.
   const resolveIcon = (label: string) => {
     const normalized = label.toLowerCase()
-    if (normalized.includes("supply") || normalized.includes("deposit")) return Wallet24Filled
-    if (normalized.includes("withdraw") || normalized.includes("unwind")) return ArrowCircleDown24Filled
-    if (normalized.includes("increase")) return ArrowCircleUp24Filled
-    if (normalized.includes("borrow")) return BuildingBank24Filled
-    if (normalized.includes("view")) return Receipt24Filled
-    if (normalized.includes("export")) return ClipboardMore24Filled
-    return ArrowDownload24Filled
+    if (normalized.includes("supply") || normalized.includes("deposit")) return CircleArrowDown
+    if (normalized.includes("withdraw") || normalized.includes("unwind")) return LogOut
+    if (normalized.includes("increase") || normalized.includes("borrow")) return CircleArrowUp
+    if (normalized.includes("repay")) return LogIn
+    if (normalized.includes("claim")) return HandCoins
+    if (normalized.includes("view")) return Receipt
+    return Download
   }
 
   return labels.map((label, index) => {
