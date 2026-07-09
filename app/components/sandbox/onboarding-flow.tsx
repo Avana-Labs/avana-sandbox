@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Check, LoaderCircle, MoveUpRight } from "lucide-react"
+import { Check, ChevronDown, LoaderCircle, MoveUpRight } from "lucide-react"
 import { motion } from "framer-motion"
 import { useMutation } from "convex/react"
 import { WalletControl } from "@/app/components/wallet-control"
@@ -12,12 +12,27 @@ import {
   CURRENCY_OPTIONS,
   LANGUAGE_OPTIONS,
   useOptionalDisplayPreferences,
+  type CurrencyCode,
 } from "@/app/components/display-preferences"
+import { CurrencyFlag } from "@/app/components/currency-flag"
 import { useThemeOptional } from "@/app/components/theme-provider"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /** Display-name cap — kept in sync with the server clamp in `savePreferences`. */
 const MAX_NAME_LENGTH = 10
+
+/**
+ * Cosmetic head-start for the "seats claimed" counter so the sandbox never reads as
+ * empty (0/cap) to early users/investors. This is a DISPLAY-ONLY baseline added on top
+ * of the real Convex `userCount`; it does not affect allocation, caps, or waitlisting.
+ */
+const SEATS_CLAIMED_BASELINE = 3760
 
 /**
  * Decentralized exchanges a user might bring LP liquidity from. Captured purely as a
@@ -91,7 +106,7 @@ const SHARE_URL = "https://app.avana.cc"
 const DEFAULT_SHARE_TEXT = [
   "Just claimed my sandbox spot at Avana.",
   "A new Aave v4 lending market built for AMM markets.",
-  "Borrow against AMM LP positions, lend, and loop — all risk-free before mainnet.",
+  "Borrow against AMM LP positions, lend, and loop, all risk-free before mainnet.",
   `Try it 👉 ${SHARE_URL}`,
 ].join("\n")
 
@@ -210,14 +225,14 @@ function LoadingRecovery({ error, onResume }: { error: string | null; onResume: 
 
 export function OnboardingUnavailable({
   onRetry,
-  headlineMuted = "We couldn't verify your onboarding status.",
-  headlineActive = "Reconnect your wallet and try again.",
-  note = "Authenticated sessions stay locked until Convex confirms access.",
+  headlineMuted,
+  headlineActive,
+  note,
 }: {
   onRetry: () => void
-  headlineMuted?: string
-  headlineActive?: string
-  note?: string
+  headlineMuted: string
+  headlineActive: string
+  note: string
 }) {
   const { t } = useTranslation()
   return (
@@ -233,38 +248,6 @@ export function OnboardingUnavailable({
         <button className={`${PRIMARY} mt-9`} onClick={onRetry} type="button">
           {t("Retry")}
         </button>
-      </motion.div>
-    </div>
-  )
-}
-
-/**
- * Persistent "you're all set" state for an ALREADY-onboarded wallet revisiting
- * /onboarding (issue #140). This is distinct from OnboardingFlow's `done` branch, which
- * is the one-time just-claimed celebration (practice funds landed, spring
- * checkmark). A returning user has no claim to make, so we show a calm completed state
- * that points them to the dashboard — never the re-runnable welcome/claim flow.
- */
-export function OnboardingComplete({ pct = 100 }: { pct?: number }) {
-  const { t } = useTranslation()
-  return (
-    <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8" data-onboarding-step="done">
-      <StatusRow wallet={null} pct={pct} />
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <div className="mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white">
-          <Check className="size-6" strokeWidth={3} />
-        </div>
-        <Headline muted={t("You're all set.")} active={t("Your Avana sandbox is ready.")} size="hero" />
-        <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-          {t("You've already claimed your practice funds. Jump back into the dashboard to keep exploring.")}
-        </p>
-        <Link className={`${PRIMARY} mt-9`} href="/dashboard">
-          {t("Open dashboard")}
-        </Link>
       </motion.div>
     </div>
   )
@@ -339,13 +322,7 @@ function BasketPanel({
   ]
   return (
     <div className="mt-8 w-full max-w-[460px]">
-      <div>
-        <p className="text-[13px] text-muted-foreground">{t("You'll get")}</p>
-        <div className="mt-1 text-2xl font-semibold tracking-[-0.02em] sm:text-[28px]">
-          {t("A full practice portfolio")}
-        </div>
-      </div>
-      <ul className="mt-6 divide-y divide-border border-y border-border">
+      <ul className="divide-y divide-border border-y border-border">
         {buckets.map((bucket) => (
           <li className="flex items-center justify-between py-3" key={bucket.label}>
             <span className="text-[15px] font-medium">{bucket.label}</span>
@@ -364,6 +341,97 @@ function BasketPanel({
 const FIELD_LABEL = "block text-[13px] font-medium text-muted-foreground"
 const FIELD_CONTROL =
   "mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 text-[15px] text-foreground outline-none transition-colors focus:border-brand"
+
+/**
+ * A labelled dropdown field that mirrors the header's language/currency pickers
+ * (same DropdownMenu primitive, rounded rows, CurrencyFlag, and a check on the
+ * active option) instead of a browser-native <select>, so onboarding matches the
+ * rest of the app's design.
+ */
+function PickerField({
+  label,
+  value,
+  options,
+  onSelect,
+  withFlag = false,
+}: {
+  label: string
+  value: string
+  options: ReadonlyArray<{ code: string; label: string }>
+  onSelect: (code: string) => void
+  withFlag?: boolean
+}) {
+  const current = options.find((option) => option.code === value) ?? options[0]
+  return (
+    <div>
+      <span className={FIELD_LABEL}>{label}</span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className={`${FIELD_CONTROL} flex items-center justify-between gap-2 text-left`}>
+            <span className="flex min-w-0 items-center gap-2">
+              {withFlag ? <CurrencyFlag code={current.code as CurrencyCode} className="size-5 shrink-0" /> : null}
+              <span className="truncate">{current.label}</span>
+            </span>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          side="bottom"
+          sideOffset={8}
+          avoidCollisions={false}
+          className="max-h-[var(--radix-dropdown-menu-content-available-height)] w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto rounded-2xl border border-border bg-background/98 p-2 text-foreground shadow-2xl backdrop-blur dark:border-white/10 dark:bg-[#121212]/98 dark:text-white"
+        >
+          {options.map((option) => (
+            <DropdownMenuItem
+              key={option.code}
+              onSelect={() => onSelect(option.code)}
+              className="flex cursor-pointer items-center justify-between gap-2 rounded-[14px] px-3 py-2.5 text-[14px] text-foreground hover:bg-hover focus:bg-hover dark:text-white"
+            >
+              <span className="flex items-center gap-2">
+                {withFlag ? <CurrencyFlag code={option.code as CurrencyCode} className="size-5" /> : null}
+                {option.label}
+              </span>
+              {option.code === value ? <Check className="size-4 text-brand" /> : null}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
+
+/**
+ * Shared onboarding action row: a PRIMARY "Continue" (always leftmost, so it never
+ * shifts between steps) and an optional SECONDARY "Back". Same shapes/placement as the
+ * rest of the flow's CTAs so the buttons never change shape or move step to step.
+ */
+function StepActions({
+  onContinue,
+  onBack,
+  saving = false,
+  continueLabel = "Continue",
+}: {
+  onContinue: () => void
+  onBack?: () => void
+  saving?: boolean
+  continueLabel?: string
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+      <button className={PRIMARY} disabled={saving} onClick={onContinue} type="button">
+        {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
+        {t(continueLabel)}
+      </button>
+      {onBack ? (
+        <button className={SECONDARY} disabled={saving} onClick={onBack} type="button">
+          {t("Back")}
+        </button>
+      ) : null}
+    </div>
+  )
+}
 
 /**
  * Step 1 of the personalize flow — a short display name, preferred language + currency,
@@ -414,84 +482,66 @@ function PersonalizeStep({
 
   return (
     <>
-      <Headline muted={t("Wallet connected.")} active={t("Help us personalize your experience.")} />
-      <div className="mt-8 flex max-w-[460px] flex-col gap-5">
+      <div className="grid gap-x-12 gap-y-8 md:grid-cols-2 md:items-start">
         <div>
-          <label className={FIELD_LABEL} htmlFor="onboarding-name">
-            {t("What should we call you?")} <span className="text-muted-foreground/70">({t("optional")})</span>
-          </label>
-          <input
-            id="onboarding-name"
-            className={FIELD_CONTROL}
-            value={name}
-            maxLength={MAX_NAME_LENGTH}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t("Your name")}
-            autoComplete="off"
-          />
+          <Headline muted={t("Nice, your wallet's connected.")} active={t("Now let's make Avana yours.")} />
         </div>
-        <div>
-          <label className={FIELD_LABEL} htmlFor="onboarding-language">
-            {t("Preferred language")}
-          </label>
-          <select
-            id="onboarding-language"
-            className={FIELD_CONTROL}
-            value={language}
-            onChange={(event) => prefs?.setLanguage(event.target.value as typeof language)}
-          >
-            {LANGUAGE_OPTIONS.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={FIELD_LABEL} htmlFor="onboarding-currency">
-            {t("Preferred currency")}
-          </label>
-          <select
-            id="onboarding-currency"
-            className={FIELD_CONTROL}
-            value={currency}
-            onChange={(event) => prefs?.setCurrency(event.target.value as typeof currency)}
-          >
-            {CURRENCY_OPTIONS.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.flag} {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <span className={FIELD_LABEL}>{t("Appearance")}</span>
-          <div className="mt-2 inline-flex rounded-full border border-border bg-surface p-1">
-            <button
-              type="button"
-              onClick={() => setTheme("light")}
-              className={`rounded-full px-5 py-2 text-[14px] font-medium transition-colors ${
-                isDark ? "text-muted-foreground" : "bg-foreground text-background"
-              }`}
-            >
-              {t("Light")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme("dark")}
-              className={`rounded-full px-5 py-2 text-[14px] font-medium transition-colors ${
-                isDark ? "bg-foreground text-background" : "text-muted-foreground"
-              }`}
-            >
-              {t("Dark")}
-            </button>
+        <div className="w-full max-w-[420px] space-y-4">
+          <div>
+            <label className={FIELD_LABEL} htmlFor="onboarding-name">
+              {t("What should we call you?")} <span className="text-muted-foreground/70">({t("optional")})</span>
+            </label>
+            <input
+              id="onboarding-name"
+              className={FIELD_CONTROL}
+              value={name}
+              maxLength={MAX_NAME_LENGTH}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={t("Your name")}
+              autoComplete="off"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <PickerField
+              label={t("Language")}
+              value={language}
+              options={LANGUAGE_OPTIONS}
+              onSelect={(code) => prefs?.setLanguage(code as typeof language)}
+            />
+            <PickerField
+              label={t("Currency")}
+              value={currency}
+              options={CURRENCY_OPTIONS}
+              onSelect={(code) => prefs?.setCurrency(code as typeof currency)}
+              withFlag
+            />
+          </div>
+          <div>
+            <span className={FIELD_LABEL}>{t("Appearance")}</span>
+            <div className="mt-2 inline-flex rounded-full border border-border bg-surface p-1">
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={`rounded-full px-5 py-2 text-[14px] font-medium transition-colors ${
+                  isDark ? "text-muted-foreground" : "bg-foreground text-background"
+                }`}
+              >
+                {t("Light")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={`rounded-full px-5 py-2 text-[14px] font-medium transition-colors ${
+                  isDark ? "bg-foreground text-background" : "text-muted-foreground"
+                }`}
+              >
+                {t("Dark")}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      <button className={`${PRIMARY} mt-9`} disabled={saving} onClick={submit} type="button">
-        {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
-        {t("Continue")}
-      </button>
+      <StepActions onContinue={submit} saving={saving} />
     </>
   )
 }
@@ -540,46 +590,38 @@ function LiquiditySourceStep({
 
   return (
     <>
-      <Headline muted={t("Almost there.")} active={t("Where does your liquidity come from?")} />
-      <p className="mt-4 text-[15px] text-muted-foreground">{t("Select all that apply")}</p>
-      <div className="mt-7 grid max-w-[560px] grid-cols-2 gap-3 sm:grid-cols-3">
-        {DEX_SOURCES.map((dex) => {
-          const active = selected.has(dex.id)
-          return (
-            <button
-              key={dex.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => toggle(dex.id)}
-              className={`relative flex h-[68px] items-center justify-center rounded-2xl border px-3 text-[15px] font-medium transition-colors ${
-                active
-                  ? "border-brand bg-brand/10 text-foreground"
-                  : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-              }`}
-            >
-              {active ? (
-                <span className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-brand text-brand-foreground">
-                  <Check className="size-3.5" strokeWidth={3} />
-                </span>
-              ) : null}
-              {dex.label}
-            </button>
-          )
-        })}
+      <div className="grid gap-x-12 gap-y-8 md:grid-cols-2 md:items-start">
+        <div>
+          <Headline muted={t("Almost done.")} active={t("Which DEXs do you use the most?")} />
+          <p className="mt-4 text-[15px] text-muted-foreground">{t("Select all that apply")}</p>
+        </div>
+        <div className="grid w-full grid-cols-2 gap-3">
+          {DEX_SOURCES.map((dex) => {
+            const active = selected.has(dex.id)
+            return (
+              <button
+                key={dex.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => toggle(dex.id)}
+                className={`relative flex h-14 items-center justify-center rounded-2xl border px-3 text-[15px] font-medium transition-colors ${
+                  active
+                    ? "border-brand bg-brand/10 text-foreground"
+                    : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                }`}
+              >
+                {active ? (
+                  <span className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-brand text-brand-foreground">
+                    <Check className="size-3.5" strokeWidth={3} />
+                  </span>
+                ) : null}
+                {dex.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
-      <div className="mt-9 flex items-center gap-5">
-        <button className={PRIMARY} disabled={saving} onClick={submit} type="button">
-          {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
-          {t("Continue")}
-        </button>
-        <button
-          className="text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-          onClick={onBack}
-          type="button"
-        >
-          {t("Back")}
-        </button>
-      </div>
+      <StepActions onContinue={submit} onBack={onBack} saving={saving} />
     </>
   )
 }
@@ -607,7 +649,6 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   // but never rendered).
   const shareText = buildShareText(state?.config)
   const intentHref = xIntentHref(shareText)
-  const resourcesLinks = state?.config?.resourcesLinks ?? []
 
   const run = async (label: NonNullable<typeof busy>, task: () => Promise<unknown>, minimumMs = 0) => {
     setBusy(label)
@@ -702,7 +743,8 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
     userCap: 0,
     perUserTargetUsd: 0,
   }
-  const seatsLeft = Math.max(0, economy.userCap - economy.userCount)
+  // Real Convex count plus the cosmetic baseline (display only), clamped to the cap.
+  const claimedSeats = Math.min(economy.userCap, SEATS_CLAIMED_BASELINE + economy.userCount)
 
   const phase =
     !wallet && !hasStarted
@@ -754,7 +796,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : !wallet || !state ? (
         <>
-          <Headline muted={t("Connect a wallet.")} active={t("We'll set up your sandbox and scope it to your address.")} />
+          <Headline muted={t("Connect an EVM wallet.")} active={t("We'll set up your sandbox and scope it to your address.")} />
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             {/* One control: connect → sign in → account, all via the ConnectKit modal. */}
             <WalletControl size="desktop" />
@@ -774,7 +816,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : economy.status === "closed" && step !== "done" ? (
         <>
           <Headline muted={t("This allocation round is full.")} active={t("Your wallet is on the waitlist.")} />
-          <p className="mt-7 text-muted-foreground">{economy.userCount.toLocaleString()} {t("wallets onboarded.")}</p>
+          <p className="mt-7 text-muted-foreground">{claimedSeats.toLocaleString()} {t("wallets onboarded.")}</p>
         </>
       ) : step === "wallet" && prefStep === "personalize" ? (
         <PersonalizeStep wallet={wallet!} existing={state.profile} onContinue={() => setPrefStep("dexSources")} />
@@ -787,9 +829,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         />
       ) : step === "wallet" ? (
         <>
-          <Headline muted={t("Wallet connected.")} active={t("Fund your sandbox to start exploring.")} />
+          <Headline muted={t("Last step.")} active={t("Let's fund your sandbox.")} />
           <p className="mt-6 max-w-lg text-[15px] leading-6 text-muted-foreground">
-            {t("Every wallet gets sandbox funds to practice with, spread across markets so you can try every flow risk-free.")}
+            {t("We'll spread practice funds across markets so you can lend, borrow, and loop with zero risk.")}
           </p>
           <button className={`${PRIMARY} mt-7`} onClick={analyze} type="button">
             {t("Fund my sandbox")}
@@ -804,10 +846,13 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "eligible" ? (
         <>
           <Headline
-            muted={t("You're eligible.")}
+            muted={t("Good news, you're in.")}
             active={t("Your practice portfolio is ready.")}
           />
-          <p className="mt-6 text-sm text-muted-foreground">{seatsLeft.toLocaleString()} {t("sandbox seats remain.")}</p>
+          <p className="mt-6 text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{claimedSeats.toLocaleString()}</span> {t("of")}{" "}
+            {economy.userCap.toLocaleString()} {t("sandbox seats already claimed.")}
+          </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button
               className={PRIMARY}
@@ -859,10 +904,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "xConfirmed" ? (
         <>
-          <Headline
-            muted={t("Here's what you'll get.")}
-            active={t("Practice funds across assets, LP collateral, lending, and multiply.")}
-          />
+          <Headline active={t("Here's what you'll get.")} />
           <BasketPanel busy={busy === "claiming"} onClaim={claimAllocation} />
           <ErrorMessage error={error} />
         </>
@@ -874,7 +916,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
       ) : step === "waitlisted" ? (
         <>
           <Headline muted={t("The allocation cap was reached.")} active={t("Your wallet is on the waitlist.")} />
-          <p className="mt-7 text-muted-foreground">{economy.userCount.toLocaleString()} {t("wallets onboarded.")}</p>
+          <p className="mt-7 text-muted-foreground">{claimedSeats.toLocaleString()} {t("wallets onboarded.")}</p>
         </>
       ) : step === "done" ? (
         <>
@@ -886,9 +928,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           >
             <Check className="size-6" strokeWidth={3} />
           </motion.div>
-          <Headline muted={t("You're all set.")} active={t("Your Avana sandbox is ready to explore.")} />
+          <Headline muted={t("You're all set.")} active={t("Your sandbox is live.")} />
           <p className="mt-4 max-w-md text-pretty text-[15px] leading-6 text-muted-foreground">
-            {t("Your practice funds are now in your wallet. Jump into the dashboard to start exploring.")}
+            {t("Everything's funded and waiting. Dive in whenever you're ready.")}
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link className={PRIMARY} href="/dashboard">{t("Open dashboard")}</Link>
@@ -896,20 +938,6 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
               {t("Share on X")} <MoveUpRight className="ml-2 size-4" />
             </a>
           </div>
-          {resourcesLinks.length > 0 ? (
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              {resourcesLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    className="inline-flex items-center text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
-                    href={link.href}
-                  >
-                    {link.label} <MoveUpRight className="ml-1 size-3.5" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : null}
         </>
       ) : null}
       </div>
