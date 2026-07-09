@@ -287,7 +287,7 @@ export function DashboardHero({
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-      {isBorrowOverview ? null : showBalance ? (
+      {isBorrowOverview || isLoopingOverview ? null : showBalance ? (
         <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
             <HeroBalanceDisplay
