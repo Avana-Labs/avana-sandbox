@@ -36,7 +36,7 @@ function formatClaimableUsd(value: number) {
 }
 
 function formatTokenAmount(value: number, symbol: string) {
-  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${symbol}`
+  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`
 }
 
 function resolveMarketId(token: PortfolioSupplyPosition) {
@@ -171,7 +171,7 @@ export function PortfolioInvestments({
                             {m(`+${formatUsdExact(token.earnedUsd)}`)}
                           </div>
                           <div className="font-data text-[11px] tabular-nums text-muted-foreground">
-                            {m(`≈ ${formatUsdExact(token.dailyEarnedUsd)}/day`)}
+                            {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
                           </div>
                         </td>
                         <td className={`py-3.5 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -251,7 +251,7 @@ export function PortfolioInvestments({
                         <span>
                           {m(`+${formatUsdExact(token.earnedUsd)}`)}
                           <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
-                            {m(`≈ ${formatUsdExact(token.dailyEarnedUsd)}/day`)}
+                            {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
                           </span>
                         </span>
                       }
