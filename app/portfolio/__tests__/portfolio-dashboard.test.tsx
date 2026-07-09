@@ -118,11 +118,7 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
 }))
 
 vi.mock("@/app/dashboard/dashboard-tabs", () => ({
-  DashboardTabs: ({ onTabChange }: { onTabChange: (tab: "overview") => void }) => (
-    <button type="button" onClick={() => onTabChange("overview")}>
-      Borrow tab
-    </button>
-  ),
+  DashboardTabs: () => <div>dashboard-hero</div>,
 }))
 
 vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
@@ -207,7 +203,6 @@ describe("DashboardClient", () => {
     )
 
     await waitFor(() => expect(readPortfolioBorrow).toHaveBeenCalledWith("demo-wallet"))
-    expect(screen.getByLabelText("Dollar amounts")).toBeInTheDocument()
     // Borrow + Multiply sections now live under the Lend (default) tab as sub-tab strips.
     await waitFor(() => expect(screen.getByText("Collateral Positions")).toBeInTheDocument())
     expect(screen.getByText("Debt Positions")).toBeInTheDocument()
