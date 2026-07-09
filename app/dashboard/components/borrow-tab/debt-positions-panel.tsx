@@ -49,11 +49,6 @@ export function DebtPositionsPanel({
     },
     { label: "Interest Owed", value: m(exact(summary.interestOwedUsd)), help: "Total interest accrued on your outstanding loans." },
     { label: "Borrowing Power", value: m(exact(summary.borrowingPowerUsd)), help: "How much more you can borrow against your collateral." },
-    {
-      label: "Loan Collateral",
-      value: <CollateralIcons symbols={summary.collateralSymbols} />,
-      help: "Assets backing your loans.",
-    },
   ]
 
   const detailHref = (marketId: string) => `/borrow/markets/${marketId}`
@@ -245,19 +240,6 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
       <span className="font-data text-[13px] font-medium tabular-nums text-foreground">{token}</span>
       <span className="font-data text-[11px] tabular-nums text-muted-foreground">{usd}</span>
     </div>
-  )
-}
-
-function CollateralIcons({ symbols }: { symbols: string[] }) {
-  if (symbols.length === 0) return <span className="text-[13px] text-muted-foreground">—</span>
-  return (
-    <span className="flex items-center">
-      {symbols.map((symbol, index) => (
-        <span key={symbol} className={cn(index > 0 && "-ml-2")}>
-          <TokenIcon symbol={symbol} size="table" />
-        </span>
-      ))}
-    </span>
   )
 }
 
