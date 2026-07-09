@@ -39,7 +39,7 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
       ? {
           headlineMuted: "We can't reach the sandbox right now.",
           headlineActive: "Please try again in a moment.",
-          note: "Your session is safe — this is a temporary connection issue, not your wallet.",
+          note: "Your session is safe. This is a temporary connection issue, not your wallet.",
         }
       : {
           headlineMuted: "Something went wrong.",
