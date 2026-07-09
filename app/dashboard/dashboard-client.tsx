@@ -44,8 +44,6 @@ import { TradingFeesPanel } from "@/app/dashboard/components/borrow-tab/trading-
 import { LendLearnSection } from "./components/lend-learn-section"
 import { cn } from "@/lib/utils"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
-import { Eye, EyeOff } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RouteErrorFallback } from "@/app/components/route-error-fallback"
@@ -220,7 +218,7 @@ export function DashboardClient({
   walletProfileId?: string
 }) {
   const router = useRouter()
-  const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
   const hasMounted = useHasMounted()
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession, rewards: rewardsSession } = useAvanaSessions()
@@ -471,17 +469,6 @@ export function DashboardClient({
 
   return (
     <>
-      <div className="mb-5 flex justify-end">
-        <label className="inline-flex items-center gap-2.5 text-[13px] font-medium text-muted-foreground">
-          {showDollarAmounts ? <Eye className="size-4 text-brand-readable" /> : <EyeOff className="size-4 text-brand-readable" />}
-          <span>{t("Dollar amounts")}</span>
-          <Switch
-            checked={showDollarAmounts}
-            onCheckedChange={setShowDollarAmounts}
-            aria-label={t("Dollar amounts")}
-          />
-        </label>
-      </div>
       <DashboardTabs
         activeTab={activeTab}
         onTabChange={handleTabChange}
