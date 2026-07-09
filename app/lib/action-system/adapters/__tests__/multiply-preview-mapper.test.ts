@@ -27,7 +27,7 @@ describe("multiply preview mappers", () => {
     })
     expect(ui.rateLabel).toBe("")
     expect(ui.metrics.map((row) => row.label)).toEqual([
-      "Collateral supplied",
+      "Collateral",
       "Collateral value",
       "Target leverage",
       "Looped exposure",
