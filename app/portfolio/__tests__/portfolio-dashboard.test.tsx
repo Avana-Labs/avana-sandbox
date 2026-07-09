@@ -131,21 +131,6 @@ vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
   DashboardPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
   DashboardLendPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
 }))
-vi.mock("@/app/portfolio/dashboard-borrow-tab", () => ({
-  DashboardBorrowTab: ({
-    collateralPositions,
-    debtPositions,
-  }: {
-    collateralPositions: Array<{ pool: { id: string } }>
-    debtPositions: Array<{ id: string }>
-  }) => (
-    <div>
-      <div>collateral:{collateralPositions.map((position) => position.pool.id).join(",")}</div>
-      <div>debt:{debtPositions.map((position) => position.id).join(",")}</div>
-    </div>
-  ),
-}))
-
 vi.mock("@/app/portfolio/portfolio-investments", () => ({
   PortfolioInvestments: () => <div>investments</div>,
 }))
@@ -226,8 +211,8 @@ describe("DashboardClient", () => {
     await waitFor(() => expect(screen.getByText("Borrow tab")).toBeInTheDocument())
 
     fireEvent.click(screen.getByText("Borrow tab"))
-    await waitFor(() => expect(screen.getByText("Credit Overview")).toBeInTheDocument())
-    expect(screen.getByText("collateral:pool-a")).toBeInTheDocument()
-    expect(screen.getByText("debt:debt-a")).toBeInTheDocument()
+    // Borrow tab now splits into Credit Overview / Collateral / Debt sub-tabs.
+    await waitFor(() => expect(screen.getByText("Collateral Positions")).toBeInTheDocument())
+    expect(screen.getByText("Debt Positions")).toBeInTheDocument()
   })
 })

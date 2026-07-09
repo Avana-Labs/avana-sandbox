@@ -101,12 +101,15 @@ export function DashboardCreditOverviewSection({
   totalBorrowedUsd,
   netApyPct,
   totalCollateralUsd,
+  hideHeading = false,
 }: {
   title: string
   approvedCreditUsd: number
   totalBorrowedUsd: number
   netApyPct: number
   totalCollateralUsd: number
+  // When the section title is already provided by an enclosing tab, suppress the h2.
+  hideHeading?: boolean
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
@@ -114,7 +117,9 @@ export function DashboardCreditOverviewSection({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      {hideHeading ? null : (
+        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      )}
       <MetricGrid
         labelOnTop
         metrics={[
