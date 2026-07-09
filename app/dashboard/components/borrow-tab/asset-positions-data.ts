@@ -59,39 +59,14 @@ export type DebtSummary = {
   collateralSymbols: string[]
 }
 
-/** An asset you could deposit but haven't — rendered under "Main deposit opportunities". */
-export type DepositOpportunity = {
-  id: string
-  marketId: string
-  symbol: string
-  name: string
-  walletBalanceToken: string
-  walletBalanceUsd: number
-  apyPct: number
-  collateralFactorPct: number
-}
-
-/** An asset you could borrow — rendered under "Main borrow opportunities". */
-export type BorrowOpportunity = {
-  id: string
-  marketId: string
-  symbol: string
-  name: string
-  apyPct: number
-  availableLiquidityToken: string
-  availableLiquidityUsd: number
-}
-
 export type DashboardCollateralData = {
   summary: CollateralSummary
   rows: CollateralAssetRow[]
-  opportunities: DepositOpportunity[]
 }
 
 export type DashboardDebtData = {
   summary: DebtSummary
   rows: DebtAssetRow[]
-  opportunities: BorrowOpportunity[]
 }
 
 const DEV_COLLATERAL: DashboardCollateralData = {
@@ -113,28 +88,6 @@ const DEV_COLLATERAL: DashboardCollateralData = {
       collateralFactorPct: 83,
     },
   ],
-  opportunities: [
-    {
-      id: "opp-deposit-usdc",
-      marketId: "usdc",
-      symbol: "USDC",
-      name: "USD Coin",
-      walletBalanceToken: "412.90 USDC",
-      walletBalanceUsd: 412.9,
-      apyPct: 4.21,
-      collateralFactorPct: 80,
-    },
-    {
-      id: "opp-deposit-gho",
-      marketId: "gho",
-      symbol: "GHO",
-      name: "Gho Token",
-      walletBalanceToken: "0 GHO",
-      walletBalanceUsd: 0,
-      apyPct: 3.18,
-      collateralFactorPct: 0,
-    },
-  ],
 }
 
 const DEV_DEBT: DashboardDebtData = {
@@ -154,38 +107,16 @@ const DEV_DEBT: DashboardDebtData = {
       availableLiquidityUsd: 893_150,
     },
   ],
-  opportunities: [
-    {
-      id: "opp-borrow-eurc",
-      marketId: "eurc",
-      symbol: "EURC",
-      name: "Euro Coin",
-      apyPct: 4.96,
-      availableLiquidityToken: "19.81K EURC",
-      availableLiquidityUsd: 22_660,
-    },
-    {
-      id: "opp-borrow-wbtc",
-      marketId: "wbtc",
-      symbol: "WBTC",
-      name: "Wrapped BTC",
-      apyPct: 0.28,
-      availableLiquidityToken: "97.10 WBTC",
-      availableLiquidityUsd: 6_210_000,
-    },
-  ],
 }
 
 const EMPTY_COLLATERAL: DashboardCollateralData = {
   summary: { depositedUsd: 0, collateralUsd: 0, netDepositApyPct: 0, interestEarnedUsd: 0 },
   rows: [],
-  opportunities: [],
 }
 
 const EMPTY_DEBT: DashboardDebtData = {
   summary: { borrowedUsd: 0, borrowApyPct: 0, borrowingPowerUsd: 0, interestOwedUsd: 0, collateralSymbols: [] },
   rows: [],
-  opportunities: [],
 }
 
 export function getDashboardCollateralData(): DashboardCollateralData {

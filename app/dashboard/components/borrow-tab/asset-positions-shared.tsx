@@ -1,7 +1,6 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Minus, Plus } from "lucide-react"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
@@ -58,43 +57,5 @@ export function AssetSummaryStrip({ metrics }: { metrics: SummaryMetric[] }) {
         ))}
       </div>
     </div>
-  )
-}
-
-/**
- * Full-width expander row that reveals the "Main deposit / borrow opportunities".
- * Used both as a table row (`asRow` colSpan) and as a standalone button on mobile.
- */
-export function OpportunitiesToggle({
-  expanded,
-  onToggle,
-  showLabel,
-  hideLabel,
-  className,
-}: {
-  expanded: boolean
-  onToggle: () => void
-  showLabel: string
-  hideLabel: string
-  className?: string
-}) {
-  const { t } = useTranslation()
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={expanded}
-      className={cn(
-        "flex w-full items-center justify-between px-5 py-3.5 text-left text-[13px] font-medium text-foreground transition-colors hover:bg-hover",
-        className,
-      )}
-    >
-      <span>{expanded ? t(hideLabel) : t(showLabel)}</span>
-      {expanded ? (
-        <Minus className="size-4 text-muted-foreground" />
-      ) : (
-        <Plus className="size-4 text-muted-foreground" />
-      )}
-    </button>
   )
 }
