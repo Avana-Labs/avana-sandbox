@@ -23,7 +23,7 @@ export function ChartRangeSelector({ activeRange, onRangeChange, className, rang
     <div
       role="tablist"
       aria-label={t("Time range")}
-      className={cn("flex w-full items-stretch justify-start gap-5 border-b border-border sm:gap-6", className)}
+      className={cn("flex w-full items-stretch justify-between gap-2 border-b border-border", className)}
     >
       {ranges.map((range) => {
         const active = activeRange === range
