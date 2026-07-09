@@ -59,11 +59,11 @@ describe("DashboardHero", () => {
 
     // The looping tab no longer renders the fake price/performance chart.
     expect(screen.queryByText("hero-chart-section")).not.toBeInTheDocument()
-    // It surfaces the multiply stats and the real (non-synthetic) health factor.
+    // It surfaces the multiply stats. (Credit Health / Borrowing Power cards now
+    // render under the Looping Overview section, not in the hero.)
     expect(screen.getByText("1")).toBeInTheDocument()
     expect(screen.getByText("8.75%")).toBeInTheDocument()
-    expect(screen.getAllByText("2.48").length).toBeGreaterThan(0)
-    expect(screen.queryByText("99.00")).not.toBeInTheDocument()
+    expect(screen.queryByText("Credit Health")).not.toBeInTheDocument()
   })
 
   it("hides fabricated credit-health / borrowing-power when there are no positions", () => {

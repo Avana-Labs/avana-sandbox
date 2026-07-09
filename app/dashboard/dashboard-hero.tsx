@@ -23,8 +23,6 @@ import { formatChartValue } from "@/app/components/charts/format"
 import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
 import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/types"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
-import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/supplies-table"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
 import { PortfolioHeroHeader } from "@/app/portfolio/hero/portfolio-hero-header"
@@ -337,18 +335,8 @@ export function DashboardHero({
         </div>
       ) : null}
 
-      {/* Only surface credit-health / borrowing-power once real positions exist —
-          computing them over $0 data fabricated a "Safe"/"RISK" state. */}
-      {isLoopingOverview && multiplySnapshot && multiplyPositionTarget ? (
-        <div className="mt-4 grid gap-4 xl:grid-cols-2">
-          <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
-          <CurrentLtvCard
-            borrowedUsd={multiplySnapshot.totalBorrowedUsd}
-            collateralUsd={multiplySnapshot.totalCollateralUsd}
-            showBalance={showDollarAmounts}
-          />
-        </div>
-      ) : null}
+      {/* Credit Health / Borrowing Power cards render under the Looping Overview
+          section in dashboard-client, not in the hero. */}
     </section>
   )
 }
