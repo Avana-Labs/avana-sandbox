@@ -143,6 +143,12 @@ const LEND_SUB_TABS: readonly { id: LendSubTab; label: string }[] = [
   { id: "performance", label: "Lending Performance" },
 ]
 
+type LoopingSubTab = "overview" | "positions"
+const LOOPING_SUB_TABS: readonly { id: LoopingSubTab; label: string }[] = [
+  { id: "overview", label: "Looping Overview" },
+  { id: "positions", label: "Looping Positions" },
+]
+
 /**
  * Underline tab strip for a main tab's sections. Same visual treatment as the primary
  * Lend/Borrow/Multiply tabs (active underline + bottom border) but kept at the
@@ -235,6 +241,7 @@ export function DashboardClient({
   const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
   const [creditSubTab, setCreditSubTab] = useState<CreditSubTab>("overview")
   const [lendSubTab, setLendSubTab] = useState<LendSubTab>("positions")
+  const [loopingSubTab, setLoopingSubTab] = useState<LoopingSubTab>("overview")
   const dashboardReturnHref = dashboardHrefForTab(activeTab)
   const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
@@ -553,11 +560,15 @@ export function DashboardClient({
             </div>
           </div>
         ) : (
-          <div className="mt-12 space-y-10">
-            <DashboardOverviewSection title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
-            <DashboardSection title={t("Looping Positions")}>
-              <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
-            </DashboardSection>
+          <div className="mt-12">
+            <SectionTabStrip items={LOOPING_SUB_TABS} value={loopingSubTab} onChange={setLoopingSubTab} ariaLabel={t("Looping sections")} />
+            <div className="mt-8">
+              {loopingSubTab === "overview" ? (
+                <DashboardOverviewSection hideHeading title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
+              ) : (
+                <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
+              )}
+            </div>
           </div>
         )
       ) : null}
