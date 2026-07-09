@@ -1,7 +1,6 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link"
 import { Info } from "lucide-react"
 import { HeroMarketCard } from "@/app/borrow/borrow-hero-market-card"
 import { Progress } from "@/components/ui/progress"
@@ -9,52 +8,27 @@ import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
 import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
-import { cn } from "@/lib/utils"
 
 function formatBalanceAmount(value: number, locale: string) {
   return value.toLocaleString(locale, { maximumFractionDigits: 0 })
 }
 
-function formatClaimAmount(value: number, locale: string) {
-  return value.toLocaleString(locale, {
-    maximumFractionDigits: 0,
-  })
-}
-
 export function RewardsBalanceHero({
   rewardPools,
   balanceTotal,
-  claimableAmount,
-  claimableCount,
   completedCount,
   totalCount,
   progressPercentage,
-  claimHref,
 }: {
   rewardPools: RewardsHeroPoolRow[]
   balanceTotal: number
-  claimableAmount: number
-  claimableCount: number
   completedCount: number
   totalCount: number
   progressPercentage: number
-  claimHref?: string
 }) {
   const { t, language } = useTranslation()
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const { showDollarAmounts } = useDisplayPreferences()
-  const claimLabel =
-    claimableCount > 0
-      ? showDollarAmounts
-        ? t("Claim {amount} AVA").replace("{amount}", formatClaimAmount(claimableAmount, locale))
-        : t("Claim rewards")
-      : t("No rewards ready")
-  const claimButtonClass = cn(
-    "inline-flex h-10 w-full items-center justify-center rounded-radius-sm px-4 text-[12px] transition-colors sm:h-9 sm:w-auto",
-    claimableCount > 0
-      ? "bg-brand text-brand-foreground hover:bg-brand/90"
-      : "cursor-not-allowed bg-muted/60 text-muted-foreground",
-  )
 
   return (
     <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
@@ -97,23 +71,8 @@ export function RewardsBalanceHero({
                   {t("AVA balance")}
                   <Info className="h-3 w-3" />
                 </span>
-                {claimableAmount > 0 ? (
-                  <span className="text-foreground">
-                    +{showDollarAmounts ? formatClaimAmount(claimableAmount, locale) : "••••"} {t("AVA ready to claim")}
-                  </span>
-                ) : null}
               </div>
             </div>
-
-            {claimableCount > 0 && claimHref ? (
-              <Link href={claimHref} className={claimButtonClass} data-testid="rewards-claim-all">
-                {claimLabel}
-              </Link>
-            ) : (
-              <button type="button" disabled className={claimButtonClass} data-testid="rewards-claim-all">
-                {claimLabel}
-              </button>
-            )}
           </div>
 
           <div className="space-y-1.5">

@@ -20,7 +20,15 @@ import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-syst
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?: string }) {
+export function RewardsActionPageClient({
+  closeHref = "/rewards",
+  embedded = false,
+  sidebar = false,
+}: {
+  closeHref?: string
+  embedded?: boolean
+  sidebar?: boolean
+}) {
   const descriptor = getActionDescriptor("rewards", "claim")
   const { t } = useTranslation()
   const router = useRouter()
@@ -146,10 +154,19 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
     }
   }, [claimSummary.claimUsd, closeHref, descriptor.primaryVerb, previewUi, rewards, router, stage, successUi])
 
-  const hideTitle = stage === "success" || stage === "processing" || stage === "review"
+  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
 
   return (
-    <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} hideTitle={hideTitle} closeHref={closeHref} simulated={rewards.readAdapter.mode === "sandbox"}>
+    <ActionPageShell
+      mode={embedded ? "embedded" : "page"}
+      density={sidebar ? "sidebar" : "default"}
+      title={descriptor.title}
+      subtitle={embedded ? undefined : descriptor.subtitle}
+      hideTitle={hideTitle}
+      hideClose={embedded}
+      closeHref={closeHref}
+      simulated={rewards.readAdapter.mode === "sandbox"}
+    >
       {stage === "processing" ? (
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
       ) : null}
@@ -158,6 +175,7 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
         <ActionReviewStage
           title={reviewStageTitle(descriptor.primaryVerb)}
           subtitle="Confirm the details below before signing."
+          hideHeader={sidebar}
           preview={previewUi}
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}
@@ -176,11 +194,15 @@ export function RewardsActionPageClient({ closeHref = "/rewards" }: { closeHref?
           preview={previewUi}
           assetSymbol="AVA"
           amountReadOnly
+          inputLabel={sidebar ? "Claimable Rewards" : undefined}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
+          homeLayout={sidebar}
+          claimSummary={sidebar}
+          singlePrimaryCta={sidebar}
         />
       ) : null}
     </ActionPageShell>

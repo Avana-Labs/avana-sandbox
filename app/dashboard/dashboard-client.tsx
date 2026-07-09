@@ -10,7 +10,6 @@ import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@
 import type { PortfolioLendTabData, PortfolioMultiplyCollateral, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
 import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
-import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import {
   buildBorrowDashboardMetrics,
   buildBorrowDashboardMetricsFromSnapshot,
@@ -220,7 +219,7 @@ export function DashboardClient({
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
   const hasMounted = useHasMounted()
-  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession, rewards: rewardsSession } = useAvanaSessions()
+  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
   const { data, error: portfolioError, isLoading: portfolioLoading, retry: retryPortfolioPage } = usePortfolioPage(
     { walletProfileId: resolvedWalletProfileId ?? "" },
@@ -319,10 +318,10 @@ export function DashboardClient({
         txHash: item.hash,
       })),
       ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory, lendSession.state),
-      ...buildRewardsActivityHistory(rewardsSession.walletId, rewardsSession.state.claims, rewardsSession.tasks),
+      // Reward claims live on the rewards page (Reward Distribution History), not here.
       ...(pageData?.activity.rows ?? []),
     ],
-    [borrowSession.transactionHistory, lendSession.state, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows, rewardsSession.state.claims, rewardsSession.tasks, rewardsSession.walletId],
+    [borrowSession.transactionHistory, lendSession.state, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows],
   )
 
   const lendTabData = useMemo(() => {

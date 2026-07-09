@@ -8,7 +8,13 @@ import {
 import { api } from "@/convex/_generated/api"
 import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/data/catalog/borrow"
 import { mockRewardsSharedSource } from "@/app/lib/data/mock/shared/rewards"
-import { REWARDS_PROMO_TABS, type RewardsPromoTabId, type RewardsQuestIconId } from "@/app/lib/data/rewards/catalog"
+import {
+  REWARDS_PROMO_TABS,
+  emptyRewardsQuestsByTab,
+  resolveRewardsPromoTab,
+  type RewardsPromoTabId,
+  type RewardsQuestIconId,
+} from "@/app/lib/data/rewards/catalog"
 import { buildDefaultRewardsCatalog, calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import type { RewardsSessionState } from "@/app/lib/rewards-system/contracts"
 import { getAuthenticatedConvexClient } from "@/app/lib/data/providers/live-convex-client"
@@ -125,12 +131,7 @@ export const liveRewardsPageSource: RewardsPageSource = {
     }
     const questsByTab = tasks.reduce<RewardsPageData["questsByTab"]>(
       (result, task) => {
-        const tab: RewardsPromoTabId =
-          task.category === "new_user"
-            ? "new-users"
-            : task.category === "challenge"
-              ? "challenge-tasks"
-              : "refer-a-friend"
+        const tab = resolveRewardsPromoTab(task)
         const taskProgress = progressByTask.get(task.id)
         result[tab].push({
           id: task.id,
@@ -143,7 +144,7 @@ export const liveRewardsPageSource: RewardsPageSource = {
         })
         return result
       },
-      { "new-users": [], "challenge-tasks": [], "refer-a-friend": [] },
+      emptyRewardsQuestsByTab(),
     )
 
     return {
