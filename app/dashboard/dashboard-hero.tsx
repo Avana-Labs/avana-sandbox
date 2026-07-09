@@ -299,16 +299,8 @@ export function DashboardHero({
             meta={uiConfig.headlineMeta ? t(uiConfig.headlineMeta) : undefined}
             hidden={!showDollarAmounts}
           />
-          {isBorrowOverview && borrowSnapshot ? (
-            <div className="mt-4 grid gap-4 xl:grid-cols-2">
-              <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
-              <CurrentLtvCard
-                borrowedUsd={borrowSnapshot.totalBorrowedUsd}
-                collateralUsd={borrowSnapshot.totalCollateralUsd}
-                showBalance={showDollarAmounts}
-              />
-            </div>
-          ) : null}
+          {/* Credit Health / Borrowing Power cards render under the Credit Overview
+              section in dashboard-client, not in the hero. */}
         </div>
       ) : showBalance ? (
         <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>
