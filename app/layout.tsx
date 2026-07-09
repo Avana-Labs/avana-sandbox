@@ -13,6 +13,7 @@ import { WalletGateProvider } from "./lib/web3/wallet-gate"
 import { Web3ProviderBoundary } from "./lib/web3/web3-provider-boundary"
 import { AvanaSessionProviders } from "./components/avana-session-providers"
 import { PageLoadingBar } from "./components/page-loading-bar"
+import { ScrollResetOnNavigate } from "./components/scroll-reset-on-navigate"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 import { SandboxGate } from "./components/sandbox/sandbox-gate"
@@ -124,6 +125,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                           <Suspense fallback={null}>
                             <PageLoadingBar />
                           </Suspense>
+                          <ScrollResetOnNavigate />
                           {children}
                         </ConditionalSiteChrome>
                       </SandboxGate>
