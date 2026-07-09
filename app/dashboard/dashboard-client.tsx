@@ -41,6 +41,7 @@ import { CollateralPositionsPanel } from "@/app/dashboard/components/borrow-tab/
 import { DebtPositionsPanel } from "@/app/dashboard/components/borrow-tab/debt-positions-panel"
 import { TradingFeesPanel } from "@/app/dashboard/components/borrow-tab/trading-fees-panel"
 import { LendLearnSection } from "./components/lend-learn-section"
+import { LendOpportunityCarousel } from "./components/lend-opportunity-carousel"
 import { cn } from "@/lib/utils"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
@@ -471,18 +472,21 @@ export function DashboardClient({
 
       {activeTab !== "activity" ? (
         <div className="mt-12 space-y-12">
-          {/* Lending Positions */}
-          <section className="space-y-5">
-            <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Account")}</h2>
-            <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} hideHeading />
-            <PortfolioInvestments
-              investments={lendTabData.investments}
-              rewardsSummary={lendTabData.rewardsSummary}
-              onClaimRewards={handleClaimLendRewards}
-              isClaimingRewards={isClaimingLendRewards}
-              showHeading={false}
-              returnHref={dashboardReturnHref}
-            />
+          {/* Lending Positions + Lend Opportunity sidebar (mirrors the hero grid) */}
+          <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-x-8">
+            <div className="min-w-0 space-y-5">
+              <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Account")}</h2>
+              <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} hideHeading />
+              <PortfolioInvestments
+                investments={lendTabData.investments}
+                rewardsSummary={lendTabData.rewardsSummary}
+                onClaimRewards={handleClaimLendRewards}
+                isClaimingRewards={isClaimingLendRewards}
+                showHeading={false}
+                returnHref={dashboardReturnHref}
+              />
+            </div>
+            <LendOpportunityCarousel />
           </section>
 
           {/* Borrow sections (moved from the former Borrow tab) */}
