@@ -1056,6 +1056,15 @@ const dict: TranslationDictionary = {
   "Block": "区块",
   "Explorer": "区块浏览器",
   "Transaction date": "交易日期",
+  "Learn": "学习",
+  "Guide": "指南",
+  "Strategy": "策略",
+  "A Beginner's Guide to LP Collateral": "LP 抵押品新手指南",
+  "What LP Collateral Makes Possible": "LP 抵押品能实现什么",
+  "Thinking Clearly About Yield Looping": "清晰思考收益循环",
+  "How to Hedge an LP Position": "如何对冲 LP 头寸",
+  "Making LP Collateral Usable": "让 LP 抵押品可用",
+  "Avana and the Next Step for Liquidity Providers": "Avana 与流动性提供者的下一步",
 }
 
 export default dict

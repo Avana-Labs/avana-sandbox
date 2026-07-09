@@ -36,6 +36,7 @@ import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-liv
 import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
+import { LendLearnSection } from "./components/lend-learn-section"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { Eye, EyeOff } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
@@ -422,6 +423,7 @@ export function DashboardClient({
             />
           </DashboardSection>
           <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} />
+          <LendLearnSection />
         </div>
       ) : null}
       {activeTab === "looping" ? (

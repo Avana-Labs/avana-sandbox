@@ -942,6 +942,15 @@ const dict: TranslationDictionary = {
   "Deposit": "Yatırma",
   "Withdraw": "Çekme",
   "Deleverage": "Kaldıracı azaltma",
+  "Learn": "Öğren",
+  "Guide": "Kılavuz",
+  "Strategy": "Strateji",
+  "A Beginner's Guide to LP Collateral": "LP teminatı için yeni başlayanlar kılavuzu",
+  "What LP Collateral Makes Possible": "LP teminatının mümkün kıldıkları",
+  "Thinking Clearly About Yield Looping": "Getiri döngüsü hakkında net düşünmek",
+  "How to Hedge an LP Position": "Bir LP pozisyonu nasıl hedge edilir",
+  "Making LP Collateral Usable": "LP teminatını kullanılabilir hale getirmek",
+  "Avana and the Next Step for Liquidity Providers": "Avana ve likidite sağlayıcıları için sonraki adım",
 }
 
 export default dict

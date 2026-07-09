@@ -942,6 +942,15 @@ const dict: TranslationDictionary = {
   "Deposit": "जमा",
   "Withdraw": "निकासी",
   "Deleverage": "लीवरेज घटाएँ",
+  "Learn": "सीखें",
+  "Guide": "गाइड",
+  "Strategy": "रणनीति",
+  "A Beginner's Guide to LP Collateral": "LP कोलैटरल के लिए शुरुआती गाइड",
+  "What LP Collateral Makes Possible": "LP कोलैटरल क्या संभव बनाता है",
+  "Thinking Clearly About Yield Looping": "यील्ड लूपिंग के बारे में स्पष्ट रूप से सोचना",
+  "How to Hedge an LP Position": "LP पोज़िशन को हेज कैसे करें",
+  "Making LP Collateral Usable": "LP कोलैटरल को उपयोगी बनाना",
+  "Avana and the Next Step for Liquidity Providers": "Avana और लिक्विडिटी प्रदाताओं के लिए अगला कदम",
 }
 
 export default dict
