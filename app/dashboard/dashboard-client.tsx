@@ -556,7 +556,17 @@ export function DashboardClient({
             <SectionTabStrip items={LOOPING_SUB_TABS} value={loopingSubTab} onChange={setLoopingSubTab} ariaLabel={t("Looping sections")} />
             <div className="mt-8">
               {loopingSubTab === "overview" ? (
-                <DashboardOverviewSection hideHeading title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
+                <div className="space-y-8">
+                  <DashboardOverviewSection hideHeading title={t("Looping Overview")} metrics={multiplyDashboardMetrics.overview} />
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+                    <CurrentLtvCard
+                      borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+                      collateralUsd={multiplySnapshot.totalCollateralUsd}
+                      showBalance={showDollarAmounts}
+                    />
+                  </div>
+                </div>
               ) : (
                 <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
               )}
