@@ -226,7 +226,7 @@ export function DashboardHero({
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
       {isBorrowOverview || isLoopingOverview ? null : showBalance ? (
-        <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>
+        <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-x-8" : "mt-5"}>
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
             {showChart ? (
               <HeroChartSection
@@ -234,9 +234,6 @@ export function DashboardHero({
                 activeRange={activeRange}
                 onRangeChange={setActiveRange}
                 gradientId="portfolioHeroFill"
-                // Shorter than the market-detail charts (240px) so the graph doesn't
-                // dominate the otherwise sparse dashboard hero.
-                height={190}
                 tone={trendTone}
                 // Mask keeps the trend shape but hides every dollar value: axis ticks and tooltip.
                 formatYAxis={showDollarAmounts ? undefined : () => "••"}
