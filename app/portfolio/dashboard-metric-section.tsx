@@ -53,14 +53,16 @@ function MetricGrid({ metrics, labelOnTop = false }: { metrics: MetricItem[]; la
   )
 }
 
-export function DashboardOverviewSection({ title, metrics }: { title: string; metrics: DashboardOverviewMetrics }) {
+export function DashboardOverviewSection({ title, metrics, hideHeading = false }: { title: string; metrics: DashboardOverviewMetrics; hideHeading?: boolean }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
     <section className="space-y-4">
-      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      {hideHeading ? null : (
+        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      )}
       <MetricGrid
         metrics={[
           {
