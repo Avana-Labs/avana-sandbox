@@ -160,7 +160,7 @@ function SectionTabStrip<T extends string>({
 }) {
   const { t } = useTranslation()
   return (
-    <div className="max-w-full overflow-x-auto overscroll-x-contain border-b border-border/90 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <div className="max-w-full overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <div role="tablist" aria-label={ariaLabel} className="flex w-max min-w-max gap-8">
         {items.map((tab) => {
           const active = tab.id === value
@@ -173,8 +173,8 @@ function SectionTabStrip<T extends string>({
               onClick={() => onChange(tab.id)}
               data-state={active ? "active" : "inactive"}
               className={cn(
-                "relative shrink-0 whitespace-nowrap border-0 px-0 pb-3 text-[19px] font-medium tracking-[-0.03em] transition-colors md:text-[20px] after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:rounded-full after:bg-transparent",
-                active ? "text-foreground after:bg-foreground" : "text-muted-foreground hover:text-foreground",
+                "shrink-0 whitespace-nowrap border-b-2 pb-2 text-left text-[15px] font-normal tracking-[-0.03em] transition-colors md:text-[17px]",
+                active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
               {t(tab.label)}
@@ -473,7 +473,7 @@ export function DashboardClient({
         <div className="mt-12 space-y-12">
           {/* Lending Positions */}
           <section className="space-y-5">
-            <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Lending Positions")}</h2>
+            <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Account")}</h2>
             <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} hideHeading />
             <PortfolioInvestments
               investments={lendTabData.investments}
@@ -487,7 +487,10 @@ export function DashboardClient({
 
           {/* Borrow sections (moved from the former Borrow tab) */}
           <div>
-            <SectionTabStrip items={CREDIT_SUB_TABS} value={creditSubTab} onChange={setCreditSubTab} ariaLabel={t("Credit sections")} />
+            <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
+              <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Borrow Account")}</h2>
+              <SectionTabStrip items={CREDIT_SUB_TABS} value={creditSubTab} onChange={setCreditSubTab} ariaLabel={t("Credit sections")} />
+            </div>
             <div className="mt-8">
               {creditSubTab === "overview" ? (
                 <div className="space-y-8">
@@ -526,7 +529,10 @@ export function DashboardClient({
             </div>
           ) : (
             <div>
-              <SectionTabStrip items={LOOPING_SUB_TABS} value={loopingSubTab} onChange={setLoopingSubTab} ariaLabel={t("Multiply sections")} />
+              <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
+                <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Multiply Account")}</h2>
+                <SectionTabStrip items={LOOPING_SUB_TABS} value={loopingSubTab} onChange={setLoopingSubTab} ariaLabel={t("Multiply sections")} />
+              </div>
               <div className="mt-8">
                 {loopingSubTab === "overview" ? (
                   <div className="space-y-8">
