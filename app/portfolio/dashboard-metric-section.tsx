@@ -210,6 +210,7 @@ export function DashboardLendPerformanceSection({
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid
+        labelOnTop
         metrics={[
           {
             label: t("Total Supplied"),
