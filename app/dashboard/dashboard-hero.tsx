@@ -234,6 +234,9 @@ export function DashboardHero({
                 activeRange={activeRange}
                 onRangeChange={setActiveRange}
                 gradientId="portfolioHeroFill"
+                // Shorter than the market-detail charts (240px) so the graph doesn't
+                // dominate the otherwise sparse dashboard hero.
+                height={190}
                 tone={trendTone}
                 // Mask keeps the trend shape but hides every dollar value: axis ticks and tooltip.
                 formatYAxis={showDollarAmounts ? undefined : () => "••"}

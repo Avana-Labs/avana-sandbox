@@ -74,9 +74,9 @@ export function MarketHeroChart({
 
   return (
     <div className="space-y-2">
-      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={meta} hidden={hideValue} label={label} />
-      {/* Divider above the graph, mirroring the one under the range selector. */}
-      <div aria-hidden className="border-t border-border" />
+      {/* Metric name kept for screen readers / internal recognition; hidden visually. */}
+      {label ? <span className="sr-only">{label}</span> : null}
+      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={meta} hidden={hideValue} />
       <HeroAreaChart
         data={points}
         activeRange={activeRange}
