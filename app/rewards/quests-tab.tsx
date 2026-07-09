@@ -125,7 +125,8 @@ function RewardsPromoPanel({
   onTaskAction: (taskId: string) => Promise<unknown>
 }) {
   const { t } = useTranslation()
-  const [activePromoTab, setActivePromoTab] = useState<RewardsPromoTabId>("new-users")
+  const [activePromoTab, setActivePromoTab] = useState<RewardsPromoTabId>(promoTabs[0]?.id ?? "getting-started")
+  const activeQuests = questsByTab[activePromoTab] ?? []
 
   return (
     <section className="space-y-6">
@@ -137,35 +138,15 @@ function RewardsPromoPanel({
         listClassName="w-max min-w-full gap-6 sm:gap-9"
       />
 
-      {activePromoTab === "new-users" ? (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
-            {questsByTab["new-users"].map((quest) => (
-              <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
-            ))}
-          </div>
+      {activeQuests.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {activeQuests.map((quest) => (
+            <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
+          ))}
         </div>
-      ) : null}
-
-      {activePromoTab === "challenge-tasks" ? (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
-            {questsByTab["challenge-tasks"].map((quest) => (
-              <AvanaQuestCard key={quest.id} quest={quest} accent="challenge" onTaskAction={onTaskAction} />
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {activePromoTab === "refer-a-friend" ? (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
-            {questsByTab["refer-a-friend"].map((quest) => (
-              <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
-            ))}
-          </div>
-        </div>
-      ) : null}
+      ) : (
+        <p className="text-[13px] text-muted-foreground">{t("No quests here yet — check back soon.")}</p>
+      )}
     </section>
   )
 }
