@@ -327,7 +327,7 @@ function LoanAssetsSection({
                       <Button
                         type="button"
                         size="table"
-                        variant="brand-secondary"
+                        variant="table-secondary"
                         className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
@@ -456,7 +456,7 @@ function AssetsSection({
                       <Button
                         type="button"
                         size="table"
-                        variant="brand-secondary"
+                        variant="table-secondary"
                         className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()

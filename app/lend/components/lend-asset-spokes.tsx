@@ -165,7 +165,7 @@ function AssetRowView({
               <Button
                 type="button"
                 size="table"
-                variant="brand-secondary"
+                variant="table-secondary"
                 className="w-auto"
                 onClick={(e) => {
                   e.stopPropagation()
