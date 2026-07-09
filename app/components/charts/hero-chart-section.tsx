@@ -43,7 +43,9 @@ export function HeroChartSection({
   const chartData = useMemo(() => rangeData[activeRange], [activeRange, rangeData])
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-2">
+      {/* Divider above the graph, mirroring the one under the range selector. */}
+      <div aria-hidden className="border-t border-border" />
       <HeroAreaChart
         data={chartData}
         activeRange={activeRange}
