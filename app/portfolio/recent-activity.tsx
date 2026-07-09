@@ -267,6 +267,9 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
 
   return (
     <section className="min-w-0">
+      <h2 className="mb-4 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
+        {t("All Transactions")}
+      </h2>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <SearchPill value={search} onChange={setSearch} />
         <div className="flex flex-wrap items-center gap-2">

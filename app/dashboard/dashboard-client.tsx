@@ -564,10 +564,7 @@ export function DashboardClient({
           <LendLearnSection />
 
           {/* Activity (merged in from the former Activity tab) */}
-          <section className="space-y-5">
-            <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Activity")}</h2>
-            <RecentActivity rows={activityRows} />
-          </section>
+          <RecentActivity rows={activityRows} />
         </div>
       ) : null}
     </>
