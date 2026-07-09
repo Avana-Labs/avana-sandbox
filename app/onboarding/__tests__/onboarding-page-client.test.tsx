@@ -84,11 +84,13 @@ describe("OnboardingPageClient — already-onboarded wallet (issue #140)", () =>
     expect(screen.queryByText(/Fund my sandbox/i)).not.toBeInTheDocument()
   })
 
-  it("still renders the claim flow for a wallet that has NOT onboarded", () => {
+  it("still renders the active onboarding flow for a wallet that has NOT onboarded", () => {
     walletStateMock.mockReturnValue(walletState("wallet"))
     render(<OnboardingPageClient />)
 
-    expect(screen.getByText(/Fund my sandbox/i)).toBeInTheDocument()
+    // A fresh wallet now lands on the personalize step first (name/language/currency/theme),
+    // ahead of the funding card — not the already-onboarded "completed" state.
+    expect(screen.getByText(/Help us personalize your experience/i)).toBeInTheDocument()
     expect(screen.queryByText(/You've already claimed/i)).not.toBeInTheDocument()
   })
 })

@@ -430,4 +430,37 @@ describe("sandbox onboarding + economy caps", () => {
       asUser.query(api.sandbox.onboarding.getEconomyStatus, { wallet: "0xdifferent" }),
     ).rejects.toThrow(/WALLET_MISMATCH/)
   })
+
+  test("savePreferences caps the name at 10 chars, sanitizes DEX sources, and merges", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    // First write: an over-long name and messy DEX list.
+    await asUser.mutation(api.sandbox.onboarding.savePreferences, {
+      wallet: WALLET,
+      preferences: {
+        name: "  ElizabethAlexandra  ",
+        language: "ZH",
+        currency: "CNY",
+        dexSources: ["uniswap", "  ", "pancakeswap"],
+      },
+    })
+
+    let profile = (await asUser.query(api.sandbox.onboarding.getWalletOnboardingState, { wallet: WALLET })).profile
+    // Trimmed + capped to 10 chars; blank DEX entries dropped.
+    expect(profile?.preferences?.name).toBe("ElizabethA")
+    expect(profile?.preferences?.dexSources).toEqual(["uniswap", "pancakeswap"])
+    expect(profile?.preferences?.language).toBe("ZH")
+    expect(profile?.preferences?.currency).toBe("CNY")
+
+    // Second write with only dexSources must NOT clobber the previously-saved name/language.
+    await asUser.mutation(api.sandbox.onboarding.savePreferences, {
+      wallet: WALLET,
+      preferences: { dexSources: ["curve"] },
+    })
+    profile = (await asUser.query(api.sandbox.onboarding.getWalletOnboardingState, { wallet: WALLET })).profile
+    expect(profile?.preferences?.name).toBe("ElizabethA")
+    expect(profile?.preferences?.language).toBe("ZH")
+    expect(profile?.preferences?.dexSources).toEqual(["curve"])
+  })
 })

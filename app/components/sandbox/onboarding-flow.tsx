@@ -8,7 +8,34 @@ import { useMutation } from "convex/react"
 import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
+import {
+  CURRENCY_OPTIONS,
+  LANGUAGE_OPTIONS,
+  useOptionalDisplayPreferences,
+} from "@/app/components/display-preferences"
+import { useThemeOptional } from "@/app/components/theme-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+
+/** Display-name cap — kept in sync with the server clamp in `savePreferences`. */
+const MAX_NAME_LENGTH = 10
+
+/**
+ * Decentralized exchanges a user might bring LP liquidity from. Captured purely as a
+ * research signal (where our sandbox users' real positions originate). Extend freely —
+ * "Other" is the catch-all for anything not listed.
+ */
+const DEX_SOURCES: Array<{ id: string; label: string }> = [
+  { id: "uniswap", label: "Uniswap" },
+  { id: "pancakeswap", label: "PancakeSwap" },
+  { id: "sushiswap", label: "SushiSwap" },
+  { id: "curve", label: "Curve" },
+  { id: "balancer", label: "Balancer" },
+  { id: "aerodrome", label: "Aerodrome" },
+  { id: "velodrome", label: "Velodrome" },
+  { id: "camelot", label: "Camelot" },
+  { id: "traderjoe", label: "Trader Joe" },
+  { id: "other", label: "Other" },
+]
 
 type BasketSlot = { tokenId: string; weight: number }
 type BasketClaim = { tokenId: string; amount: number; priceUsdAtClaim: number }
@@ -29,6 +56,14 @@ export type OnboardingGateState = {
     basketSnapshot?: BasketClaim[]
     tweetUrl?: string
     claimTxSynthetic?: string
+    preferences?: {
+      theme?: string
+      language?: string
+      currency?: string
+      showDollarAmounts?: boolean
+      name?: string
+      dexSources?: string[]
+    }
   } | null
   config: {
     basket: BasketSlot[]
@@ -80,6 +115,8 @@ const xIntentHref = (shareText: string) =>
 const PROGRESS: Record<string, number> = {
   intro: 10,
   connect: 25,
+  personalize: 32,
+  dexSources: 38,
   wallet: 45,
   analyzing: 60,
   eligible: 72,
@@ -324,6 +361,229 @@ function BasketPanel({
   )
 }
 
+const FIELD_LABEL = "block text-[13px] font-medium text-muted-foreground"
+const FIELD_CONTROL =
+  "mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 text-[15px] text-foreground outline-none transition-colors focus:border-brand"
+
+/**
+ * Step 1 of the personalize flow — a short display name, preferred language + currency,
+ * and light/dark theme. Language/currency/theme apply app-wide immediately via the shared
+ * providers (so this screen itself localizes as you pick), and all four persist to Convex
+ * so they follow the wallet on the next sign-in. Name is optional and capped at 10 chars.
+ */
+function PersonalizeStep({
+  wallet,
+  existing,
+  onContinue,
+}: {
+  wallet: string
+  existing: OnboardingGateState["profile"]
+  onContinue: () => void
+}) {
+  const { t } = useTranslation()
+  const savePreferences = useMutation(api.sandbox.onboarding.savePreferences)
+  const prefs = useOptionalDisplayPreferences()
+  const themeCtx = useThemeOptional()
+  const setTheme = themeCtx?.setTheme ?? (() => {})
+  const [name, setName] = useState(existing?.preferences?.name ?? "")
+  const [saving, setSaving] = useState(false)
+
+  const language = prefs?.language ?? "EN"
+  const currency = prefs?.currency ?? "USD"
+  const isDark = themeCtx?.resolvedTheme === "dark"
+
+  const submit = async () => {
+    setSaving(true)
+    try {
+      const preferences: {
+        name?: string
+        language: string
+        currency: string
+        theme: "light" | "dark"
+      } = { language, currency, theme: isDark ? "dark" : "light" }
+      const trimmed = name.trim().slice(0, MAX_NAME_LENGTH)
+      if (trimmed) preferences.name = trimmed
+      await savePreferences({ wallet, preferences })
+    } catch {
+      // Best-effort: a save blip must never trap the user on this screen.
+    } finally {
+      setSaving(false)
+      onContinue()
+    }
+  }
+
+  return (
+    <>
+      <Headline muted={t("Wallet connected.")} active={t("Help us personalize your experience.")} />
+      <div className="mt-8 flex max-w-[460px] flex-col gap-5">
+        <div>
+          <label className={FIELD_LABEL} htmlFor="onboarding-name">
+            {t("What should we call you?")} <span className="text-muted-foreground/70">({t("optional")})</span>
+          </label>
+          <input
+            id="onboarding-name"
+            className={FIELD_CONTROL}
+            value={name}
+            maxLength={MAX_NAME_LENGTH}
+            onChange={(event) => setName(event.target.value)}
+            placeholder={t("Your name")}
+            autoComplete="off"
+          />
+        </div>
+        <div>
+          <label className={FIELD_LABEL} htmlFor="onboarding-language">
+            {t("Preferred language")}
+          </label>
+          <select
+            id="onboarding-language"
+            className={FIELD_CONTROL}
+            value={language}
+            onChange={(event) => prefs?.setLanguage(event.target.value as typeof language)}
+          >
+            {LANGUAGE_OPTIONS.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={FIELD_LABEL} htmlFor="onboarding-currency">
+            {t("Preferred currency")}
+          </label>
+          <select
+            id="onboarding-currency"
+            className={FIELD_CONTROL}
+            value={currency}
+            onChange={(event) => prefs?.setCurrency(event.target.value as typeof currency)}
+          >
+            {CURRENCY_OPTIONS.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.flag} {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <span className={FIELD_LABEL}>{t("Appearance")}</span>
+          <div className="mt-2 inline-flex rounded-full border border-border bg-surface p-1">
+            <button
+              type="button"
+              onClick={() => setTheme("light")}
+              className={`rounded-full px-5 py-2 text-[14px] font-medium transition-colors ${
+                isDark ? "text-muted-foreground" : "bg-foreground text-background"
+              }`}
+            >
+              {t("Light")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme("dark")}
+              className={`rounded-full px-5 py-2 text-[14px] font-medium transition-colors ${
+                isDark ? "bg-foreground text-background" : "text-muted-foreground"
+              }`}
+            >
+              {t("Dark")}
+            </button>
+          </div>
+        </div>
+      </div>
+      <button className={`${PRIMARY} mt-9`} disabled={saving} onClick={submit} type="button">
+        {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
+        {t("Continue")}
+      </button>
+    </>
+  )
+}
+
+/**
+ * Step 2 of the personalize flow — a multi-select grid of DEXes the user brings LP
+ * liquidity from. Persisted to `preferences.dexSources` purely as a research signal
+ * (where our users' real positions originate). Optional; both selecting and skipping
+ * advance to funding.
+ */
+function LiquiditySourceStep({
+  wallet,
+  existing,
+  onBack,
+  onContinue,
+}: {
+  wallet: string
+  existing: OnboardingGateState["profile"]
+  onBack: () => void
+  onContinue: () => void
+}) {
+  const { t } = useTranslation()
+  const savePreferences = useMutation(api.sandbox.onboarding.savePreferences)
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(existing?.preferences?.dexSources ?? []))
+  const [saving, setSaving] = useState(false)
+
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const submit = async () => {
+    setSaving(true)
+    try {
+      await savePreferences({ wallet, preferences: { dexSources: [...selected] } })
+    } catch {
+      // Best-effort: never trap the user on this screen.
+    } finally {
+      setSaving(false)
+      onContinue()
+    }
+  }
+
+  return (
+    <>
+      <Headline muted={t("Almost there.")} active={t("Where does your liquidity come from?")} />
+      <p className="mt-4 text-[15px] text-muted-foreground">{t("Select all that apply")}</p>
+      <div className="mt-7 grid max-w-[560px] grid-cols-2 gap-3 sm:grid-cols-3">
+        {DEX_SOURCES.map((dex) => {
+          const active = selected.has(dex.id)
+          return (
+            <button
+              key={dex.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => toggle(dex.id)}
+              className={`relative flex h-[68px] items-center justify-center rounded-2xl border px-3 text-[15px] font-medium transition-colors ${
+                active
+                  ? "border-brand bg-brand/10 text-foreground"
+                  : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+              }`}
+            >
+              {active ? (
+                <span className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-brand text-brand-foreground">
+                  <Check className="size-3.5" strokeWidth={3} />
+                </span>
+              ) : null}
+              {dex.label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="mt-9 flex items-center gap-5">
+        <button className={PRIMARY} disabled={saving} onClick={submit} type="button">
+          {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
+          {t("Continue")}
+        </button>
+        <button
+          className="text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          onClick={onBack}
+          type="button"
+        >
+          {t("Back")}
+        </button>
+      </div>
+    </>
+  )
+}
+
 export function OnboardingFlow({ wallet, state }: { wallet: string | null; state: OnboardingGateState | null }) {
   const beginAnalysis = useMutation(api.sandbox.onboarding.beginAnalysis)
   const completeAnalysis = useMutation(api.sandbox.onboarding.startAnalysis)
@@ -335,6 +595,11 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   const [busy, setBusy] = useState<null | "analyzing" | "sharing" | "claiming">(null)
   const [error, setError] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
+  // Client-only sub-steps shown once, right after wallet connect and before the funding
+  // card: personalize (name/language/currency/theme) → liquidity source (DEXes). A returning
+  // wallet that already saved these skips straight to funding.
+  const [prefStep, setPrefStep] = useState<"personalize" | "dexSources" | "fund">("personalize")
+  const prefStepInit = useRef(false)
   const { t } = useTranslation()
 
   // Drive the X composer + done-state resources from the live Convex config so the
@@ -418,6 +683,19 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   }, [wallet, busy, state?.onboardingStep])
 
   const step = busy === "analyzing" ? "analyzing" : busy === "claiming" ? "claimPending" : state?.onboardingStep
+
+  // Skip the personalize sub-steps for a wallet that has already saved them; otherwise show
+  // them once when we first land on the "wallet" step. Init in an effect (not render) so a
+  // late-resolving profile still initializes correctly.
+  const savedPrefs = state?.profile?.preferences
+  const prefsAlreadySet = Boolean(savedPrefs?.name || (savedPrefs?.dexSources && savedPrefs.dexSources.length > 0))
+  useEffect(() => {
+    if (step === "wallet" && !prefStepInit.current) {
+      prefStepInit.current = true
+      setPrefStep(prefsAlreadySet ? "fund" : "personalize")
+    }
+  }, [step, prefsAlreadySet])
+
   const economy = state?.economy ?? {
     status: "open" as const,
     userCount: 0,
@@ -434,7 +712,11 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         : economy.status === "closed" && step !== "done"
           ? "closed"
           : (step ?? "connect")
-  const pct = PROGRESS[phase] ?? 10
+  // The personalize/dexSources sub-steps live inside the "wallet" phase; surface them in the
+  // progress rail + phase key so the rail advances and the screen swaps as the user moves.
+  const viewPhase =
+    phase === "wallet" && prefStep !== "fund" ? (prefStep === "dexSources" ? "dexSources" : "personalize") : phase
+  const pct = PROGRESS[viewPhase] ?? 10
 
   return (
     <div
@@ -448,7 +730,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           paint from the SSR HTML and never be re-touched by JS on hydration, or LCP is
           pinned to hydration completion (~4s on throttled mobile). Step changes swap
           instantly; a CSS-only fade could be added later without an opacity:0 start. */}
-      <div key={phase} data-onboarding-phase={phase}>
+      <div key={viewPhase} data-onboarding-phase={viewPhase}>
       {!wallet && !hasStarted ? (
         <>
           <Headline
@@ -494,6 +776,15 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           <Headline muted={t("This allocation round is full.")} active={t("Your wallet is on the waitlist.")} />
           <p className="mt-7 text-muted-foreground">{economy.userCount.toLocaleString()} {t("wallets onboarded.")}</p>
         </>
+      ) : step === "wallet" && prefStep === "personalize" ? (
+        <PersonalizeStep wallet={wallet!} existing={state.profile} onContinue={() => setPrefStep("dexSources")} />
+      ) : step === "wallet" && prefStep === "dexSources" ? (
+        <LiquiditySourceStep
+          wallet={wallet!}
+          existing={state.profile}
+          onBack={() => setPrefStep("personalize")}
+          onContinue={() => setPrefStep("fund")}
+        />
       ) : step === "wallet" ? (
         <>
           <Headline muted={t("Wallet connected.")} active={t("Fund your sandbox to start exploring.")} />
