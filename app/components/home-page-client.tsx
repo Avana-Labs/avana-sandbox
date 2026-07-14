@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import type { HomeMode } from "@/app/lib/home-sim"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
