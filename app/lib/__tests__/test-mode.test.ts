@@ -60,7 +60,7 @@ describe("open gate test mode", () => {
   it("opens only in the isolated local production Lighthouse artifact", async () => {
     vi.stubEnv("NODE_ENV", "production")
     vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE", "1")
-    vi.stubEnv("AVANA_NEXT_DIST_DIR", ".next-lighthouse")
+    vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT", "1")
     vi.stubEnv("VERCEL", "")
     vi.stubEnv("CI", "")
     const audit = await import("@/app/lib/test-mode")
