@@ -19,6 +19,7 @@ const budgets = {
   "best-practices": Number(process.env.LH_BEST_PRACTICES_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS["best-practices"]),
   seo: Number(process.env.LH_SEO_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS.seo),
 }
+const runCount = Math.max(1, Number(process.env.LH_RUNS ?? 3))
 
 function runLighthouse(route, outputPath) {
   const url = new URL(route, baseUrl).toString()
@@ -49,6 +50,12 @@ function score(report, category) {
   return Math.round((report.categories[category]?.score ?? 0) * 100)
 }
 
+function median(values) {
+  const sorted = [...values].sort((left, right) => left - right)
+  const middle = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0 ? Math.round((sorted[middle - 1] + sorted[middle]) / 2) : sorted[middle]
+}
+
 async function assertRouteContent(route) {
   const response = await fetch(new URL(route, baseUrl))
   const html = await response.text()
@@ -70,13 +77,22 @@ const failures = []
 
 for (const route of LIGHTHOUSE_ROUTES) {
   await assertRouteContent(route)
-  const outputPath = path.join(outputDir, `${route.replaceAll("/", "_") || "home"}.json`)
-  await runLighthouse(route, outputPath)
-  const report = JSON.parse(await fs.readFile(outputPath, "utf8"))
-  const row = { route }
+  const categoryScores = Object.fromEntries(Object.keys(budgets).map((category) => [category, []]))
+
+  for (let run = 1; run <= runCount; run += 1) {
+    const outputPath = path.join(outputDir, `${route.replaceAll("/", "_") || "home"}-${run}.json`)
+    await runLighthouse(route, outputPath)
+    const report = JSON.parse(await fs.readFile(outputPath, "utf8"))
+
+    for (const category of Object.keys(budgets)) {
+      categoryScores[category].push(score(report, category))
+    }
+  }
+
+  const row = { route, runs: runCount }
 
   for (const category of Object.keys(budgets)) {
-    row[category] = score(report, category)
+    row[category] = median(categoryScores[category])
     if (row[category] < budgets[category]) {
       failures.push(`${route} ${category}: ${row[category]} < ${budgets[category]}`)
     }
