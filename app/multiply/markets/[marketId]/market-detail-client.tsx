@@ -1,11 +1,10 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import * as React from "react"
 import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { AboutNewsSection, DetailFaqSection } from "@/app/borrow/_detail/ui"
-import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -13,12 +12,50 @@ import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/
 import {
   MarketHero,
   MarketHeroIdentity,
-  RelatedMarketsRow,
-  MarketSidebar,
-  SupplyBorrowCard,
-  TransactionHistoryCard,
 } from "@/app/multiply/_detail"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
+import { cn } from "@/lib/utils"
+
+const AboutNewsSection = dynamic(() => import("@/app/borrow/_detail/ui/AboutNewsSection").then((mod) => mod.AboutNewsSection), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[380px]" />,
+})
+const QuickStatsGrid = dynamic(() => import("@/app/borrow/_detail/pool-sections/QuickStatsGrid").then((mod) => mod.QuickStatsGrid), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[280px]" />,
+})
+const CashflowCard = dynamic(() => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const SupplyBorrowCard = dynamic(() => import("@/app/multiply/_detail/pool-sections/SupplyBorrowCard").then((mod) => mod.SupplyBorrowCard), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const TransactionHistoryCard = dynamic(
+  () => import("@/app/multiply/_detail/pool-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
+  { ssr: false, loading: () => <DeferredBlock className="h-[360px]" /> },
+)
+const RelatedMarketsRow = dynamic(() => import("@/app/multiply/_detail/pool-sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[200px]" />,
+})
+const MarketSidebar = dynamic(() => import("@/app/multiply/_detail/sidebars/MarketSidebar").then((mod) => mod.MarketSidebar), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[760px]" />,
+})
+
+function DeferredBlock({ className }: { className?: string }) {
+  return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
+}
 
 type Props = { detail: MultiplyMarketDetail }
 

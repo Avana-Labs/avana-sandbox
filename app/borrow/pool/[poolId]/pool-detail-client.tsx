@@ -1,23 +1,51 @@
 "use client"
 
-import * as React from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { AboutNewsSection, DetailFaqSection } from "@/app/borrow/_detail/ui"
 import {
   PoolHero,
   PoolHeroIdentity,
   QuickStatsGrid,
-  CashflowCard,
-  RiskSection,
-  CollateralHistoryCard,
-  RelatedPoolsRow,
 } from "@/app/borrow/_detail/pool-sections"
-import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { cn } from "@/lib/utils"
+
+const AboutNewsSection = dynamic(() => import("@/app/borrow/_detail/ui/AboutNewsSection").then((mod) => mod.AboutNewsSection), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[380px]" />,
+})
+const CashflowCard = dynamic(() => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[320px]" />,
+})
+const CollateralHistoryCard = dynamic(
+  () => import("@/app/borrow/_detail/pool-sections/CollateralHistoryCard").then((mod) => mod.CollateralHistoryCard),
+  { ssr: false, loading: () => <DeferredBlock className="h-[360px]" /> },
+)
+const RelatedPoolsRow = dynamic(() => import("@/app/borrow/_detail/pool-sections/RelatedPoolsRow").then((mod) => mod.RelatedPoolsRow), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[200px]" />,
+})
+const PoolBorrowSidebar = dynamic(() => import("@/app/borrow/_detail/sidebars/PoolBorrowSidebar").then((mod) => mod.PoolBorrowSidebar), {
+  ssr: false,
+  loading: () => <DeferredBlock className="h-[760px]" />,
+})
+
+function DeferredBlock({ className }: { className?: string }) {
+  return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
+}
 
 type Props = { detail: PoolDetail }
 
