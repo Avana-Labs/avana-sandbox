@@ -118,6 +118,10 @@ const securityHeaders = [
 const nextConfig = {
   poweredByHeader: false,
   experimental: {
+    // Inline the route's critical CSS into the initial document. This removes the
+    // shared stylesheet from the first-paint dependency chain while retaining
+    // cacheable stylesheet chunks for later navigations.
+    inlineCss: true,
     // Tree-shake heavy barrel packages so a 2-icon import doesn't pull the whole library.
     // @fluentui/react-icons especially ships thousands of icons behind one barrel.
     optimizePackageImports: [
