@@ -19,11 +19,15 @@ import { Switch } from "@/components/ui/switch"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 function AppsGridIcon({ className }: { className?: string }) {
+  const dots: JSX.Element[] = []
+  for (const cx of [3, 9, 15]) {
+    for (const cy of [3, 9, 15]) {
+      dots.push(<circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={1.7} fill="currentColor" />)
+    }
+  }
   return (
     <svg viewBox="0 0 18 18" fill="none" aria-hidden className={className}>
-      {[3, 9, 15].flatMap((cx) =>
-        [3, 9, 15].map((cy) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={1.7} fill="currentColor" />),
-      )}
+      {dots}
     </svg>
   )
 }

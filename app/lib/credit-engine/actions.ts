@@ -5,23 +5,33 @@ import { RAY, TOKEN_SCALE, WAD, assetsToShares, mulDiv } from "./units"
 import { currentCollateralValueUsd6, currentDebtValueUsd6, debtInterestOwedUsd6 } from "./valuation"
 
 function cloneState(state: BorrowSystemState): BorrowSystemState {
+  const markets: BorrowSystemState["markets"] = {}
+  for (const [id, market] of Object.entries(state.markets)) {
+    markets[id] = { ...market, snapshot: { ...market.snapshot } }
+  }
+
+  const assets: BorrowSystemState["assets"] = {}
+  for (const [id, asset] of Object.entries(state.assets)) {
+    assets[id] = { ...asset, snapshot: { ...asset.snapshot }, borrowConfig: { ...asset.borrowConfig } }
+  }
+
+  const accounts: BorrowSystemState["accounts"] = {}
+  for (const [id, account] of Object.entries(state.accounts)) {
+    accounts[id] = {
+      ...account,
+      walletLpBalancesUsd6: { ...(account.walletLpBalancesUsd6 ?? {}) },
+      walletReturnedLpBalancesUsd6: { ...(account.walletReturnedLpBalancesUsd6 ?? {}) },
+      collateralPositions: (account.collateralPositions ?? []).map((position) => ({ ...position })),
+      debtPositions: (account.debtPositions ?? []).map((position) => ({ ...position })),
+      rewardPositions: (account.rewardPositions ?? []).map((position) => ({ ...position })),
+    }
+  }
+
   return {
     ...state,
-    markets: Object.fromEntries(Object.entries(state.markets).map(([id, market]) => [id, { ...market, snapshot: { ...market.snapshot } }])),
-    assets: Object.fromEntries(Object.entries(state.assets).map(([id, asset]) => [id, { ...asset, snapshot: { ...asset.snapshot }, borrowConfig: { ...asset.borrowConfig } }])),
-    accounts: Object.fromEntries(
-      Object.entries(state.accounts).map(([id, account]) => [
-        id,
-        {
-          ...account,
-          walletLpBalancesUsd6: { ...(account.walletLpBalancesUsd6 ?? {}) },
-          walletReturnedLpBalancesUsd6: { ...(account.walletReturnedLpBalancesUsd6 ?? {}) },
-          collateralPositions: (account.collateralPositions ?? []).map((position) => ({ ...position })),
-          debtPositions: (account.debtPositions ?? []).map((position) => ({ ...position })),
-          rewardPositions: (account.rewardPositions ?? []).map((position) => ({ ...position })),
-        },
-      ]),
-    ),
+    markets,
+    assets,
+    accounts,
     transactions: [...state.transactions],
   }
 }

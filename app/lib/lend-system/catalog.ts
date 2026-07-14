@@ -131,19 +131,24 @@ function buildMarketFromRow(
 
 const NOW = Date.UTC(2026, 5, 19)
 
-export const LEND_MARKET_CATALOG: LendMarket[] = LEND_ASSET_GROUPS.flatMap((group) => group.rows).map((row, index) => {
-  const groupTitle = LEND_ASSET_GROUPS.find((group) => group.rows.includes(row))?.title ?? "Other Assets"
-  return buildMarketFromRow(row, index + 1, groupTitle, NOW)
-})
+export const LEND_MARKET_CATALOG: LendMarket[] = []
+for (const group of LEND_ASSET_GROUPS) {
+  for (const row of group.rows) {
+    LEND_MARKET_CATALOG.push(buildMarketFromRow(row, LEND_MARKET_CATALOG.length + 1, group.title, NOW))
+  }
+}
 
 export function buildLendCatalogMarketsRecord(now = NOW): Record<string, LendMarket> {
-  return Object.fromEntries(
-    LEND_ASSET_GROUPS.flatMap((group) => group.rows).map((row, index) => {
-      const groupTitle = LEND_ASSET_GROUPS.find((entry) => entry.rows.includes(row))?.title ?? "Other Assets"
-      const market = buildMarketFromRow(row, index + 1, groupTitle, now)
-      return [market.marketId, market] as const
-    }),
-  )
+  const markets: Record<string, LendMarket> = {}
+  let rank = 1
+  for (const group of LEND_ASSET_GROUPS) {
+    for (const row of group.rows) {
+      const market = buildMarketFromRow(row, rank, group.title, now)
+      markets[market.marketId] = market
+      rank += 1
+    }
+  }
+  return markets
 }
 
 export function getLendMarketById(marketId: string) {

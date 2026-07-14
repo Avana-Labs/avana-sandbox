@@ -13,11 +13,13 @@ function normalizeBorrowAccount(account: BorrowAccountState): BorrowAccountState
 
 /** Repair persisted sandbox sessions that predate rewardPositions on accounts. */
 export function normalizeBorrowSystemState(state: BorrowSystemState): BorrowSystemState {
+  const accounts: BorrowSystemState["accounts"] = {}
+  for (const [walletId, account] of Object.entries(state.accounts)) {
+    accounts[walletId] = normalizeBorrowAccount(account)
+  }
   return {
     ...state,
-    accounts: Object.fromEntries(
-      Object.entries(state.accounts).map(([walletId, account]) => [walletId, normalizeBorrowAccount(account)]),
-    ),
+    accounts,
   }
 }
 
@@ -31,7 +33,11 @@ function encode(value: unknown): JsonValue {
     return value.map((entry) => encode(entry))
   }
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, encode(entry)]))
+    const encoded: Record<string, JsonValue> = {}
+    for (const [key, entry] of Object.entries(value)) {
+      encoded[key] = encode(entry)
+    }
+    return encoded
   }
   return value as JsonValue
 }
@@ -44,7 +50,11 @@ function decode(value: JsonValue): unknown {
     if ("__bigint" in value && typeof value.__bigint === "string") {
       return BigInt(value.__bigint)
     }
-    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, decode(entry)]))
+    const decoded: Record<string, unknown> = {}
+    for (const [key, entry] of Object.entries(value)) {
+      decoded[key] = decode(entry)
+    }
+    return decoded
   }
   return value
 }

@@ -225,31 +225,26 @@ export function useMultiplySession({
 
   const hydrateWalletData = useCallback(
     (data: ConvexMultiplyWalletData) => {
-      const positions = Object.fromEntries(
-        data.positions
-          .filter((position) => position.product === "multiply")
-          .map((position) => {
-            const id = String(position._id)
-            return [
-              id,
-              {
-                id,
-                walletId,
-                marketId: position.marketSlug,
-                collateralAmount: position.collateralAmount ?? 0,
-                collateralValueUsd: position.collateralValueUsd ?? 0,
-                debtValueUsd: position.debtValueUsd ?? 0,
-                multiplier: position.multiplier ?? 1,
-                ltv: position.ltv ?? 0,
-                healthFactor: position.healthFactor ?? "infinity",
-                liquidationPrice: position.liquidationPrice ?? null,
-                netApy: position.netApyPct ?? 0,
-                openedAt: position.openedAt,
-                lastUpdatedAt: position.lastUpdatedAt,
-              },
-            ]
-          }),
-      )
+      const positions: Record<string, MultiplySystemState["positions"][string]> = {}
+      for (const position of data.positions) {
+        if (position.product !== "multiply") continue
+        const id = String(position._id)
+        positions[id] = {
+          id,
+          walletId,
+          marketId: position.marketSlug,
+          collateralAmount: position.collateralAmount ?? 0,
+          collateralValueUsd: position.collateralValueUsd ?? 0,
+          debtValueUsd: position.debtValueUsd ?? 0,
+          multiplier: position.multiplier ?? 1,
+          ltv: position.ltv ?? 0,
+          healthFactor: position.healthFactor ?? "infinity",
+          liquidationPrice: position.liquidationPrice ?? null,
+          netApy: position.netApyPct ?? 0,
+          openedAt: position.openedAt,
+          lastUpdatedAt: position.lastUpdatedAt,
+        }
+      }
       // Resolve a transaction's resulting multiplier by its POSITION, not its own tx id
       // (they never match — the prior code looked positions up by `transaction._id`, so
       // multiplierAfter was always the fallback of 1). Prefer the linked positionId; fall
@@ -288,13 +283,11 @@ export function useMultiplySession({
       // uses, so a freshly-hydrated position and a just-simulated one agree. Fall back to
       // the persisted value only when the market/price isn't available for a position.
       setState((current) => {
-        const revalued = Object.fromEntries(
-          Object.entries(positions).map(([id, position]) => {
-            const market = current.markets[position.marketId]
-            if (!market) return [id, position]
-            return [id, revalueMultiplyPosition(position, market)]
-          }),
-        )
+        const revalued: typeof positions = {}
+        for (const [id, position] of Object.entries(positions)) {
+          const market = current.markets[position.marketId]
+          revalued[id] = market ? revalueMultiplyPosition(position, market) : position
+        }
         return { ...current, positions: revalued }
       })
       setTransactionHistory(history)
