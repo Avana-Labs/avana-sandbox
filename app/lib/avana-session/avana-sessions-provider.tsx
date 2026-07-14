@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { hasConvexClient, useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
@@ -254,59 +254,6 @@ function WalletHydrator({
   return null
 }
 
-function DeferredSessionHydrators({
-  walletId,
-  borrow,
-  lend,
-  multiply,
-  persistLocalState,
-  onWalletHydrated,
-}: {
-  walletId: string
-  borrow: BorrowSession
-  lend: LendSession
-  multiply: MultiplySession
-  persistLocalState: boolean
-  onWalletHydrated?: (positions: readonly PositionRevisionSummary[]) => void
-}) {
-  const [enabled, setEnabled] = useState(false)
-
-  useEffect(() => {
-    const activate = () => setEnabled(true)
-    const idleId = "requestIdleCallback" in window ? window.requestIdleCallback(activate, { timeout: 1_500 }) : null
-    const timeoutId = idleId == null ? window.setTimeout(activate, 250) : null
-
-    return () => {
-      if (idleId != null) window.cancelIdleCallback(idleId)
-      if (timeoutId != null) window.clearTimeout(timeoutId)
-    }
-  }, [])
-
-  if (!enabled) return null
-
-  return (
-    <>
-      <MarketHydrator
-        hydrateBorrow={borrow.hydrateMarketData}
-        hydrateLend={lend.hydrateMarketData}
-        hydrateMultiply={multiply.hydrateMarketData}
-      />
-      {!persistLocalState ? (
-        <WalletHydrator
-          walletId={walletId}
-          borrow={borrow}
-          lend={lend}
-          multiply={multiply}
-          hydrateBorrow={borrow.hydrateWalletData}
-          hydrateLend={lend.hydrateWalletData}
-          hydrateMultiply={multiply.hydrateWalletData}
-          onWalletHydrated={onWalletHydrated}
-        />
-      ) : null}
-    </>
-  )
-}
-
 export type AvanaSessions = {
   walletId: string
   walletAddress: string
@@ -403,14 +350,25 @@ export function AvanaSessionsProvider({
   return (
     <AvanaSessionsContext.Provider value={value}>
       {hasConvexClient ? (
-        <DeferredSessionHydrators
-          walletId={avana.walletId}
-          borrow={borrow}
-          lend={lend}
-          multiply={multiply}
-          persistLocalState={persistLocalState}
-          onWalletHydrated={onWalletHydrated}
-        />
+        <>
+          <MarketHydrator
+            hydrateBorrow={borrow.hydrateMarketData}
+            hydrateLend={lend.hydrateMarketData}
+            hydrateMultiply={multiply.hydrateMarketData}
+          />
+          {!persistLocalState ? (
+            <WalletHydrator
+              walletId={avana.walletId}
+              borrow={borrow}
+              lend={lend}
+              multiply={multiply}
+              hydrateBorrow={borrow.hydrateWalletData}
+              hydrateLend={lend.hydrateWalletData}
+              hydrateMultiply={multiply.hydrateWalletData}
+              onWalletHydrated={onWalletHydrated}
+            />
+          ) : null}
+        </>
       ) : null}
       {children}
     </AvanaSessionsContext.Provider>
