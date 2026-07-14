@@ -6,51 +6,48 @@ import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
-import {
-  AssetHero,
-  AssetHeroIdentity,
-} from "@/app/borrow/_detail/asset-sections"
-import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { AssetHero, AssetHeroIdentity } from "@/app/borrow/_detail/asset-sections/AssetHero"
+import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections/QuickStatsGrid"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
-const AboutNewsSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.AboutNewsSection), {
+const AboutNewsSection = dynamic(() => import("@/app/borrow/_detail/ui/AboutNewsSection").then((mod) => mod.AboutNewsSection), {
   ssr: false,
   loading: () => <DeferredBlock className="h-[320px]" />,
 })
-const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.DetailFaqSection), {
+const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection), {
   ssr: false,
   loading: () => <DeferredBlock className="h-[380px]" />,
 })
 const InterestRateModelCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
+  () => import("@/app/borrow/_detail/asset-sections/InterestRateModelCard").then((mod) => mod.InterestRateModelCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
 )
 const CashflowTrendCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.CashflowTrendCard),
+  () => import("@/app/borrow/_detail/asset-sections/CashflowTrendCard").then((mod) => mod.CashflowTrendCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
 )
 const AllocationBreakdownCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AllocationBreakdownCard),
+  () => import("@/app/borrow/_detail/asset-sections/AllocationBreakdownCard").then((mod) => mod.AllocationBreakdownCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
 )
 const AssetCashflowCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AssetCashflowCard),
+  () => import("@/app/borrow/_detail/asset-sections/AssetCashflowCard").then((mod) => mod.AssetCashflowCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[240px]" /> },
 )
 const TransactionHistoryCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.TransactionHistoryCard),
+  () => import("@/app/borrow/_detail/asset-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[360px]" /> },
 )
 const RelatedAssetsRow = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.RelatedAssetsRow),
+  () => import("@/app/borrow/_detail/asset-sections/RelatedAssetsRow").then((mod) => mod.RelatedAssetsRow),
   { ssr: false, loading: () => <DeferredBlock className="h-[200px]" /> },
 )
-const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections").then((mod) => mod.RiskSection), {
+const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection), {
   ssr: false,
   loading: () => <DeferredBlock className="h-[320px]" />,
 })
-const AssetTokenSidebar = dynamic(() => import("@/app/borrow/_detail/sidebars").then((mod) => mod.AssetTokenSidebar), {
+const AssetTokenSidebar = dynamic(() => import("@/app/borrow/_detail/sidebars/AssetTokenSidebar").then((mod) => mod.AssetTokenSidebar), {
   ssr: false,
   loading: () => <DeferredBlock className="h-[760px]" />,
 })
