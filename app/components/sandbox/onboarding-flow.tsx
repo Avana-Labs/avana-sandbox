@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Check, ChevronDown, LoaderCircle, MoveUpRight } from "lucide-react"
-import { motion } from "framer-motion"
 import { useMutation } from "convex/react"
 import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
@@ -238,17 +237,13 @@ export function OnboardingUnavailable({
   return (
     <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8">
       <StatusRow wallet={null} pct={10} />
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      >
+      <div className="animate-content-reveal">
         <Headline muted={t(headlineMuted)} active={t(headlineActive)} size="hero" />
         <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">{t(note)}</p>
         <button className={`${PRIMARY} mt-9`} onClick={onRetry} type="button">
           {t("Retry")}
         </button>
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -283,22 +278,21 @@ function ThinkingSteps({ muted, active, steps }: { muted?: string; active: strin
         {steps.map((label, i) => {
           const state = i < done ? "done" : i === done ? "active" : "pending"
           return (
-            <motion.li
+            <li
               key={label}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: state === "pending" ? 0.45 : 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.12 }}
-              className="flex items-center gap-3 text-[15px]"
+              className={`flex items-center gap-3 text-[15px] transition-opacity duration-300 ${
+                state === "pending" ? "opacity-[0.45]" : "opacity-100"
+              }`}
             >
               {state === "done" ? (
-                <motion.span initial={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 360, damping: 16 }}>
+                <span className="animate-content-reveal">
                   <Check className="size-[18px] text-emerald-500" strokeWidth={2.75} />
-                </motion.span>
+                </span>
               ) : (
                 <LoaderCircle className={`size-[18px] ${state === "active" ? "animate-spin text-brand" : "text-muted-foreground/40"}`} />
               )}
               <span className={state === "pending" ? "text-muted-foreground" : "text-foreground"}>{t(label)}</span>
-            </motion.li>
+            </li>
           )
         })}
       </ul>
@@ -920,14 +914,9 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "done" ? (
         <>
-          <motion.div
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 320, damping: 18 }}
-            className="mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white"
-          >
+          <div className="mb-7 flex size-12 animate-content-reveal items-center justify-center rounded-full bg-emerald-500 text-white">
             <Check className="size-6" strokeWidth={3} />
-          </motion.div>
+          </div>
           <Headline muted={t("You're all set.")} active={t("Your sandbox is live.")} />
           <p className="mt-4 max-w-md text-pretty text-[15px] leading-6 text-muted-foreground">
             {t("Everything's funded and waiting. Dive in whenever you're ready.")}
