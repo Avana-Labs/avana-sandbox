@@ -34,6 +34,12 @@ export const LIGHTHOUSE_CATEGORY_BUDGETS = {
   seo: 100,
 }
 
+export const LIGHTHOUSE_NUMERIC_BUDGETS = {
+  largestContentfulPaintMs: 2_500,
+  totalBlockingTimeMs: 200,
+  unusedJavaScriptBytes: 100 * 1024,
+}
+
 /**
  * Lighthouse must verify that an audit reached the intended application surface.
  * Without this, the client-side sandbox gate can make every route score the same
