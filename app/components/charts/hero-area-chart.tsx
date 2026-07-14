@@ -1,8 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
 import { Area, AreaChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
-import { useMediaQuery } from "@/app/lib/use-media-query"
 import type { ChartPoint, ChartRangeOption } from "./types"
 
 const TONE_COLORS = {
@@ -36,7 +34,6 @@ export function HeroAreaChart({
   tone,
   onActiveIndexChange,
 }: HeroAreaChartProps) {
-  const isMobile = useMediaQuery("(max-width: 639px)")
   // Axis labels (both value and date/time) are intentionally hidden. The
   // formatter and active range stay in the prop contract for callers but no
   // longer drive any rendered ticks.
@@ -47,24 +44,6 @@ export function HeroAreaChart({
     tone ?? (data.length >= 2 && data[data.length - 1].value < data[0].value ? "negative" : "positive")
   const color = TONE_COLORS[resolvedTone]
 
-  const yTickValues = useMemo(() => {
-    if (isMobile || data.length === 0) {
-      return []
-    }
-
-    const values = data.map((point) => point.value)
-    const min = Math.min(...values)
-    const max = Math.max(...values)
-    const tickCount = 4
-
-    if (min === max) {
-      return [min]
-    }
-
-    const step = (max - min) / (tickCount - 1)
-    return Array.from({ length: tickCount }, (_, index) => Math.round((min + step * index) * 100) / 100)
-  }, [data, isMobile])
-
   const chartShellClassName =
     className ??
     "relative h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.06)_1px,transparent_0)] [background-size:18px_18px] dark:bg-none sm:h-[240px]"
@@ -74,7 +53,7 @@ export function HeroAreaChart({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
-          margin={{ top: 12, right: isMobile ? 8 : 16, bottom: 8, left: 0 }}
+            margin={{ top: 12, right: 16, bottom: 8, left: 0 }}
           onMouseMove={
             onActiveIndexChange
               ? (state: { activeTooltipIndex?: number; isTooltipActive?: boolean }) => {
@@ -101,7 +80,6 @@ export function HeroAreaChart({
             axisLine={false}
             tickLine={false}
             tick={false}
-            ticks={yTickValues}
             domain={[(dataMin: number) => dataMin - 4, (dataMax: number) => dataMax + 4]}
           />
           <RechartsTooltip
