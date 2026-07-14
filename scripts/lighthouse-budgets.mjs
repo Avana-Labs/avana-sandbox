@@ -7,6 +7,8 @@ import { URL } from "node:url"
 import {
   CHROME_FLAGS,
   LIGHTHOUSE_CATEGORY_BUDGETS,
+  LIGHTHOUSE_ONBOARDING_MARKER,
+  LIGHTHOUSE_ROUTE_MARKERS,
   LIGHTHOUSE_ROUTES,
 } from "./lighthouse-config.mjs"
 
@@ -47,10 +49,27 @@ function score(report, category) {
   return Math.round((report.categories[category]?.score ?? 0) * 100)
 }
 
+async function assertRouteContent(route) {
+  const response = await fetch(new URL(route, baseUrl))
+  const html = await response.text()
+  const expectedMarker = LIGHTHOUSE_ROUTE_MARKERS[route]
+
+  if (!response.ok) {
+    throw new Error(`${route} returned ${response.status} during the Lighthouse preflight`)
+  }
+  if (html.includes(LIGHTHOUSE_ONBOARDING_MARKER)) {
+    throw new Error(`${route} rendered the onboarding gate instead of the audited application surface`)
+  }
+  if (expectedMarker && !html.includes(expectedMarker)) {
+    throw new Error(`${route} did not render its expected marker: ${expectedMarker}`)
+  }
+}
+
 const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "avana-lighthouse-"))
 const failures = []
 
 for (const route of LIGHTHOUSE_ROUTES) {
+  await assertRouteContent(route)
   const outputPath = path.join(outputDir, `${route.replaceAll("/", "_") || "home"}.json`)
   await runLighthouse(route, outputPath)
   const report = JSON.parse(await fs.readFile(outputPath, "utf8"))
