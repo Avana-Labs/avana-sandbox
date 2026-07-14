@@ -33,8 +33,8 @@ export function RelatedPoolsRow({ detail }: Props) {
                 <img
                   alt=""
                   aria-hidden="true"
-                  width="160"
-                  height="160"
+                  width="320"
+                  height="320"
                   className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-3xl saturate-150 mix-blend-screen"
                   loading="lazy"
                   decoding="async"
