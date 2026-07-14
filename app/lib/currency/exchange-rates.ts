@@ -11,7 +11,7 @@ import { applyLiveRates, USD_PER_UNIT_BASELINE } from "@/app/lib/currency/rates"
  * remains the fallback when the network is unavailable, so the switcher never
  * breaks offline.
  */
-const ENDPOINT = "https://open.er-api.com/v6/latest/USD"
+const ENDPOINT = "/api/fx-rates"
 const CACHE_KEY = "avana-fx-rates"
 // Rates refresh at most this often; a fresh cache short-circuits the network so
 // switching currencies stays instant on repeat visits.
@@ -80,7 +80,7 @@ export async function fetchLiveRates(options?: { force?: boolean }): Promise<boo
   try {
     const res = await fetch(ENDPOINT, { cache: "no-store" })
     if (!res.ok) return false
-    const data = (await res.json()) as { result?: string; rates?: Record<string, number> }
+    const data = (await res.json()) as { result?: string; rates?: Record<string, number> | null }
     if (data.result !== "success" || !data.rates) return false
 
     const rates = pickSupported(data.rates)
