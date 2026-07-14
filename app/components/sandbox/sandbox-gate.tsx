@@ -111,7 +111,6 @@ function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode 
 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
-  const { t } = useTranslation()
   const hydrated = useHydrated()
   const { authedWallet, isSignedIn } = useSiweAuth()
   const { active: walletActive } = useWalletGate()
@@ -124,7 +123,10 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   if (!hydrated) {
     return (
       <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Restoring your session")} />
+        {/* The guest intro is SSR-safe and matches the first hydrated OnboardingFlow
+            render. Showing it here lets the LCP paint from HTML instead of waiting for
+            localStorage/session hydration to settle. */}
+        <OnboardingFlow wallet={null} state={null} />
       </LockedShell>
     )
   }
