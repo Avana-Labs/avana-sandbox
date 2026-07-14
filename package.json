@@ -40,7 +40,8 @@
     "test:stress:engine": "RUN_FULL_APP_STRESS=1 vitest run app/lib/__tests__/full-app-stress.test.ts",
     "test:stress:onboarding": "RUN_ONBOARDING_10K=1 vitest run convex/sandbox-onboarding-10k.test.ts",
     "start": "node scripts/run-next.mjs start",
-    "lighthouse:budgets": "node scripts/lighthouse-budgets.mjs"
+    "lighthouse:budgets": "node scripts/lighthouse-budgets.mjs",
+    "lighthouse:analyze": "node scripts/analyze-lighthouse-bundles.mjs"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.4.0",
