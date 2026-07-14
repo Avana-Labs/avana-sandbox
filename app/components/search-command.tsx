@@ -238,7 +238,13 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
   }, [resolvedResults, activeTab, normalizedQuery])
 
   // Flat list in rendered order, used for keyboard navigation.
-  const flatResults = useMemo(() => groupedResults.flatMap(([, group]) => group), [groupedResults])
+  const flatResults = useMemo(() => {
+    const next: SearchResult[] = []
+    for (const [, group] of groupedResults) {
+      next.push(...group)
+    }
+    return next
+  }, [groupedResults])
 
   // Reset/clamp the active item whenever the visible list changes.
   useEffect(() => {

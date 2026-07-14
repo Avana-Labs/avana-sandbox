@@ -16,9 +16,10 @@ const SANDBOX_PLEDGEABLE_LP_USD6 = 1_000_000_000_000n // $1,000,000 per pool
 
 export function buildConvexBorrowSessionSeed(walletId: string) {
   const state = buildMockBorrowSystemState(walletId)
-  const walletLpBalancesUsd6 = Object.fromEntries(
-    Object.keys(state.markets).map((marketId) => [marketId, SANDBOX_PLEDGEABLE_LP_USD6]),
-  )
+  const walletLpBalancesUsd6: Record<string, bigint> = {}
+  for (const marketId of Object.keys(state.markets)) {
+    walletLpBalancesUsd6[marketId] = SANDBOX_PLEDGEABLE_LP_USD6
+  }
   return serializeBorrowSystemState({
     ...state,
     accounts: {

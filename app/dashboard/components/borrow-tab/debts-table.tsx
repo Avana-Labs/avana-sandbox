@@ -1,6 +1,7 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -75,13 +76,13 @@ export function DebtsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="rounded-radius-md">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[32%]" />
-                <col className="w-[20%]" />
-                <col className="w-[18%]" />
-                <col className="w-[18%]" />
-                <col className="w-[12%]" />
+                <col className="w-[28%]" />
+                <col className="w-[16%]" />
+                <col className="w-[16%]" />
+                <col className="w-[16%]" />
+                <col className="w-[24%]" />
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -137,26 +138,26 @@ export function DebtsPanel({
                           <Button
                             type="button"
                             size="table"
-                            variant="brand-secondary"
+                            variant="table-primary"
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               onRepay(row)
                             }}
                           >
-                            {t("Repay")}
+                            <ActionIcon label="Repay" />{t("Repay")}
                           </Button>
                           <Button
                             type="button"
                             size="table"
-                            variant="brand"
+                            variant="table-secondary"
                             className="w-auto"
                             onClick={(event) => {
                               event.stopPropagation()
                               onManage(row)
                             }}
                           >
-                            {t("Borrow")}
+                            <ActionIcon label="Borrow" />{t("Borrow")}
                           </Button>
                         </HoverActionGroup>
                       </td>
@@ -224,7 +225,7 @@ export function DebtsPanel({
                     onRepay(row)
                   }}
                 >
-                  {t("Repay")}
+                  <ActionIcon label="Repay" />{t("Repay")}
                 </Button>
                 <Button
                   type="button"
@@ -235,7 +236,7 @@ export function DebtsPanel({
                     onManage(row)
                   }}
                 >
-                  {t("Borrow")}
+                  <ActionIcon label="Borrow" />{t("Borrow")}
                 </Button>
               </div>
             </li>

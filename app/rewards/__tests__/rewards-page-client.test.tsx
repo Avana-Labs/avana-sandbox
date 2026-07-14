@@ -63,6 +63,11 @@ const rewardsSessionContext = {
   runReferralSandboxStep,
   createReferralCode,
   recordReferralLinkCopied,
+  // The sidebar embeds the claim action, which reads a live summary on mount.
+  readAdapter: {
+    mode: "sandbox" as const,
+    readRewardSummary: vi.fn(async () => ({ totalClaimableAmount: 50, claimableTaskCount: 1 })),
+  },
 }
 
 vi.mock("next/navigation", () => ({
@@ -105,9 +110,11 @@ function renderRewardsPage() {
           rewardPools: [],
           promoTabs: REWARDS_PROMO_TABS,
           questsByTab: {
-            "new-users": [],
-            "challenge-tasks": [],
-            "refer-a-friend": [],
+            "getting-started": [],
+            lend: [],
+            borrow: [],
+            multiply: [],
+            referrals: [],
           },
         }}
       />
@@ -132,11 +139,15 @@ async function clickQuestAction(name: string | RegExp) {
   fireEvent.click(target)
 }
 
-async function openReferralTab() {
+async function openProductTab(label: string) {
   await waitFor(() => {
-    expect(screen.getAllByRole("tab", { name: "Refer a friend" }).some((tab) => tab.hasAttribute("data-state"))).toBe(true)
+    expect(screen.getAllByRole("tab", { name: label }).some((tab) => tab.hasAttribute("data-state"))).toBe(true)
   })
-  openPromoTab("Refer a friend")
+  openPromoTab(label)
+}
+
+async function openReferralTab() {
+  await openProductTab("Referrals")
 }
 
 describe("RewardsPageClient", () => {
@@ -180,15 +191,15 @@ describe("RewardsPageClient", () => {
   it("renders live rewards summary and claims session-backed tasks", async () => {
     renderRewardsPage()
 
-    expect(screen.getByTestId("rewards-claim-all")).toHaveAttribute("href", "/actions/rewards/claim")
-    expect(screen.getByTestId("rewards-claim-all").textContent).toMatch(/^Claim \d+ AVA$/)
-
-    expect(screen.getByTestId("rewards-claim-all")).toHaveAttribute("href", "/actions/rewards/claim")
+    // Mobile keeps a single claim entry point into the full flow.
+    const mobileClaim = screen.getByRole("link", { name: "Claim rewards" })
+    expect(mobileClaim).toHaveAttribute("href", "/actions/rewards/claim")
     expect(claimAllRewards).not.toHaveBeenCalled()
 
+    await openProductTab("Borrow")
     const questClaimButton = screen
       .getAllByRole("button", { name: "Claim 50 AVA" })
-      .find((button) => button.getAttribute("data-testid") !== "rewards-claim-all")
+      .find((button) => button.getAttribute("data-testid") !== "action-footer-primary")
     expect(questClaimButton).toBeDefined()
     await userEvent.click(questClaimButton!)
     expect(claimReward).toHaveBeenCalledWith("first-borrow")
@@ -228,6 +239,7 @@ describe("RewardsPageClient", () => {
   it("routes deep-link tasks into the correct product surfaces", async () => {
     renderRewardsPage()
 
+    await openProductTab("Lend")
     await clickQuestAction("Go to Lend")
     expect(push).toHaveBeenCalledWith("/lend")
   })
@@ -235,7 +247,7 @@ describe("RewardsPageClient", () => {
   it("records daily check-ins from challenge tasks", async () => {
     renderRewardsPage()
 
-    openPromoTab("Challenge tasks")
+    await openProductTab("Multiply")
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Check in" }).length).toBeGreaterThan(0))
     await clickQuestAction("Check in")
 
@@ -245,7 +257,7 @@ describe("RewardsPageClient", () => {
   it("records sandbox tours and routes users to the tour surface", async () => {
     renderRewardsPage()
 
-    openPromoTab("Challenge tasks")
+    await openProductTab("Borrow")
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Start tour" }).length).toBeGreaterThan(0))
     await clickQuestAction("Start tour")
 

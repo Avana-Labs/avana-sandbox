@@ -8,11 +8,6 @@ const DesktopHelpBubble = dynamic(
   { ssr: false },
 )
 
-const ExternalLinkGuard = dynamic(
-  () => import("./external-link-guard").then((mod) => mod.ExternalLinkGuard),
-  { ssr: false },
-)
-
 const Toaster = dynamic(() => import("sonner").then((mod) => mod.Toaster), { ssr: false })
 
 export function DeferredGlobalChrome() {
@@ -37,7 +32,6 @@ export function DeferredGlobalChrome() {
     <>
       <DesktopHelpBubble />
       <Toaster />
-      <ExternalLinkGuard />
     </>
   )
 }

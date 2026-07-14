@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { REWARDS_PROMO_TABS, type RewardsPromoTabId, type RewardsQuest, type RewardsQuestIconId } from "@/app/lib/data/rewards/catalog"
+import {
+  REWARDS_PROMO_TABS,
+  REWARDS_QUESTS_PER_TAB,
+  emptyRewardsQuestsByTab,
+  resolveRewardsPromoTab,
+  type RewardsPromoTabId,
+  type RewardsQuest,
+  type RewardsQuestIconId,
+} from "@/app/lib/data/rewards/catalog"
 import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -20,8 +28,14 @@ import {
   isReferralTaskAction,
 } from "@/app/lib/rewards-engine/task-actions"
 import { RewardsPageSkeleton } from "@/app/components/loading-states"
+import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero } from "./rewards-balance-hero"
+import { RewardsClaimSidebar } from "./rewards-claim-sidebar"
+import { RewardDistributionHistory } from "./reward-distribution-history"
 import { RewardsTabs } from "./rewards-tabs"
+import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { primaryCtaClass } from "@/app/components/action-page/action-cta"
+import Link from "next/link"
 import { RewardsEducationDialog, RewardsFavoriteDialog, RewardsReferralDialog, RewardsSimulateDialog } from "./rewards-task-dialogs"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -41,12 +55,6 @@ type RewardsSnapshot = {
 type RewardCardViewModel = RewardsQuest & {
   status: UserRewardProgress["status"]
   progressLabel: string
-}
-
-function toPromoTabId(category: RewardTask["category"]): RewardsPromoTabId {
-  if (category === "new_user") return "new-users"
-  if (category === "challenge") return "challenge-tasks"
-  return "refer-a-friend"
 }
 
 function titleCase(value: string) {
@@ -243,30 +251,27 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
   }, [hasPendingWaitTask, reloadSnapshot])
 
   const questsByTab = useMemo(() => {
-    if (!snapshot) {
-      return {
-        "new-users": [],
-        "challenge-tasks": [],
-        "refer-a-friend": [],
-      }
-    }
+    if (!snapshot) return emptyRewardsQuestsByTab<RewardCardViewModel>()
 
     const progressByTaskId = new Map(snapshot.progress.map((item) => [item.taskId, item]))
-    return tasks.reduce<Record<RewardsPromoTabId, RewardCardViewModel[]>>(
+    const grouped = tasks.reduce<Record<RewardsPromoTabId, RewardCardViewModel[]>>(
       (accumulator, task) => {
         const progress = progressByTaskId.get(task.id)
         if (!progress) return accumulator
-        accumulator[toPromoTabId(task.category)].push(
+        accumulator[resolveRewardsPromoTab(task)].push(
           mapTaskToQuest(task, progress, state.firstLoginAt, now, t, exact),
         )
         return accumulator
       },
-      {
-        "new-users": [],
-        "challenge-tasks": [],
-        "refer-a-friend": [],
-      },
+      emptyRewardsQuestsByTab<RewardCardViewModel>(),
     )
+
+    // Show at most 6 cards per tab (catalog order). Any extra claimable quests
+    // stay claimable through the sidebar / mobile claim rail.
+    for (const key of Object.keys(grouped) as RewardsPromoTabId[]) {
+      grouped[key] = grouped[key].slice(0, REWARDS_QUESTS_PER_TAB)
+    }
+    return grouped
   }, [tasks, snapshot, state.firstLoginAt, now, t, exact])
 
   const runReferralActivations = useCallback(
@@ -407,24 +412,48 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     (snapshot.summary.completedTaskCount / Math.max(1, snapshot.summary.totalTaskCount)) * 100,
   )
 
+  const claimHref = snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined
+  const rewardActivityRows = buildRewardsActivityHistory(walletId, state.claims, tasks)
+
   return (
     <>
       <RewardsBalanceHero
         rewardPools={pageData?.rewardPools ?? []}
         balanceTotal={snapshot.summary.totalClaimedAmount}
-        claimableAmount={snapshot.summary.totalClaimableAmount}
-        claimableCount={snapshot.summary.claimableTaskCount}
         completedCount={snapshot.summary.completedTaskCount}
         totalCount={snapshot.summary.totalTaskCount}
         progressPercentage={progressPercentage}
-        claimHref={snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined}
       />
 
-      <RewardsTabs
-        promoTabs={pageData?.promoTabs ?? REWARDS_PROMO_TABS}
-        questsByTab={questsByTab}
-        onTaskAction={(taskId) => handleTaskAction(taskId)}
-      />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8">
+        <div className="min-w-0">
+          <RewardsTabs
+            promoTabs={pageData?.promoTabs ?? REWARDS_PROMO_TABS}
+            questsByTab={questsByTab}
+            onTaskAction={(taskId) => handleTaskAction(taskId)}
+          />
+        </div>
+
+        <aside className="hidden lg:block lg:self-start">
+          <RewardsClaimSidebar />
+        </aside>
+      </div>
+
+      <div className="pb-24 lg:pb-0">
+        <RewardDistributionHistory rows={rewardActivityRows} />
+      </div>
+
+      <MobileDetailActionBar>
+        {claimHref ? (
+          <Link href={claimHref} className={primaryCtaClass({ size: "compact", className: "w-full" })}>
+            {t("Claim rewards")}
+          </Link>
+        ) : (
+          <button type="button" disabled className={primaryCtaClass({ size: "compact", disabled: true, className: "w-full" })}>
+            {t("No rewards ready")}
+          </button>
+        )}
+      </MobileDetailActionBar>
 
       <RewardsEducationDialog
         open={educationOpen}

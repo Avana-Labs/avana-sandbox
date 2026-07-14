@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -141,7 +142,7 @@ export function BorrowableAssetsPanel({
                           onBorrow(asset)
                         }}
                       >
-                        {t("Borrow")}
+                        <ActionIcon label="Borrow" />{t("Borrow")}
                       </MarketMobilePrimaryAction>
                     </MarketMobileCard>
                   </li>
@@ -327,7 +328,7 @@ function LoanAssetsSection({
                       <Button
                         type="button"
                         size="table"
-                        variant="brand-secondary"
+                        variant="table-primary"
                         className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
@@ -336,19 +337,19 @@ function LoanAssetsSection({
                           router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
                         }}
                       >
-                        {t("Deposit")}
+                        <ActionIcon label="Deposit" />{t("Deposit")}
                       </Button>
                       <Button
                         type="button"
                         size="table"
-                        variant="brand"
+                        variant="table-secondary"
                         className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
                           onBorrow(asset)
                         }}
                       >
-                        {t("Borrow")}
+                        <ActionIcon label="Borrow" />{t("Borrow")}
                       </Button>
                     </HoverActionGroup>
                   </td>
@@ -456,7 +457,7 @@ function AssetsSection({
                       <Button
                         type="button"
                         size="table"
-                        variant="brand-secondary"
+                        variant="table-primary"
                         className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
@@ -465,19 +466,19 @@ function AssetsSection({
                           router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
                         }}
                       >
-                        {t("Deposit")}
+                        <ActionIcon label="Deposit" />{t("Deposit")}
                       </Button>
                       <Button
                         type="button"
                         size="table"
-                        variant="brand"
+                        variant="table-secondary"
                         className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
                           onBorrow(asset)
                         }}
                       >
-                        {t("Borrow")}
+                        <ActionIcon label="Borrow" />{t("Borrow")}
                       </Button>
                     </HoverActionGroup>
                   </td>

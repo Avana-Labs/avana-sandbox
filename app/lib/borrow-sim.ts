@@ -407,9 +407,10 @@ export const BORROW_DEXES: BorrowDex[] = [
   },
 ]
 
-const DEX_BY_ID: Record<BorrowDexId, BorrowDex> = Object.fromEntries(
-  BORROW_DEXES.map((dex) => [dex.id, dex]),
-) as Record<BorrowDexId, BorrowDex>
+const DEX_BY_ID = {} as Record<BorrowDexId, BorrowDex>
+for (const dex of BORROW_DEXES) {
+  DEX_BY_ID[dex.id] = dex
+}
 
 export const BORROW_SPOKES: BorrowSpoke[] = [
   // -------- Uniswap --------
@@ -661,9 +662,10 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
   },
 ]
 
-const SPOKE_BY_ID: Record<BorrowSpokeId, BorrowSpoke> = Object.fromEntries(
-  BORROW_SPOKES.map((spoke) => [spoke.id, spoke]),
-) as Record<BorrowSpokeId, BorrowSpoke>
+const SPOKE_BY_ID = {} as Record<BorrowSpokeId, BorrowSpoke>
+for (const spoke of BORROW_SPOKES) {
+  SPOKE_BY_ID[spoke.id] = spoke
+}
 
 // ----- Pool catalog ---------------------------------------------------------
 

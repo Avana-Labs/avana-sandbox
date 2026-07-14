@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ActionIcon } from "@/app/components/action-icon"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
@@ -597,7 +598,7 @@ function LoopTableRow({
             <Button
               type="button"
               size="table"
-              variant="brand-secondary"
+              variant="table-primary"
               className="w-auto"
               onClick={(event) => {
                 event.stopPropagation()
@@ -606,12 +607,12 @@ function LoopTableRow({
                 router.push(actionPagePath("multiply", "multiply", { market: marketId, return: row.href }))
               }}
             >
-              {t("Multiply")}
+              <ActionIcon label="Multiply" />{t("Multiply")}
             </Button>
             <Button
               type="button"
               size="table"
-              variant="brand"
+              variant="table-secondary"
               className="w-auto"
               onClick={(event) => {
                 event.stopPropagation()
@@ -620,7 +621,7 @@ function LoopTableRow({
                 router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: row.href }))
               }}
             >
-              {t("Deleverage")}
+              <ActionIcon label="Deleverage" />{t("Deleverage")}
             </Button>
           </HoverActionGroup>
         </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { ActionIcon } from "@/app/components/action-icon"
 import { TokenIcon } from "@/app/components/token-icon"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -31,8 +32,12 @@ function formatHealthFactor(value: number) {
 
 export function MultiplyCollateralTable({
   rows,
+  returnHref,
 }: {
   rows: PortfolioMultiplyCollateral[]
+  // Close-button destination for the launched action flow. Defaults to the
+  // market detail page; the dashboard passes its own URL so close returns here.
+  returnHref?: string
 }) {
   const router = useRouter()
   const { showDollarAmounts } = useDisplayPreferences()
@@ -46,34 +51,34 @@ export function MultiplyCollateralTable({
       <div className="rounded-radius-md bg-transparent dark:bg-transparent">
         <div className="hidden overflow-x-auto md:block">
           <DesktopTableSurface className="rounded-radius-md">
-            <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[30%]" />
-                <col className="w-[18%]" />
+                <col className="w-[22%]" />
                 <col className="w-[12%]" />
-                <col className="w-[16%]" />
+                <col className="w-[10%]" />
                 <col className="w-[12%]" />
-                <col className="w-[12%]" />
-                <col className="w-[12%]" />
+                <col className="w-[9%]" />
+                <col className="w-[9%]" />
+                <col className="w-[26%]" />
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Market")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Exposure")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Multiplier")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Debt")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Health")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Net APY")}
                   </th>
                   <SilentActionHeader className="pr-5" />
@@ -121,26 +126,26 @@ export function MultiplyCollateralTable({
                         <Button
                           type="button"
                           size="table"
-                          variant="brand-secondary"
+                          variant="table-primary"
                           className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
-                            router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
+                            router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
                           }}
                         >
-                          {t("Multiply")}
+                          <ActionIcon label="Multiply" />{t("Multiply")}
                         </Button>
                         <Button
                           type="button"
                           size="table"
-                          variant="brand"
+                          variant="table-secondary"
                           className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
-                            router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
+                            router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
                           }}
                         >
-                          {t("Deleverage")}
+                          <ActionIcon label="Deleverage" />{t("Deleverage")}
                         </Button>
                       </HoverActionGroup>
                     </td>
@@ -162,7 +167,7 @@ export function MultiplyCollateralTable({
               <MarketMobileCardHeader
                 identity={
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="font-data text-[13px] tabular-nums text-muted-foreground dark:text-white/42">
+                    <span className="text-[13px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
                       {index + 1}
                     </span>
                     <TokenIcon symbol={row.collateralToken} size="table" />
@@ -213,10 +218,10 @@ export function MultiplyCollateralTable({
                   className="h-10 rounded-radius-sm px-4 text-[13px]"
                   onClick={(event) => {
                     event.stopPropagation()
-                    router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
+                    router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
                   }}
                 >
-                  {t("Multiply")}
+                  <ActionIcon label="Multiply" />{t("Multiply")}
                 </Button>
                 <Button
                   type="button"
@@ -224,10 +229,10 @@ export function MultiplyCollateralTable({
                   className="h-10 rounded-radius-sm px-4 text-[13px]"
                   onClick={(event) => {
                     event.stopPropagation()
-                    router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: `/multiply/markets/${row.marketId}` }))
+                    router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
                   }}
                 >
-                  {t("Deleverage")}
+                  <ActionIcon label="Deleverage" />{t("Deleverage")}
                 </Button>
               </div>
             </MarketMobileCard>

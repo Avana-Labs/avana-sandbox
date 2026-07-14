@@ -9,7 +9,9 @@ import { useDisplayPreferences } from "@/app/components/display-preferences"
  * while the wallet and product sessions above this boundary remain intact.
  */
 export function CurrencyDisplayBoundary({ children }: { children: ReactNode }) {
-  const { currency } = useDisplayPreferences()
+  const { currency, ratesVersion } = useDisplayPreferences()
 
-  return <Fragment key={currency}>{children}</Fragment>
+  // Remount on a currency switch OR when live FX rates are (re)applied, so tables
+  // and detail surfaces that read the module-level rate recalculate either way.
+  return <Fragment key={`${currency}:${ratesVersion}`}>{children}</Fragment>
 }

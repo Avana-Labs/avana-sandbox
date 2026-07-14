@@ -62,7 +62,7 @@ export function PoolHeroIdentity({
                   await navigator.clipboard.writeText(metaLabel)
                 }}
                 className="inline-flex items-center gap-1.5 text-[13px] font-normal leading-none text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={t("Copy chain")}
+                aria-label={`${t("Copy chain")} ${metaLabel}`}
               >
                 <Copy className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
                 <span>{metaLabel}</span>
@@ -123,7 +123,7 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
 
 function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number] }) {
   return (
-    <span className={cn("inline-flex size-12 items-center justify-center", visual.textClass)} aria-label={visual.symbol}>
+    <span role="img" className={cn("inline-flex size-12 items-center justify-center", visual.textClass)} aria-label={visual.symbol}>
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={visual.iconUrl} alt="" className="size-12 object-contain" width={48} height={48} fetchPriority="high" />

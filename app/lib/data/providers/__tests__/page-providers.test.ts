@@ -215,7 +215,7 @@ describe("page providers", () => {
 
     expect(data.rewardPools.length).toBeGreaterThan(0)
     expect(data.promoTabs.length).toBeGreaterThan(0)
-    expect(data.questsByTab["new-users"].length).toBeGreaterThan(0)
+    expect(data.questsByTab["getting-started"].length).toBeGreaterThan(0)
   })
 
   it("accepts a rewards source override", async () => {

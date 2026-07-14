@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { OnboardingFlow, type OnboardingGateState } from "../onboarding-flow"
 
@@ -114,20 +114,47 @@ describe("OnboardingFlow — Convex config drives the UI (issue #139)", () => {
     render(<OnboardingFlow wallet={WALLET} state={stateWithStep("xPending")} />)
     expect(screen.getByText(/Just claimed my sandbox spot at Avana/)).toBeInTheDocument()
   })
+})
 
-  it("renders the Convex resourcesLinks on the completed state", () => {
-    render(
-      <OnboardingFlow
-        wallet={WALLET}
-        state={stateWithStep("done", {
-          resourcesLinks: [
-            { label: "Read the docs", href: "/docs" },
-            { label: "Explore markets", href: "/borrow" },
-          ],
-        })}
-      />,
+describe("OnboardingFlow — personalize + liquidity-source steps", () => {
+  it("runs personalize → liquidity → funding, capping the name and saving DEX sources", async () => {
+    render(<OnboardingFlow wallet={WALLET} state={stateWithStep("wallet")} />)
+
+    // A fresh wallet lands on the personalize step first (not the funding card).
+    expect(screen.getByText(/Now let's make Avana yours/i)).toBeInTheDocument()
+    const nameInput = screen.getByPlaceholderText(/Your name/i)
+    expect(nameInput).toHaveAttribute("maxLength", "10")
+    fireEvent.change(nameInput, { target: { value: "ElizabethAlexandra" } })
+    fireEvent.click(screen.getByRole("button", { name: /^Continue$/i }))
+
+    // The save is capped at 10 chars regardless of the raw input length.
+    await waitFor(() =>
+      expect(noop).toHaveBeenCalledWith(
+        expect.objectContaining({ wallet: WALLET, preferences: expect.objectContaining({ name: "ElizabethA" }) }),
+      ),
     )
-    expect(screen.getByRole("link", { name: /Read the docs/i })).toHaveAttribute("href", "/docs")
-    expect(screen.getByRole("link", { name: /Explore markets/i })).toHaveAttribute("href", "/borrow")
+
+    // Advances to the liquidity-source multi-select.
+    await screen.findByText(/Which DEXs do you use the most/i)
+    fireEvent.click(screen.getByRole("button", { name: /Uniswap/i }))
+    fireEvent.click(screen.getByRole("button", { name: /^Continue$/i }))
+
+    await waitFor(() =>
+      expect(noop).toHaveBeenCalledWith(
+        expect.objectContaining({ wallet: WALLET, preferences: { dexSources: ["uniswap"] } }),
+      ),
+    )
+
+    // Then the original funding card.
+    await screen.findByText(/Let's fund your sandbox/i)
+  })
+
+  it("skips both steps for a wallet that has already saved preferences", () => {
+    const state = stateWithStep("wallet")
+    state.profile = { ...state.profile, preferences: { name: "Sam", dexSources: ["uniswap"] } }
+    render(<OnboardingFlow wallet={WALLET} state={state} />)
+
+    expect(screen.getByText(/Let's fund your sandbox/i)).toBeInTheDocument()
+    expect(screen.queryByText(/make Avana yours/i)).not.toBeInTheDocument()
   })
 })

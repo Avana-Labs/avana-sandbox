@@ -3,93 +3,14 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { BrandIcon, BrandLogo } from "./brand-logo"
 import { LazyMobileMenu } from "./lazy-mobile-menu"
 import { LazySearchCommand, LazySearchCommandIconOnly, SearchCommandIconPlaceholder, SearchCommandPlaceholder } from "./lazy-search-command"
 import { personalDesktopHeaderLinks } from "./site-nav"
-import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-controls"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
-
-function SandboxWalletDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const { walletId, walletAddress, sandboxMode } = useAvanaSessions()
-  const { t } = useTranslation()
-  const [copied, setCopied] = useState(false)
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        onOpenChange(nextOpen)
-        if (!nextOpen) {
-          setCopied(false)
-        }
-      }}
-    >
-      <DialogContent className="sm:max-w-[460px]">
-        <DialogHeader>
-          <DialogTitle className="text-[20px] font-medium tracking-[-0.02em] text-foreground">
-            {t("Sandbox wallet")}
-          </DialogTitle>
-          <DialogDescription className="text-[13px] leading-5 text-muted-foreground">
-            {t("This workspace uses a built-in demo wallet. There is no external wallet connection yet.")}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3 rounded-radius-md border border-border bg-surface-inset p-4">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">{t("Wallet")}</span>
-            <span className="rounded-full bg-brand/10 px-2.5 py-1 text-[12px] font-medium text-brand">
-              {sandboxMode ? t("Sandbox active") : t("Connected")}
-            </span>
-          </div>
-          <div>
-            <div className="text-[18px] font-medium tracking-[-0.02em] text-foreground">{walletId}</div>
-            <div className="mt-1 break-all text-[13px] text-muted-foreground">{walletAddress}</div>
-          </div>
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-2">
-          <button
-            type="button"
-            className="inline-flex h-10 items-center justify-center rounded-radius-sm border border-border px-4 text-[14px] font-medium text-foreground transition-colors hover:bg-hover"
-            onClick={async () => {
-              if (typeof navigator === "undefined" || !navigator.clipboard) return
-              await navigator.clipboard.writeText(walletAddress)
-              setCopied(true)
-              window.setTimeout(() => setCopied(false), 1500)
-            }}
-          >
-            {copied ? t("Copied") : t("Copy address")}
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-10 items-center justify-center rounded-radius-sm bg-brand px-4 text-[14px] font-medium text-brand-foreground transition-colors hover:bg-brand/90"
-            onClick={() => onOpenChange(false)}
-          >
-            {t("Close")}
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 export function Header() {
   const pathname = usePathname()
@@ -98,7 +19,6 @@ export function Header() {
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)
-  const [walletDialogOpen, setWalletDialogOpen] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
@@ -232,7 +152,6 @@ export function Header() {
           </div>
         </div>
       </div>
-      <SandboxWalletDialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen} />
     </header>
   )
 }

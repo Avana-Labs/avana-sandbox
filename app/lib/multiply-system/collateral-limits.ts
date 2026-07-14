@@ -64,7 +64,7 @@ export function buildMultiplyOverCapPreviewUi(options: {
   const reason = multiplyOverCapReason(options.collateralSymbol, options.maxCollateralAmount)
   return {
     allowed: false,
-    amountTitle: "Collateral supplied",
+    amountTitle: "Collateral",
     amountLabel: formatActionAmount(options.collateralAmount, options.collateralSymbol, 6),
     amountValue: String(options.collateralAmount),
     assetLabel: options.collateralSymbol,

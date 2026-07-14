@@ -1,6 +1,7 @@
 "use client"
 
 import { memo, useMemo, useState } from "react"
+import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -309,27 +310,27 @@ function CollateralDesktopTable({
                       <Button
                         type="button"
                         size="table"
-                        variant="brand-secondary"
+                        variant="table-primary"
                         className="w-auto"
                         onClick={(event) => {
                           event.stopPropagation()
                           onUseAsCollateral(pool)
                         }}
                       >
-                        {t("Pledge")}
+                        <ActionIcon label="Pledge" />{t("Pledge")}
                       </Button>
                     ) : null}
                     <Button
                       type="button"
                       size="table"
-                      variant="brand"
+                      variant="table-secondary"
                       className="w-auto"
                       onClick={(event) => {
                         event.stopPropagation()
                         router.push(actionPagePath("borrow", "borrow", { market: pool.id, return: `/borrow/markets/${pool.id}` }))
                       }}
                     >
-                      {t("Borrow")}
+                      <ActionIcon label="Borrow" />{t("Borrow")}
                     </Button>
                   </HoverActionGroup>
                 </td>
@@ -536,7 +537,7 @@ function SpokeMobileSection({
                         onUseAsCollateral(pool)
                       }}
                     >
-                      {t("Pledge")}
+                      <ActionIcon label="Pledge" />{t("Pledge")}
                     </MarketMobilePrimaryAction>
                   </MarketMobileCard>
                 </li>

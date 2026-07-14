@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
@@ -37,7 +37,7 @@ export function LendClient({ pageData }: { pageData: LendPageData }) {
                 <HotMarkets assets={featuredAssets} sequence={featuredSequence} snapshots={featuredSnapshots} />
               </div>
 
-              <LendAssetSpokes
+              <DeferredLendAssetSpokes
                 groups={assetGroups}
                 onDeposit={(marketId) => router.push(actionPagePath("lend", "deposit", { market: marketId }))}
               />
@@ -46,5 +46,38 @@ export function LendClient({ pageData }: { pageData: LendPageData }) {
         </main>
       </div>
     </TokenPricesProvider>
+  )
+}
+
+function DeferredLendAssetSpokes({
+  groups,
+  onDeposit,
+}: {
+  groups: LendPageData["assetGroups"]
+  onDeposit: (marketId: string) => void
+}) {
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const [shouldMount, setShouldMount] = useState(false)
+
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        setShouldMount(true)
+        observer.disconnect()
+      },
+      { rootMargin: "320px 0px", threshold: 0 },
+    )
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={sectionRef} className="mt-8 min-h-[640px] [content-visibility:auto] [contain-intrinsic-size:640px]">
+      {shouldMount ? <LendAssetSpokes groups={groups} onDeposit={onDeposit} /> : <div className="h-[640px] rounded-radius-md border border-border bg-surface-raised/60" />}
+    </div>
   )
 }

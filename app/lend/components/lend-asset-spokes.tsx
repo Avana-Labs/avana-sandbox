@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
@@ -69,6 +70,7 @@ function AssetIcon({ row }: { row: AssetRow }) {
           src={row.logoSrc}
           width={40}
           height={40}
+          sizes="40px"
           className="h-full w-full object-contain"
           unoptimized
         />
@@ -153,26 +155,26 @@ function AssetRowView({
               <Button
                 type="button"
                 size="table"
-                variant="brand"
+                variant="table-primary"
                 className="w-auto"
                 onClick={(e) => {
                   e.stopPropagation()
                   onDeposit(marketId)
                 }}
               >
-                {t("Deposit")}
+                <ActionIcon label="Deposit" />{t("Deposit")}
               </Button>
               <Button
                 type="button"
                 size="table"
-                variant="brand-secondary"
+                variant="table-secondary"
                 className="w-auto"
                 onClick={(e) => {
                   e.stopPropagation()
                   router.push(actionPagePath("lend", "withdraw", { market: marketId, return: detailReturn }))
                 }}
               >
-                {t("Withdraw")}
+                <ActionIcon label="Withdraw" />{t("Withdraw")}
               </Button>
             </HoverActionGroup>
           </div>

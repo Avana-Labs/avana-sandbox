@@ -61,7 +61,15 @@ export function NewsCard({ items, title = "Risk Stewards", plain = false, viewAl
               <div className="size-14 shrink-0 overflow-hidden rounded-radius-md bg-surface-inset ring-1 ring-border">
                 {item.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" src={item.imageUrl} />
+                  <img
+                    alt=""
+                    width="56"
+                    height="56"
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    src={item.imageUrl}
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[10px] font-medium text-text-low">
                     {item.imageLabel ?? item.source.slice(0, 2).toUpperCase()}

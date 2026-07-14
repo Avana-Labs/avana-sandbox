@@ -191,11 +191,12 @@ function strategyTierForApyPct(apyPct: number): "low" | "medium" | "high" {
 }
 
 export function buildLendStrategyBuckets(markets: LendMarket[]): PortfolioStrategyBucket[] {
-  return STRATEGY_TIERS.flatMap((tier) => {
+  const buckets: PortfolioStrategyBucket[] = []
+  for (const tier of STRATEGY_TIERS) {
     const tierMarkets = markets
       .filter((market) => market.status !== "paused" && strategyTierForApyPct(market.totalApy * 100) === tier.riskTier)
       .sort((a, b) => b.totalApy - a.totalApy)
-    if (tierMarkets.length === 0) return []
+    if (tierMarkets.length === 0) continue
 
     const apys = tierMarkets.map((market) => market.totalApy * 100)
     const minApy = Math.min(...apys)
@@ -203,22 +204,21 @@ export function buildLendStrategyBuckets(markets: LendMarket[]): PortfolioStrate
     const apyRangeLabel =
       minApy === maxApy ? `${maxApy.toFixed(1)}% APY` : `${minApy.toFixed(1)}-${maxApy.toFixed(1)}% APY range`
 
-    return [
-      {
-        title: tier.title,
-        description: tier.description,
-        apyRangeLabel,
-        tone: tier.tone,
-        pools: tierMarkets.map((market) => ({
-          name: `Aave ${market.asset.symbol}`,
-          apyPct: market.totalApy * 100,
-          tvlUsd: market.totalSupplied * market.assetPriceUsd,
-          isUp: market.rewardsApy > 0,
-          allocationUsd: 0,
-        })),
-      },
-    ]
-  })
+    buckets.push({
+      title: tier.title,
+      description: tier.description,
+      apyRangeLabel,
+      tone: tier.tone,
+      pools: tierMarkets.map((market) => ({
+        name: `Aave ${market.asset.symbol}`,
+        apyPct: market.totalApy * 100,
+        tvlUsd: market.totalSupplied * market.assetPriceUsd,
+        isUp: market.rewardsApy > 0,
+        allocationUsd: 0,
+      })),
+    })
+  }
+  return buckets
 }
 
 export function buildPortfolioLendData(
@@ -386,10 +386,13 @@ function buildRangePoints(params: {
 }): ChartPoint[] {
   const labels = CHART_RANGE_LABELS[params.range]
   const pointCount = 63
+  const lastLabel = labels[labels.length - 1] ?? "Now"
   const points = Array.from({ length: pointCount }, (_, index) => ({
     time: index,
     value: params.startValue,
-    label: labels[Math.min(labels.length - 1, Math.floor((index / Math.max(1, pointCount - 1)) * labels.length))] ?? labels.at(-1) ?? "Now",
+    label:
+      labels[Math.min(labels.length - 1, Math.floor((index / Math.max(1, pointCount - 1)) * labels.length))] ??
+      lastLabel,
   }))
 
   if (points.length === 0) return points

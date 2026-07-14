@@ -101,7 +101,7 @@ export function mapMultiplyPreviewToActionUi(
   const metrics = [
     metricValue(
       "collateral-supplied",
-      "Collateral supplied",
+      "Collateral",
       formatActionAmount(options.collateralAmount, options.collateralSymbol, 6),
     ),
     metricValue(
@@ -143,7 +143,7 @@ export function mapMultiplyPreviewToActionUi(
 
   return {
     allowed: preview.allowed,
-    amountTitle: "Collateral supplied",
+    amountTitle: "Collateral",
     amountLabel: formatActionAmount(options.collateralAmount, options.collateralSymbol, 6),
     amountValue: String(options.collateralAmount),
     assetLabel: options.collateralSymbol,

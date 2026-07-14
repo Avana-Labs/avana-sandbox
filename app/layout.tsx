@@ -13,6 +13,7 @@ import { WalletGateProvider } from "./lib/web3/wallet-gate"
 import { Web3ProviderBoundary } from "./lib/web3/web3-provider-boundary"
 import { AvanaSessionProviders } from "./components/avana-session-providers"
 import { PageLoadingBar } from "./components/page-loading-bar"
+import { ScrollResetOnNavigate } from "./components/scroll-reset-on-navigate"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 import { SandboxGate } from "./components/sandbox/sandbox-gate"
@@ -115,22 +116,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <DisplayPreferencesProvider>
             <WalletGateProvider>
               <AvanaSessionProviders>
-                <PreferencesProfileSync />
-                <TokenPricesProvider>
-                  <CurrencyDisplayBoundary>
-                    <Web3ProviderBoundary>
-                      <SandboxGate>
+                <Web3ProviderBoundary>
+                  <SandboxGate>
+                    {/* These subscriptions are useful only inside the unlocked product UI.
+                        Keeping them behind the gate avoids starting price/profile work while
+                        the guest onboarding screen is the only visible surface. */}
+                    <PreferencesProfileSync />
+                    <TokenPricesProvider>
+                      <CurrencyDisplayBoundary>
                         <ConditionalSiteChrome>
                           <Suspense fallback={null}>
                             <PageLoadingBar />
                           </Suspense>
+                          <ScrollResetOnNavigate />
                           {children}
                         </ConditionalSiteChrome>
-                      </SandboxGate>
-                    </Web3ProviderBoundary>
-                    <DeferredGlobalChrome />
-                  </CurrencyDisplayBoundary>
-                </TokenPricesProvider>
+                        <DeferredGlobalChrome />
+                      </CurrencyDisplayBoundary>
+                    </TokenPricesProvider>
+                  </SandboxGate>
+                </Web3ProviderBoundary>
               </AvanaSessionProviders>
             </WalletGateProvider>
           </DisplayPreferencesProvider>

@@ -9,14 +9,22 @@ export {
   type LendFeaturedAssetId,
 } from "./featured-assets"
 
-export const TOKENS = LEND_ASSET_GROUPS.flatMap((group) =>
-  group.rows.map((row) => ({
-    symbol: row.symbol,
-    name: row.name,
-    balance: 0,
-    price: 1,
-  })),
-)
+export const TOKENS: Array<{
+  symbol: string
+  name: string
+  balance: number
+  price: number
+}> = []
+for (const group of LEND_ASSET_GROUPS) {
+  for (const row of group.rows) {
+    TOKENS.push({
+      symbol: row.symbol,
+      name: row.name,
+      balance: 0,
+      price: 1,
+    })
+  }
+}
 
 export const MARKETS = [
   { symbol: "wstETH", name: "Lido Wrapped stETH", apy: 5.14, apyChange24h: 0.18, tvl: "$8.4M", utilization: 38, type: "Liquid", protocol: "Lido", color: "text-[#627EEA]", bg: "bg-[#EEF0FF]", soon: false, event: null },
