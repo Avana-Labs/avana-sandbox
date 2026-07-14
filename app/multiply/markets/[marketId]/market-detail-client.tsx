@@ -9,10 +9,7 @@ import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-m
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
-import {
-  MarketHero,
-  MarketHeroIdentity,
-} from "@/app/multiply/_detail"
+import { MarketHero, MarketHeroIdentity } from "@/app/multiply/_detail/market-sections/MarketHero"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { cn } from "@/lib/utils"
 
