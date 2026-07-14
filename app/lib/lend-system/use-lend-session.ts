@@ -254,36 +254,31 @@ export function useLendSession({
 
   const hydrateWalletData = useCallback(
     (data: ConvexLendWalletData) => {
-      const positions = Object.fromEntries(
-        data.positions
-          .filter((position) => position.product === "lend")
-          .map((position) => {
-            const market = stateRef.current.markets[position.marketSlug]
-            const suppliedValueUsd = Number(BigInt(position.suppliedUsd6 ?? "0")) / 1_000_000
-            const suppliedAmount = market?.assetPriceUsd ? suppliedValueUsd / market.assetPriceUsd : suppliedValueUsd
-            const earnedUsd = Number(BigInt(position.earnedUsd6 ?? "0")) / 1_000_000
-            const id = String(position._id)
-            return [
-              id,
-              {
-                positionId: id,
-                walletId,
-                marketId: position.marketSlug,
-                asset: market?.asset.symbol ?? position.marketSlug,
-                principalAmount: Math.max(0, suppliedAmount - earnedUsd),
-                scaledBalance: suppliedAmount,
-                liquidityIndexAtLastAction: market?.liquidityIndex ?? 1,
-                currentSuppliedAmount: suppliedAmount,
-                interestEarned: earnedUsd,
-                rewardsEarnedUsd: 0,
-                suppliedValueUsd,
-                openedAt: position.openedAt,
-                updatedAt: position.lastUpdatedAt,
-                status: position.status === "open" ? ("active" as const) : ("closed" as const),
-              },
-            ]
-          }),
-      )
+      const positions: Record<string, LendSystemState["positions"][string]> = {}
+      for (const position of data.positions) {
+        if (position.product !== "lend") continue
+        const market = stateRef.current.markets[position.marketSlug]
+        const suppliedValueUsd = Number(BigInt(position.suppliedUsd6 ?? "0")) / 1_000_000
+        const suppliedAmount = market?.assetPriceUsd ? suppliedValueUsd / market.assetPriceUsd : suppliedValueUsd
+        const earnedUsd = Number(BigInt(position.earnedUsd6 ?? "0")) / 1_000_000
+        const id = String(position._id)
+        positions[id] = {
+          positionId: id,
+          walletId,
+          marketId: position.marketSlug,
+          asset: market?.asset.symbol ?? position.marketSlug,
+          principalAmount: Math.max(0, suppliedAmount - earnedUsd),
+          scaledBalance: suppliedAmount,
+          liquidityIndexAtLastAction: market?.liquidityIndex ?? 1,
+          currentSuppliedAmount: suppliedAmount,
+          interestEarned: earnedUsd,
+          rewardsEarnedUsd: 0,
+          suppliedValueUsd,
+          openedAt: position.openedAt,
+          updatedAt: position.lastUpdatedAt,
+          status: position.status === "open" ? ("active" as const) : ("closed" as const),
+        }
+      }
       const history: LendTransactionHistoryItem[] = data.transactions
         .filter((transaction) => transaction.product === "lend")
         .map((transaction) => ({

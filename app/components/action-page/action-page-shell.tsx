@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
-import type { ReactNode } from "react"
+import { useEffect, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import type { ActionPageMode } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -39,6 +39,16 @@ export function ActionPageShell({
   const { t } = useTranslation()
   const showChrome = true
   const showTitleBlock = showChrome && !hideTitle
+
+  // Full-screen action flows open as their own route (the table/hero "popup" CTAs
+  // navigate here), but Next preserves the launching page's window scroll — so the
+  // flow would open mid-scroll with its header cut off. Reset to the top on mount.
+  // Embedded flows live inside another scroll context, so leave those untouched.
+  useEffect(() => {
+    if (mode === "page" || mode === "overlay") {
+      window.scrollTo(0, 0)
+    }
+  }, [mode])
 
   const handleClose = () => {
     if (onClose) {

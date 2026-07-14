@@ -514,10 +514,19 @@ export function MultiplyActionPageClient({
   const collateralBalanceValue = showCollateralBalance
     ? formatActionAmount(maxCollateralAmount!, market.collateralAsset.symbol, 6)
     : undefined
+  // Position value at 1.0x (multiply: the collateral being supplied; deleverage: the
+  // position's net equity). The ruler scales this by leverage to label its two ends
+  // with the resulting exposure range. Undefined ⇒ ends fall back to leverage bounds.
+  const leverageExposureBaseUsd =
+    kind === "multiply"
+      ? (parsePositiveActionAmount(amount) ?? 0) * collateralPriceUsd
+      : position
+        ? Math.max(0, position.collateralValueUsd - position.debtValueUsd)
+        : undefined
   const stackedAmountField = useWorkspaceFields ? (
     <ActionConfigureAmountSection
       verb={descriptor.primaryVerb}
-      inputLabel={kind === "multiply" ? "Collateral supplied" : undefined}
+      inputLabel={kind === "multiply" ? "Collateral" : undefined}
       amount={amount}
       onAmountChange={(value) => {
         setHasUserInput(true)
@@ -552,6 +561,7 @@ export function MultiplyActionPageClient({
             max={effectiveMultiplierMax}
             step={0.1}
             label="Target leverage"
+            exposureBaseUsd={leverageExposureBaseUsd}
           />
         </>
       }
@@ -595,7 +605,7 @@ export function MultiplyActionPageClient({
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
-          inputLabel={kind === "multiply" ? "Collateral supplied" : undefined}
+          inputLabel={kind === "multiply" ? "Collateral" : undefined}
           amount={amount}
           onAmountChange={(value) => {
             setHasUserInput(true)
@@ -619,6 +629,7 @@ export function MultiplyActionPageClient({
           multiplierMin={multiplierMin}
           multiplierMax={effectiveMultiplierMax}
           multiplierLabel="Target leverage"
+          multiplierExposureBaseUsd={leverageExposureBaseUsd}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
           secondaryHref={closeHref}

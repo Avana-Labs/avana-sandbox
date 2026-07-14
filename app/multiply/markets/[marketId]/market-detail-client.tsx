@@ -9,7 +9,7 @@ import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import {
   MarketHero,
   MarketHeroIdentity,
@@ -84,6 +84,7 @@ export function MarketDetailClient({ detail }: Props) {
                     borrowableSymbol={detail.row.asset}
                   />
                   <RelatedMarketsRow detail={detail} />
+                  <DetailPageNotice />
                 </section>
               </div>
 

@@ -4,6 +4,7 @@ import * as React from "react"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
 import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { PillTabStrip } from "@/app/components/tab-primitives"
 import { cn } from "@/lib/utils"
 
 const KIND_LABEL: Record<TxHistoryRow["kind"], string> = {
@@ -80,26 +81,13 @@ export function TransactionHistoryCard({
           <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">{t(title)}</h2>
           {subtitle ? <p className="mt-1 text-[12px] text-muted-foreground">{t(subtitle)}</p> : null}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {FILTERS.map((filter) => {
-            const active = filter.id === activeFilter
-            return (
-              <button
-                key={filter.id}
-                type="button"
-                onClick={() => setActiveFilter(filter.id)}
-                className={cn(
-                  "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
-                  active
-                    ? "bg-foreground text-background"
-                    : "bg-slate-100 text-slate-600 hover:bg-surface-hover hover:text-foreground dark:bg-slate-800 dark:text-slate-300",
-                )}
-              >
-                {t(filter.label)}
-              </button>
-            )
-          })}
-        </div>
+        <PillTabStrip
+          items={FILTERS.map((filter) => ({ id: filter.id, label: t(filter.label) }))}
+          value={activeFilter}
+          onChange={setActiveFilter}
+          ariaLabel={t("Filter transactions")}
+          className="flex-nowrap"
+        />
       </div>
       <div className="overflow-hidden">
           <div className="hidden md:block">

@@ -4,27 +4,13 @@ import dynamic from "next/dynamic"
 import type { ReactNode } from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Info } from "lucide-react"
-import {
-  ArrowCircleDown24Filled,
-  ArrowCircleUp24Filled,
-  ArrowDownload24Filled,
-  BuildingBank24Filled,
-  ClipboardMore24Filled,
-  Receipt24Filled,
-  Wallet24Filled,
-} from "@fluentui/react-icons"
+import { CircleArrowDown, CircleArrowUp, Download, HandCoins, Info, LogIn, LogOut, Receipt } from "lucide-react"
 import {
   buildRangeData,
-  resolveSeriesChange,
   resolveSeriesTone,
 } from "@/app/components/charts/chart-data"
-import { formatChartValue } from "@/app/components/charts/format"
-import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
 import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/types"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
-import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
-import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/supplies-table"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
 import { PortfolioHeroHeader } from "@/app/portfolio/hero/portfolio-hero-header"
@@ -41,15 +27,6 @@ const HeroChartSection = dynamic(
 )
 
 const DEFAULT_RANGE_DATA = buildRangeData(880, 14)
-
-const RANGE_PERIOD_WORD: Record<ChartRangeOption, string> = {
-  "1D": "today",
-  "1W": "this week",
-  "1M": "this month",
-  "3M": "past 3 months",
-  "1Y": "this year",
-  All: "all time",
-}
 
 type DashboardHeroProps = {
   tab: "overview" | "lending" | "looping" | "activity"
@@ -87,10 +64,7 @@ const HERO_UI_CONFIG: Record<DashboardHeroProps["tab"], HeroUiConfig> = {
     // ("Total supplied") instead of a single portfolio total that flip-flops.
     headlineMeta: "Total supplied",
     actionLabels: ["Borrow", "Repay", "Deposit", "Withdraw"],
-    statOneLabel: "Average APY",
-    statOneHelpText: "Weighted average APY across supplied assets in the wallet.",
-    statTwoLabel: "Earned",
-    statTwoHelpText: "Total yield already accrued by the portfolio.",
+    hideStats: true,
   },
   looping: {
     headlineMeta: "Multiply value",
@@ -156,28 +130,18 @@ function buildActions({
     return null
   }
 
-  const resolveClasses = (label: string) => {
-    // One consistent button chrome for every quick action, with a deliberate,
-    // theme-aware money-flow semantic on top: inflows (deposit) read success,
-    // outflows (withdraw/unwind) read danger, everything else stays neutral.
-    // (Replaces the ad-hoc mix of hardcoded blue/green/red/black hexes.)
-    const normalized = label.toLowerCase()
-    const chrome =
-      "!border-border/70 !bg-background hover:!bg-surface-hover dark:!border-white/10 dark:!bg-card dark:hover:!bg-surface-hover"
-    if (normalized.includes("deposit") || normalized.includes("supply")) return `${chrome} !text-success`
-    if (normalized.includes("withdraw") || normalized.includes("unwind")) return `${chrome} !text-danger`
-    return `${chrome} !text-foreground`
-  }
-
+  // Reuse the directional glyphs from the lend/borrow tables (see action-icon.tsx):
+  // deposit/supply flow down-into, borrow/increase up-out, repay is money back in,
+  // withdraw/unwind is money out.
   const resolveIcon = (label: string) => {
     const normalized = label.toLowerCase()
-    if (normalized.includes("supply") || normalized.includes("deposit")) return Wallet24Filled
-    if (normalized.includes("withdraw") || normalized.includes("unwind")) return ArrowCircleDown24Filled
-    if (normalized.includes("increase")) return ArrowCircleUp24Filled
-    if (normalized.includes("borrow")) return BuildingBank24Filled
-    if (normalized.includes("view")) return Receipt24Filled
-    if (normalized.includes("export")) return ClipboardMore24Filled
-    return ArrowDownload24Filled
+    if (normalized.includes("supply") || normalized.includes("deposit")) return CircleArrowDown
+    if (normalized.includes("withdraw") || normalized.includes("unwind")) return LogOut
+    if (normalized.includes("increase") || normalized.includes("borrow")) return CircleArrowUp
+    if (normalized.includes("repay")) return LogIn
+    if (normalized.includes("claim")) return HandCoins
+    if (normalized.includes("view")) return Receipt
+    return Download
   }
 
   return labels.map((label, index) => {
@@ -189,7 +153,6 @@ function buildActions({
       icon: resolveIcon(label),
       href: actionHref ?? undefined,
       onClick: actionHref && onNavigate ? () => onNavigate(actionHref) : undefined,
-      className: resolveClasses(label),
     }
   })
 }
@@ -220,19 +183,14 @@ function StatCard({ label, value, helpText, hidden = false }: { label: string; v
 export function DashboardHero({
   tab,
   tabs,
-  headlineValue,
-  headlineDelta,
   rangeData = DEFAULT_RANGE_DATA,
   statOneValue = "4.92%",
   statTwoValue = "+$12.46",
-  borrowSnapshot,
-  multiplySnapshot,
   multiplyPositionTarget,
 }: DashboardHeroProps) {
   const router = useRouter()
   const { t } = useTranslation()
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const { showDollarAmounts } = useDisplayPreferences()
 
   const uiConfig = HERO_UI_CONFIG[tab]
@@ -245,32 +203,9 @@ export function DashboardHero({
   const showStats = !uiConfig.hideStats
   const displayRangeData = showChart ? rangeData ?? DEFAULT_RANGE_DATA : null
 
-  // Delta + color track the active range's real trend, so a dip turns red.
+  // Chart color tracks the active range's real trend, so a dip turns red.
   const activePoints = displayRangeData?.[activeRange] ?? []
   const trendTone = showChart ? resolveSeriesTone(activePoints) : "positive"
-  const trendChange = showChart ? resolveSeriesChange(activePoints) : null
-  const hoverPoint = showChart && hoverIndex != null ? activePoints[hoverIndex] ?? null : null
-  const firstPoint = activePoints[0]
-  const displayPoint = hoverPoint ?? activePoints[activePoints.length - 1]
-  const displayTone = hoverPoint
-    ? hoverPoint.value >= (firstPoint?.value ?? hoverPoint.value)
-      ? "positive"
-      : "negative"
-    : trendTone
-  const resolvedHeadlineValue = headlineValue ?? (displayPoint ? formatChartValue("usd", displayPoint.value) : formatChartValue("usd", 0))
-  const displayDelta = showChart && trendChange
-    ? hoverPoint
-      ? (() => {
-          const baseValue = firstPoint?.value ?? hoverPoint.value
-          const changeAbs = Math.abs(hoverPoint.value - baseValue)
-          const pct = baseValue ? ((hoverPoint.value - baseValue) / baseValue) * 100 : 0
-          return `${formatChartValue("usd", changeAbs)} (${Math.abs(pct).toFixed(2)}%) ${t(RANGE_PERIOD_WORD[activeRange])}`
-        })()
-      : `${formatChartValue("usd", trendChange.changeAbs)} (${Math.abs(trendChange.pct).toFixed(2)}%) ${t(RANGE_PERIOD_WORD[activeRange])}`
-    : undefined
-  const resolvedDisplayValue = hoverPoint ? formatChartValue("usd", displayPoint.value) : resolvedHeadlineValue
-  const resolvedHeadlineDelta = headlineDelta ?? displayDelta
-  const overviewDelta = headlineDelta ?? undefined
 
   const actions = showActions
     ? buildActions({
@@ -290,45 +225,14 @@ export function DashboardHero({
 
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
-      {isBorrowOverview ? (
-        <div className="mt-5">
-          <HeroBalanceDisplay
-            value={resolvedDisplayValue}
-            delta={headlineDelta ?? overviewDelta ?? ""}
-            deltaTone="positive"
-            meta={uiConfig.headlineMeta ? t(uiConfig.headlineMeta) : undefined}
-            hidden={!showDollarAmounts}
-          />
-          {isBorrowOverview && borrowSnapshot ? (
-            <div className="mt-4 grid gap-4 xl:grid-cols-2">
-              <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
-              <CurrentLtvCard
-                borrowedUsd={borrowSnapshot.totalBorrowedUsd}
-                collateralUsd={borrowSnapshot.totalCollateralUsd}
-                showBalance={showDollarAmounts}
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : showBalance ? (
-        <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "mt-5"}>
+      {isBorrowOverview || isLoopingOverview ? null : showBalance ? (
+        <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-x-8" : "mt-5"}>
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
-            <HeroBalanceDisplay
-              value={resolvedDisplayValue}
-              delta={resolvedHeadlineDelta ?? ""}
-              deltaTone={displayTone}
-              meta={uiConfig.headlineMeta ? t(uiConfig.headlineMeta) : undefined}
-              hidden={!showDollarAmounts}
-            />
             {showChart ? (
               <HeroChartSection
                 rangeData={displayRangeData ?? DEFAULT_RANGE_DATA}
                 activeRange={activeRange}
-                onRangeChange={(range) => {
-                  setHoverIndex(null)
-                  setActiveRange(range)
-                }}
-                onActiveIndexChange={setHoverIndex}
+                onRangeChange={setActiveRange}
                 gradientId="portfolioHeroFill"
                 tone={trendTone}
                 // Mask keeps the trend shape but hides every dollar value: axis ticks and tooltip.
@@ -358,18 +262,8 @@ export function DashboardHero({
         </div>
       ) : null}
 
-      {/* Only surface credit-health / borrowing-power once real positions exist —
-          computing them over $0 data fabricated a "Safe"/"RISK" state. */}
-      {isLoopingOverview && multiplySnapshot && multiplyPositionTarget ? (
-        <div className="mt-4 grid gap-4 xl:grid-cols-2">
-          <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
-          <CurrentLtvCard
-            borrowedUsd={multiplySnapshot.totalBorrowedUsd}
-            collateralUsd={multiplySnapshot.totalCollateralUsd}
-            showBalance={showDollarAmounts}
-          />
-        </div>
-      ) : null}
+      {/* Credit Health / Borrowing Power cards render under the Multiply Overview
+          section in dashboard-client, not in the hero. */}
     </section>
   )
 }

@@ -107,19 +107,19 @@ export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps)
   // borrowAssetsBySpoke maps each spoke to its borrowable assets. To change what shows
   // under "Borrowable", start at session.getBorrowableAssetsForMarket + BorrowableAssetsPanel.
   const borrowAssetsBySpoke = useMemo(() => {
-    return Object.fromEntries(
-      poolGroups.flatMap((group) =>
-        group.spokes.map((entry) => {
-          const assets = new Map<string, BorrowableAsset>()
-          for (const row of entry.rows) {
-            for (const asset of session.getBorrowableAssetsForMarket(row.id)) {
-              assets.set(asset.id, applyBorrowableAssetDelta(asset, liquidityDeltas))
-            }
+    const next: Record<string, BorrowableAsset[]> = {}
+    for (const group of poolGroups) {
+      for (const entry of group.spokes) {
+        const assets = new Map<string, BorrowableAsset>()
+        for (const row of entry.rows) {
+          for (const asset of session.getBorrowableAssetsForMarket(row.id)) {
+            assets.set(asset.id, applyBorrowableAssetDelta(asset, liquidityDeltas))
           }
-          return [entry.spoke.id, Array.from(assets.values())]
-        }),
-      ),
-    ) as Record<string, BorrowableAsset[]>
+        }
+        next[entry.spoke.id] = Array.from(assets.values())
+      }
+    }
+    return next
   }, [poolGroups, session, liquidityDeltas])
 
   useEffect(() => {

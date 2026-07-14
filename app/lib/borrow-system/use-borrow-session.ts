@@ -248,6 +248,46 @@ export function useBorrowSession({
       setState((current) => {
         const account = current.accounts[walletId]
         if (!account) return current
+        const collateralPositions = []
+        const debtPositions = []
+        for (const position of borrowPositions) {
+          for (const collateral of position.collateral) {
+            let collateralShares = BigInt(collateral.collateralShares)
+            let principalTokenAmount = BigInt(collateral.principalTokenAmount)
+            // Onboarding-seeded collateral is stored as 0 shares + a USD value, because the
+            // seed has no access to the client's catalog LP prices. Derive real shares here
+            // from that USD using the live market price so the position values to the intended
+            // USD. Real supplied positions already carry correct (non-zero) shares.
+            const market = current.markets[collateral.marketSlug]
+            if (collateralShares === 0n && collateral.collateralValueUsd6 && market) {
+              const priceUsd6 = market.snapshot.lpTokenPriceUsd6
+              const tokenAmount =
+                priceUsd6 > 0n ? (BigInt(collateral.collateralValueUsd6) * TOKEN_SCALE) / priceUsd6 : 0n
+              collateralShares = assetsToShares(tokenAmount, market.snapshot.supplyIndexRay)
+              principalTokenAmount = tokenAmount
+            }
+            collateralPositions.push({
+              id: String(collateral._id),
+              marketId: collateral.marketSlug,
+              collateralShares,
+              principalTokenAmount,
+              collateralEnabled: collateral.collateralEnabled,
+            })
+          }
+          for (const debt of position.debt) {
+            debtPositions.push({
+              id: String(debt._id),
+              assetId: debt.assetId,
+              baseAssetId: debt.baseAssetId,
+              spokeId: debt.spokeId as import("@/app/lib/credit-engine").BorrowSpokeId,
+              marketId: debt.marketSlug,
+              debtSharesUsd6: BigInt(debt.debtSharesUsd6),
+              debtIndexRay: BigInt(debt.debtIndexRay),
+              borrowRateWad: BigInt(debt.borrowRateWad),
+              principalBorrowedUsd6: BigInt(debt.principalBorrowedUsd6),
+            })
+          }
+        }
         return {
           ...current,
           accounts: {
@@ -257,44 +297,8 @@ export function useBorrowSession({
               walletBalanceUsd6: BigInt(
                 Math.round((data.balances ?? []).reduce((sum, balance) => sum + balance.valueUsd, 0) * 1_000_000),
               ),
-              collateralPositions: borrowPositions.flatMap((position) =>
-                position.collateral.map((collateral) => {
-                  let collateralShares = BigInt(collateral.collateralShares)
-                  let principalTokenAmount = BigInt(collateral.principalTokenAmount)
-                  // Onboarding-seeded collateral is stored as 0 shares + a USD value, because the
-                  // seed has no access to the client's catalog LP prices. Derive real shares here
-                  // from that USD using the live market price so the position values to the intended
-                  // USD. Real supplied positions already carry correct (non-zero) shares.
-                  const market = current.markets[collateral.marketSlug]
-                  if (collateralShares === 0n && collateral.collateralValueUsd6 && market) {
-                    const priceUsd6 = market.snapshot.lpTokenPriceUsd6
-                    const tokenAmount =
-                      priceUsd6 > 0n ? (BigInt(collateral.collateralValueUsd6) * TOKEN_SCALE) / priceUsd6 : 0n
-                    collateralShares = assetsToShares(tokenAmount, market.snapshot.supplyIndexRay)
-                    principalTokenAmount = tokenAmount
-                  }
-                  return {
-                    id: String(collateral._id),
-                    marketId: collateral.marketSlug,
-                    collateralShares,
-                    principalTokenAmount,
-                    collateralEnabled: collateral.collateralEnabled,
-                  }
-                }),
-              ),
-              debtPositions: borrowPositions.flatMap((position) =>
-                position.debt.map((debt) => ({
-                  id: String(debt._id),
-                  assetId: debt.assetId,
-                  baseAssetId: debt.baseAssetId,
-                  spokeId: debt.spokeId as import("@/app/lib/credit-engine").BorrowSpokeId,
-                  marketId: debt.marketSlug,
-                  debtSharesUsd6: BigInt(debt.debtSharesUsd6),
-                  debtIndexRay: BigInt(debt.debtIndexRay),
-                  borrowRateWad: BigInt(debt.borrowRateWad),
-                  principalBorrowedUsd6: BigInt(debt.principalBorrowedUsd6),
-                })),
-              ),
+              collateralPositions,
+              debtPositions,
               // Reduce each seeded reward position's claimable to the persisted remaining
               // from prior claims, so claimable does not reset to full on reload. Wallets
               // with no persisted claims keep the seeded (full) claimable.

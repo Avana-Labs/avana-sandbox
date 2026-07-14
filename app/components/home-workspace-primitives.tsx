@@ -87,6 +87,7 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
           alt={visual.symbol}
           width={TOKEN_ICON_TABLE_PX}
           height={TOKEN_ICON_TABLE_PX}
+          sizes={`${TOKEN_ICON_TABLE_PX}px`}
           className="h-full w-full object-contain"
           onError={() => setImgFailed(true)}
           unoptimized

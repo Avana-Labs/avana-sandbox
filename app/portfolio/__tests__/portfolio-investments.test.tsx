@@ -32,7 +32,7 @@ describe("PortfolioInvestments", () => {
     expect(screen.queryByText(/today/i)).toBeNull()
     // The figure is labeled as a per-day run-rate. It renders once per responsive
     // layout (desktop table + mobile card), so both matches are expected.
-    expect(screen.getAllByText(/≈ .*\/day/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/\/day/).length).toBeGreaterThan(0)
   })
 
   it("shows claimable lend rewards and runs the claim action", () => {

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
@@ -172,7 +172,9 @@ describe("ActionConfigureStage", () => {
     )
 
     expect(await screen.findByTestId("action-leverage-ruler")).toBeInTheDocument()
-    await userEvent.setup().click(screen.getByRole("button", { name: "Max" }))
+    // Dragging the slider to its max publishes the upper bound (the Min/Max snap
+    // buttons were removed in favour of the draggable ruler).
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "5" } })
     expect(onMultiplierChange).toHaveBeenCalledWith("5")
   })
 })

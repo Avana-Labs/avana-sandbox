@@ -168,13 +168,16 @@ function buildRegistry() {
     }
   })
 
-  const borrowables: SpokeBorrowableRecord[] = BORROW_SPOKES.flatMap((spoke) => {
+  const borrowables: SpokeBorrowableRecord[] = []
+  for (const spoke of BORROW_SPOKES) {
     const spokeMarkets = marketsBySpoke.get(spoke.id) ?? []
-    return spoke.borrowableTokens
-      .map((token) => baseAssetBySymbol.get(normalizeSymbol(token.symbol)))
-      .filter((asset): asset is BorrowBaseAssetDefinition => Boolean(asset))
-      .map((asset) => buildSpokeBorrowableRecord(spoke, asset, spokeMarkets.map((market) => market.id)))
-  })
+    const marketIds = spokeMarkets.map((market) => market.id)
+    for (const token of spoke.borrowableTokens) {
+      const asset = baseAssetBySymbol.get(normalizeSymbol(token.symbol))
+      if (!asset) continue
+      borrowables.push(buildSpokeBorrowableRecord(spoke, asset, marketIds))
+    }
+  }
 
   return {
     baseAssets,

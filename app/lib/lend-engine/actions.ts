@@ -219,19 +219,18 @@ function applyClaimRewards(
   const claimableUsd = walletPositions.reduce((sum, [, position]) => sum + position.rewardsEarnedUsd, 0)
   if (claimableUsd <= 0) return state
 
-  const nextPositions = Object.fromEntries(
-    Object.entries(state.positions).map(([positionId, position]) => {
-      if (position.walletId !== action.walletId) return [positionId, position]
-      return [
-        positionId,
-        {
-          ...position,
-          rewardsEarnedUsd: 0,
-          updatedAt: now,
-        },
-      ]
-    }),
-  )
+  const nextPositions: LendSystemState["positions"] = {}
+  for (const [positionId, position] of Object.entries(state.positions)) {
+    if (position.walletId !== action.walletId) {
+      nextPositions[positionId] = position
+      continue
+    }
+    nextPositions[positionId] = {
+      ...position,
+      rewardsEarnedUsd: 0,
+      updatedAt: now,
+    }
+  }
 
   return {
     ...state,

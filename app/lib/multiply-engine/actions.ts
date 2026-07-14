@@ -2,21 +2,26 @@ import { simulateDeleverage, simulateMultiply } from "./simulation"
 import type { MultiplyAction, MultiplyPosition, MultiplySystemState, MultiplyTransaction } from "./types"
 
 function cloneState(state: MultiplySystemState): MultiplySystemState {
+  const markets: MultiplySystemState["markets"] = {}
+  for (const [id, market] of Object.entries(state.markets)) {
+    markets[id] = {
+      ...market,
+      economics: { ...market.economics },
+      risk: { ...market.risk },
+      collateralAsset: { ...market.collateralAsset },
+      borrowAsset: { ...market.borrowAsset },
+    }
+  }
+
+  const positions: MultiplySystemState["positions"] = {}
+  for (const [id, position] of Object.entries(state.positions)) {
+    positions[id] = { ...position }
+  }
+
   return {
     ...state,
-    markets: Object.fromEntries(
-      Object.entries(state.markets).map(([id, market]) => [
-        id,
-        {
-          ...market,
-          economics: { ...market.economics },
-          risk: { ...market.risk },
-          collateralAsset: { ...market.collateralAsset },
-          borrowAsset: { ...market.borrowAsset },
-        },
-      ]),
-    ),
-    positions: Object.fromEntries(Object.entries(state.positions).map(([id, position]) => [id, { ...position }])),
+    markets,
+    positions,
     transactions: [...state.transactions],
   }
 }

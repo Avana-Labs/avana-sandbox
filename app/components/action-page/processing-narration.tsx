@@ -48,7 +48,7 @@ const SCRIPTS: Record<string, string[]> = {
   multiply: [
     "Connecting to Uniswap v3",
     "Opening your base position",
-    "Looping your collateral",
+    "Multiplying your collateral",
     "Balancing your health factor",
     "Locking in your leverage",
   ],

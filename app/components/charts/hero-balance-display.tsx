@@ -1,3 +1,5 @@
+import type { ReactNode } from "react"
+
 type HeroBalanceDisplayProps = {
   value: string
   delta: string
@@ -7,6 +9,8 @@ type HeroBalanceDisplayProps = {
   hidden?: boolean
   /** Small uppercase metric label shown above the value (e.g. "Total borrows"). */
   label?: string
+  /** Inline node rendered right next to the value (e.g. a show/hide toggle). */
+  valueSuffix?: ReactNode
 }
 
 function HeroDeltaText({ value, tone, meta }: { value: string; tone: "positive" | "negative"; meta?: string }) {
@@ -21,15 +25,18 @@ function HeroDeltaText({ value, tone, meta }: { value: string; tone: "positive" 
   )
 }
 
-export function HeroBalanceDisplay({ value, delta, deltaTone = "positive", meta, hidden = false, label }: HeroBalanceDisplayProps) {
+export function HeroBalanceDisplay({ value, delta, deltaTone = "positive", meta, hidden = false, label, valueSuffix }: HeroBalanceDisplayProps) {
   return (
     <div className="space-y-1.5">
       {label ? (
         <span className="block text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
       ) : null}
-      <span className="block text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
-        {hidden ? "••••••••" : value}
-      </span>
+      <div className="flex items-center gap-2">
+        <span className="text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
+          {hidden ? "••••••••" : value}
+        </span>
+        {valueSuffix}
+      </div>
       {hidden ? (
         <span className="text-[13px] text-muted-foreground">••••••••</span>
       ) : (

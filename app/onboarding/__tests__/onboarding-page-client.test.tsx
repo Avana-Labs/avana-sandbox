@@ -42,6 +42,9 @@ vi.mock("@/convex/_generated/api", () => ({
 const useSiweAuthMock = vi.fn()
 vi.mock("@/app/lib/siwe/use-siwe-auth", () => ({ useSiweAuth: () => useSiweAuthMock() }))
 
+const routerReplaceMock = vi.fn()
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: routerReplaceMock, push: vi.fn() }) }))
+
 // onboarding-flow pulls in connectkit via wallet-control; stub it for jsdom.
 vi.mock("@/app/components/wallet-control", () => ({ WalletControl: () => <div data-testid="wallet-control" /> }))
 vi.mock("@/app/lib/i18n/use-translation", () => ({
@@ -73,22 +76,23 @@ afterEach(() => {
 })
 
 describe("OnboardingPageClient — already-onboarded wallet (issue #140)", () => {
-  it("shows the completed state (not the claim flow) when onboardingStep is 'done'", () => {
+  it("redirects an already-onboarded wallet into the app (never re-shows onboarding)", () => {
     walletStateMock.mockReturnValue(walletState("done"))
     render(<OnboardingPageClient />)
 
-    expect(screen.getByText(/You're all set\./i)).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /Open dashboard/i })).toHaveAttribute("href", "/dashboard")
-    // No re-claim affordance is offered to an already-onboarded user.
+    // A completed wallet is sent straight to the dashboard, not shown any onboarding UI.
+    expect(routerReplaceMock).toHaveBeenCalledWith("/dashboard")
     expect(screen.queryByRole("button", { name: /Claim your allocation/i })).not.toBeInTheDocument()
     expect(screen.queryByText(/Fund my sandbox/i)).not.toBeInTheDocument()
   })
 
-  it("still renders the claim flow for a wallet that has NOT onboarded", () => {
+  it("still renders the active onboarding flow for a wallet that has NOT onboarded", () => {
     walletStateMock.mockReturnValue(walletState("wallet"))
     render(<OnboardingPageClient />)
 
-    expect(screen.getByText(/Fund my sandbox/i)).toBeInTheDocument()
-    expect(screen.queryByText(/You've already claimed/i)).not.toBeInTheDocument()
+    // A fresh wallet now lands on the personalize step first (name/language/currency/theme),
+    // ahead of the funding card — not the already-onboarded "completed" state.
+    expect(screen.getByText(/Now let's make Avana yours/i)).toBeInTheDocument()
+    expect(routerReplaceMock).not.toHaveBeenCalled()
   })
 })

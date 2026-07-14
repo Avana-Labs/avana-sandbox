@@ -18,33 +18,53 @@ type MetricItem = {
   description: string
 }
 
-function MetricGrid({ metrics }: { metrics: MetricItem[] }) {
+function MetricGrid({ metrics, labelOnTop = false }: { metrics: MetricItem[]; labelOnTop?: boolean }) {
   return (
-    <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-x-8">
-      {metrics.map((metric) => (
-        <article key={metric.label} className="min-w-0 space-y-1.5">
+    <div className="grid w-full grid-cols-2 gap-5 xl:grid-cols-4 xl:gap-x-8">
+      {metrics.map((metric) => {
+        const value = (
           <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
             {metric.value}
           </div>
+        )
+        const label = (
           <div className="flex items-center gap-1.5">
             <span className="text-[12px] font-medium tracking-tight text-muted-foreground">{metric.label}</span>
             <ActionMetricHelp text={metric.description} topic={metric.label} />
           </div>
-        </article>
-      ))}
+        )
+        return (
+          <article key={metric.label} className="min-w-0 space-y-1.5">
+            {labelOnTop ? (
+              <>
+                {label}
+                {value}
+              </>
+            ) : (
+              <>
+                {value}
+                {label}
+              </>
+            )}
+          </article>
+        )
+      })}
     </div>
   )
 }
 
-export function DashboardOverviewSection({ title, metrics }: { title: string; metrics: DashboardOverviewMetrics }) {
+export function DashboardOverviewSection({ title, metrics, hideHeading = false }: { title: string; metrics: DashboardOverviewMetrics; hideHeading?: boolean }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
     <section className="space-y-4">
-      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      {hideHeading ? null : (
+        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      )}
       <MetricGrid
+        labelOnTop
         metrics={[
           {
             label: t("Net Value"),
@@ -65,6 +85,66 @@ export function DashboardOverviewSection({ title, metrics }: { title: string; me
             label: t("Risk Premium"),
             value: showDollarAmounts ? formatPct(metrics.riskPremiumPct) : MASK,
             description: t("An additional cost on your borrow rate based on the riskiness of your collateral"),
+          },
+        ]}
+      />
+    </section>
+  )
+}
+
+/**
+ * Credit (Borrow) overview — a dedicated variant of the overview grid. Unlike the
+ * shared DashboardOverviewSection (still used by the Looping tab), this surfaces
+ * Approved credit + Net APY + Total Collateral, folding in what used to live in the
+ * separate "Credit Performance" section.
+ */
+export function DashboardCreditOverviewSection({
+  title,
+  approvedCreditUsd,
+  totalBorrowedUsd,
+  netApyPct,
+  totalCollateralUsd,
+  hideHeading = false,
+}: {
+  title: string
+  approvedCreditUsd: number
+  totalBorrowedUsd: number
+  netApyPct: number
+  totalCollateralUsd: number
+  // When the section title is already provided by an enclosing tab, suppress the h2.
+  hideHeading?: boolean
+}) {
+  const { showDollarAmounts } = useDisplayPreferences()
+  const { t } = useTranslation()
+  const m = (value: string) => (showDollarAmounts ? value : MASK)
+
+  return (
+    <section className="space-y-4">
+      {hideHeading ? null : (
+        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      )}
+      <MetricGrid
+        labelOnTop
+        metrics={[
+          {
+            label: t("Approved credit"),
+            value: m(formatUsdExact(approvedCreditUsd)),
+            description: t("Total borrowing capacity approved against your collateral"),
+          },
+          {
+            label: t("Total Borrowed"),
+            value: m(formatUsdExact(totalBorrowedUsd)),
+            description: t("Current outstanding loan balance"),
+          },
+          {
+            label: t("Net APY"),
+            value: showDollarAmounts ? formatPct(netApyPct) : MASK,
+            description: t("Weighted average APY across all active positions"),
+          },
+          {
+            label: t("Total Collateral"),
+            value: m(formatUsdExact(totalCollateralUsd)),
+            description: t("LP positions currently securing your loans"),
           },
         ]}
       />
@@ -98,16 +178,6 @@ export function DashboardPerformanceSection({
             value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
             description: t("Weighted average APY across all active positions"),
           },
-          {
-            label: t("Interest Earned"),
-            value: m(formatUsdExact(metrics.interestEarnedUsd)),
-            description: t("Total yield earned from trading fees activities"),
-          },
-          {
-            label: t("Interest Owed"),
-            value: m(formatUsdExact(metrics.interestOwedUsd)),
-            description: t("Total interest accrued on outstanding loans"),
-          },
         ]}
       />
     </section>
@@ -124,9 +194,11 @@ export type DashboardLendPerformanceMetrics = {
 export function DashboardLendPerformanceSection({
   title,
   metrics,
+  hideHeading = false,
 }: {
   title: string
   metrics: DashboardLendPerformanceMetrics
+  hideHeading?: boolean
 }) {
   const { showDollarAmounts } = useDisplayPreferences()
   const { t } = useTranslation()
@@ -134,8 +206,11 @@ export function DashboardLendPerformanceSection({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      {hideHeading ? null : (
+        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      )}
       <MetricGrid
+        labelOnTop
         metrics={[
           {
             label: t("Total Supplied"),

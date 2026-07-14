@@ -73,8 +73,10 @@ export function MarketHeroChart({
   }, [ctx, feed, hoverPoint, points, rangeTone])
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={meta} hidden={hideValue} label={label} />
+    <div className="space-y-2">
+      {/* Metric name kept for screen readers / internal recognition; hidden visually. */}
+      {label ? <span className="sr-only">{label}</span> : null}
+      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={meta} hidden={hideValue} />
       <HeroAreaChart
         data={points}
         activeRange={activeRange}

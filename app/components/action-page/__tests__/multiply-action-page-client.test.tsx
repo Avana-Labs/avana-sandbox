@@ -94,12 +94,12 @@ describe("MultiplyActionPageClient", () => {
       </AvanaSessionsProvider>,
     )
 
-    fireEvent.change(screen.getByLabelText("Collateral supplied amount"), { target: { value: "0.01" } })
+    fireEvent.change(screen.getByLabelText("Collateral amount"), { target: { value: "0.01" } })
 
     await waitFor(() => expect(screen.getByTestId("action-metrics-block")).toBeInTheDocument())
-    expect(screen.getByLabelText("Collateral supplied amount")).toHaveValue("0.01")
+    expect(screen.getByLabelText("Collateral amount")).toHaveValue("0.01")
     expect(screen.getByTestId("action-leverage-ruler")).toHaveTextContent("Target leverage")
-    expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Collateral supplied")
+    expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Collateral")
     expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Target leverage")
     expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Looped exposure")
     expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("USDT borrowed")
@@ -110,7 +110,7 @@ describe("MultiplyActionPageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Review" }))
 
     await waitFor(() => expect(screen.getByTestId("action-review-stage")).toBeInTheDocument())
-    expect(screen.getByTestId("action-review-stage")).toHaveTextContent("Collateral supplied")
+    expect(screen.getByTestId("action-review-stage")).toHaveTextContent("Collateral")
     expect(screen.getByTestId("action-review-stage")).toHaveTextContent("0.01")
     expect(screen.getByTestId("action-review-stage")).toHaveTextContent("Target leverage")
     expect(screen.queryByText(/0\.01.*2\.00x/)).not.toBeInTheDocument()
@@ -123,7 +123,7 @@ describe("MultiplyActionPageClient", () => {
       </AvanaSessionsProvider>,
     )
 
-    const input = await screen.findByLabelText("Collateral supplied amount")
+    const input = await screen.findByLabelText("Collateral amount")
     fireEvent.change(input, { target: { value: "999999999" } })
 
     // No crash, no projected metrics. The block lives on the CTA itself: it is
@@ -147,8 +147,9 @@ describe("MultiplyActionPageClient", () => {
       </AvanaSessionsProvider>,
     )
 
-    const input = (await screen.findByLabelText("Collateral supplied amount")) as HTMLInputElement
-    // Scope to the amount card's Max button (the leverage ruler also has a "Max").
+    const input = (await screen.findByLabelText("Collateral amount")) as HTMLInputElement
+    // Scope to the amount card's Max button (balance-cap fill), distinct from the
+    // leverage ruler below it.
     const amountCard = within(screen.getByTestId("action-amount-card"))
     fireEvent.click(amountCard.getByRole("button", { name: "Max" }))
 
@@ -190,8 +191,7 @@ describe("MultiplyActionPageClient", () => {
       expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
     })
 
-    expect(screen.getByRole("button", { name: "Min" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Max" })).toBeInTheDocument()
+    expect(screen.getByTestId("action-leverage-ruler")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Enter an amount" })).toBeDisabled()
     expect(screen.queryByTestId("action-health-factor-card")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
@@ -220,8 +220,8 @@ describe("MultiplyActionPageClient", () => {
     fireEvent.change(slider, { target: { value: "1.7" } })
     await waitFor(() => expect(slider.value).toBe("1.7"))
 
-    // Min (→ 1x) is honored too.
-    fireEvent.click(screen.getByRole("button", { name: "Min" }))
+    // Dragging to the min (→ 1x) is honored too.
+    fireEvent.change(slider, { target: { value: "1" } })
     await waitFor(() => expect(slider.value).toBe("1"))
   })
 
@@ -233,7 +233,10 @@ describe("MultiplyActionPageClient", () => {
       </AvanaSessionsProvider>,
     )
 
-    fireEvent.click(screen.getByRole("button", { name: "Max" }))
+    // Drag the ruler to its max reachable target (just below the 2.0x seed) to
+    // produce a valid deleverage preview.
+    const slider = await screen.findByRole("slider", { name: "Target leverage multiplier" })
+    fireEvent.change(slider, { target: { value: "1.9" } })
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument()

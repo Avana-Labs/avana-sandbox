@@ -17,7 +17,7 @@ import {
 } from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 
 type Props = { detail: PoolDetail }
 
@@ -72,6 +72,7 @@ export function PoolDetailClient({ detail }: Props) {
                   />
                   <CollateralHistoryCard transactions={detail.transactions} />
                   <RelatedPoolsRow detail={detail} />
+                  <DetailPageNotice />
                 </section>
               </div>
 

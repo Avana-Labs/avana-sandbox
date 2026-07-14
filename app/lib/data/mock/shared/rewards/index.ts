@@ -1,4 +1,4 @@
-export type RewardsPromoTabId = "new-users" | "challenge-tasks" | "refer-a-friend"
+export type RewardsPromoTabId = "getting-started" | "lend" | "borrow" | "multiply" | "referrals"
 export type RewardsQuestIconId =
   | "droplets"
   | "flame"
@@ -28,9 +28,11 @@ export type RewardsQuest = {
 export const REWARDS_BALANCE_TOTAL = 14_400
 
 export const REWARDS_PROMO_TABS = [
-  { id: "new-users", label: "New users" },
-  { id: "challenge-tasks", label: "Challenge tasks" },
-  { id: "refer-a-friend", label: "Refer a friend" },
+  { id: "getting-started", label: "Getting started" },
+  { id: "lend", label: "Lend" },
+  { id: "borrow", label: "Borrow" },
+  { id: "multiply", label: "Multiply" },
+  { id: "referrals", label: "Referrals" },
 ] as const satisfies ReadonlyArray<{ id: RewardsPromoTabId; label: string }>
 
 export const NEW_USER_QUESTS: RewardsQuest[] = [
@@ -82,11 +84,30 @@ export const REFERRAL_QUESTS: RewardsQuest[] = [
   { id: "referral-ambassador", title: "Become an Avana ambassador", description: "Reach 10 active referred wallets and maintain healthy participation.", reward: "300 AVA", cta: "Unlock tier", category: "Ambassador", iconId: "trophy" },
 ]
 
-export const REWARDS_QUESTS_BY_TAB: Record<RewardsPromoTabId, RewardsQuest[]> = {
-  "new-users": NEW_USER_QUESTS,
-  "challenge-tasks": CHALLENGE_QUESTS,
-  "refer-a-friend": REFERRAL_QUESTS,
+const ALL_MOCK_QUESTS: RewardsQuest[] = [...NEW_USER_QUESTS, ...CHALLENGE_QUESTS, ...REFERRAL_QUESTS]
+
+/** Route each demo quest to a product tab by its icon/category shorthand. */
+function mockQuestTab(quest: RewardsQuest): RewardsPromoTabId {
+  if (REFERRAL_QUESTS.includes(quest) || quest.iconId === "link2") return "referrals"
+  if (quest.iconId === "droplets") return "lend"
+  if (quest.iconId === "rocket" || quest.iconId === "repeat2") return "borrow"
+  if (quest.iconId === "layers3") return "multiply"
+  return "getting-started"
 }
+
+export const REWARDS_QUESTS_BY_TAB: Record<RewardsPromoTabId, RewardsQuest[]> = ALL_MOCK_QUESTS.reduce(
+  (result, quest) => {
+    result[mockQuestTab(quest)].push(quest)
+    return result
+  },
+  {
+    "getting-started": [] as RewardsQuest[],
+    lend: [] as RewardsQuest[],
+    borrow: [] as RewardsQuest[],
+    multiply: [] as RewardsQuest[],
+    referrals: [] as RewardsQuest[],
+  } as Record<RewardsPromoTabId, RewardsQuest[]>,
+)
 
 export const mockRewardsSharedSource = {
   getBalanceTotal() {

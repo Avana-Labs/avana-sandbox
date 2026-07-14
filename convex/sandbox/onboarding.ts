@@ -724,6 +724,8 @@ export const savePreferences = mutation({
       language: v.optional(v.string()),
       currency: v.optional(v.string()),
       showDollarAmounts: v.optional(v.boolean()),
+      name: v.optional(v.string()),
+      dexSources: v.optional(v.array(v.string())),
     }),
   },
   handler: async (ctx, args) => {
@@ -731,12 +733,28 @@ export const savePreferences = mutation({
     const authSubject = (await getAuthSubject(ctx)) ?? undefined
     const existing = await profileForWallet(ctx, wallet)
 
+    // Sanitize the new user-supplied fields server-side so no client can overflow them:
+    // the display name is capped at 10 chars, and only defined fields are merged (a bare
+    // `undefined` would otherwise clobber a previously-saved value).
+    const incoming = { ...args.preferences }
+    if (typeof incoming.name === "string") {
+      const trimmed = incoming.name.trim().slice(0, 10)
+      if (trimmed) incoming.name = trimmed
+      else delete incoming.name
+    }
+    if (incoming.dexSources) {
+      incoming.dexSources = incoming.dexSources
+        .map((source) => source.trim().slice(0, 40))
+        .filter(Boolean)
+        .slice(0, 24)
+    }
+
     if (existing) {
       await ctx.db.patch(existing._id, {
         authSubject: existing.authSubject ?? authSubject,
         preferences: {
           ...existing.preferences,
-          ...args.preferences,
+          ...incoming,
         },
       })
       return "updated" as const
@@ -748,7 +766,7 @@ export const savePreferences = mutation({
       createdAt: Date.now(),
       seedVersion: SEED_VERSION,
       onboardingStep: "wallet",
-      preferences: args.preferences,
+      preferences: incoming,
     })
     return "created" as const
   },

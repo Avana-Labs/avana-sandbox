@@ -53,6 +53,7 @@ export function TokenIcon({
           alt={meta.symbol}
           width={px}
           height={px}
+          sizes={`${px}px`}
           className="h-full w-full object-contain"
           onError={() => setFailed(true)}
           unoptimized

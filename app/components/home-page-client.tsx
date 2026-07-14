@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import type { HomeMode } from "@/app/lib/home-sim"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
@@ -28,17 +28,12 @@ export function HomePageClient() {
 
 function HomePageWorkspace() {
   const { borrow: session } = useAvanaSessions()
-  const [isClientReady, setIsClientReady] = useState(false)
   const [mode, setMode] = useState<HomeMode>("borrow")
-
-  useEffect(() => {
-    setIsClientReady(true)
-  }, [])
 
   // Gate on the full available-pool list (always populated) rather than the
   // pledged pools — a freshly onboarded wallet with no positions still renders
   // the card instead of hanging on the loading skeleton forever.
-  if (!isClientReady || session.availableCollateralPools.length === 0) {
+  if (session.availableCollateralPools.length === 0) {
     return <HomeWorkspaceSkeleton />
   }
 

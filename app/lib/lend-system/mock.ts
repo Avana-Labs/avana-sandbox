@@ -4,10 +4,12 @@ import { buildLendCatalogMarketsRecord } from "./catalog"
 import { resolveLendMarketId } from "./catalog"
 
 function buildMockWalletBalances(walletId: string) {
+  const balances: Record<string, number> = {}
+  for (const token of getWalletLendAssets(walletId)) {
+    balances[resolveLendMarketId(token.symbol)] = token.balance
+  }
   return {
-    [walletId]: Object.fromEntries(
-      getWalletLendAssets(walletId).map((token) => [resolveLendMarketId(token.symbol), token.balance]),
-    ),
+    [walletId]: balances,
   }
 }
 

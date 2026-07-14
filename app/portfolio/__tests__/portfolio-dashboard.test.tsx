@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { DashboardClient } from "@/app/dashboard/dashboard-client"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
@@ -118,33 +118,15 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
 }))
 
 vi.mock("@/app/dashboard/dashboard-tabs", () => ({
-  DashboardTabs: ({ onTabChange }: { onTabChange: (tab: "overview") => void }) => (
-    <button type="button" onClick={() => onTabChange("overview")}>
-      Borrow tab
-    </button>
-  ),
+  DashboardTabs: () => <div>dashboard-hero</div>,
 }))
 
 vi.mock("@/app/portfolio/dashboard-metric-section", () => ({
   DashboardOverviewSection: ({ title }: { title: string }) => <div>{title}</div>,
+  DashboardCreditOverviewSection: ({ title }: { title: string }) => <div>{title}</div>,
   DashboardPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
   DashboardLendPerformanceSection: ({ title }: { title: string }) => <div>{title}</div>,
 }))
-vi.mock("@/app/portfolio/dashboard-borrow-tab", () => ({
-  DashboardBorrowTab: ({
-    collateralPositions,
-    debtPositions,
-  }: {
-    collateralPositions: Array<{ pool: { id: string } }>
-    debtPositions: Array<{ id: string }>
-  }) => (
-    <div>
-      <div>collateral:{collateralPositions.map((position) => position.pool.id).join(",")}</div>
-      <div>debt:{debtPositions.map((position) => position.id).join(",")}</div>
-    </div>
-  ),
-}))
-
 vi.mock("@/app/portfolio/portfolio-investments", () => ({
   PortfolioInvestments: () => <div>investments</div>,
 }))
@@ -221,13 +203,8 @@ describe("DashboardClient", () => {
     )
 
     await waitFor(() => expect(readPortfolioBorrow).toHaveBeenCalledWith("demo-wallet"))
-    expect(screen.getByLabelText("Dollar amounts")).toBeInTheDocument()
-    await waitFor(() => expect(screen.getByText("Borrow tab")).toBeInTheDocument())
-
-    fireEvent.click(screen.getByText("Borrow tab"))
-    await waitFor(() => expect(screen.getByText("Credit Overview")).toBeInTheDocument())
-    expect(screen.getByText("Credit Performance")).toBeInTheDocument()
-    expect(screen.getByText("collateral:pool-a")).toBeInTheDocument()
-    expect(screen.getByText("debt:debt-a")).toBeInTheDocument()
+    // Borrow + Multiply sections now live under the Lend (default) tab as sub-tab strips.
+    await waitFor(() => expect(screen.getByText("Collateral Positions")).toBeInTheDocument())
+    expect(screen.getByText("Debt Positions")).toBeInTheDocument()
   })
 })

@@ -20,10 +20,13 @@ export function HoverActionGroup({
   className?: string
   align?: "start" | "end"
 }) {
+  // Always visible on desktop, but faded at rest (both chips share the muted
+  // fill) so the row stays calm; hovering (or keyboard focus) fades them to full
+  // opacity while the primary chip morphs to the brand fill.
   return (
     <div
       className={cn(
-        "flex gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto",
+        "flex gap-1.5 opacity-60 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-within:opacity-100",
         align === "start" ? "justify-start" : "justify-end",
         className,
       )}

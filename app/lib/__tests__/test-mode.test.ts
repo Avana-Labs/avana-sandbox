@@ -10,6 +10,7 @@ describe("open gate test mode", () => {
     vi.stubEnv("NODE_ENV", "production")
     vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "1")
     vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "1")
+    vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE", "1")
     const prod = await import("@/app/lib/test-mode")
     expect(prod.IS_OPEN_GATE_TEST_MODE).toBe(false)
     expect(prod.shouldUseOpenGateSession()).toBe(false)
@@ -19,6 +20,7 @@ describe("open gate test mode", () => {
     vi.stubEnv("NODE_ENV", "development")
     vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "0")
     vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
+    vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE", "0")
     const dev = await import("@/app/lib/test-mode")
     expect(dev.IS_OPEN_GATE_TEST_MODE).toBe(false)
     expect(dev.shouldUseOpenGateSession()).toBe(false)
@@ -43,6 +45,26 @@ describe("open gate test mode", () => {
     const e2e = await import("@/app/lib/test-mode")
     expect(e2e.IS_OPEN_GATE_TEST_MODE).toBe(true)
     expect(e2e.shouldUseOpenGateSession()).toBe(true)
+  })
+
+  it("opens in development for the Lighthouse audit flag", async () => {
+    vi.stubEnv("NODE_ENV", "development")
+    vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "0")
+    vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
+    vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE", "1")
+    const audit = await import("@/app/lib/test-mode")
+    expect(audit.IS_OPEN_GATE_TEST_MODE).toBe(true)
+    expect(audit.shouldUseOpenGateSession()).toBe(true)
+  })
+
+  it("opens only in the isolated local production Lighthouse artifact", async () => {
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE", "1")
+    vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT", "1")
+    vi.stubEnv("VERCEL", "")
+    vi.stubEnv("CI", "")
+    const audit = await import("@/app/lib/test-mode")
+    expect(audit.shouldUseOpenGateSession()).toBe(true)
   })
 
   it("keeps the mock data source override independent of the open gate", async () => {
