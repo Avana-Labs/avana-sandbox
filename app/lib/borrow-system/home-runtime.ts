@@ -123,12 +123,12 @@ export function selectHomeRepayTokensForMarket(
 }
 
 export function selectHomeDebtMap(state: BorrowSystemState, walletId: string) {
-  return Object.fromEntries(
-    selectBorrowCollateralPools(state, walletId).map((pool) => {
-      const spokeId = state.markets[pool.id]?.spokeId
-      return [pool.id, spokeId ? totalSpokeDebtUsd(state, walletId, spokeId) : 0]
-    }),
-  ) as Record<string, number>
+  const debtMap: Record<string, number> = {}
+  for (const pool of selectBorrowCollateralPools(state, walletId)) {
+    const spokeId = state.markets[pool.id]?.spokeId
+    debtMap[pool.id] = spokeId ? totalSpokeDebtUsd(state, walletId, spokeId) : 0
+  }
+  return debtMap
 }
 
 export function selectHomeDebtContextForMarket(state: BorrowSystemState, walletId: string, marketId: string) {
@@ -367,7 +367,11 @@ export function selectRewardClaimableTotals(state: BorrowSystemState, walletId: 
   const account = state.accounts[walletId]
   if (!account) return {}
   const rewardPositions = account.rewardPositions ?? []
-  return Object.fromEntries(rewardPositions.map((position) => [position.id, fixedToNumber(position.claimableUsd6, 6)]))
+  const claimableTotals: Record<string, number> = {}
+  for (const position of rewardPositions) {
+    claimableTotals[position.id] = fixedToNumber(position.claimableUsd6, 6)
+  }
+  return claimableTotals
 }
 
 export function buildClaimBorrowAction(walletId: string, preview: ClaimPreview): BorrowAction | null {
@@ -391,9 +395,10 @@ export function buildHomeClaimPreview(
   partialAmountUsd: number | null,
 ): ClaimPreview {
   const engineTotals = selectRewardClaimableTotals(state, walletId)
-  const claimableTotals = Object.fromEntries(
-    positions.map((position) => [position.id, engineTotals[position.id] ?? 0]),
-  )
+  const claimableTotals: Record<string, number> = {}
+  for (const position of positions) {
+    claimableTotals[position.id] = engineTotals[position.id] ?? 0
+  }
   return calculateClaimPreview(positions, claimableTotals, selections, partialAmountUsd)
 }
 

@@ -377,9 +377,10 @@ export const HOME_INITIAL_CLAIM_SELECTIONS: Record<string, boolean> = {
   "claim-wbtc-eth": false,
 }
 
-export const HOME_INITIAL_CLAIMABLE_TOTALS: Record<string, number> = Object.fromEntries(
-  HOME_CLAIM_POSITIONS.map((position) => [position.id, position.totalUsd]),
-)
+export const HOME_INITIAL_CLAIMABLE_TOTALS: Record<string, number> = {}
+for (const position of HOME_CLAIM_POSITIONS) {
+  HOME_INITIAL_CLAIMABLE_TOTALS[position.id] = position.totalUsd
+}
 
 export const HOME_DEFAULT_SELECTIONS = {
   borrowPoolId: "eth-usdc",

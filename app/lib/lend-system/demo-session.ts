@@ -13,13 +13,11 @@ export function buildConvexLendSessionSeed(walletId: string) {
   // funds per asset (it's play money). This is wallet holdings only; it isn't summed
   // into the portfolio total, so the $1M starter allocation is unchanged. Deposited
   // positions are still hydrated from Convex.
-  const walletBalances = {
-    [walletId]: Object.fromEntries(
-      Object.values(state.markets).map((market) => [
-        market.marketId,
-        market.assetPriceUsd > 0 ? 1_000_000 / market.assetPriceUsd : 1_000_000,
-      ]),
-    ),
+  const walletBalances: Record<string, Record<string, number>> = {
+    [walletId]: {},
+  }
+  for (const market of Object.values(state.markets)) {
+    walletBalances[walletId][market.marketId] = market.assetPriceUsd > 0 ? 1_000_000 / market.assetPriceUsd : 1_000_000
   }
   return serializeLendSystemState({
     ...state,

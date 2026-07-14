@@ -7,32 +7,28 @@ export function accrueBorrowSystemState(state: BorrowSystemState, nextNow: numbe
   const elapsedSeconds = BigInt(Math.floor((nextNow - state.now) / 1000))
   if (elapsedSeconds <= 0n) return state
 
-  const markets = Object.fromEntries(
-    Object.entries(state.markets).map(([marketId, market]) => [
-      marketId,
-      {
-        ...market,
-        snapshot: {
-          ...market.snapshot,
-          supplyIndexRay: accrueLinearIndex(market.snapshot.supplyIndexRay, market.snapshot.feeApyWad, elapsedSeconds),
-        },
+  const markets: BorrowSystemState["markets"] = {}
+  for (const [marketId, market] of Object.entries(state.markets)) {
+    markets[marketId] = {
+      ...market,
+      snapshot: {
+        ...market.snapshot,
+        supplyIndexRay: accrueLinearIndex(market.snapshot.supplyIndexRay, market.snapshot.feeApyWad, elapsedSeconds),
       },
-    ]),
-  )
+    }
+  }
 
-  const accounts = Object.fromEntries(
-    Object.entries(state.accounts).map(([walletId, account]) => [
-      walletId,
-      {
-        ...account,
-        lastUpdatedAt: nextNow,
-        debtPositions: account.debtPositions.map((position) => ({
-          ...position,
-          debtIndexRay: accrueLinearIndex(position.debtIndexRay, position.borrowRateWad, elapsedSeconds),
-        })),
-      },
-    ]),
-  )
+  const accounts: BorrowSystemState["accounts"] = {}
+  for (const [walletId, account] of Object.entries(state.accounts)) {
+    accounts[walletId] = {
+      ...account,
+      lastUpdatedAt: nextNow,
+      debtPositions: account.debtPositions.map((position) => ({
+        ...position,
+        debtIndexRay: accrueLinearIndex(position.debtIndexRay, position.borrowRateWad, elapsedSeconds),
+      })),
+    }
+  }
 
   return {
     ...state,
@@ -51,28 +47,28 @@ export function accrueBorrowSystemStateForWallet(state: BorrowSystemState, walle
   const account = state.accounts[walletId]
   if (!account) return accrueBorrowSystemState(state, nextNow)
 
-  const affectedMarketIds = new Set([
-    ...account.collateralPositions.map((position) => position.marketId),
-    ...account.debtPositions.map((position) => position.marketId).filter(Boolean) as string[],
-  ])
+  const affectedMarketIds = new Set<string>()
+  for (const position of account.collateralPositions) {
+    affectedMarketIds.add(position.marketId)
+  }
+  for (const position of account.debtPositions) {
+    if (position.marketId) affectedMarketIds.add(position.marketId)
+  }
 
-  const markets = Object.fromEntries(
-    Object.entries(state.markets).map(([marketId, market]) => {
-      if (!affectedMarketIds.has(marketId)) {
-        return [marketId, market]
-      }
-      return [
-        marketId,
-        {
-          ...market,
-          snapshot: {
-            ...market.snapshot,
-            supplyIndexRay: accrueLinearIndex(market.snapshot.supplyIndexRay, market.snapshot.feeApyWad, elapsedSeconds),
-          },
-        },
-      ]
-    }),
-  )
+  const markets: BorrowSystemState["markets"] = {}
+  for (const [marketId, market] of Object.entries(state.markets)) {
+    if (!affectedMarketIds.has(marketId)) {
+      markets[marketId] = market
+      continue
+    }
+    markets[marketId] = {
+      ...market,
+      snapshot: {
+        ...market.snapshot,
+        supplyIndexRay: accrueLinearIndex(market.snapshot.supplyIndexRay, market.snapshot.feeApyWad, elapsedSeconds),
+      },
+    }
+  }
 
   return {
     ...state,

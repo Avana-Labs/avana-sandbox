@@ -10,6 +10,17 @@
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "1.0.3"
   },
+  "browserslist": {
+    "production": [
+      "last 2 Chrome versions",
+      "last 2 Edge versions",
+      "last 2 Firefox versions",
+      "last 2 Safari versions"
+    ],
+    "development": [
+      "last 1 Chrome version"
+    ]
+  },
   "scripts": {
     "clean": "node scripts/clean-next.mjs",
     "dev": "node scripts/run-next.mjs dev",

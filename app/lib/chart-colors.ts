@@ -53,11 +53,16 @@ export function toRgba(hex: string, alpha: number) {
 }
 
 function resolveTailwindTextColor(className: string, theme: ThemeMode) {
-  const token = className
-    .split(/\s+/)
-    .map((part) => part.trim())
-    .map((part) => part.split(":").at(-1) ?? part)
-    .find((part) => /^text-[a-z]+-\d{3}$/.test(part))
+  let token: string | null = null
+  for (const part of className.split(/\s+/)) {
+    const trimmed = part.trim()
+    const segments = trimmed.split(":")
+    const candidate = segments[segments.length - 1] ?? trimmed
+    if (/^text-[a-z]+-\d{3}$/.test(candidate)) {
+      token = candidate
+      break
+    }
+  }
   if (!token) return null
 
   const match = /^text-([a-z]+)-(\d{3})$/.exec(token)

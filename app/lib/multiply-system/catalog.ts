@@ -144,5 +144,9 @@ export function getMultiplyMarketById(marketId: string) {
 }
 
 export function buildMultiplyCatalogMarketsRecord() {
-  return Object.fromEntries(MULTIPLY_MARKET_CATALOG.map((market) => [market.id, market]))
+  const markets: Record<string, MultiplyMarketRecord> = {}
+  for (const market of MULTIPLY_MARKET_CATALOG) {
+    markets[market.id] = market
+  }
+  return markets
 }

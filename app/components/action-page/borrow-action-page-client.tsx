@@ -64,6 +64,14 @@ function resolveClaimPositions(marketId: string, claimPositionId?: string) {
   return HOME_CLAIM_POSITIONS.filter((position) => position.poolId === poolId || position.poolId === marketId)
 }
 
+function selectionsFromPositions(positions: ReadonlyArray<{ id: string }>) {
+  const selections: Record<string, boolean> = {}
+  for (const position of positions) {
+    selections[position.id] = true
+  }
+  return selections
+}
+
 export function BorrowActionPageClient({
   kind,
   closeHref = "/borrow",
@@ -643,7 +651,7 @@ export function BorrowActionPageClient({
         return undefined
       }
       const positions = resolveClaimPositions(marketId, claimPositionId)
-      const selections = Object.fromEntries(positions.map((position) => [position.id, true]))
+      const selections = selectionsFromPositions(positions)
       const claimPreview = buildHomeClaimPreview(session.state, walletId, positions, selections, safeAmount || null)
       setPreviewUi(
         mapBorrowRewardsClaimPreviewToActionUi({
@@ -805,7 +813,7 @@ export function BorrowActionPageClient({
         })
       } else if (kind === "claim") {
         const positions = resolveClaimPositions(marketId)
-        const selections = Object.fromEntries(positions.map((position) => [position.id, true]))
+        const selections = selectionsFromPositions(positions)
         const claimPreview = buildHomeClaimPreview(session.state, walletId, positions, selections, safeAmount || null)
         const action = buildClaimBorrowAction(walletId, claimPreview)
         if (!action) throw new Error("Nothing to claim")

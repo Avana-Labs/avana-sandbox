@@ -304,31 +304,34 @@ function walletLpBalancesFromHomePools() {
     const marketId = HOME_POOL_TO_MARKET_ID[pool.id]
     if (marketId) homeBalances.set(marketId, usd6(pool.collateralUsd * 2))
   }
-  return Object.fromEntries(
-    BORROW_POOL_CATALOG.map((pool) => [pool.id, homeBalances.get(pool.id) ?? usd6(25_000)]),
-  )
+  const balances: Record<string, bigint> = {}
+  for (const pool of BORROW_POOL_CATALOG) {
+    balances[pool.id] = homeBalances.get(pool.id) ?? usd6(25_000)
+  }
+  return balances
 }
 
 export function buildMockBorrowCatalog() {
   const spokeBorrowables = listSpokeBorrowables()
-  const borrowAssetIdsBySpoke = new Map(
-    spokeBorrowables.map((asset) => [`${asset.spokeId}:${asset.symbol.toUpperCase()}`, asset.id]),
-  )
-  const markets = Object.fromEntries(
-    BORROW_POOL_CATALOG.map((pool) => [
-      pool.id,
-      buildMarketRecord(
-        pool,
-        new Map(
-          pool.borrowableTokens.map((visual) => [
-            visual.symbol.toUpperCase(),
-            borrowAssetIdsBySpoke.get(`${pool.spoke}:${visual.symbol.toUpperCase()}`) ?? "",
-          ]),
-        ),
-      ),
-    ]),
-  )
-  const assets = Object.fromEntries(spokeBorrowables.map((asset) => [asset.id, buildAssetRecord(asset)]))
+  const borrowAssetIdsBySpoke = new Map<string, string>()
+  for (const asset of spokeBorrowables) {
+    borrowAssetIdsBySpoke.set(`${asset.spokeId}:${asset.symbol.toUpperCase()}`, asset.id)
+  }
+  const markets: Record<string, BorrowMarketRecord> = {}
+  for (const pool of BORROW_POOL_CATALOG) {
+    const borrowAssetIdsBySymbol = new Map<string, string>()
+    for (const visual of pool.borrowableTokens) {
+      borrowAssetIdsBySymbol.set(
+        visual.symbol.toUpperCase(),
+        borrowAssetIdsBySpoke.get(`${pool.spoke}:${visual.symbol.toUpperCase()}`) ?? "",
+      )
+    }
+    markets[pool.id] = buildMarketRecord(pool, borrowAssetIdsBySymbol)
+  }
+  const assets: Record<string, BorrowAssetRecord> = {}
+  for (const asset of spokeBorrowables) {
+    assets[asset.id] = buildAssetRecord(asset)
+  }
   return { markets, assets }
 }
 

@@ -37,6 +37,12 @@ export function CurrencyFlag({ code, className = "h-6 w-6" }: CurrencyFlagProps)
 }
 
 function UsdFlag() {
+  const stars: JSX.Element[] = []
+  for (const y of [2, 5, 8]) {
+    for (const x of [2.2, 5.3, 8.4]) {
+      stars.push(<circle key={`${x}-${y}`} cx={x} cy={y} r="0.55" fill="#fff" />)
+    }
+  }
   return (
     <>
       <rect width="24" height="24" fill="#fff" />
@@ -44,7 +50,7 @@ function UsdFlag() {
         <rect key={y} y={y} width="24" height="2" fill="#d94b5a" />
       ))}
       <rect width="11" height="10" fill="#28407a" />
-      {[2, 5, 8].flatMap((y) => [2.2, 5.3, 8.4].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="0.55" fill="#fff" />))}
+      {stars}
     </>
   )
 }
