@@ -1,54 +1,18 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import * as React from "react"
 import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { LendHero, LendHeroIdentity, SupplyCard } from "@/app/lend/_detail"
+import { AboutNewsSection, DetailFaqSection } from "@/app/borrow/_detail/ui"
+import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
+import { TransactionHistoryCard } from "@/app/borrow/_detail/asset-sections"
+import { LendHero, LendHeroIdentity, SupplyCard, RelatedMarketsRow, LendSidebar } from "@/app/lend/_detail"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
 import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
-import { cn } from "@/lib/utils"
-
-const AboutNewsSection = dynamic(() => import("@/app/borrow/_detail/ui/AboutNewsSection").then((mod) => mod.AboutNewsSection), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[320px]" />,
-})
-const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[380px]" />,
-})
-const QuickStatsGrid = dynamic(() => import("@/app/borrow/_detail/pool-sections/QuickStatsGrid").then((mod) => mod.QuickStatsGrid), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[280px]" />,
-})
-const CashflowCard = dynamic(() => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[320px]" />,
-})
-const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[320px]" />,
-})
-const TransactionHistoryCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
-  { ssr: false, loading: () => <DeferredBlock className="h-[360px]" /> },
-)
-const RelatedMarketsRow = dynamic(() => import("@/app/lend/_detail/sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[200px]" />,
-})
-const LendSidebar = dynamic(() => import("@/app/lend/_detail/sidebars/LendSidebar").then((mod) => mod.LendSidebar), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[760px]" />,
-})
-
-function DeferredBlock({ className }: { className?: string }) {
-  return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
-}
 
 type Props = { detail: LendMarketDetail }
 
