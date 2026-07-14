@@ -70,6 +70,7 @@ function AssetIcon({ row }: { row: AssetRow }) {
           src={row.logoSrc}
           width={40}
           height={40}
+          sizes="40px"
           className="h-full w-full object-contain"
           unoptimized
         />
