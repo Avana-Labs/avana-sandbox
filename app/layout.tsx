@@ -116,11 +116,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <DisplayPreferencesProvider>
             <WalletGateProvider>
               <AvanaSessionProviders>
-                <PreferencesProfileSync />
-                <TokenPricesProvider>
-                  <CurrencyDisplayBoundary>
-                    <Web3ProviderBoundary>
-                      <SandboxGate>
+                <Web3ProviderBoundary>
+                  <SandboxGate>
+                    {/* These subscriptions are useful only inside the unlocked product UI.
+                        Keeping them behind the gate avoids starting price/profile work while
+                        the guest onboarding screen is the only visible surface. */}
+                    <PreferencesProfileSync />
+                    <TokenPricesProvider>
+                      <CurrencyDisplayBoundary>
                         <ConditionalSiteChrome>
                           <Suspense fallback={null}>
                             <PageLoadingBar />
@@ -128,11 +131,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                           <ScrollResetOnNavigate />
                           {children}
                         </ConditionalSiteChrome>
-                      </SandboxGate>
-                    </Web3ProviderBoundary>
-                    <DeferredGlobalChrome />
-                  </CurrencyDisplayBoundary>
-                </TokenPricesProvider>
+                        <DeferredGlobalChrome />
+                      </CurrencyDisplayBoundary>
+                    </TokenPricesProvider>
+                  </SandboxGate>
+                </Web3ProviderBoundary>
               </AvanaSessionProviders>
             </WalletGateProvider>
           </DisplayPreferencesProvider>
