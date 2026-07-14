@@ -5,7 +5,7 @@ import Link from "next/link"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import {
   AssetHero,
   AssetHeroIdentity,
@@ -110,6 +110,7 @@ export function AssetDetailClient({ detail }: Props) {
                     assetSymbol={detail.hero.symbol}
                   />
                   <RelatedAssetsRow detail={detail} />
+                  <DetailPageNotice />
                 </section>
               </div>
 

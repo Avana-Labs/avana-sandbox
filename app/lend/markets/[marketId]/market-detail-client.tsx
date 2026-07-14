@@ -12,7 +12,7 @@ import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-contex
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
-import { DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 
 type Props = { detail: LendMarketDetail }
 
@@ -104,6 +104,7 @@ export function LendMarketDetailClient({ detail }: Props) {
                     kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
                   />
                   <RelatedMarketsRow detail={detail} />
+                  <DetailPageNotice />
                 </section>
               </div>
 
