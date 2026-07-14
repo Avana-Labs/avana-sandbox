@@ -8,6 +8,7 @@ import {
   CHROME_FLAGS,
   LIGHTHOUSE_CATEGORY_BUDGETS,
   LIGHTHOUSE_ONBOARDING_MARKER,
+  LIGHTHOUSE_NUMERIC_BUDGETS,
   LIGHTHOUSE_ROUTE_MARKERS,
   LIGHTHOUSE_ROUTES,
 } from "./lighthouse-config.mjs"
@@ -20,6 +21,11 @@ const budgets = {
   seo: Number(process.env.LH_SEO_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS.seo),
 }
 const runCount = Math.max(1, Number(process.env.LH_RUNS ?? 3))
+const numericBudgets = {
+  largestContentfulPaintMs: Number(process.env.LH_LCP_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.largestContentfulPaintMs),
+  totalBlockingTimeMs: Number(process.env.LH_TBT_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.totalBlockingTimeMs),
+  unusedJavaScriptBytes: Number(process.env.LH_UNUSED_JS_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.unusedJavaScriptBytes),
+}
 
 function runLighthouse(route, outputPath) {
   const url = new URL(route, baseUrl).toString()
@@ -56,6 +62,12 @@ function median(values) {
   return sorted.length % 2 === 0 ? Math.round((sorted[middle - 1] + sorted[middle]) / 2) : sorted[middle]
 }
 
+function numericAudit(report, id) {
+  const audit = report.audits[id]
+  if (id === "unused-javascript") return audit?.details?.overallSavingsBytes ?? 0
+  return audit?.numericValue ?? 0
+}
+
 async function assertRouteContent(route) {
   const response = await fetch(new URL(route, baseUrl))
   const html = await response.text()
@@ -78,6 +90,11 @@ const failures = []
 for (const route of LIGHTHOUSE_ROUTES) {
   await assertRouteContent(route)
   const categoryScores = Object.fromEntries(Object.keys(budgets).map((category) => [category, []]))
+  const numericScores = {
+    largestContentfulPaintMs: [],
+    totalBlockingTimeMs: [],
+    unusedJavaScriptBytes: [],
+  }
 
   for (let run = 1; run <= runCount; run += 1) {
     const outputPath = path.join(outputDir, `${route.replaceAll("/", "_") || "home"}-${run}.json`)
@@ -87,6 +104,9 @@ for (const route of LIGHTHOUSE_ROUTES) {
     for (const category of Object.keys(budgets)) {
       categoryScores[category].push(score(report, category))
     }
+    numericScores.largestContentfulPaintMs.push(numericAudit(report, "largest-contentful-paint"))
+    numericScores.totalBlockingTimeMs.push(numericAudit(report, "total-blocking-time"))
+    numericScores.unusedJavaScriptBytes.push(numericAudit(report, "unused-javascript"))
   }
 
   const row = { route, runs: runCount }
@@ -95,6 +115,13 @@ for (const route of LIGHTHOUSE_ROUTES) {
     row[category] = median(categoryScores[category])
     if (row[category] < budgets[category]) {
       failures.push(`${route} ${category}: ${row[category]} < ${budgets[category]}`)
+    }
+  }
+
+  for (const [metric, budget] of Object.entries(numericBudgets)) {
+    row[metric] = median(numericScores[metric])
+    if (row[metric] > budget) {
+      failures.push(`${route} ${metric}: ${row[metric]} > ${budget}`)
     }
   }
 
