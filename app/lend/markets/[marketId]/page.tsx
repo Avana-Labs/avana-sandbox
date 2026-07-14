@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getLendMarketDetail } from "@/app/lib/lend-detail"
 import { getLendMarketDetailFromConvex } from "@/app/lib/lend-detail/convex-detail"
 import { LendMarketDetailClientShell } from "./page-client-shell"
+import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 
 type PageProps = {
   params: Promise<{ marketId: string }>
@@ -12,15 +14,37 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { marketId } = await params
   const detail = getLendMarketDetail(marketId)
   if (!detail) return { title: "Lend market · Avana" }
-  return {
+  return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Lend`,
     description: detail.about.description,
-  }
+    path: `/lend/markets/${marketId}`,
+    keywords: [detail.hero.name, "supply yield", "DeFi lend market"],
+  })
 }
 
 export default async function LendMarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
   const detail = await getLendMarketDetailFromConvex(marketId)
   if (!detail) notFound()
-  return <LendMarketDetailClientShell detail={detail} />
+  const canonicalUrl = `https://avana.cc/lend/markets/${marketId}`
+  return (
+    <>
+      <SchemaMarkup
+        data={[
+          buildWebPageSchema({
+            name: `${detail.hero.name} · Avana Lend`,
+            description: detail.about.description,
+            url: canonicalUrl,
+          }),
+          buildBreadcrumbSchema([
+            { name: "Home", url: "https://avana.cc" },
+            { name: "Lend", url: "https://avana.cc/lend" },
+            { name: detail.hero.name, url: canonicalUrl },
+          ]),
+          buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
+        ]}
+      />
+      <LendMarketDetailClientShell detail={detail} />
+    </>
+  )
 }
