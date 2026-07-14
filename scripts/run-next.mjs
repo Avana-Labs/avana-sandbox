@@ -19,6 +19,7 @@ if (!supportedModes.has(mode)) {
 const isLocalLighthouseAuditBuild =
   process.env.NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE === "1" &&
   process.env.AVANA_NEXT_DIST_DIR === ".next-lighthouse" &&
+  process.env.NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT === "1" &&
   !process.env.VERCEL &&
   !process.env.CI
 
