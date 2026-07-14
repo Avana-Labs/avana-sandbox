@@ -16,9 +16,12 @@ if (!supportedModes.has(mode)) {
 // A `build` with NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 inlines IS_OPEN_GATE_TEST_MODE=true
 // — a full SIWE/onboarding bypass authenticating every visitor as the test wallet.
 // Refuse it so a poisoned artifact can never be produced or shipped.
-if (mode === "build" && process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1") {
+if (
+  mode === "build" &&
+  (process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1" || process.env.NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE === "1")
+) {
   process.stderr.write(
-    "Refusing to build with NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1: that bakes the open auth gate\n" +
+    "Refusing to build with an open-gate test mode: that bakes the open auth gate\n" +
       "(and the test wallet) into the production artifact. Unset it for production builds.\n",
   )
   process.exit(1)

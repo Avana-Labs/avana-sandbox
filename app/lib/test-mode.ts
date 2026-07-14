@@ -31,9 +31,14 @@ export function isPlaywrightTestMode(): boolean {
   return process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1"
 }
 
+/** Local Lighthouse route audit opt-in. It shares the production hard floor below. */
+export function isLighthouseAuditMode(): boolean {
+  return process.env.NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE === "1"
+}
+
 export function shouldUseOpenGateSession(): boolean {
   if (isProductionBuild()) return false
-  return isDevOpenGateEnabled() || isPlaywrightTestMode()
+  return isDevOpenGateEnabled() || isPlaywrightTestMode() || isLighthouseAuditMode()
 }
 
 export function shouldUseMockDataSource(): boolean {
