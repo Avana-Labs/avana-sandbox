@@ -15,6 +15,7 @@ import {
 } from "@/app/components/display-preferences"
 import { CurrencyFlag } from "@/app/components/currency-flag"
 import { useThemeOptional } from "@/app/components/theme-provider"
+import styles from "./onboarding-flow.module.css"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -237,7 +238,7 @@ export function OnboardingUnavailable({
   return (
     <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8">
       <StatusRow wallet={null} pct={10} />
-      <div className="animate-content-reveal">
+      <div className={styles.reveal}>
         <Headline muted={t(headlineMuted)} active={t(headlineActive)} size="hero" />
         <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">{t(note)}</p>
         <button className={`${PRIMARY} mt-9`} onClick={onRetry} type="button">
@@ -285,7 +286,7 @@ function ThinkingSteps({ muted, active, steps }: { muted?: string; active: strin
               }`}
             >
               {state === "done" ? (
-                <span className="animate-content-reveal">
+                <span className={styles.reveal}>
                   <Check className="size-[18px] text-emerald-500" strokeWidth={2.75} />
                 </span>
               ) : (
@@ -914,7 +915,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
         </>
       ) : step === "done" ? (
         <>
-          <div className="mb-7 flex size-12 animate-content-reveal items-center justify-center rounded-full bg-emerald-500 text-white">
+          <div className={`mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white ${styles.reveal}`}>
             <Check className="size-6" strokeWidth={3} />
           </div>
           <Headline muted={t("You're all set.")} active={t("Your sandbox is live.")} />
