@@ -41,7 +41,8 @@
     "test:stress:onboarding": "RUN_ONBOARDING_10K=1 vitest run convex/sandbox-onboarding-10k.test.ts",
     "start": "node scripts/run-next.mjs start",
     "lighthouse:budgets": "node scripts/lighthouse-budgets.mjs",
-    "lighthouse:serve": "NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 npm run dev -- --port 3001",
+    "lighthouse:build": "AVANA_NEXT_DIST_DIR=.next-lighthouse NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 npm run build",
+    "lighthouse:serve": "AVANA_NEXT_DIST_DIR=.next-lighthouse NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 npm run start -- --port 3001",
     "lighthouse:analyze": "node scripts/analyze-lighthouse-bundles.mjs"
   },
   "dependencies": {

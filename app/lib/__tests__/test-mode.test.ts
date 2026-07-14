@@ -57,6 +57,16 @@ describe("open gate test mode", () => {
     expect(audit.shouldUseOpenGateSession()).toBe(true)
   })
 
+  it("opens only in the isolated local production Lighthouse artifact", async () => {
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE", "1")
+    vi.stubEnv("AVANA_NEXT_DIST_DIR", ".next-lighthouse")
+    vi.stubEnv("VERCEL", "")
+    vi.stubEnv("CI", "")
+    const audit = await import("@/app/lib/test-mode")
+    expect(audit.shouldUseOpenGateSession()).toBe(true)
+  })
+
   it("keeps the mock data source override independent of the open gate", async () => {
     vi.stubEnv("NODE_ENV", "production")
     vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "0")

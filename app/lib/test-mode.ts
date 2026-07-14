@@ -16,9 +16,23 @@
  * separately via `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1` on its own dev server.
  */
 
-/** Hard floor: the open gate is impossible in any production build (all deploys are prod). */
+/**
+ * A local production-equivalent audit artifact is isolated in its own output directory
+ * and rejected in CI/Vercel. It exists solely for Lighthouse to measure product routes
+ * without onboarding; deployment builds cannot opt into it.
+ */
+function isLocalLighthouseAuditBuild(): boolean {
+  return (
+    process.env.NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE === "1" &&
+    process.env.AVANA_NEXT_DIST_DIR === ".next-lighthouse" &&
+    !process.env.VERCEL &&
+    !process.env.CI
+  )
+}
+
+/** Hard floor: the open gate is impossible in every deploy build. */
 function isProductionBuild(): boolean {
-  return process.env.NODE_ENV === "production"
+  return process.env.NODE_ENV === "production" && !isLocalLighthouseAuditBuild()
 }
 
 /** Explicit local opt-in for day-to-day coding. Set in `.env.local` (gitignored). */
