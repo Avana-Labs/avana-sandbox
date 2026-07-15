@@ -3,19 +3,15 @@ import { describe, expect, it, vi } from "vitest"
 import { buildRangeData } from "@/app/components/charts"
 import { DashboardHero } from "@/app/dashboard/dashboard-hero"
 
-vi.mock("next/dynamic", () => ({
-  default: () =>
-    function DynamicChartSection() {
-      return <div>hero-chart-section</div>
-    },
+vi.mock("@/app/components/charts/hero-chart-section", () => ({
+  HeroChartSection: () => <div>hero-chart-section</div>,
 }))
 
 vi.mock("@/app/components/display-preferences", () => ({
-  useDisplayPreferences: () => ({
+  useAmountDisplayPreferences: () => ({
     showDollarAmounts: true,
   }),
-  useOptionalDisplayPreferences: () => ({
-    showDollarAmounts: true,
+  useOptionalLocaleDisplayPreferences: () => ({
     currency: "USD",
     language: "EN",
   }),

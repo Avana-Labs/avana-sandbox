@@ -35,9 +35,15 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   AvanaSessionsProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="local-session">{children}</div>
   ),
-  ConvexAvanaSessionsProvider: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="convex-session">{children}</div>
-  ),
+}))
+
+vi.mock("@/app/lib/avana-session/convex-session-provider", () => ({
+  ConvexSessionProvider: ({ children }: { children: React.ReactNode }) =>
+    mocks.convexAuthenticated ? (
+      <div data-testid="convex-session">{children}</div>
+    ) : (
+      <div aria-label="Authenticating wallet session" />
+    ),
 }))
 
 describe("AvanaSessionProviders", () => {
@@ -46,18 +52,18 @@ describe("AvanaSessionProviders", () => {
     mocks.siwe.isSignedIn = true
   })
 
-  it("does not mount wallet queries before Convex confirms the SIWE token", () => {
+  it("does not mount wallet queries before Convex confirms the SIWE token", async () => {
     render(
       <AvanaSessionProviders>
         <div>App content</div>
       </AvanaSessionProviders>,
     )
 
-    expect(screen.getByLabelText("Authenticating wallet session")).toBeInTheDocument()
+    expect(await screen.findByLabelText("Authenticating wallet session")).toBeInTheDocument()
     expect(screen.queryByTestId("convex-session")).not.toBeInTheDocument()
   })
 
-  it("mounts the wallet session after Convex confirms authentication", () => {
+  it("mounts the wallet session after Convex confirms authentication", async () => {
     mocks.convexAuthenticated = true
 
     render(
@@ -66,6 +72,6 @@ describe("AvanaSessionProviders", () => {
       </AvanaSessionProviders>,
     )
 
-    expect(screen.getByTestId("convex-session")).toHaveTextContent("App content")
+    expect(await screen.findByTestId("convex-session")).toHaveTextContent("App content")
   })
 })

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -67,7 +67,7 @@ function formatRelativeTime(iso: string) {
  */
 export function RewardDistributionHistory({ rows }: { rows: PortfolioActivityRow[] }) {
   const { t } = useTranslation()
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const [showAll, setShowAll] = React.useState(false)
 
   const sorted = React.useMemo(

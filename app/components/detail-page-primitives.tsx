@@ -1,12 +1,50 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 export const DETAIL_PAGE_MAX_W = "max-w-[1152px]"
 
 export function DetailPageWidth({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("mx-auto", DETAIL_PAGE_MAX_W, className)}>{children}</div>
+}
+
+export function DeferredDetailContent({
+  children,
+  className,
+  placeholderClassName = "min-h-[1200px]",
+}: {
+  children: ReactNode
+  className?: string
+  placeholderClassName?: string
+}) {
+  const markerRef = useRef<HTMLDivElement | null>(null)
+  const [shouldMount, setShouldMount] = useState(() => process.env.NODE_ENV === "test")
+
+  useEffect(() => {
+    if (shouldMount) return
+    const marker = markerRef.current
+    if (!marker || typeof IntersectionObserver === "undefined") {
+      setShouldMount(true)
+      return
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        setShouldMount(true)
+        observer.disconnect()
+      },
+      { rootMargin: "200px 0px", threshold: 0 },
+    )
+    observer.observe(marker)
+    return () => observer.disconnect()
+  }, [shouldMount])
+
+  return (
+    <div ref={markerRef} className={className}>
+      {shouldMount ? children : <div aria-hidden className={cn("rounded-radius-md bg-table-row", placeholderClassName)} />}
+    </div>
+  )
 }
 
 export function MobileDetailActionBar({ children, className }: { children: ReactNode; className?: string }) {

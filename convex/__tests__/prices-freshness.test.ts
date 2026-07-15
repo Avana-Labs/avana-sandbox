@@ -24,6 +24,27 @@ describe("getPriceStatus surfaces price freshness", () => {
     expect(status.staleAfterMs).toBe(PRICE_STALE_AFTER_MS)
   })
 
+  test("returns prices and freshness in one reactive snapshot", async () => {
+    const t = convexTest(schema, modules)
+    const updatedAt = Date.now()
+    await t.mutation(internal.prices.upsertPrices, {
+      rows: [
+        {
+          symbol: "eth",
+          llamaId: "coingecko:ethereum",
+          priceUsd: 3200,
+          source: "defillama",
+          updatedAt,
+        },
+      ],
+    })
+
+    const snapshot = await t.query(api.prices.getPriceSnapshot, {})
+    expect(snapshot.prices).toHaveLength(1)
+    expect(snapshot.prices[0]).toMatchObject({ symbol: "eth", priceUsd: 3200 })
+    expect(snapshot.status).toEqual({ updatedAt, staleAfterMs: PRICE_STALE_AFTER_MS, count: 1 })
+  })
+
   test("a fresh refresh reports a recent updatedAt", async () => {
     const t = convexTest(schema, modules)
     vi.stubGlobal(

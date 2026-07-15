@@ -1,14 +1,28 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useMemo, useState } from "react"
 import { resolveAvailableRanges, resolveSeriesChange, resolveSeriesTone } from "./chart-data"
 import { ChartRangeSelector } from "./chart-range-selector"
 import { formatChartAxis, formatChartValue } from "./format"
-import { HeroAreaChart } from "./hero-area-chart"
 import { HeroBalanceDisplay } from "./hero-balance-display"
 import type { ChartFeed, ChartRangeOption } from "./types"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
+
+const HeroAreaChart = dynamic(() => import("./hero-area-chart").then((mod) => mod.HeroAreaChart), {
+  ssr: false,
+  loading: () => <HeroAreaChartPlaceholder />,
+})
+
+function HeroAreaChartPlaceholder() {
+  return (
+    <div
+      aria-hidden
+      className="h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.06)_1px,transparent_0)] [background-size:18px_18px] dark:bg-none sm:h-[240px]"
+    />
+  )
+}
 
 type MarketHeroChartProps = {
   feed: ChartFeed

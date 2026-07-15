@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
 import { MultiplyClient } from "./multiply-client"
 import { fetchMultiplyPage } from "@/app/lib/data/providers/multiply"
@@ -14,7 +15,9 @@ export const metadata: Metadata = buildSeoMetadata({
 export const dynamic = "force-dynamic"
 
 export default async function MultiplyPage() {
-  const pageData = await fetchMultiplyPage()
+  const [pageData, requestHeaders] = await Promise.all([fetchMultiplyPage(), headers()])
+  const userAgent = requestHeaders.get("user-agent") ?? ""
+  const initialIsDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
 
   return (
     <>
@@ -25,7 +28,7 @@ export default async function MultiplyPage() {
           url: "https://avana.cc/multiply",
         })}
       />
-      <MultiplyClient pageData={pageData} />
+      <MultiplyClient pageData={pageData} initialIsDesktop={initialIsDesktop} />
     </>
   )
 }

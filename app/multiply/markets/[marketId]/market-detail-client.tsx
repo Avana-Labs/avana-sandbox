@@ -1,26 +1,31 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { AboutNewsSection, DetailFaqSection } from "@/app/borrow/_detail/ui"
-import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
+import { AboutNewsSection } from "@/app/borrow/_detail/ui"
+import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { DeferredDetailContent, DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import {
   MarketHero,
   MarketHeroIdentity,
-  RelatedMarketsRow,
   MarketSidebar,
-  SupplyBorrowCard,
-  TransactionHistoryCard,
 } from "@/app/multiply/_detail"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 
 type Props = { detail: MultiplyMarketDetail }
+
+const SupplyBorrowCard = dynamic(() => import("@/app/multiply/_detail/pool-sections/SupplyBorrowCard").then((mod) => mod.SupplyBorrowCard), { ssr: false })
+const CashflowCard = dynamic(() => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard), { ssr: false })
+const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection), { ssr: false })
+const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection), { ssr: false })
+const TransactionHistoryCard = dynamic(() => import("@/app/multiply/_detail/pool-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard), { ssr: false })
+const RelatedMarketsRow = dynamic(() => import("@/app/multiply/_detail/pool-sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow), { ssr: false })
 
 export function MarketDetailClient({ detail }: Props) {
   const session = useMultiplySessionContext()
@@ -71,20 +76,22 @@ export function MarketDetailClient({ detail }: Props) {
                 <section aria-label={t("Multiply market analytics")} className="space-y-12 pt-12">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Key Statistics</h2>
                   <QuickStatsGrid detail={detail} />
-                  <SupplyBorrowCard detail={detail} />
-                  <CashflowCard detail={detail} />
-                  <RiskSection detail={detail} />
-                  <DetailFaqSection
-                    title={t("Multiply FAQs")}
-                    items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                  />
-                  <TransactionHistoryCard
-                    transactions={transactions}
-                    collateralSymbol={detail.row.protocol}
-                    borrowableSymbol={detail.row.asset}
-                  />
-                  <RelatedMarketsRow detail={detail} />
-                  <DetailPageNotice />
+                  <DeferredDetailContent className="space-y-12">
+                    <SupplyBorrowCard detail={detail} />
+                    <CashflowCard detail={detail} />
+                    <RiskSection detail={detail} />
+                    <DetailFaqSection
+                      title={t("Multiply FAQs")}
+                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
+                    />
+                    <TransactionHistoryCard
+                      transactions={transactions}
+                      collateralSymbol={detail.row.protocol}
+                      borrowableSymbol={detail.row.asset}
+                    />
+                    <RelatedMarketsRow detail={detail} />
+                    <DetailPageNotice />
+                  </DeferredDetailContent>
                 </section>
               </div>
 

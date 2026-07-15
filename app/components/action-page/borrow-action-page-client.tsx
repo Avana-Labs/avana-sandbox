@@ -14,7 +14,7 @@ import { buildRepayPreviewModel, buildWithdrawPreviewModel } from "@/app/lib/bor
 import { HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
-import { useAvanaSessions, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
 import {
@@ -97,7 +97,7 @@ export function BorrowActionPageClient({
 }) {
   const descriptor = getActionDescriptor("borrow", kind)
   const router = useRouter()
-  const { walletId } = useAvanaSessions()
+  const { walletId } = useAvanaIdentity()
   const session = useBorrowSessionContext()
   // Home Express starts every action from an unselected ("0") state so the user
   // picks the collateral/position first, rather than auto-picking the first pool.

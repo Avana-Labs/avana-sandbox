@@ -211,7 +211,7 @@ describe("page providers", () => {
   })
 
   it("fetches rewards page data from the default source", async () => {
-    const data = await fetchRewardsPage({ walletProfileId: resolvePortfolioWalletProfileId() })
+    const data = await fetchRewardsPage({ walletProfileId: await resolvePortfolioWalletProfileId() })
 
     expect(data.rewardPools.length).toBeGreaterThan(0)
     expect(data.promoTabs.length).toBeGreaterThan(0)
@@ -264,7 +264,7 @@ describe("page providers", () => {
   })
 
   it("fetches portfolio page data from the default source", async () => {
-    const data = await fetchPortfolioPage({ walletProfileId: resolvePortfolioWalletProfileId() })
+    const data = await fetchPortfolioPage({ walletProfileId: await resolvePortfolioWalletProfileId() })
 
     expect(data.walletProfile.id).toBeTruthy()
     expect(data.activity.rows.length).toBeGreaterThan(0)
@@ -278,7 +278,7 @@ describe("page providers", () => {
         return "wallet-override"
       },
       async getPortfolioPageRecords(walletProfileId) {
-        const records = await mockPortfolioPageSource.getPortfolioPageRecords(resolvePortfolioWalletProfileId())
+        const records = await mockPortfolioPageSource.getPortfolioPageRecords(await resolvePortfolioWalletProfileId())
         return {
           ...records,
           data: {

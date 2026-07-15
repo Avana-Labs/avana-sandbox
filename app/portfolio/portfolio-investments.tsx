@@ -16,7 +16,7 @@ import {
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
@@ -64,7 +64,7 @@ export function PortfolioInvestments({
 }) {
   const router = useRouter()
   const { t } = useTranslation()
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const claimableUsd = rewardsSummary?.claimableUsd ?? 0
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
@@ -145,7 +145,7 @@ export function PortfolioInvestments({
                             <TokenIcon symbol={token.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
                               <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{token.name}</span>
-                              <span className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">{token.symbol}</span>
+                              <span className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">{token.symbol}</span>
                             </div>
                           </div>
                         </td>
@@ -153,7 +153,7 @@ export function PortfolioInvestments({
                           <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {m(formatTokenAmount(token.balance, token.symbol))}
                           </div>
-                          <div className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                          <div className="text-[12px] tracking-[-0.03em] text-muted-foreground">
                             {m(formatUsdExact(token.suppliedUsd))}
                           </div>
                         </td>
@@ -161,7 +161,7 @@ export function PortfolioInvestments({
                           <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {token.apyPct.toFixed(2)}%
                           </div>
-                          <div className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                          <div className="text-[12px] tracking-[-0.03em] text-muted-foreground">
                             {m(`+${formatUsdExact(token.earnedUsd)}`)}
                           </div>
                         </td>
@@ -230,7 +230,7 @@ export function PortfolioInvestments({
                       value={
                         <span>
                           {m(formatTokenAmount(token.balance, token.symbol))}
-                          <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                          <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
                             {m(formatUsdExact(token.suppliedUsd))}
                           </span>
                         </span>
@@ -241,7 +241,7 @@ export function PortfolioInvestments({
                       value={
                         <span>
                           {m(`+${formatUsdExact(token.earnedUsd)}`)}
-                          <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+                          <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
                             {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
                           </span>
                         </span>

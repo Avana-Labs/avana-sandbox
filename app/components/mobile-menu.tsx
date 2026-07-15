@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react"
 import { Switch } from "@/components/ui/switch"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { CurrencyFlag } from "./currency-flag"
-import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
+import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useLocaleDisplayPreferences } from "./display-preferences"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { useTheme } from "./theme-provider"
 
@@ -40,11 +40,12 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     pointerId: number
     startY: number
     offset: number
+    sheetHeight: number
     moved: boolean
   } | null>(null)
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
-  const { language, setLanguage, currency, setCurrency } = useDisplayPreferences()
+  const { language, setLanguage, currency, setCurrency } = useLocaleDisplayPreferences()
   const { t } = useTranslation()
   const accentClass = "text-[#01AACF]"
 
@@ -183,6 +184,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       pointerId: event.pointerId,
       startY: event.clientY,
       offset: sheetDragOffset,
+      sheetHeight: selectorSheetRef.current?.offsetHeight ?? 0,
       moved: false,
     }
     setSheetDragging(true)
@@ -221,8 +223,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     }
 
     event.currentTarget.releasePointerCapture(event.pointerId)
-    const sheetHeight = selectorSheetRef.current?.offsetHeight ?? 0
-    const closeThreshold = Math.max(180, sheetHeight * 0.32)
+    const closeThreshold = Math.max(180, dragState.sheetHeight * 0.32)
     finishSelectorDrag(dragState.moved && sheetDragOffset > closeThreshold, sheetDragOffset)
     event.preventDefault()
   }

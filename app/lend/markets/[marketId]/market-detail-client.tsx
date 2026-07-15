@@ -1,18 +1,25 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { AboutNewsSection, DetailFaqSection } from "@/app/borrow/_detail/ui"
-import { CashflowCard, QuickStatsGrid, RiskSection } from "@/app/borrow/_detail/pool-sections"
-import { TransactionHistoryCard } from "@/app/borrow/_detail/asset-sections"
-import { LendHero, LendHeroIdentity, SupplyCard, RelatedMarketsRow, LendSidebar } from "@/app/lend/_detail"
+import { AboutNewsSection } from "@/app/borrow/_detail/ui"
+import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { LendHero, LendHeroIdentity, LendSidebar } from "@/app/lend/_detail"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
-import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { DeferredDetailContent, DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+
+const SupplyCard = dynamic(() => import("@/app/lend/_detail/sections/SupplyCard").then((mod) => mod.SupplyCard), { ssr: false })
+const CashflowCard = dynamic(() => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard), { ssr: false })
+const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection), { ssr: false })
+const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection), { ssr: false })
+const TransactionHistoryCard = dynamic(() => import("@/app/borrow/_detail/asset-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard), { ssr: false })
+const RelatedMarketsRow = dynamic(() => import("@/app/lend/_detail/sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow), { ssr: false })
 
 type Props = { detail: LendMarketDetail }
 
@@ -91,20 +98,22 @@ export function LendMarketDetailClient({ detail }: Props) {
                 <section aria-label={t("Lend market analytics")} className="space-y-12 pt-12">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Key Statistics</h2>
                   <QuickStatsGrid detail={detail} />
-                  <SupplyCard detail={detail} />
-                  <CashflowCard detail={detail} />
-                  <RiskSection detail={detail} />
-                  <DetailFaqSection
-                    title={t("General FAQs")}
-                    items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                  />
-                  <TransactionHistoryCard
-                    transactions={transactions}
-                    assetSymbol={detail.hero.symbol}
-                    kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
-                  />
-                  <RelatedMarketsRow detail={detail} />
-                  <DetailPageNotice />
+                  <DeferredDetailContent className="space-y-12">
+                    <SupplyCard detail={detail} />
+                    <CashflowCard detail={detail} />
+                    <RiskSection detail={detail} />
+                    <DetailFaqSection
+                      title={t("General FAQs")}
+                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
+                    />
+                    <TransactionHistoryCard
+                      transactions={transactions}
+                      assetSymbol={detail.hero.symbol}
+                      kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
+                    />
+                    <RelatedMarketsRow detail={detail} />
+                    <DetailPageNotice />
+                  </DeferredDetailContent>
                 </section>
               </div>
 

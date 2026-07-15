@@ -78,6 +78,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useRewardsSessionContext: () => rewardsSessionContext,
+  useAvanaIdentity: () => ({ walletId: "demo-wallet" }),
   useAvanaSessions: () => ({
     walletId: "demo-wallet",
     lend: {

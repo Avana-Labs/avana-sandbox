@@ -24,6 +24,7 @@ yarn-error.log*
 .lh-explore-after/
 .lh-home/
 .lh-home-after/
+/.artifacts/
 
 # env files
 .env*

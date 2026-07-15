@@ -17,24 +17,34 @@ vi.mock("@/app/lend/_detail", () => ({
   LendHeroIdentity: ({ detail }: { detail: { hero: { name: string } } }) => (
     <div data-testid="lend-hero-identity">{detail.hero.name}</div>
   ),
+  LendSidebar: () => <div data-testid="lend-sidebar" />,
+}))
+vi.mock("@/app/lend/_detail/sections/SupplyCard", () => ({
   SupplyCard: () => <div data-testid="supply-card" />,
+}))
+vi.mock("@/app/lend/_detail/sections/RelatedMarketsRow", () => ({
   RelatedMarketsRow: ({ detail }: { detail: { related: unknown[] } }) => (
     <div data-testid="related">{detail.related.length}</div>
   ),
-  LendSidebar: () => <div data-testid="lend-sidebar" />,
 }))
 vi.mock("@/app/borrow/_detail/ui", () => ({
   AboutNewsSection: () => <div data-testid="about" />,
+}))
+vi.mock("@/app/borrow/_detail/ui/DetailFaqSection", () => ({
   DetailFaqSection: ({ items }: { items: unknown[] }) => <div data-testid="faqs">{items.length}</div>,
 }))
 vi.mock("@/app/borrow/_detail/pool-sections", () => ({
-  CashflowCard: () => <div data-testid="cashflow" />,
   QuickStatsGrid: ({ detail }: { detail: { quickStats: unknown[] } }) => (
     <div data-testid="quickstats">{detail.quickStats.length}</div>
   ),
+}))
+vi.mock("@/app/borrow/_detail/pool-sections/CashflowCard", () => ({
+  CashflowCard: () => <div data-testid="cashflow" />,
+}))
+vi.mock("@/app/borrow/_detail/pool-sections/RiskSection", () => ({
   RiskSection: () => <div data-testid="risk" />,
 }))
-vi.mock("@/app/borrow/_detail/asset-sections", () => ({
+vi.mock("@/app/borrow/_detail/asset-sections/TransactionHistoryCard", () => ({
   TransactionHistoryCard: ({ transactions, assetSymbol }: { transactions: unknown[]; assetSymbol: string }) => (
     <div data-testid="transactions">{`${assetSymbol}:${transactions.length}`}</div>
   ),
@@ -46,7 +56,7 @@ vi.mock("@/app/lib/lend-system/lend-session-context", () => ({
 describe("LendMarketDetailClient", () => {
   afterEach(cleanup)
 
-  it("composes the rich sections from a LendMarketDetail", () => {
+  it("composes the rich sections from a LendMarketDetail", async () => {
     const detail = getLendMarketDetail("usdc")!
     render(<LendMarketDetailClient detail={detail} />)
 
@@ -56,7 +66,7 @@ describe("LendMarketDetailClient", () => {
     expect(screen.getByTestId("lend-hero-identity")).toHaveTextContent(detail.hero.name)
     expect(screen.getByTestId("lend-hero")).toBeInTheDocument()
     expect(screen.getByTestId("quickstats")).toHaveTextContent(String(detail.quickStats.length))
-    expect(screen.getByTestId("supply-card")).toBeInTheDocument()
+    expect(await screen.findByTestId("supply-card")).toBeInTheDocument()
     expect(screen.getByTestId("cashflow")).toBeInTheDocument()
     expect(screen.getByTestId("risk")).toBeInTheDocument()
     expect(screen.getByTestId("faqs")).toHaveTextContent(String(detail.faqs.length))

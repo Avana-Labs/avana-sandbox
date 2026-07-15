@@ -43,6 +43,7 @@
     "lighthouse:budgets": "node scripts/lighthouse-budgets.mjs",
     "lighthouse:build": "AVANA_NEXT_DIST_DIR=.next-lighthouse NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT=1 npm run build",
     "lighthouse:serve": "AVANA_NEXT_DIST_DIR=.next-lighthouse NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT=1 npm run start -- --port 3001",
+    "lighthouse:gpu": "LH_ENABLE_GPU=1 LH_OUTPUT_DIR=.artifacts/lighthouse-gpu npm run lighthouse:budgets",
     "lighthouse:analyze": "node scripts/analyze-lighthouse-bundles.mjs"
   },
   "dependencies": {
@@ -71,7 +72,6 @@
     "next-themes": "^0.4.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "2.15.4",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",

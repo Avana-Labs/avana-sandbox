@@ -34,7 +34,7 @@ export default async function RewardsPage() {
       </>
     )
   }
-  const walletProfileId = resolvePortfolioWalletProfileId()
+  const walletProfileId = await resolvePortfolioWalletProfileId()
   const pageData = await fetchRewardsPage({ walletProfileId })
 
   return (

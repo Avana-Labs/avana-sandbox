@@ -33,8 +33,8 @@ export function PageLoadingBar() {
   const rafRef = useRef<number | null>(null)
   const startedAtRef = useRef<number | null>(null)
   const progressRef = useRef(0)
+  const progressElementRef = useRef<HTMLDivElement | null>(null)
   const [visible, setVisible] = useState(false)
-  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
     const stopTimers = () => {
@@ -49,13 +49,18 @@ export function PageLoadingBar() {
       }
     }
 
+    const writeProgress = (progress: number) => {
+      progressRef.current = progress
+      if (progressElementRef.current) {
+        progressElementRef.current.style.transform = `scaleX(${progress / 100})`
+      }
+    }
+
     const animateProgress = () => {
-      setProgress((current) => {
-        const remaining = MAX_TRICKLE_PROGRESS - current
-        const next = remaining <= 0.2 ? current : current + remaining * 0.045
-        progressRef.current = next
-        return next
-      })
+      const current = progressRef.current
+      const remaining = MAX_TRICKLE_PROGRESS - current
+      const next = remaining <= 0.2 ? current : current + remaining * 0.045
+      writeProgress(next)
 
       rafRef.current = requestAnimationFrame(animateProgress)
     }
@@ -64,16 +69,14 @@ export function PageLoadingBar() {
       stopTimers()
 
       startedAtRef.current = Date.now()
-      progressRef.current = INITIAL_PROGRESS
-      setProgress(INITIAL_PROGRESS)
+      writeProgress(INITIAL_PROGRESS)
       setVisible(true)
       rafRef.current = requestAnimationFrame(animateProgress)
 
       resetTimerRef.current = setTimeout(() => {
         stopTimers()
         setVisible(false)
-        setProgress(0)
-        progressRef.current = 0
+        writeProgress(0)
         startedAtRef.current = null
       }, SAFETY_RESET_MS)
     }
@@ -125,11 +128,16 @@ export function PageLoadingBar() {
     const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed)
 
     const completeTimer = setTimeout(() => {
-      setProgress(100)
+      progressRef.current = 100
+      if (progressElementRef.current) {
+        progressElementRef.current.style.transform = "scaleX(1)"
+      }
       setTimeout(() => {
         setVisible(false)
-        setProgress(0)
         progressRef.current = 0
+        if (progressElementRef.current) {
+          progressElementRef.current.style.transform = "scaleX(0)"
+        }
       }, 180)
       startedAtRef.current = null
     }, remaining)
@@ -148,8 +156,8 @@ export function PageLoadingBar() {
       aria-hidden="true"
     >
       <div
-        className="absolute inset-y-0 left-0 bg-[hsl(var(--brand))] shadow-[0_0_10px_hsl(var(--brand)/0.35)] transition-[width] duration-200 ease-out"
-        style={{ width: `${progress}%` }}
+        ref={progressElementRef}
+        className="absolute inset-y-0 left-0 w-full origin-left scale-x-0 bg-[hsl(var(--brand))] shadow-[0_0_10px_hsl(var(--brand)/0.35)] transition-transform duration-200 ease-out"
       >
         <div className="loading-progress-head absolute inset-y-0 right-0 w-14" />
       </div>

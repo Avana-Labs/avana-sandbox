@@ -8,8 +8,8 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { getMultiplyMarketById, MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 import { buildMultiplyPageData } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { ExploreLoopsMarketsTable } from "./components/explore-loops-markets-table"
 import { MultiplyHero } from "./components/multiply-hero"
+import { ExploreLoopsMarketsTable } from "./components/explore-loops-markets-table"
 
 function resolveMarketFromRowHref(href: string): MultiplyMarketRecord | null {
   const marketId = href.split("/").pop()
@@ -17,7 +17,13 @@ function resolveMarketFromRowHref(href: string): MultiplyMarketRecord | null {
   return getMultiplyMarketById(marketId.toLowerCase())
 }
 
-export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
+export function MultiplyClient({
+  pageData,
+  initialIsDesktop = true,
+}: {
+  pageData: MultiplyPageData
+  initialIsDesktop?: boolean
+}) {
   const router = useRouter()
   const session = useMultiplySessionContext()
   const [hasMounted, setHasMounted] = React.useState(false)
@@ -50,6 +56,7 @@ export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
       <div className="mx-auto max-w-[1152px]">
         <MultiplyHero metrics={livePageData.heroMetrics} />
         <ExploreLoopsMarketsTable
+          initialIsDesktop={initialIsDesktop}
           rows={livePageData.lendRows}
           trendingSnapshots={livePageData.trendingSnapshots}
           pageSize={livePageData.pageSize}

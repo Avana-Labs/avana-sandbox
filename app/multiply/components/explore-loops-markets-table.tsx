@@ -22,6 +22,7 @@ import { useCurrency } from "@/app/lib/currency/use-currency"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, categorizeMarket, type CategoryChip } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useMediaQuery } from "@/app/lib/use-media-query"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -103,6 +104,7 @@ function resolveMarketIdFromHref(href: string) {
 }
 
 type ExploreLoopsMarketsTableProps = {
+  initialIsDesktop?: boolean
   rows: MultiplyPageData["lendRows"]
   trendingSnapshots: MultiplyPageData["trendingSnapshots"]
   pageSize: MultiplyPageData["pageSize"]
@@ -113,6 +115,7 @@ type ExploreLoopsMarketsTableProps = {
 }
 
 export function ExploreLoopsMarketsTable({
+  initialIsDesktop = true,
   rows,
   trendingSnapshots,
   tokenBorrowApys,
@@ -215,6 +218,7 @@ export function ExploreLoopsMarketsTable({
           groupedSections.map((group) => (
             <div key={group.title} className="space-y-8">
               <LoopMarketsSection
+                initialIsDesktop={initialIsDesktop}
                 title={group.title}
                 rows={group.rows}
                 tokenLogos={tokenLogos}
@@ -239,12 +243,14 @@ export function ExploreLoopsMarketsTable({
 }
 
 function LoopMarketsSection({
+  initialIsDesktop,
   title,
   rows,
   tokenLogos,
   tokenSupplyApys,
   tokenBorrowApys,
 }: {
+  initialIsDesktop: boolean
   title: string
   rows: MultiplyPageData["lendRows"]
   tokenLogos: MultiplyPageData["tokenLogos"]
@@ -253,6 +259,7 @@ function LoopMarketsSection({
 }) {
   const { t } = useTranslation()
   const { compact } = useCurrency()
+  const isDesktop = useMediaQuery("(min-width: 768px)", initialIsDesktop, true)
   const [sortKey, setSortKey] = React.useState<LoopSortKey>("protocol")
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
 
@@ -307,8 +314,8 @@ function LoopMarketsSection({
         </div>
       </div>
 
-      <DesktopTableSurface className="rounded-radius-md">
-        <div className="space-y-4 md:hidden">
+      <DesktopTableSurface className="rounded-radius-md [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
+        {!isDesktop ? <div className="space-y-4">
           {sortedRows.length ? (
             sortedRows.map((row, index) => (
               <MobileLoopCard
@@ -328,9 +335,9 @@ function LoopMarketsSection({
               {t("No loops in this category yet.")}
             </div>
           )}
-        </div>
+        </div> : null}
 
-        <div className="hidden md:block">
+        {isDesktop ? <div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
               <colgroup>
@@ -439,7 +446,7 @@ function LoopMarketsSection({
               </tbody>
             </table>
           </div>
-        </div>
+        </div> : null}
       </DesktopTableSurface>
     </section>
   )
@@ -494,7 +501,7 @@ function LoopTableRow({
               {row.protocol}
             </span>
             <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
+              <span className="text-muted-foreground">{t("APY")}</span>
               <span className="font-data tabular-nums text-success">{supplyApy ?? "—"}</span>
             </span>
           </span>
@@ -518,7 +525,7 @@ function LoopTableRow({
               {row.asset}
             </span>
             <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
+              <span className="text-muted-foreground">{t("APY")}</span>
               <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">{borrowApy ?? "—"}</span>
             </span>
           </span>
@@ -546,7 +553,7 @@ function LoopTableRow({
               <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                 {row.rewardRows[1].value}
               </span>
-              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
                 {row.rewardRows[1].label}
               </span>
             </span>
@@ -555,7 +562,7 @@ function LoopTableRow({
               <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                 {row.rewardRows[0].value}
               </span>
-              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
                 {row.rewardRows[0].label}
               </span>
             </span>
@@ -564,7 +571,7 @@ function LoopTableRow({
               {row.partnerRewards}
             </span>
           ) : (
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+            <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground">
               —
             </span>
           )}
@@ -665,7 +672,7 @@ function MobileLoopCard({
                 </div>
                 <div className="min-w-0">
                   <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.protocol}</div>
-                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{row.asset}</div>
+                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground">{row.asset}</div>
                 </div>
               </div>
             </div>

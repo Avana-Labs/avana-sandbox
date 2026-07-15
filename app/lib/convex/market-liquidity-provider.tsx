@@ -1,13 +1,26 @@
-"use client"
+"use client";
 
-import { Component, createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
-import { ConvexProviderWithAuth, ConvexReactClient, useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
-import { useConvexSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+import {
+  lazy,
+  Suspense,
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
-export type MarketLiquidityDelta = { borrowedDeltaUsd: number; suppliedDeltaUsd: number }
+export type MarketLiquidityDelta = {
+  borrowedDeltaUsd: number;
+  suppliedDeltaUsd: number;
+};
 
-export type RecordDeltaInput = { marketSlug: string; borrowedDeltaUsd?: number; suppliedDeltaUsd?: number }
+export type RecordDeltaInput = {
+  marketSlug: string;
+  borrowedDeltaUsd?: number;
+  suppliedDeltaUsd?: number;
+};
 
 export type MarketLiquidityValue = {
   /**
@@ -17,48 +30,50 @@ export type MarketLiquidityValue = {
    *   - pool / market supplied TVL  → keyed by MARKET id (suppliedDeltaUsd)
    * Use the helpers in `@/app/lib/market-liquidity/apply` rather than reading raw.
    */
-  deltas: Map<string, MarketLiquidityDelta>
+  deltas: Map<string, MarketLiquidityDelta>;
   /** True once the shared Convex ledger query has resolved (cross-user mode). */
-  connected: boolean
+  connected: boolean;
   /** Fold a borrow/repay/supply/withdraw into the ledger (Convex when online, else local). */
-  recordDelta: (input: RecordDeltaInput) => void
-}
+  recordDelta: (input: RecordDeltaInput) => void;
+};
 
-const EMPTY_DELTAS = new Map<string, MarketLiquidityDelta>()
+const EMPTY_DELTAS = new Map<string, MarketLiquidityDelta>();
 
-const MarketLiquidityContext = createContext<MarketLiquidityValue>({
+export const MarketLiquidityContext = createContext<MarketLiquidityValue>({
   deltas: EMPTY_DELTAS,
   connected: false,
   recordDelta: () => undefined,
-})
+});
 
-// Created once at module load. NEXT_PUBLIC_ vars are inlined, so this resolves
-// identically on server and client (no hydration mismatch). The client connects
-// lazily on the first subscription; if the URL is unreachable, useQuery stays
-// undefined and we fall back to the in-session local ledger below.
-const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
-const convexClient =
-  convexUrl && /^https?:\/\//.test(convexUrl)
-    ? (() => {
-        try {
-          return new ConvexReactClient(convexUrl)
-        } catch {
-          return null
-        }
-      })()
-    : null
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+export const hasConvexClient = Boolean(
+  convexUrl && /^https?:\/\//.test(convexUrl),
+);
+const ConvexMarketLiquidityProvider = lazy(
+  () => import("./market-liquidity-convex-provider"),
+);
 
-function mergeDelta(map: Map<string, MarketLiquidityDelta>, input: RecordDeltaInput) {
-  const borrowedDeltaUsd = Number.isFinite(input.borrowedDeltaUsd) ? (input.borrowedDeltaUsd as number) : 0
-  const suppliedDeltaUsd = Number.isFinite(input.suppliedDeltaUsd) ? (input.suppliedDeltaUsd as number) : 0
-  if (borrowedDeltaUsd === 0 && suppliedDeltaUsd === 0) return map
-  const next = new Map(map)
-  const current = next.get(input.marketSlug) ?? { borrowedDeltaUsd: 0, suppliedDeltaUsd: 0 }
+function mergeDelta(
+  map: Map<string, MarketLiquidityDelta>,
+  input: RecordDeltaInput,
+) {
+  const borrowedDeltaUsd = Number.isFinite(input.borrowedDeltaUsd)
+    ? (input.borrowedDeltaUsd as number)
+    : 0;
+  const suppliedDeltaUsd = Number.isFinite(input.suppliedDeltaUsd)
+    ? (input.suppliedDeltaUsd as number)
+    : 0;
+  if (borrowedDeltaUsd === 0 && suppliedDeltaUsd === 0) return map;
+  const next = new Map(map);
+  const current = next.get(input.marketSlug) ?? {
+    borrowedDeltaUsd: 0,
+    suppliedDeltaUsd: 0,
+  };
   next.set(input.marketSlug, {
     borrowedDeltaUsd: current.borrowedDeltaUsd + borrowedDeltaUsd,
     suppliedDeltaUsd: current.suppliedDeltaUsd + suppliedDeltaUsd,
-  })
-  return next
+  });
+  return next;
 }
 
 /**
@@ -69,95 +84,49 @@ function mergeDelta(map: Map<string, MarketLiquidityDelta>, input: RecordDeltaIn
  * deltas take over and this local store is ignored.
  */
 function useLocalLedger() {
-  const [localDeltas, setLocalDeltas] = useState<Map<string, MarketLiquidityDelta>>(EMPTY_DELTAS)
+  const [localDeltas, setLocalDeltas] =
+    useState<Map<string, MarketLiquidityDelta>>(EMPTY_DELTAS);
   const recordLocal = useCallback((input: RecordDeltaInput) => {
-    setLocalDeltas((current) => mergeDelta(current, input))
-  }, [])
-  return { localDeltas, recordLocal }
+    setLocalDeltas((current) => mergeDelta(current, input));
+  }, []);
+  return { localDeltas, recordLocal };
 }
 
-function MarketLiquidityBridge({
-  localDeltas,
-  recordLocal,
+export function MarketLiquidityProvider({
   children,
+  live = false,
 }: {
-  localDeltas: Map<string, MarketLiquidityDelta>
-  recordLocal: (input: RecordDeltaInput) => void
-  children: ReactNode
+  children: ReactNode;
+  live?: boolean;
 }) {
-  // Subscribe to the periodically-rebuilt snapshot, NOT the raw event table: reading the
-  // single cache doc means one user's write doesn't invalidate every subscriber (M33).
-  const rows = useQuery(api.liquidity.listDeltaSnapshot)
-  const connected = rows !== undefined
+  const { localDeltas, recordLocal } = useLocalLedger();
+  const fallbackValue = useMemo(
+    () => ({ deltas: localDeltas, connected: false, recordDelta: recordLocal }),
+    [localDeltas, recordLocal],
+  );
+  const localTree = (
+    <MarketLiquidityContext.Provider value={fallbackValue}>
+      {children}
+    </MarketLiquidityContext.Provider>
+  );
 
-  const value = useMemo<MarketLiquidityValue>(() => {
-    if (!connected) {
-      // Convex configured but unreachable → keep the local fallback live.
-      return { deltas: localDeltas, connected: false, recordDelta: recordLocal }
-    }
-    const deltas = new Map<string, MarketLiquidityDelta>()
-    for (const row of rows ?? []) {
-      deltas.set(row.marketSlug, {
-        borrowedDeltaUsd: row.borrowedDeltaUsd,
-        suppliedDeltaUsd: row.suppliedDeltaUsd,
-      })
-    }
-    // In connected mode the shared ledger is written ONLY server-side inside the
-    // idempotent `recordTransaction` (there is no public client recorder), so `recordDelta`
-    // is a deliberate no-op here — a client can never fold an arbitrary delta into the
-    // cross-user numbers. The demo bridge already skips folding when `connected`.
-    return { deltas, connected: true, recordDelta: () => undefined }
-  }, [connected, rows, localDeltas, recordLocal])
-
-  return <MarketLiquidityContext.Provider value={value}>{children}</MarketLiquidityContext.Provider>
-}
-
-class MarketLiquidityErrorBoundary extends Component<
-  { children: ReactNode; fallbackChildren: ReactNode; fallbackValue: MarketLiquidityValue },
-  { errored: boolean }
-> {
-  state = { errored: false }
-
-  static getDerivedStateFromError() {
-    return { errored: true }
-  }
-
-  render() {
-    if (this.state.errored) {
-      return <MarketLiquidityContext.Provider value={this.props.fallbackValue}>{this.props.fallbackChildren}</MarketLiquidityContext.Provider>
-    }
-    return this.props.children
-  }
-}
-
-export function MarketLiquidityProvider({ children }: { children: ReactNode }) {
-  const { localDeltas, recordLocal } = useLocalLedger()
-
-  if (!convexClient) {
-    // No Convex configured → the local ledger is the single source of truth.
-    return (
-      <MarketLiquidityContext.Provider value={{ deltas: localDeltas, connected: false, recordDelta: recordLocal }}>
-        {children}
-      </MarketLiquidityContext.Provider>
-    )
-  }
-  const fallbackValue = { deltas: localDeltas, connected: false, recordDelta: recordLocal }
+  if (!live || !hasConvexClient) return localTree;
   return (
-    // ConvexProviderWithAuth attaches the SIWE JWT (when signed in) to authed sandbox
-    // calls; public market-data queries still resolve when signed out (identity null).
-    <ConvexProviderWithAuth client={convexClient} useAuth={useConvexSiweAuth}>
-      <MarketLiquidityErrorBoundary fallbackChildren={children} fallbackValue={fallbackValue}>
-        <MarketLiquidityBridge localDeltas={localDeltas} recordLocal={recordLocal}>
-          {children}
-        </MarketLiquidityBridge>
-      </MarketLiquidityErrorBoundary>
-    </ConvexProviderWithAuth>
-  )
+    <Suspense fallback={localTree}>
+      <ConvexMarketLiquidityProvider
+        localDeltas={localDeltas}
+        recordLocal={recordLocal}
+        fallbackValue={fallbackValue}
+      >
+        {children}
+      </ConvexMarketLiquidityProvider>
+    </Suspense>
+  );
 }
 
 /** Live shared-ledger deltas + recorder. Falls back to the in-session local ledger when Convex is absent. */
 export function useMarketLiquidity() {
-  return useContext(MarketLiquidityContext)
+  return useContext(MarketLiquidityContext);
 }
 
 /**
@@ -165,4 +134,3 @@ export function useMarketLiquidity() {
  * the session (decided at module load). Use it to conditionally RENDER components
  * that call Convex's `useQuery` so they only mount when a ConvexProvider exists.
  */
-export const hasConvexClient = convexClient != null

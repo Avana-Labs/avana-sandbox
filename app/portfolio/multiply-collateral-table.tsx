@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
 import { TokenIcon } from "@/app/components/token-icon"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
@@ -40,7 +40,7 @@ export function MultiplyCollateralTable({
   returnHref?: string
 }) {
   const router = useRouter()
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const usd = (value: number) => (showDollarAmounts ? formatCompactUsd(value) : MASK)
 
