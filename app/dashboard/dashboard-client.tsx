@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import {
@@ -11,7 +11,12 @@ import {
 } from "@/app/lib/avana-session/avana-sessions-provider"
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
 import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
-import type { PortfolioLendTabData, PortfolioMultiplyCollateral, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import type {
+  PortfolioLendTabData,
+  PortfolioMultiplyCollateral,
+  PortfolioMultiplyTabData,
+  PortfolioPageData,
+} from "@/app/lib/data/providers/portfolio"
 import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import {
@@ -159,7 +164,9 @@ function SectionTabStrip<T extends string>({
               data-state={active ? "active" : "inactive"}
               className={cn(
                 "shrink-0 whitespace-nowrap border-b-2 pb-2 text-left text-[15px] font-normal tracking-[-0.03em] transition-colors md:text-[17px]",
-                active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+                active
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
               {t(tab.label)}
@@ -194,6 +201,43 @@ function DashboardLoadingState() {
   )
 }
 
+function DeferredDashboardContent({ children }: { children: ReactNode }) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [shouldMount, setShouldMount] = useState(() => process.env.NODE_ENV === "test")
+
+  useEffect(() => {
+    if (shouldMount) return
+    const container = containerRef.current
+    if (!container || typeof IntersectionObserver === "undefined") {
+      setShouldMount(true)
+      return
+    }
+
+    const mount = () => setShouldMount(true)
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        mount()
+        observer.disconnect()
+      },
+      { rootMargin: "400px 0px", threshold: 0 },
+    )
+    observer.observe(container)
+    document.addEventListener("keydown", mount, { once: true })
+
+    return () => {
+      observer.disconnect()
+      document.removeEventListener("keydown", mount)
+    }
+  }, [shouldMount])
+
+  return (
+    <div ref={containerRef} className={shouldMount ? "space-y-12" : "min-h-[960px]"}>
+      {shouldMount ? children : null}
+    </div>
+  )
+}
+
 export function DashboardClient({
   initialData,
   walletProfileId,
@@ -209,10 +253,12 @@ export function DashboardClient({
   const multiplySession = useMultiplySessionContext()
   const lendSession = useLendSessionContext()
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
-  const { data, error: portfolioError, isLoading: portfolioLoading, retry: retryPortfolioPage } = usePortfolioPage(
-    { walletProfileId: resolvedWalletProfileId ?? "" },
-    initialData,
-  )
+  const {
+    data,
+    error: portfolioError,
+    isLoading: portfolioLoading,
+    retry: retryPortfolioPage,
+  } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const pageData = data ?? initialData
   const readTabFromLocation = useCallback((): DashboardTab => {
     if (typeof window === "undefined") return "lending"
@@ -288,8 +334,7 @@ export function DashboardClient({
     }
   }, [borrowSession.state, hasMounted, liveBorrowTab, pageData, walletId])
 
-  const collateralPositions =
-    liveBorrowTab?.collateralPositions ?? pageData?.borrow.collateralPositions ?? []
+  const collateralPositions = liveBorrowTab?.collateralPositions ?? pageData?.borrow.collateralPositions ?? []
   const debtPositions = liveBorrowTab?.debtPositions ?? pageData?.borrow.debtPositions ?? []
   const activityRows = useMemo(
     () => [
@@ -309,11 +354,26 @@ export function DashboardClient({
       // Reward claims live on the rewards page (Reward Distribution History), not here.
       ...(pageData?.activity.rows ?? []),
     ],
-    [borrowSession.transactionHistory, lendSession.state, lendSession.transactionHistory, lendSession.walletId, multiplySession.transactionHistory, pageData?.activity.rows],
+    [
+      borrowSession.transactionHistory,
+      lendSession.state,
+      lendSession.transactionHistory,
+      lendSession.walletId,
+      multiplySession.transactionHistory,
+      pageData?.activity.rows,
+    ],
   )
 
   const lendTabData = useMemo(() => {
-    if (!pageData) return hasMounted ? (portfolioLend ?? { investments: [], positions: [], strategyBuckets: [], history: [] }) : { investments: [], positions: [], strategyBuckets: [], history: [] }
+    if (!pageData)
+      return hasMounted
+        ? (portfolioLend ?? {
+            investments: [],
+            positions: [],
+            strategyBuckets: [],
+            history: [],
+          })
+        : { investments: [], positions: [], strategyBuckets: [], history: [] }
     return mergeLendTabData(pageData.lend, hasMounted ? portfolioLend : null)
   }, [hasMounted, pageData, portfolioLend])
 
@@ -438,7 +498,9 @@ export function DashboardClient({
             retryPortfolioPage()
           }}
           title={t("We couldn't load your portfolio")}
-          message={t("The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.")}
+          message={t(
+            "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.",
+          )}
         />
       )
     }
@@ -462,8 +524,14 @@ export function DashboardClient({
           {/* Lending Positions + Lend Opportunity sidebar (mirrors the hero grid) */}
           <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-x-8">
             <div className="min-w-0 space-y-5">
-              <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Account")}</h2>
-              <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={lendDashboardMetrics} hideHeading />
+              <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
+                {t("Lend Account")}
+              </h2>
+              <DashboardLendPerformanceSection
+                title={t("Lending Performance")}
+                metrics={lendDashboardMetrics}
+                hideHeading
+              />
               <PortfolioInvestments
                 investments={lendTabData.investments}
                 rewardsSummary={lendTabData.rewardsSummary}
@@ -476,79 +544,105 @@ export function DashboardClient({
             <LendOpportunityCarousel />
           </section>
 
-          {/* Borrow sections (moved from the former Borrow tab) */}
-          <div>
-            <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
-              <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Borrow Account")}</h2>
-              <SectionTabStrip items={CREDIT_SUB_TABS} value={creditSubTab} onChange={setCreditSubTab} ariaLabel={t("Credit sections")} />
-            </div>
-            <div className="mt-8">
-              {creditSubTab === "overview" ? (
-                <div className="space-y-8">
-                  <DashboardCreditOverviewSection
-                    hideHeading
-                    title={t("Borrow Overview")}
-                    approvedCreditUsd={borrowSnapshot.approvedUsd}
-                    totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
-                    netApyPct={borrowDashboardMetrics.performance.netApyPct}
-                    totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
-                  />
-                  <div className="grid gap-4 xl:grid-cols-2">
-                    <SuppliesHealthFactorCard averageHealthFactor={borrowSnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
-                    <CurrentLtvCard
-                      borrowedUsd={borrowSnapshot.totalBorrowedUsd}
-                      collateralUsd={borrowSnapshot.totalCollateralUsd}
-                      showBalance={showDollarAmounts}
-                    />
-                  </div>
-                </div>
-              ) : creditSubTab === "collateral" ? (
-                <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
-              ) : creditSubTab === "debt" ? (
-                <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
-              ) : (
-                <TradingFeesPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
-              )}
-            </div>
-          </div>
-
-          {/* Multiply sections (moved from the former Multiply tab) */}
-          {multiplyTabData.lpCollaterals.length === 0 ? (
-            // Real empty state — no fabricated health/risk metrics computed over $0.
-            <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
-              {t("No multiply positions yet. Open a loop to leverage your collateral.")}
-            </div>
-          ) : (
+          <DeferredDashboardContent>
+            {/* Borrow sections (moved from the former Borrow tab) */}
             <div>
               <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
-                <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Multiply Account")}</h2>
-                <SectionTabStrip items={LOOPING_SUB_TABS} value={loopingSubTab} onChange={setLoopingSubTab} ariaLabel={t("Multiply sections")} />
+                <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
+                  {t("Borrow Account")}
+                </h2>
+                <SectionTabStrip
+                  items={CREDIT_SUB_TABS}
+                  value={creditSubTab}
+                  onChange={setCreditSubTab}
+                  ariaLabel={t("Credit sections")}
+                />
               </div>
               <div className="mt-8">
-                {loopingSubTab === "overview" ? (
+                {creditSubTab === "overview" ? (
                   <div className="space-y-8">
-                    <DashboardOverviewSection hideHeading title={t("Multiply Overview")} metrics={multiplyDashboardMetrics.overview} />
+                    <DashboardCreditOverviewSection
+                      hideHeading
+                      title={t("Borrow Overview")}
+                      approvedCreditUsd={borrowSnapshot.approvedUsd}
+                      totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
+                      netApyPct={borrowDashboardMetrics.performance.netApyPct}
+                      totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
+                    />
                     <div className="grid gap-4 xl:grid-cols-2">
-                      <SuppliesHealthFactorCard averageHealthFactor={multiplySnapshot.averageHealthFactor} showBalance={showDollarAmounts} />
+                      <SuppliesHealthFactorCard
+                        averageHealthFactor={borrowSnapshot.averageHealthFactor}
+                        showBalance={showDollarAmounts}
+                      />
                       <CurrentLtvCard
-                        borrowedUsd={multiplySnapshot.totalBorrowedUsd}
-                        collateralUsd={multiplySnapshot.totalCollateralUsd}
+                        borrowedUsd={borrowSnapshot.totalBorrowedUsd}
+                        collateralUsd={borrowSnapshot.totalCollateralUsd}
                         showBalance={showDollarAmounts}
                       />
                     </div>
                   </div>
+                ) : creditSubTab === "collateral" ? (
+                  <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+                ) : creditSubTab === "debt" ? (
+                  <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
                 ) : (
-                  <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
+                  <TradingFeesPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
                 )}
               </div>
             </div>
-          )}
 
-          {/* Learn */}
-          <LendLearnSection />
+            {/* Multiply sections (moved from the former Multiply tab) */}
+            {multiplyTabData.lpCollaterals.length === 0 ? (
+              // Real empty state — no fabricated health/risk metrics computed over $0.
+              <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+                {t("No multiply positions yet. Open a loop to leverage your collateral.")}
+              </div>
+            ) : (
+              <div>
+                <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
+                  <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
+                    {t("Multiply Account")}
+                  </h2>
+                  <SectionTabStrip
+                    items={LOOPING_SUB_TABS}
+                    value={loopingSubTab}
+                    onChange={setLoopingSubTab}
+                    ariaLabel={t("Multiply sections")}
+                  />
+                </div>
+                <div className="mt-8">
+                  {loopingSubTab === "overview" ? (
+                    <div className="space-y-8">
+                      <DashboardOverviewSection
+                        hideHeading
+                        title={t("Multiply Overview")}
+                        metrics={multiplyDashboardMetrics.overview}
+                      />
+                      <div className="grid gap-4 xl:grid-cols-2">
+                        <SuppliesHealthFactorCard
+                          averageHealthFactor={multiplySnapshot.averageHealthFactor}
+                          showBalance={showDollarAmounts}
+                        />
+                        <CurrentLtvCard
+                          borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+                          collateralUsd={multiplySnapshot.totalCollateralUsd}
+                          showBalance={showDollarAmounts}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
+                  )}
+                </div>
+              </div>
+            )}
 
-          {/* Activity (merged in from the former Activity tab) */}
-          <RecentActivity rows={activityRows} />
+            {/* Learn */}
+            <LendLearnSection />
+
+            {/* Activity (merged in from the former Activity tab) */}
+            <RecentActivity rows={activityRows} />
+          </DeferredDashboardContent>
         </div>
       ) : null}
     </>
