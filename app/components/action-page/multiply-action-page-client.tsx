@@ -414,6 +414,34 @@ export function MultiplyActionPageClient({
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
       if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
+      const marketLabel = formatMultiplyLoopMarketLabel(
+        market.collateralAsset.symbol,
+        market.borrowAsset.symbol,
+      )
+      const executionPreviewUi =
+        kind === "multiply"
+          ? mapMultiplyPreviewToActionUi(preview, {
+              marketLabel,
+              collateralSymbol: market.collateralAsset.symbol,
+              borrowSymbol: market.borrowAsset.symbol,
+              collateralAmount: parsedAmount!,
+              collateralPriceUsd,
+              catalogCollateralPriceUsd: collateralPriceUsd,
+              multiplier: parsedMultiplier!,
+              collateralApy: market.collateralAsset.apy,
+              borrowApy: market.borrowAsset.borrowApy,
+              maxLtv: market.risk.maxLtv,
+            })
+          : kind === "close"
+            ? mapClosePreviewToActionUi(preview, {
+                marketLabel,
+                collateralSymbol: market.collateralAsset.symbol,
+              })
+            : mapDeleveragePreviewToActionUi(preview, {
+                marketLabel,
+                targetMultiplier: parsedMultiplier!,
+                collateralSymbol: market.collateralAsset.symbol,
+              })
 
       const simulated = session.readAdapter.mode === "sandbox"
       const result = await runActionSubmitFlow({
@@ -433,10 +461,10 @@ export function MultiplyActionPageClient({
               ? `${market.collateralAsset.symbol} position fully unwound and collateral withdrawn.`
               : `${parsedMultiplier!.toFixed(2)}x on ${market.collateralAsset.symbol} processed.`,
           receiptHash: result.receipt.hash ?? null,
-          metrics: previewUi.metrics,
+          metrics: executionPreviewUi.metrics,
           href: dashboardHrefForProduct("multiply"),
           primaryCtaLabel: successDashboardCtaLabel("multiply"),
-          preview: previewUi,
+          preview: executionPreviewUi,
           verb: descriptor.primaryVerb,
         }),
       )

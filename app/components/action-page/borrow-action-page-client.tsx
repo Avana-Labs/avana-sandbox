@@ -840,6 +840,70 @@ export function BorrowActionPageClient({
       const preview = await session.previewTransaction(intent)
       if (!preview.allowed) throw new Error(humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable")
 
+      let executionPreviewUi = submittedPreviewUi
+      if (kind === "borrow") {
+        const token = session.getBorrowableAssetsForMarket(activeMarketId).find((entry) => entry.id === resolvedBorrowAssetId)
+        const borrowMarket = session.state.markets[activeMarketId]
+        const maxBorrowUsd = usd6ToNumber(preview.before.availableBorrowCapacityUsd6)
+        executionPreviewUi = mapBorrowTransactionPreviewToActionUi(preview, {
+          symbol: token?.symbol ?? "Asset",
+          amountUsd: safeAmount,
+          marketLabel,
+          ratePct: token?.borrowApr ?? 0,
+          balanceLabel: "Available to borrow",
+          balanceUsd: maxBorrowUsd,
+          liquidationThresholdPct: borrowMarket
+            ? wadToPercent(borrowMarket.riskConfig.liquidationThresholdWad)
+            : undefined,
+          maxBorrowUsd,
+          creditScopeLabel: creditScopeLabel ?? undefined,
+        })
+      } else if (kind === "supply") {
+        const supplyMarket = session.state.markets[marketId]
+        const collateralFactorPct = supplyMarket
+          ? wadToPercent(supplyMarket.riskConfig.collateralFactorWad)
+          : 0
+        const liquidationPct = supplyMarket
+          ? wadToPercent(supplyMarket.riskConfig.liquidationThresholdWad)
+          : 0
+        const borrowableAssets = session.getBorrowableAssetsForMarket(marketId)
+        executionPreviewUi = mapBorrowSupplyPreviewToActionUi(preview, {
+          symbol: formatBorrowLpSymbolLabel(supplyMarket),
+          amountUsd: safeAmount,
+          marketLabel,
+          poolLabel: supplyMarket?.display.name ?? marketLabel,
+          collateralSymbol: supplyMarket?.display.visuals[0]?.symbol ?? "LP",
+          borrowSymbol: supplyMarket?.display.visuals[1]?.symbol ?? "",
+          collateralFactorPct,
+          collateralRiskPct: Math.max(0, liquidationPct - collateralFactorPct),
+          borrowableAssetsLabel: borrowableAssets.map((asset) => asset.symbol).join(", ") || "—",
+          borrowableAssetSymbols: borrowableAssets.map((asset) => asset.symbol),
+          creditScopeLabel: creditScopeLabel ?? undefined,
+        })
+      } else if (kind === "repay" && debtPosition) {
+        const repayModel = buildRepayPreviewModel(session.state, walletId, debtPosition.id, safeAmount)
+        executionPreviewUi = mapBorrowRepayPreviewToActionUi(preview, {
+          symbol: session.state.assets[debtPosition.assetId]?.symbol ?? "Asset",
+          amountUsd: safeAmount,
+          marketLabel,
+          remainingDebtUsd: repayModel.remainingDebtUsd,
+          yearlyInterestSavedUsd: repayModel.yearlyInterestSavedUsd,
+          creditScopeLabel: creditScopeLabel ?? undefined,
+          exceedsDebt: repayModel.exceedsDebt,
+        })
+      } else if (kind === "remove") {
+        const pct = (parseActionPercentBps(percent) ?? 0) / 100
+        const removeModel = buildWithdrawPreviewModel(session.state, walletId, marketId, pct)
+        executionPreviewUi = mapBorrowRemovePreviewToActionUi(preview, {
+          percent: pct,
+          safePercent: removeModel.safePercent,
+          removeUsd: removeModel.removeUsd,
+          marketLabel,
+          positionApyPct: session.collateralPools.find((entry) => entry.id === marketId)?.pairApr ?? 0,
+          creditScopeLabel: creditScopeLabel ?? undefined,
+        })
+      }
+
       const simulated = session.readAdapter.mode === "sandbox"
       const result = await runActionSubmitFlow({
         simulated,
@@ -850,21 +914,18 @@ export function BorrowActionPageClient({
 
       if (result.receipt.status !== "success") throw new Error(humanizeBlockedReason(result.receipt.error) ?? "Transaction failed")
       const executedAmountUsd = usd6ToNumber(result.historyItem.executedAmountUsd6)
-      const executedPreview =
-        kind === "remove"
-          ? {
-              ...submittedPreviewUi,
-              amountUsd: executedAmountUsd,
-              amountUsdLabel: formatActionUsd(executedAmountUsd, { exact: true }),
-            }
-          : submittedPreviewUi
+      const executedPreview = {
+        ...executionPreviewUi,
+        amountUsd: executedAmountUsd,
+        amountUsdLabel: formatActionUsd(executedAmountUsd, { exact: true }),
+      }
 
       setSuccessUi(
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
           description: `${formatActionUsd(executedAmountUsd, { exact: true })} processed.`,
           receiptHash: result.receipt.hash ?? null,
-          metrics: submittedPreviewUi.metrics,
+          metrics: executionPreviewUi.metrics,
           href: dashboardHrefForProduct("borrow"),
           primaryCtaLabel: successDashboardCtaLabel("borrow"),
           preview: executedPreview,

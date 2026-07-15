@@ -298,6 +298,24 @@ export function LendActionPageClient({
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
       if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? t("Action unavailable"))
+      const executionPreviewUi =
+        kind === "deposit"
+          ? mapLendDepositPreviewToActionUi(preview, {
+              symbol: market.asset.symbol,
+              amount: parsed,
+              marketLabel: formatLendMarketValueLabel(market.asset.symbol),
+              balanceAmount: getWalletBalanceForLendMarket(session.state, walletId, market),
+              rewardsApy: market.rewardsApy,
+              assetPriceUsd,
+            })
+          : mapLendWithdrawPreviewToActionUi(preview, {
+              symbol: market.asset.symbol,
+              amount: parsed,
+              marketLabel: formatLendMarketValueLabel(market.asset.symbol),
+              balanceAmount: position?.currentSuppliedAmount ?? 0,
+              assetPriceUsd,
+              poolAvailableLiquidity: market.availableLiquidity,
+            })
 
       const simulated = session.readAdapter.mode === "sandbox"
       const result = await runActionSubmitFlow({
@@ -313,10 +331,10 @@ export function LendActionPageClient({
           title: `${descriptor.primaryVerb} successful`,
           description: `${parsed.toFixed(4)} ${market.asset.symbol} processed.`,
           receiptHash: result.receipt.hash ?? null,
-          metrics: previewUi.metrics,
+          metrics: executionPreviewUi.metrics,
           href: dashboardHrefForProduct("lend"),
           primaryCtaLabel: successDashboardCtaLabel("lend"),
-          preview: previewUi,
+          preview: executionPreviewUi,
           verb: descriptor.primaryVerb,
         }),
       )

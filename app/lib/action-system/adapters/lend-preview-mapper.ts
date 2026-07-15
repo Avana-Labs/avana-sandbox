@@ -25,6 +25,7 @@ function basePreviewFields(
   },
 ): Pick<
   ActionPreviewUi,
+  | "quoteId"
   | "allowed"
   | "amountLabel"
   | "amountUsd"
@@ -42,6 +43,7 @@ function basePreviewFields(
   | "warnings"
 > {
   return {
+    quoteId: preview.intent.id,
     allowed: preview.allowed,
     amountLabel: formatActionAmount(options.amount, options.symbol, 4),
     amountUsd: options.amountUsd,

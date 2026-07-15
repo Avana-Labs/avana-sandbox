@@ -22,6 +22,8 @@ describe("multiply preview mappers", () => {
       maxLtv: 0.8,
     })
 
+    expect(ui.quoteId).toBe(preview.intent.id)
+
     expect(ui.marketBreakdown).toEqual({
       collateral: { symbol: "WETH", apy: "3.82%" },
       borrow: { symbol: "USDC", apy: "4.80%" },
