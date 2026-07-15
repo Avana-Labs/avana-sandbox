@@ -17,6 +17,7 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
+import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
@@ -334,6 +335,14 @@ export function LendActionPageClient({
       setIsPending(false)
     }
   }, [amount, closeHref, descriptor.primaryVerb, exact, isPending, kind, market, position, previewUi, router, session, stage, successUi, t, walletId])
+
+  if (session.isHydrated === false) {
+    return (
+      <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} closeHref={closeHref} simulated>
+        <ActionSessionLoading />
+      </ActionPageShell>
+    )
+  }
 
   // Never dead-end on "Market unavailable": an unknown id routes to the picker
   // (stage "select") above. This only guards the impossible no-market/non-select

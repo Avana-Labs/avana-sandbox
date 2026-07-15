@@ -33,6 +33,7 @@ import { ActionSelectStage } from "@/app/components/action-page/action-select-st
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
+import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
@@ -893,6 +894,14 @@ export function BorrowActionPageClient({
     if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
     setAmount(String(Number(previewUi.maxAmount.toFixed(kind === "repay" ? 6 : 2))))
   }, [kind, previewUi?.maxAmount])
+
+  if (session.isHydrated === false) {
+    return (
+      <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} closeHref={closeHref} simulated>
+        <ActionSessionLoading />
+      </ActionPageShell>
+    )
+  }
 
   const shellSubtitle =
     stage === "select"
