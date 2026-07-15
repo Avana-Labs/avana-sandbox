@@ -14,6 +14,7 @@ import {
 } from "./lighthouse-config.mjs"
 
 const baseUrl = process.env.LH_BASE_URL ?? "http://127.0.0.1:3001"
+const chromeFlags = process.env.LH_ENABLE_GPU === "1" ? CHROME_FLAGS.replace(" --disable-gpu", "") : CHROME_FLAGS
 const budgets = {
   performance: Number(process.env.LH_PERFORMANCE_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS.performance),
   accessibility: Number(process.env.LH_ACCESSIBILITY_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS.accessibility),
@@ -38,7 +39,7 @@ function runLighthouse(route, outputPath) {
     url,
     "--output=json",
     `--output-path=${outputPath}`,
-    `--chrome-flags=${CHROME_FLAGS}`,
+    `--chrome-flags=${chromeFlags}`,
     "--quiet",
   ]
 
@@ -98,7 +99,12 @@ async function assertRouteContent(route) {
   }
 }
 
-const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "avana-lighthouse-"))
+const requestedOutputDir = process.env.LH_OUTPUT_DIR
+const outputDir = requestedOutputDir
+  ? path.resolve(requestedOutputDir)
+  : await fs.mkdtemp(path.join(os.tmpdir(), "avana-lighthouse-"))
+await fs.mkdir(outputDir, { recursive: true })
+process.stdout.write(`${JSON.stringify({ lighthouseOutputDir: outputDir, gpuEnabled: process.env.LH_ENABLE_GPU === "1" })}\n`)
 const failures = []
 
 for (const route of LIGHTHOUSE_ROUTES) {
