@@ -192,6 +192,7 @@ and no forced geometry read during sheet pointer movement.
 - `npm run build` and `npm run lighthouse:build`: passed, including TypeScript and static-page generation.
 - Playwright route-performance suite: 27/27 routes and action shells passed against the production artifact.
 - Playwright browser soak: 100/100 navigation, interaction, reload, and cross-route sessions passed.
+- The soak's captured Dashboard and Multiply interactions reported good INP, with observed samples from 48ms to 120ms.
 - Lighthouse: three-run median matrix completed for all 12 routes.
 - Remaining-issue Lighthouse matrix: three-run medians completed for Borrow, Lend, Multiply, and Dashboard, followed by a separate three-run Borrow verification after its mobile-spoke correction.
 - Five-commit Lighthouse matrix: three-run medians completed for Borrow, Lend, Multiply, and Dashboard, followed by a separate three-run Dashboard verification after removing the chart import boundary.
