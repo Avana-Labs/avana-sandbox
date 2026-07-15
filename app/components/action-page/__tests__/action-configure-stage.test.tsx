@@ -91,6 +91,7 @@ describe("ActionConfigureStage", () => {
     // No misleading SAFE health-factor card / metrics block for a blocked action.
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-health-factor-card")).not.toBeInTheDocument()
+    expect(screen.getByText("This borrow exceeds your available credit.")).toBeInTheDocument()
     // The gate is the CTA itself: a disabled button with a short in-place reason.
     const cta = screen.getByRole("button", { name: "Try a smaller amount" })
     expect(cta).toBeInTheDocument()

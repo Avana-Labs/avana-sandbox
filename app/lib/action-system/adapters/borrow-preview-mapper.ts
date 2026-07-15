@@ -212,8 +212,8 @@ export function mapBorrowRepayPreviewToActionUi(
     rateValue: formatActionUsd(options.amountUsd),
     marketLabel: "Market",
     marketValue: options.marketLabel,
-    balanceLabel: "Remaining debt",
-    balanceValue: formatActionUsd(options.remainingDebtUsd),
+    balanceLabel: "Outstanding debt",
+    balanceValue: formatActionUsd(beforeDebt, { exact: true }),
     maxAmount: beforeDebt,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
@@ -244,7 +244,7 @@ export function mapBorrowRepayPreviewToActionUi(
     blockedReason: allowed
       ? null
       : exceedsDebt
-        ? "Amount exceeds outstanding debt"
+        ? `Amount exceeds outstanding debt. Maximum repay is ${formatActionUsd(beforeDebt, { exact: true })}.`
         : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
