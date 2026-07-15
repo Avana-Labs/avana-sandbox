@@ -150,6 +150,7 @@ export function BorrowActionPageClient({
     if (kind === "supply" && !initialMarketId) return "select"
     if (kind === "claim" && !initialMarketId && !initialPositionId) return "select"
     if (kind === "repay" && !initialMarketId && !initialDebtId) return "select"
+    if (kind === "remove" && !initialMarketId && !initialPositionId) return "select"
     return "configure"
   })
   const [assetId, setAssetId] = useState(resolvedInitialAsset)
@@ -280,6 +281,7 @@ export function BorrowActionPageClient({
     if (kind === "repay") return repaySelectItemsForWallet(session, walletId)
     if (kind === "claim") return claimSelectItemsForWallet(session, walletId)
     if (kind === "supply") return supplySelectItemsForWallet(session, walletId)
+    if (kind === "remove") return supplySelectItemsForWallet(session, walletId)
     return borrowSelectItemsForMarket(session, selectMarketId || undefined, walletId)
   }, [kind, selectMarketId, session, walletId])
 
@@ -678,9 +680,10 @@ export function BorrowActionPageClient({
     if (kind === "borrow" && !resolvedInitialAsset) return true
     if (kind === "supply" && !initialMarketId && supplySelectItemsForWallet(session, walletId).length > 1) return true
     if (kind === "repay" && debtPositions.length > 1 && !initialMarketId && !initialDebtId) return true
+    if (kind === "remove" && !initialMarketId && !initialPositionId && selectItems.length > 1) return true
     if (kind === "claim" && claimSelectItemsForWallet(session, walletId).length > 1 && !initialMarketId && !initialPositionId) return true
     return false
-  }, [debtPositions.length, embedded, initialMarketId, initialPositionId, initialDebtId, kind, resolvedInitialAsset, session, walletId])
+  }, [debtPositions.length, embedded, initialMarketId, initialPositionId, initialDebtId, kind, resolvedInitialAsset, selectItems.length, session, walletId])
 
   useEffect(() => {
     if (previewUi == null || successUi != null) return
@@ -885,6 +888,8 @@ export function BorrowActionPageClient({
         ? "Choose the debt to repay."
         : kind === "claim"
           ? "Choose rewards to claim."
+          : kind === "remove"
+            ? "Choose collateral to remove."
           : kind === "supply"
             ? "Choose the LP pool you want to pledge."
             : "Choose the asset to borrow."
@@ -1003,13 +1008,15 @@ export function BorrowActionPageClient({
       {stage === "select" && !embedded ? (
         <ActionSelectStage
           items={selectItems}
-          sectionLabel={kind === "supply" ? "Supported pools" : "Available assets"}
-          searchPlaceholder={kind === "supply" ? "Search pools" : "Find an asset"}
+          sectionLabel={kind === "supply" ? "Supported pools" : kind === "remove" ? "Your collateral" : "Available assets"}
+          searchPlaceholder={kind === "supply" || kind === "remove" ? "Search pools" : "Find an asset"}
           emptyTitle={
             kind === "repay"
               ? "No debt found"
               : kind === "claim"
                 ? "Nothing to claim"
+                : kind === "remove"
+                  ? "No collateral found"
                 : kind === "supply"
                   ? "No pools found"
                   : "No assets found"
@@ -1019,6 +1026,8 @@ export function BorrowActionPageClient({
               ? "Borrow first, then repay from here."
               : kind === "claim"
                 ? "You have no claimable rewards right now. Supply collateral and earn fees before claiming."
+                : kind === "remove"
+                  ? "Pledge collateral before trying to remove it."
                 : kind === "supply"
                   ? "Try adjusting your search — every market is available to pledge in the sandbox."
                   : "Try adjusting your search"
@@ -1048,6 +1057,10 @@ export function BorrowActionPageClient({
             }
             if (kind === "supply") {
               router.replace(actionPagePath("borrow", "supply", { market: id }))
+              return
+            }
+            if (kind === "remove") {
+              router.replace(actionPagePath("borrow", "remove", { market: id }))
               return
             }
             const selection = resolveBorrowTokenSelection(session, id, selectMarketId)
