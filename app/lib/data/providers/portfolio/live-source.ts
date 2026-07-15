@@ -4,6 +4,7 @@ import { getAuthenticatedConvexClient } from "@/app/lib/data/providers/live-conv
 import { MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR, worstMultiplyHealthFactor } from "@/app/lib/multiply-system/read-model"
 import type { PortfolioActivityKind, PortfolioActivityRecord, PortfolioCollateralRecord, PortfolioDebtRecord, PortfolioPageRecords, PortfolioSupplyRecord } from "./records"
 import type { PortfolioPageSource } from "./source"
+import { allocateDebtByCollateral, calculateLiveBorrowDebt } from "./live-accounting"
 
 export const livePortfolioPageAdapter = createDataSourceAdapter({
   id: "portfolio-live",
@@ -62,14 +63,19 @@ export const livePortfolioPageSource: PortfolioPageSource = {
 
     const collaterals: PortfolioCollateralRecord[] = state.positions
       .filter((position) => position.product === "borrow")
-      .flatMap((position) =>
-        position.collateral.map((collateral) => {
+      .flatMap((position) => {
+        const positionBorrowedUsd = position.debt.reduce(
+          (sum, debt) => sum + calculateLiveBorrowDebt(debt).borrowedUsd,
+          0,
+        )
+        const totalCollateralUsd = position.collateral.reduce(
+          (sum, collateral) => sum + toUsd(collateral.collateralValueUsd6),
+          0,
+        )
+        return position.collateral.map((collateral) => {
           const pool = poolBySlug.get(collateral.marketSlug)
           const collateralUsd = toUsd(collateral.collateralValueUsd6)
-          const borrowedUsd = position.debt.reduce(
-            (sum, debt) => sum + Number((BigInt(debt.debtSharesUsd6) * BigInt(debt.debtIndexRay)) / 10n ** 27n) / 1_000_000,
-            0,
-          )
+          const borrowedUsd = allocateDebtByCollateral(positionBorrowedUsd, collateralUsd, totalCollateralUsd)
           const maxLtv = pool?.maxLtvPct ?? 0
           const liquidationUsd = collateralUsd * ((pool?.liquidationThresholdPct ?? maxLtv) / 100)
           const visuals = pool?.visuals?.slice(0, 2) ?? []
@@ -94,22 +100,22 @@ export const livePortfolioPageSource: PortfolioPageSource = {
             pairApr: pool?.pairAprPct ?? 0,
             feesUsd: 0,
           }
-        }),
-      )
+        })
+      })
 
     const debts: PortfolioDebtRecord[] = state.positions
       .filter((position) => position.product === "borrow")
       .flatMap((position) =>
-        position.debt.map((debt) => ({
-          id: String(debt._id),
-          walletProfileId: wallet,
-          poolId: debt.marketSlug ?? position.marketSlug,
-          debtAssetSymbol: debt.baseAssetId.toUpperCase(),
-          borrowedUsd: Number((BigInt(debt.debtSharesUsd6) * BigInt(debt.debtIndexRay)) / 10n ** 27n) / 1_000_000,
-          borrowAprPct: Number(BigInt(debt.borrowRateWad)) / 10 ** 16,
-          accruedInterestUsd: 0,
-          dailyInterestUsd: 0,
-        })),
+        position.debt.map((debt) => {
+          const accounting = calculateLiveBorrowDebt(debt)
+          return {
+            id: String(debt._id),
+            walletProfileId: wallet,
+            poolId: debt.marketSlug ?? position.marketSlug,
+            debtAssetSymbol: debt.baseAssetId.toUpperCase(),
+            ...accounting,
+          }
+        }),
       )
 
     const activity: PortfolioActivityRecord[] = state.transactions.map((transaction) => ({
