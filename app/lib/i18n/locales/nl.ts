@@ -300,6 +300,7 @@ const dict: TranslationDictionary = {
   "Sending…": "Verzenden…",
   "show less": "minder tonen",
   "Something went wrong": "Er ging iets mis",
+  "Something went wrong.": "Er ging iets mis.",
   "Something went wrong. Please try again.": "Er ging iets mis. Probeer het opnieuw.",
   "Submit another request": "Nog een verzoek indienen",
   "Supply market": "Aanbodmarkt",
