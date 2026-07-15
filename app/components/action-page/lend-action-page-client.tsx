@@ -204,6 +204,7 @@ export function LendActionPageClient({
             marketLabel: formatLendMarketValueLabel(market.asset.symbol),
             balanceAmount: position?.currentSuppliedAmount ?? 0,
             assetPriceUsd,
+            poolAvailableLiquidity: market.availableLiquidity,
           }),
         )
       })
