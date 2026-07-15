@@ -1,15 +1,23 @@
 "use client"
 
-import { Component, useEffect, useState, type ReactNode } from "react"
-import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
+import dynamic from "next/dynamic"
+import { Component, type ReactNode } from "react"
 import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
+import { OnboardingFlow, OnboardingUnavailable } from "./onboarding-flow"
+
+const AuthedGate = dynamic(() => import("./authed-sandbox-gate").then((mod) => mod.AuthedSandboxGate), {
+  ssr: false,
+  loading: () => (
+    <LockedShell>
+      <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
+    </LockedShell>
+  ),
+})
 
 class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
   state = { errored: false }
@@ -49,62 +57,6 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
   return (
     <LockedShell>
       <OnboardingUnavailable onRetry={() => window.location.reload()} {...copy} />
-    </LockedShell>
-  )
-}
-
-/** Wallet-only state (no economy) shaped for OnboardingFlow. */
-type WalletOnlyState = Omit<OnboardingGateState, "economy">
-
-function AuthedGate({ wallet, children }: { wallet: string; children: ReactNode }) {
-  const { t } = useTranslation()
-  // Steady-state subscription: wallet profile/step ONLY. This does NOT read the global
-  // economy shard counters, so a claim by any other wallet no longer invalidates every
-  // authed wallet's gate subscription (the 10k-concurrency hazard). The economy status is
-  // subscribed separately, and only while onboarding is still in progress (below).
-  const walletState = useQuery(api.sandbox.onboarding.getWalletOnboardingState, { wallet }) as
-    | WalletOnlyState
-    | undefined
-  const isDone = walletState?.onboardingStep === "done"
-  // Only pull the (invalidated-by-every-claim) economy status when this wallet is NOT done —
-  // i.e. it is actively onboarding and the OnboardingFlow needs seats-left/open|closed.
-  const economy = useQuery(
-    api.sandbox.onboarding.getEconomyStatus,
-    isDone || walletState === undefined ? "skip" : { wallet },
-  ) as OnboardingGateState["economy"] | undefined
-
-  // When Convex is configured but unreachable the query never resolves, leaving a
-  // forever "Verifying…" spinner. Time out into the offline state after 12s.
-  const [timedOut, setTimedOut] = useState(false)
-  useEffect(() => {
-    if (walletState !== undefined) {
-      setTimedOut(false)
-      return
-    }
-    const timer = setTimeout(() => setTimedOut(true), 12000)
-    return () => clearTimeout(timer)
-  }, [walletState])
-  if (walletState === undefined) {
-    if (timedOut) return <GateUnavailable variant="offline" />
-    return (
-      <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Verifying onboarding access")} />
-      </LockedShell>
-    )
-  }
-  if (isDone) return <>{children}</>
-  // Onboarding still in progress: wait for the economy status before rendering the flow so
-  // seats-left/closed copy is accurate rather than flashing a default.
-  if (economy === undefined) {
-    return (
-      <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Verifying onboarding access")} />
-      </LockedShell>
-    )
-  }
-  return (
-    <LockedShell>
-      <OnboardingFlow wallet={wallet} state={{ ...walletState, economy }} />
     </LockedShell>
   )
 }
