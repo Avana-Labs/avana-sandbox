@@ -149,7 +149,7 @@ export function BorrowActionPageClient({
     if (kind === "borrow" && !resolvedInitialAsset) return "select"
     if (kind === "supply" && !initialMarketId) return "select"
     if (kind === "claim" && !initialMarketId && !initialPositionId) return "select"
-    if (kind === "repay" && !initialMarketId && !initialDebtId) return "select"
+    if (kind === "repay" && !initialDebtId && !resolvedInitialAsset) return "select"
     if (kind === "remove" && !initialMarketId && !initialPositionId) return "select"
     return "configure"
   })
