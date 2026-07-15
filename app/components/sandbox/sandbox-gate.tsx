@@ -1,7 +1,6 @@
 "use client"
 
-import dynamic from "next/dynamic"
-import { Component, type ReactNode } from "react"
+import { Component, lazy, Suspense, type ReactNode } from "react"
 import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
@@ -11,14 +10,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
 import styles from "./onboarding-flow.module.css"
 
-const AuthedGate = dynamic(() => import("./authed-sandbox-gate").then((mod) => mod.AuthedSandboxGate), {
-  ssr: false,
-  loading: () => (
-    <LockedShell>
-      <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
-    </LockedShell>
-  ),
-})
+const AuthedGate = lazy(async () => ({ default: (await import("./authed-sandbox-gate")).AuthedSandboxGate }))
 
 class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
   state = { errored: false }
@@ -126,7 +118,15 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   }
   return (
     <GateErrorBoundary key={authedWallet}>
-      <AuthedGate wallet={authedWallet}>{children}</AuthedGate>
+      <Suspense
+        fallback={
+          <LockedShell>
+            <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
+          </LockedShell>
+        }
+      >
+        <AuthedGate wallet={authedWallet}>{children}</AuthedGate>
+      </Suspense>
     </GateErrorBoundary>
   )
 }

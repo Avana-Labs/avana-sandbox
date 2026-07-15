@@ -1,7 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { type ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider";
 import {
   hasConvexClient,
@@ -13,12 +12,10 @@ import {
   TEST_MODE_WALLET_ADDRESS,
 } from "@/app/lib/test-mode";
 
-const ConvexSessionProvider = dynamic(
-  () => import("@/app/lib/avana-session/convex-session-provider").then((mod) => mod.ConvexSessionProvider),
-  {
-    ssr: false,
-    loading: () => <div className="min-h-screen bg-background" />,
-  },
+const ConvexSessionProvider = lazy(
+  async () => ({
+    default: (await import("@/app/lib/avana-session/convex-session-provider")).ConvexSessionProvider,
+  }),
 );
 
 export function AvanaSessionProviders({
@@ -49,9 +46,11 @@ export function AvanaSessionProviders({
       live={Boolean(hasConvexClient && isSignedIn && authedWallet)}
     >
       {hasConvexClient && isSignedIn && authedWallet ? (
-        <ConvexSessionProvider walletId={authedWallet}>
-          {children}
-        </ConvexSessionProvider>
+        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+          <ConvexSessionProvider walletId={authedWallet}>
+            {children}
+          </ConvexSessionProvider>
+        </Suspense>
       ) : (
         <AvanaSessionsProvider walletId={effectiveWalletId}>
           {children}
