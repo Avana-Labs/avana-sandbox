@@ -68,6 +68,18 @@ describe("BorrowActionPageClient", () => {
     expect(screen.queryByPlaceholderText("Find an asset")).not.toBeInTheDocument()
   })
 
+  it("does not auto-select a debt from a market-only Repay URL", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <BorrowActionPageClient kind="repay" initialMarketId="uni-v3-bluechip-weth-usdc" />
+      </AvanaSessionsProvider>,
+    )
+
+    expect(await screen.findByText("Choose the debt to repay.")).toBeInTheDocument()
+    expect(screen.getByPlaceholderText("Find an asset")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument()
+  })
+
   it("keeps a token picker selection after closing the dialog", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
