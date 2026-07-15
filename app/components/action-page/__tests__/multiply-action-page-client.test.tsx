@@ -69,6 +69,7 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-risk-banner")).not.toBeInTheDocument()
     expect(screen.getByText("$0.00")).toBeInTheDocument()
+    expect(screen.getByText("1.1x")).toBeInTheDocument()
   })
 
   it("clamps the leverage multiplier to the selected market public maximum", async () => {

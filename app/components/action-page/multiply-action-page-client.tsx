@@ -23,9 +23,9 @@ import {
   MULTIPLY_ACTION_MIN_LEVERAGE,
   getDeleverageMultiplierMax,
   getDefaultDeleverageMultiplier,
+  resolveDefaultMultiplyLeverage,
   resolveMultiplyMarketMaxLeverage,
 } from "@/app/lib/multiply-system/leverage-limits"
-import { clampMultiplierToOptions, buildMultiplierOptions } from "@/app/components/action-page/multiplier-options"
 import {
   buildMultiplyOverCapPreviewUi,
   exceedsMultiplyCollateralCap,
@@ -117,17 +117,10 @@ export function MultiplyActionPageClient({
   }, [market, session.state.positions, walletId, walletPositions])
   const defaultMultiplyMultiplier = useMemo(() => {
     if (kind !== "multiply") return ""
-    const marketCap = market ? resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier) : 3
-    const recommendedCap =
-      market && Number.isFinite(market.risk.recommendedMaxMultiplier)
-        ? Math.min(marketCap, market.risk.recommendedMaxMultiplier)
-        : marketCap
-    // Start at ~75% of the cap (a practical target, never pinned at max) so the
-    // ruler is obviously draggable in both directions instead of feeling stuck.
-    const practicalTarget = Math.max(MULTIPLY_ACTION_MIN_LEVERAGE + 0.5, Math.min(recommendedCap, marketCap * 0.75))
-    const options = buildMultiplierOptions(marketCap)
-    const clamped = clampMultiplierToOptions(practicalTarget, options)
-    return String(Number(clamped.toFixed(2)))
+    const safeDefault = market
+      ? resolveDefaultMultiplyLeverage(market.risk.publicMaxMultiplier, market.risk.recommendedMaxMultiplier)
+      : 1.1
+    return String(Number(safeDefault.toFixed(2)))
   }, [kind, market])
 
   const [stage, setStage] = useState<ActionStage>("configure")

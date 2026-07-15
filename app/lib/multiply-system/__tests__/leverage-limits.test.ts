@@ -3,6 +3,7 @@ import {
   MULTIPLY_ACTION_MAX_LEVERAGE,
   getDeleverageMultiplierMax,
   getDefaultDeleverageMultiplier,
+  resolveDefaultMultiplyLeverage,
   resolveMultiplyMarketMaxLeverage,
 } from "@/app/lib/multiply-system/leverage-limits"
 
@@ -24,6 +25,11 @@ describe("resolveMultiplyMarketMaxLeverage", () => {
     expect(getDefaultDeleverageMultiplier(2)).toBe("1.5")
     expect(getDefaultDeleverageMultiplier(1.2)).toBe("1")
     expect(getDefaultDeleverageMultiplier(Number.NaN)).toBe("1")
+  })
+
+  it("defaults new positions to conservative leverage within market limits", () => {
+    expect(resolveDefaultMultiplyLeverage(4, 3)).toBe(1.1)
+    expect(resolveDefaultMultiplyLeverage(1.3, 1.2)).toBe(1.1)
   })
 
   it("caps deleverage at a valid target below the current multiplier", () => {
