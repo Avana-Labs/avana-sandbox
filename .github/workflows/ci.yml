@@ -36,6 +36,9 @@ jobs:
           node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" \
             || npm install --no-save @rolldown/binding-linux-x64-gnu@$(node -p "require('./package.json').optionalDependencies['@rolldown/binding-linux-x64-gnu'] || require('./package-lock.json').packages['node_modules/@rolldown/binding-linux-x64-gnu'].version")
 
+      - name: Format check
+        run: npm run format:check
+
       - name: Lint
         run: npm run lint
 

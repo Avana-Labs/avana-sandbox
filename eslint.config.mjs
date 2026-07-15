@@ -2,10 +2,20 @@ import js from "@eslint/js"
 import nextPlugin from "@next/eslint-plugin-next"
 import globals from "globals"
 import tseslint from "typescript-eslint"
+import prettier from "eslint-config-prettier"
 
 export default tseslint.config(
   {
-    ignores: [".next/**", ".next-dev/**", ".next-prod/**", "node_modules/**", ".reports/**", ".c?????/**", "convex/_generated/**", "tailwind.config.js"],
+    ignores: [
+      ".next/**",
+      ".next-dev/**",
+      ".next-prod/**",
+      "node_modules/**",
+      ".reports/**",
+      ".c?????/**",
+      "convex/_generated/**",
+      "tailwind.config.js",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -49,4 +59,7 @@ export default tseslint.config(
       "no-console": "off",
     },
   },
+  // Must stay LAST: disables ESLint stylistic rules that would conflict with
+  // Prettier, so formatting is owned solely by `prettier --check`.
+  prettier,
 )
