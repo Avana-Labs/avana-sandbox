@@ -45,6 +45,7 @@ const DialogContent = React.forwardRef<
     pointerId: number
     startY: number
     offset: number
+    contentHeight: number
     moved: boolean
   } | null>(null)
 
@@ -86,6 +87,7 @@ const DialogContent = React.forwardRef<
         pointerId: event.pointerId,
         startY: event.clientY,
         offset: dragOffset,
+        contentHeight: contentRef.current?.offsetHeight ?? 0,
         moved: false,
       }
       setIsDragging(true)
@@ -115,8 +117,7 @@ const DialogContent = React.forwardRef<
       }
 
       event.currentTarget.releasePointerCapture(event.pointerId)
-      const contentHeight = contentRef.current?.offsetHeight ?? 0
-      const closeThreshold = Math.max(180, contentHeight * 0.32)
+      const closeThreshold = Math.max(180, dragState.contentHeight * 0.32)
       const shouldClose = dragState.moved && dragOffset > closeThreshold
       endDrag(shouldClose, dragOffset)
       event.preventDefault()
