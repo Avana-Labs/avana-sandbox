@@ -36,7 +36,7 @@ export default async function DashboardPage() {
       </>
     )
   }
-  const walletProfileId = resolvePortfolioWalletProfileId()
+  const walletProfileId = await resolvePortfolioWalletProfileId()
   const initialData = await fetchPortfolioPage({ walletProfileId })
 
   return (

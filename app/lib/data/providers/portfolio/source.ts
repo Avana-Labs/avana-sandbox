@@ -1,5 +1,4 @@
 import type { DataSourceAdapter, DataSourceRequestContext, DataSourceResponse } from "@/app/lib/data/core/source-runtime"
-import { livePortfolioPageAdapter, livePortfolioPageSource } from "./live-source"
 import type { PortfolioPageRecords } from "./records"
 
 export type * from "./records"
@@ -12,5 +11,3 @@ export type PortfolioPageSource = {
     context?: DataSourceRequestContext,
   ): Promise<DataSourceResponse<PortfolioPageRecords>>
 }
-
-export { livePortfolioPageAdapter, livePortfolioPageSource }
