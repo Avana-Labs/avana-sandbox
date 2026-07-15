@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { LendAssetSpokes } from "@/app/lend/components/lend-asset-spokes"
+import { LendAssetSpokes, paginateLendAssetGroups } from "@/app/lend/components/lend-asset-spokes"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
@@ -9,6 +9,17 @@ vi.mock("@/app/lib/prices/token-prices-context", () => ({ usePriceFor: () => () 
 afterEach(cleanup)
 
 describe("LendAssetSpokes withdrawal availability", () => {
+  it("paginates globally while preserving asset groups", () => {
+    const firstPage = paginateLendAssetGroups(LEND_ASSET_GROUPS, 0, 4)
+    const secondPage = paginateLendAssetGroups(LEND_ASSET_GROUPS, 1, 4)
+
+    expect(firstPage.flatMap((group) => group.rows)).toHaveLength(4)
+    expect(secondPage.flatMap((group) => group.rows)).toHaveLength(4)
+    expect(secondPage.flatMap((group) => group.rows)[0]?.symbol).not.toBe(
+      firstPage.flatMap((group) => group.rows)[0]?.symbol,
+    )
+  })
+
   it("disables Withdraw when the wallet has no supplied position", () => {
     const group = LEND_ASSET_GROUPS[0]!
     const rows = group.rows.slice(0, 2)

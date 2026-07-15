@@ -65,6 +65,23 @@ type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
   availableLiquiditySortValue?: number;
 };
 type AssetGroup = LendPageData["assetGroups"][number];
+const LEND_PAGE_SIZE = 12;
+
+export function paginateLendAssetGroups(groups: AssetGroup[], page: number, pageSize = LEND_PAGE_SIZE) {
+  const start = Math.max(0, page) * pageSize;
+  const end = start + pageSize;
+  let cursor = 0;
+  return groups
+    .map((group) => {
+      const groupStart = cursor;
+      const groupEnd = cursor + group.rows.length;
+      cursor = groupEnd;
+      const sliceStart = Math.max(0, start - groupStart);
+      const sliceEnd = Math.min(group.rows.length, end - groupStart);
+      return { ...group, rows: sliceEnd > sliceStart ? group.rows.slice(sliceStart, sliceEnd) : [] };
+    })
+    .filter((group) => group.rows.length > 0);
+}
 const DEFAULT_ASSET_GROUPS: AssetGroup[] = LEND_ASSET_GROUPS;
 
 function SortIcon() {
@@ -604,6 +621,7 @@ export function LendAssetSpokes({
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [currentTab, setCurrentTab] = useState<CategoryChip["id"]>("all");
+  const [page, setPage] = useState(0);
 
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -622,6 +640,13 @@ export function LendAssetSpokes({
       })
       .filter((group) => group.rows.length > 0);
   }, [groups, search, currentTab]);
+  const totalRows = filteredGroups.reduce((sum, group) => sum + group.rows.length, 0);
+  const pageCount = Math.max(1, Math.ceil(totalRows / LEND_PAGE_SIZE));
+  const pagedGroups = useMemo(() => paginateLendAssetGroups(filteredGroups, page), [filteredGroups, page]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [currentTab, search]);
 
   return (
     <section
@@ -640,8 +665,8 @@ export function LendAssetSpokes({
       </div>
 
       <div className="space-y-14">
-        {filteredGroups.length > 0 ? (
-          filteredGroups.map((group, index) => (
+        {pagedGroups.length > 0 ? (
+          pagedGroups.map((group, index) => (
             <div key={group.title} className="space-y-8">
               <AssetSection
                 title={group.title}
@@ -665,6 +690,30 @@ export function LendAssetSpokes({
           </div>
         )}
       </div>
+
+      {pageCount > 1 ? (
+        <nav aria-label={t("Lend market pages")} className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            disabled={page === 0}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
+          >
+            {t("Previous")}
+          </button>
+          <span className="text-[13px] text-muted-foreground">
+            {t("Page {page} of {count}").replace("{page}", String(page + 1)).replace("{count}", String(pageCount))}
+          </span>
+          <button
+            type="button"
+            disabled={page >= pageCount - 1}
+            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
+          >
+            {t("Next")}
+          </button>
+        </nav>
+      ) : null}
     </section>
   );
 }
