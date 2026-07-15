@@ -37,6 +37,22 @@ export function nextActionStage(stage: ActionStage, event: ActionStageEvent): Ac
       if (event === "back") return "review"
       return stage
     case "processing":
+      if (event === "submit") return "submitted"
+      if (event === "error") return "error"
+      return stage
+    case "submitted":
+      if (event === "confirmed") return "confirmed"
+      if (event === "error") return "error"
+      return stage
+    case "confirmed":
+      if (event === "continue") return "refreshing_position"
+      if (event === "error") return "error"
+      return stage
+    case "refreshing_position":
+      if (event === "continue") return "reconciled"
+      if (event === "error") return "error"
+      return stage
+    case "reconciled":
       if (event === "success") return "success"
       if (event === "error") return "error"
       return stage
@@ -57,6 +73,10 @@ export function isReviewStage(stage: ActionStage) {
   return stage === "review"
 }
 
+export function isProcessingStage(stage: ActionStage) {
+  return ["processing", "submitted", "confirmed", "refreshing_position", "reconciled"].includes(stage)
+}
+
 export function secondaryCtaLabel(stage: ActionStage, options?: { canGoBack?: boolean }) {
   if (stage === "success") return "Done"
   if (stage === "review") return "Back"
@@ -74,7 +94,7 @@ export function primaryCtaLabel(options: {
   blockedSymbol?: string
 }) {
   if (options.stage === "success") return "View dashboard"
-  if (options.stage === "processing") return "Processing…"
+  if (isProcessingStage(options.stage)) return "Processing…"
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return options.verb
   if (options.stage === "error") return options.verb
   if (options.stage === "review") return options.verb
@@ -99,7 +119,7 @@ export function shouldDisablePrimaryCta(options: {
   blockedRedirect?: boolean
 }) {
   if (options.isPending) return true
-  if (options.stage === "processing") return true
+  if (isProcessingStage(options.stage)) return true
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return true
   if (options.blockedReason && !options.blockedRedirect) return true
   if (options.stage === "configure" && !options.isValid) return true

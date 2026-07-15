@@ -16,7 +16,7 @@ import { ActionReviewStage } from "@/app/components/action-page/action-review-st
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
-import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -154,7 +154,7 @@ export function RewardsActionPageClient({
     }
   }, [claimSummary.claimUsd, closeHref, descriptor.primaryVerb, previewUi, rewards, router, stage, successUi])
 
-  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
+  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
 
   return (
     <ActionPageShell
@@ -167,8 +167,8 @@ export function RewardsActionPageClient({
       closeHref={closeHref}
       simulated={rewards.readAdapter.mode === "sandbox"}
     >
-      {stage === "processing" ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
+      {isProcessingStage(stage) ? (
+        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} stage={stage} />
       ) : null}
 
       {stage === "review" ? (

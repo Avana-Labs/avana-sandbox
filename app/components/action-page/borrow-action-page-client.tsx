@@ -49,7 +49,7 @@ import {
   resolveClaimMarketId,
   supplySelectItemsForWallet,
 } from "@/app/lib/action-system/resolve-borrow-context"
-import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parseActionPercentBps, parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
 function resolveClaimPositions(marketId: string, claimPositionId?: string) {
@@ -691,7 +691,7 @@ export function BorrowActionPageClient({
     // Only recover the success screen while a submit is in flight. Matching on the
     // "configure" stage too let a revisit within 15s of any same-market success
     // auto-jump to a phantom "successful" screen without the user submitting.
-    if (stage !== "processing") return
+    if (!isProcessingStage(stage)) return
 
     const minTimestamp = Date.now() - 15_000
 
@@ -905,10 +905,10 @@ export function BorrowActionPageClient({
           : kind === "supply"
             ? "Choose the LP pool you want to pledge."
             : "Choose the asset to borrow."
-      : stage === "success" || stage === "processing" || stage === "review"
+      : stage === "success" || isProcessingStage(stage) || stage === "review"
         ? undefined
         : descriptor.subtitle
-  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
+  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   // Require a collateral pool before the borrow-asset picker opens, so the asset
@@ -1086,8 +1086,8 @@ export function BorrowActionPageClient({
         />
       ) : null}
 
-      {stage === "processing" ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={reviewPreviewUi ?? previewUi} closeHref={closeHref} />
+      {isProcessingStage(stage) ? (
+        <ActionProcessingStage verb={descriptor.primaryVerb} preview={reviewPreviewUi ?? previewUi} closeHref={closeHref} stage={stage} />
       ) : null}
 
       {stage === "review" && reviewPreviewUi ? (

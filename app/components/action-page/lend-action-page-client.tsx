@@ -23,7 +23,7 @@ import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/act
 import { lendDepositSelectItems, lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/app/lib/lend-system/market-labels"
 import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
-import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
@@ -339,14 +339,14 @@ export function LendActionPageClient({
   // case and renders nothing rather than an error card.
   if (!market && stage !== "select") return null
 
-  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
+  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
       ? t("Choose the market to withdraw from.")
       : stage === "select" && kind === "deposit"
         ? t("Choose the asset to deposit.")
-        : stage === "success" || stage === "processing" || stage === "review"
+        : stage === "success" || isProcessingStage(stage) || stage === "review"
           ? undefined
           : descriptor.subtitle
 
@@ -378,8 +378,8 @@ export function LendActionPageClient({
         />
       ) : null}
 
-      {stage === "processing" ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
+      {isProcessingStage(stage) ? (
+        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} stage={stage} />
       ) : null}
 
       {stage === "review" && previewUi ? (

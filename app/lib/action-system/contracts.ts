@@ -20,6 +20,10 @@ export type ActionStage =
   | "approve_allowance"
   | "wallet_sign"
   | "processing"
+  | "submitted"
+  | "confirmed"
+  | "refreshing_position"
+  | "reconciled"
   | "success"
   | "error"
 

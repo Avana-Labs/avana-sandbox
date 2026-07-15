@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { LoaderCircle } from "lucide-react"
-import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
+import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionCard } from "@/app/components/action-page/action-metrics"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { ProcessingNarration } from "@/app/components/action-page/processing-narration"
@@ -14,11 +14,13 @@ export function ActionProcessingStage({
   preview,
   closeHref,
   onClose,
+  stage = "processing",
 }: {
   verb: string
   preview: ActionPreviewUi | null
   closeHref?: string
   onClose?: () => void
+  stage?: ActionStage
 }) {
   const { t } = useTranslation()
   const symbol = preview?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
@@ -29,7 +31,17 @@ export function ActionProcessingStage({
         <div className="relative px-4 pb-2 pt-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[11px] font-medium text-violet-200">
             <LoaderCircle className="size-3.5 animate-spin" />
-            {t("Pending")}
+            {t(
+              stage === "submitted"
+                ? "Submitted"
+                : stage === "confirmed"
+                  ? "Confirmed"
+                  : stage === "refreshing_position"
+                    ? "Refreshing position"
+                    : stage === "reconciled"
+                      ? "Reconciled"
+                      : "Pending",
+            )}
           </div>
 
           <div className="flex flex-col items-center py-6 text-center">
