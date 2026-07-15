@@ -77,6 +77,7 @@ export function useLendSession({
   const shouldPersistState = persistState ?? adapterMode === "sandbox"
   const seededState = useMemo(() => deserializeLendSystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<LendSystemState>(seededState)
+  const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
   const [transactionHistory, setTransactionHistory] = useState<LendTransactionHistoryItem[]>(
     () => (shouldPersistState ? readLendSessionMetadata(walletId).transactionHistory : []),
   )
@@ -100,6 +101,7 @@ export function useLendSession({
       setState(seededState)
       setTransactionHistory([])
       setTransactionReceipts([])
+      setHydratedWalletId(walletId)
       return
     }
     const nextState = readLendSessionState(walletId, sessionSeed)
@@ -112,6 +114,7 @@ export function useLendSession({
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory)
     setTransactionReceipts(metadata.receipts)
+    setHydratedWalletId(walletId)
   }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
@@ -368,5 +371,6 @@ export function useLendSession({
     claimRewards,
     reset,
     isPending,
+    isHydrated: hydratedWalletId === walletId,
   }
 }

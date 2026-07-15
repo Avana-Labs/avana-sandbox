@@ -88,6 +88,7 @@ export function useMultiplySession({
   const seededState = useMemo(() => deserializeMultiplySystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<MultiplySystemState>(seededState)
   const [hasHydratedStorage, setHasHydratedStorage] = useState(false)
+  const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
   const [transactionHistory, setTransactionHistory] = useState<MultiplyTransactionHistoryItem[]>(
     () => readMultiplySessionMetadata(walletId).transactionHistory,
   )
@@ -108,6 +109,7 @@ export function useMultiplySession({
       setTransactionHistory([])
       setTransactionReceipts([])
       setHasHydratedStorage(true)
+      setHydratedWalletId(walletId)
       return
     }
     const persistedState = readMultiplySessionState(walletId, sessionSeed)
@@ -126,6 +128,7 @@ export function useMultiplySession({
     setTransactionHistory(metadata.transactionHistory)
     setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(metadata.transactionHistory))
     setHasHydratedStorage(true)
+    setHydratedWalletId(walletId)
   }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
@@ -345,5 +348,6 @@ export function useMultiplySession({
     executeTransaction,
     reset,
     isPending,
+    isHydrated: hasHydratedStorage && hydratedWalletId === walletId,
   }
 }
