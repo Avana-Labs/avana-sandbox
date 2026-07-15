@@ -1,11 +1,11 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useEffect } from "react"
 import { useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { SupportCenterForm, type SupportSubmit } from "./support-center-client"
+import type { SupportSubmit } from "./support-center-client"
 
-export function ConvexSupportCenter() {
+export function ConvexSupportSubmissionBridge({ onReady }: { onReady: (submit: SupportSubmit | null) => void }) {
   const submitSupportRequest = useMutation(api.support.submitSupportRequest)
   const submit = useCallback<SupportSubmit>(
     async (payload) => {
@@ -16,5 +16,11 @@ export function ConvexSupportCenter() {
     },
     [submitSupportRequest],
   )
-  return <SupportCenterForm submit={submit} />
+
+  useEffect(() => {
+    onReady(submit)
+    return () => onReady(null)
+  }, [onReady, submit])
+
+  return null
 }
