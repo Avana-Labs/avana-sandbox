@@ -4,11 +4,12 @@ import { useMemo } from "react"
 import { BorrowPageHero } from "./borrow-page-hero"
 import { BorrowWorkspaceShell } from "./borrow-workspace-shell"
 import { useBorrowPageLive } from "./use-borrow-page-live"
-import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { BorrowPageData, BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 
-export function BorrowPageClient({ pageData }: { pageData: BorrowPageData }) {
-  const { walletId, borrow: session } = useAvanaSessions()
+export function BorrowPageClient({ pageData, initialIsDesktop }: { pageData: BorrowPageData; initialIsDesktop: boolean }) {
+  const { walletId } = useAvanaIdentity()
+  const session = useBorrowSessionContext()
   const livePageData = useBorrowPageLive(walletId, session)
   const resolvedPageData = useMemo(() => livePageData ?? pageData, [livePageData, pageData])
 
@@ -27,7 +28,7 @@ export function BorrowPageClient({ pageData }: { pageData: BorrowPageData }) {
   return (
     <>
       <BorrowPageHero pageData={resolvedPageData} />
-      <BorrowWorkspaceShell pageData={workspaceData} />
+      <BorrowWorkspaceShell pageData={workspaceData} initialIsDesktop={initialIsDesktop} />
     </>
   )
 }

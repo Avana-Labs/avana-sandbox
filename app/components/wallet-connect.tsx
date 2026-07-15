@@ -13,7 +13,7 @@ import { ArrowUpRight, CircleUserRound, Code2, Eye, EyeOff, FileText, LifeBuoy, 
 import { useTheme } from "./theme-provider"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
-import { useDisplayPreferences } from "./display-preferences"
+import { useAmountDisplayPreferences } from "./display-preferences"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { Switch } from "@/components/ui/switch"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -79,7 +79,7 @@ function MenuLink({ href, label, icon: Icon, newTab, internal }: MenuLinkItem) {
 
 export function WalletConnect({ isResourcesActive = false }: { isResourcesActive?: boolean }) {
   const { theme, setTheme } = useTheme()
-  const { showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts, setShowDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
 

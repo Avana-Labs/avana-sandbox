@@ -2,7 +2,7 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAvanaSessions, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
@@ -59,7 +59,7 @@ export function MultiplyActionPageClient({
   const descriptor = getActionDescriptor("multiply", kind)
   const { t } = useTranslation()
   const router = useRouter()
-  const { walletId } = useAvanaSessions()
+  const { walletId } = useAvanaIdentity()
   const session = useMultiplySessionContext()
   const priceFor = usePriceFor()
   const walletPositions = useMemo(

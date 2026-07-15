@@ -27,32 +27,26 @@ vi.mock("@/app/portfolio/use-portfolio-page", () => ({
 }))
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
-  useAvanaSessions: () => ({
+  useAvanaIdentity: () => ({ walletId: "demo-wallet" }),
+  useBorrowSessionContext: () => ({
+    readAdapter: { readPortfolioBorrow },
+    state: { now: Date.UTC(2026, 5, 19), markets: {}, assets: {}, accounts: {}, transactions: [] },
+    get transactionHistory() {
+      return transactionHistory
+    },
+  }),
+  useMultiplySessionContext: () => ({
+    readAdapter: { readPortfolioMultiply },
+    state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, walletBalances: {}, transactions: [] },
+    get transactionHistory() {
+      return multiplyTransactionHistory
+    },
+  }),
+  useLendSessionContext: () => ({
     walletId: "demo-wallet",
-    borrow: {
-      readAdapter: { readPortfolioBorrow },
-      state: { now: Date.UTC(2026, 5, 19), markets: {}, assets: {}, accounts: {}, transactions: [] },
-      get transactionHistory() {
-        return transactionHistory
-      },
-    },
-    multiply: {
-      readAdapter: { readPortfolioMultiply },
-      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, walletBalances: {}, transactions: [] },
-      get transactionHistory() {
-        return multiplyTransactionHistory
-      },
-    },
-    lend: {
-      readAdapter: { readPortfolioLend },
-      state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, walletBalances: {}, transactions: [] },
-      transactionHistory: [],
-    },
-    rewards: {
-      walletId: "demo-wallet",
-      state: { claims: [] },
-      tasks: [],
-    },
+    readAdapter: { readPortfolioLend },
+    state: { now: Date.UTC(2026, 5, 19), markets: {}, positions: {}, walletBalances: {}, transactions: [] },
+    transactionHistory: [],
   }),
 }))
 

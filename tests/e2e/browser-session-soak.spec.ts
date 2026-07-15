@@ -20,7 +20,7 @@ for (let sessionIndex = 0; sessionIndex < SESSION_COUNT; sessionIndex += 1) {
       await page.waitForTimeout(INTERACTION_DELAY_MS)
     }
 
-    const targetTabName = route === "/multiply" ? "BTC Loops" : route === "/dashboard" ? "Borrow" : null
+    const targetTabName = route === "/multiply" ? "BTC Loops" : route === "/dashboard" ? "1W" : null
     if (targetTabName) {
       const target = page.getByRole("tab", { name: targetTabName, exact: true })
       await target.click()

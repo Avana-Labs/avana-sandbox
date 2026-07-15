@@ -1,7 +1,7 @@
 "use client"
 
 import { Fragment, type ReactNode } from "react"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useLocaleDisplayPreferences } from "@/app/components/display-preferences"
 
 /**
  * Shared market formatters read the active FX rate from a module. Recreate only
@@ -9,7 +9,7 @@ import { useDisplayPreferences } from "@/app/components/display-preferences"
  * while the wallet and product sessions above this boundary remain intact.
  */
 export function CurrencyDisplayBoundary({ children }: { children: ReactNode }) {
-  const { currency, ratesVersion } = useDisplayPreferences()
+  const { currency, ratesVersion } = useLocaleDisplayPreferences()
 
   // Remount on a currency switch OR when live FX rates are (re)applied, so tables
   // and detail surfaces that read the module-level rate recalculate either way.

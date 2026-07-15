@@ -243,11 +243,15 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
   useEffect(() => {
     if (!hasPendingWaitTask) return undefined
-    const timer = window.setInterval(() => {
-      void reloadSnapshot()
-      setNow(Date.now())
-    }, 5_000)
-    return () => window.clearInterval(timer)
+    const tickIfVisible = () => {
+      if (document.visibilityState === "visible") reloadSnapshot()
+    }
+    const timer = window.setInterval(tickIfVisible, 5_000)
+    document.addEventListener("visibilitychange", tickIfVisible)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener("visibilitychange", tickIfVisible)
+    }
   }, [hasPendingWaitTask, reloadSnapshot])
 
   const questsByTab = useMemo(() => {

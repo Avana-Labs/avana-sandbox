@@ -1,12 +1,10 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { useMutation } from "convex/react"
-import { api } from "@/convex/_generated/api"
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 
 export type SupportSubmitPayload = {
   category: string
@@ -244,7 +242,7 @@ const SUPPORT_CATEGORIES: SupportCategory[] = [
 
 type SendStatus = "idle" | "sending" | "sent" | "error"
 
-function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
+export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   const { t } = useTranslation()
   const [stage, setStage] = useState<1 | 2 | 3>(1)
   const [categoryValue, setCategoryValue] = useState("")
@@ -551,26 +549,9 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   )
 }
 
-/**
- * Convex-backed submitter: persists each request to the `supportRequests` table.
- * The wallet is derived server-side from the authenticated session (not sent by
- * the client), so we only forward the browser user-agent.
- */
-function ConvexSupportCenter() {
-  const submitSupportRequest = useMutation(api.support.submitSupportRequest)
-
-  const submit = useCallback<SupportSubmit>(
-    async (payload) => {
-      await submitSupportRequest({
-        ...payload,
-        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
-      })
-    },
-    [submitSupportRequest],
-  )
-
-  return <SupportCenterForm submit={submit} />
-}
+const SupportCenterSubmissionBridge = lazy(
+  async () => ({ default: (await import("./support-center-submission-bridge")).SupportCenterSubmissionBridge }),
+)
 
 /**
  * Public entry. Uses the Convex-backed submitter when a Convex client is
@@ -578,12 +559,20 @@ function ConvexSupportCenter() {
  * demo never dead-ends if the backend is unavailable.
  */
 export function SupportCenterClient() {
-  if (hasConvexClient) return <ConvexSupportCenter />
+  const submitRef = useRef<SupportSubmit>(async () => {})
+  const submit = useCallback<SupportSubmit>((payload) => submitRef.current(payload), [])
+  const handleConnectedSubmit = useCallback((connectedSubmit: SupportSubmit | null) => {
+    submitRef.current = connectedSubmit ?? (async () => {})
+  }, [])
+
   return (
-    <SupportCenterForm
-      submit={async () => {
-        // No Convex client configured — accept the submission without persisting.
-      }}
-    />
+    <>
+      {!IS_DEV_SHORTCUT_MODE ? (
+        <Suspense fallback={null}>
+          <SupportCenterSubmissionBridge onReady={handleConnectedSubmit} />
+        </Suspense>
+      ) : null}
+      <SupportCenterForm submit={submit} />
+    </>
   )
 }

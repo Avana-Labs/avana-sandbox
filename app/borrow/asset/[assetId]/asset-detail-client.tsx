@@ -5,19 +5,17 @@ import Link from "next/link"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { DeferredDetailContent, DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import {
   AssetHero,
   AssetHeroIdentity,
 } from "@/app/borrow/_detail/asset-sections"
 import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { AboutNewsSection } from "@/app/borrow/_detail/ui"
+import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
-const AboutNewsSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.AboutNewsSection), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[320px]" />,
-})
 const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.DetailFaqSection), {
   ssr: false,
   loading: () => <DeferredBlock className="h-[380px]" />,
@@ -50,11 +48,6 @@ const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections").t
   ssr: false,
   loading: () => <DeferredBlock className="h-[320px]" />,
 })
-const AssetTokenSidebar = dynamic(() => import("@/app/borrow/_detail/sidebars").then((mod) => mod.AssetTokenSidebar), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[760px]" />,
-})
-
 function DeferredBlock({ className }: { className?: string }) {
   return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
 }
@@ -96,21 +89,25 @@ export function AssetDetailClient({ detail }: Props) {
                 <section aria-label={t("Asset analytics")} className="space-y-12 pt-12">
                   <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
                   <QuickStatsGrid detail={detail} />
-                  <InterestRateModelCard detail={detail} />
-                  <AllocationBreakdownCard detail={detail} />
-                  <AssetCashflowCard detail={detail} />
-                  <RiskSection detail={detail} />
-                  <CashflowTrendCard detail={detail} />
-                  <DetailFaqSection
-                    title={t("General FAQs")}
-                    items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                  />
-                  <TransactionHistoryCard
-                    transactions={detail.transactions}
-                    assetSymbol={detail.hero.symbol}
-                  />
-                  <RelatedAssetsRow detail={detail} />
-                  <DetailPageNotice />
+                  <DeferredDetailContent>
+                    <div className="space-y-12">
+                      <InterestRateModelCard detail={detail} />
+                      <AllocationBreakdownCard detail={detail} />
+                      <AssetCashflowCard detail={detail} />
+                      <RiskSection detail={detail} />
+                      <CashflowTrendCard detail={detail} />
+                      <DetailFaqSection
+                        title={t("General FAQs")}
+                        items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
+                      />
+                      <TransactionHistoryCard
+                        transactions={detail.transactions}
+                        assetSymbol={detail.hero.symbol}
+                      />
+                      <RelatedAssetsRow detail={detail} />
+                      <DetailPageNotice />
+                    </div>
+                  </DeferredDetailContent>
                 </section>
               </div>
 

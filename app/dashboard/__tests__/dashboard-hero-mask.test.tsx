@@ -5,23 +5,22 @@ import { DashboardHero } from "@/app/dashboard/dashboard-hero"
 
 // Surface the format functions the hero hands the (dynamically imported) chart so the
 // test can assert what the axis + tooltip would render under the mask.
-vi.mock("next/dynamic", () => ({
-  default: () =>
-    function DynamicChartSection(props: { formatYAxis?: (v: number) => string; formatValue?: (v: number) => string }) {
-      const yAxis = props.formatYAxis ? props.formatYAxis(1234) : "default-axis"
-      const value = props.formatValue ? props.formatValue(1234) : "default-value"
-      return (
-        <div>
-          <div>chart-axis:{yAxis}</div>
-          <div>chart-value:{value}</div>
-        </div>
-      )
-    },
+vi.mock("@/app/components/charts/hero-chart-section", () => ({
+  HeroChartSection: (props: { formatYAxis?: (v: number) => string; formatValue?: (v: number) => string }) => {
+    const yAxis = props.formatYAxis ? props.formatYAxis(1234) : "default-axis"
+    const value = props.formatValue ? props.formatValue(1234) : "default-value"
+    return (
+      <div>
+        <div>chart-axis:{yAxis}</div>
+        <div>chart-value:{value}</div>
+      </div>
+    )
+  },
 }))
 
 vi.mock("@/app/components/display-preferences", () => ({
-  useDisplayPreferences: () => ({ showDollarAmounts: false }),
-  useOptionalDisplayPreferences: () => ({ showDollarAmounts: false, currency: "USD", language: "EN" }),
+  useAmountDisplayPreferences: () => ({ showDollarAmounts: false }),
+  useOptionalLocaleDisplayPreferences: () => ({ currency: "USD", language: "EN" }),
 }))
 
 vi.mock("@/app/portfolio/hero/portfolio-hero-header", () => ({

@@ -84,7 +84,7 @@
     --field-bottom: 0 0% 96.1%; /* #F5F5F5 — filled bottom input, no border */
 
     --brand: 191 99% 41%;
-    --brand-foreground: 0 0% 100%;
+    --brand-foreground: 0 0% 8%;
     --brand-soft: 191 100% 95%;
     --brand-soft-foreground: 191 99% 41%;
 
@@ -169,7 +169,7 @@
     --field-bottom: 0 0% 12.2%; /* #1F1F1F — filled bottom input, no border */
 
     --brand: 191 99% 41%;
-    --brand-foreground: 0 0% 100%;
+    --brand-foreground: 0 0% 8%;
     --brand-soft: 191 55% 18%;
     --brand-soft-foreground: 191 99% 41%;
 

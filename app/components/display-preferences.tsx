@@ -59,7 +59,14 @@ type DisplayPreferencesContextValue = {
   ratesVersion: number
 }
 
-const DisplayPreferencesContext = createContext<DisplayPreferencesContextValue | null>(null)
+type AmountDisplayPreferences = Pick<
+  DisplayPreferencesContextValue,
+  "showDollarAmounts" | "setShowDollarAmounts" | "toggleShowDollarAmounts"
+>
+type LocaleDisplayPreferences = Omit<DisplayPreferencesContextValue, keyof AmountDisplayPreferences>
+
+const AmountDisplayPreferencesContext = createContext<AmountDisplayPreferences | null>(null)
+const LocaleDisplayPreferencesContext = createContext<LocaleDisplayPreferences | null>(null)
 
 export function DisplayPreferencesProvider({ children }: { children: ReactNode }) {
   const [showDollarAmounts, setShowDollarAmountsState] = useState(true)
@@ -162,11 +169,16 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
     currencyRef.current = value
   }, [])
 
-  const value = useMemo(
+  const amountValue = useMemo<AmountDisplayPreferences>(
     () => ({
       showDollarAmounts,
       setShowDollarAmounts,
       toggleShowDollarAmounts,
+    }),
+    [setShowDollarAmounts, showDollarAmounts, toggleShowDollarAmounts],
+  )
+  const localeValue = useMemo<LocaleDisplayPreferences>(
+    () => ({
       language,
       setLanguage,
       currency,
@@ -179,24 +191,46 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
       ratesVersion,
       setCurrency,
       setLanguage,
-      setShowDollarAmounts,
-      showDollarAmounts,
-      toggleShowDollarAmounts,
     ],
   )
 
-  return <DisplayPreferencesContext.Provider value={value}>{children}</DisplayPreferencesContext.Provider>
+  return (
+    <AmountDisplayPreferencesContext.Provider value={amountValue}>
+      <LocaleDisplayPreferencesContext.Provider value={localeValue}>
+        {children}
+      </LocaleDisplayPreferencesContext.Provider>
+    </AmountDisplayPreferencesContext.Provider>
+  )
 }
 
 export function useDisplayPreferences() {
-  const context = useContext(DisplayPreferencesContext)
-  if (!context) {
+  const amount = useContext(AmountDisplayPreferencesContext)
+  const locale = useContext(LocaleDisplayPreferencesContext)
+  if (!amount || !locale) {
     throw new Error("useDisplayPreferences must be used within a DisplayPreferencesProvider")
   }
 
-  return context
+  return { ...amount, ...locale }
 }
 
 export function useOptionalDisplayPreferences() {
-  return useContext(DisplayPreferencesContext)
+  const amount = useContext(AmountDisplayPreferencesContext)
+  const locale = useContext(LocaleDisplayPreferencesContext)
+  return amount && locale ? { ...amount, ...locale } : null
+}
+
+export function useAmountDisplayPreferences() {
+  const context = useContext(AmountDisplayPreferencesContext)
+  if (!context) throw new Error("useAmountDisplayPreferences must be used within a DisplayPreferencesProvider")
+  return context
+}
+
+export function useLocaleDisplayPreferences() {
+  const context = useContext(LocaleDisplayPreferencesContext)
+  if (!context) throw new Error("useLocaleDisplayPreferences must be used within a DisplayPreferencesProvider")
+  return context
+}
+
+export function useOptionalLocaleDisplayPreferences() {
+  return useContext(LocaleDisplayPreferencesContext)
 }

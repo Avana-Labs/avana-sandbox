@@ -4,7 +4,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { useLendSessionContext, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useAvanaIdentity, useLendSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { getLendMarketById } from "@/app/lib/lend-system/catalog"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
@@ -49,7 +49,7 @@ export function LendActionPageClient({
   const router = useRouter()
   const { exact } = useCurrency()
   const { t } = useTranslation()
-  const { walletId } = useAvanaSessions()
+  const { walletId } = useAvanaIdentity()
   const session = useLendSessionContext()
   const priceFor = usePriceFor()
   const depositItems = useMemo(

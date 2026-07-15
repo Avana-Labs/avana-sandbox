@@ -1,6 +1,6 @@
 "use client"
 
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { MultiplyHeroMetrics } from "@/app/lib/data/providers/multiply"
@@ -8,7 +8,7 @@ import type { MultiplyHeroMetrics } from "@/app/lib/data/providers/multiply"
 const HIDDEN = "••••••"
 
 export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const fc = useCurrency()
   const { t } = useTranslation()
 

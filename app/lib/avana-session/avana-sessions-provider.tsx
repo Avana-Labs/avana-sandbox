@@ -1,18 +1,8 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
-import { useMutation, useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
-import { hasConvexClient, useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
-import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
-import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
-import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
+import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import { useRewardsSession } from "@/app/lib/rewards-system"
-import {
-  borrowResultToRecordArgs,
-  lendResultToRecordArgs,
-  multiplyResultToRecordArgs,
-} from "@/app/lib/sandbox-tx/persistence"
 import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
 import type { LendSandboxActionResult, LendTransactionResult } from "@/app/lib/lend-system/contracts"
 import type { MultiplySandboxActionResult, MultiplyTransactionResult } from "@/app/lib/multiply-system/contracts"
@@ -20,14 +10,6 @@ import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { useAvanaSession } from "./use-avana-session"
-import { pendingHydrationIntentIds, shouldApplyHydration } from "./wallet-hydration-guard"
-import {
-  advanceRevisionOnSuccess,
-  captureHydratedRevisions,
-  seedRevisionFromReceipt,
-  withExpectedRevision,
-  type PositionRevisionSummary,
-} from "./optimistic-revision"
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
 type MultiplySession = ReturnType<typeof useMultiplySession>
@@ -172,88 +154,6 @@ function useLiquidityLedgerBridge({ borrow, enabled }: { borrow: BorrowSession; 
   }, [borrow.transactionHistory, enabled, connected, recordDelta])
 }
 
-/**
- * Pushes the Convex market reference data (listMarketSnapshots) into the borrow
- * AND lend sessions so list/preview/HF/hero read the single source of truth. One
- * query feeds both — it returns every scope (asset/pool/lend) and each session
- * picks its own rows. Rendered only when a Convex client exists (so useQuery has a
- * ConvexProvider). No-op while loading.
- */
-function MarketHydrator({
-  hydrateBorrow,
-  hydrateLend,
-  hydrateMultiply,
-}: {
-  hydrateBorrow: (snapshots: readonly ConvexMarketSnapshot[]) => void
-  hydrateLend: (snapshots: readonly LendConvexSnapshot[]) => void
-  hydrateMultiply: (snapshots: readonly MultiplyConvexSnapshot[]) => void
-}) {
-  const snapshots = useQuery(api.markets.listMarketSnapshots)
-  useEffect(() => {
-    if (snapshots && snapshots.length > 0) {
-      hydrateBorrow(snapshots as ConvexMarketSnapshot[])
-      hydrateLend(snapshots)
-      hydrateMultiply(snapshots)
-    }
-  }, [snapshots, hydrateBorrow, hydrateLend, hydrateMultiply])
-  return null
-}
-
-function WalletHydrator({
-  walletId,
-  borrow,
-  lend,
-  multiply,
-  hydrateBorrow,
-  hydrateLend,
-  hydrateMultiply,
-  onWalletHydrated,
-}: {
-  walletId: string
-  borrow: BorrowSession
-  lend: LendSession
-  multiply: MultiplySession
-  hydrateBorrow: BorrowSession["hydrateWalletData"]
-  hydrateLend: LendSession["hydrateWalletData"]
-  hydrateMultiply: MultiplySession["hydrateWalletData"]
-  /** Called with the position set of a snapshot that actually gets APPLIED, so the caller
-   *  can track the revision the engine state is now based on (for optimistic concurrency). */
-  onWalletHydrated?: (positions: readonly PositionRevisionSummary[]) => void
-}) {
-  const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
-
-  // Hold the latest history arrays in a ref so the hydration effect reads current optimistic
-  // edits without re-running on every local history change (it runs only on re-emit). Storing
-  // references (O(1)/render) instead of an eagerly-built Set keeps unrelated re-renders cheap.
-  const historiesRef = useRef({
-    borrow: borrow.transactionHistory,
-    lend: lend.transactionHistory,
-    multiply: multiply.transactionHistory,
-  })
-  historiesRef.current = {
-    borrow: borrow.transactionHistory,
-    lend: lend.transactionHistory,
-    multiply: multiply.transactionHistory,
-  }
-
-  useEffect(() => {
-    if (!session) return
-    // Gate on RECENT, non-failed optimistic intents only. Applying a re-emit that predates an
-    // in-flight write would clobber it; but gating on EVERY known intent (incl. failed/rejected
-    // ones the server never stored) permanently froze the hydrator. pendingHydrationIntentIds
-    // drops failed + aged-out intents so a poison intent can't pin the tab on stale data.
-    const { borrow: b, lend: l, multiply: m } = historiesRef.current
-    const pending = pendingHydrationIntentIds([...b, ...l, ...m], Date.now())
-    if (!shouldApplyHydration(session, pending)) return
-    hydrateBorrow(session)
-    hydrateLend(session)
-    hydrateMultiply(session)
-    // Track the revisions this applied snapshot is based on (optimistic-concurrency guard).
-    onWalletHydrated?.(session.positions)
-  }, [hydrateBorrow, hydrateLend, hydrateMultiply, onWalletHydrated, session])
-  return null
-}
-
 export type AvanaSessions = {
   walletId: string
   walletAddress: string
@@ -264,7 +164,14 @@ export type AvanaSessions = {
   rewards: RewardsSession
 }
 
+export type AvanaIdentity = Pick<AvanaSessions, "walletId" | "walletAddress" | "sandboxMode">
+
 const AvanaSessionsContext = createContext<AvanaSessions | null>(null)
+const AvanaIdentityContext = createContext<AvanaIdentity | null>(null)
+const BorrowSessionContext = createContext<BorrowSession | null>(null)
+const MultiplySessionContext = createContext<MultiplySession | null>(null)
+const LendSessionContext = createContext<LendSession | null>(null)
+const RewardsSessionContext = createContext<RewardsSession | null>(null)
 
 export function AvanaSessionsProvider({
   walletId,
@@ -276,7 +183,6 @@ export function AvanaSessionsProvider({
   persistRewardsState,
   persistLocalState = true,
   sessionSource = "demo",
-  onWalletHydrated,
 }: {
   walletId?: string
   children: ReactNode
@@ -293,9 +199,6 @@ export function AvanaSessionsProvider({
   persistRewardsState?: (stateJson: string) => Promise<unknown>
   persistLocalState?: boolean
   sessionSource?: "demo" | "convex"
-  /** Notified with the position set each time a Convex snapshot is applied to the engine
-   *  state; used by the Convex provider to track revisions for optimistic concurrency. */
-  onWalletHydrated?: (positions: readonly PositionRevisionSummary[]) => void
 }) {
   const avana = useAvanaSession(walletId, sessionSource)
   const borrow = useBorrowSession({
@@ -346,130 +249,29 @@ export function AvanaSessionsProvider({
     }),
     [avana.walletId, avana.walletAddress, avana.sandboxMode, borrow, multiply, lend, rewards],
   )
+  const identity = useMemo<AvanaIdentity>(
+    () => ({
+      walletId: avana.walletId,
+      walletAddress: avana.walletAddress,
+      sandboxMode: avana.sandboxMode,
+    }),
+    [avana.walletId, avana.walletAddress, avana.sandboxMode],
+  )
 
   return (
     <AvanaSessionsContext.Provider value={value}>
-      {hasConvexClient ? (
-        <>
-          <MarketHydrator
-            hydrateBorrow={borrow.hydrateMarketData}
-            hydrateLend={lend.hydrateMarketData}
-            hydrateMultiply={multiply.hydrateMarketData}
-          />
-          {!persistLocalState ? (
-            <WalletHydrator
-              walletId={avana.walletId}
-              borrow={borrow}
-              lend={lend}
-              multiply={multiply}
-              hydrateBorrow={borrow.hydrateWalletData}
-              hydrateLend={lend.hydrateWalletData}
-              hydrateMultiply={multiply.hydrateWalletData}
-              onWalletHydrated={onWalletHydrated}
-            />
-          ) : null}
-        </>
-      ) : null}
-      {children}
+      <AvanaIdentityContext.Provider value={identity}>
+        <BorrowSessionContext.Provider value={borrow}>
+          <MultiplySessionContext.Provider value={multiply}>
+            <LendSessionContext.Provider value={lend}>
+              <RewardsSessionContext.Provider value={rewards}>
+                {children}
+              </RewardsSessionContext.Provider>
+            </LendSessionContext.Provider>
+          </MultiplySessionContext.Provider>
+        </BorrowSessionContext.Provider>
+      </AvanaIdentityContext.Provider>
     </AvanaSessionsContext.Provider>
-  )
-}
-
-export function ConvexAvanaSessionsProvider({
-  walletId,
-  children,
-}: {
-  walletId: string
-  children: ReactNode
-}) {
-  const recordTransaction = useMutation(api.sandbox.transactions.recordTransaction)
-  const saveRewardsState = useMutation(api.sandbox.rewards.saveState)
-  const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
-
-  // Optimistic-concurrency: the revision each (product, market) position was last hydrated
-  // to. Sent as expectedRevision so the server rejects a write computed from a stale read
-  // (another tab wrote first) instead of silently clobbering it. See ./optimistic-revision.
-  const revisionByKeyRef = useRef(new Map<string, number>())
-  const handleWalletHydrated = useCallback(
-    (positions: readonly PositionRevisionSummary[]) => captureHydratedRevisions(revisionByKeyRef.current, positions),
-    [],
-  )
-
-  const persistBorrowTransaction = useCallback(
-    async (result: SandboxActionResult) => {
-      const { args, key } = withExpectedRevision(borrowResultToRecordArgs(result, walletId), "borrow", revisionByKeyRef.current)
-      const persisted = await recordTransaction(args)
-      // Seed from the server-authoritative revision (works for idempotent replays too, M-12);
-      // fall back to the +1 inference only if the receipt carries no revision.
-      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
-      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
-      return {
-        id: String(persisted.receipt.id),
-        hash: persisted.receipt.hash,
-        status: persisted.receipt.status,
-        simulated: persisted.receipt.simulated,
-        timestamp: persisted.receipt.timestamp,
-      }
-    },
-    [recordTransaction, walletId],
-  )
-  const persistLendTransaction = useCallback(
-    async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
-      const { args, key } = withExpectedRevision(lendResultToRecordArgs(result, walletId), "lend", revisionByKeyRef.current)
-      const persisted = await recordTransaction(args)
-      // Seed from the server-authoritative revision (works for idempotent replays too, M-12);
-      // fall back to the +1 inference only if the receipt carries no revision.
-      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
-      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
-      return {
-        id: String(persisted.receipt.id),
-        hash: persisted.receipt.hash,
-        status: persisted.receipt.status,
-        actionType: result.receipt.actionType,
-        simulated: persisted.receipt.simulated,
-        timestamp: persisted.receipt.timestamp,
-      }
-    },
-    [recordTransaction, walletId],
-  )
-  const persistMultiplyTransaction = useCallback(
-    async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
-      const { args, key } = withExpectedRevision(multiplyResultToRecordArgs(result, walletId), "multiply", revisionByKeyRef.current)
-      const persisted = await recordTransaction(args)
-      // Seed from the server-authoritative revision (works for idempotent replays too, M-12);
-      // fall back to the +1 inference only if the receipt carries no revision.
-      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
-      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
-      return {
-        id: String(persisted.receipt.id),
-        hash: persisted.receipt.hash,
-        status: persisted.receipt.status,
-        actionType: result.receipt.actionType,
-        simulated: persisted.receipt.simulated,
-        timestamp: persisted.receipt.timestamp,
-      }
-    },
-    [recordTransaction, walletId],
-  )
-  const persistRewardsState = useCallback(
-    (stateJson: string) => saveRewardsState({ wallet: walletId, stateJson }),
-    [saveRewardsState, walletId],
-  )
-
-  return (
-    <AvanaSessionsProvider
-      walletId={walletId}
-      persistBorrowTransaction={persistBorrowTransaction}
-      persistLendTransaction={persistLendTransaction}
-      persistMultiplyTransaction={persistMultiplyTransaction}
-      remoteRewardsState={rewardsState?.stateJson ?? (rewardsState === null ? null : undefined)}
-      persistRewardsState={persistRewardsState}
-      persistLocalState={false}
-      sessionSource="convex"
-      onWalletHydrated={handleWalletHydrated}
-    >
-      {children}
-    </AvanaSessionsProvider>
   )
 }
 
@@ -485,18 +287,42 @@ export function useOptionalAvanaSessions() {
   return useContext(AvanaSessionsContext)
 }
 
+export function useAvanaIdentity() {
+  const context = useContext(AvanaIdentityContext)
+  if (!context) {
+    throw new Error("useAvanaIdentity must be used within AvanaSessionsProvider")
+  }
+  return context
+}
+
 export function useBorrowSessionContext() {
-  return useAvanaSessions().borrow
+  const context = useContext(BorrowSessionContext)
+  if (!context) {
+    throw new Error("useBorrowSessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
 }
 
 export function useMultiplySessionContext() {
-  return useAvanaSessions().multiply
+  const context = useContext(MultiplySessionContext)
+  if (!context) {
+    throw new Error("useMultiplySessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
 }
 
 export function useLendSessionContext() {
-  return useAvanaSessions().lend
+  const context = useContext(LendSessionContext)
+  if (!context) {
+    throw new Error("useLendSessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
 }
 
 export function useRewardsSessionContext() {
-  return useAvanaSessions().rewards
+  const context = useContext(RewardsSessionContext)
+  if (!context) {
+    throw new Error("useRewardsSessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
 }

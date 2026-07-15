@@ -4,7 +4,7 @@ import Image from "next/image"
 import { Info } from "lucide-react"
 import { HeroMarketCard } from "@/app/borrow/borrow-hero-market-card"
 import { Progress } from "@/components/ui/progress"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
 import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
@@ -28,20 +28,17 @@ export function RewardsBalanceHero({
 }) {
   const { t, language } = useTranslation()
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
 
   return (
     <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
       <section className="relative overflow-hidden rounded-radius-md border-0 bg-card px-4 py-4 sm:px-5 md:min-h-[174px]">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
         <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
-          <Image
-            src="/avana-icon.png"
-            alt=""
-            width={760}
-            height={760}
-            className="h-48 w-48 object-contain opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] sm:h-64 sm:w-64 md:h-[20rem] md:w-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
-            aria-hidden
+          <div
+            aria-hidden="true"
+            className="size-48 bg-contain bg-center bg-no-repeat opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] sm:size-64 md:size-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
+            style={{ backgroundImage: "url('/avana-icon.png')" }}
           />
         </div>
 

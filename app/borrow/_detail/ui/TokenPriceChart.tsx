@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useLocaleDisplayPreferences } from "@/app/components/display-preferences"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
@@ -37,7 +37,7 @@ export function TokenPriceChart({
   formatValue = defaultFormatValue,
   onHoverChange,
 }: TokenPriceChartProps) {
-  const { language } = useDisplayPreferences()
+  const { language } = useLocaleDisplayPreferences()
   const { ctx, convert } = useCurrency()
   const { t } = useTranslation()
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"

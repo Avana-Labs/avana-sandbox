@@ -73,11 +73,12 @@ function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
 export type BorrowWorkspaceProps = {
   pageData: BorrowWorkspaceData
   onTabChange?: (tab: BorrowTabId) => void
+  initialIsDesktop?: boolean
 }
 
-export function BorrowWorkspace({ pageData, onTabChange }: BorrowWorkspaceProps) {
+export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true }: BorrowWorkspaceProps) {
   const router = useRouter()
-  const isDesktop = useMediaQuery("(min-width: 768px)", true)
+  const isDesktop = useMediaQuery("(min-width: 768px)", initialIsDesktop, true)
   const { pendingRows } = pageData
   const session = useBorrowSessionContext()
   const { deltas: liquidityDeltas } = useMarketLiquidity()
