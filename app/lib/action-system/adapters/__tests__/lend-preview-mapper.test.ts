@@ -22,8 +22,9 @@ describe("lend preview mappers", () => {
       "APY",
       "Rewards APY",
       "Rewards earned",
-      "Total earned",
+      "Lifetime earnings",
     ])
+    expect(ui.metrics.find((row) => row.id === "total-earned")).toMatchObject({ value: "$10.50" })
     expect(ui.amountUsdLabel).toBe("$50.00")
   })
 
