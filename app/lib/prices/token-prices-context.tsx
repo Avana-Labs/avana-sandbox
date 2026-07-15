@@ -21,8 +21,9 @@ const TokenPricesContext = React.createContext<Record<string, number>>({})
  * mounted (static-label fallback, nothing to be stale about).
  */
 export type PriceFreshness = { stale: boolean; updatedAt: number | null; ageMs: number | null }
+type PriceStatus = { updatedAt: number | null; staleAfterMs: number; count: number }
 
-const PriceFreshnessContext = React.createContext<PriceFreshness>({ stale: false, updatedAt: null, ageMs: null })
+const PriceStatusContext = React.createContext<PriceStatus | undefined>(undefined)
 
 /** A stable lookup: symbol → USD price (undefined when unpriced). */
 export function usePriceFor(): (symbol: string) => number | undefined {
@@ -32,7 +33,27 @@ export function usePriceFor(): (symbol: string) => number | undefined {
 
 /** Freshness of the oracle prices — read this to show a "prices may be stale" indicator. */
 export function usePriceFreshness(): PriceFreshness {
-  return React.useContext(PriceFreshnessContext)
+  const status = React.useContext(PriceStatusContext)
+  const [now, setNow] = React.useState<number | null>(null)
+  React.useEffect(() => {
+    if (status === undefined) return undefined
+    const tick = () => {
+      if (document.visibilityState === "visible") setNow(Date.now())
+    }
+    tick()
+    const id = window.setInterval(tick, 60_000)
+    document.addEventListener("visibilitychange", tick)
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener("visibilitychange", tick)
+    }
+  }, [status])
+
+  if (status === undefined) return { stale: false, updatedAt: null, ageMs: null }
+  if (status.updatedAt == null) return { stale: true, updatedAt: null, ageMs: null }
+  if (now == null) return { stale: false, updatedAt: status.updatedAt, ageMs: null }
+  const ageMs = Math.max(0, now - status.updatedAt)
+  return { stale: ageMs > status.staleAfterMs, updatedAt: status.updatedAt, ageMs }
 }
 
 /**
@@ -60,9 +81,9 @@ class TokenPricesErrorBoundary extends React.Component<
       // defaults, so the failed prices query can't re-throw in a loop.
       return (
         <TokenPricesContext.Provider value={{}}>
-          <PriceFreshnessContext.Provider value={{ stale: false, updatedAt: null, ageMs: null }}>
+          <PriceStatusContext.Provider value={undefined}>
             {this.props.fallbackChildren}
-          </PriceFreshnessContext.Provider>
+          </PriceStatusContext.Provider>
         </TokenPricesContext.Provider>
       )
     }
@@ -88,27 +109,9 @@ function ConvexTokenPrices({ children }: { children: React.ReactNode }) {
     for (const row of rows ?? []) next[priceKey(row.symbol)] = row.priceUsd
     return next
   }, [rows])
-  // Derive staleness from a CLIENT-side ticking clock, not the reactive query (which returns
-  // only updatedAt). getPriceStatus is cached until tokenPrices changes, so if freshness were
-  // computed server-side it would freeze; ticking `now` here lets fresh→stale flip in real time
-  // even while the cron is wedged. Initialised in an effect (null first) to avoid an SSR/client
-  // hydration mismatch on Date.now().
-  const [now, setNow] = React.useState<number | null>(null)
-  React.useEffect(() => {
-    setNow(Date.now())
-    const id = window.setInterval(() => setNow(Date.now()), 60_000)
-    return () => window.clearInterval(id)
-  }, [])
-  const freshness = React.useMemo<PriceFreshness>(() => {
-    if (status === undefined) return { stale: false, updatedAt: null, ageMs: null } // still loading
-    if (status.updatedAt == null) return { stale: true, updatedAt: null, ageMs: null } // never refreshed
-    if (now == null) return { stale: false, updatedAt: status.updatedAt, ageMs: null } // pre-first-tick
-    const ageMs = Math.max(0, now - status.updatedAt)
-    return { stale: ageMs > status.staleAfterMs, updatedAt: status.updatedAt, ageMs }
-  }, [status, now])
   return (
     <TokenPricesContext.Provider value={map}>
-      <PriceFreshnessContext.Provider value={freshness}>{children}</PriceFreshnessContext.Provider>
+      <PriceStatusContext.Provider value={status}>{children}</PriceStatusContext.Provider>
     </TokenPricesContext.Provider>
   )
 }
