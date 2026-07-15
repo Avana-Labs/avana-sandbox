@@ -1,9 +1,41 @@
 import { describe, expect, it } from "vitest"
-import { borrowResultToRecordArgs, multiplyResultToRecordArgs } from "@/app/lib/sandbox-tx/persistence"
+import { borrowResultToRecordArgs, lendResultToRecordArgs, multiplyResultToRecordArgs } from "@/app/lib/sandbox-tx/persistence"
 import type { MultiplySandboxActionResult } from "@/app/lib/multiply-system/contracts"
 import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
+import type { LendSandboxActionResult } from "@/app/lib/lend-system/contracts"
 
 const WALLET = "0xabc0000000000000000000000000000000000001"
+
+describe("lendResultToRecordArgs", () => {
+  it("persists token interest as USD together with the active supply APY", () => {
+    const result = {
+      historyItem: {
+        intentId: "intent-lend-1",
+        marketId: "weth",
+        positionId: "lend-1",
+        kind: "deposit",
+        amount: 1,
+        simulated: true,
+      },
+      state: {
+        markets: { weth: { assetPriceUsd: 2_000, totalApy: 0.05 } },
+        positions: {
+          "lend-1": {
+            status: "active",
+            marketId: "weth",
+            suppliedValueUsd: 10_000,
+            interestEarned: 0.5,
+          },
+        },
+      },
+    } as unknown as LendSandboxActionResult
+
+    const args = lendResultToRecordArgs(result, WALLET)
+    expect(args.amountUsd).toBe(2_000)
+    expect(args.position?.earnedUsd6).toBe("1000000000")
+    expect(args.position?.supplyApyPct).toBe(5)
+  })
+})
 
 /**
  * Build the minimal shape multiplyResultToRecordArgs actually reads: the history item and

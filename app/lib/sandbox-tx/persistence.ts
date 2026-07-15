@@ -39,6 +39,7 @@ export type RecordTransactionArgs = {
     debtValueUsd6?: string
     suppliedUsd6?: string
     earnedUsd6?: string
+    supplyApyPct?: number
     collateralAmount?: number
     collateralValueUsd?: number
     debtValueUsd?: number
@@ -91,7 +92,8 @@ export function lendResultToRecordArgs(result: LendSandboxActionResult, wallet: 
           status: position.status === "active" ? "open" : "closed",
           marketSlug: position.marketId,
           suppliedUsd6: Math.round(position.suppliedValueUsd * 1_000_000).toString(),
-          earnedUsd6: Math.round(position.interestEarned * 1_000_000).toString(),
+          earnedUsd6: Math.round(position.interestEarned * assetPriceUsd * 1_000_000).toString(),
+          supplyApyPct: (result.state.markets[item.marketId]?.totalApy ?? 0) * 100,
         }
       : undefined,
   }
