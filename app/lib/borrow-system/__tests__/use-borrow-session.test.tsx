@@ -198,8 +198,9 @@ describe("useBorrowSession", () => {
       amountUsd6: parseFixed("50", 6),
     })
 
+    let execution!: ReturnType<(typeof result.current)["executeTransaction"]>
     act(() => {
-      void result.current.executeTransaction(intent)
+      execution = result.current.executeTransaction(intent)
     })
 
     await waitFor(() => {
@@ -207,7 +208,7 @@ describe("useBorrowSession", () => {
     })
 
     await act(async () => {
-      await result.current.executeTransaction(intent)
+      await execution
     })
 
     expect(result.current.isPending).toBe(false)
