@@ -308,7 +308,7 @@ function AssetSection({
         </div>
       </div>
 
-      <DesktopTableSurface className="rounded-radius-md">
+      <DesktopTableSurface className="rounded-radius-md [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
         <div className="space-y-4 md:hidden">
           {sortedRows.length > 0 ? (
             sortedRows.map((row, index) => (
