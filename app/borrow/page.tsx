@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
 import { BorrowPageClient } from "./borrow-page-client"
 import { fetchBorrowPage } from "@/app/lib/data/providers/borrow"
@@ -13,7 +14,9 @@ export const metadata: Metadata = buildSeoMetadata({
 })
 
 export default async function BorrowPage() {
-  const pageData = await fetchBorrowPage()
+  const [pageData, requestHeaders] = await Promise.all([fetchBorrowPage(), headers()])
+  const userAgent = requestHeaders.get("user-agent") ?? ""
+  const initialIsDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
 
   return (
     <>
@@ -27,7 +30,7 @@ export default async function BorrowPage() {
       <div className="bg-background">
         <main className="container mx-auto px-4 py-8">
           <div className="mx-auto max-w-[1152px]">
-            <BorrowPageClient pageData={pageData} />
+            <BorrowPageClient pageData={pageData} initialIsDesktop={initialIsDesktop} />
           </div>
         </main>
       </div>

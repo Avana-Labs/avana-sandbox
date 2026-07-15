@@ -10,8 +10,13 @@ function getInitialMatch(query: string, defaultValue: boolean) {
   return window.matchMedia(query).matches
 }
 
-export function useMediaQuery(query: string, defaultValue = false): boolean {
-  const [matches, setMatches] = useState(() => getInitialMatch(query, defaultValue))
+export function useMediaQuery(query: string, defaultValue = false, hydrateFromDefault = false): boolean {
+  // Components rendered on the server can opt into the server-selected default
+  // for their first client render. The effect reconciles the real media query
+  // immediately after hydration without producing mismatched responsive markup.
+  const [matches, setMatches] = useState(() =>
+    hydrateFromDefault ? defaultValue : getInitialMatch(query, defaultValue),
+  )
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
