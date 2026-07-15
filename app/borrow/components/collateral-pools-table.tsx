@@ -1,6 +1,6 @@
 "use client"
 
-import { memo, useMemo, useState } from "react"
+import { memo, useEffect, useMemo, useRef, useState } from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -364,22 +364,23 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
   onUseAsCollateral,
   onBorrowAssetDesktop,
 }: CollateralPoolsTableProps) {
+  const spokes = groups.flatMap((group) => group.spokes)
+
   return (
     <div className="hidden space-y-10 md:block">
-      {groups.flatMap((group) =>
-        group.spokes.map((entry) => (
-          <SpokeDesktopSection
-            key={entry.spoke.id}
-            spoke={entry.spoke}
-            rows={entry.rows}
-            borrowAssets={borrowAssetsBySpoke[entry.spoke.id] ?? []}
-            pending={pending.filter((row) => row.spoke === entry.spoke.id)}
-            onViewMarket={onViewMarket}
-            onUseAsCollateral={onUseAsCollateral}
-            onBorrowAsset={onBorrowAssetDesktop}
-          />
-        )),
-      )}
+      {spokes.map((entry, index) => (
+        <SpokeDesktopSection
+          key={entry.spoke.id}
+          spoke={entry.spoke}
+          rows={entry.rows}
+          borrowAssets={borrowAssetsBySpoke[entry.spoke.id] ?? []}
+          pending={pending.filter((row) => row.spoke === entry.spoke.id)}
+          onViewMarket={onViewMarket}
+          onUseAsCollateral={onUseAsCollateral}
+          onBorrowAsset={onBorrowAssetDesktop}
+          deferContent={index > 0}
+        />
+      ))}
     </div>
   )
 })
@@ -392,6 +393,7 @@ function SpokeDesktopSection({
   onViewMarket,
   onUseAsCollateral,
   onBorrowAsset,
+  deferContent,
 }: {
   spoke: BorrowSpoke
   rows: BorrowPoolRow[]
@@ -400,22 +402,57 @@ function SpokeDesktopSection({
   onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral: (pool: BorrowPoolRow) => void
   onBorrowAsset: (asset: BorrowableAsset) => void
+  deferContent: boolean
 }) {
   // Each spoke/category owns its own Collateral/Borrowable toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
+  const [contentMounted, setContentMounted] = useState(!deferContent)
+  const sectionRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (contentMounted) return
+    const section = sectionRef.current
+    if (!section || typeof IntersectionObserver === "undefined") {
+      setContentMounted(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        setContentMounted(true)
+        observer.disconnect()
+      },
+      { rootMargin: "400px 0px", threshold: 0 },
+    )
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [contentMounted])
   // NOTE: no `overflow-hidden` / `cv-section` here — both would trap the sticky
   // section header. The header below is `sticky top-16` so each spoke title (+ its
   // Collateral/Borrowable tabs) hangs under the site header while its own table
   // scrolls, then the next spoke's header takes over.
   return (
-    <section className="mb-2">
+    <section ref={sectionRef} className="mb-2">
       <div className="mt-4 rounded-radius-xl bg-transparent md:shadow-none">
         <div className="sticky top-16 z-20 flex items-center justify-between gap-3 rounded-t-radius-xl bg-background px-1 py-2 md:px-4 md:py-3">
           <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
-          <SectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <SectionTabs
+            activeTab={activeTab}
+            onTabChange={(tab) => {
+              setContentMounted(true)
+              setActiveTab(tab)
+            }}
+          />
         </div>
         <div className="bg-transparent">
-          {activeTab === "collateral" ? (
+          {!contentMounted ? (
+            <div
+              aria-hidden
+              className="min-h-[360px] rounded-radius-md bg-table-row"
+              data-testid="deferred-spoke-content"
+            />
+          ) : activeTab === "collateral" ? (
             <CollateralDesktopTable rows={rows} pending={pending} onViewMarket={onViewMarket} onUseAsCollateral={onUseAsCollateral} embedded />
           ) : (
             <BorrowableAssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} groupByCategory={false} variant="loan" />
