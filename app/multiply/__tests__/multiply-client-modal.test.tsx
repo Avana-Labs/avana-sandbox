@@ -36,12 +36,12 @@ describe("MultiplyClient action routing", () => {
     vi.clearAllMocks()
   })
 
-  it("routes multiply actions to the shared action page", () => {
+  it("routes multiply actions to the shared action page", async () => {
     const pageData = buildMultiplyPageData("wallet-1")
 
     render(<MultiplyClient pageData={pageData} />)
 
-    fireEvent.click(screen.getByText("open-multiply-action"))
+    fireEvent.click(await screen.findByText("open-multiply-action"))
     expect(push).toHaveBeenCalledWith("/actions/multiply/multiply?market=aave-gho")
   })
 })
