@@ -142,6 +142,7 @@ export function mapMultiplyPreviewToActionUi(
   ]
 
   return {
+    quoteId: preview.intent.id,
     allowed: preview.allowed,
     amountTitle: "Collateral",
     amountLabel: formatActionAmount(options.collateralAmount, options.collateralSymbol, 6),
@@ -203,6 +204,7 @@ export function mapDeleveragePreviewToActionUi(
   const liqPrice = preview.simulationSummary?.liquidationPrice
 
   return {
+    quoteId: preview.intent.id,
     allowed: preview.allowed,
     amountLabel: `${options.targetMultiplier.toFixed(2)}x ${options.collateralSymbol}`,
     amountValue: `${options.targetMultiplier.toFixed(2)}x`,

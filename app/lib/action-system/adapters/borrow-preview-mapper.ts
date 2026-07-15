@@ -117,6 +117,7 @@ export function mapBorrowTransactionPreviewToActionUi(
       : humanizeBlockedReason(rawBlockedReason) ?? "Action unavailable"
 
   return {
+    quoteId: preview.intent.id,
     allowed: preview.allowed,
     amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
     amountUsd: options.amountUsd,
@@ -214,6 +215,7 @@ export function mapBorrowRepayPreviewToActionUi(
   const allowed = preview.allowed && !exceedsDebt
 
   return {
+    quoteId: preview.intent.id,
     allowed,
     amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
     amountUsd: options.amountUsd,
@@ -283,6 +285,7 @@ export function mapBorrowSupplyPreviewToActionUi(
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
 
   return {
+    quoteId: preview.intent.id,
     allowed: preview.allowed,
     amountLabel: formatActionUsd(options.amountUsd),
     amountValue: formatActionInputAmount(options.amountUsd, 2),
@@ -361,6 +364,7 @@ export function mapBorrowRemovePreviewToActionUi(
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
 
   return {
+    quoteId: preview.intent.id,
     allowed: preview.allowed,
     amountLabel: `${options.percent}%`,
     amountValue: String(options.percent),
@@ -502,10 +506,11 @@ export function mapBorrowSuccessToActionUi(options: {
   metrics: ActionPreviewUi["metrics"]
   href: string
   primaryCtaLabel?: string
-  preview?: Pick<ActionPreviewUi, "amountLabel" | "amountUsd" | "rateLabel" | "rateValue" | "marketValue"> | null
+  preview?: Pick<ActionPreviewUi, "quoteId" | "amountLabel" | "amountUsd" | "rateLabel" | "rateValue" | "marketValue"> | null
   verb?: string
 }): ActionSuccessUi {
   return {
+    quoteId: options.preview?.quoteId,
     title: options.title,
     description: options.description,
     receiptHash: options.receiptHash,

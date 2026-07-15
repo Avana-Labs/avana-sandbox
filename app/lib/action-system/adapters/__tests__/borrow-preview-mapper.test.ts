@@ -23,6 +23,8 @@ describe("borrow preview mappers", () => {
       creditScopeLabel: "Uniswap Bluechip",
     })
 
+    expect(ui.quoteId).toBe(preview.intent.id)
+
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Credit scope",
       "Position APY",

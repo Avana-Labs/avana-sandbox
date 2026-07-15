@@ -43,6 +43,7 @@ export type ActionMetricRow = {
 export type ActionRiskLevel = "safe" | "warning" | "danger"
 
 export type ActionPreviewUi = {
+  quoteId?: string
   allowed: boolean
   amountLabel: string
   amountTitle?: string
@@ -77,6 +78,7 @@ export type ActionPreviewUi = {
 }
 
 export type ActionSuccessUi = {
+  quoteId?: string
   title: string
   description: string
   receiptHash: string | null

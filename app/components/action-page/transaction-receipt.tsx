@@ -35,6 +35,7 @@ export type TransactionReceiptData = {
   rateLabel?: string | null
   rateValue?: string | null
   marketValue?: string | null
+  quoteId?: string | null
   /** Raw USD network fee; rendered as a currency-reactive "Network fee" row when present. */
   networkFeeUsd?: number | null
   block?: number | string | null
@@ -144,6 +145,7 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
               <ActionInfoRow label={data.rateLabel} value={data.rateValue} tooltip="rate" />
             ) : null}
             {data.marketValue ? <ActionInfoRow label="Market" value={data.marketValue} tooltip="market" /> : null}
+            {data.quoteId ? <ActionInfoRow label="Quote" value={data.quoteId} /> : null}
             {typeof data.networkFeeUsd === "number" ? (
               <ActionInfoRow label="Network fee" value={exact(data.networkFeeUsd)} />
             ) : null}
