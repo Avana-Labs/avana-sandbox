@@ -4,7 +4,7 @@ import Image from "next/image"
 import { Info } from "lucide-react"
 import { HeroMarketCard } from "@/app/borrow/borrow-hero-market-card"
 import { Progress } from "@/components/ui/progress"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
 import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
@@ -28,7 +28,7 @@ export function RewardsBalanceHero({
 }) {
   const { t, language } = useTranslation()
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
 
   return (
     <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">

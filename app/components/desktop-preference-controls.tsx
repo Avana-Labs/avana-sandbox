@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CurrencyFlag } from "./currency-flag"
-import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
+import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useLocaleDisplayPreferences } from "./display-preferences"
 import { useTheme } from "./theme-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useEffect, useState } from "react"
@@ -20,7 +20,7 @@ const triggerClassName =
 type PreferencesView = "root" | "language" | "currency"
 
 export function DesktopPreferenceControls() {
-  const { currency, language, setCurrency, setLanguage } = useDisplayPreferences()
+  const { currency, language, setCurrency, setLanguage } = useLocaleDisplayPreferences()
   const { resolvedTheme, setTheme } = useTheme()
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)

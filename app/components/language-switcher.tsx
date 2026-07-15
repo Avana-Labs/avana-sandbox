@@ -7,12 +7,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
+import { LANGUAGE_OPTIONS, useLocaleDisplayPreferences } from "./display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 export function LanguageSwitcher({ compact = false, className }: { compact?: boolean; className?: string }) {
-  const { language, setLanguage } = useDisplayPreferences()
+  const { language, setLanguage } = useLocaleDisplayPreferences()
   const { t } = useTranslation()
 
   return (

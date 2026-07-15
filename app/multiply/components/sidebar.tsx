@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useLocaleDisplayPreferences } from "@/app/components/display-preferences"
 import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -80,7 +80,7 @@ export function PromoCard() {
 
 export function TransactionHistoryList() {
   const currency = useCurrency()
-  const { language } = useDisplayPreferences()
+  const { language } = useLocaleDisplayPreferences()
   const { t } = useTranslation()
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"
 

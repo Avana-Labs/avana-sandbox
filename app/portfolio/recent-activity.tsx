@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -210,7 +210,7 @@ function FilterMenu<T extends string>({
 }
 
 export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const amount = (row: PortfolioActivityRow) => (showDollarAmounts ? formatRowAmount(row) : MASK)
   const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])

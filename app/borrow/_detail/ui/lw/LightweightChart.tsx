@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Area, AreaChart, Bar, BarChart, Line, LineChart, ReferenceDot, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
 import { useTheme } from "@/app/components/theme-provider"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useLocaleDisplayPreferences } from "@/app/components/display-preferences"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { Series, TimeRangeId } from "@/app/lib/borrow-detail"
@@ -68,7 +68,7 @@ export function LightweightChart({
 }: LightweightChartProps) {
   const isMobile = useMediaQuery("(max-width: 639px)")
   const { resolvedTheme } = useTheme()
-  const { language } = useDisplayPreferences()
+  const { language } = useLocaleDisplayPreferences()
   const { ctx, convert } = useCurrency()
   const { t } = useTranslation()
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"
