@@ -92,8 +92,8 @@ function HelpLinkItem({ href, label, icon: Icon, external, onActivate }: HelpLin
   )
 }
 
-export function DesktopHelpBubble() {
-  const [open, setOpen] = useState(false)
+export function DesktopHelpBubble({ initialOpen = false }: { initialOpen?: boolean }) {
+  const [open, setOpen] = useState(initialOpen)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const shouldReduceMotion = useReducedMotion()
   const { t } = useTranslation()
