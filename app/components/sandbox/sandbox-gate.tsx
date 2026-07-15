@@ -8,7 +8,8 @@ import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { OnboardingFlow, OnboardingUnavailable } from "./onboarding-flow"
+import { GuestOnboardingFlow } from "./guest-onboarding-flow"
+import styles from "./onboarding-flow.module.css"
 
 const AuthedGate = dynamic(() => import("./authed-sandbox-gate").then((mod) => mod.AuthedSandboxGate), {
   ssr: false,
@@ -39,6 +40,7 @@ function LockedShell({ children }: { children: ReactNode }) {
 }
 
 function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" }) {
+  const { t } = useTranslation()
   // A crash inside the gated app is OUR bug, not an auth problem — don't tell the
   // user to "reconnect their wallet" for a render error. Only the genuine
   // Convex-unreachable case talks about connectivity.
@@ -56,7 +58,28 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
         }
   return (
     <LockedShell>
-      <OnboardingUnavailable onRetry={() => window.location.reload()} {...copy} />
+      <div className="mx-auto w-full max-w-[938px] py-4 sm:py-8">
+        <div className="mb-9 sm:mb-11">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full w-[10%] rounded-full bg-brand" />
+          </div>
+        </div>
+        <div className={styles.reveal}>
+          <h1 className="max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-medium leading-[1.14] tracking-[-0.03em]">
+            <span className="text-muted-foreground">{t(copy.headlineMuted)}</span>
+            <br />
+            <span className="text-foreground">{t(copy.headlineActive)}</span>
+          </h1>
+          <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">{t(copy.note)}</p>
+          <button
+            className="mt-9 inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-semibold text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90"
+            onClick={() => window.location.reload()}
+            type="button"
+          >
+            {t("Retry")}
+          </button>
+        </div>
+      </div>
     </LockedShell>
   )
 }
@@ -79,7 +102,7 @@ export function SandboxGate({ children }: { children: ReactNode }) {
         {/* The guest intro is SSR-safe and matches the first hydrated OnboardingFlow
             render. Showing it here lets the LCP paint from HTML instead of waiting for
             localStorage/session hydration to settle. */}
-        <OnboardingFlow wallet={null} state={null} />
+        <GuestOnboardingFlow />
       </LockedShell>
     )
   }
@@ -97,7 +120,7 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   if (!isSignedIn || !authedWallet) {
     return (
       <LockedShell>
-        <OnboardingFlow wallet={null} state={null} />
+        <GuestOnboardingFlow />
       </LockedShell>
     )
   }
