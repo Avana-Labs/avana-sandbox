@@ -29,7 +29,7 @@ type ProgressiveReveal = {
   /** True during the brief loading pause between reveals. */
   isRevealing: boolean
   /** Attach to the sentinel element rendered after the last visible item. */
-  sentinelRef: React.RefObject<HTMLDivElement | null>
+  sentinelRef: React.RefObject<HTMLDivElement>
 }
 
 /**
@@ -50,7 +50,7 @@ export function useProgressiveReveal({
   const base = Math.max(1, initialCount ?? chunkSize)
   const [visibleCount, setVisibleCount] = React.useState(base)
   const [isRevealing, setIsRevealing] = React.useState(false)
-  const sentinelRef = React.useRef<HTMLDivElement | null>(null)
+  const sentinelRef = React.useRef<HTMLDivElement>(null)
 
   // Restart from the top whenever the underlying filter/search changes.
   React.useEffect(() => {
@@ -102,7 +102,7 @@ export function RevealSentinel({
   active,
   className,
 }: {
-  sentinelRef: React.RefObject<HTMLDivElement | null>
+  sentinelRef: React.RefObject<HTMLDivElement>
   active: boolean
   className?: string
 }) {
