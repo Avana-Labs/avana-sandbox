@@ -44,7 +44,8 @@ export const livePortfolioPageSource: PortfolioPageSource = {
         const market = marketBySlug.get(position.marketSlug)
         const suppliedUsd = toUsd(position.suppliedUsd6)
         const earnedUsd = toUsd(position.earnedUsd6)
-        const priceUsd = 1
+        const priceUsd = market?.priceUsd && market.priceUsd > 0 ? market.priceUsd : 1
+        const apyPct = Math.max(0, position.supplyApyPct ?? 0)
         return {
           id: String(position._id),
           walletProfileId: wallet,
@@ -54,8 +55,8 @@ export const livePortfolioPageSource: PortfolioPageSource = {
           priceUsd,
           suppliedUsd,
           earnedUsd,
-          dailyEarnedUsd: 0,
-          apyPct: 0,
+          dailyEarnedUsd: (suppliedUsd * apyPct) / 100 / 365,
+          apyPct,
         }
       })
 

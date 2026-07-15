@@ -40,6 +40,7 @@ export type ConvexLendWalletData = {
     status: "open" | "closed"
     suppliedUsd6?: string
     earnedUsd6?: string
+    supplyApyPct?: number
     openedAt: number
     lastUpdatedAt: number
   }>

@@ -657,6 +657,7 @@ export default defineSchema({
     debtValueUsd6: v.optional(v.string()),
     suppliedUsd6: v.optional(v.string()),
     earnedUsd6: v.optional(v.string()),
+    supplyApyPct: v.optional(v.number()),
     // multiply (number-native — see app/lib/multiply-engine/types.ts MultiplyPosition)
     collateralAmount: v.optional(v.number()),
     collateralValueUsd: v.optional(v.number()),
