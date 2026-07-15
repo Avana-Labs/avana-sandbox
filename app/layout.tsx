@@ -29,7 +29,7 @@ const enableProductionAnalytics = process.env.NODE_ENV === "production" && Boole
 const diatypeSans = localFont({
   src: [
     {
-      path: "../public/fonts/diatype/core/ABCDiatypeVariable-Trial.woff2",
+      path: "../public/fonts/diatype/core/ABCDiatype-Regular-Trial.woff2",
       weight: "400",
       style: "normal",
     },
