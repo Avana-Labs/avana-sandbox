@@ -63,13 +63,14 @@ export function Header() {
     }
 
     updateDivider()
-    const resizeObserver =
-      header && typeof ResizeObserver !== "undefined" &&
-      new ResizeObserver(() => {
+    let resizeObserver: ResizeObserver | null = null
+    if (header && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
         threshold = header.offsetHeight
         updateDivider()
       })
-    if (resizeObserver && header) resizeObserver.observe(header)
+      resizeObserver.observe(header)
+    }
     window.addEventListener("scroll", updateDivider, { passive: true })
     document.addEventListener("scroll", updateDivider, { capture: true, passive: true })
 
