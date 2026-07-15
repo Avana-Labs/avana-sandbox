@@ -20,8 +20,8 @@ vi.mock("next/dynamic", () => ({
 }))
 
 vi.mock("@/app/components/display-preferences", () => ({
-  useDisplayPreferences: () => ({ showDollarAmounts: false }),
-  useOptionalDisplayPreferences: () => ({ showDollarAmounts: false, currency: "USD", language: "EN" }),
+  useAmountDisplayPreferences: () => ({ showDollarAmounts: false }),
+  useOptionalLocaleDisplayPreferences: () => ({ currency: "USD", language: "EN" }),
 }))
 
 vi.mock("@/app/portfolio/hero/portfolio-hero-header", () => ({

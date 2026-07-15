@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from "vitest"
 import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
 
 vi.mock("@/app/components/display-preferences", () => ({
-  useDisplayPreferences: () => ({ showDollarAmounts: true }),
-  useOptionalDisplayPreferences: () => ({ showDollarAmounts: true, currency: "USD", language: "EN" }),
+  useAmountDisplayPreferences: () => ({ showDollarAmounts: true }),
+  useOptionalLocaleDisplayPreferences: () => ({ currency: "USD", language: "EN" }),
 }))
 
 vi.mock("@/app/dashboard/components/borrow-tab/supplies-table", () => ({
