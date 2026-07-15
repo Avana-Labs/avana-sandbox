@@ -37,6 +37,8 @@ import {
   type CategoryChip,
 } from "@/app/lib/markets/category";
 import { useMediaQuery } from "@/app/lib/use-media-query";
+import { useCurrency } from "@/app/lib/currency/use-currency";
+import { redenominateCompactUsd } from "@/app/lib/currency/format";
 
 /** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
 function AssetSubLabel({ symbol }: { symbol: string }) {
@@ -130,6 +132,7 @@ function AssetRowView({
   onDeposit?: (marketId: string) => void;
 }) {
   const { t } = useTranslation();
+  const { ctx } = useCurrency();
   const router = useRouter();
   const marketId =
     "marketId" in row && typeof row.marketId === "string"
@@ -175,7 +178,7 @@ function AssetRowView({
           </span>
         </div>
         <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
-          {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
+          {redenominateCompactUsd(row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary, ctx)}
         </div>
       </td>
 
@@ -192,8 +195,10 @@ function AssetRowView({
           </span>
         </div>
         <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
-          {row.availableLiquiditySecondaryLabel ??
-            row.availableLiquiditySecondary}
+          {redenominateCompactUsd(
+            row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary,
+            ctx,
+          )}
         </div>
       </td>
 
@@ -242,6 +247,7 @@ function AssetRowView({
 
 function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
   const { t } = useTranslation();
+  const { ctx } = useCurrency();
   const router = useRouter();
   const marketId =
     "marketId" in row && typeof row.marketId === "string"
@@ -282,7 +288,7 @@ function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
             <span>
               {row.totalDepositsLabel ?? row.totalDepositsPrimary}
               <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
-                {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
+                {redenominateCompactUsd(row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary, ctx)}
               </span>
             </span>
           }
@@ -297,8 +303,10 @@ function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
             <span>
               {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
               <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
-                {row.availableLiquiditySecondaryLabel ??
-                  row.availableLiquiditySecondary}
+                {redenominateCompactUsd(
+                  row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary,
+                  ctx,
+                )}
               </span>
             </span>
           }
