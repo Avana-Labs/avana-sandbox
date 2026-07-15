@@ -96,11 +96,11 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
     // recommended cap (which lives in the secondary row for context).
     rewardRows: [
       {
-        label: `CF ${Math.round(market.risk.collateralFactor * 100)}% · LT ${Math.round(market.risk.liquidationThreshold * 100)}%`,
+        label: `Collateral factor ${Math.round(market.risk.collateralFactor * 100)}% · Liquidation threshold ${Math.round(market.risk.liquidationThreshold * 100)}%`,
         value: `Recommended max ${formatFactor(market.risk.recommendedMaxMultiplier)}`,
       },
       {
-        label: `CF ${Math.round(market.risk.collateralFactor * 100)}% · LT ${Math.round(market.risk.liquidationThreshold * 100)}%`,
+        label: `Collateral factor ${Math.round(market.risk.collateralFactor * 100)}% · Liquidation threshold ${Math.round(market.risk.liquidationThreshold * 100)}%`,
         value: formatFactor(maxLeverage),
       },
     ],
