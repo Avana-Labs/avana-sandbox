@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
-import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+import {
+  useAvanaIdentity,
+  useBorrowSessionContext,
+  useLendSessionContext,
+  useMultiplySessionContext,
+} from "@/app/lib/avana-session/avana-sessions-provider"
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
 import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioLendTabData, PortfolioMultiplyCollateral, PortfolioMultiplyTabData, PortfolioPageData } from "@/app/lib/data/providers/portfolio"
@@ -199,7 +204,10 @@ export function DashboardClient({
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const hasMounted = useHasMounted()
-  const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()
+  const { walletId } = useAvanaIdentity()
+  const borrowSession = useBorrowSessionContext()
+  const multiplySession = useMultiplySessionContext()
+  const lendSession = useLendSessionContext()
   const resolvedWalletProfileId = walletProfileId ?? initialData?.walletProfile.id ?? walletId
   const { data, error: portfolioError, isLoading: portfolioLoading, retry: retryPortfolioPage } = usePortfolioPage(
     { walletProfileId: resolvedWalletProfileId ?? "" },
