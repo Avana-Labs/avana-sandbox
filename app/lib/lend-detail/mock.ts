@@ -133,7 +133,11 @@ function buildQuickStats(market: LendMarket, ref: Reference): QuickStat[] {
     { id: "available", label: "Available Liquidity", value: formatCompactUsd(ref.availableUsd), delta: deltaFromPct(0.6) },
     { id: "utilization", label: "Utilization", value: formatPct(ref.utilizationPct, 2), delta: deltaFromPct(-0.4) },
     { id: "supplyApy", label: "Supply APY", value: formatPct(ref.supplyApyPct, 2), delta: deltaFromPct(0.1) },
-    { id: "rewardsApy", label: "Rewards APY", value: formatPct(ref.rewardsApyPct, 2) },
+    {
+      id: "rewardsApy",
+      label: "Rewards APY",
+      value: ref.rewardsApyPct > 0 ? formatPct(ref.rewardsApyPct, 2) : "No rewards",
+    },
     { id: "borrowApy", label: "Borrow APY", value: formatPct(ref.borrowAprPct, 2), delta: deltaFromPct(0.08) },
     { id: "reserveFactor", label: "Reserve Factor", value: formatPct(ref.reserveFactorPct, 0) },
   ]
