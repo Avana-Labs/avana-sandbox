@@ -4,7 +4,7 @@ import { getAuthenticatedConvexClient } from "@/app/lib/data/providers/live-conv
 import { MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR, worstMultiplyHealthFactor } from "@/app/lib/multiply-system/read-model"
 import type { PortfolioActivityKind, PortfolioActivityRecord, PortfolioCollateralRecord, PortfolioDebtRecord, PortfolioPageRecords, PortfolioSupplyRecord } from "./records"
 import type { PortfolioPageSource } from "./source"
-import { allocateDebtByCollateral, calculateLiveBorrowDebt } from "./live-accounting"
+import { allocateDebtByCollateral, calculateLiveBorrowDebt, calculateLiveMultiplyPosition } from "./live-accounting"
 
 export const livePortfolioPageAdapter = createDataSourceAdapter({
   id: "portfolio-live",
@@ -179,19 +179,29 @@ export const livePortfolioPageSource: PortfolioPageSource = {
           borrowPowerUsd: Math.max(0, (position.collateralValueUsd ?? 0) - (position.debtValueUsd ?? 0)),
         }
       }),
-      multiplyPositions: multiplyPositions.map((position) => ({
-        id: String(position._id),
-        walletProfileId: wallet,
-        symbol: marketBySlug.get(position.marketSlug)?.symbol ?? position.marketSlug,
-        label: marketBySlug.get(position.marketSlug)?.name ?? position.marketSlug,
-        side: "long",
-        leverage: position.multiplier ?? 1,
-        collateralUsd: position.collateralValueUsd ?? 0,
-        exposureUsd: (position.collateralValueUsd ?? 0) * (position.multiplier ?? 1),
-        pnlUsd: 0,
-        pnlPct: 0,
-        status: position.status,
-      })),
+      multiplyPositions: multiplyPositions.map((position) => {
+        const collateralUsd = position.collateralValueUsd ?? 0
+        const accounting = calculateLiveMultiplyPosition({
+          collateralUsd,
+          debtUsd: position.debtValueUsd ?? 0,
+          netApyPct: position.netApyPct ?? 0,
+          openedAt: position.openedAt,
+          now: Date.now(),
+        })
+        return {
+          id: String(position._id),
+          walletProfileId: wallet,
+          symbol: marketBySlug.get(position.marketSlug)?.symbol ?? position.marketSlug,
+          label: marketBySlug.get(position.marketSlug)?.name ?? position.marketSlug,
+          side: "long",
+          leverage: position.multiplier ?? 1,
+          collateralUsd,
+          exposureUsd: accounting.exposureUsd,
+          pnlUsd: accounting.pnlUsd,
+          pnlPct: accounting.pnlPct,
+          status: position.status,
+        }
+      }),
       openOrders: [],
       twapOrders: [],
       activity,

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { allocateDebtByCollateral, calculateLiveBorrowDebt } from "@/app/lib/data/providers/portfolio/live-accounting"
+import {
+  allocateDebtByCollateral,
+  calculateLiveBorrowDebt,
+  calculateLiveMultiplyPosition,
+} from "@/app/lib/data/providers/portfolio/live-accounting"
 
 describe("live portfolio accounting", () => {
   it("derives accrued and daily Borrow interest from principal, index, and APR", () => {
@@ -22,5 +26,21 @@ describe("live portfolio accounting", () => {
     expect(first).toBe(450)
     expect(second).toBe(150)
     expect(first + second).toBe(600)
+  })
+
+  it("uses looped collateral as exposure and accrues net carry on equity", () => {
+    const openedAt = Date.UTC(2025, 0, 1)
+    const result = calculateLiveMultiplyPosition({
+      collateralUsd: 3_000,
+      debtUsd: 2_000,
+      netApyPct: 12,
+      openedAt,
+      now: Date.UTC(2026, 0, 1),
+    })
+
+    expect(result.exposureUsd).toBe(3_000)
+    expect(result.equityUsd).toBe(1_000)
+    expect(result.pnlUsd).toBe(120)
+    expect(result.pnlPct).toBe(12)
   })
 })
