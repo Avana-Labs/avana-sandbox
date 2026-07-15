@@ -102,6 +102,7 @@ export function HeroAreaChart({
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [dimensions, setDimensions] = useState({ width: 1_000, height });
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [isVisible, setIsVisible] = useState(true);
   void formatYAxis;
   void activeRange;
 
@@ -118,6 +119,16 @@ export function HeroAreaChart({
           : { width, height: nextHeight },
       );
     });
+    observer.observe(shell);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) =>
+      setIsVisible(Boolean(entry?.isIntersecting)),
+    );
     observer.observe(shell);
     return () => observer.disconnect();
   }, []);
@@ -209,25 +220,27 @@ export function HeroAreaChart({
           </>
         ) : lastPoint ? (
           <>
-            <circle
-              cx={lastPoint.x}
-              cy={lastPoint.y}
-              fill={color.stroke}
-              opacity="0.45"
-            >
-              <animate
-                attributeName="r"
-                values="5;18"
-                dur="1.6s"
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="opacity"
-                values="0.5;0"
-                dur="1.6s"
-                repeatCount="indefinite"
-              />
-            </circle>
+            {isVisible ? (
+              <circle
+                cx={lastPoint.x}
+                cy={lastPoint.y}
+                fill={color.stroke}
+                opacity="0.45"
+              >
+                <animate
+                  attributeName="r"
+                  values="5;18"
+                  dur="1.6s"
+                  repeatCount="indefinite"
+                />
+                <animate
+                  attributeName="opacity"
+                  values="0.5;0"
+                  dur="1.6s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+            ) : null}
             <circle
               cx={lastPoint.x}
               cy={lastPoint.y}
