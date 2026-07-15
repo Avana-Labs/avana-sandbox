@@ -103,7 +103,7 @@ export function MarketDetailClient({ detail }: Props) {
         </div>
       </main>
 
-      <MobileDetailActionBar className="grid grid-cols-2 gap-3">
+      <MobileDetailActionBar className="grid grid-cols-3 gap-3">
         <Link
           href={actionPagePath("multiply", "multiply", { market: marketId, return: `/multiply/markets/${marketId}` })}
           className={primaryCtaClass({ size: "compact" })}
@@ -115,6 +115,12 @@ export function MarketDetailClient({ detail }: Props) {
           className={secondaryCtaClass({ size: "compact" })}
         >
           {t("Deleverage")}
+        </Link>
+        <Link
+          href={actionPagePath("multiply", "close", { market: marketId, return: `/multiply/markets/${marketId}` })}
+          className={secondaryCtaClass({ size: "compact" })}
+        >
+          {t("Close")}
         </Link>
       </MobileDetailActionBar>
     </div>

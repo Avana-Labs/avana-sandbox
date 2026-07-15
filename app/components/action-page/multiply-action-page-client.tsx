@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation"
 import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
-import { mapDeleveragePreviewToActionUi, mapMultiplyPreviewToActionUi } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
+import {
+  mapClosePreviewToActionUi,
+  mapDeleveragePreviewToActionUi,
+  mapMultiplyPreviewToActionUi,
+} from "@/app/lib/action-system/adapters/multiply-preview-mapper"
 import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
@@ -47,7 +51,7 @@ export function MultiplyActionPageClient({
   initialAmount = "",
   initialMultiplier,
 }: {
-  kind: "multiply" | "deleverage"
+  kind: "multiply" | "deleverage" | "close"
   closeHref?: string
   embedded?: boolean
   sidebar?: boolean
@@ -61,6 +65,7 @@ export function MultiplyActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaIdentity()
   const session = useMultiplySessionContext()
+  const isExitKind = kind === "deleverage" || kind === "close"
   const priceFor = usePriceFor()
   const walletPositions = useMemo(
     () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
@@ -71,7 +76,7 @@ export function MultiplyActionPageClient({
   // dead-ending — every multiply market is available.
   const validInitialMarketId = initialMarketId && session.state.markets[initialMarketId] ? initialMarketId : undefined
   const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(
-    () => validInitialMarketId ?? (kind === "deleverage" ? walletPositions[0]?.marketId : undefined),
+    () => validInitialMarketId ?? (isExitKind ? walletPositions[0]?.marketId : undefined),
   )
   const market = useMemo(() => {
     const markets = Object.values(session.state.markets)
@@ -128,13 +133,15 @@ export function MultiplyActionPageClient({
   // Input stays bound to `amount`; the engine preview below keys off the deferred value so
   // it runs on the settled input, not once per keystroke (the INP lever). See borrow client.
   const deferredAmount = useDeferredValue(amount)
-  const [multiplier, setMultiplier] = useState(() => initialMultiplier ?? (kind === "deleverage" ? "" : defaultMultiplyMultiplier))
+  const [multiplier, setMultiplier] = useState(() =>
+    kind === "close" ? "1" : initialMultiplier ?? (kind === "deleverage" ? "" : defaultMultiplyMultiplier),
+  )
   const [hasUserInput, setHasUserInput] = useState(() => Boolean(initialAmount || initialMultiplier))
 
   useEffect(() => {
-    if (kind !== "deleverage" || initialMarketId || selectedMarketId || walletPositions.length === 0) return
+    if (!isExitKind || initialMarketId || selectedMarketId || walletPositions.length === 0) return
     setSelectedMarketId(walletPositions[0]!.marketId)
-  }, [initialMarketId, kind, selectedMarketId, walletPositions])
+  }, [initialMarketId, isExitKind, selectedMarketId, walletPositions])
 
   useEffect(() => {
     if (kind !== "deleverage" || !position) return
@@ -177,6 +184,34 @@ export function MultiplyActionPageClient({
   useEffect(() => {
     if (!market) return
     let cancelled = false
+
+    if (kind === "close") {
+      if (!position) {
+        setPreviewUi(null)
+        return
+      }
+      const intent = session.createIntent({ type: "close", walletId, positionId: position.id })
+      void session
+        .previewTransaction(intent)
+        .then((preview) => {
+          if (cancelled) return
+          setPreviewUi(
+            mapClosePreviewToActionUi(preview, {
+              marketLabel: formatMultiplyLoopMarketLabel(
+                market.collateralAsset.symbol,
+                market.borrowAsset.symbol,
+              ),
+              collateralSymbol: market.collateralAsset.symbol,
+            }),
+          )
+        })
+        .catch(() => {
+          if (!cancelled) setPreviewUi(null)
+        })
+      return () => {
+        cancelled = true
+      }
+    }
     const parsedAmount = parsePositiveActionAmount(deferredAmount)
     const parsedMultiplier = parsePositiveActionAmount(multiplier)
     if (parsedMultiplier == null) {
@@ -343,11 +378,13 @@ export function MultiplyActionPageClient({
     try {
       const parsedAmount = parsePositiveActionAmount(amount)
       const parsedMultiplier = parsePositiveActionAmount(multiplier)
-      if ((kind === "multiply" && parsedAmount == null) || parsedMultiplier == null) throw new Error("Enter a valid amount")
+      if ((kind === "multiply" && parsedAmount == null) || (kind !== "close" && parsedMultiplier == null)) {
+        throw new Error("Enter a valid amount")
+      }
       const position =
         session.state.positions[`${walletId}:${market.id}`] ??
         Object.values(session.state.positions).find((entry) => entry.walletId === walletId && entry.marketId === market.id)
-      if (kind === "deleverage" && !position) throw new Error("No position selected")
+      if (isExitKind && !position) throw new Error("No position selected")
 
       const action =
         kind === "multiply"
@@ -356,14 +393,20 @@ export function MultiplyActionPageClient({
               walletId,
               marketId: market.id,
               collateralAmount: parsedAmount!,
-              selectedMultiplier: parsedMultiplier,
+              selectedMultiplier: parsedMultiplier!,
               collateralPriceUsd,
             }
-          : {
+          : kind === "close"
+            ? {
+                type: "close" as const,
+                walletId,
+                positionId: position!.id,
+              }
+            : {
               type: "deleverage" as const,
               walletId,
               positionId: position!.id,
-              targetMultiplier: parsedMultiplier,
+              targetMultiplier: parsedMultiplier!,
               repayAmountUsd: parsedAmount ?? undefined,
             }
 
@@ -384,7 +427,10 @@ export function MultiplyActionPageClient({
       setSuccessUi(
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
-          description: `${parsedMultiplier.toFixed(2)}x on ${market.collateralAsset.symbol} processed.`,
+          description:
+            kind === "close"
+              ? `${market.collateralAsset.symbol} position fully unwound and collateral withdrawn.`
+              : `${parsedMultiplier!.toFixed(2)}x on ${market.collateralAsset.symbol} processed.`,
           receiptHash: result.receipt.hash ?? null,
           metrics: previewUi.metrics,
           href: dashboardHrefForProduct("multiply"),
@@ -407,7 +453,7 @@ export function MultiplyActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, collateralPriceUsd, descriptor.primaryVerb, hasUserInput, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
+  }, [amount, closeHref, collateralPriceUsd, descriptor.primaryVerb, hasUserInput, isExitKind, isPending, kind, market, multiplier, previewUi, router, session, stage, successUi, walletId, position])
 
   const handleClose = useCallback(async () => {
     if (!market || isPending) return
@@ -496,7 +542,7 @@ export function MultiplyActionPageClient({
   // explainer filler in the action widget.
   const loopHint = null
   const effectiveMultiplierMax =
-    kind === "deleverage"
+    isExitKind
       ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
       : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
   const useWorkspaceFields =
@@ -614,11 +660,15 @@ export function MultiplyActionPageClient({
             setAmount("")
           }}
           leverageHint={loopHint}
-          multiplier={multiplier}
-          onMultiplierChange={(value) => {
-            setHasUserInput(true)
-            setMultiplier(value)
-          }}
+          multiplier={kind === "close" ? undefined : multiplier}
+          onMultiplierChange={
+            kind === "close"
+              ? undefined
+              : (value) => {
+                  setHasUserInput(true)
+                  setMultiplier(value)
+                }
+          }
           multiplierMin={multiplierMin}
           multiplierMax={effectiveMultiplierMax}
           multiplierLabel="Target leverage"
@@ -632,7 +682,7 @@ export function MultiplyActionPageClient({
           onMax={handleMaxCollateral}
           balanceLabel={collateralBalanceLabel}
           balanceValue={collateralBalanceValue}
-          hideAmountInput={useWorkspaceFields}
+          hideAmountInput={useWorkspaceFields || kind === "close"}
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           homeLayout={isHomeLayout}
           singlePrimaryCta={sidebar}

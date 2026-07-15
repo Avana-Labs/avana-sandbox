@@ -2,7 +2,7 @@ export type ActionProduct = "borrow" | "lend" | "multiply" | "rewards"
 
 export type BorrowActionKind = "borrow" | "repay" | "supply" | "remove" | "claim"
 export type LendActionKind = "deposit" | "withdraw"
-export type MultiplyActionKind = "multiply" | "deleverage"
+export type MultiplyActionKind = "multiply" | "deleverage" | "close"
 export type RewardsActionKind = "claim"
 
 export type ActionKind =
@@ -170,6 +170,13 @@ export const ACTION_DESCRIPTORS: Record<ActionProduct, Partial<Record<ActionKind
       title: "Deleverage",
       subtitle: "Configure and review your unwind.",
       primaryVerb: "Deleverage",
+    },
+    close: {
+      product: "multiply",
+      kind: "close",
+      title: "Close position",
+      subtitle: "Review the full unwind and collateral withdrawal.",
+      primaryVerb: "Close",
     },
   },
   rewards: {

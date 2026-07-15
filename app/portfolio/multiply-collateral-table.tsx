@@ -147,6 +147,18 @@ export function MultiplyCollateralTable({
                         >
                           <ActionIcon label="Deleverage" />{t("Deleverage")}
                         </Button>
+                        <Button
+                          type="button"
+                          size="table"
+                          variant="table-secondary"
+                          className="w-auto"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            router.push(actionPagePath("multiply", "close", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
+                          }}
+                        >
+                          {t("Close")}
+                        </Button>
                       </HoverActionGroup>
                     </td>
                   </tr>
@@ -211,7 +223,7 @@ export function MultiplyCollateralTable({
                 />
               </MarketMobileStatList>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   type="button"
                   variant="brand-secondary"
@@ -233,6 +245,17 @@ export function MultiplyCollateralTable({
                   }}
                 >
                   <ActionIcon label="Deleverage" />{t("Deleverage")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="brand-secondary"
+                  className="h-10 rounded-radius-sm px-4 text-[13px]"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    router.push(actionPagePath("multiply", "close", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
+                  }}
+                >
+                  {t("Close")}
                 </Button>
               </div>
             </MarketMobileCard>
