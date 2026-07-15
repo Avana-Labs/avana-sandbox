@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
@@ -76,18 +77,36 @@ export function CollateralPositionsPanel({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[28%]" />
-                <col className="w-[18%]" />
-                <col className="w-[12%]" />
-                <col className="w-[18%]" />
-                <col className="w-[24%]" />
+                <col className="w-[22%]" />
+                <col className="w-[14%]" />
+                <col className="w-[10%]" />
+                <col className="w-[14%]" />
+                <col className="w-[13%]" />
+                <col className="w-[11%]" />
+                <col className="w-[16%]" />
               </colgroup>
               <thead>
                 <tr className="text-left">
-                  <th className={cn(HEADER_CLASS, "rounded-l-radius-lg pl-5")}>{t("Asset")}</th>
+                  <th className={cn(HEADER_CLASS, "rounded-l-radius-lg pl-5")}>
+                    <MetricHeader label={t("Asset")} help="The underlying token for this reserve" />
+                  </th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("Deposited")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("APY")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("Earnings")}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>
+                    <MetricHeader
+                      label={t("Collateral Factor")}
+                      help="Maximum percentage of an asset's value that can be borrowed against"
+                      align="right"
+                    />
+                  </th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>
+                    <MetricHeader
+                      label={t("Use as collateral")}
+                      help="Whether this asset can be used as collateral for borrowing"
+                      align="right"
+                    />
+                  </th>
                   <th className={cn(HEADER_CLASS, "rounded-r-radius-lg pr-5")} />
                 </tr>
               </thead>
@@ -109,6 +128,12 @@ export function CollateralPositionsPanel({
                     </td>
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.earningsToken)} usd={m(exact(row.earningsUsd))} />
+                    </td>
+                    <td className={cn("py-3.5 text-right font-data text-[15px] tabular-nums text-foreground", TABLE_ROW_HOVER_BG)}>
+                      {row.collateralFactorPct.toFixed(0)}%
+                    </td>
+                    <td className={cn("py-3.5 text-right text-[13px] text-foreground", TABLE_ROW_HOVER_BG)}>
+                      {t(row.collateralEnabled ? "Yes" : "No")}
                     </td>
                     <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
                       <HoverActionGroup className="gap-2">
@@ -178,6 +203,15 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
   )
 }
 
+function MetricHeader({ label, help, align = "left" }: { label: string; help: string; align?: "left" | "right" }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+      {label}
+      <ActionMetricHelp topic={label} text={help} />
+    </span>
+  )
+}
+
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
@@ -235,6 +269,14 @@ function CollateralMobileCard({
               <span className="ml-2 text-[12px] text-muted-foreground">{mask(exact(row.earningsUsd))}</span>
             </span>
           }
+        />
+        <MarketMobileStatRow
+          label={<MetricHeader label={t("Collateral Factor")} help="Maximum percentage of an asset's value that can be borrowed against" />}
+          value={`${row.collateralFactorPct.toFixed(0)}%`}
+        />
+        <MarketMobileStatRow
+          label={<MetricHeader label={t("Use as collateral")} help="Whether this asset can be used as collateral for borrowing" />}
+          value={t(row.collateralEnabled ? "Yes" : "No")}
         />
       </MarketMobileStatList>
       <div className="grid grid-cols-2 gap-2">
