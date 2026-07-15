@@ -39,7 +39,10 @@ export function Header() {
   useEffect(() => {
     if (!mounted) return
 
-    const resolveThreshold = () => headerRef.current?.offsetHeight ?? 68
+    const header = headerRef.current
+    let threshold = header?.offsetHeight ?? 68
+    let pendingOffset = 0
+    let frame: number | null = null
 
     const readScrollOffset = (target?: EventTarget | null) => {
       if (target instanceof HTMLElement) {
@@ -49,15 +52,30 @@ export function Header() {
       return Math.max(window.scrollY, document.documentElement.scrollTop, document.body.scrollTop)
     }
 
+    const commitDivider = () => {
+      frame = null
+      setShowDivider(pendingOffset > threshold)
+    }
+
     const updateDivider = (event?: Event) => {
-      setShowDivider(readScrollOffset(event?.target) > resolveThreshold())
+      pendingOffset = readScrollOffset(event?.target)
+      if (frame === null) frame = window.requestAnimationFrame(commitDivider)
     }
 
     updateDivider()
+    const resizeObserver =
+      header && typeof ResizeObserver !== "undefined" &&
+      new ResizeObserver(() => {
+        threshold = header.offsetHeight
+        updateDivider()
+      })
+    if (resizeObserver && header) resizeObserver.observe(header)
     window.addEventListener("scroll", updateDivider, { passive: true })
     document.addEventListener("scroll", updateDivider, { capture: true, passive: true })
 
     return () => {
+      resizeObserver?.disconnect()
+      if (frame !== null) window.cancelAnimationFrame(frame)
       window.removeEventListener("scroll", updateDivider)
       document.removeEventListener("scroll", updateDivider, true)
     }
