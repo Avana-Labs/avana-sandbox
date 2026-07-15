@@ -114,8 +114,15 @@ type ExploreLoopsMarketsTableProps = {
   onOpenMultiply?: (href: string) => void
 }
 
+export function paginateMultiplyRows<T>(rows: readonly T[], page: number, pageSize: number) {
+  const safeSize = Math.max(1, pageSize)
+  const start = Math.max(0, page) * safeSize
+  return rows.slice(start, start + safeSize)
+}
+
 export function ExploreLoopsMarketsTable({
   initialIsDesktop = true,
+  pageSize,
   rows,
   trendingSnapshots,
   tokenBorrowApys,
@@ -125,6 +132,7 @@ export function ExploreLoopsMarketsTable({
   const { t } = useTranslation()
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
   const [search, setSearch] = React.useState("")
+  const [page, setPage] = React.useState(0)
   const searchQuery = search.trim().toLowerCase()
 
   // Compute each row's searchable text ONCE per `rows` change (keyed by row identity),
@@ -166,9 +174,19 @@ export function ExploreLoopsMarketsTable({
     return categoryFilteredRows.filter((row) => (searchTextByRow.get(row) ?? "").includes(searchQuery))
   }, [categoryFilteredRows, searchQuery, searchTextByRow])
 
+  const effectivePageSize = Math.max(1, pageSize || 12)
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / effectivePageSize))
+  const pagedRows = React.useMemo(
+    () => paginateMultiplyRows(filteredRows, page, effectivePageSize),
+    [effectivePageSize, filteredRows, page],
+  )
+
+  React.useEffect(() => {
+    setPage(0)
+  }, [currentTab, search])
+
   // Bucket the filtered rows into the ordered collateral-family groups, dropping
-  // any empty group — the same grouped-table treatment the Lend page uses. No
-  // pagination: every market in a group is shown under its own sortable table.
+  // any empty group — the same grouped-table treatment the Lend page uses.
   const groupedSections = React.useMemo(() => {
     const buckets: Record<LoopGroupKey, Array<MultiplyPageData["lendRows"][number]>> = {
       forex: [],
@@ -176,11 +194,11 @@ export function ExploreLoopsMarketsTable({
       btc: [],
       other: [],
     }
-    for (const row of filteredRows) buckets[loopGroupKey(row.protocol)].push(row)
+    for (const row of pagedRows) buckets[loopGroupKey(row.protocol)].push(row)
     return LOOP_GROUP_ORDER.map((group) => ({ title: group.title, rows: buckets[group.key] })).filter(
       (group) => group.rows.length > 0,
     )
-  }, [filteredRows])
+  }, [pagedRows])
 
   return (
     <section className="mt-7">
@@ -238,6 +256,30 @@ export function ExploreLoopsMarketsTable({
           </div>
         )}
       </div>
+
+      {pageCount > 1 ? (
+        <nav aria-label={t("Multiply market pages")} className="mt-10 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            disabled={page === 0}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
+          >
+            {t("Previous")}
+          </button>
+          <span className="text-[13px] text-muted-foreground">
+            {t("Page {page} of {count}").replace("{page}", String(page + 1)).replace("{count}", String(pageCount))}
+          </span>
+          <button
+            type="button"
+            disabled={page >= pageCount - 1}
+            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
+          >
+            {t("Next")}
+          </button>
+        </nav>
+      ) : null}
     </section>
   )
 }
