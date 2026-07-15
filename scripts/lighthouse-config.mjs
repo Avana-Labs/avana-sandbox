@@ -53,7 +53,7 @@ export const LIGHTHOUSE_ROUTE_MARKERS = {
   "/borrow/assets/uni-v3-bluechip%3Ausdc": "Asset data",
   "/lend": "Total TVL",
   "/lend/markets/usdc": "Supply APY",
-  "/multiply": "Total TVL",
+  "/multiply": "Total Liquidity",
   "/multiply/markets/aave-gho": "Total value locked",
   "/dashboard": "Borrow",
   "/rewards": "AVA balance",
