@@ -197,7 +197,12 @@ function buildMultiplyMarketRow(
     apy: formatPct(maxLoopApy),
     apyLabel: "APY derived from supply and borrow APRs",
     points: formatCompactUsd(availableUsd),
-    rewardRows: [{ label: `CF ${Math.round(cf * 100)}% · LT ${Math.round(lt * 100)}%`, value: formatFactor(maxLeverage) }],
+    rewardRows: [
+      {
+        label: `Collateral factor ${Math.round(cf * 100)}% · Liquidation threshold ${Math.round(lt * 100)}%`,
+        value: formatFactor(maxLeverage),
+      },
+    ],
     collateralFactor: cf,
     liquidationThreshold: lt,
   }
