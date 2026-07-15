@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider";
-import { isLighthouseAuditMode } from "@/app/lib/test-mode";
+import {
+  isLighthouseAuditMode,
+  shouldUseOpenGateSession,
+} from "@/app/lib/test-mode";
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth";
 import { priceKey } from "./format";
 
@@ -95,7 +98,12 @@ export function TokenPricesProvider({
   // open a live oracle subscription there: it adds no audited UI data and a stale
   // remote Convex deployment turns the expected fallback into console errors and
   // retry work. Production and normal local sessions keep the live subscription.
-  if (!hasConvexClient || !isSignedIn || isLighthouseAuditMode())
+  if (
+    !hasConvexClient ||
+    !isSignedIn ||
+    shouldUseOpenGateSession() ||
+    isLighthouseAuditMode()
+  )
     return <>{children}</>;
   return (
     <React.Suspense fallback={children}>

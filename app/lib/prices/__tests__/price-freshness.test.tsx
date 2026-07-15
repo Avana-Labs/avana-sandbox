@@ -7,7 +7,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/app/lib/convex/market-liquidity-provider", () => ({
   hasConvexClient: true,
 }));
-vi.mock("@/app/lib/test-mode", () => ({ isLighthouseAuditMode: () => false }));
+vi.mock("@/app/lib/test-mode", () => ({
+  isLighthouseAuditMode: () => false,
+  shouldUseOpenGateSession: () => false,
+}));
 vi.mock("@/app/lib/siwe/use-siwe-auth", () => ({
   useSiweAuth: () => ({ isSignedIn: true }),
 }));
