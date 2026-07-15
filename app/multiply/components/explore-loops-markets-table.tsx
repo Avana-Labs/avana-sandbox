@@ -395,7 +395,7 @@ function LoopMarketsSection({
                           : "text-foreground/70 dark:text-white/70",
                       )}
                     >
-                      <span>{t("MAX APY")}</span>
+                      <span>{t("APY AT MAX LEVERAGE")}</span>
                       <SortIcon />
                     </button>
                   </th>
@@ -680,7 +680,7 @@ function MobileLoopCard({
           metric={
             <MarketMobileMetric
               value={row.apy || "—"}
-              label={t("Max APY")}
+              label={t("APY at {leverage}").replace("{leverage}", row.rewardRows?.[1]?.value ?? "max leverage")}
               valueClassName={row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-success") : undefined}
             />
           }
