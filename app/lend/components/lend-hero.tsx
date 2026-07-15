@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -25,7 +25,7 @@ function parseMarketUsd(value: string) {
 
 
 export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["markets"][number]> }) {
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const fc = useCurrency()
   const { t } = useTranslation()
 

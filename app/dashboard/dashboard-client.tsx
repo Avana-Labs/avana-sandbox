@@ -1,6 +1,5 @@
 "use client"
 
-import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
@@ -43,7 +42,7 @@ import { LendLearnSection } from "./components/lend-learn-section"
 import { LendOpportunityCarousel } from "./components/lend-opportunity-carousel"
 import { cn } from "@/lib/utils"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RouteErrorFallback } from "@/app/components/route-error-fallback"
 
@@ -107,25 +106,6 @@ export function mergeMultiplyTabData(
     twapOrders: staticData.twapOrders,
     history: liveData.history,
   }
-}
-
-function DashboardSection({
-  title,
-  className,
-  children,
-}: {
-  title?: string
-  className?: string
-  children: ReactNode
-}) {
-  return (
-    <section className={["space-y-4", className].filter(Boolean).join(" ")}>
-      {title ? (
-        <h2 className="mb-3 mt-1 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
-      ) : null}
-      {children}
-    </section>
-  )
 }
 
 type CreditSubTab = "overview" | "collateral" | "debt" | "fees"
@@ -216,7 +196,7 @@ export function DashboardClient({
   initialData?: PortfolioPageData
   walletProfileId?: string
 }) {
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const hasMounted = useHasMounted()
   const { walletId, borrow: borrowSession, multiply: multiplySession, lend: lendSession } = useAvanaSessions()

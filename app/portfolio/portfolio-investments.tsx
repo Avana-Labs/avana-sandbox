@@ -16,7 +16,7 @@ import {
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
@@ -64,7 +64,7 @@ export function PortfolioInvestments({
 }) {
   const router = useRouter()
   const { t } = useTranslation()
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const claimableUsd = rewardsSummary?.claimableUsd ?? 0
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 

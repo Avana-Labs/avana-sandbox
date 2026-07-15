@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
@@ -43,7 +43,7 @@ export function DashboardBorrowTab({
   returnHref?: string
 }) {
   const router = useRouter()
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const supplies = collateralPositions
   const debtsRows = useMemo(() => debtPositions.filter((row) => row.borrowedUsd > 0), [debtPositions])

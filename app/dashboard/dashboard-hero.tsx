@@ -10,7 +10,7 @@ import {
   resolveSeriesTone,
 } from "@/app/components/charts/chart-data"
 import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/types"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
 import { PortfolioHeroHeader } from "@/app/portfolio/hero/portfolio-hero-header"
@@ -191,7 +191,7 @@ export function DashboardHero({
   const router = useRouter()
   const { t } = useTranslation()
   const [activeRange, setActiveRange] = useState<ChartRangeOption>("1D")
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
 
   const uiConfig = HERO_UI_CONFIG[tab]
   const isBorrowOverview = tab === "overview"

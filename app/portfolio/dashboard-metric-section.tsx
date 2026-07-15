@@ -1,7 +1,7 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { DashboardOverviewMetrics, DashboardPerformanceMetrics } from "./dashboard-tab-metrics"
@@ -54,7 +54,7 @@ function MetricGrid({ metrics, labelOnTop = false }: { metrics: MetricItem[]; la
 }
 
 export function DashboardOverviewSection({ title, metrics, hideHeading = false }: { title: string; metrics: DashboardOverviewMetrics; hideHeading?: boolean }) {
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
@@ -114,7 +114,7 @@ export function DashboardCreditOverviewSection({
   // When the section title is already provided by an enclosing tab, suppress the h2.
   hideHeading?: boolean
 }) {
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
@@ -159,7 +159,7 @@ export function DashboardPerformanceSection({
   title: string
   metrics: DashboardPerformanceMetrics
 }) {
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
@@ -200,7 +200,7 @@ export function DashboardLendPerformanceSection({
   metrics: DashboardLendPerformanceMetrics
   hideHeading?: boolean
 }) {
-  const { showDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 

@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react"
 import { Switch } from "@/components/ui/switch"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { CurrencyFlag } from "./currency-flag"
-import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useDisplayPreferences } from "./display-preferences"
+import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useLocaleDisplayPreferences } from "./display-preferences"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { useTheme } from "./theme-provider"
 
@@ -44,7 +44,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   } | null>(null)
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
-  const { language, setLanguage, currency, setCurrency } = useDisplayPreferences()
+  const { language, setLanguage, currency, setCurrency } = useLocaleDisplayPreferences()
   const { t } = useTranslation()
   const accentClass = "text-[#01AACF]"
 

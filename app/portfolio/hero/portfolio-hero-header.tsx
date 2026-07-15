@@ -2,7 +2,7 @@
 
 import { Eye, EyeOff } from "lucide-react"
 import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
-import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 // TODO(backend): wire these to the user's real Avana balance.
@@ -11,7 +11,7 @@ const AVANA_BALANCE_DELTA = "-$312.96 (-3.80%)"
 
 export function PortfolioHeroHeader() {
   const { t } = useTranslation()
-  const { showDollarAmounts, toggleShowDollarAmounts } = useDisplayPreferences()
+  const { showDollarAmounts, toggleShowDollarAmounts } = useAmountDisplayPreferences()
 
   return (
     <div className="mb-8 mt-4 sm:mb-10 sm:mt-6">
