@@ -35,8 +35,16 @@ export default tseslint.config(
     },
   },
   {
-    // CLI/seed scripts legitimately print progress to stdout.
+    // CLI/seed scripts legitimately print progress to stdout and use runtime
+    // globals (fetch, URL, process) — `.mjs`/`.cjs` scripts miss the main block's
+    // globals otherwise, tripping no-undef.
     files: ["scripts/**/*.{ts,tsx,js,mjs,cjs}"],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
     rules: {
       "no-console": "off",
     },

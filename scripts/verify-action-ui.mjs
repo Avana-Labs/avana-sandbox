@@ -1,5 +1,3 @@
-/* global console, process */
-
 import { chromium } from "@playwright/test"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
