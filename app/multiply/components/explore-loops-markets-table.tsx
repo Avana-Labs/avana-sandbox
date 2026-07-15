@@ -23,6 +23,7 @@ import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, categorizeMarket, type CategoryChip } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useMediaQuery } from "@/app/lib/use-media-query"
+import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -138,7 +139,6 @@ export function ExploreLoopsMarketsTable({
   const { t } = useTranslation()
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
   const [search, setSearch] = React.useState("")
-  const [page, setPage] = React.useState(0)
   const searchQuery = search.trim().toLowerCase()
 
   // Compute each row's searchable text ONCE per `rows` change (keyed by row identity),
@@ -181,17 +181,20 @@ export function ExploreLoopsMarketsTable({
   }, [categoryFilteredRows, searchQuery, searchTextByRow])
 
   const effectivePageSize = Math.max(1, pageSize || 12)
-  const pageCount = Math.max(1, Math.ceil(filteredRows.length / effectivePageSize))
-  const pagedRows = React.useMemo(
-    () => paginateMultiplyRows(filteredRows, page, effectivePageSize),
-    [effectivePageSize, filteredRows, page],
+
+  // Reveal rows on scroll instead of paginating: only the first chunk renders up
+  // front, then the sentinel eases in the rest as the user scrolls down.
+  const { visibleCount, hasMore, isRevealing, sentinelRef } = useProgressiveReveal({
+    total: filteredRows.length,
+    chunkSize: effectivePageSize,
+    resetKey: `${currentTab}|${searchQuery}`,
+  })
+  const revealedRows = React.useMemo(
+    () => filteredRows.slice(0, visibleCount),
+    [filteredRows, visibleCount],
   )
 
-  React.useEffect(() => {
-    setPage(0)
-  }, [currentTab, search])
-
-  // Bucket the filtered rows into the ordered collateral-family groups, dropping
+  // Bucket the revealed rows into the ordered collateral-family groups, dropping
   // any empty group — the same grouped-table treatment the Lend page uses.
   const groupedSections = React.useMemo(() => {
     const buckets: Record<LoopGroupKey, Array<MultiplyPageData["lendRows"][number]>> = {
@@ -200,11 +203,11 @@ export function ExploreLoopsMarketsTable({
       btc: [],
       other: [],
     }
-    for (const row of pagedRows) buckets[loopGroupKey(row.protocol)].push(row)
+    for (const row of revealedRows) buckets[loopGroupKey(row.protocol)].push(row)
     return LOOP_GROUP_ORDER.map((group) => ({ title: group.title, rows: buckets[group.key] })).filter(
       (group) => group.rows.length > 0,
     )
-  }, [pagedRows])
+  }, [revealedRows])
 
   return (
     <section className="mt-7">
@@ -263,29 +266,7 @@ export function ExploreLoopsMarketsTable({
         )}
       </div>
 
-      {pageCount > 1 ? (
-        <nav aria-label={t("Multiply market pages")} className="mt-10 flex items-center justify-center gap-3">
-          <button
-            type="button"
-            disabled={page === 0}
-            onClick={() => setPage((current) => Math.max(0, current - 1))}
-            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
-          >
-            {t("Previous")}
-          </button>
-          <span className="text-[13px] text-muted-foreground">
-            {t("Page {page} of {count}").replace("{page}", String(page + 1)).replace("{count}", String(pageCount))}
-          </span>
-          <button
-            type="button"
-            disabled={page >= pageCount - 1}
-            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
-            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
-          >
-            {t("Next")}
-          </button>
-        </nav>
-      ) : null}
+      {hasMore ? <RevealSentinel sentinelRef={sentinelRef} active={isRevealing} className="mt-10 flex items-center justify-center py-8" /> : null}
     </section>
   )
 }

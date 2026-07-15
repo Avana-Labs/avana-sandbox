@@ -38,6 +38,7 @@ import {
 } from "@/app/lib/markets/category";
 import { useMediaQuery } from "@/app/lib/use-media-query";
 import { useCurrency } from "@/app/lib/currency/use-currency";
+import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal";
 import { redenominateCompactUsd } from "@/app/lib/currency/format";
 
 /** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
@@ -621,7 +622,6 @@ export function LendAssetSpokes({
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [currentTab, setCurrentTab] = useState<CategoryChip["id"]>("all");
-  const [page, setPage] = useState(0);
 
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -641,12 +641,19 @@ export function LendAssetSpokes({
       .filter((group) => group.rows.length > 0);
   }, [groups, search, currentTab]);
   const totalRows = filteredGroups.reduce((sum, group) => sum + group.rows.length, 0);
-  const pageCount = Math.max(1, Math.ceil(totalRows / LEND_PAGE_SIZE));
-  const pagedGroups = useMemo(() => paginateLendAssetGroups(filteredGroups, page), [filteredGroups, page]);
 
-  useEffect(() => {
-    setPage(0);
-  }, [currentTab, search]);
+  // Reveal assets on scroll instead of paginating: only the first chunk of rows
+  // (sliced across the ordered groups) renders up front, then the sentinel eases
+  // in the rest as the user scrolls down.
+  const { visibleCount, hasMore, isRevealing, sentinelRef } = useProgressiveReveal({
+    total: totalRows,
+    chunkSize: LEND_PAGE_SIZE,
+    resetKey: `${currentTab}|${search.trim().toLowerCase()}`,
+  });
+  const revealedGroups = useMemo(
+    () => paginateLendAssetGroups(filteredGroups, 0, visibleCount),
+    [filteredGroups, visibleCount],
+  );
 
   return (
     <section
@@ -665,8 +672,8 @@ export function LendAssetSpokes({
       </div>
 
       <div className="space-y-14">
-        {pagedGroups.length > 0 ? (
-          pagedGroups.map((group, index) => (
+        {revealedGroups.length > 0 ? (
+          revealedGroups.map((group, index) => (
             <div key={group.title} className="space-y-8">
               <AssetSection
                 title={group.title}
@@ -691,29 +698,7 @@ export function LendAssetSpokes({
         )}
       </div>
 
-      {pageCount > 1 ? (
-        <nav aria-label={t("Lend market pages")} className="flex items-center justify-center gap-3">
-          <button
-            type="button"
-            disabled={page === 0}
-            onClick={() => setPage((current) => Math.max(0, current - 1))}
-            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
-          >
-            {t("Previous")}
-          </button>
-          <span className="text-[13px] text-muted-foreground">
-            {t("Page {page} of {count}").replace("{page}", String(page + 1)).replace("{count}", String(pageCount))}
-          </span>
-          <button
-            type="button"
-            disabled={page >= pageCount - 1}
-            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
-            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
-          >
-            {t("Next")}
-          </button>
-        </nav>
-      ) : null}
+      {hasMore ? <RevealSentinel sentinelRef={sentinelRef} active={isRevealing} /> : null}
     </section>
   );
 }
