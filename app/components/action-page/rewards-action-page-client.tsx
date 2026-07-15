@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAvanaSessions, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useAvanaIdentity, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import { evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
@@ -32,7 +32,7 @@ export function RewardsActionPageClient({
   const descriptor = getActionDescriptor("rewards", "claim")
   const { t } = useTranslation()
   const router = useRouter()
-  const { walletId } = useAvanaSessions()
+  const { walletId } = useAvanaIdentity()
   const rewards = useRewardsSessionContext()
   const [amount, setAmount] = useState("")
   const [stage, setStage] = useState<ActionStage>("configure")

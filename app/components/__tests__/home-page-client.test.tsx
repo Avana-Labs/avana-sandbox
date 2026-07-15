@@ -34,13 +34,10 @@ vi.mock("@/app/components/action-page/borrow-action-page-client", () => ({
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   AvanaSessionsProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
-  useAvanaSessions: () => ({
-    walletId,
-    borrow: {
-      state,
-      collateralPools: selectBorrowCollateralPools(state, walletId),
-      availableCollateralPools: selectAllAvailableCollateralPools(state, walletId),
-    },
+  useBorrowSessionContext: () => ({
+    state,
+    collateralPools: selectBorrowCollateralPools(state, walletId),
+    availableCollateralPools: selectAllAvailableCollateralPools(state, walletId),
   }),
 }))
 
