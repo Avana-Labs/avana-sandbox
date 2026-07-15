@@ -18,7 +18,7 @@
     { "name": "borrow-configure", "path": "/actions/borrow/borrow?asset=uni-v3-bluechip:usdc&amount=500", "marker": "Borrow" },
     { "name": "repay-select", "path": "/actions/borrow/repay", "marker": "Repay" },
     { "name": "repay-configure", "path": "/actions/borrow/repay?amount=500", "marker": "Repay" },
-    { "name": "supply-configure", "path": "/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc&amount=1000", "marker": "Supply" },
+    { "name": "supply-configure", "path": "/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc&amount=1000", "marker": "Pledge" },
     { "name": "remove-configure", "path": "/actions/borrow/remove?market=uni-v3-bluechip-weth-usdc", "marker": "Remove" },
     { "name": "borrow-claim", "path": "/actions/borrow/claim?market=uni-v3-bluechip-weth-usdc", "marker": "Claim" },
     { "name": "lend-deposit", "path": "/actions/lend/deposit?amount=10&market=usdc", "marker": "Deposit" },
