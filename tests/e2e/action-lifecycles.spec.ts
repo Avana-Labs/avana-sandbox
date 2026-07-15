@@ -2,26 +2,40 @@ import { expect, test } from "@playwright/test"
 
 const lifecycles = [
   {
-    product: "borrow",
+    name: "borrow open",
     path: "/actions/borrow/borrow?asset=uni-v3-bluechip:usdc&market=uni-v3-bluechip-weth-usdc&amount=1",
     dashboardSection: "dashboard-borrow-account",
   },
   {
-    product: "lend",
+    name: "lend deposit",
     path: "/actions/lend/deposit?market=usdc&amount=1",
     dashboardSection: "dashboard-lend-account",
   },
   {
-    product: "multiply",
+    name: "multiply open",
     path: "/actions/multiply/multiply?market=aave-gho&multiplier=2&amount=1",
     dashboardSection: "dashboard-multiply-account",
+  },
+  {
+    name: "borrow repay",
+    path: "/actions/borrow/repay?market=uni-v3-bluechip-weth-usdc&amount=1",
+    dashboardSection: "dashboard-borrow-account",
+    selectName: "USD Coin USDC $1,200 owed",
+  },
+  {
+    name: "lend withdraw",
+    path: "/actions/lend/withdraw?market=gho&amount=1",
+    dashboardSection: "dashboard-lend-account",
   },
 ] as const
 
 for (const lifecycle of lifecycles) {
-  test(`${lifecycle.product} completes configure, review, success, and dashboard reconciliation`, async ({ page }) => {
+  test(`${lifecycle.name} completes configure, review, success, and dashboard reconciliation`, async ({ page }) => {
     test.setTimeout(45_000)
     await page.goto(lifecycle.path, { waitUntil: "commit" })
+    if ("selectName" in lifecycle) {
+      await page.getByRole("button", { name: lifecycle.selectName, exact: true }).click()
+    }
 
     const configurePrimary = page.getByTestId("action-footer").locator("button").last()
     await expect(configurePrimary).toBeEnabled({ timeout: 15_000 })
