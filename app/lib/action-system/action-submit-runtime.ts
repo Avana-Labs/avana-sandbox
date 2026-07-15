@@ -13,6 +13,7 @@ export const WALLET_SIGN_SIMULATED_MS = 1200
  * receipt appears — see ProcessingNarration. Kept synthetic-only (`simulated`).
  */
 export const PROCESSING_SIMULATED_MS = 4200
+export const RECONCILIATION_STAGE_SIMULATED_MS = 300
 
 // Unit tests (vitest) drive the whole flow with real timers; skip the UX pacing so they
 // don't wait several seconds. The stage sequence itself is still exercised. The real app
@@ -72,5 +73,13 @@ export async function runActionSubmitFlow<T extends ActionSubmitResult>(options:
   options.onStage("processing")
   if (options.simulated) await delay(PROCESSING_SIMULATED_MS)
 
-  return raceWithTimeout(options.execute(), options.timeoutMs ?? EXECUTE_TIMEOUT_MS)
+  options.onStage("submitted")
+  const result = await raceWithTimeout(options.execute(), options.timeoutMs ?? EXECUTE_TIMEOUT_MS)
+  options.onStage("confirmed")
+  if (options.simulated) await delay(RECONCILIATION_STAGE_SIMULATED_MS)
+  options.onStage("refreshing_position")
+  if (options.simulated) await delay(RECONCILIATION_STAGE_SIMULATED_MS)
+  options.onStage("reconciled")
+  if (options.simulated) await delay(RECONCILIATION_STAGE_SIMULATED_MS)
+  return result
 }

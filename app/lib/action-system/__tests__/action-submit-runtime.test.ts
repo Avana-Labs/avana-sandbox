@@ -19,7 +19,15 @@ describe("runActionSubmitFlow", () => {
     await vi.runAllTimersAsync()
     const result = await promise
 
-    expect(stages).toEqual(["approve_allowance", "wallet_sign", "processing"])
+    expect(stages).toEqual([
+      "approve_allowance",
+      "wallet_sign",
+      "processing",
+      "submitted",
+      "confirmed",
+      "refreshing_position",
+      "reconciled",
+    ])
     expect(result.receipt.hash).toBe("sim-test")
     vi.useRealTimers()
   })

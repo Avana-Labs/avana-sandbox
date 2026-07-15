@@ -17,7 +17,7 @@ import { ActionReviewStage } from "@/app/components/action-page/action-review-st
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
-import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import {
   MULTIPLY_ACTION_MIN_LEVERAGE,
@@ -489,7 +489,7 @@ export function MultiplyActionPageClient({
   // including a fully-unwound 1.0x/$0 position that deleverage itself can no longer act on.
   const canClosePosition = kind === "deleverage" && position != null
 
-  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
+  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   // The loop mechanics are documented in the market's "About" section — no inline
@@ -574,8 +574,8 @@ export function MultiplyActionPageClient({
     >
       {useWorkspaceFields ? stackedAmountField : null}
 
-      {stage === "processing" ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
+      {isProcessingStage(stage) ? (
+        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} stage={stage} />
       ) : null}
 
       {stage === "review" && previewUi ? (

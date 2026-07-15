@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   isConfigureVisibleStage,
+  isProcessingStage,
   isReviewStage,
   nextActionStage,
   primaryCtaLabel,
@@ -14,7 +15,11 @@ describe("nextActionStage", () => {
     expect(nextActionStage("configure", "review")).toBe("review")
     expect(nextActionStage("review", "submit")).toBe("wallet_sign")
     expect(nextActionStage("wallet_sign", "signed")).toBe("processing")
-    expect(nextActionStage("processing", "success")).toBe("success")
+    expect(nextActionStage("processing", "submit")).toBe("submitted")
+    expect(nextActionStage("submitted", "confirmed")).toBe("confirmed")
+    expect(nextActionStage("confirmed", "continue")).toBe("refreshing_position")
+    expect(nextActionStage("refreshing_position", "continue")).toBe("reconciled")
+    expect(nextActionStage("reconciled", "success")).toBe("success")
   })
 
   it("routes allowance before wallet sign", () => {
@@ -53,6 +58,15 @@ describe("configure visibility", () => {
   it("identifies review stage", () => {
     expect(isReviewStage("review")).toBe(true)
     expect(isReviewStage("configure")).toBe(false)
+  })
+
+  it("identifies every pending transaction lifecycle stage", () => {
+    expect(isProcessingStage("processing")).toBe(true)
+    expect(isProcessingStage("submitted")).toBe(true)
+    expect(isProcessingStage("confirmed")).toBe(true)
+    expect(isProcessingStage("refreshing_position")).toBe(true)
+    expect(isProcessingStage("reconciled")).toBe(true)
+    expect(isProcessingStage("success")).toBe(false)
   })
 })
 
