@@ -79,9 +79,6 @@ export function mapLendDepositPreviewToActionUi(
     : preview.after.suppliedValueUsd
   const beforeApy = preview.before.currentApy
   const afterApy = preview.after.currentApy
-  const beforeEarned = options.assetPriceUsd
-    ? preview.before.interestEarned * options.assetPriceUsd + preview.before.rewardsEarnedUsd
-    : preview.before.totalEarnedUsd
   const afterEarned = options.assetPriceUsd
     ? preview.after.interestEarned * options.assetPriceUsd + preview.after.rewardsEarnedUsd
     : preview.after.totalEarnedUsd
@@ -117,7 +114,7 @@ export function mapLendDepositPreviewToActionUi(
       {
         id: "rewards",
         label: "Rewards APY",
-        value: formatActionRatioPercent(options.rewardsApy),
+        value: options.rewardsApy > 0 ? formatActionRatioPercent(options.rewardsApy) : "No rewards",
       },
       {
         id: "rewards-earned",
@@ -128,10 +125,8 @@ export function mapLendDepositPreviewToActionUi(
       },
       {
         id: "total-earned",
-        label: "Total earned",
-        value: formatActionUsdBeforeAfter(beforeEarned, afterEarned),
-        before: formatActionUsd(beforeEarned),
-        after: formatActionUsd(afterEarned),
+        label: "Lifetime earnings",
+        value: formatActionUsd(afterEarned, { exact: true }),
       },
     ],
     risk: null,
