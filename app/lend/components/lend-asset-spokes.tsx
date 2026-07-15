@@ -125,11 +125,13 @@ function AssetRowView({
   index,
   delay,
   onDeposit,
+  canWithdraw,
 }: {
   row: AssetRow;
   index: number;
   delay: number;
   onDeposit?: (marketId: string) => void;
+  canWithdraw: boolean;
 }) {
   const { t } = useTranslation();
   const { ctx } = useCurrency();
@@ -224,8 +226,11 @@ function AssetRowView({
                 size="table"
                 variant="table-secondary"
                 className="w-auto"
+                disabled={!canWithdraw}
+                title={canWithdraw ? undefined : t("No supplied position to withdraw")}
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (!canWithdraw) return;
                   router.push(
                     actionPagePath("lend", "withdraw", {
                       market: marketId,
@@ -321,6 +326,7 @@ function AssetSection({
   subtitle,
   rows,
   onDeposit,
+  withdrawableMarketIds,
   initialIsDesktop,
   deferContent,
 }: {
@@ -328,6 +334,7 @@ function AssetSection({
   subtitle?: string;
   rows: AssetRow[];
   onDeposit?: (marketId: string) => void;
+  withdrawableMarketIds: ReadonlySet<string>;
   initialIsDesktop: boolean;
   deferContent: boolean;
 }) {
@@ -560,6 +567,7 @@ function AssetSection({
                         index={index}
                         delay={index * 40}
                         onDeposit={onDeposit}
+                        canWithdraw={withdrawableMarketIds.has(row.marketId ?? row.symbol.toLowerCase())}
                       />
                     ))
                   ) : (
@@ -585,10 +593,12 @@ function AssetSection({
 export function LendAssetSpokes({
   groups = DEFAULT_ASSET_GROUPS,
   onDeposit,
+  withdrawableMarketIds = new Set<string>(),
   initialIsDesktop = true,
 }: {
   groups?: LendPageData["assetGroups"];
   onDeposit?: (marketId: string) => void;
+  withdrawableMarketIds?: ReadonlySet<string>;
   initialIsDesktop?: boolean;
 }) {
   const { t } = useTranslation();
@@ -638,6 +648,7 @@ export function LendAssetSpokes({
                 subtitle={group.subtitle}
                 rows={group.rows}
                 onDeposit={onDeposit}
+                withdrawableMarketIds={withdrawableMarketIds}
                 initialIsDesktop={initialIsDesktop}
                 deferContent={index > 0}
               />
