@@ -35,13 +35,10 @@ export function RewardsBalanceHero({
       <section className="relative overflow-hidden rounded-radius-md border-0 bg-card px-4 py-4 sm:px-5 md:min-h-[174px]">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
         <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
-          <Image
-            src="/avana-icon.png"
-            alt=""
-            width={760}
-            height={760}
-            className="h-48 w-48 object-contain opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] sm:h-64 sm:w-64 md:h-[20rem] md:w-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
-            aria-hidden
+          <div
+            aria-hidden="true"
+            className="size-48 bg-contain bg-center bg-no-repeat opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] sm:size-64 md:size-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
+            style={{ backgroundImage: "url('/avana-icon.png')" }}
           />
         </div>
 
