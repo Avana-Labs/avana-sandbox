@@ -1,11 +1,9 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
-import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export type SupportSubmitPayload = {
@@ -551,8 +549,8 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   )
 }
 
-const ConvexSupportCenter = dynamic(
-  () => import("./support-center-connected").then((mod) => mod.ConvexSupportCenter),
+const SupportCenterSubmissionBridge = dynamic(
+  () => import("./support-center-submission-bridge").then((mod) => mod.SupportCenterSubmissionBridge),
   { ssr: false },
 )
 
@@ -562,13 +560,16 @@ const ConvexSupportCenter = dynamic(
  * demo never dead-ends if the backend is unavailable.
  */
 export function SupportCenterClient() {
-  const { authedWallet, isSignedIn } = useSiweAuth()
-  if (hasConvexClient && isSignedIn && authedWallet) return <ConvexSupportCenter />
+  const submitRef = useRef<SupportSubmit>(async () => {})
+  const submit = useCallback<SupportSubmit>((payload) => submitRef.current(payload), [])
+  const handleConnectedSubmit = useCallback((connectedSubmit: SupportSubmit | null) => {
+    submitRef.current = connectedSubmit ?? (async () => {})
+  }, [])
+
   return (
-    <SupportCenterForm
-      submit={async () => {
-        // No Convex client configured — accept the submission without persisting.
-      }}
-    />
+    <>
+      <SupportCenterSubmissionBridge onReady={handleConnectedSubmit} />
+      <SupportCenterForm submit={submit} />
+    </>
   )
 }
