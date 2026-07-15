@@ -22,9 +22,13 @@ const budgets = {
 }
 const runCount = Math.max(1, Number(process.env.LH_RUNS ?? 3))
 const numericBudgets = {
+  firstContentfulPaintMs: Number(process.env.LH_FCP_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.firstContentfulPaintMs),
   largestContentfulPaintMs: Number(process.env.LH_LCP_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.largestContentfulPaintMs),
   totalBlockingTimeMs: Number(process.env.LH_TBT_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.totalBlockingTimeMs),
   unusedJavaScriptBytes: Number(process.env.LH_UNUSED_JS_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.unusedJavaScriptBytes),
+  totalByteWeightBytes: Number(process.env.LH_TOTAL_BYTES_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.totalByteWeightBytes),
+  domNodes: Number(process.env.LH_DOM_NODES_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.domNodes),
+  mainThreadWorkMs: Number(process.env.LH_MAIN_THREAD_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.mainThreadWorkMs),
 }
 
 function runLighthouse(route, outputPath) {
@@ -68,6 +72,16 @@ function numericAudit(report, id) {
   return audit?.numericValue ?? 0
 }
 
+const numericAuditIds = {
+  firstContentfulPaintMs: "first-contentful-paint",
+  largestContentfulPaintMs: "largest-contentful-paint",
+  totalBlockingTimeMs: "total-blocking-time",
+  unusedJavaScriptBytes: "unused-javascript",
+  totalByteWeightBytes: "total-byte-weight",
+  domNodes: "dom-size",
+  mainThreadWorkMs: "mainthread-work-breakdown",
+}
+
 async function assertRouteContent(route) {
   const response = await fetch(new URL(route, baseUrl))
   const html = await response.text()
@@ -91,9 +105,13 @@ for (const route of LIGHTHOUSE_ROUTES) {
   await assertRouteContent(route)
   const categoryScores = Object.fromEntries(Object.keys(budgets).map((category) => [category, []]))
   const numericScores = {
+    firstContentfulPaintMs: [],
     largestContentfulPaintMs: [],
     totalBlockingTimeMs: [],
     unusedJavaScriptBytes: [],
+    totalByteWeightBytes: [],
+    domNodes: [],
+    mainThreadWorkMs: [],
   }
 
   for (let run = 1; run <= runCount; run += 1) {
@@ -104,9 +122,9 @@ for (const route of LIGHTHOUSE_ROUTES) {
     for (const category of Object.keys(budgets)) {
       categoryScores[category].push(score(report, category))
     }
-    numericScores.largestContentfulPaintMs.push(numericAudit(report, "largest-contentful-paint"))
-    numericScores.totalBlockingTimeMs.push(numericAudit(report, "total-blocking-time"))
-    numericScores.unusedJavaScriptBytes.push(numericAudit(report, "unused-javascript"))
+    for (const [metric, auditId] of Object.entries(numericAuditIds)) {
+      numericScores[metric].push(numericAudit(report, auditId))
+    }
   }
 
   const row = { route, runs: runCount }
