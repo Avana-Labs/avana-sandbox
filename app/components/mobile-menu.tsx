@@ -40,6 +40,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     pointerId: number
     startY: number
     offset: number
+    sheetHeight: number
     moved: boolean
   } | null>(null)
   const pathname = usePathname()
@@ -183,6 +184,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       pointerId: event.pointerId,
       startY: event.clientY,
       offset: sheetDragOffset,
+      sheetHeight: selectorSheetRef.current?.offsetHeight ?? 0,
       moved: false,
     }
     setSheetDragging(true)
@@ -221,8 +223,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     }
 
     event.currentTarget.releasePointerCapture(event.pointerId)
-    const sheetHeight = selectorSheetRef.current?.offsetHeight ?? 0
-    const closeThreshold = Math.max(180, sheetHeight * 0.32)
+    const closeThreshold = Math.max(180, dragState.sheetHeight * 0.32)
     finishSelectorDrag(dragState.moved && sheetDragOffset > closeThreshold, sheetDragOffset)
     event.preventDefault()
   }
