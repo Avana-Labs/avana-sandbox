@@ -88,6 +88,7 @@ export function mapMultiplyPreviewToActionUi(
     preview.warnings[0] ??
     "This leverage reduces your safety buffer."
   const hasExistingPosition = preview.before.collateralValueUsd > 0 || preview.before.debtValueUsd > 0
+  const loopCount = Math.max(0, preview.simulationSummary?.loopCount ?? 0)
   const addedExposureUsd = scaleUsd(addedValue(preview.after.collateralValueUsd, preview.before.collateralValueUsd))
   const addedDebtUsd = scaleUsd(addedValue(preview.after.debtValueUsd, preview.before.debtValueUsd))
   const borrowCapacityUsd = Math.max(
@@ -143,6 +144,15 @@ export function mapMultiplyPreviewToActionUi(
 
   return {
     quoteId: preview.intent.id,
+    loopCount,
+    executionSteps: [
+      { id: "supply-initial", label: "Supply initial collateral" },
+      ...Array.from({ length: loopCount }, (_, index) => [
+        { id: `borrow-${index + 1}`, label: `Loop ${index + 1}: Borrow` },
+        { id: `swap-${index + 1}`, label: `Loop ${index + 1}: Swap to collateral` },
+        { id: `resupply-${index + 1}`, label: `Loop ${index + 1}: Resupply collateral` },
+      ]).flat(),
+    ],
     allowed: preview.allowed,
     amountTitle: "Collateral",
     amountLabel: formatActionAmount(options.collateralAmount, options.collateralSymbol, 6),
@@ -205,6 +215,12 @@ export function mapDeleveragePreviewToActionUi(
 
   return {
     quoteId: preview.intent.id,
+    executionSteps: [
+      { id: "unwind", label: "Withdraw looped collateral" },
+      { id: "swap", label: "Swap collateral for debt asset" },
+      { id: "repay", label: "Repay debt" },
+      { id: "resupply", label: "Resupply remaining collateral" },
+    ],
     allowed: preview.allowed,
     amountLabel: `${options.targetMultiplier.toFixed(2)}x ${options.collateralSymbol}`,
     amountValue: `${options.targetMultiplier.toFixed(2)}x`,

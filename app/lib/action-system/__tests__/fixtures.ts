@@ -118,6 +118,7 @@ export function multiplyPreviewFixture(overrides: Partial<MultiplyTransactionPre
     simulationSummary: {
       liquidationPrice: 1_850,
       priceImpactPct: 0.12,
+      loopCount: 2,
     },
     ...overrides,
   }
