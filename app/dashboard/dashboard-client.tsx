@@ -1,6 +1,7 @@
 "use client"
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useSearchParams } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import { focusDashboardProduct } from "@/app/dashboard/dashboard-product-focus"
@@ -223,9 +224,13 @@ function DashboardLoadingState() {
   )
 }
 
-function DeferredDashboardContent({ children }: { children: ReactNode }) {
+function DeferredDashboardContent({ children, eager = false }: { children: ReactNode; eager?: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const [shouldMount, setShouldMount] = useState(() => process.env.NODE_ENV === "test")
+  const [shouldMount, setShouldMount] = useState(() => process.env.NODE_ENV === "test" || eager)
+
+  useEffect(() => {
+    if (eager) setShouldMount(true)
+  }, [eager])
 
   useEffect(() => {
     if (shouldMount) return
@@ -269,6 +274,7 @@ export function DashboardClient({
 }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
+  const searchParams = useSearchParams()
   const hasMounted = useHasMounted()
   const { walletId } = useAvanaIdentity()
   const borrowSession = useBorrowSessionContext()
@@ -282,13 +288,10 @@ export function DashboardClient({
     retry: retryPortfolioPage,
   } = usePortfolioPage({ walletProfileId: resolvedWalletProfileId ?? "" }, initialData)
   const pageData = data ?? initialData
-  const readTabFromLocation = useCallback((): DashboardTab => {
-    if (typeof window === "undefined") return "lending"
-    const parsed = parseDashboardTab(new URLSearchParams(window.location.search).get("tab")) ?? "lending"
-    // The Activity tab was merged into the Lend tab; treat any lingering ?tab=activity as Lend.
-    return parsed === "activity" ? "lending" : parsed
-  }, [])
-  const [activeTab, setActiveTab] = useState<DashboardTab>("lending")
+  const requestedTab = parseDashboardTab(searchParams.get("tab")) ?? "lending"
+  // The Activity tab was merged into the Lend tab; treat any lingering ?tab=activity as Lend.
+  const normalizedRequestedTab: DashboardTab = requestedTab === "activity" ? "lending" : requestedTab
+  const [activeTab, setActiveTab] = useState<DashboardTab>(normalizedRequestedTab)
   const [creditSubTab, setCreditSubTab] = useState<CreditSubTab>("overview")
   const [loopingSubTab, setLoopingSubTab] = useState<LoopingSubTab>("overview")
   const dashboardReturnHref = dashboardHrefForTab(activeTab)
@@ -480,24 +483,18 @@ export function DashboardClient({
   }, [multiplyTabData])
 
   useEffect(() => {
-    setActiveTab(readTabFromLocation())
-    const onPopState = () => setActiveTab(readTabFromLocation())
-    window.addEventListener("popstate", onPopState)
-    return () => window.removeEventListener("popstate", onPopState)
-  }, [readTabFromLocation])
+    setActiveTab(normalizedRequestedTab)
+  }, [normalizedRequestedTab])
 
   useEffect(() => {
     if (!pageData || activeTab === "activity") return
-    let frame = 0
+    if (focusDashboardProduct(activeTab)) return
     let attempts = 0
-    const focusSection = () => {
-      if (!focusDashboardProduct(activeTab) && attempts < 30) {
-        attempts += 1
-        frame = window.requestAnimationFrame(focusSection)
-      }
-    }
-    frame = window.requestAnimationFrame(focusSection)
-    return () => window.cancelAnimationFrame(frame)
+    const timer = setInterval(() => {
+      attempts += 1
+      if (focusDashboardProduct(activeTab) || attempts >= 100) clearInterval(timer)
+    }, 100)
+    return () => clearInterval(timer)
   }, [activeTab, pageData])
 
   // While the authenticated portfolio is still empty, retry transient client fetch
@@ -584,7 +581,7 @@ export function DashboardClient({
             <LendOpportunityCarousel />
           </section>
 
-          <DeferredDashboardContent>
+          <DeferredDashboardContent eager={activeTab === "overview" || activeTab === "looping"}>
             {/* Borrow sections (moved from the former Borrow tab) */}
             <div id="dashboard-borrow-account" tabIndex={-1} className="scroll-mt-24 outline-none">
               <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">

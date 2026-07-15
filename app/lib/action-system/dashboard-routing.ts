@@ -16,16 +16,23 @@ const TAB_LABELS: Record<DashboardTabKey, string> = {
   activity: "Activity",
 }
 
+const TAB_SECTION: Partial<Record<DashboardTabKey, string>> = {
+  lending: "dashboard-lend-account",
+  overview: "dashboard-borrow-account",
+  looping: "dashboard-multiply-account",
+}
+
 export function dashboardTabForProduct(product: ActionProduct): DashboardTabKey {
   return PRODUCT_TAB[product]
 }
 
 export function dashboardHrefForProduct(product: ActionProduct): string {
-  return `/dashboard?tab=${dashboardTabForProduct(product)}`
+  return dashboardHrefForTab(dashboardTabForProduct(product))
 }
 
 export function dashboardHrefForTab(tab: DashboardTabKey): string {
-  return `/dashboard?tab=${tab}`
+  const section = TAB_SECTION[tab]
+  return `/dashboard?tab=${tab}${section ? `#${section}` : ""}`
 }
 
 export function dashboardTabLabel(tab: DashboardTabKey): string {
