@@ -54,9 +54,8 @@ test("borrow keeps the workspace shell below the hero", async ({ page }) => {
   await expect(page.locator(".borrow-workspace-shell")).toBeVisible()
 })
 
-test("home borrow workspace shell is present in the initial HTML", async ({ page }) => {
+test("home action workspace becomes interactive within budget", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" })
-
-  const html = await page.content()
-  expect(html).toContain('data-testid="home-workspace-loading"')
+  await expect(page.getByText("Collateral", { exact: true })).toBeVisible({ timeout: 5_000 })
+  await expect(page.getByRole("button", { name: "Enter an amount" })).toBeVisible()
 })
