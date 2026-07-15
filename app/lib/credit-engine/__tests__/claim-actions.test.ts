@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { applyBorrowAction, assertBorrowSystemInvariants, calculateCreditMetrics, parseFixed } from "@/app/lib/credit-engine"
-import { simulateClaim } from "@/app/lib/credit-engine/simulation"
 import {
-  EXAMPLE_WALLET_1_REWARD_ID,
-  makeExampleBorrowSystemState,
-} from "@/app/lib/credit-engine/__tests__/fixtures"
+  applyBorrowAction,
+  assertBorrowSystemInvariants,
+  calculateCreditMetrics,
+  parseFixed,
+} from "@/app/lib/credit-engine"
+import { simulateClaim } from "@/app/lib/credit-engine/simulation"
+import { EXAMPLE_WALLET_1_REWARD_ID, makeExampleBorrowSystemState } from "@/app/lib/credit-engine/__tests__/fixtures"
 
 describe("claim borrow actions", () => {
   it("claims rewards without changing collateral or debt metrics", () => {
@@ -20,7 +22,9 @@ describe("claim borrow actions", () => {
     })
 
     const afterMetrics = calculateCreditMetrics(next, "wallet-1")
-    const reward = next.accounts["wallet-1"]!.rewardPositions.find((position) => position.id === EXAMPLE_WALLET_1_REWARD_ID)!
+    const reward = next.accounts["wallet-1"]!.rewardPositions.find(
+      (position) => position.id === EXAMPLE_WALLET_1_REWARD_ID,
+    )!
 
     expect(reward.claimableUsd6).toBe(parseFixed("42", 6))
     expect(next.accounts["wallet-1"]!.walletBalanceUsd6).toBe(beforeBalance + parseFixed("100", 6))
@@ -63,7 +67,9 @@ describe("claim borrow actions", () => {
       amountUsd6: parseFixed("1000", 6),
     })
 
-    const reward = next.accounts["wallet-1"]!.rewardPositions.find((position) => position.id === EXAMPLE_WALLET_1_REWARD_ID)!
+    const reward = next.accounts["wallet-1"]!.rewardPositions.find(
+      (position) => position.id === EXAMPLE_WALLET_1_REWARD_ID,
+    )!
     expect(reward.claimableUsd6).toBe(0n)
   })
 })

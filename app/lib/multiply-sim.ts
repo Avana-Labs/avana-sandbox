@@ -115,7 +115,10 @@ export const MULTIPLY_LIQUIDATION_THRESHOLDS: Partial<Record<keyof typeof MULTIP
   CRV: 0.68,
 }
 
-export const MULTIPLY_LOOP_DEFINITIONS: Array<{ collateral: keyof typeof MULTIPLY_TOKEN_LOGOS; borrowable: keyof typeof MULTIPLY_TOKEN_LOGOS }> = [
+export const MULTIPLY_LOOP_DEFINITIONS: Array<{
+  collateral: keyof typeof MULTIPLY_TOKEN_LOGOS
+  borrowable: keyof typeof MULTIPLY_TOKEN_LOGOS
+}> = [
   { collateral: "wstETH", borrowable: "ETH" },
   { collateral: "stETH", borrowable: "ETH" },
   { collateral: "rETH", borrowable: "ETH" },
@@ -213,5 +216,9 @@ export const MULTIPLY_MARKET_ROWS: MultiplyMarketRow[] = MULTIPLY_LOOP_DEFINITIO
 ).filter((row): row is MultiplyMarketRow => Boolean(row))
 
 export function getMultiplyMarketRow(id: string): MultiplyMarketRow | null {
-  return MULTIPLY_MARKET_ROWS.find((row) => row.href.endsWith(`/multiply/markets/${id}`) || `${row.protocol}-${row.asset}` === id) ?? null
+  return (
+    MULTIPLY_MARKET_ROWS.find(
+      (row) => row.href.endsWith(`/multiply/markets/${id}`) || `${row.protocol}-${row.asset}` === id,
+    ) ?? null
+  )
 }

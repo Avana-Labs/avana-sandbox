@@ -1,11 +1,7 @@
 "use client"
 
 import { ChevronDown } from "lucide-react"
-import {
-  calculateBorrowPreview,
-  type HomeBorrowToken,
-  type HomeCollateralPool,
-} from "@/app/lib/home-sim"
+import { calculateBorrowPreview, type HomeBorrowToken, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"
 import { cn } from "@/lib/utils"
@@ -52,7 +48,9 @@ export function CompactBorrowCard({
         <PickerSurface label={t("Collateral")} tier="top" seamless>
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="font-data text-[20px] font-medium tracking-tight text-foreground">{compact(pool.collateralUsd)}</div>
+              <div className="font-data text-[20px] font-medium tracking-tight text-foreground">
+                {compact(pool.collateralUsd)}
+              </div>
               <div className="mt-0.5 text-[11.5px] text-muted-foreground">{pool.name}</div>
             </div>
             {poolReadOnly ? (
@@ -112,7 +110,9 @@ export function CompactBorrowCard({
                 placeholder="0"
                 className="no-number-spinner w-full bg-transparent font-data text-[28px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
               />
-              <span className="text-[11px] text-muted-foreground">{amount ? exact(Number.parseFloat(amount) || 0) : exact(0)}</span>
+              <span className="text-[11px] text-muted-foreground">
+                {amount ? exact(Number.parseFloat(amount) || 0) : exact(0)}
+              </span>
             </label>
             {token ? (
               <button
@@ -151,7 +151,14 @@ export function CompactBorrowCard({
             )}
           />
           <span className="text-foreground">
-            <strong className={cn("font-medium", preview.riskTone === "danger" ? "text-rose-700 dark:text-rose-300" : "text-amber-700 dark:text-amber-300")}>
+            <strong
+              className={cn(
+                "font-medium",
+                preview.riskTone === "danger"
+                  ? "text-rose-700 dark:text-rose-300"
+                  : "text-amber-700 dark:text-amber-300",
+              )}
+            >
               {preview.warningTitle}.
             </strong>{" "}
             <span className="text-muted-foreground">{preview.warningMessage}</span>
@@ -189,7 +196,9 @@ export function CompactBorrowCard({
           </div>
           <div className="rounded-radius-sm border border-border bg-surface-raised px-2.5 py-2">
             <div className="text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">{t("Liq. at")}</div>
-            <div className="mt-0.5 font-data text-[12.5px] font-medium text-amber-700 dark:text-amber-400">{compact(pool.liquidationUsd)}</div>
+            <div className="mt-0.5 font-data text-[12.5px] font-medium text-amber-700 dark:text-amber-400">
+              {compact(pool.liquidationUsd)}
+            </div>
           </div>
         </div>
       ) : null}

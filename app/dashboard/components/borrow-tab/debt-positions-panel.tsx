@@ -24,13 +24,7 @@ const MASK = "••••"
 const HEADER_CLASS =
   "whitespace-nowrap bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70"
 
-export function DebtPositionsPanel({
-  showBalance = true,
-  returnHref,
-}: {
-  showBalance?: boolean
-  returnHref?: string
-}) {
+export function DebtPositionsPanel({ showBalance = true, returnHref }: { showBalance?: boolean; returnHref?: string }) {
   const { t } = useTranslation()
   const router = useRouter()
   const { exact } = useCurrency()
@@ -45,7 +39,11 @@ export function DebtPositionsPanel({
       help: "Blended interest rate across your open loans.",
       valueClassName: "text-brand",
     },
-    { label: "Interest Owed", value: m(exact(summary.interestOwedUsd)), help: "Total interest accrued on your outstanding loans." },
+    {
+      label: "Interest Owed",
+      value: m(exact(summary.interestOwedUsd)),
+      help: "Total interest accrued on your outstanding loans.",
+    },
   ]
 
   const detailHref = (marketId: string) => `/borrow/markets/${marketId}`
@@ -104,7 +102,12 @@ export function DebtPositionsPanel({
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.borrowedToken)} usd={m(exact(row.borrowedUsd))} />
                     </td>
-                    <td className={cn("py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white", TABLE_ROW_HOVER_BG)}>
+                    <td
+                      className={cn(
+                        "py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white",
+                        TABLE_ROW_HOVER_BG,
+                      )}
+                    >
                       {row.apyPct.toFixed(2)}%
                     </td>
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
@@ -171,7 +174,9 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
     <div className="flex items-center gap-2.5">
       <TokenIcon symbol={symbol} size="table" />
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{name}</span>
+        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+          {name}
+        </span>
         <span className="text-[11px] text-muted-foreground">{symbol}</span>
       </div>
     </div>
@@ -210,7 +215,9 @@ function DebtMobileCard({
           <div className="flex min-w-0 items-center gap-2.5">
             <TokenIcon symbol={row.symbol} size="table" />
             <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.name}</div>
+              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                {row.name}
+              </div>
               <div className="text-[11px] text-muted-foreground">{row.symbol}</div>
             </div>
           </div>

@@ -47,7 +47,10 @@ export function TokenPriceChart({
   const containerRef = React.useRef<HTMLDivElement>(null)
   const [hoverIndex, setHoverIndex] = React.useState<number | null>(null)
 
-  const layout = React.useMemo(() => buildLayout(series.points, plotW, plotH, locale), [locale, series.points, plotW, plotH])
+  const layout = React.useMemo(
+    () => buildLayout(series.points, plotW, plotH, locale),
+    [locale, series.points, plotW, plotH],
+  )
   const resolvedFormatValue = React.useCallback(
     (value: number) =>
       formatValue === defaultFormatValue
@@ -148,9 +151,7 @@ export function TokenPriceChart({
             vectorEffect="non-scaling-stroke"
           />
 
-          {hoverIndex != null ? (
-            <line x1={dotX} x2={dotX} y1={0} y2={plotH} stroke="#D4D4D4" strokeWidth={1} />
-          ) : null}
+          {hoverIndex != null ? <line x1={dotX} x2={dotX} y1={0} y2={plotH} stroke="#D4D4D4" strokeWidth={1} /> : null}
 
           <circle cx={dotX} cy={dotY} r={3.5} fill="#3A3A3A" stroke="#FFFFFF" strokeWidth={2} />
         </g>
@@ -186,7 +187,6 @@ export function TokenPriceChart({
           ))}
         </g>
       </svg>
-
     </div>
   )
 }
@@ -196,9 +196,7 @@ type YTick = { value: number; y: number }
 type XTick = { x: number; label: string }
 
 function buildLayout(points: LayoutPoint[], plotW: number, plotH: number, locale: string) {
-  const sorted = [...points]
-    .filter((p) => Number.isFinite(p.v))
-    .sort((a, b) => (a.t > b.t ? 1 : a.t < b.t ? -1 : 0))
+  const sorted = [...points].filter((p) => Number.isFinite(p.v)).sort((a, b) => (a.t > b.t ? 1 : a.t < b.t ? -1 : 0))
 
   if (sorted.length === 0) {
     return { points: sorted, coords: [] as Array<[number, number]>, yTicks: [] as YTick[], xTicks: [] as XTick[] }

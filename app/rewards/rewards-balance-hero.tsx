@@ -51,7 +51,10 @@ export function RewardsBalanceHero({
                   <span className="ml-2 align-middle text-[0.78em]">AVA</span>
                 </span>
 
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand ring-1 ring-brand/20" aria-hidden>
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand ring-1 ring-brand/20"
+                  aria-hidden
+                >
                   <Image
                     src="/avana-icon.png"
                     alt=""
@@ -83,7 +86,11 @@ export function RewardsBalanceHero({
                   .replace("{total}", String(totalCount))}
               </span>
             </div>
-            <Progress value={progressPercentage} className="h-1.5" aria-label={t("Overall quest completion progress")} />
+            <Progress
+              value={progressPercentage}
+              className="h-1.5"
+              aria-label={t("Overall quest completion progress")}
+            />
           </div>
         </div>
       </section>

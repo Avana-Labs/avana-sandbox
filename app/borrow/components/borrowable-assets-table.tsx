@@ -46,7 +46,6 @@ function formatUtilizationPct(utilization: number): string {
   return `${utilization.toFixed(2)}%`
 }
 
-
 export function BorrowableAssetsPanel({
   rows,
   onBorrow,
@@ -123,7 +122,13 @@ export function BorrowableAssetsPanel({
                             </div>
                           </div>
                         }
-                        metric={<MarketMobileMetric value={`${asset.borrowApr.toFixed(2)}%`} label={t("Borrow APR")} valueClassName={aprTone} />}
+                        metric={
+                          <MarketMobileMetric
+                            value={`${asset.borrowApr.toFixed(2)}%`}
+                            label={t("Borrow APR")}
+                            valueClassName={aprTone}
+                          />
+                        }
                       />
 
                       <MarketMobileStatList className="mt-4">
@@ -142,7 +147,8 @@ export function BorrowableAssetsPanel({
                           onBorrow(asset)
                         }}
                       >
-                        <ActionIcon label="Borrow" />{t("Borrow")}
+                        <ActionIcon label="Borrow" />
+                        {t("Borrow")}
                       </MarketMobilePrimaryAction>
                     </MarketMobileCard>
                   </li>
@@ -158,7 +164,12 @@ export function BorrowableAssetsPanel({
 
 function SortIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 12 16" fill="none" className="size-[14px] text-muted-foreground/70 dark:text-white/60">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 12 16"
+      fill="none"
+      className="size-[14px] text-muted-foreground/70 dark:text-white/60"
+    >
       <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -211,153 +222,162 @@ function LoanAssetsSection({
 
   const table = (
     <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] text-[12px]">
-            <thead>
-              <tr className="bg-table-header text-left text-muted-foreground">
-                <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  #
-                </th>
-                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("asset")}
-                    className={cn(
-                      "flex items-center gap-2 transition-colors",
-                      sortKey === "asset"
-                        ? "text-foreground dark:text-white"
-                        : "text-muted-foreground/70 dark:text-white/42",
-                    )}
-                  >
-                    <span>{t("ASSET")}</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("apy")}
-                    className={cn(
-                      "flex items-center gap-2 transition-colors",
-                      sortKey === "apy"
-                        ? "text-foreground dark:text-white"
-                        : "text-muted-foreground/70 dark:text-white/42",
-                    )}
-                  >
-                    <span>{t("BASE APY")}</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("borrows")}
-                    className={cn(
-                      "flex items-center gap-2 transition-colors",
-                      sortKey === "borrows"
-                        ? "text-foreground dark:text-white"
-                        : "text-muted-foreground/70 dark:text-white/42",
-                    )}
-                  >
-                    <span>{t("TOTAL BORROWS")}</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("liquidity")}
-                    className={cn(
-                      "flex w-full items-center gap-2 transition-colors",
-                      sortKey === "liquidity"
-                        ? "text-foreground dark:text-white"
-                        : "text-muted-foreground/70 dark:text-white/42",
-                    )}
-                  >
-                    <span>{t("LIQUIDITY")}</span>
-                    <SortIcon />
-                  </button>
-                </th>
-                <th className="pb-3 pt-4 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
-              </tr>
-            </thead>
+      <table className="w-full min-w-[980px] text-[12px]">
+        <thead>
+          <tr className="bg-table-header text-left text-muted-foreground">
+            <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              #
+            </th>
+            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <button
+                type="button"
+                onClick={() => toggleSort("asset")}
+                className={cn(
+                  "flex items-center gap-2 transition-colors",
+                  sortKey === "asset"
+                    ? "text-foreground dark:text-white"
+                    : "text-muted-foreground/70 dark:text-white/42",
+                )}
+              >
+                <span>{t("ASSET")}</span>
+                <SortIcon />
+              </button>
+            </th>
+            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <button
+                type="button"
+                onClick={() => toggleSort("apy")}
+                className={cn(
+                  "flex items-center gap-2 transition-colors",
+                  sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+                )}
+              >
+                <span>{t("BASE APY")}</span>
+                <SortIcon />
+              </button>
+            </th>
+            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <button
+                type="button"
+                onClick={() => toggleSort("borrows")}
+                className={cn(
+                  "flex items-center gap-2 transition-colors",
+                  sortKey === "borrows"
+                    ? "text-foreground dark:text-white"
+                    : "text-muted-foreground/70 dark:text-white/42",
+                )}
+              >
+                <span>{t("TOTAL BORROWS")}</span>
+                <SortIcon />
+              </button>
+            </th>
+            <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <button
+                type="button"
+                onClick={() => toggleSort("liquidity")}
+                className={cn(
+                  "flex w-full items-center gap-2 transition-colors",
+                  sortKey === "liquidity"
+                    ? "text-foreground dark:text-white"
+                    : "text-muted-foreground/70 dark:text-white/42",
+                )}
+              >
+                <span>{t("LIQUIDITY")}</span>
+                <SortIcon />
+              </button>
+            </th>
+            <th className="pb-3 pt-4 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+          </tr>
+        </thead>
 
-            <tbody key={`loan-${sortKey}-${sortDirection}-${sortedAssets.length}`}>
-              {sortedAssets.map((asset, index) => (
-                <tr
-                  key={asset.id}
-                  className="asset-swap group cursor-pointer transition-colors"
-                  onClick={() => router.push(borrowAssetDetailPath(asset.id))}
-                  style={{ animationDelay: `${index * 40}ms` }}
-                >
-                  <td className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
-                    {index + 1}
-                  </td>
-                  <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <div className="flex min-w-0 items-center gap-4">
-                      <TokenBubble visual={asset.visual} size="table" ring={false} className="bg-transparent" />
-                      <div className="min-w-0">
-                        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-                          {asset.name}
-                        </div>
-                        <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
-                          {(() => {
-                            const price = priceFor(asset.symbol)
-                            return price !== undefined ? formatTokenPrice(price) : asset.symbol
-                          })()}
-                        </div>
-                      </div>
+        <tbody key={`loan-${sortKey}-${sortDirection}-${sortedAssets.length}`}>
+          {sortedAssets.map((asset, index) => (
+            <tr
+              key={asset.id}
+              className="asset-swap group cursor-pointer transition-colors"
+              onClick={() => router.push(borrowAssetDetailPath(asset.id))}
+              style={{ animationDelay: `${index * 40}ms` }}
+            >
+              <td
+                className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+              >
+                {index + 1}
+              </td>
+              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+                <div className="flex min-w-0 items-center gap-4">
+                  <TokenBubble visual={asset.visual} size="table" ring={false} className="bg-transparent" />
+                  <div className="min-w-0">
+                    <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+                      {asset.name}
                     </div>
-                  </td>
-                  <td className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}>
-                    <div className="flex items-center gap-2">
-                      <span className="tabular-nums">{asset.borrowApr.toFixed(2)}%</span>
+                    <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
+                      {(() => {
+                        const price = priceFor(asset.symbol)
+                        return price !== undefined ? formatTokenPrice(price) : asset.symbol
+                      })()}
                     </div>
-                  </td>
-                  <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-                      {compact(asset.totalBorrowedUsd)}
-                    </div>
-                  </td>
-                  <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-                      {compact(asset.availableUsd)}
-                    </div>
-                  </td>
-                  <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <HoverActionGroup className="gap-2">
-                      <Button
-                        type="button"
-                        size="table"
-                        variant="table-primary"
-                        className="w-auto"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          const lendMarketId = resolveLendMarketId(asset.symbol)
-                          if (!lendMarketId) return
-                          router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
-                        }}
-                      >
-                        <ActionIcon label="Deposit" />{t("Deposit")}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="table"
-                        variant="table-secondary"
-                        className="w-auto"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onBorrow(asset)
-                        }}
-                      >
-                        <ActionIcon label="Borrow" />{t("Borrow")}
-                      </Button>
-                    </HoverActionGroup>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+              </td>
+              <td
+                className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="tabular-nums">{asset.borrowApr.toFixed(2)}%</span>
+                </div>
+              </td>
+              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+                <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+                  {compact(asset.totalBorrowedUsd)}
+                </div>
+              </td>
+              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+                <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+                  {compact(asset.availableUsd)}
+                </div>
+              </td>
+              <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+                <HoverActionGroup className="gap-2">
+                  <Button
+                    type="button"
+                    size="table"
+                    variant="table-primary"
+                    className="w-auto"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      const lendMarketId = resolveLendMarketId(asset.symbol)
+                      if (!lendMarketId) return
+                      router.push(
+                        actionPagePath("lend", "deposit", {
+                          market: lendMarketId,
+                          return: borrowAssetDetailPath(asset.id),
+                        }),
+                      )
+                    }}
+                  >
+                    <ActionIcon label="Deposit" />
+                    {t("Deposit")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="table"
+                    variant="table-secondary"
+                    className="w-auto"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onBorrow(asset)
+                    }}
+                  >
+                    <ActionIcon label="Borrow" />
+                    {t("Borrow")}
+                  </Button>
+                </HoverActionGroup>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 
   if (embedded) {
@@ -366,7 +386,7 @@ function LoanAssetsSection({
 
   return (
     <section className="space-y-5">
-    <DesktopTableSurface>{table}</DesktopTableSurface>
+      <DesktopTableSurface>{table}</DesktopTableSurface>
     </section>
   )
 }
@@ -406,18 +426,34 @@ function AssetsSection({
               <tr className="bg-table-header text-left text-muted-foreground">
                 <th className="pb-2 pt-3 pl-5 pr-3 text-[10.5px] font-medium uppercase tracking-[0.06em]">#</th>
                 <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Asset")}</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Borrow APR")}</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Utilization")}</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Available")}</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Wallet Balance")}</th>
-                <th className="w-20 pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">7D</th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                  {t("Borrow APR")}
+                </th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                  {t("Utilization")}
+                </th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                  {t("Available")}
+                </th>
+                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                  {t("Wallet Balance")}
+                </th>
+                <th className="w-20 pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                  7D
+                </th>
                 <th className="w-44 pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]" />
               </tr>
             </thead>
             <tbody>
               {assets.map((asset, index) => (
-                <tr key={asset.id} className="group cursor-pointer transition-colors" onClick={() => router.push(borrowAssetDetailPath(asset.id))}>
-                  <td className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
+                <tr
+                  key={asset.id}
+                  className="group cursor-pointer transition-colors"
+                  onClick={() => router.push(borrowAssetDetailPath(asset.id))}
+                >
+                  <td
+                    className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+                  >
                     {index + 1}
                   </td>
                   <td className={`py-2.5 pl-5 ${TABLE_ROW_HOVER_BG}`}>
@@ -432,19 +468,34 @@ function AssetsSection({
                     />
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                    <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>
+                    <span
+                      className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}
+                    >
                       {formatApy(asset.borrowApr)}
                     </span>
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                    <span className={cn("font-data text-[13px] font-medium tabular-nums", utilizationToneClass(asset.utilization))}>
+                    <span
+                      className={cn(
+                        "font-data text-[13px] font-medium tabular-nums",
+                        utilizationToneClass(asset.utilization),
+                      )}
+                    >
                       {formatUtilizationPct(asset.utilization)}
                     </span>
                   </td>
-                  <td className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
+                  <td
+                    className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
+                  >
                     {compact(asset.availableUsd)}
                   </td>
-                  <td className={cn("py-2.5 pl-4 text-right font-data text-[13px] tabular-nums", asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground", TABLE_ROW_HOVER_BG)}>
+                  <td
+                    className={cn(
+                      "py-2.5 pl-4 text-right font-data text-[13px] tabular-nums",
+                      asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground",
+                      TABLE_ROW_HOVER_BG,
+                    )}
+                  >
                     {asset.walletBalanceLabel}
                   </td>
                   <td className={`py-2.5 pl-4 ${TABLE_ROW_HOVER_BG}`}>
@@ -463,10 +514,16 @@ function AssetsSection({
                           event.stopPropagation()
                           const lendMarketId = resolveLendMarketId(asset.symbol)
                           if (!lendMarketId) return
-                          router.push(actionPagePath("lend", "deposit", { market: lendMarketId, return: borrowAssetDetailPath(asset.id) }))
+                          router.push(
+                            actionPagePath("lend", "deposit", {
+                              market: lendMarketId,
+                              return: borrowAssetDetailPath(asset.id),
+                            }),
+                          )
                         }}
                       >
-                        <ActionIcon label="Deposit" />{t("Deposit")}
+                        <ActionIcon label="Deposit" />
+                        {t("Deposit")}
                       </Button>
                       <Button
                         type="button"
@@ -478,7 +535,8 @@ function AssetsSection({
                           onBorrow(asset)
                         }}
                       >
-                        <ActionIcon label="Borrow" />{t("Borrow")}
+                        <ActionIcon label="Borrow" />
+                        {t("Borrow")}
                       </Button>
                     </HoverActionGroup>
                   </td>

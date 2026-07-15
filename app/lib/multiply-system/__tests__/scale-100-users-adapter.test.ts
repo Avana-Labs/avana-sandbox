@@ -8,54 +8,58 @@ import { SandboxMultiplyReadAdapter } from "@/app/lib/multiply-system/sandbox-re
 import { SandboxMultiplyTransactionAdapter } from "@/app/lib/multiply-system/sandbox-transaction-adapter"
 
 describe("multiply adapter 100-user scale", () => {
-  it("executes 100 wallet actions through the transaction adapter and keeps reads consistent", { timeout: 30_000 }, async () => {
-    const initialState = makeStressMultiplySystemState(100)
-    let state = initialState
-    let idCounter = 0
+  it(
+    "executes 100 wallet actions through the transaction adapter and keeps reads consistent",
+    { timeout: 30_000 },
+    async () => {
+      const initialState = makeStressMultiplySystemState(100)
+      let state = initialState
+      let idCounter = 0
 
-    const adapter = new SandboxMultiplyTransactionAdapter({
-      readState: () => state,
-      writeState: (nextState) => {
-        state = nextState
-      },
-      now: () => 1_718_800_000_000 + idCounter,
-      generateId: (prefix: string) => `${prefix}-${++idCounter}`,
-    })
+      const adapter = new SandboxMultiplyTransactionAdapter({
+        readState: () => state,
+        writeState: (nextState) => {
+          state = nextState
+        },
+        now: () => 1_718_800_000_000 + idCounter,
+        generateId: (prefix: string) => `${prefix}-${++idCounter}`,
+      })
 
-    const actions = makeStressMultiplyActions(initialState)
-    const receipts = []
+      const actions = makeStressMultiplyActions(initialState)
+      const receipts = []
 
-    for (const action of actions) {
-      const intent = adapter.createIntent(action)
-      const result = await adapter.executeTransaction(intent)
-      receipts.push(result.receipt)
-    }
+      for (const action of actions) {
+        const intent = adapter.createIntent(action)
+        const result = await adapter.executeTransaction(intent)
+        receipts.push(result.receipt)
+      }
 
-    expect(receipts.length).toBe(actions.length)
-    expect(receipts.every((receipt) => receipt.simulated)).toBe(true)
-    expect(receipts.filter((receipt) => receipt.status === "success").length).toBeGreaterThan(50)
+      expect(receipts.length).toBe(actions.length)
+      expect(receipts.every((receipt) => receipt.simulated)).toBe(true)
+      expect(receipts.filter((receipt) => receipt.status === "success").length).toBeGreaterThan(50)
 
-    const readAdapter = new SandboxMultiplyReadAdapter({ state })
-    const sampledWalletIds = [
-      "wallet-multiply-stress-0",
-      "wallet-multiply-stress-7",
-      "wallet-multiply-stress-25",
-      "wallet-multiply-stress-50",
-      "wallet-multiply-stress-99",
-    ]
+      const readAdapter = new SandboxMultiplyReadAdapter({ state })
+      const sampledWalletIds = [
+        "wallet-multiply-stress-0",
+        "wallet-multiply-stress-7",
+        "wallet-multiply-stress-25",
+        "wallet-multiply-stress-50",
+        "wallet-multiply-stress-99",
+      ]
 
-    for (const walletId of sampledWalletIds) {
-      const portfolio = await readAdapter.readPortfolioMultiply(walletId)
-      const snapshot = await readAdapter.readWalletSnapshot(walletId)
-      expect(Number.isFinite(portfolio.creditLines.totalCollateralUsd)).toBe(true)
-      expect(snapshot.transactionHistory.every((item) => item.simulated)).toBe(true)
-    }
+      for (const walletId of sampledWalletIds) {
+        const portfolio = await readAdapter.readPortfolioMultiply(walletId)
+        const snapshot = await readAdapter.readWalletSnapshot(walletId)
+        expect(Number.isFinite(portfolio.creditLines.totalCollateralUsd)).toBe(true)
+        expect(snapshot.transactionHistory.every((item) => item.simulated)).toBe(true)
+      }
 
-    const borrowState = makeExampleBorrowSystemState()
-    const borrowCollateralBefore = borrowState.accounts["wallet-1"]!.collateralPositions.length
-    expect(borrowCollateralBefore).toBeGreaterThan(0)
-    expect(Object.keys(state.positions).length).toBeGreaterThan(0)
-  })
+      const borrowState = makeExampleBorrowSystemState()
+      const borrowCollateralBefore = borrowState.accounts["wallet-1"]!.collateralPositions.length
+      expect(borrowCollateralBefore).toBeGreaterThan(0)
+      expect(Object.keys(state.positions).length).toBeGreaterThan(0)
+    },
+  )
 
   it("previewTransaction does not mutate multiply state for 100 wallets", async () => {
     const initialState = makeStressMultiplySystemState(100)

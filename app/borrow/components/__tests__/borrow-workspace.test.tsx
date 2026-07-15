@@ -25,7 +25,13 @@ const market = {
   riskPremiumBps: 25,
   visuals: [
     { symbol: "WETH", shortLabel: "WETH", bgClassName: "bg-black", textClassName: "text-white", iconUrl: "/weth.svg" },
-    { symbol: "USDC", shortLabel: "USDC", bgClassName: "bg-blue-500", textClassName: "text-white", iconUrl: "/usdc.svg" },
+    {
+      symbol: "USDC",
+      shortLabel: "USDC",
+      bgClassName: "bg-blue-500",
+      textClassName: "text-white",
+      iconUrl: "/usdc.svg",
+    },
   ],
   collateralExampleUsd: 12000,
   trendUp: true,

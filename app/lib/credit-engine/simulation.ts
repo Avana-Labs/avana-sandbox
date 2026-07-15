@@ -46,11 +46,15 @@ function calculateSpokeCollateralValueUsd6(state: BorrowSystemState, walletId: s
 }
 
 function snapshot(state: BorrowSystemState, walletId: string, spokeId?: BorrowSpokeId): SimulationSnapshot {
-  const metrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : calculateCreditMetrics(state, walletId)
+  const metrics = spokeId
+    ? calculateSpokeCreditMetrics(state, walletId, spokeId)
+    : calculateCreditMetrics(state, walletId)
   return {
     state,
     metrics: {
-      collateralValueUsd6: spokeId ? calculateSpokeCollateralValueUsd6(state, walletId, spokeId) : calculateCollateralValueUsd6(state, walletId),
+      collateralValueUsd6: spokeId
+        ? calculateSpokeCollateralValueUsd6(state, walletId, spokeId)
+        : calculateCollateralValueUsd6(state, walletId),
       borrowCapacityUsd6: calculateBorrowCapacityUsd6(state, walletId, spokeId),
       availableBorrowCapacityUsd6: metrics.availableCreditUsd6,
       totalBorrowedUsd6: metrics.totalBorrowedUsd6,
@@ -65,10 +69,13 @@ function spokeForAction(state: BorrowSystemState, action: BorrowAction): BorrowS
     return state.markets[action.marketId]?.spokeId
   }
   if (action.type === "repay") {
-    return state.accounts[action.walletId]?.debtPositions.find((position) => position.id === action.debtPositionId)?.spokeId
+    return state.accounts[action.walletId]?.debtPositions.find((position) => position.id === action.debtPositionId)
+      ?.spokeId
   }
   if (action.type === "removeCollateral" || action.type === "liquidate") {
-    const marketId = state.accounts[action.walletId]?.collateralPositions.find((position) => position.id === action.positionId)?.marketId
+    const marketId = state.accounts[action.walletId]?.collateralPositions.find(
+      (position) => position.id === action.positionId,
+    )?.marketId
     return marketId ? state.markets[marketId]?.spokeId : undefined
   }
   return undefined
@@ -93,7 +100,10 @@ function warningsFromSnapshot(actionType: BorrowAction["type"], after: Simulatio
   return warnings
 }
 
-function previewAction<TAction extends BorrowAction>(state: BorrowSystemState, action: TAction): BorrowSimulationResult {
+function previewAction<TAction extends BorrowAction>(
+  state: BorrowSystemState,
+  action: TAction,
+): BorrowSimulationResult {
   const spokeId = spokeForAction(state, action)
   const before = snapshot(state, action.walletId, spokeId)
 
@@ -135,7 +145,10 @@ export function simulateRepay(state: BorrowSystemState, action: Extract<BorrowAc
   return previewAction(state, action)
 }
 
-export function simulateWithdraw(state: BorrowSystemState, action: Extract<BorrowAction, { type: "removeCollateral" }>) {
+export function simulateWithdraw(
+  state: BorrowSystemState,
+  action: Extract<BorrowAction, { type: "removeCollateral" }>,
+) {
   return previewAction(state, action)
 }
 

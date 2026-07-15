@@ -98,12 +98,20 @@ export function ActionLeverageRuler({
             aria-label={t("Custom {label}").replace("{label}", t(label))}
             className="h-9 w-20 rounded-full border border-border bg-background pl-3 pr-7 text-right font-data text-[14px] font-medium tabular-nums text-foreground outline-none focus:border-brand"
           />
-          <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground">x</span>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground"
+          >
+            x
+          </span>
         </label>
       </div>
 
       <div className={variant === "embedded" ? "relative mt-9 px-2" : "relative mt-10 px-2"}>
-        <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-1.5 -translate-y-1/2 rounded-full bg-border/70" aria-hidden />
+        <div
+          className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-1.5 -translate-y-1/2 rounded-full bg-border/70"
+          aria-hidden
+        />
         <div
           className="pointer-events-none absolute left-2 top-1/2 z-[5] h-1.5 -translate-y-1/2 rounded-full bg-brand transition-[width] duration-150 ease-out"
           style={{ width: `calc((100% - 1rem) * ${fillPct / 100})` }}

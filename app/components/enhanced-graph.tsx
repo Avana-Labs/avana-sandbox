@@ -19,14 +19,7 @@ interface EnhancedGraphProps {
   values?: number[]
 }
 
-function StaticGraph({
-  isPositive,
-  className = "",
-  points = 12,
-  height = 40,
-  seed,
-  values,
-}: EnhancedGraphProps) {
+function StaticGraph({ isPositive, className = "", points = 12, height = 40, seed, values }: EnhancedGraphProps) {
   const graphId = useId()
   const graphSeed = seed ?? `${graphId}-${isPositive ? "positive" : "negative"}-${points}`
   const graphPoints = useMemo(() => {

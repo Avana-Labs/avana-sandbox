@@ -106,7 +106,13 @@ describe("DashboardBorrowTab", () => {
   })
 
   it("routes portfolio supply actions to shared action pages", () => {
-    render(<DashboardBorrowTab section="supplies" collateralPositions={[supplyRow] as never} returnHref="/dashboard?tab=overview" />)
+    render(
+      <DashboardBorrowTab
+        section="supplies"
+        collateralPositions={[supplyRow] as never}
+        returnHref="/dashboard?tab=overview"
+      />,
+    )
 
     fireEvent.click(screen.getByText("open-borrow"))
     expect(push).toHaveBeenCalledWith(
@@ -125,7 +131,9 @@ describe("DashboardBorrowTab", () => {
   })
 
   it("routes portfolio debt actions to shared action pages", () => {
-    render(<DashboardBorrowTab section="debts" debtPositions={[debtRow] as never} returnHref="/dashboard?tab=overview" />)
+    render(
+      <DashboardBorrowTab section="debts" debtPositions={[debtRow] as never} returnHref="/dashboard?tab=overview" />,
+    )
 
     fireEvent.click(screen.getByText("open-repay"))
     expect(push).toHaveBeenCalledWith(

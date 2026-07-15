@@ -5,11 +5,7 @@ export type LendActionKind = "deposit" | "withdraw"
 export type MultiplyActionKind = "multiply" | "deleverage" | "close"
 export type RewardsActionKind = "claim"
 
-export type ActionKind =
-  | BorrowActionKind
-  | LendActionKind
-  | MultiplyActionKind
-  | RewardsActionKind
+export type ActionKind = BorrowActionKind | LendActionKind | MultiplyActionKind | RewardsActionKind
 
 export type ActionPageMode = "page" | "overlay" | "embedded"
 

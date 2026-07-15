@@ -18,7 +18,9 @@ describe("Avana rewards bridge", () => {
     }
     writeLendSessionState(walletId, seededLendState)
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    )
     const { result } = renderHook(() => useAvanaSessions(), { wrapper })
 
     await act(async () => {
@@ -71,7 +73,9 @@ describe("Avana rewards bridge", () => {
     }
     writeLendSessionState(walletId, seededState)
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    )
     const { result } = renderHook(() => useAvanaSessions(), { wrapper })
 
     const eventsBeforeClaim = await result.current.rewards.readAdapter.readRecentActivity(walletId)
@@ -89,15 +93,21 @@ describe("Avana rewards bridge", () => {
     const eventsAfterClaim = await result.current.rewards.readAdapter.readRecentActivity(walletId)
 
     expect(eventsAfterClaim.filter((event) => event.type === "lend_withdrawn")).toHaveLength(withdrawCountBeforeClaim)
-    expect(eventsAfterClaim.filter((event) => event.type === "reward_claimed")).toHaveLength(rewardClaimCountBeforeClaim)
+    expect(eventsAfterClaim.filter((event) => event.type === "reward_claimed")).toHaveLength(
+      rewardClaimCountBeforeClaim,
+    )
   })
 
   it("preserves claimed rewards across provider remounts", async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    )
     const firstMount = renderHook(() => useAvanaSessions(), { wrapper })
 
     await waitFor(async () => {
-      const progress = await firstMount.result.current.rewards.readAdapter.readProgress(firstMount.result.current.walletId)
+      const progress = await firstMount.result.current.rewards.readAdapter.readProgress(
+        firstMount.result.current.walletId,
+      )
       expect(progress.find((item) => item.taskId === "connect-wallet")?.status).toBe("claimable")
     })
 
@@ -106,7 +116,9 @@ describe("Avana rewards bridge", () => {
     })
 
     await waitFor(async () => {
-      const summary = await firstMount.result.current.rewards.readAdapter.readRewardSummary(firstMount.result.current.walletId)
+      const summary = await firstMount.result.current.rewards.readAdapter.readRewardSummary(
+        firstMount.result.current.walletId,
+      )
       expect(summary.totalClaimedAmount).toBe(45)
     })
 
@@ -115,7 +127,9 @@ describe("Avana rewards bridge", () => {
     const secondMount = renderHook(() => useAvanaSessions(), { wrapper })
 
     await waitFor(async () => {
-      const summary = await secondMount.result.current.rewards.readAdapter.readRewardSummary(secondMount.result.current.walletId)
+      const summary = await secondMount.result.current.rewards.readAdapter.readRewardSummary(
+        secondMount.result.current.walletId,
+      )
       expect(summary.totalClaimedAmount).toBe(45)
     })
   })

@@ -567,7 +567,14 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
         product: "multiply",
         kind: "multiply",
         marketSlug: "eth-usdc-loop",
-        position: { status: "open", marketSlug: "eth-usdc-loop", collateralValueUsd: 2000, debtValueUsd: 1000, multiplier: 2, ltv: 0.5 },
+        position: {
+          status: "open",
+          marketSlug: "eth-usdc-loop",
+          collateralValueUsd: 2000,
+          debtValueUsd: 1000,
+          multiplier: 2,
+          ltv: 0.5,
+        },
       }),
     )
     expect(create.idempotent).toBe(false)
@@ -581,7 +588,14 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
         product: "multiply",
         kind: "multiply",
         marketSlug: "eth-usdc-loop",
-        position: { status: "open", marketSlug: "eth-usdc-loop", collateralValueUsd: 2000, debtValueUsd: 1000, multiplier: 2, ltv: 0.5 },
+        position: {
+          status: "open",
+          marketSlug: "eth-usdc-loop",
+          collateralValueUsd: 2000,
+          debtValueUsd: 1000,
+          multiplier: 2,
+          ltv: 0.5,
+        },
       }),
     )
     expect(replay.idempotent).toBe(true)

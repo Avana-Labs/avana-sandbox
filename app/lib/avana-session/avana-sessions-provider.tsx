@@ -264,9 +264,7 @@ export function AvanaSessionsProvider({
         <BorrowSessionContext.Provider value={borrow}>
           <MultiplySessionContext.Provider value={multiply}>
             <LendSessionContext.Provider value={lend}>
-              <RewardsSessionContext.Provider value={rewards}>
-                {children}
-              </RewardsSessionContext.Provider>
+              <RewardsSessionContext.Provider value={rewards}>{children}</RewardsSessionContext.Provider>
             </LendSessionContext.Provider>
           </MultiplySessionContext.Provider>
         </BorrowSessionContext.Provider>

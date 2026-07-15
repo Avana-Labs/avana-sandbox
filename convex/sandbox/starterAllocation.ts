@@ -111,10 +111,7 @@ const SCOPE_TO_BUCKET: Record<StarterMarket["scope"], BucketKey> = {
  * `buildStarterAllocationPlan` deliberately still degrades gracefully for its other
  * callers; this is the strict gate used only on the claim path.
  */
-export function assertCatalogCanSatisfyStarter(
-  wallet: string,
-  markets: readonly StarterPricedMarket[],
-): void {
+export function assertCatalogCanSatisfyStarter(wallet: string, markets: readonly StarterPricedMarket[]): void {
   const byScope = (scope: StarterMarket["scope"]) =>
     markets
       .filter((market) => market.scope === scope)
@@ -155,10 +152,7 @@ export function assertCatalogCanSatisfyStarter(
   }
 }
 
-export function buildStarterAllocationPlan(
-  wallet: string,
-  markets: readonly StarterMarket[],
-): StarterAllocationPlan {
+export function buildStarterAllocationPlan(wallet: string, markets: readonly StarterMarket[]): StarterAllocationPlan {
   const normalizedWallet = wallet.toLowerCase()
   const seed = hashWallet(normalizedWallet)
   const byScope = (scope: StarterMarket["scope"]) =>
@@ -177,25 +171,58 @@ export function buildStarterAllocationPlan(
     multiply: [],
   }
 
-  const bucketDefs: Array<{ key: BucketKey; scope: StarterMarket["scope"]; target: number; count: number; seed: number }> = [
-    { key: "liquid", scope: "asset", target: STARTER_BUCKETS.liquid.amountUsd, count: STARTER_BUCKETS.liquid.count, seed },
-    { key: "collateral", scope: "pool", target: STARTER_BUCKETS.collateral.amountUsd, count: STARTER_BUCKETS.collateral.count, seed: seed ^ 0x9e3779b9 },
-    { key: "lend", scope: "lend", target: STARTER_BUCKETS.lend.amountUsd, count: STARTER_BUCKETS.lend.count, seed: seed ^ 0x85ebca6b },
-    { key: "multiply", scope: "multiply", target: STARTER_BUCKETS.multiply.amountUsd, count: STARTER_BUCKETS.multiply.count, seed: seed ^ 0xc2b2ae35 },
+  const bucketDefs: Array<{
+    key: BucketKey
+    scope: StarterMarket["scope"]
+    target: number
+    count: number
+    seed: number
+  }> = [
+    {
+      key: "liquid",
+      scope: "asset",
+      target: STARTER_BUCKETS.liquid.amountUsd,
+      count: STARTER_BUCKETS.liquid.count,
+      seed,
+    },
+    {
+      key: "collateral",
+      scope: "pool",
+      target: STARTER_BUCKETS.collateral.amountUsd,
+      count: STARTER_BUCKETS.collateral.count,
+      seed: seed ^ 0x9e3779b9,
+    },
+    {
+      key: "lend",
+      scope: "lend",
+      target: STARTER_BUCKETS.lend.amountUsd,
+      count: STARTER_BUCKETS.lend.count,
+      seed: seed ^ 0x85ebca6b,
+    },
+    {
+      key: "multiply",
+      scope: "multiply",
+      target: STARTER_BUCKETS.multiply.amountUsd,
+      count: STARTER_BUCKETS.multiply.count,
+      seed: seed ^ 0xc2b2ae35,
+    },
   ]
 
   // Onboarding must never hard-fail just because a scope is missing from the seed (e.g.
   // an un-seeded deployment). Allocate only across the buckets that have markets and
   // redistribute the full equity over them, proportional to each bucket's base target.
   // When every scope is present this reproduces the original per-bucket amounts exactly.
-  const available = bucketDefs.map((def) => ({ ...def, candidates: byScope(def.scope) })).filter((def) => def.candidates.length > 0)
+  const available = bucketDefs
+    .map((def) => ({ ...def, candidates: byScope(def.scope) }))
+    .filter((def) => def.candidates.length > 0)
   if (available.length === 0) return plan
 
   const targetCents = STARTER_EQUITY_USD * 100
   const baseTotal = available.reduce((sum, def) => sum + def.target, 0)
   let assignedCents = 0
   available.forEach((def, index) => {
-    const cents = index === available.length - 1 ? targetCents - assignedCents : Math.round((def.target / baseTotal) * targetCents)
+    const cents =
+      index === available.length - 1 ? targetCents - assignedCents : Math.round((def.target / baseTotal) * targetCents)
     assignedCents += index === available.length - 1 ? 0 : cents
     plan[def.key] = allocateBucket(def.candidates, cents / 100, def.count, def.seed)
   })

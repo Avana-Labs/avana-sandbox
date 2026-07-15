@@ -20,9 +20,7 @@ export default function OnboardingError({ error, reset }: { error: Error; reset:
       <OnboardingUnavailable
         onRetry={reset}
         headlineMuted={isAuth ? "Your session needs a refresh." : "Something went wrong."}
-        headlineActive={
-          isAuth ? "Reconnect your wallet to continue onboarding." : "We couldn't load onboarding."
-        }
+        headlineActive={isAuth ? "Reconnect your wallet to continue onboarding." : "We couldn't load onboarding."}
         note={
           isAuth
             ? "Authenticated sessions stay locked until Convex confirms access."

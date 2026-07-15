@@ -6,7 +6,12 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { BrandIcon, BrandLogo } from "./brand-logo"
 import { LazyMobileMenu } from "./lazy-mobile-menu"
-import { LazySearchCommand, LazySearchCommandIconOnly, SearchCommandIconPlaceholder, SearchCommandPlaceholder } from "./lazy-search-command"
+import {
+  LazySearchCommand,
+  LazySearchCommandIconOnly,
+  SearchCommandIconPlaceholder,
+  SearchCommandPlaceholder,
+} from "./lazy-search-command"
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-controls"
@@ -87,9 +92,7 @@ export function Header() {
       ref={headerRef}
       className={`sticky top-0 z-40 bg-background/95 text-foreground transition-[box-shadow] duration-200 ${
         walletModalOpen ? "" : "backdrop-blur"
-      } ${
-        mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
-      }`}
+      } ${mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"}`}
     >
       <div className="hidden lg:block">
         <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 lg:px-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] xl:gap-4 xl:px-6 2xl:px-8">
@@ -101,7 +104,10 @@ export function Header() {
               <BrandLogo className="hidden h-[44px] xl:block" />
             </Link>
 
-            <nav aria-label={t("Primary")} className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <nav
+              aria-label={t("Primary")}
+              className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
               {desktopLinks.slice(0, 4).map((link) => {
                 const isActive = mounted && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href))
 
@@ -123,7 +129,9 @@ export function Header() {
           </div>
 
           <div className="hidden min-w-0 justify-center px-1 xl:flex xl:px-2">
-            <div className="w-full max-w-[280px] xl:max-w-[360px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
+            <div className="w-full max-w-[280px] xl:max-w-[360px]">
+              {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
+            </div>
           </div>
 
           <div className="flex min-w-0 items-center justify-end gap-2 xl:gap-2.5">
@@ -173,9 +181,7 @@ export function Header() {
             <LazyMobileMenu brand={renderMobileBrand()} />
           </div>
 
-          <div className="flex items-center gap-0.5">
-            {renderMobileActions()}
-          </div>
+          <div className="flex items-center gap-0.5">{renderMobileActions()}</div>
         </div>
       </div>
     </header>

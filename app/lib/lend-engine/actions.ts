@@ -1,6 +1,19 @@
-import { calculateAvailableLiquidity, calculateCurrentSuppliedBalance, calculateInterestEarned, calculateSuppliedValueUsd, calculateUtilization } from "./formulas"
+import {
+  calculateAvailableLiquidity,
+  calculateCurrentSuppliedBalance,
+  calculateInterestEarned,
+  calculateSuppliedValueUsd,
+  calculateUtilization,
+} from "./formulas"
 import { simulateDeposit, simulateWithdraw } from "./simulation"
-import type { LendAction, LendClaimRewardsIntent, LendDepositIntent, LendPosition, LendSystemState, LendWithdrawIntent } from "./types"
+import type {
+  LendAction,
+  LendClaimRewardsIntent,
+  LendDepositIntent,
+  LendPosition,
+  LendSystemState,
+  LendWithdrawIntent,
+} from "./types"
 
 // A remainder worth less than this after a withdraw is dust (ongoing accrual
 // between quote and execution): sweep it out and close the position rather than
@@ -38,7 +51,11 @@ function updateMarketTotals(market: LendSystemState["markets"][string], deltaSup
   }
 }
 
-export function applyLendAction(state: LendSystemState, action: LendAction, ids: { positionId: string; transactionId: string }): LendSystemState {
+export function applyLendAction(
+  state: LendSystemState,
+  action: LendAction,
+  ids: { positionId: string; transactionId: string },
+): LendSystemState {
   const now = action.at ?? state.now
   if (action.type === "deposit") {
     return applyDeposit(state, action, now, ids)
@@ -215,7 +232,9 @@ function applyClaimRewards(
   now: number,
   ids: { positionId: string; transactionId: string },
 ): LendSystemState {
-  const walletPositions = Object.entries(state.positions).filter(([, position]) => position.walletId === action.walletId)
+  const walletPositions = Object.entries(state.positions).filter(
+    ([, position]) => position.walletId === action.walletId,
+  )
   const claimableUsd = walletPositions.reduce((sum, [, position]) => sum + position.rewardsEarnedUsd, 0)
   if (claimableUsd <= 0) return state
 
@@ -252,7 +271,10 @@ function applyClaimRewards(
   }
 }
 
-export function refreshPositionMetrics(position: LendPosition, market: LendSystemState["markets"][string]): LendPosition {
+export function refreshPositionMetrics(
+  position: LendPosition,
+  market: LendSystemState["markets"][string],
+): LendPosition {
   const currentSuppliedAmount = calculateCurrentSuppliedBalance(position.scaledBalance, market.liquidityIndex)
   return {
     ...position,

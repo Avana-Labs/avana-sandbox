@@ -4,12 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { ArrowUpRight, BadgeDollarSign, Layers3, Search, Sparkles } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import type { BorrowAssetVisual } from "@/app/lib/borrow-sim"
@@ -105,7 +100,13 @@ function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
       )}
     >
       {visual.iconUrl ? (
-        <Image src={visual.iconUrl} alt="" width={TOKEN_ICON_TABLE_PX} height={TOKEN_ICON_TABLE_PX} className="size-full rounded-full object-cover" />
+        <Image
+          src={visual.iconUrl}
+          alt=""
+          width={TOKEN_ICON_TABLE_PX}
+          height={TOKEN_ICON_TABLE_PX}
+          className="size-full rounded-full object-cover"
+        />
       ) : (
         visual.shortLabel
       )}
@@ -124,7 +125,13 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
         )}
       >
         {visuals[0].iconUrl ? (
-          <Image src={visuals[0].iconUrl} alt="" width={TOKEN_ICON_TABLE_PX} height={TOKEN_ICON_TABLE_PX} className="size-full rounded-full object-cover" />
+          <Image
+            src={visuals[0].iconUrl}
+            alt=""
+            width={TOKEN_ICON_TABLE_PX}
+            height={TOKEN_ICON_TABLE_PX}
+            className="size-full rounded-full object-cover"
+          />
         ) : (
           <span className="text-[9px] font-medium">{visuals[0].shortLabel}</span>
         )}
@@ -137,7 +144,13 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
         )}
       >
         {visuals[1].iconUrl ? (
-          <Image src={visuals[1].iconUrl} alt="" width={TOKEN_ICON_TABLE_PX} height={TOKEN_ICON_TABLE_PX} className="size-full rounded-full object-cover" />
+          <Image
+            src={visuals[1].iconUrl}
+            alt=""
+            width={TOKEN_ICON_TABLE_PX}
+            height={TOKEN_ICON_TABLE_PX}
+            className="size-full rounded-full object-cover"
+          />
         ) : (
           <span className="text-[9px] font-medium">{visuals[1].shortLabel}</span>
         )}
@@ -308,7 +321,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
             ? "inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
             : "flex h-9 w-full items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-left text-[14px] font-normal tracking-[-0.01em] text-[#767676] shadow-none lg:h-10 lg:gap-3 lg:px-4 lg:text-[15px] dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground"
         }
-        >
+      >
         {iconOnly ? (
           <Search className="h-5 w-5" />
         ) : (
@@ -339,7 +352,9 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
               role="combobox"
               aria-expanded={flatResults.length > 0}
               aria-controls="search-command-results"
-              aria-activedescendant={flatResults[activeIndex] ? `search-result-${flatResults[activeIndex].id}` : undefined}
+              aria-activedescendant={
+                flatResults[activeIndex] ? `search-result-${flatResults[activeIndex].id}` : undefined
+              }
               placeholder={t("Search pools, borrow assets, lend assets")}
               className="h-8 min-w-0 flex-1 bg-transparent text-[16px] font-normal text-foreground outline-none placeholder:text-muted-foreground"
             />
@@ -368,14 +383,24 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
             {loadingResults && results == null ? (
               <div className="px-5 py-12 text-center">
                 <p className="text-[15px] font-medium text-foreground">{t("Loading results")}</p>
-                <p className="mt-1 text-[13px] text-muted-foreground">{t("Preparing pools, borrow assets, and lend assets.")}</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  {t("Preparing pools, borrow assets, and lend assets.")}
+                </p>
               </div>
             ) : groupedResults.length > 0 ? (
               groupedResults.map(([tab, group]) => (
                 <section key={tab} className="pb-3.5">
                   <div className="flex items-center gap-2 px-3 pb-1.5 pt-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     <SectionIcon tab={tab} />
-                    <span>{t(tab === "pools" ? "Pools to use as collateral" : tab === "borrow" ? "Assets to borrow" : "Assets to lend")}</span>
+                    <span>
+                      {t(
+                        tab === "pools"
+                          ? "Pools to use as collateral"
+                          : tab === "borrow"
+                            ? "Assets to borrow"
+                            : "Assets to lend",
+                      )}
+                    </span>
                     <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/80">
                       {group.length}
                     </span>
@@ -385,39 +410,39 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
                       const flatIndex = flatResults.indexOf(result)
                       const isActive = flatIndex === activeIndex
                       return (
-                      <button
-                        key={result.id}
-                        id={`search-result-${result.id}`}
-                        ref={isActive ? activeItemRef : undefined}
-                        role="option"
-                        aria-selected={isActive}
-                        type="button"
-                        onClick={() => goToResult(result.href)}
-                        onMouseMove={() => setActiveIndex(flatIndex)}
-                        className={cn(
-                          "group flex w-full items-center gap-3 rounded-radius-md px-3 py-2 text-left transition-colors hover:bg-hover",
-                          isActive && "bg-surface-inset",
-                        )}
-                      >
-                        <ResultIcon result={result} />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2">
-                            <span className="truncate text-[14px] font-medium leading-5 text-foreground">
-                              {result.title}
+                        <button
+                          key={result.id}
+                          id={`search-result-${result.id}`}
+                          ref={isActive ? activeItemRef : undefined}
+                          role="option"
+                          aria-selected={isActive}
+                          type="button"
+                          onClick={() => goToResult(result.href)}
+                          onMouseMove={() => setActiveIndex(flatIndex)}
+                          className={cn(
+                            "group flex w-full items-center gap-3 rounded-radius-md px-3 py-2 text-left transition-colors hover:bg-hover",
+                            isActive && "bg-surface-inset",
+                          )}
+                        >
+                          <ResultIcon result={result} />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2">
+                              <span className="truncate text-[14px] font-medium leading-5 text-foreground">
+                                {result.title}
+                              </span>
+                              <span className="hidden shrink-0 rounded-full bg-surface-inset px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-flex">
+                                {t(result.eyebrow)}
+                              </span>
                             </span>
-                            <span className="hidden shrink-0 rounded-full bg-surface-inset px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-flex">
-                              {t(result.eyebrow)}
+                            <span className="block truncate text-[12px] leading-5 text-muted-foreground">
+                              {result.subtitle}
                             </span>
                           </span>
-                          <span className="block truncate text-[12px] leading-5 text-muted-foreground">
-                            {result.subtitle}
+                          <span className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-muted-foreground group-hover:text-foreground">
+                            {result.metric}
+                            <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
                           </span>
-                        </span>
-                        <span className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-muted-foreground group-hover:text-foreground">
-                          {result.metric}
-                          <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
-                        </span>
-                      </button>
+                        </button>
                       )
                     })}
                   </div>
@@ -426,7 +451,9 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
             ) : (
               <div className="px-5 py-12 text-center">
                 <p className="text-[15px] font-medium text-foreground">{t("No results found")}</p>
-                <p className="mt-1 text-[13px] text-muted-foreground">{t("Try a token symbol, pool pair, or action like borrow.")}</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  {t("Try a token symbol, pool pair, or action like borrow.")}
+                </p>
               </div>
             )}
           </div>

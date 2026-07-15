@@ -18,7 +18,12 @@ import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
 import { computeAssetAllocationRows } from "@/app/lib/borrow-detail/allocation"
-import { buildAssetRiskAssessment, buildLendRiskAssessment, buildMultiplyRiskAssessment, buildPoolRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
+import {
+  buildAssetRiskAssessment,
+  buildLendRiskAssessment,
+  buildMultiplyRiskAssessment,
+  buildPoolRiskAssessment,
+} from "@/app/lib/borrow-detail/risk-model"
 import { buildAssetFaqs, buildLendFaqs, buildMultiplyFaqs, buildPoolFaqs } from "@/app/lib/borrow-detail/content-model"
 import { getAssetAboutCard } from "@/app/lib/borrow-detail/asset.mock"
 import { getPoolAboutCard } from "@/app/lib/borrow-detail/pool.mock"
@@ -94,7 +99,13 @@ export type SeedRiskRow = {
   score: number
   headline: string
   summary: string
-  breakdown: { id: string; label: string; bps: number; level: "low" | "moderate" | "elevated" | "high"; description: string }[]
+  breakdown: {
+    id: string
+    label: string
+    bps: number
+    level: "low" | "moderate" | "elevated" | "high"
+    description: string
+  }[]
   metrics: { id: string; label: string; value: string; hint?: string }[]
 }
 
@@ -181,7 +192,14 @@ function schemaCategory(category: string): "stable" | "crypto" {
  * non-negative, seeded by `${slug}:${metric}` so it's reproducible and each market
  * looks distinct. `noise` here is the per-step volatility (random-walk step size).
  */
-function dailyWalk(slug: string, metric: string, base: number, asOf: number, days: number, opts: { drift?: number; noise?: number; wave?: number } = {}): { day: string; value: number }[] {
+function dailyWalk(
+  slug: string,
+  metric: string,
+  base: number,
+  asOf: number,
+  days: number,
+  opts: { drift?: number; noise?: number; wave?: number } = {},
+): { day: string; value: number }[] {
   const rand = prngFromString(`${slug}:${metric}`)
   const drift = opts.drift ?? 1.06
   const volatility = opts.noise ?? 0.05
@@ -305,7 +323,10 @@ function dailyStatsForLendMarket(
     const borrowedUsd = round((suppliedUsd * utilizationPct) / 100, 0)
     const supplyApyPct = round(Math.max(0.01, apy[i]!.value), 2)
     // Implied borrow APR from supply = borrow · utilization · (1 − reserveFactor).
-    const borrowAprPct = round(supplyApyPct / Math.max(0.05, utilizationPct / 100) / Math.max(0.5, 1 - base.reserveFactor), 2)
+    const borrowAprPct = round(
+      supplyApyPct / Math.max(0.05, utilizationPct / 100) / Math.max(0.5, 1 - base.reserveFactor),
+      2,
+    )
     return {
       slug,
       day: s.day,
@@ -427,7 +448,10 @@ const WALLET_EVENT_KINDS = ["supply", "borrow", "repay", "withdraw"] as const
 
 function hex(rand: () => number, length: number): string {
   let out = ""
-  while (out.length < length) out += Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")
+  while (out.length < length)
+    out += Math.floor(rand() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")
   return out.slice(0, length)
 }
 
@@ -509,7 +533,8 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
 
   for (const pool of BORROW_POOL_CATALOG) {
     markets.push(poolMarketRow(pool, asOf))
-    const utilizationPct = pool.tvlUsd > 0 ? Math.min(95, Math.max(5, round((pool.availableUsd / pool.tvlUsd) * 100, 2))) : 45
+    const utilizationPct =
+      pool.tvlUsd > 0 ? Math.min(95, Math.max(5, round((pool.availableUsd / pool.tvlUsd) * 100, 2))) : 45
     const stats = dailyStatsForMarket(
       pool.id,
       "pool",
@@ -612,13 +637,23 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       slug: market.marketId,
       description: `${market.asset.name} (${market.asset.symbol}) is a single-asset supply market on Avana. Deposit to earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""}, and withdraw available liquidity anytime. Yield tracks borrow demand and utilization.`,
       stats: [
-        { label: "Risk tier", value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High" },
+        {
+          label: "Risk tier",
+          value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High",
+        },
         { label: "Reserve factor", value: `${(market.reserveFactor * 100).toFixed(0)}%` },
-        { label: "Status", value: market.status === "active" ? "Active" : market.status === "capped" ? "Capped" : "Paused" },
+        {
+          label: "Status",
+          value: market.status === "active" ? "Active" : market.status === "capped" ? "Capped" : "Paused",
+        },
       ],
       history: [
         { date: "2025-01-20", title: "Listed", description: `${market.asset.symbol} supply market opened.` },
-        { date: "2025-09-08", title: "Parameters reviewed", description: "Quarterly risk review — reserve factor unchanged." },
+        {
+          date: "2025-09-08",
+          title: "Parameters reviewed",
+          description: "Quarterly risk review — reserve factor unchanged.",
+        },
       ],
       faqs: buildLendFaqs(market.asset.symbol, market.asset.name),
     })
@@ -652,11 +687,22 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
         { label: "Collateral", value: market.collateralAsset.symbol },
         { label: "Borrowable", value: market.borrowAsset.symbol },
         { label: "Max leverage", value: `${market.risk.publicMaxMultiplier.toFixed(2)}x` },
-        { label: "Risk tier", value: market.risk.riskTier === "low" ? "Low" : market.risk.riskTier === "medium" ? "Medium" : "High" },
+        {
+          label: "Risk tier",
+          value: market.risk.riskTier === "low" ? "Low" : market.risk.riskTier === "medium" ? "Medium" : "High",
+        },
       ],
       history: [
-        { date: "2025-08-12", title: "Market listed", description: `${market.collateralAsset.symbol}/${market.borrowAsset.symbol} added to Multiply.` },
-        { date: "2026-01-18", title: "Risk limits refreshed", description: "Updated leverage and availability parameters." },
+        {
+          date: "2025-08-12",
+          title: "Market listed",
+          description: `${market.collateralAsset.symbol}/${market.borrowAsset.symbol} added to Multiply.`,
+        },
+        {
+          date: "2026-01-18",
+          title: "Risk limits refreshed",
+          description: "Updated leverage and availability parameters.",
+        },
       ],
       faqs: buildMultiplyFaqs(market.collateralAsset.symbol, market.borrowAsset.symbol),
     })

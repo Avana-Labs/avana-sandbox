@@ -41,7 +41,9 @@ export function LendHeroIdentity({
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-foreground">{detail.hero.name}</h1>
+              <h1 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-foreground">
+                {detail.hero.name}
+              </h1>
               <BadgeCheck
                 className="h-[24px] w-[24px] shrink-0 -translate-y-[3px] fill-muted-foreground text-background"
                 aria-hidden="true"
@@ -69,7 +71,9 @@ export function LendHeroIdentity({
         <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
           <HeroIcon
             label={t("Search")}
-            onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")}
+            onClick={() =>
+              window.open(`https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")
+            }
           >
             <Search className="h-3.5 w-3.5" />
           </HeroIcon>
@@ -84,7 +88,10 @@ export function LendHeroIdentity({
           >
             <Globe className="h-3.5 w-3.5" />
           </HeroIcon>
-          <HeroIcon label={t("X")} onClick={() => window.open(`https://x.com/search?q=${encodeURIComponent(detail.hero.symbol)}`, "_blank")}>
+          <HeroIcon
+            label={t("X")}
+            onClick={() => window.open(`https://x.com/search?q=${encodeURIComponent(detail.hero.symbol)}`, "_blank")}
+          >
             <XIcon />
           </HeroIcon>
           <HeroIcon label={t("Share")} onClick={() => navigator.clipboard.writeText(window.location.href)}>
@@ -119,10 +126,21 @@ export function LendHero({ detail, leading, actions, className, hideIdentity = f
 
 function TokenAvatar({ visual }: { visual: LendMarketDetail["hero"]["visual"] }) {
   return (
-    <span role="img" className={cn("inline-flex size-12 items-center justify-center", visual.textClass)} aria-label={visual.symbol}>
+    <span
+      role="img"
+      className={cn("inline-flex size-12 items-center justify-center", visual.textClass)}
+      aria-label={visual.symbol}
+    >
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={visual.iconUrl} alt="" className="size-12 object-contain" width={48} height={48} fetchPriority="high" />
+        <img
+          src={visual.iconUrl}
+          alt=""
+          className="size-12 object-contain"
+          width={48}
+          height={48}
+          fetchPriority="high"
+        />
       ) : (
         <span className="text-[12px] font-medium">{visual.shortLabel}</span>
       )}

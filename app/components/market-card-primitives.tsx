@@ -55,7 +55,11 @@ export function MarketMobileMetric({
 }) {
   return (
     <>
-      <div className={cn("font-data text-[18px] font-medium tabular-nums text-foreground dark:text-white", valueClassName)}>{value}</div>
+      <div
+        className={cn("font-data text-[18px] font-medium tabular-nums text-foreground dark:text-white", valueClassName)}
+      >
+        {value}
+      </div>
       <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
     </>
   )
@@ -115,8 +119,12 @@ export function MarketMobileInsetStat({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-2 py-2.5">
-      <span className={cn("font-data text-[14px] font-medium tabular-nums text-foreground", valueClassName)}>{value}</span>
-      <span className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
+      <span className={cn("font-data text-[14px] font-medium tabular-nums text-foreground", valueClassName)}>
+        {value}
+      </span>
+      <span className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+        {label}
+      </span>
     </div>
   )
 }

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 import { parseFixed, validateAction } from "@/app/lib/credit-engine"
-import { EXAMPLE_CURVE_MARKET_ID, EXAMPLE_CURVE_USDT_ASSET_ID, EXAMPLE_UNI_MARKET_ID, EXAMPLE_UNI_USDC_ASSET_ID, EXAMPLE_WALLET_1_DEBT_ID, makeExampleBorrowSystemState } from "./fixtures"
+import {
+  EXAMPLE_CURVE_MARKET_ID,
+  EXAMPLE_CURVE_USDT_ASSET_ID,
+  EXAMPLE_UNI_MARKET_ID,
+  EXAMPLE_UNI_USDC_ASSET_ID,
+  EXAMPLE_WALLET_1_DEBT_ID,
+  makeExampleBorrowSystemState,
+} from "./fixtures"
 
 describe("credit engine action validation", () => {
   it("blocks invalid amounts", () => {
@@ -89,8 +96,22 @@ describe("credit engine action validation", () => {
   })
 
   it.each([
-    ["borrow", { type: "borrow" as const, walletId: "wallet-1", marketId: EXAMPLE_UNI_MARKET_ID, assetId: EXAMPLE_UNI_USDC_ASSET_ID, amountUsd6: 0n }, "Borrow amount must be positive"],
-    ["repay", { type: "repay" as const, walletId: "wallet-1", debtPositionId: EXAMPLE_WALLET_1_DEBT_ID, amountUsd6: 0n }, "Repay amount must be positive"],
+    [
+      "borrow",
+      {
+        type: "borrow" as const,
+        walletId: "wallet-1",
+        marketId: EXAMPLE_UNI_MARKET_ID,
+        assetId: EXAMPLE_UNI_USDC_ASSET_ID,
+        amountUsd6: 0n,
+      },
+      "Borrow amount must be positive",
+    ],
+    [
+      "repay",
+      { type: "repay" as const, walletId: "wallet-1", debtPositionId: EXAMPLE_WALLET_1_DEBT_ID, amountUsd6: 0n },
+      "Repay amount must be positive",
+    ],
     [
       "supplyCollateral",
       { type: "supplyCollateral" as const, walletId: "wallet-1", marketId: EXAMPLE_UNI_MARKET_ID, amountUsd6: 0n },

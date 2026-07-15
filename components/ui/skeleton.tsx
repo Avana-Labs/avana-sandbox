@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils"
 
 /**
  * Skeleton placeholder. A soft, theme-adaptive shimmer sweeps across a gently
@@ -11,10 +11,7 @@ import { cn } from '@/lib/utils'
  * than a screen reader crawling over dozens of empty placeholder blocks. Pass
  * `aria-hidden={false}` to opt a specific placeholder back in.
  */
-function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       aria-hidden="true"

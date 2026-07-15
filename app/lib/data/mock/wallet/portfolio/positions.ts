@@ -92,7 +92,7 @@ export const WALLET_COLLATERALS: PortfolioCollateralRecord[] = [
     walletProfileId: "demo-wallet",
     pool: ETH_USDC_POOL,
     borrowedUsd: 12_400,
-    healthFactor: 2.60,
+    healthFactor: 2.6,
     pairApr: 5.3,
     feesUsd: 418,
   },
@@ -110,7 +110,7 @@ export const WALLET_COLLATERALS: PortfolioCollateralRecord[] = [
     walletProfileId: "demo-wallet",
     pool: USDC_USDT_POOL,
     borrowedUsd: 6_200,
-    healthFactor: 2.50,
+    healthFactor: 2.5,
     pairApr: 3.1,
     feesUsd: 186,
   },
@@ -179,7 +179,7 @@ export const WALLET_MULTIPLY_COLLATERALS: PortfolioMultiplyCollateralRecord[] = 
     borrowableToken: "USDC",
     multiplier: 4,
     protocol: "Uniswap v3 Bluechip",
-    healthFactor: 2.60,
+    healthFactor: 2.6,
     collateralUsd: 36_000,
     borrowPowerUsd: 27_800,
   },
@@ -248,7 +248,10 @@ export function getWalletMultiplyPositions(walletProfileId: string) {
 }
 
 export function getWalletMultiplyCreditLines(walletProfileId: string) {
-  return WALLET_MULTIPLY_CREDIT_LINES.find((record) => record.walletProfileId === walletProfileId) ?? WALLET_MULTIPLY_CREDIT_LINES[0]
+  return (
+    WALLET_MULTIPLY_CREDIT_LINES.find((record) => record.walletProfileId === walletProfileId) ??
+    WALLET_MULTIPLY_CREDIT_LINES[0]
+  )
 }
 
 export function getWalletMultiplyCollaterals(walletProfileId: string) {

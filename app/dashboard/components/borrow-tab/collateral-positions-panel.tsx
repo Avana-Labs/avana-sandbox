@@ -46,7 +46,11 @@ export function CollateralPositionsPanel({
       help: "Blended supply yield across your deposited assets.",
       valueClassName: "text-brand",
     },
-    { label: "Interest Earned", value: m(exact(summary.interestEarnedUsd)), help: "Total yield accrued across your deposits." },
+    {
+      label: "Interest Earned",
+      value: m(exact(summary.interestEarnedUsd)),
+      help: "Total yield accrued across your deposits.",
+    },
   ]
 
   const detailHref = (marketId: string) => `/lend/markets/${marketId}`
@@ -123,13 +127,23 @@ export function CollateralPositionsPanel({
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.depositedToken)} usd={m(exact(row.depositedUsd))} />
                     </td>
-                    <td className={cn("py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white", TABLE_ROW_HOVER_BG)}>
+                    <td
+                      className={cn(
+                        "py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white",
+                        TABLE_ROW_HOVER_BG,
+                      )}
+                    >
                       {row.apyPct.toFixed(2)}%
                     </td>
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.earningsToken)} usd={m(exact(row.earningsUsd))} />
                     </td>
-                    <td className={cn("py-3.5 text-right font-data text-[15px] tabular-nums text-foreground", TABLE_ROW_HOVER_BG)}>
+                    <td
+                      className={cn(
+                        "py-3.5 text-right font-data text-[15px] tabular-nums text-foreground",
+                        TABLE_ROW_HOVER_BG,
+                      )}
+                    >
                       {row.collateralFactorPct.toFixed(0)}%
                     </td>
                     <td className={cn("py-3.5 text-right text-[13px] text-foreground", TABLE_ROW_HOVER_BG)}>
@@ -196,7 +210,9 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
     <div className="flex items-center gap-2.5">
       <TokenIcon symbol={symbol} size="table" />
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{name}</span>
+        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+          {name}
+        </span>
         <span className="text-[11px] text-muted-foreground">{symbol}</span>
       </div>
     </div>
@@ -244,7 +260,9 @@ function CollateralMobileCard({
           <div className="flex min-w-0 items-center gap-2.5">
             <TokenIcon symbol={row.symbol} size="table" />
             <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.name}</div>
+              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                {row.name}
+              </div>
               <div className="text-[11px] text-muted-foreground">{row.symbol}</div>
             </div>
           </div>
@@ -271,11 +289,21 @@ function CollateralMobileCard({
           }
         />
         <MarketMobileStatRow
-          label={<MetricHeader label={t("Collateral Factor")} help="Maximum percentage of an asset's value that can be borrowed against" />}
+          label={
+            <MetricHeader
+              label={t("Collateral Factor")}
+              help="Maximum percentage of an asset's value that can be borrowed against"
+            />
+          }
           value={`${row.collateralFactorPct.toFixed(0)}%`}
         />
         <MarketMobileStatRow
-          label={<MetricHeader label={t("Use as collateral")} help="Whether this asset can be used as collateral for borrowing" />}
+          label={
+            <MetricHeader
+              label={t("Use as collateral")}
+              help="Whether this asset can be used as collateral for borrowing"
+            />
+          }
           value={t(row.collateralEnabled ? "Yes" : "No")}
         />
       </MarketMobileStatList>

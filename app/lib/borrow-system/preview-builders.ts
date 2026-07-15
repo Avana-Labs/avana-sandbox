@@ -48,18 +48,23 @@ export function buildBorrowPreviewModel(
     amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
   })
 
-    return {
-      isEmpty: false,
-      isValid: preview.allowed,
-      exceedsBorrowPower: !preview.allowed,
-      healthFactor: healthFactorToNumber(preview.after.metrics.healthFactorWad),
-      remainingBorrowPowerUsd: fixedToNumber(preview.after.metrics.availableBorrowCapacityUsd6, 6),
-      progressPercent:
+  return {
+    isEmpty: false,
+    isValid: preview.allowed,
+    exceedsBorrowPower: !preview.allowed,
+    healthFactor: healthFactorToNumber(preview.after.metrics.healthFactorWad),
+    remainingBorrowPowerUsd: fixedToNumber(preview.after.metrics.availableBorrowCapacityUsd6, 6),
+    progressPercent:
       preview.before.metrics.borrowCapacityUsd6 > 0n
-        ? Math.min(100, (fixedToNumber(preview.after.metrics.totalBorrowedUsd6, 6) / fixedToNumber(preview.before.metrics.borrowCapacityUsd6, 6)) * 100)
+        ? Math.min(
+            100,
+            (fixedToNumber(preview.after.metrics.totalBorrowedUsd6, 6) /
+              fixedToNumber(preview.before.metrics.borrowCapacityUsd6, 6)) *
+              100,
+          )
         : 0,
-      warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,
-    }
+    warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,
+  }
 }
 
 export function buildRepayPreviewModel(
@@ -68,7 +73,9 @@ export function buildRepayPreviewModel(
   debtPositionId: string | null,
   amountUsd: number,
 ) {
-  const debtPosition = debtPositionId ? state.accounts[walletId]?.debtPositions.find((position) => position.id === debtPositionId) ?? null : null
+  const debtPosition = debtPositionId
+    ? (state.accounts[walletId]?.debtPositions.find((position) => position.id === debtPositionId) ?? null)
+    : null
   const currentDebtUsd = debtPosition ? fixedToNumber(currentDebtValueUsd6(debtPosition), 6) : 0
 
   if (amountUsd <= 0 || !debtPosition) {
@@ -89,7 +96,8 @@ export function buildRepayPreviewModel(
     debtPositionId: debtPosition.id,
     amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
   })
-  const nextPosition = preview.after.state.accounts[walletId]?.debtPositions.find((position) => position.id === debtPosition.id) ?? null
+  const nextPosition =
+    preview.after.state.accounts[walletId]?.debtPositions.find((position) => position.id === debtPosition.id) ?? null
 
   return {
     isEmpty: false,
@@ -97,9 +105,11 @@ export function buildRepayPreviewModel(
     exceedsDebt: amountUsd > currentDebtUsd,
     remainingDebtUsd: nextPosition ? fixedToNumber(currentDebtValueUsd6(nextPosition), 6) : 0,
     healthFactorAfter: healthFactorToNumber(preview.after.metrics.healthFactorWad),
-      yearlyInterestSavedUsd: debtPosition ? Math.min(amountUsd, currentDebtUsd) * fixedToNumber(debtPosition.borrowRateWad, 18) : 0,
-      warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,
-    }
+    yearlyInterestSavedUsd: debtPosition
+      ? Math.min(amountUsd, currentDebtUsd) * fixedToNumber(debtPosition.borrowRateWad, 18)
+      : 0,
+    warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,
+  }
 }
 
 export function buildWithdrawPreviewModel(

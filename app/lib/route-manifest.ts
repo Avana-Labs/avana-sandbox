@@ -9,14 +9,10 @@ const ROUTE_MANIFEST_TAG = "site-route-manifest"
 export { SITE_STATIC_ROUTES }
 
 /** Caches server route metadata to avoid recalculating the route manifest on every request. */
-export const getCachedRouteManifest = unstable_cache(
-  async () => SITE_STATIC_ROUTES,
-  ["site-route-manifest"],
-  {
-    revalidate: 3600,
-    tags: [ROUTE_MANIFEST_TAG],
-  },
-)
+export const getCachedRouteManifest = unstable_cache(async () => SITE_STATIC_ROUTES, ["site-route-manifest"], {
+  revalidate: 3600,
+  tags: [ROUTE_MANIFEST_TAG],
+})
 
 /** Allows future content updates to invalidate the cached route manifest by tag. */
 export async function refreshRouteManifest() {

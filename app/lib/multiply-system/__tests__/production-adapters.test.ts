@@ -37,7 +37,9 @@ describe("multiply production adapters", () => {
   })
 
   it("creates live intents and delegates preview and execution", async () => {
-    const previewTransaction = vi.fn(async (intent: MultiplyTransactionIntent) => ({ intent }) as MultiplyTransactionPreview)
+    const previewTransaction = vi.fn(
+      async (intent: MultiplyTransactionIntent) => ({ intent }) as MultiplyTransactionPreview,
+    )
     const executeTransaction = vi.fn(async () => null as never)
     const adapter = new ProductionMultiplyTransactionAdapter({
       previewTransaction,

@@ -250,9 +250,7 @@ export function buildPortfolioLendData(
   history: LendTransactionHistoryItem[] = [],
 ): PortfolioLendTabData {
   const walletPositions = Object.values(state.positions).filter((position) => position.walletId === walletId)
-  const positions = walletPositions.filter(
-    (position) => position.walletId === walletId && position.status === "active",
-  )
+  const positions = walletPositions.filter((position) => position.walletId === walletId && position.status === "active")
   const claimableRewardsUsd = walletPositions.reduce((sum, position) => sum + position.rewardsEarnedUsd, 0)
   const closedRewardsUsd = walletPositions
     .filter((position) => position.status === "closed")
@@ -301,10 +299,11 @@ export function buildLendWalletSnapshot(
 ): LendWalletReadSnapshot {
   const portfolio = buildPortfolioLendData(walletId, state, transactionHistory)
   const totalSuppliedUsd = portfolio.investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
-  const totalEarnedUsd = portfolio.rewardsSummary?.totalEarnedUsd ?? portfolio.investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  const totalEarnedUsd =
+    portfolio.rewardsSummary?.totalEarnedUsd ?? portfolio.investments.reduce((sum, item) => sum + item.earnedUsd, 0)
   const rewardsEarnedUsd =
     portfolio.rewardsSummary?.claimableUsd ??
-    portfolio.investments.reduce((sum, item) => sum + (item.earnedUsd - ((item.interestEarned ?? 0) * item.priceUsd)), 0)
+    portfolio.investments.reduce((sum, item) => sum + (item.earnedUsd - (item.interestEarned ?? 0) * item.priceUsd), 0)
   const averageApy =
     portfolio.investments.length === 0
       ? 0
@@ -358,14 +357,16 @@ export function buildLendActivityHistory(
             ? ("withdraw" as const)
             : ("claim" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
-      amountUsd: item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
+      amountUsd:
+        item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
       primaryLabel:
         item.kind === "deposit"
           ? "Simulated deposit"
           : item.kind === "withdraw"
             ? "Simulated withdraw"
             : "Simulated rewards claim",
-      secondaryLabel: item.kind === "claim" ? `${item.amount.toFixed(2)} USD rewards` : `${item.amount.toFixed(4)} ${item.asset}`,
+      secondaryLabel:
+        item.kind === "claim" ? `${item.amount.toFixed(2)} USD rewards` : `${item.amount.toFixed(4)} ${item.asset}`,
       txHash: item.hash,
     }))
 }
@@ -422,7 +423,10 @@ function buildRangePoints(params: {
 
   const historyCount = params.history.length
   for (const [index, item] of params.history.entries()) {
-    const pointIndex = historyCount === 1 ? Math.floor(pointCount * 0.6) : Math.round((index / Math.max(1, historyCount - 1)) * (pointCount - 2))
+    const pointIndex =
+      historyCount === 1
+        ? Math.floor(pointCount * 0.6)
+        : Math.round((index / Math.max(1, historyCount - 1)) * (pointCount - 2))
     const delta = item.kind === "supply" ? item.amountUsd : -item.amountUsd
     for (let cursor = pointIndex; cursor < points.length; cursor += 1) {
       points[cursor]!.value = Math.max(0, points[cursor]!.value + delta)
@@ -445,10 +449,7 @@ function buildRangePoints(params: {
 
 export { buildLendRangeData }
 
-export function mapLendHistoryToDetailRows(
-  history: LendTransactionHistoryItem[],
-  assetSymbol: string,
-) {
+export function mapLendHistoryToDetailRows(history: LendTransactionHistoryItem[], assetSymbol: string) {
   const now = Date.now()
   return history.map((item) => ({
     id: item.id,

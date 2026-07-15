@@ -32,9 +32,7 @@ export const PillTabButton = React.forwardRef<HTMLButtonElement, PillTabButtonPr
       className={cn(
         "relative h-9 rounded-none px-3 text-[12px] font-medium hover:bg-transparent",
         "after:pointer-events-none after:absolute after:inset-x-3 after:-bottom-px after:h-[2px] after:bg-transparent after:transition-colors after:content-['']",
-        active
-          ? "text-foreground after:bg-foreground"
-          : "text-muted-foreground hover:text-foreground",
+        active ? "text-foreground after:bg-foreground" : "text-muted-foreground hover:text-foreground",
         className,
       )}
       {...props}

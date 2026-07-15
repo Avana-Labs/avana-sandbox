@@ -78,7 +78,11 @@ export function ActionSelectStage({
             >
               <div className="flex min-w-0 items-center gap-3">
                 {item.pairSymbols ? (
-                  <ActionTokenPairIcon collateralSymbol={item.pairSymbols[0]} borrowSymbol={item.pairSymbols[1]} size="md" />
+                  <ActionTokenPairIcon
+                    collateralSymbol={item.pairSymbols[0]}
+                    borrowSymbol={item.pairSymbols[1]}
+                    size="md"
+                  />
                 ) : (
                   <ActionTokenIcon symbol={item.symbol} />
                 )}

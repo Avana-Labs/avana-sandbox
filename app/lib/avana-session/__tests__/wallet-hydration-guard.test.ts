@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  HYDRATION_GATE_TTL_MS,
-  pendingHydrationIntentIds,
-  shouldApplyHydration,
-} from "../wallet-hydration-guard"
+import { HYDRATION_GATE_TTL_MS, pendingHydrationIntentIds, shouldApplyHydration } from "../wallet-hydration-guard"
 
 const snap = (intentIds: Array<string | undefined | null>) => ({
   transactions: intentIds.map((intentId) => ({ intentId })),
@@ -48,10 +44,7 @@ describe("pendingHydrationIntentIds (freeze guard, C-3)", () => {
   })
 
   it("gates on recent success/pending intents", () => {
-    const pending = pendingHydrationIntentIds(
-      [item("a", "success", 100), item("b", "pending", 100)],
-      now,
-    )
+    const pending = pendingHydrationIntentIds([item("a", "success", 100), item("b", "pending", 100)], now)
     expect([...pending].sort()).toEqual(["a", "b"])
   })
 

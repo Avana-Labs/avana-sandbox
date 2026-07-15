@@ -19,8 +19,7 @@ export function useWrongNetwork(): WrongNetworkState {
   const { switchChainAsync, isPending } = useSwitchChain()
   const [switchError, setSwitchError] = useState<string | null>(null)
 
-  const isWrongNetwork =
-    !IS_DEV_SHORTCUT_MODE && isConnected && chainId != null && chainId !== TARGET_CHAIN_ID
+  const isWrongNetwork = !IS_DEV_SHORTCUT_MODE && isConnected && chainId != null && chainId !== TARGET_CHAIN_ID
 
   const switchToTargetChain = useCallback(async (): Promise<boolean> => {
     setSwitchError(null)
@@ -31,9 +30,7 @@ export function useWrongNetwork(): WrongNetworkState {
       // A user rejecting the wallet prompt (or a wallet that can't switch) must not
       // crash the app — surface it and let them retry.
       setSwitchError(
-        error instanceof Error && error.message
-          ? error.message
-          : `Could not switch to ${TARGET_CHAIN_NAME}.`,
+        error instanceof Error && error.message ? error.message : `Could not switch to ${TARGET_CHAIN_NAME}.`,
       )
       return false
     }

@@ -10,22 +10,41 @@ import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { DeferredDetailContent, DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import {
-  MarketHero,
-  MarketHeroIdentity,
-  MarketSidebar,
-} from "@/app/multiply/_detail"
+  DeferredDetailContent,
+  DetailPageNotice,
+  DetailPageWidth,
+  MobileDetailActionBar,
+} from "@/app/components/detail-page-primitives"
+import { MarketHero, MarketHeroIdentity, MarketSidebar } from "@/app/multiply/_detail"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 
 type Props = { detail: MultiplyMarketDetail }
 
-const SupplyBorrowCard = dynamic(() => import("@/app/multiply/_detail/pool-sections/SupplyBorrowCard").then((mod) => mod.SupplyBorrowCard), { ssr: false })
-const CashflowCard = dynamic(() => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard), { ssr: false })
-const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection), { ssr: false })
-const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection), { ssr: false })
-const TransactionHistoryCard = dynamic(() => import("@/app/multiply/_detail/pool-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard), { ssr: false })
-const RelatedMarketsRow = dynamic(() => import("@/app/multiply/_detail/pool-sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow), { ssr: false })
+const SupplyBorrowCard = dynamic(
+  () => import("@/app/multiply/_detail/pool-sections/SupplyBorrowCard").then((mod) => mod.SupplyBorrowCard),
+  { ssr: false },
+)
+const CashflowCard = dynamic(
+  () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
+  { ssr: false },
+)
+const RiskSection = dynamic(
+  () => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection),
+  { ssr: false },
+)
+const DetailFaqSection = dynamic(
+  () => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection),
+  { ssr: false },
+)
+const TransactionHistoryCard = dynamic(
+  () => import("@/app/multiply/_detail/pool-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
+  { ssr: false },
+)
+const RelatedMarketsRow = dynamic(
+  () => import("@/app/multiply/_detail/pool-sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow),
+  { ssr: false },
+)
 
 export function MarketDetailClient({ detail }: Props) {
   const session = useMultiplySessionContext()
@@ -46,7 +65,10 @@ export function MarketDetailClient({ detail }: Props) {
       <main className="pb-24 pt-8 md:pb-12">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
-            <nav aria-label={t("Breadcrumb")} className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
+            <nav
+              aria-label={t("Breadcrumb")}
+              className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]"
+            >
               <Link href="/multiply" className="transition-colors hover:text-foreground">
                 {t("Multiply")}
               </Link>
@@ -74,7 +96,9 @@ export function MarketDetailClient({ detail }: Props) {
                 />
 
                 <section aria-label={t("Multiply market analytics")} className="space-y-12 pt-12">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Key Statistics</h2>
+                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+                    Key Statistics
+                  </h2>
                   <QuickStatsGrid detail={detail} />
                   <DeferredDetailContent className="space-y-12">
                     <SupplyBorrowCard detail={detail} />

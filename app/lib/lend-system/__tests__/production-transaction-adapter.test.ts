@@ -113,7 +113,11 @@ describe("ProductionLendTransactionAdapter", () => {
       walletBalance: 3,
     })
 
-    await expect(adapter.previewTransaction(intent)).rejects.toThrow("Production lend transaction adapter is not implemented")
-    await expect(adapter.executeTransaction(intent)).rejects.toThrow("Production lend transaction adapter is not implemented")
+    await expect(adapter.previewTransaction(intent)).rejects.toThrow(
+      "Production lend transaction adapter is not implemented",
+    )
+    await expect(adapter.executeTransaction(intent)).rejects.toThrow(
+      "Production lend transaction adapter is not implemented",
+    )
   })
 })

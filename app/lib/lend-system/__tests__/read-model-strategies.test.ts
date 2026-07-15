@@ -65,8 +65,7 @@ describe("buildLendStrategyBuckets", () => {
       const apys = bucket.pools.map((pool) => pool.apyPct)
       const min = Math.min(...apys)
       const max = Math.max(...apys)
-      const expected =
-        min === max ? `${max.toFixed(1)}% APY` : `${min.toFixed(1)}-${max.toFixed(1)}% APY range`
+      const expected = min === max ? `${max.toFixed(1)}% APY` : `${min.toFixed(1)}-${max.toFixed(1)}% APY range`
       expect(bucket.apyRangeLabel).toBe(expected)
     }
   })
@@ -105,6 +104,6 @@ describe("buildLendStrategyBuckets", () => {
     // The figure is the annualized run-rate divided by 365 — a projection, so it is
     // non-zero even though the seconds-old position has accrued nothing yet.
     expect(seeded!.earnedUsd).toBe(0)
-    expect(seeded!.dailyEarnedUsd).toBeCloseTo((seeded!.suppliedUsd * (market.totalApy)) / 365, 6)
+    expect(seeded!.dailyEarnedUsd).toBeCloseTo((seeded!.suppliedUsd * market.totalApy) / 365, 6)
   })
 })

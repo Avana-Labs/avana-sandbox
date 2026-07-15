@@ -3,12 +3,7 @@
 import { Check } from "lucide-react"
 import { HOME_BORROW_TOKENS, type HomeBorrowToken } from "@/app/lib/home-sim"
 import { TokenBubble } from "@/app/components/home-workspace-primitives"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 

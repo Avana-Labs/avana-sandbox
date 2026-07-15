@@ -31,7 +31,15 @@ export function AssetTokenActions({ detail, className }: Props) {
   return <TokenRail detail={detail} className={className} />
 }
 
-function TokenRail({ detail, className, embedActions = false }: { detail: AssetDetail; className?: string; embedActions?: boolean }) {
+function TokenRail({
+  detail,
+  className,
+  embedActions = false,
+}: {
+  detail: AssetDetail
+  className?: string
+  embedActions?: boolean
+}) {
   const { t } = useTranslation()
   const router = useRouter()
   // This is a Borrow-section asset detail page, so the primary action must be a
@@ -71,48 +79,11 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
         />
 
         <div className="mt-3">
-            {tab === "borrow" ? (
-              canBorrowFromSession && borrowContext ? (
-                embedActions ? (
-                  <ResponsiveBorrowAction
-                    kind="borrow"
-                    market={borrowContext.id}
-                    asset={detail.row.id}
-                    closeHref={closeHref}
-                    sidebar
-                  />
-                ) : (
-                  <ActionPageLaunchCta
-                    product="borrow"
-                    kind="borrow"
-                    market={borrowContext.id}
-                    asset={detail.row.id}
-                    returnTo={closeHref}
-                  />
-                )
-              ) : (
-                <div className="rounded-radius-md border border-border bg-surface-raised px-5 py-4">
-                  <p className="text-[15px] leading-6 text-muted-foreground">
-                    {t("Deposit compatible collateral from {spoke} before borrowing {symbol}.")
-                      .replace("{spoke}", detail.row.spokeLabel)
-                      .replace("{symbol}", detail.hero.symbol)}
-                  </p>
-                  <Button
-                    type="button"
-                    className="mt-4 h-11 rounded-radius-lg bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90"
-                    onClick={() => setDepositPromptOpen(true)}
-                    disabled={!fallbackMarket}
-                  >
-                    {t("Pledge")}
-                  </Button>
-                </div>
-              )
-            ) : null}
-
-            {tab === "repay" && borrowContext ? (
+          {tab === "borrow" ? (
+            canBorrowFromSession && borrowContext ? (
               embedActions ? (
                 <ResponsiveBorrowAction
-                  kind="repay"
+                  kind="borrow"
                   market={borrowContext.id}
                   asset={detail.row.id}
                   closeHref={closeHref}
@@ -121,13 +92,50 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
               ) : (
                 <ActionPageLaunchCta
                   product="borrow"
-                  kind="repay"
+                  kind="borrow"
                   market={borrowContext.id}
                   asset={detail.row.id}
                   returnTo={closeHref}
                 />
               )
-            ) : null}
+            ) : (
+              <div className="rounded-radius-md border border-border bg-surface-raised px-5 py-4">
+                <p className="text-[15px] leading-6 text-muted-foreground">
+                  {t("Deposit compatible collateral from {spoke} before borrowing {symbol}.")
+                    .replace("{spoke}", detail.row.spokeLabel)
+                    .replace("{symbol}", detail.hero.symbol)}
+                </p>
+                <Button
+                  type="button"
+                  className="mt-4 h-11 rounded-radius-lg bg-[hsl(var(--brand))] text-base text-white hover:bg-[hsl(var(--brand))]/90"
+                  onClick={() => setDepositPromptOpen(true)}
+                  disabled={!fallbackMarket}
+                >
+                  {t("Pledge")}
+                </Button>
+              </div>
+            )
+          ) : null}
+
+          {tab === "repay" && borrowContext ? (
+            embedActions ? (
+              <ResponsiveBorrowAction
+                kind="repay"
+                market={borrowContext.id}
+                asset={detail.row.id}
+                closeHref={closeHref}
+                sidebar
+              />
+            ) : (
+              <ActionPageLaunchCta
+                product="borrow"
+                kind="repay"
+                market={borrowContext.id}
+                asset={detail.row.id}
+                returnTo={closeHref}
+              />
+            )
+          ) : null}
         </div>
       </div>
 
@@ -159,7 +167,12 @@ function TokenRail({ detail, className, embedActions = false }: { detail: AssetD
               >
                 {t("Pledge")}
               </Button>
-              <Button type="button" variant="secondary" className="h-11 rounded-radius-lg" onClick={() => setDepositPromptOpen(false)}>
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-11 rounded-radius-lg"
+                onClick={() => setDepositPromptOpen(false)}
+              >
                 {t("Got it")}
               </Button>
             </div>

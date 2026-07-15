@@ -32,9 +32,7 @@ if (mode === "build" && process.env.NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE === "1") {
 }
 
 if (mode === "build" && process.env.NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE === "1" && !isLocalLighthouseAuditBuild) {
-  process.stderr.write(
-    "Refusing to build Lighthouse audit mode outside the local .next-lighthouse artifact.\n",
-  )
+  process.stderr.write("Refusing to build Lighthouse audit mode outside the local .next-lighthouse artifact.\n")
   process.exit(1)
 }
 
@@ -42,7 +40,7 @@ const isCI = !!(process.env.VERCEL || process.env.CI)
 
 const modeConfig = isCI
   ? {
-      dev:   { distDir: ".next", cleanTargets: [] },
+      dev: { distDir: ".next", cleanTargets: [] },
       build: { distDir: ".next", cleanTargets: [] },
       start: { distDir: ".next", cleanTargets: [] },
     }

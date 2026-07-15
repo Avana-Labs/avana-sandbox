@@ -12,10 +12,7 @@ export function ConvexSessionProvider({ walletId, children }: { walletId: string
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div
-          className="h-2 w-40 animate-pulse rounded-full bg-muted"
-          aria-label={t("Authenticating wallet session")}
-        />
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Authenticating wallet session")} />
       </div>
     )
   }

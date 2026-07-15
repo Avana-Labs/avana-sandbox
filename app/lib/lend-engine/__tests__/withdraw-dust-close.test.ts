@@ -15,7 +15,13 @@ function depositedState(depositAmount: number) {
   }
   const state = applyLendAction(
     seed,
-    { type: "deposit", walletId: "wallet-1", marketId: market.marketId, depositAmount, walletBalance: depositAmount * 2 },
+    {
+      type: "deposit",
+      walletId: "wallet-1",
+      marketId: market.marketId,
+      depositAmount,
+      walletBalance: depositAmount * 2,
+    },
     { positionId: "pos-1", transactionId: "tx-deposit" },
   )
   return { state, marketId: market.marketId }

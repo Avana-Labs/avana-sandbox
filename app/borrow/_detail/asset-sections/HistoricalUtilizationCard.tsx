@@ -15,7 +15,9 @@ export function HistoricalUtilizationCard({ detail }: Props) {
         <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
           {t("Historical utilization")}
         </h2>
-        <p className="mt-0.5 text-[11.5px] text-muted-foreground">{t("Borrowed ÷ supplied over the last 12 months.")}</p>
+        <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+          {t("Borrowed ÷ supplied over the last 12 months.")}
+        </p>
       </div>
       <div className="w-full pt-4">
         <LightweightChart

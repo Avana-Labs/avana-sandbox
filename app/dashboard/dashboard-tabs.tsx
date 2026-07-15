@@ -31,10 +31,10 @@ export function DashboardTabs({
     activeTab === "overview"
       ? buildBorrowHeroData(pageData.heroByTab.overview, borrowSnapshot)
       : activeTab === "lending" && lendSnapshot
-      ? buildLendHeroData(pageData.heroByTab.lending, lendSnapshot)
-      : activeTab === "looping" && multiplyHero
-        ? multiplyHero
-      : pageData.heroByTab[activeTab]
+        ? buildLendHeroData(pageData.heroByTab.lending, lendSnapshot)
+        : activeTab === "looping" && multiplyHero
+          ? multiplyHero
+          : pageData.heroByTab[activeTab]
 
   return (
     <section className="mb-6 sm:mb-8">

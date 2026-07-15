@@ -20,10 +20,7 @@ export function blockedCtaLabel(reason: string, options?: { symbol?: string }): 
 
   // The only redirect case: you can't borrow without collateral, so send the
   // button to the pledge flow instead of dead-ending it.
-  if (
-    r.includes("no collateral") ||
-    (r.includes("deposit") && (r.includes("before") || r.includes("collateral")))
-  ) {
+  if (r.includes("no collateral") || (r.includes("deposit") && (r.includes("before") || r.includes("collateral")))) {
     return { label: "Deposit collateral first", redirect: true }
   }
 
@@ -32,10 +29,7 @@ export function blockedCtaLabel(reason: string, options?: { symbol?: string }): 
   }
   if (r.includes("liquidity")) return { label: "Insufficient liquidity" }
   if (/\blp\b/.test(r)) return { label: "Insufficient LP" }
-  if (
-    r.includes("balance") &&
-    (r.includes("insufficient") || r.includes("enough") || r.includes("exceed"))
-  ) {
+  if (r.includes("balance") && (r.includes("insufficient") || r.includes("enough") || r.includes("exceed"))) {
     // Return a translation key with a {symbol} placeholder (interpolated at render)
     // so the label localizes — token tickers themselves are never translated.
     return { label: symbol ? "Insufficient {symbol}" : "Insufficient balance" }

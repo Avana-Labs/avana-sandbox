@@ -49,12 +49,7 @@ export function getToneClasses(tone: HomeSuccessRowTone = "default") {
 
 export function PremiumPanel({ title, description, action, className, contentClassName, children }: PremiumPanelProps) {
   return (
-    <Card
-      className={cn(
-        "overflow-hidden rounded-radius-md border-0 bg-card shadow-none",
-        className,
-      )}
-    >
+    <Card className={cn("overflow-hidden rounded-radius-md border-0 bg-card shadow-none", className)}>
       <CardHeader className="gap-2 border-b border-border p-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-col gap-0.5">
           <CardTitle className="text-[14px] font-medium tracking-tight">{title}</CardTitle>
@@ -129,9 +124,14 @@ export function DetailList({ rows, className }: DetailListProps) {
     <div className={cn("rounded-radius-sm border border-border bg-surface-inset", className)}>
       <div className="flex flex-col divide-y divide-border">
         {rows.map((row, index) => (
-          <div key={`${row.label}-${index}`} className="flex flex-col gap-1 px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <div
+            key={`${row.label}-${index}`}
+            className="flex flex-col gap-1 px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between"
+          >
             <span className="text-[12px] text-muted-foreground">{row.label}</span>
-            <span className={cn("font-data text-[12.5px] font-medium tabular-nums", getToneClasses(row.tone))}>{row.value}</span>
+            <span className={cn("font-data text-[12.5px] font-medium tabular-nums", getToneClasses(row.tone))}>
+              {row.value}
+            </span>
             {index < rows.length - 1 ? <Separator className="sm:hidden" /> : null}
           </div>
         ))}

@@ -104,13 +104,19 @@ export function MultiplyCollateralTable({
                         </span>
                       </div>
                     </td>
-                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
+                    <td
+                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                    >
                       {usd(row.collateralUsd)}
                     </td>
-                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
+                    <td
+                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                    >
                       {row.multiplier.toFixed(2)}x
                     </td>
-                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
+                    <td
+                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                    >
                       {usd(row.debtUsd)}
                     </td>
                     <td
@@ -118,7 +124,9 @@ export function MultiplyCollateralTable({
                     >
                       {formatHealthFactor(row.healthFactor)}
                     </td>
-                    <td className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}>
+                    <td
+                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                    >
                       {formatPct(row.netApyPct)}
                     </td>
                     <td className={`px-4 py-3 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -130,10 +138,16 @@ export function MultiplyCollateralTable({
                           className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
-                            router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
+                            router.push(
+                              actionPagePath("multiply", "multiply", {
+                                market: row.marketId,
+                                return: returnHref ?? `/multiply/markets/${row.marketId}`,
+                              }),
+                            )
                           }}
                         >
-                          <ActionIcon label="Multiply" />{t("Multiply")}
+                          <ActionIcon label="Multiply" />
+                          {t("Multiply")}
                         </Button>
                         <Button
                           type="button"
@@ -142,10 +156,16 @@ export function MultiplyCollateralTable({
                           className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
-                            router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
+                            router.push(
+                              actionPagePath("multiply", "deleverage", {
+                                market: row.marketId,
+                                return: returnHref ?? `/multiply/markets/${row.marketId}`,
+                              }),
+                            )
                           }}
                         >
-                          <ActionIcon label="Deleverage" />{t("Deleverage")}
+                          <ActionIcon label="Deleverage" />
+                          {t("Deleverage")}
                         </Button>
                         <Button
                           type="button"
@@ -154,7 +174,12 @@ export function MultiplyCollateralTable({
                           className="w-auto"
                           onClick={(event) => {
                             event.stopPropagation()
-                            router.push(actionPagePath("multiply", "close", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
+                            router.push(
+                              actionPagePath("multiply", "close", {
+                                market: row.marketId,
+                                return: returnHref ?? `/multiply/markets/${row.marketId}`,
+                              }),
+                            )
                           }}
                         >
                           {t("Close")}
@@ -203,14 +228,8 @@ export function MultiplyCollateralTable({
               />
 
               <MarketMobileStatList>
-                <MarketMobileStatRow
-                  label={t("Exposure")}
-                  value={usd(row.collateralUsd)}
-                />
-                <MarketMobileStatRow
-                  label={t("Debt")}
-                  value={usd(row.debtUsd)}
-                />
+                <MarketMobileStatRow label={t("Exposure")} value={usd(row.collateralUsd)} />
+                <MarketMobileStatRow label={t("Debt")} value={usd(row.debtUsd)} />
                 <MarketMobileStatRow
                   label={t("Health")}
                   value={formatHealthFactor(row.healthFactor)}
@@ -230,10 +249,16 @@ export function MultiplyCollateralTable({
                   className="h-10 rounded-radius-sm px-4 text-[13px]"
                   onClick={(event) => {
                     event.stopPropagation()
-                    router.push(actionPagePath("multiply", "multiply", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
+                    router.push(
+                      actionPagePath("multiply", "multiply", {
+                        market: row.marketId,
+                        return: returnHref ?? `/multiply/markets/${row.marketId}`,
+                      }),
+                    )
                   }}
                 >
-                  <ActionIcon label="Multiply" />{t("Multiply")}
+                  <ActionIcon label="Multiply" />
+                  {t("Multiply")}
                 </Button>
                 <Button
                   type="button"
@@ -241,10 +266,16 @@ export function MultiplyCollateralTable({
                   className="h-10 rounded-radius-sm px-4 text-[13px]"
                   onClick={(event) => {
                     event.stopPropagation()
-                    router.push(actionPagePath("multiply", "deleverage", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
+                    router.push(
+                      actionPagePath("multiply", "deleverage", {
+                        market: row.marketId,
+                        return: returnHref ?? `/multiply/markets/${row.marketId}`,
+                      }),
+                    )
                   }}
                 >
-                  <ActionIcon label="Deleverage" />{t("Deleverage")}
+                  <ActionIcon label="Deleverage" />
+                  {t("Deleverage")}
                 </Button>
                 <Button
                   type="button"
@@ -252,7 +283,12 @@ export function MultiplyCollateralTable({
                   className="h-10 rounded-radius-sm px-4 text-[13px]"
                   onClick={(event) => {
                     event.stopPropagation()
-                    router.push(actionPagePath("multiply", "close", { market: row.marketId, return: returnHref ?? `/multiply/markets/${row.marketId}` }))
+                    router.push(
+                      actionPagePath("multiply", "close", {
+                        market: row.marketId,
+                        return: returnHref ?? `/multiply/markets/${row.marketId}`,
+                      }),
+                    )
                   }}
                 >
                   {t("Close")}

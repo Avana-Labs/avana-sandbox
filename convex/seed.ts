@@ -182,7 +182,9 @@ export const upsertRisk = internalMutation({
         breakdown: v.array(
           v.object({ id: v.string(), label: v.string(), bps: v.number(), level: riskLevel, description: v.string() }),
         ),
-        metrics: v.array(v.object({ id: v.string(), label: v.string(), value: v.string(), hint: v.optional(v.string()) })),
+        metrics: v.array(
+          v.object({ id: v.string(), label: v.string(), value: v.string(), hint: v.optional(v.string()) }),
+        ),
       }),
     ),
   },

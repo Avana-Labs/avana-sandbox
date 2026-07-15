@@ -75,7 +75,8 @@ export function formatActionFeeSummary(amountUsd: number, networkFeeUsd: number,
 
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {
   if (!Number.isFinite(assetAmount)) return `0 ${symbol}`
-  const rounded = assetAmount >= 100 ? assetAmount.toFixed(2) : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")
+  const rounded =
+    assetAmount >= 100 ? assetAmount.toFixed(2) : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")
   return `${rounded} ${symbol}`
 }
 

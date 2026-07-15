@@ -42,11 +42,7 @@ describe("ActionPageShell", () => {
 
   it("renders action shell title, subtitle, close control, and body", async () => {
     renderShell(
-      <ActionPageShell
-        title="Borrow"
-        subtitle="Configure and review your loan."
-        closeHref="/borrow"
-      >
+      <ActionPageShell title="Borrow" subtitle="Configure and review your loan." closeHref="/borrow">
         <div>Body</div>
       </ActionPageShell>,
     )

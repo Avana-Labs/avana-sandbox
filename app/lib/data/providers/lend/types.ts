@@ -1,8 +1,4 @@
-import {
-  LEND_ASSET_GROUPS,
-  LEND_FEATURED_ASSETS,
-  LEND_FEATURED_SEQUENCE,
-} from "@/app/lib/data/catalog/lend"
+import { LEND_ASSET_GROUPS, LEND_FEATURED_ASSETS, LEND_FEATURED_SEQUENCE } from "@/app/lib/data/catalog/lend"
 import type { LendFeaturedSnapshot, LendMarketRow } from "@/app/lib/lend-system/read-model"
 
 export type LendToken = {

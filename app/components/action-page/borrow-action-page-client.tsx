@@ -33,7 +33,10 @@ import { ActionSelectStage } from "@/app/components/action-page/action-select-st
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { ActionSessionLoading, shouldShowActionSessionLoading } from "@/app/components/action-page/action-session-loading"
+import {
+  ActionSessionLoading,
+  shouldShowActionSessionLoading,
+} from "@/app/components/action-page/action-session-loading"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
@@ -120,24 +123,21 @@ export function BorrowActionPageClient({
     usesAllMarketPools && !preferPledgedPools ? session.availableCollateralPools : session.collateralPools
   const hasInvalidInitialMarket = Boolean(
     initialMarketId &&
-      !initialAssetId &&
-      // A market is "available" whenever it exists in the catalog — the wallet may
-      // simply not hold a position in it yet (never a dead-end). Borrow/supply
-      // validate against the full catalog; repay/remove/claim need a pledged position.
-      (usesAllMarketPools
-        ? !session.state.markets[initialMarketId]
-        : !session.collateralPools.some((pool) => pool.id === initialMarketId)),
+    !initialAssetId &&
+    // A market is "available" whenever it exists in the catalog — the wallet may
+    // simply not hold a position in it yet (never a dead-end). Borrow/supply
+    // validate against the full catalog; repay/remove/claim need a pledged position.
+    (usesAllMarketPools
+      ? !session.state.markets[initialMarketId]
+      : !session.collateralPools.some((pool) => pool.id === initialMarketId)),
   )
-  const resolvedInitialMarket = useMemo(
-    () => {
-      if (initialAssetId) {
-        return resolveBorrowMarketForAsset(session, initialAssetId, hasInvalidInitialMarket ? undefined : initialMarketId)
-      }
-      if (initialMarketId && !hasInvalidInitialMarket) return initialMarketId
-      return undefined
-    },
-    [hasInvalidInitialMarket, initialAssetId, initialMarketId, session],
-  )
+  const resolvedInitialMarket = useMemo(() => {
+    if (initialAssetId) {
+      return resolveBorrowMarketForAsset(session, initialAssetId, hasInvalidInitialMarket ? undefined : initialMarketId)
+    }
+    if (initialMarketId && !hasInvalidInitialMarket) return initialMarketId
+    return undefined
+  }, [hasInvalidInitialMarket, initialAssetId, initialMarketId, session])
   const resolvedInitialAsset = useMemo(
     () => (initialAssetId ? resolveBorrowAssetId(session.state, initialAssetId, resolvedInitialMarket) : ""),
     [initialAssetId, resolvedInitialMarket, session.state],
@@ -156,7 +156,9 @@ export function BorrowActionPageClient({
   })
   const [assetId, setAssetId] = useState(resolvedInitialAsset)
   const [marketId, setMarketId] = useState(
-    isHomeZeroState ? "" : resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : session.collateralPools[0]?.id ?? ""),
+    isHomeZeroState
+      ? ""
+      : (resolvedInitialMarket ?? (hasInvalidInitialMarket ? "" : (session.collateralPools[0]?.id ?? ""))),
   )
   const [amount, setAmount] = useState(initialAmount)
   // The input stays bound to `amount` for instant typing feedback, but the expensive
@@ -181,7 +183,10 @@ export function BorrowActionPageClient({
   const lastInitialAssetIdRef = useRef(initialAssetId)
   const lastInitialMarketIdRef = useRef(initialMarketId)
 
-  const debtPositions = useMemo(() => session.state.accounts[walletId]?.debtPositions ?? [], [session.state.accounts, walletId])
+  const debtPositions = useMemo(
+    () => session.state.accounts[walletId]?.debtPositions ?? [],
+    [session.state.accounts, walletId],
+  )
   const [debtPositionId, setDebtPositionId] = useState(initialDebtId ?? "")
 
   const debtPosition = useMemo(() => {
@@ -207,12 +212,12 @@ export function BorrowActionPageClient({
     // else the sole/first debt. Never leave it null off the zero-state, which
     // defaulted the repay asset to the market's first collateral token (e.g. WETH)
     // instead of the asset actually owed (e.g. USDC).
-    return (
-      debtPositions.find((position) => position.marketId === marketId) ?? debtPositions[0] ?? null
-    )
+    return debtPositions.find((position) => position.marketId === marketId) ?? debtPositions[0] ?? null
   }, [debtPositionId, debtPositions, initialMarketId, isHomeZeroState, kind, marketId, session.state.markets])
 
-  const activeMarketId = hasInvalidInitialMarket ? "" : marketId || (isHomeZeroState ? "" : session.collateralPools[0]?.id || "")
+  const activeMarketId = hasInvalidInitialMarket
+    ? ""
+    : marketId || (isHomeZeroState ? "" : session.collateralPools[0]?.id || "")
   const selectMarketId = activeMarketId
   const resolvedBorrowAssetId = useMemo(
     () => (kind === "borrow" && assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : ""),
@@ -303,10 +308,7 @@ export function BorrowActionPageClient({
   }, [marketId, session.marketSummaries])
 
   const creditScopeLabel = useMemo(() => {
-    const scopedMarketId =
-      kind === "borrow"
-        ? activeMarketId
-        : debtPosition?.marketId ?? marketId ?? activeMarketId
+    const scopedMarketId = kind === "borrow" ? activeMarketId : (debtPosition?.marketId ?? marketId ?? activeMarketId)
     const market = scopedMarketId ? session.state.markets[scopedMarketId] : null
     if (!market) return null
     return getBorrowSpoke(market.spokeId)?.label ?? market.display.venue
@@ -368,14 +370,24 @@ export function BorrowActionPageClient({
     if (kind === "remove" || kind === "supply") {
       return formatBorrowLpSymbolLabel(session.state.markets[marketId])
     }
-    const resolvedAssetId = resolvedBorrowAssetId || (assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : "")
+    const resolvedAssetId =
+      resolvedBorrowAssetId || (assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : "")
     if (resolvedAssetId) {
       return session.state.assets[resolvedAssetId]?.symbol ?? previewUi?.amountLabel.split(" ").slice(-1)[0]
     }
     if (debtPosition) return session.state.assets[debtPosition.assetId]?.symbol
     const market = session.state.markets[marketId]
     return market?.display.visuals[0]?.symbol ?? "Asset"
-  }, [activeMarketId, assetId, debtPosition, kind, previewUi?.amountLabel, resolvedBorrowAssetId, session.state.assets, session.state.markets])
+  }, [
+    activeMarketId,
+    assetId,
+    debtPosition,
+    kind,
+    previewUi?.amountLabel,
+    resolvedBorrowAssetId,
+    session.state.assets,
+    session.state.markets,
+  ])
 
   useEffect(() => {
     if (initialPositionId) setClaimPositionId(initialPositionId)
@@ -491,7 +503,9 @@ export function BorrowActionPageClient({
         )
         .then((preview) => {
           if (cancelled) return
-          const token = session.getBorrowableAssetsForMarket(activeMarketId).find((entry) => entry.id === resolvedAssetId)
+          const token = session
+            .getBorrowableAssetsForMarket(activeMarketId)
+            .find((entry) => entry.id === resolvedAssetId)
           const borrowMarket = session.state.markets[activeMarketId]
           const liquidationThresholdPct = borrowMarket
             ? wadToPercent(borrowMarket.riskConfig.liquidationThresholdWad)
@@ -527,12 +541,8 @@ export function BorrowActionPageClient({
         return undefined
       }
       const market = session.state.markets[marketId]
-      const collateralFactorPct = market
-        ? wadToPercent(market.riskConfig.collateralFactorWad)
-        : 0
-      const liquidationPct = market
-        ? wadToPercent(market.riskConfig.liquidationThresholdWad)
-        : 0
+      const collateralFactorPct = market ? wadToPercent(market.riskConfig.collateralFactorWad) : 0
+      const liquidationPct = market ? wadToPercent(market.riskConfig.liquidationThresholdWad) : 0
       const borrowableAssets = session.getBorrowableAssetsForMarket(marketId)
       void session
         .previewTransaction(
@@ -609,7 +619,9 @@ export function BorrowActionPageClient({
 
     if (kind === "remove") {
       const percentBps = parseActionPercentBps(deferredPercent)
-      const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === marketId)
+      const position = session.state.accounts[walletId]?.collateralPositions.find(
+        (entry) => entry.marketId === marketId,
+      )
       if (percentBps == null || !position) {
         setPreviewUi(null)
         return undefined
@@ -668,7 +680,22 @@ export function BorrowActionPageClient({
       )
     }
     return undefined
-  }, [activeMarketId, deferredAmount, assetId, claimPositionId, creditScopeLabel, debtPosition, isHomeZeroState, kind, marketId, marketLabel, deferredPercent, resolvedBorrowAssetId, session, walletId])
+  }, [
+    activeMarketId,
+    deferredAmount,
+    assetId,
+    claimPositionId,
+    creditScopeLabel,
+    debtPosition,
+    isHomeZeroState,
+    kind,
+    marketId,
+    marketLabel,
+    deferredPercent,
+    resolvedBorrowAssetId,
+    session,
+    walletId,
+  ])
 
   useEffect(() => {
     // Editing inputs after a failed submit clears the stale error banner and drops back to
@@ -683,9 +710,26 @@ export function BorrowActionPageClient({
     if (kind === "supply" && !initialMarketId && supplySelectItemsForWallet(session, walletId).length > 1) return true
     if (kind === "repay" && debtPositions.length > 1 && !initialMarketId && !initialDebtId) return true
     if (kind === "remove" && !initialMarketId && !initialPositionId && selectItems.length > 1) return true
-    if (kind === "claim" && claimSelectItemsForWallet(session, walletId).length > 1 && !initialMarketId && !initialPositionId) return true
+    if (
+      kind === "claim" &&
+      claimSelectItemsForWallet(session, walletId).length > 1 &&
+      !initialMarketId &&
+      !initialPositionId
+    )
+      return true
     return false
-  }, [debtPositions.length, embedded, initialMarketId, initialPositionId, initialDebtId, kind, resolvedInitialAsset, selectItems.length, session, walletId])
+  }, [
+    debtPositions.length,
+    embedded,
+    initialMarketId,
+    initialPositionId,
+    initialDebtId,
+    kind,
+    resolvedInitialAsset,
+    selectItems.length,
+    session,
+    walletId,
+  ])
 
   useEffect(() => {
     if (previewUi == null || successUi != null) return
@@ -827,7 +871,9 @@ export function BorrowActionPageClient({
         if (!action) throw new Error("Nothing to claim")
         intent = session.createIntent(action)
       } else {
-        const position = session.state.accounts[walletId]?.collateralPositions.find((entry) => entry.marketId === marketId)
+        const position = session.state.accounts[walletId]?.collateralPositions.find(
+          (entry) => entry.marketId === marketId,
+        )
         if (!position) throw new Error("No collateral selected")
         intent = session.createIntent({
           type: "removeCollateral",
@@ -842,7 +888,9 @@ export function BorrowActionPageClient({
 
       let executionPreviewUi = submittedPreviewUi
       if (kind === "borrow") {
-        const token = session.getBorrowableAssetsForMarket(activeMarketId).find((entry) => entry.id === resolvedBorrowAssetId)
+        const token = session
+          .getBorrowableAssetsForMarket(activeMarketId)
+          .find((entry) => entry.id === resolvedBorrowAssetId)
         const borrowMarket = session.state.markets[activeMarketId]
         const maxBorrowUsd = usd6ToNumber(preview.before.availableBorrowCapacityUsd6)
         executionPreviewUi = mapBorrowTransactionPreviewToActionUi(preview, {
@@ -860,12 +908,8 @@ export function BorrowActionPageClient({
         })
       } else if (kind === "supply") {
         const supplyMarket = session.state.markets[marketId]
-        const collateralFactorPct = supplyMarket
-          ? wadToPercent(supplyMarket.riskConfig.collateralFactorWad)
-          : 0
-        const liquidationPct = supplyMarket
-          ? wadToPercent(supplyMarket.riskConfig.liquidationThresholdWad)
-          : 0
+        const collateralFactorPct = supplyMarket ? wadToPercent(supplyMarket.riskConfig.collateralFactorWad) : 0
+        const liquidationPct = supplyMarket ? wadToPercent(supplyMarket.riskConfig.liquidationThresholdWad) : 0
         const borrowableAssets = session.getBorrowableAssetsForMarket(marketId)
         executionPreviewUi = mapBorrowSupplyPreviewToActionUi(preview, {
           symbol: formatBorrowLpSymbolLabel(supplyMarket),
@@ -912,7 +956,8 @@ export function BorrowActionPageClient({
         execute: async () => session.executeTransaction(preview.intent),
       })
 
-      if (result.receipt.status !== "success") throw new Error(humanizeBlockedReason(result.receipt.error) ?? "Transaction failed")
+      if (result.receipt.status !== "success")
+        throw new Error(humanizeBlockedReason(result.receipt.error) ?? "Transaction failed")
       const executedAmountUsd = usd6ToNumber(result.historyItem.executedAmountUsd6)
       const executedPreview = {
         ...executionPreviewUi,
@@ -947,7 +992,25 @@ export function BorrowActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [activeMarketId, amount, closeHref, debtPosition, descriptor.primaryVerb, isPending, kind, marketId, percent, previewUi, resolvedBorrowAssetId, reviewPreviewUi, router, session, stage, successUi, walletId])
+  }, [
+    activeMarketId,
+    amount,
+    closeHref,
+    debtPosition,
+    descriptor.primaryVerb,
+    isPending,
+    kind,
+    marketId,
+    percent,
+    previewUi,
+    resolvedBorrowAssetId,
+    reviewPreviewUi,
+    router,
+    session,
+    stage,
+    successUi,
+    walletId,
+  ])
 
   // Borrow fills the safe credit cap; Repay fills the selected debt exactly.
   const showActionMax = kind === "borrow" || kind === "repay"
@@ -972,9 +1035,9 @@ export function BorrowActionPageClient({
           ? "Choose rewards to claim."
           : kind === "remove"
             ? "Choose collateral to remove."
-          : kind === "supply"
-            ? "Choose the LP pool you want to pledge."
-            : "Choose the asset to borrow."
+            : kind === "supply"
+              ? "Choose the LP pool you want to pledge."
+              : "Choose the asset to borrow."
       : stage === "success" || isProcessingStage(stage) || stage === "review"
         ? undefined
         : descriptor.subtitle
@@ -1004,11 +1067,7 @@ export function BorrowActionPageClient({
             ? marketId
             : assetId
   const useSupplyWorkspace =
-    embedded &&
-    isHomeLayout &&
-    kind === "supply" &&
-    activePool != null &&
-    isConfigureVisibleStage(stage)
+    embedded && isHomeLayout && kind === "supply" && activePool != null && isConfigureVisibleStage(stage)
   const useWorkspaceFields =
     embedded && isHomeLayout && (showCollateralContextBar || (kind === "supply" && activePool != null))
   const stackedAmountField =
@@ -1090,7 +1149,9 @@ export function BorrowActionPageClient({
       {stage === "select" && !embedded ? (
         <ActionSelectStage
           items={selectItems}
-          sectionLabel={kind === "supply" ? "Supported pools" : kind === "remove" ? "Your collateral" : "Available assets"}
+          sectionLabel={
+            kind === "supply" ? "Supported pools" : kind === "remove" ? "Your collateral" : "Available assets"
+          }
           searchPlaceholder={kind === "supply" || kind === "remove" ? "Search pools" : "Find an asset"}
           emptyTitle={
             kind === "repay"
@@ -1099,9 +1160,9 @@ export function BorrowActionPageClient({
                 ? "Nothing to claim"
                 : kind === "remove"
                   ? "No collateral found"
-                : kind === "supply"
-                  ? "No pools found"
-                  : "No assets found"
+                  : kind === "supply"
+                    ? "No pools found"
+                    : "No assets found"
           }
           emptyDescription={
             kind === "repay"
@@ -1110,9 +1171,9 @@ export function BorrowActionPageClient({
                 ? "You have no claimable rewards right now. Supply collateral and earn fees before claiming."
                 : kind === "remove"
                   ? "Pledge collateral before trying to remove it."
-                : kind === "supply"
-                  ? "Try adjusting your search — every market is available to pledge in the sandbox."
-                  : "Try adjusting your search"
+                  : kind === "supply"
+                    ? "Try adjusting your search — every market is available to pledge in the sandbox."
+                    : "Try adjusting your search"
           }
           onSelect={(id) => {
             if (kind === "repay") {
@@ -1157,7 +1218,12 @@ export function BorrowActionPageClient({
       ) : null}
 
       {isProcessingStage(stage) ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={reviewPreviewUi ?? previewUi} closeHref={closeHref} stage={stage} />
+        <ActionProcessingStage
+          verb={descriptor.primaryVerb}
+          preview={reviewPreviewUi ?? previewUi}
+          closeHref={closeHref}
+          stage={stage}
+        />
       ) : null}
 
       {stage === "review" && reviewPreviewUi ? (

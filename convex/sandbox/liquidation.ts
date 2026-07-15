@@ -70,10 +70,7 @@ export const recordLiquidation = mutation({
     }
     requirePositiveUsd6(args.repaidUsd6, "repaidUsd6")
     requirePositiveUsd6(args.seizedCollateralUsd6, "seizedCollateralUsd6")
-    if (
-      args.healthFactorWadBefore !== null &&
-      BigInt(args.healthFactorWadBefore) >= 1_000_000_000_000_000_000n
-    ) {
+    if (args.healthFactorWadBefore !== null && BigInt(args.healthFactorWadBefore) >= 1_000_000_000_000_000_000n) {
       throw new Error("INVALID_LIQUIDATION: the victim position is not underwater.")
     }
     const now = Date.now()
@@ -120,10 +117,8 @@ export const recordLiquidation = mutation({
         const currentTokenAmount = BigInt(collateral.principalTokenAmount)
         await ctx.db.patch(collateral._id, {
           collateralValueUsd6: nextValue.toString(),
-          collateralShares:
-            currentValue > 0n ? ((currentSharesValue * nextValue) / currentValue).toString() : "0",
-          principalTokenAmount:
-            currentValue > 0n ? ((currentTokenAmount * nextValue) / currentValue).toString() : "0",
+          collateralShares: currentValue > 0n ? ((currentSharesValue * nextValue) / currentValue).toString() : "0",
+          principalTokenAmount: currentValue > 0n ? ((currentTokenAmount * nextValue) / currentValue).toString() : "0",
           updatedAt: now,
         })
         remainingSeize -= seized
@@ -132,10 +127,7 @@ export const recordLiquidation = mutation({
         throw new Error("INVALID_LIQUIDATION: seized collateral exceeds the position value.")
       }
 
-      const collateralBefore = collateralRows.reduce(
-        (sum, row) => sum + BigInt(row.collateralValueUsd6 ?? "0"),
-        0n,
-      )
+      const collateralBefore = collateralRows.reduce((sum, row) => sum + BigInt(row.collateralValueUsd6 ?? "0"), 0n)
       const debtBefore = debtRows.reduce((sum, row) => sum + BigInt(row.principalBorrowedUsd6), 0n)
       const collateralAfter = collateralBefore - BigInt(args.seizedCollateralUsd6)
       const debtAfter = debtBefore - (currentPrincipal - nextPrincipal)
@@ -202,7 +194,11 @@ export const getLiquidations = query({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
     const [asVictim, asLiquidator] = await Promise.all([
-      ctx.db.query("liquidationActions").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("desc").take(50),
+      ctx.db
+        .query("liquidationActions")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+        .order("desc")
+        .take(50),
       ctx.db
         .query("liquidationActions")
         .withIndex("by_liquidator_at", (q) => q.eq("liquidatorWallet", wallet))

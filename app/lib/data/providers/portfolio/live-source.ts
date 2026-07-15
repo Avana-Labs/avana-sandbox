@@ -2,7 +2,14 @@ import { createDataSourceAdapter } from "@/app/lib/data/core/source-runtime"
 import { api } from "@/convex/_generated/api"
 import { getAuthenticatedConvexClient } from "@/app/lib/data/providers/live-convex-client"
 import { MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR, worstMultiplyHealthFactor } from "@/app/lib/multiply-system/read-model"
-import type { PortfolioActivityKind, PortfolioActivityRecord, PortfolioCollateralRecord, PortfolioDebtRecord, PortfolioPageRecords, PortfolioSupplyRecord } from "./records"
+import type {
+  PortfolioActivityKind,
+  PortfolioActivityRecord,
+  PortfolioCollateralRecord,
+  PortfolioDebtRecord,
+  PortfolioPageRecords,
+  PortfolioSupplyRecord,
+} from "./records"
 import type { PortfolioPageSource } from "./source"
 import { allocateDebtByCollateral, calculateLiveBorrowDebt, calculateLiveMultiplyPosition } from "./live-accounting"
 
@@ -29,7 +36,10 @@ export const livePortfolioPageSource: PortfolioPageSource = {
     const poolBySlug = new Map(state.pools.map((pool) => [pool.slug, pool]))
     const toUsd = (value?: string) => Number(BigInt(value ?? "0")) / 1_000_000
     const multiplyPositions = state.positions.filter((position) => position.product === "multiply")
-    const totalMultiplyCollateral = multiplyPositions.reduce((sum, position) => sum + (position.collateralValueUsd ?? 0), 0)
+    const totalMultiplyCollateral = multiplyPositions.reduce(
+      (sum, position) => sum + (position.collateralValueUsd ?? 0),
+      0,
+    )
     const totalMultiplyDebt = multiplyPositions.reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
     const healthFactors = multiplyPositions
       .map((position) => position.healthFactor)
@@ -79,7 +89,12 @@ export const livePortfolioPageSource: PortfolioPageSource = {
           const maxLtv = pool?.maxLtvPct ?? 0
           const liquidationUsd = collateralUsd * ((pool?.liquidationThresholdPct ?? maxLtv) / 100)
           const visuals = pool?.visuals?.slice(0, 2) ?? []
-          const fallbackVisual = { symbol: "AVA", shortLabel: "A", bgClassName: "bg-brand", textClassName: "text-brand-foreground" }
+          const fallbackVisual = {
+            symbol: "AVA",
+            shortLabel: "A",
+            bgClassName: "bg-brand",
+            textClassName: "text-brand-foreground",
+          }
           return {
             id: String(collateral._id),
             walletProfileId: wallet,

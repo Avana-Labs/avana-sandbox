@@ -1,4 +1,12 @@
-import type { BorrowAssetRecord, BorrowMarketRecord, BorrowSystemState, BorrowVisual, UserCollateralPosition, UserDebtPosition, UserRewardPosition } from "@/app/lib/credit-engine"
+import type {
+  BorrowAssetRecord,
+  BorrowMarketRecord,
+  BorrowSystemState,
+  BorrowVisual,
+  UserCollateralPosition,
+  UserDebtPosition,
+  UserRewardPosition,
+} from "@/app/lib/credit-engine"
 import { RAY, clampMax, clampMin, parseFixed } from "@/app/lib/credit-engine"
 import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
@@ -137,7 +145,9 @@ function buildMarketRecord(pool: BorrowPoolRow, borrowAssetIdsBySymbol: Map<stri
       supportedBorrowAssetIds: pool.borrowableTokens
         .map((visual) => borrowAssetIdsBySymbol.get(visual.symbol.toUpperCase()))
         .filter((value): value is string => Boolean(value)),
-      relatedMarketIds: BORROW_POOL_CATALOG.filter((candidate) => candidate.id !== pool.id && candidate.spoke === pool.spoke)
+      relatedMarketIds: BORROW_POOL_CATALOG.filter(
+        (candidate) => candidate.id !== pool.id && candidate.spoke === pool.spoke,
+      )
         .slice(0, 3)
         .map((candidate) => candidate.id),
     },
@@ -161,7 +171,8 @@ function buildMarketRecord(pool: BorrowPoolRow, borrowAssetIdsBySymbol: Map<stri
         },
         {
           question: "How is borrowing power determined?",
-          answer: "Borrowing power is derived from collateral factor, liquidation threshold, account utilization, and current debt.",
+          answer:
+            "Borrowing power is derived from collateral factor, liquidation threshold, account utilization, and current debt.",
         },
       ],
       parameterChanges: [
@@ -237,7 +248,12 @@ function buildAssetRecord(asset: SpokeBorrowableRecord): BorrowAssetRecord {
   }
 }
 
-function collateralPositionFromHomePool(walletId: string, poolId: string, collateralUsd: number, markets: Record<string, BorrowMarketRecord>): UserCollateralPosition | null {
+function collateralPositionFromHomePool(
+  walletId: string,
+  poolId: string,
+  collateralUsd: number,
+  markets: Record<string, BorrowMarketRecord>,
+): UserCollateralPosition | null {
   const marketId = HOME_POOL_TO_MARKET_ID[poolId]
   if (!marketId) return null
   const market = markets[marketId]
@@ -283,7 +299,10 @@ function debtPositionFromHomePool(
   }
 }
 
-export function rewardPositionsFromHomeClaims(walletId: string, markets: Record<string, BorrowMarketRecord>): UserRewardPosition[] {
+export function rewardPositionsFromHomeClaims(
+  walletId: string,
+  markets: Record<string, BorrowMarketRecord>,
+): UserRewardPosition[] {
   return HOME_CLAIM_POSITIONS.map((position) => {
     const marketId = HOME_POOL_TO_MARKET_ID[position.poolId]
     if (!marketId || !markets[marketId]) return null

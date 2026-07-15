@@ -90,10 +90,12 @@ describe("credit metrics", () => {
 
   it("returns zero borrow capacity when all collateral is invalid or disabled", () => {
     const state = makeExampleBorrowSystemState()
-    state.accounts["wallet-1"]!.collateralPositions = state.accounts["wallet-1"]!.collateralPositions.map((position) => ({
-      ...position,
-      collateralEnabled: false,
-    }))
+    state.accounts["wallet-1"]!.collateralPositions = state.accounts["wallet-1"]!.collateralPositions.map(
+      (position) => ({
+        ...position,
+        collateralEnabled: false,
+      }),
+    )
 
     expect(calculateBorrowCapacityUsd6(state, "wallet-1")).toBe(0n)
   })

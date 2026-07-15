@@ -158,7 +158,10 @@ export function ProcessingNarration({ verb }: { verb: string }) {
             {isDone ? (
               <Check className="size-4 shrink-0 text-emerald-500" aria-hidden />
             ) : (
-              <LoaderCircle className="size-4 shrink-0 animate-spin text-violet-400 motion-reduce:animate-none" aria-hidden />
+              <LoaderCircle
+                className="size-4 shrink-0 animate-spin text-violet-400 motion-reduce:animate-none"
+                aria-hidden
+              />
             )}
             <span>{t(line)}</span>
           </li>

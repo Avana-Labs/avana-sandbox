@@ -46,11 +46,7 @@ export function makeExampleBorrowSystemState(): BorrowSystemState {
           riskScoreWad: parseFixed("0.22", 18),
         },
         relations: {
-          supportedBorrowAssetIds: [
-            EXAMPLE_UNI_USDC_ASSET_ID,
-            EXAMPLE_UNI_USDT_ASSET_ID,
-            EXAMPLE_UNI_WETH_ASSET_ID,
-          ],
+          supportedBorrowAssetIds: [EXAMPLE_UNI_USDC_ASSET_ID, EXAMPLE_UNI_USDT_ASSET_ID, EXAMPLE_UNI_WETH_ASSET_ID],
           relatedMarketIds: [EXAMPLE_CURVE_MARKET_ID],
         },
         snapshot: {

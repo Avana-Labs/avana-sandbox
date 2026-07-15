@@ -38,9 +38,9 @@ describe("submitSupportRequest — auth, server-derived wallet, rate limit, boun
   test("enforces the message minimum length", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
-    await expect(
-      asUser.mutation(api.support.submitSupportRequest, request({ message: "too short" })),
-    ).rejects.toThrow(/at least/)
+    await expect(asUser.mutation(api.support.submitSupportRequest, request({ message: "too short" }))).rejects.toThrow(
+      /at least/,
+    )
   })
 
   test("rate-limits after the hourly per-wallet cap", async () => {

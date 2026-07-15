@@ -61,10 +61,23 @@ const DEFAULT_CONFIG = {
 // catalog prices (app/lib/lend-system/catalog.ts). Without full coverage here, a fresh deployment
 // (empty `tokenPrices`) resolves those asset legs to $0 and the claim gate rejects every wallet.
 const SANDBOX_TOKEN_PRICE_USD: Record<string, number> = {
-  usdc: 1, usdt: 1, dai: 1, gho: 1, crvusd: 1, eurc: 1.08,
-  eth: 3500, weth: 3500, steth: 3650, wsteth: 3800, reth: 3700, cbeth: 3600,
-  wbtc: 95_000, cbbtc: 96_000,
-  aave: 280, uni: 12, crv: 0.5,
+  usdc: 1,
+  usdt: 1,
+  dai: 1,
+  gho: 1,
+  crvusd: 1,
+  eurc: 1.08,
+  eth: 3500,
+  weth: 3500,
+  steth: 3650,
+  wsteth: 3800,
+  reth: 3700,
+  cbeth: 3600,
+  wbtc: 95_000,
+  cbbtc: 96_000,
+  aave: 280,
+  uni: 12,
+  crv: 0.5,
 }
 
 /** Deterministic pseudo-tier in [min, max] from the wallet (sandbox stand-in for keccak256). */
@@ -254,10 +267,7 @@ export const getWalletOnboardingState = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const [profile, config] = await Promise.all([
-      profileForWallet(ctx, wallet),
-      ctx.db.query("sandboxConfig").first(),
-    ])
+    const [profile, config] = await Promise.all([profileForWallet(ctx, wallet), ctx.db.query("sandboxConfig").first()])
     return {
       onboardingStep: profile?.onboardingStep ?? "wallet",
       profile,
@@ -462,15 +472,9 @@ export const claim = mutation({
     // whose price truly cannot be resolved is treated as incomplete rather than seeded at
     // $1/token. Throws ONBOARDING_CATALOG_INCOMPLETE; the claim aborts before any write and
     // the profile stays on its current (non-"done") step, so the wallet can retry once seeded.
-    assertCatalogCanSatisfyStarter(
-      wallet,
-      starterCatalog,
-    )
+    assertCatalogCanSatisfyStarter(wallet, starterCatalog)
 
-    const allocation = buildStarterAllocationPlan(
-      wallet,
-      starterCatalog,
-    )
+    const allocation = buildStarterAllocationPlan(wallet, starterCatalog)
     const basketSnapshot = allocation.liquid.map((leg) => {
       const market = marketBySlug.get(leg.marketSlug)
       const symbol = market?.symbol.toLowerCase() ?? leg.marketSlug
@@ -664,8 +668,7 @@ export const claim = mutation({
     const initialPortfolio = {
       wallet,
       at: now,
-      totalValueUsd:
-        liquidValueUsd + collateralValueUsd + lendValueUsd + multiplyExposureUsd - multiplyDebtUsd,
+      totalValueUsd: liquidValueUsd + collateralValueUsd + lendValueUsd + multiplyExposureUsd - multiplyDebtUsd,
       totalSuppliedUsd: collateralValueUsd + lendValueUsd + multiplyExposureUsd,
       totalBorrowedUsd: multiplyDebtUsd,
       availableToBorrowUsd: collateralValueUsd * 0.7,
@@ -698,8 +701,7 @@ export const claim = mutation({
     ) {
       await ctx.db.patch(economy._id, {
         status: "closed",
-        closedReason:
-          counts.userCount + 1 >= economy.userCap ? "userCap reached" : "totalGrantedUsdCap reached",
+        closedReason: counts.userCount + 1 >= economy.userCap ? "userCap reached" : "totalGrantedUsdCap reached",
         closedAt: now,
       })
     }

@@ -67,13 +67,17 @@ export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: 
 
   return Object.values(state.markets).map((market) => {
     const position = account?.collateralPositions.find((row) => row.marketId === market.id)
-    const positionUsd = position ? fixedToNumber(currentCollateralValueUsd6(position, market), 6) : fixedToNumber(market.snapshot.lpTokenPriceUsd6, 6) * 1.75
+    const positionUsd = position
+      ? fixedToNumber(currentCollateralValueUsd6(position, market), 6)
+      : fixedToNumber(market.snapshot.lpTokenPriceUsd6, 6) * 1.75
     const feeApyPct = fixedToNumber(market.snapshot.feeApyWad, 18) * 100
     // Show the intrinsic per-market risk premium (matches the pool detail) rather than the
     // wallet-scoped premium, which is 0 for a browsing wallet with no position in the spoke.
     const riskPremiumBps =
       CATALOG_RISK_PREMIUM_BPS.get(market.id) ??
-      Math.round(fixedToNumber(calculateSpokeCreditMetrics(state, walletId, market.spokeId).riskPremiumWad, 18) * 10_000)
+      Math.round(
+        fixedToNumber(calculateSpokeCreditMetrics(state, walletId, market.spokeId).riskPremiumWad, 18) * 10_000,
+      )
 
     return {
       id: market.id,
@@ -111,18 +115,28 @@ export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: 
   })
 }
 
-export function selectBorrowableAssets(state: BorrowSystemState, walletId: string, marketId?: string): BorrowableAsset[] {
+export function selectBorrowableAssets(
+  state: BorrowSystemState,
+  walletId: string,
+  marketId?: string,
+): BorrowableAsset[] {
   const account = state.accounts[walletId]
   const market = marketId ? state.markets[marketId] : null
   const supported = market ? new Set(market.relations.supportedBorrowAssetIds) : null
-  const walletBalanceLabel = account ? `$${fixedToNumber(account.walletBalanceUsd6, 6).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "$0"
+  const walletBalanceLabel = account
+    ? `$${fixedToNumber(account.walletBalanceUsd6, 6).toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+    : "$0"
 
   return Object.values(state.assets)
     .filter((asset) => !supported || supported.has(asset.id))
     .map((asset) => {
       const scopedMetrics = calculateSpokeCreditMetrics(state, walletId, asset.spokeId)
-      const totalLiquidityUsd = fixedToNumber(asset.snapshot.availableLiquidityUsd6 + asset.snapshot.totalBorrowedUsd6, 6)
-      const utilization = totalLiquidityUsd > 0 ? (fixedToNumber(asset.snapshot.totalBorrowedUsd6, 6) / totalLiquidityUsd) * 100 : 0
+      const totalLiquidityUsd = fixedToNumber(
+        asset.snapshot.availableLiquidityUsd6 + asset.snapshot.totalBorrowedUsd6,
+        6,
+      )
+      const utilization =
+        totalLiquidityUsd > 0 ? (fixedToNumber(asset.snapshot.totalBorrowedUsd6, 6) / totalLiquidityUsd) * 100 : 0
 
       return {
         id: asset.id,
@@ -220,7 +234,9 @@ function metricsForPosition(state: BorrowSystemState, walletId: string, marketId
     accounts: {
       [walletId]: {
         ...base,
-        collateralPositions: base.collateralPositions.filter((position) => state.markets[position.marketId]?.spokeId === spokeId),
+        collateralPositions: base.collateralPositions.filter(
+          (position) => state.markets[position.marketId]?.spokeId === spokeId,
+        ),
         debtPositions: base.debtPositions.filter((position) => position.spokeId === spokeId),
       },
     },

@@ -46,8 +46,7 @@ describe("multiply engine simulation", () => {
       selectedMultiplier: 2.2,
     })
     const capacity = (simulation: typeof low) =>
-      simulation.after.collateralValueUsd * EXAMPLE_ETH_USDT_MARKET.risk.maxLtv -
-      simulation.after.debtValueUsd
+      simulation.after.collateralValueUsd * EXAMPLE_ETH_USDT_MARKET.risk.maxLtv - simulation.after.debtValueUsd
 
     expect(high.after.healthFactor).not.toBe("infinity")
     expect(low.after.healthFactor).not.toBe("infinity")

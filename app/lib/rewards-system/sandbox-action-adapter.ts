@@ -1,4 +1,9 @@
-import { applyActivityEvent, buildDefaultRewardsCatalog, claimReward as buildClaimReward, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
+import {
+  applyActivityEvent,
+  buildDefaultRewardsCatalog,
+  claimReward as buildClaimReward,
+  evaluateAllTasksForUser,
+} from "@/app/lib/rewards-engine"
 import { buildSandboxCompletionEvents } from "@/app/lib/rewards-engine/task-completion"
 import type {
   ReferralProfile,
@@ -10,10 +15,7 @@ import type {
 import type { RewardsActionAdapter, RewardsSessionState } from "./contracts"
 
 function applyActivityEventToSession(state: RewardsSessionState, event: RewardActivityEvent): RewardsSessionState {
-  const nextEngineState = applyActivityEvent(
-    { events: state.events, claims: state.claims },
-    event,
-  )
+  const nextEngineState = applyActivityEvent({ events: state.events, claims: state.claims }, event)
 
   return {
     ...state,
@@ -30,7 +32,10 @@ type SandboxRewardsActionAdapterOptions = {
 }
 
 function buildReferralCode(wallet: string) {
-  return `AVA-${wallet.replace(/[^a-z0-9]/gi, "").slice(-8).toUpperCase()}`
+  return `AVA-${wallet
+    .replace(/[^a-z0-9]/gi, "")
+    .slice(-8)
+    .toUpperCase()}`
 }
 
 export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
@@ -223,10 +228,7 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
       })
       state = {
         ...state,
-        relationships: [
-          ...state.relationships,
-          { referrerWallet: wallet, referredWallet, createdAt: this.now() },
-        ],
+        relationships: [...state.relationships, { referrerWallet: wallet, referredWallet, createdAt: this.now() }],
       }
       this.writeState(state)
       return state
@@ -249,7 +251,9 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
       return state
     }
 
-    const fundedCount = state.events.filter((event) => event.wallet === wallet && event.type === "referral_funded").length
+    const fundedCount = state.events.filter(
+      (event) => event.wallet === wallet && event.type === "referral_funded",
+    ).length
     const fundedWallet = `${wallet}-crew-${fundedCount}`
     state = applyActivityEventToSession(state, {
       id: `${wallet}:referral_funded:${fundedWallet}`,
@@ -413,7 +417,9 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
 
   async applyReferralCode(wallet: string, referralCode: string) {
     let state = this.readState()
-    const referrerProfile = Object.values(state.referralProfiles).find((profile) => profile.referralCode === referralCode)
+    const referrerProfile = Object.values(state.referralProfiles).find(
+      (profile) => profile.referralCode === referralCode,
+    )
     if (!referrerProfile) throw new Error(`Unknown referral code ${referralCode}`)
     if (referrerProfile.wallet === wallet) throw new Error("Wallet cannot refer itself")
 

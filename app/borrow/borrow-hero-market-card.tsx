@@ -59,7 +59,12 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
               <div className="font-data text-[13px] font-medium tabular-nums leading-tight tracking-tight text-foreground md:text-[14px]">
                 {row.value}
               </div>
-              <div className={cn("font-data text-[11px] font-medium tabular-nums leading-tight md:text-[12px]", row.deltaClassName)}>
+              <div
+                className={cn(
+                  "font-data text-[11px] font-medium tabular-nums leading-tight md:text-[12px]",
+                  row.deltaClassName,
+                )}
+              >
                 {row.delta}
               </div>
             </div>

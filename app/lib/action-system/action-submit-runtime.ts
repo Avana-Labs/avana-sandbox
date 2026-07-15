@@ -27,8 +27,7 @@ const SKIP_SIMULATED_DELAYS = typeof process !== "undefined" && process.env?.VIT
  * timeout we reject so the caller transitions to the error stage and clears its pending flag.
  */
 export const EXECUTE_TIMEOUT_MS = 30_000
-export const EXECUTE_TIMEOUT_MESSAGE =
-  "The transaction timed out. Check your connection and try again."
+export const EXECUTE_TIMEOUT_MESSAGE = "The transaction timed out. Check your connection and try again."
 
 function delay(ms: number) {
   if (SKIP_SIMULATED_DELAYS) return Promise.resolve()

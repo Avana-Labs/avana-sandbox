@@ -14,12 +14,7 @@ import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
 import { buildLendMarketDetail, resolveLendMarket } from "./mock"
 import type { LendMarketDetail } from "./types"
 
-export type {
-  LendMarketDetail,
-  LendMarketHero,
-  LendMarketRelatedSummary,
-  LendTokenVisual,
-} from "./types"
+export type { LendMarketDetail, LendMarketHero, LendMarketRelatedSummary, LendTokenVisual } from "./types"
 export { buildLendMarketDetail, resolveLendMarket, getLendAboutCard } from "./mock"
 export type { LendDetailOverrides } from "./mock"
 

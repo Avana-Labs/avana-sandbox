@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest"
 import fc from "fast-check"
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
-import { RAY, USD_SCALE, WAD, assetsToShares, calculateCreditMetrics, currentDebtValueUsd6, sharesToAssets } from "@/app/lib/credit-engine"
+import {
+  RAY,
+  USD_SCALE,
+  WAD,
+  assetsToShares,
+  calculateCreditMetrics,
+  currentDebtValueUsd6,
+  sharesToAssets,
+} from "@/app/lib/credit-engine"
 import { EXAMPLE_UNI_USDC_ASSET_ID, makeExampleBorrowSystemState } from "./fixtures"
 
 const BPS_TO_WAD = 100_000_000_000_000n
@@ -77,8 +85,28 @@ describe("borrow credit property tests", () => {
         fc.bigInt({ min: RAY, max: RAY * 4n }),
         (shares, indexA, indexB) => {
           fc.pre(indexB >= indexA)
-          expect(currentDebtValueUsd6({ id: "d", assetId: EXAMPLE_UNI_USDC_ASSET_ID, baseAssetId: "usdc", spokeId: "uni-v3-bluechip", debtSharesUsd6: shares, debtIndexRay: indexB, borrowRateWad: 0n, principalBorrowedUsd6: shares })).toBeGreaterThanOrEqual(
-            currentDebtValueUsd6({ id: "d", assetId: EXAMPLE_UNI_USDC_ASSET_ID, baseAssetId: "usdc", spokeId: "uni-v3-bluechip", debtSharesUsd6: shares, debtIndexRay: indexA, borrowRateWad: 0n, principalBorrowedUsd6: shares }),
+          expect(
+            currentDebtValueUsd6({
+              id: "d",
+              assetId: EXAMPLE_UNI_USDC_ASSET_ID,
+              baseAssetId: "usdc",
+              spokeId: "uni-v3-bluechip",
+              debtSharesUsd6: shares,
+              debtIndexRay: indexB,
+              borrowRateWad: 0n,
+              principalBorrowedUsd6: shares,
+            }),
+          ).toBeGreaterThanOrEqual(
+            currentDebtValueUsd6({
+              id: "d",
+              assetId: EXAMPLE_UNI_USDC_ASSET_ID,
+              baseAssetId: "usdc",
+              spokeId: "uni-v3-bluechip",
+              debtSharesUsd6: shares,
+              debtIndexRay: indexA,
+              borrowRateWad: 0n,
+              principalBorrowedUsd6: shares,
+            }),
           )
         },
       ),
@@ -87,19 +115,25 @@ describe("borrow credit property tests", () => {
   })
 
   it("keeps credit metrics inside formula invariants for random valid states", () => {
-    const arb = fc.record({
-      collateralFactorBps: fc.integer({ min: 1000, max: 8500 }),
-      liquidationThresholdBps: fc.integer({ min: 1500, max: 9500 }),
-      riskScoreBps: fc.integer({ min: 0, max: 9000 }),
-      feeApyBps: fc.integer({ min: 0, max: 3500 }),
-      lpPriceUsd: fc.integer({ min: 100, max: 5000 }),
-      walletBalanceUsd: fc.integer({ min: 0, max: 250000 }),
-      collateralShares: fc.integer({ min: 1, max: 250 }),
-      principalCollateralShares: fc.integer({ min: 1, max: 250 }),
-      baseBorrowAprBps: fc.integer({ min: 100, max: 2500 }),
-      debtPrincipalUsd: fc.integer({ min: 0, max: 500000 }),
-      debtIndexBps: fc.integer({ min: 0, max: 2500 }),
-    }).filter((value) => value.liquidationThresholdBps >= value.collateralFactorBps && value.collateralShares >= value.principalCollateralShares)
+    const arb = fc
+      .record({
+        collateralFactorBps: fc.integer({ min: 1000, max: 8500 }),
+        liquidationThresholdBps: fc.integer({ min: 1500, max: 9500 }),
+        riskScoreBps: fc.integer({ min: 0, max: 9000 }),
+        feeApyBps: fc.integer({ min: 0, max: 3500 }),
+        lpPriceUsd: fc.integer({ min: 100, max: 5000 }),
+        walletBalanceUsd: fc.integer({ min: 0, max: 250000 }),
+        collateralShares: fc.integer({ min: 1, max: 250 }),
+        principalCollateralShares: fc.integer({ min: 1, max: 250 }),
+        baseBorrowAprBps: fc.integer({ min: 100, max: 2500 }),
+        debtPrincipalUsd: fc.integer({ min: 0, max: 500000 }),
+        debtIndexBps: fc.integer({ min: 0, max: 2500 }),
+      })
+      .filter(
+        (value) =>
+          value.liquidationThresholdBps >= value.collateralFactorBps &&
+          value.collateralShares >= value.principalCollateralShares,
+      )
 
     fc.assert(
       fc.property(arb, (params) => {

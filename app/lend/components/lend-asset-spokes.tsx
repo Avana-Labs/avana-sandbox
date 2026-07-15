@@ -1,89 +1,77 @@
-"use client";
+"use client"
 
-import Image from "next/image";
-import { ActionIcon } from "@/app/components/action-icon";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { actionPagePath } from "@/app/lib/action-system/contracts";
-import { Button } from "@/components/ui/button";
-import {
-  DesktopTableSurface,
-  HoverActionGroup,
-  SilentActionHeader,
-} from "@/app/components/market-table-primitives";
+import Image from "next/image"
+import { ActionIcon } from "@/app/components/action-icon"
+import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { Button } from "@/components/ui/button"
+import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
   MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
-} from "@/app/components/market-card-primitives";
-import { TokenIcon } from "@/app/components/token-icon";
-import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend";
-import type { LendPageData } from "@/app/lib/data/providers/lend";
-import { cn } from "@/lib/utils";
-import {
-  TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
-  TABLE_ROW_HOVER_RIGHT,
-} from "@/app/lib/ui/table-row-hover";
-import { usePriceFor } from "@/app/lib/prices/token-prices-context";
-import { formatTokenPrice } from "@/app/lib/prices/format";
-import { useTranslation } from "@/app/lib/i18n/use-translation";
-import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar";
-import {
-  CATEGORY_CHIPS,
-  matchesCategory,
-  type CategoryChip,
-} from "@/app/lib/markets/category";
-import { useMediaQuery } from "@/app/lib/use-media-query";
-import { useCurrency } from "@/app/lib/currency/use-currency";
-import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal";
-import { redenominateCompactUsd } from "@/app/lib/currency/format";
+} from "@/app/components/market-card-primitives"
+import { TokenIcon } from "@/app/components/token-icon"
+import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
+import type { LendPageData } from "@/app/lib/data/providers/lend"
+import { cn } from "@/lib/utils"
+import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { formatTokenPrice } from "@/app/lib/prices/format"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
+import { CATEGORY_CHIPS, matchesCategory, type CategoryChip } from "@/app/lib/markets/category"
+import { useMediaQuery } from "@/app/lib/use-media-query"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
+import { redenominateCompactUsd } from "@/app/lib/currency/format"
 
 /** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
 function AssetSubLabel({ symbol }: { symbol: string }) {
-  const priceFor = usePriceFor();
-  const price = priceFor(symbol);
-  return <>{price !== undefined ? formatTokenPrice(price) : symbol}</>;
+  const priceFor = usePriceFor()
+  const price = priceFor(symbol)
+  return <>{price !== undefined ? formatTokenPrice(price) : symbol}</>
 }
 
 type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
-  marketId?: string;
-  href?: string;
-  supplyApyLabel?: string;
-  rewardsApyLabel?: string;
-  totalApyLabel?: string;
-  supplyApyValue?: number;
-  rewardsApyValue?: number;
-  totalDepositsLabel?: string;
-  totalDepositsSecondaryLabel?: string;
-  totalDepositsSortValue?: number;
-  utilizationLabel?: string;
-  utilizationValue?: number;
-  availableLiquidityLabel?: string;
-  availableLiquiditySecondaryLabel?: string;
-  availableLiquiditySortValue?: number;
-};
-type AssetGroup = LendPageData["assetGroups"][number];
-const LEND_PAGE_SIZE = 12;
+  marketId?: string
+  href?: string
+  supplyApyLabel?: string
+  rewardsApyLabel?: string
+  totalApyLabel?: string
+  supplyApyValue?: number
+  rewardsApyValue?: number
+  totalDepositsLabel?: string
+  totalDepositsSecondaryLabel?: string
+  totalDepositsSortValue?: number
+  utilizationLabel?: string
+  utilizationValue?: number
+  availableLiquidityLabel?: string
+  availableLiquiditySecondaryLabel?: string
+  availableLiquiditySortValue?: number
+}
+type AssetGroup = LendPageData["assetGroups"][number]
+const LEND_PAGE_SIZE = 12
 
 export function paginateLendAssetGroups(groups: AssetGroup[], page: number, pageSize = LEND_PAGE_SIZE) {
-  const start = Math.max(0, page) * pageSize;
-  const end = start + pageSize;
-  let cursor = 0;
+  const start = Math.max(0, page) * pageSize
+  const end = start + pageSize
+  let cursor = 0
   return groups
     .map((group) => {
-      const groupStart = cursor;
-      const groupEnd = cursor + group.rows.length;
-      cursor = groupEnd;
-      const sliceStart = Math.max(0, start - groupStart);
-      const sliceEnd = Math.min(group.rows.length, end - groupStart);
-      return { ...group, rows: sliceEnd > sliceStart ? group.rows.slice(sliceStart, sliceEnd) : [] };
+      const groupStart = cursor
+      const groupEnd = cursor + group.rows.length
+      cursor = groupEnd
+      const sliceStart = Math.max(0, start - groupStart)
+      const sliceEnd = Math.min(group.rows.length, end - groupStart)
+      return { ...group, rows: sliceEnd > sliceStart ? group.rows.slice(sliceStart, sliceEnd) : [] }
     })
-    .filter((group) => group.rows.length > 0);
+    .filter((group) => group.rows.length > 0)
 }
-const DEFAULT_ASSET_GROUPS: AssetGroup[] = LEND_ASSET_GROUPS;
+const DEFAULT_ASSET_GROUPS: AssetGroup[] = LEND_ASSET_GROUPS
 
 function SortIcon() {
   return (
@@ -93,22 +81,10 @@ function SortIcon() {
       fill="none"
       className="size-[14px] text-muted-foreground/70 dark:text-white/60"
     >
-      <path
-        d="M4 5 6 3l2 2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4 11 6 13l2-2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  );
+  )
 }
 
 function AssetIcon({ row }: { row: AssetRow }) {
@@ -125,17 +101,10 @@ function AssetIcon({ row }: { row: AssetRow }) {
           unoptimized
         />
       </span>
-    );
+    )
   }
 
-  return (
-    <TokenIcon
-      symbol={row.symbol}
-      size="table"
-      ring
-      className="bg-card dark:bg-card"
-    />
-  );
+  return <TokenIcon symbol={row.symbol} size="table" ring className="bg-card dark:bg-card" />
 }
 
 function AssetRowView({
@@ -145,21 +114,18 @@ function AssetRowView({
   onDeposit,
   canWithdraw,
 }: {
-  row: AssetRow;
-  index: number;
-  delay: number;
-  onDeposit?: (marketId: string) => void;
-  canWithdraw: boolean;
+  row: AssetRow
+  index: number
+  delay: number
+  onDeposit?: (marketId: string) => void
+  canWithdraw: boolean
 }) {
-  const { t } = useTranslation();
-  const { ctx } = useCurrency();
-  const router = useRouter();
-  const marketId =
-    "marketId" in row && typeof row.marketId === "string"
-      ? row.marketId
-      : row.symbol.toLowerCase();
-  const detailHref = row.href ?? `/lend/markets/${marketId}`;
-  const detailReturn = detailHref;
+  const { t } = useTranslation()
+  const { ctx } = useCurrency()
+  const router = useRouter()
+  const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
+  const detailHref = row.href ?? `/lend/markets/${marketId}`
+  const detailReturn = detailHref
   return (
     <tr
       className="asset-swap group cursor-pointer transition-colors"
@@ -193,9 +159,7 @@ function AssetRowView({
 
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-          <span className="tabular-nums">
-            {row.totalDepositsLabel ?? row.totalDepositsPrimary}
-          </span>
+          <span className="tabular-nums">{row.totalDepositsLabel ?? row.totalDepositsPrimary}</span>
         </div>
         <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
           {redenominateCompactUsd(row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary, ctx)}
@@ -210,15 +174,10 @@ function AssetRowView({
 
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-          <span className="tabular-nums">
-            {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
-          </span>
+          <span className="tabular-nums">{row.availableLiquidityLabel ?? row.availableLiquidityPrimary}</span>
         </div>
         <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
-          {redenominateCompactUsd(
-            row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary,
-            ctx,
-          )}
+          {redenominateCompactUsd(row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary, ctx)}
         </div>
       </td>
 
@@ -232,8 +191,8 @@ function AssetRowView({
                 variant="table-primary"
                 className="w-auto"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  onDeposit(marketId);
+                  e.stopPropagation()
+                  onDeposit(marketId)
                 }}
               >
                 <ActionIcon label="Deposit" />
@@ -247,14 +206,14 @@ function AssetRowView({
                 disabled={!canWithdraw}
                 title={canWithdraw ? undefined : t("No supplied position to withdraw")}
                 onClick={(e) => {
-                  e.stopPropagation();
-                  if (!canWithdraw) return;
+                  e.stopPropagation()
+                  if (!canWithdraw) return
                   router.push(
                     actionPagePath("lend", "withdraw", {
                       market: marketId,
                       return: detailReturn,
                     }),
-                  );
+                  )
                 }}
               >
                 <ActionIcon label="Withdraw" />
@@ -265,24 +224,17 @@ function AssetRowView({
         ) : null}
       </td>
     </tr>
-  );
+  )
 }
 
 function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
-  const { t } = useTranslation();
-  const { ctx } = useCurrency();
-  const router = useRouter();
-  const marketId =
-    "marketId" in row && typeof row.marketId === "string"
-      ? row.marketId
-      : row.symbol.toLowerCase();
-  const detailHref = row.href ?? `/lend/markets/${marketId}`;
+  const { t } = useTranslation()
+  const { ctx } = useCurrency()
+  const router = useRouter()
+  const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
+  const detailHref = row.href ?? `/lend/markets/${marketId}`
   return (
-    <MarketMobileCard
-      clickable
-      style={{ animationDelay: `${index * 40}ms` }}
-      onClick={() => router.push(detailHref)}
-    >
+    <MarketMobileCard clickable style={{ animationDelay: `${index * 40}ms` }} onClick={() => router.push(detailHref)}>
       <MarketMobileCardHeader
         identity={
           <div className="flex min-w-0 items-center gap-3">
@@ -297,12 +249,7 @@ function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
             </div>
           </div>
         }
-        metric={
-          <MarketMobileMetric
-            value={row.supplyApyLabel ?? row.apy}
-            label={t("APY")}
-          />
-        }
+        metric={<MarketMobileMetric value={row.supplyApyLabel ?? row.apy} label={t("APY")} />}
       />
       <MarketMobileStatList className="mt-4">
         <MarketMobileStatRow
@@ -316,27 +263,21 @@ function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
             </span>
           }
         />
-        <MarketMobileStatRow
-          label={t("Utilization")}
-          value={row.utilizationLabel ?? "—"}
-        />
+        <MarketMobileStatRow label={t("Utilization")} value={row.utilizationLabel ?? "—"} />
         <MarketMobileStatRow
           label={t("Available Liquidity")}
           value={
             <span>
               {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
               <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
-                {redenominateCompactUsd(
-                  row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary,
-                  ctx,
-                )}
+                {redenominateCompactUsd(row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary, ctx)}
               </span>
             </span>
           }
         />
       </MarketMobileStatList>
     </MarketMobileCard>
-  );
+  )
 }
 
 function AssetSection({
@@ -348,93 +289,79 @@ function AssetSection({
   initialIsDesktop,
   deferContent,
 }: {
-  title: string;
-  subtitle?: string;
-  rows: AssetRow[];
-  onDeposit?: (marketId: string) => void;
-  withdrawableMarketIds: ReadonlySet<string>;
-  initialIsDesktop: boolean;
-  deferContent: boolean;
+  title: string
+  subtitle?: string
+  rows: AssetRow[]
+  onDeposit?: (marketId: string) => void
+  withdrawableMarketIds: ReadonlySet<string>
+  initialIsDesktop: boolean
+  deferContent: boolean
 }) {
-  const { t } = useTranslation();
-  const isDesktop = useMediaQuery("(min-width: 768px)", initialIsDesktop, true);
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const [contentMounted, setContentMounted] = useState(
-    !deferContent || process.env.NODE_ENV === "test",
-  );
+  const { t } = useTranslation()
+  const isDesktop = useMediaQuery("(min-width: 768px)", initialIsDesktop, true)
+  const sectionRef = useRef<HTMLElement | null>(null)
+  const [contentMounted, setContentMounted] = useState(!deferContent || process.env.NODE_ENV === "test")
   const [sortKey, setSortKey] = useState<
-    | "asset"
-    | "supplyApy"
-    | "totalDeposits"
-    | "utilization"
-    | "availableLiquidity"
-  >("asset");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+    "asset" | "supplyApy" | "totalDeposits" | "utilization" | "availableLiquidity"
+  >("asset")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   const toggleSort = (nextKey: typeof sortKey) => {
     if (sortKey === nextKey) {
-      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
-      return;
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
+      return
     }
 
-    setSortKey(nextKey);
-    setSortDirection(nextKey === "asset" ? "asc" : "desc");
-  };
+    setSortKey(nextKey)
+    setSortDirection(nextKey === "asset" ? "asc" : "desc")
+  }
 
   const sortedRows = useMemo(() => {
-    const direction = sortDirection === "asc" ? 1 : -1;
+    const direction = sortDirection === "asc" ? 1 : -1
 
     return [...rows].sort((a, b) => {
       switch (sortKey) {
         case "supplyApy":
-          return (
-            ((a.supplyApyValue ?? a.apyValue / 100) -
-              (b.supplyApyValue ?? b.apyValue / 100)) *
-            direction
-          );
+          return ((a.supplyApyValue ?? a.apyValue / 100) - (b.supplyApyValue ?? b.apyValue / 100)) * direction
         case "totalDeposits":
           return (
             ((a.totalDepositsSortValue ?? a.totalDepositsValue ?? 0) -
               (b.totalDepositsSortValue ?? b.totalDepositsValue ?? 0)) *
             direction
-          );
+          )
         case "utilization":
-          return (
-            ((a.utilizationValue ?? 0) - (b.utilizationValue ?? 0)) * direction
-          );
+          return ((a.utilizationValue ?? 0) - (b.utilizationValue ?? 0)) * direction
         case "availableLiquidity":
           return (
             ((a.availableLiquiditySortValue ?? a.availableLiquidityValue ?? 0) -
-              (b.availableLiquiditySortValue ??
-                b.availableLiquidityValue ??
-                0)) *
+              (b.availableLiquiditySortValue ?? b.availableLiquidityValue ?? 0)) *
             direction
-          );
+          )
         case "asset":
         default:
-          return a.name.localeCompare(b.name) * direction;
+          return a.name.localeCompare(b.name) * direction
       }
-    });
-  }, [rows, sortDirection, sortKey]);
+    })
+  }, [rows, sortDirection, sortKey])
 
   useEffect(() => {
-    if (contentMounted) return;
-    const section = sectionRef.current;
+    if (contentMounted) return
+    const section = sectionRef.current
     if (!section || typeof IntersectionObserver === "undefined") {
-      setContentMounted(true);
-      return;
+      setContentMounted(true)
+      return
     }
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (!entry?.isIntersecting) return;
-        setContentMounted(true);
-        observer.disconnect();
+        if (!entry?.isIntersecting) return
+        setContentMounted(true)
+        observer.disconnect()
       },
       { rootMargin: "400px 0px", threshold: 0 },
-    );
-    observer.observe(section);
-    return () => observer.disconnect();
-  }, [contentMounted]);
+    )
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [contentMounted])
 
   return (
     <section ref={sectionRef} className="space-y-5">
@@ -450,27 +377,18 @@ function AssetSection({
           >
             {t(title)}
           </h2>
-          {subtitle ? (
-            <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">
-              {t(subtitle)}
-            </p>
-          ) : null}
+          {subtitle ? <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">{t(subtitle)}</p> : null}
         </div>
       </div>
 
       {!contentMounted ? (
-        <div
-          aria-hidden
-          className="min-h-[640px] rounded-radius-md bg-table-row"
-        />
+        <div aria-hidden className="min-h-[640px] rounded-radius-md bg-table-row" />
       ) : (
         <DesktopTableSurface className="rounded-radius-md [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
           {!isDesktop ? (
             <div className="space-y-4">
               {sortedRows.length > 0 ? (
-                sortedRows.map((row, index) => (
-                  <AssetCardView key={row.symbol} row={row} index={index} />
-                ))
+                sortedRows.map((row, index) => <AssetCardView key={row.symbol} row={row} index={index} />)
               ) : (
                 <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
                   {t("No assets match these filters.")}
@@ -590,10 +508,7 @@ function AssetSection({
                     ))
                   ) : (
                     <tr>
-                      <td
-                        className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60"
-                        colSpan={7}
-                      >
+                      <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={7}>
                         {t("No assets match these filters.")}
                       </td>
                     </tr>
@@ -605,7 +520,7 @@ function AssetSection({
         </DesktopTableSurface>
       )}
     </section>
-  );
+  )
 }
 
 export function LendAssetSpokes({
@@ -614,33 +529,31 @@ export function LendAssetSpokes({
   withdrawableMarketIds = new Set<string>(),
   initialIsDesktop = true,
 }: {
-  groups?: LendPageData["assetGroups"];
-  onDeposit?: (marketId: string) => void;
-  withdrawableMarketIds?: ReadonlySet<string>;
-  initialIsDesktop?: boolean;
+  groups?: LendPageData["assetGroups"]
+  onDeposit?: (marketId: string) => void
+  withdrawableMarketIds?: ReadonlySet<string>
+  initialIsDesktop?: boolean
 }) {
-  const { t } = useTranslation();
-  const [search, setSearch] = useState("");
-  const [currentTab, setCurrentTab] = useState<CategoryChip["id"]>("all");
+  const { t } = useTranslation()
+  const [search, setSearch] = useState("")
+  const [currentTab, setCurrentTab] = useState<CategoryChip["id"]>("all")
 
   const filteredGroups = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = search.trim().toLowerCase()
 
     return groups
       .map((group) => {
         const rows = group.rows.filter((row) => {
           const matchesSearch =
-            query.length === 0 ||
-            row.name.toLowerCase().includes(query) ||
-            row.symbol.toLowerCase().includes(query);
-          return matchesSearch && matchesCategory(row.symbol, currentTab);
-        });
+            query.length === 0 || row.name.toLowerCase().includes(query) || row.symbol.toLowerCase().includes(query)
+          return matchesSearch && matchesCategory(row.symbol, currentTab)
+        })
 
-        return { ...group, rows };
+        return { ...group, rows }
       })
-      .filter((group) => group.rows.length > 0);
-  }, [groups, search, currentTab]);
-  const totalRows = filteredGroups.reduce((sum, group) => sum + group.rows.length, 0);
+      .filter((group) => group.rows.length > 0)
+  }, [groups, search, currentTab])
+  const totalRows = filteredGroups.reduce((sum, group) => sum + group.rows.length, 0)
 
   // Reveal assets on scroll instead of paginating: only the first chunk of rows
   // (sliced across the ordered groups) renders up front, then the sentinel eases
@@ -649,17 +562,14 @@ export function LendAssetSpokes({
     total: totalRows,
     chunkSize: LEND_PAGE_SIZE,
     resetKey: `${currentTab}|${search.trim().toLowerCase()}`,
-  });
+  })
   const revealedGroups = useMemo(
     () => paginateLendAssetGroups(filteredGroups, 0, visibleCount),
     [filteredGroups, visibleCount],
-  );
+  )
 
   return (
-    <section
-      className="mt-[38px] space-y-[58px]"
-      style={{ overflowAnchor: "none" }}
-    >
+    <section className="mt-[38px] space-y-[58px]" style={{ overflowAnchor: "none" }}>
       <div className="py-2.5">
         <MarketFilterBar
           chips={CATEGORY_CHIPS.lend}
@@ -700,5 +610,5 @@ export function LendAssetSpokes({
 
       {hasMore ? <RevealSentinel sentinelRef={sentinelRef} active={isRevealing} /> : null}
     </section>
-  );
+  )
 }

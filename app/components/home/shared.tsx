@@ -22,12 +22,7 @@ export function PickerSurface({
 }) {
   if (seamless) {
     return (
-      <div
-        className={cn(
-          "px-4 py-4 transition-colors",
-          tier === "top" ? "bg-surface-raised" : "bg-surface-inset",
-        )}
-      >
+      <div className={cn("px-4 py-4 transition-colors", tier === "top" ? "bg-surface-raised" : "bg-surface-inset")}>
         <div className="mb-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
           {label}
         </div>
@@ -44,9 +39,7 @@ export function PickerSurface({
         tier === "top" ? "bg-surface-raised" : "bg-surface-inset",
       )}
     >
-      <div className="mb-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-        {label}
-      </div>
+      <div className="mb-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
       {children}
       {footer ? <div className="mt-3 text-[11.5px] text-muted-foreground">{footer}</div> : null}
     </div>

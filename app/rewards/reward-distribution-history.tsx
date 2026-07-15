@@ -116,7 +116,12 @@ export function RewardDistributionHistory({ rows }: { rows: PortfolioActivityRow
                 <div className="mt-2.5 flex items-center justify-between gap-3">
                   <span className="font-data text-[14px] font-medium tabular-nums text-success">{amount(row)}</span>
                   <div className="flex items-center gap-2.5">
-                    <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium", STATUS_TONE[row.status])}>
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                        STATUS_TONE[row.status],
+                      )}
+                    >
                       {statusLabel(row)}
                     </span>
                     <TxnLink
@@ -164,7 +169,12 @@ export function RewardDistributionHistory({ rows }: { rows: PortfolioActivityRow
                       {amount(row)}
                     </td>
                     <td className="px-5 py-4 align-middle">
-                      <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium", STATUS_TONE[row.status])}>
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                          STATUS_TONE[row.status],
+                        )}
+                      >
                         {statusLabel(row)}
                       </span>
                     </td>

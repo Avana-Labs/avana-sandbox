@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { borrowResultToRecordArgs, lendResultToRecordArgs, multiplyResultToRecordArgs } from "@/app/lib/sandbox-tx/persistence"
+import {
+  borrowResultToRecordArgs,
+  lendResultToRecordArgs,
+  multiplyResultToRecordArgs,
+} from "@/app/lib/sandbox-tx/persistence"
 import type { MultiplySandboxActionResult } from "@/app/lib/multiply-system/contracts"
 import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
 import type { LendSandboxActionResult } from "@/app/lib/lend-system/contracts"

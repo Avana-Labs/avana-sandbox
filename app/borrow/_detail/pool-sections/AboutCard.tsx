@@ -42,7 +42,11 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         plain ? "space-y-4" : "overflow-hidden rounded-radius-lg border border-border bg-surface-raised shadow-elev-1"
       }
     >
-      <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
+      <div
+        className={
+          plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"
+        }
+      >
         <h2
           className={
             compact
@@ -54,7 +58,11 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         </h2>
       </div>
 
-      <p className={plain ? "text-[14px] leading-[1.55] text-text-high" : "px-4 text-[14px] leading-[1.55] text-text-high"}>
+      <p
+        className={
+          plain ? "text-[14px] leading-[1.55] text-text-high" : "px-4 text-[14px] leading-[1.55] text-text-high"
+        }
+      >
         {shownDescription}
         {isLong ? (
           <button
@@ -84,7 +92,10 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
                     className="group flex items-center justify-end gap-2 text-text-extra-high transition-colors hover:text-text-high"
                   >
                     <span className="truncate font-data font-medium tabular-nums">{t(s.value)}</span>
-                    <ArrowUpRight className="size-4 shrink-0 text-text-low transition-colors group-hover:text-text-high" aria-hidden />
+                    <ArrowUpRight
+                      className="size-4 shrink-0 text-text-low transition-colors group-hover:text-text-high"
+                      aria-hidden
+                    />
                   </a>
                 ) : (
                   t(s.value)

@@ -87,11 +87,7 @@ describe("MultiplyActionPageClient", () => {
   it("previews a fresh-wallet multiply without merging a ghost position", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
-        <MultiplyActionPageClient
-          kind="multiply"
-          initialMarketId="eth-usdt"
-          initialMultiplier="2"
-        />
+        <MultiplyActionPageClient kind="multiply" initialMarketId="eth-usdt" initialMultiplier="2" />
       </AvanaSessionsProvider>,
     )
 

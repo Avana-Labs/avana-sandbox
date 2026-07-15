@@ -10,7 +10,9 @@ export function RelatedMarketsRow({ detail }: Props) {
   return (
     <section id="related-markets" className="min-w-0">
       <div className="mb-3">
-        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Related markets</h2>
+        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+          Related markets
+        </h2>
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {detail.related.map((rel) => (
@@ -43,7 +45,14 @@ export function RelatedMarketsRow({ detail }: Props) {
                   <span className="inline-flex size-8 items-center justify-center" aria-hidden="true">
                     {rel.visual.iconUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={rel.visual.iconUrl} alt="" className="size-8 object-contain" width={32} height={32} loading="lazy" />
+                      <img
+                        src={rel.visual.iconUrl}
+                        alt=""
+                        className="size-8 object-contain"
+                        width={32}
+                        height={32}
+                        loading="lazy"
+                      />
                     ) : (
                       <span className="text-[11px] font-medium text-muted-foreground">{rel.visual.shortLabel}</span>
                     )}

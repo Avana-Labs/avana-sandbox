@@ -103,7 +103,13 @@ async function buildBreakdown(ctx: QueryCtx, marketId: Id<"markets">, scope: "as
       rewardsDistributedUsd: acc.rewardsDistributedUsd + m.rewardsDistributedUsd,
       swapFeesUsd: acc.swapFeesUsd + m.swapFeesUsd,
     }),
-    { interestFromBorrowersUsd: 0, interestToSuppliersUsd: 0, reserveTakeUsd: 0, rewardsDistributedUsd: 0, swapFeesUsd: 0 },
+    {
+      interestFromBorrowersUsd: 0,
+      interestToSuppliersUsd: 0,
+      reserveTakeUsd: 0,
+      rewardsDistributedUsd: 0,
+      swapFeesUsd: 0,
+    },
   )
 
   const feesSeries = {
@@ -123,14 +129,26 @@ async function buildBreakdown(ctx: QueryCtx, marketId: Id<"markets">, scope: "as
           { label: "Swap fees", reported: formatCompactUsd(ttm.swapFeesUsd), highlighted: true },
           { label: "LP incentives", reported: formatCompactUsd(ttm.rewardsDistributedUsd) },
           { label: "Protocol revenue", reported: formatCompactUsd(ttm.reserveTakeUsd) },
-          { label: "Net to suppliers", reported: formatCompactUsd(ttm.interestToSuppliersUsd + ttm.swapFeesUsd * 0.9), highlighted: true },
+          {
+            label: "Net to suppliers",
+            reported: formatCompactUsd(ttm.interestToSuppliersUsd + ttm.swapFeesUsd * 0.9),
+            highlighted: true,
+          },
         ]
       : [
-          { label: "Interest paid by borrowers", reported: formatCompactUsd(ttm.interestFromBorrowersUsd), highlighted: true },
+          {
+            label: "Interest paid by borrowers",
+            reported: formatCompactUsd(ttm.interestFromBorrowersUsd),
+            highlighted: true,
+          },
           { label: "To suppliers", reported: formatCompactUsd(ttm.interestToSuppliersUsd) },
           { label: "Reserve", reported: formatCompactUsd(ttm.reserveTakeUsd) },
           { label: "Rewards distributed", reported: formatCompactUsd(ttm.rewardsDistributedUsd) },
-          { label: "Net to suppliers", reported: formatCompactUsd(ttm.interestToSuppliersUsd + ttm.rewardsDistributedUsd), highlighted: true },
+          {
+            label: "Net to suppliers",
+            reported: formatCompactUsd(ttm.interestToSuppliersUsd + ttm.rewardsDistributedUsd),
+            highlighted: true,
+          },
         ]
 
   return {

@@ -4,11 +4,7 @@
 // liquidity — while still rejecting absurd inputs before the simulation engine.
 
 import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
-import {
-  formatActionAmount,
-  formatActionApproxUsd,
-  formatActionFeeSummary,
-} from "@/app/lib/action-system/formatters"
+import { formatActionAmount, formatActionApproxUsd, formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 
 /**
  * The sandbox wallet's spendable collateral budget (USD), matching the borrow

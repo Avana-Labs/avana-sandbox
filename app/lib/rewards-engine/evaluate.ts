@@ -43,12 +43,15 @@ function countMatchingEvents(task: RewardTask, events: RewardActivityEvent[]) {
   })
 
   if (requirement.distinctProducts) {
-    const products = new Set(matches.map((event) => event.product).filter((product) => requirement.distinctProducts?.includes(product)))
+    const products = new Set(
+      matches.map((event) => event.product).filter((product) => requirement.distinctProducts?.includes(product)),
+    )
     return products.size
   }
 
   if (requirement.distinctMarketIds) {
-    return new Set(matches.map((event) => event.marketId).filter((marketId): marketId is string => Boolean(marketId))).size
+    return new Set(matches.map((event) => event.marketId).filter((marketId): marketId is string => Boolean(marketId)))
+      .size
   }
 
   return matches.length
@@ -57,7 +60,12 @@ function countMatchingEvents(task: RewardTask, events: RewardActivityEvent[]) {
 export function evaluateReferralProgress(task: RewardTask, events: RewardActivityEvent[]) {
   const requirement = task.requirement
   if (requirement.type !== "referral_count") return 0
-  return new Set(events.filter((event) => requirement.eventTypes.includes(event.type)).map((event) => event.referredWallet).filter(Boolean)).size
+  return new Set(
+    events
+      .filter((event) => requirement.eventTypes.includes(event.type))
+      .map((event) => event.referredWallet)
+      .filter(Boolean),
+  ).size
 }
 
 export function evaluateStreakProgress(task: RewardTask, events: RewardActivityEvent[]) {
@@ -102,7 +110,9 @@ export function evaluateHoldingPeriodProgress(task: RewardTask, events: RewardAc
   if (matches.length === 0) return 0
   const elapsedMs = matches[matches.length - 1]!.timestamp - matches[0]!.timestamp
   const elapsedDays = elapsedMs / (24 * 60 * 60 * 1000)
-  return elapsedDays >= requirement.durationDays ? requirement.targetCount : Math.max(0, Math.min(requirement.targetCount, elapsedDays / requirement.durationDays))
+  return elapsedDays >= requirement.durationDays
+    ? requirement.targetCount
+    : Math.max(0, Math.min(requirement.targetCount, elapsedDays / requirement.durationDays))
 }
 
 function evaluateWaitSinceLoginProgress(firstLoginAt: number | undefined, waitMs: number, now: number) {
@@ -111,7 +121,12 @@ function evaluateWaitSinceLoginProgress(firstLoginAt: number | undefined, waitMs
   return Math.min(1, elapsed / waitMs)
 }
 
-function evaluateRawProgress(task: RewardTask, events: RewardActivityEvent[], firstLoginAt: number | undefined, now: number) {
+function evaluateRawProgress(
+  task: RewardTask,
+  events: RewardActivityEvent[],
+  firstLoginAt: number | undefined,
+  now: number,
+) {
   switch (task.requirement.type) {
     case "event_count":
       return countMatchingEvents(task, events)
@@ -239,7 +254,9 @@ export function calculateRewardSummary({
     totalTaskCount: tasks.length,
     totalEarnedAmount: progress.reduce((total, item) => total + item.claimableAmount + item.claimedAmount, 0),
     totalClaimableAmount: progress.reduce((total, item) => total + item.claimableAmount, 0),
-    totalClaimedAmount: claims.filter((claim) => claim.wallet === wallet).reduce((total, claim) => total + claim.amount, 0),
+    totalClaimedAmount: claims
+      .filter((claim) => claim.wallet === wallet)
+      .reduce((total, claim) => total + claim.amount, 0),
   }
 }
 

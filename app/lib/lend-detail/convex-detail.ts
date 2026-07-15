@@ -86,16 +86,15 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     fetchLendContent(slug),
   ])
 
-  return applyDetailContentOverlay({
-    ...detail,
-    quickStats: injectRealPrice(
-      mergeConvexQuickStats(detail.quickStats, quickStats),
-      prices,
-      market.asset.symbol,
-    ),
-    heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
-    cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
-    transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
-    risk: (risk as typeof detail.risk) ?? detail.risk,
-  }, content)
+  return applyDetailContentOverlay(
+    {
+      ...detail,
+      quickStats: injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, market.asset.symbol),
+      heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
+      cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
+      transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
+      risk: (risk as typeof detail.risk) ?? detail.risk,
+    },
+    content,
+  )
 }

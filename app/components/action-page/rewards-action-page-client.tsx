@@ -39,7 +39,11 @@ export function RewardsActionPageClient({
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
-  const [claimSummary, setClaimSummary] = useState({ claimUsd: 0, claimableTaskCount: 0, tokenBreakdown: [] as Array<{ symbol: string; amount: number }> })
+  const [claimSummary, setClaimSummary] = useState({
+    claimUsd: 0,
+    claimableTaskCount: 0,
+    tokenBreakdown: [] as Array<{ symbol: string; amount: number }>,
+  })
 
   useEffect(() => {
     void rewards.readAdapter.readRewardSummary(walletId).then((summary) => {

@@ -11,7 +11,9 @@ const executeTransaction = vi.fn()
 const push = vi.fn()
 const walletId = "demo-wallet"
 const previewState = buildMockBorrowSystemState(walletId)
-const previewPool = selectBorrowCollateralPools(previewState, walletId).find((entry) => entry.id === "uni-v3-bluechip-weth-usdc")!
+const previewPool = selectBorrowCollateralPools(previewState, walletId).find(
+  (entry) => entry.id === "uni-v3-bluechip-weth-usdc",
+)!
 const pool = {
   ...previewPool,
 }
@@ -69,15 +71,7 @@ vi.mock("@/components/ui/dialog", () => ({
 }))
 
 vi.mock("@/app/components/action-page/action-page-launch-cta", () => ({
-  ActionPageLaunchCta: ({
-    kind,
-    label,
-    amount,
-  }: {
-    kind: string
-    label?: string
-    amount?: string
-  }) => (
+  ActionPageLaunchCta: ({ kind, label, amount }: { kind: string; label?: string; amount?: string }) => (
     <a data-testid={`action-launch-${kind}`} data-amount={amount ?? ""} href={`/actions/borrow/${kind}`}>
       {label ?? kind}
     </a>
@@ -88,7 +82,8 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useBorrowSessionContext: () => {
     const state = buildMockBorrowSystemState(walletId)
     const collateralPools = selectBorrowCollateralPools(state, walletId)
-    const collateralPool = collateralPools.find((entry) => entry.id === "uni-v3-bluechip-weth-usdc") ?? collateralPools[0]!
+    const collateralPool =
+      collateralPools.find((entry) => entry.id === "uni-v3-bluechip-weth-usdc") ?? collateralPools[0]!
 
     return {
       state,
@@ -108,8 +103,20 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
           availableUsd: collateralPool.borrowPowerUsd,
           riskPremiumBps: 25,
           visuals: [
-            { symbol: "WETH", shortLabel: "WETH", bgClassName: "bg-black", textClassName: "text-white", iconUrl: "/weth.svg" },
-            { symbol: "USDC", shortLabel: "USDC", bgClassName: "bg-blue-500", textClassName: "text-white", iconUrl: "/usdc.svg" },
+            {
+              symbol: "WETH",
+              shortLabel: "WETH",
+              bgClassName: "bg-black",
+              textClassName: "text-white",
+              iconUrl: "/weth.svg",
+            },
+            {
+              symbol: "USDC",
+              shortLabel: "USDC",
+              bgClassName: "bg-blue-500",
+              textClassName: "text-white",
+              iconUrl: "/usdc.svg",
+            },
           ],
           collateralExampleUsd: collateralPool.collateralUsd,
           trendUp: true,
@@ -155,7 +162,8 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
   useBorrowSession: () => {
     const state = buildMockBorrowSystemState(walletId)
     const collateralPools = selectBorrowCollateralPools(state, walletId)
-    const collateralPool = collateralPools.find((entry) => entry.id === "uni-v3-bluechip-weth-usdc") ?? collateralPools[0]!
+    const collateralPool =
+      collateralPools.find((entry) => entry.id === "uni-v3-bluechip-weth-usdc") ?? collateralPools[0]!
 
     return {
       state,
@@ -175,8 +183,20 @@ vi.mock("@/app/lib/borrow-system/use-borrow-session", () => ({
           availableUsd: collateralPool.borrowPowerUsd,
           riskPremiumBps: 25,
           visuals: [
-            { symbol: "WETH", shortLabel: "WETH", bgClassName: "bg-black", textClassName: "text-white", iconUrl: "/weth.svg" },
-            { symbol: "USDC", shortLabel: "USDC", bgClassName: "bg-blue-500", textClassName: "text-white", iconUrl: "/usdc.svg" },
+            {
+              symbol: "WETH",
+              shortLabel: "WETH",
+              bgClassName: "bg-black",
+              textClassName: "text-white",
+              iconUrl: "/weth.svg",
+            },
+            {
+              symbol: "USDC",
+              shortLabel: "USDC",
+              bgClassName: "bg-blue-500",
+              textClassName: "text-white",
+              iconUrl: "/usdc.svg",
+            },
           ],
           collateralExampleUsd: collateralPool.collateralUsd,
           trendUp: true,
@@ -218,7 +238,13 @@ describe("detail sidebars", () => {
     vi.clearAllMocks()
     createIntent.mockImplementation((action) => ({ id: `intent-${action.type}`, payload: action }))
     previewTransaction.mockImplementation(async (intent) => ({ allowed: true, intent }))
-    executeTransaction.mockResolvedValue({ preview: { allowed: true }, receipt: {}, result: {}, historyItem: {}, state: {} })
+    executeTransaction.mockResolvedValue({
+      preview: { allowed: true },
+      receipt: {},
+      result: {},
+      historyItem: {},
+      state: {},
+    })
   })
 
   it("links asset sidebar tabs to action pages", () => {

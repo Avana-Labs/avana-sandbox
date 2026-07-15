@@ -13,12 +13,43 @@ let multiplyTransactionHistory: Array<Record<string, unknown>> = []
 vi.mock("@/app/portfolio/use-portfolio-page", () => ({
   usePortfolioPage: ({ walletProfileId }: { walletProfileId: string }) => ({
     data: {
-      walletProfile: { id: walletProfileId, walletAddress: "0x123", displayName: "Demo", selectedNetwork: "base", networks: ["base"] },
+      walletProfile: {
+        id: walletProfileId,
+        walletAddress: "0x123",
+        displayName: "Demo",
+        selectedNetwork: "base",
+        networks: ["base"],
+      },
       heroByTab: { overview: {}, lending: {}, looping: {}, activity: {} },
       tabs: { borrow: {}, lend: {}, multiply: {}, activity: { totalEvents: 0 } },
-      borrow: { creditLines: { approvedUsd: 0, liquidationThresholdUsd: 0, averageHealthFactor: null, currentLtvPct: 0, totalBorrowedUsd: 0, totalCollateralUsd: 0 }, collateralPositions: [], debtPositions: [] },
+      borrow: {
+        creditLines: {
+          approvedUsd: 0,
+          liquidationThresholdUsd: 0,
+          averageHealthFactor: null,
+          currentLtvPct: 0,
+          totalBorrowedUsd: 0,
+          totalCollateralUsd: 0,
+        },
+        collateralPositions: [],
+        debtPositions: [],
+      },
       lend: { investments: [], strategyBuckets: [] },
-      multiply: { creditLines: { approvedUsd: 0, liquidationThresholdUsd: 0, averageHealthFactor: null, currentLtvPct: 0, totalBorrowedUsd: 0, totalCollateralUsd: 0 }, lpCollaterals: [], positions: [], openOrders: [], twapOrders: [], history: [] },
+      multiply: {
+        creditLines: {
+          approvedUsd: 0,
+          liquidationThresholdUsd: 0,
+          averageHealthFactor: null,
+          currentLtvPct: 0,
+          totalBorrowedUsd: 0,
+          totalCollateralUsd: 0,
+        },
+        lpCollaterals: [],
+        positions: [],
+        openOrders: [],
+        twapOrders: [],
+        history: [],
+      },
       activity: { rows: [] },
       rewards: { claimableUsd: 0, earnedUsd: 0, settledUsd: 0, pendingUsd: 0 },
       fetchedAt: new Date().toISOString(),
@@ -123,7 +154,14 @@ describe("DashboardClient activity", () => {
     ]
 
     readPortfolioBorrow.mockResolvedValue({
-      creditLines: { approvedUsd: 100, liquidationThresholdUsd: 80, averageHealthFactor: 2, currentLtvPct: 40, totalBorrowedUsd: 50, totalCollateralUsd: 100 },
+      creditLines: {
+        approvedUsd: 100,
+        liquidationThresholdUsd: 80,
+        averageHealthFactor: 2,
+        currentLtvPct: 40,
+        totalBorrowedUsd: 50,
+        totalCollateralUsd: 100,
+      },
       collateralPositions: [],
       debtPositions: [],
     })

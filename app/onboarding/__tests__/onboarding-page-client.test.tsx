@@ -60,7 +60,12 @@ function walletState(step: OnboardingGateState["onboardingStep"]): Omit<Onboardi
   }
 }
 
-const ECONOMY: OnboardingGateState["economy"] = { status: "open", userCount: 1, userCap: 10, perUserTargetUsd: 1_000_000 }
+const ECONOMY: OnboardingGateState["economy"] = {
+  status: "open",
+  userCount: 1,
+  userCap: 10,
+  perUserTargetUsd: 1_000_000,
+}
 
 beforeEach(() => {
   economyMock.mockReturnValue(ECONOMY)

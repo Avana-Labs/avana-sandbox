@@ -21,7 +21,12 @@ const LEARN_CARDS: LearnCard[] = [
   { title: "Thinking Clearly About Yield Looping", category: "Guide", slug: "yield-looping-playbook", icon: Repeat },
   { title: "How to Hedge an LP Position", category: "Guide", slug: "hedge-lp-position", icon: Umbrella },
   { title: "Making LP Collateral Usable", category: "Guide", slug: "defi-ux-challenges", icon: Sparkles },
-  { title: "Avana and the Next Step for Liquidity Providers", category: "Strategy", slug: "avana-lp-collateral", icon: Compass },
+  {
+    title: "Avana and the Next Step for Liquidity Providers",
+    category: "Strategy",
+    slug: "avana-lp-collateral",
+    icon: Compass,
+  },
 ]
 
 export function LendLearnSection() {
@@ -45,7 +50,9 @@ export function LendLearnSection() {
             >
               <Icon className="h-6 w-6 flex-none text-brand" strokeWidth={1.75} aria-hidden="true" />
               <span className="min-w-0">
-                <span className="block truncate text-[14px] font-medium leading-snug text-foreground">{t(card.title)}</span>
+                <span className="block truncate text-[14px] font-medium leading-snug text-foreground">
+                  {t(card.title)}
+                </span>
                 <span className="mt-0.5 block text-[12px] text-muted-foreground">{t(card.category)}</span>
               </span>
               <ArrowUpRight

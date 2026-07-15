@@ -106,7 +106,8 @@ const securityHeaders = [
   },
   {
     key: "Permissions-Policy",
-    value: "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), usb=()",
+    value:
+      "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), usb=()",
   },
   {
     key: "X-Content-Type-Options",

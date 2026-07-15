@@ -2,18 +2,16 @@
 
 Interactive frontend for exploring **Avana** — borrow against LP positions on Aave v4. Everything runs locally with **synthetic wallets, markets, and transactions** so you can learn flows, stress-test UX, and validate engine behavior without mainnet risk.
 
-
 ## Main routes
 
-| Route | What to try |
-|-------|-------------|
-| `/` | Home workspace — Borrow, Repay, Claim, Remove in one card |
-| `/borrow` | Market explorer + pool detail pages with sidebar actions |
-| `/lend` | Supply / withdraw stable and volatile assets |
-| `/multiply` | Loop markets, leverage ruler, deleverage |
-| `/dashboard` | Portfolio tabs: Borrow, Lend, Multiply, Activity |
-| `/rewards` | AVA quest rewards + product-linked claim flows |
-
+| Route        | What to try                                               |
+| ------------ | --------------------------------------------------------- |
+| `/`          | Home workspace — Borrow, Repay, Claim, Remove in one card |
+| `/borrow`    | Market explorer + pool detail pages with sidebar actions  |
+| `/lend`      | Supply / withdraw stable and volatile assets              |
+| `/multiply`  | Loop markets, leverage ruler, deleverage                  |
+| `/dashboard` | Portfolio tabs: Borrow, Lend, Multiply, Activity          |
+| `/rewards`   | AVA quest rewards + product-linked claim flows            |
 
 ## Core flows to exercise
 
@@ -23,7 +21,6 @@ Interactive frontend for exploring **Avana** — borrow against LP positions on 
 4. **Lend** — Deposit wallet balance into a market; withdraw supplied position.
 5. **Multiply** — Set collateral amount + multiplier; review net APY, LTV, liquidation price.
 6. **Rewards** — Complete quest-style tasks; claim AVA and product rewards.
-
 
 Lightpaper: [https://avana-ashen.vercel.app/lightpaper](https://avana-ashen.vercel.app/lightpaper)
 

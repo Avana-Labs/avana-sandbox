@@ -17,7 +17,9 @@ describe("borrow collateral actions", () => {
     const metrics = calculateCreditMetrics(next, "wallet-1")
     expect(formatFixed(metrics.poolCollateralValueUsd6, 6)).toBe("21399.224999")
     expect(formatFixed(metrics.creditLimitUsd6, 6)).toBe("15200.395599")
-    expect(next.accounts["wallet-1"]!.walletLpBalancesUsd6[EXAMPLE_UNI_MARKET_ID]).toBe(beforeWalletLp - parseFixed("1000", 6))
+    expect(next.accounts["wallet-1"]!.walletLpBalancesUsd6[EXAMPLE_UNI_MARKET_ID]).toBe(
+      beforeWalletLp - parseFixed("1000", 6),
+    )
     expect(next.transactions.at(-1)?.kind).toBe("deposit")
   })
 
@@ -34,7 +36,9 @@ describe("borrow collateral actions", () => {
     const metrics = calculateCreditMetrics(next, "wallet-1")
     expect(formatFixed(metrics.poolCollateralValueUsd6, 6)).toBe("19399.225")
     expect(formatFixed(metrics.healthFactorWad, 18)).toBe("2.532309370967741935")
-    expect(next.accounts["wallet-1"]!.walletLpBalancesUsd6[EXAMPLE_UNI_MARKET_ID]).toBe(beforeWalletLp + parseFixed("1000", 6))
+    expect(next.accounts["wallet-1"]!.walletLpBalancesUsd6[EXAMPLE_UNI_MARKET_ID]).toBe(
+      beforeWalletLp + parseFixed("1000", 6),
+    )
     expect(next.transactions.at(-1)?.kind).toBe("withdraw")
   })
 

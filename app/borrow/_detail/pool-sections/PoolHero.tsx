@@ -74,7 +74,9 @@ export function PoolHeroIdentity({
         <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
           <HeroIcon
             label={t("Search")}
-            onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")}
+            onClick={() =>
+              window.open(`https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")
+            }
           >
             <Search className="h-3.5 w-3.5" />
           </HeroIcon>
@@ -115,7 +117,12 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
       {hideIdentity ? null : <PoolHeroIdentity detail={detail} leading={leading} actions={actions} />}
 
       <div className="pt-4" data-testid="pool-hero-chart-card">
-        <MarketHeroChart feed={feed} defaultRange="1D" gradientId={`poolHeroFill-${detail.id}`} label={t("Total supplied")} />
+        <MarketHeroChart
+          feed={feed}
+          defaultRange="1D"
+          gradientId={`poolHeroFill-${detail.id}`}
+          label={t("Total supplied")}
+        />
       </div>
     </section>
   )
@@ -123,10 +130,21 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
 
 function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number] }) {
   return (
-    <span role="img" className={cn("inline-flex size-12 items-center justify-center", visual.textClass)} aria-label={visual.symbol}>
+    <span
+      role="img"
+      className={cn("inline-flex size-12 items-center justify-center", visual.textClass)}
+      aria-label={visual.symbol}
+    >
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={visual.iconUrl} alt="" className="size-12 object-contain" width={48} height={48} fetchPriority="high" />
+        <img
+          src={visual.iconUrl}
+          alt=""
+          className="size-12 object-contain"
+          width={48}
+          height={48}
+          fetchPriority="high"
+        />
       ) : (
         <span className="text-[12px] font-medium">{visual.shortLabel}</span>
       )}

@@ -100,7 +100,7 @@ export function LightweightChart({
   const [dimensions, setDimensions] = React.useState({ width: 900, height })
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
   const [isVisible, setIsVisible] = React.useState(true)
-  const accentKey = Array.isArray(accentClassName) ? accentClassName.join("|") : accentClassName ?? ""
+  const accentKey = Array.isArray(accentClassName) ? accentClassName.join("|") : (accentClassName ?? "")
   void showLastLabel
   void showEndDot
   void timeRange
@@ -114,9 +114,7 @@ export function LightweightChart({
         width: Math.max(1, Math.round(entry.contentRect.width)),
         height: Math.max(1, Math.round(entry.contentRect.height)),
       }
-      setDimensions((current) =>
-        current.width === next.width && current.height === next.height ? current : next,
-      )
+      setDimensions((current) => (current.width === next.width && current.height === next.height ? current : next))
     })
     observer.observe(shell)
     return () => observer.disconnect()
@@ -186,7 +184,11 @@ export function LightweightChart({
       onPointerLeave={clearPointer}
       data-testid="lightweight-chart"
     >
-      <svg className="size-full overflow-visible" viewBox={`0 0 ${dimensions.width} ${dimensions.height}`} aria-hidden="true">
+      <svg
+        className="size-full overflow-visible"
+        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+        aria-hidden="true"
+      >
         <defs>
           <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={palette.fillTop} stopOpacity={variant === "token" ? 0.18 : 1} />
@@ -195,40 +197,72 @@ export function LightweightChart({
         </defs>
 
         {type === "area" && geometry.areaPath ? <path d={geometry.areaPath} fill={`url(#${id})`} /> : null}
-        {type === "bar"
-          ? geometry.points.map((point) => {
-              const barWidth = Math.min(10, Math.max(2, geometry.plotWidth / Math.max(1, data.length) * 0.6))
-              return (
-                <rect
-                  key={point.iso}
-                  x={point.x - barWidth / 2}
-                  y={point.y}
-                  width={barWidth}
-                  height={Math.max(1, geometry.plotBottom - point.y)}
-                  rx={3}
-                  fill={palette.stroke}
-                />
-              )
-            })
-          : geometry.linePath
-            ? <path d={geometry.linePath} fill="none" stroke={palette.stroke} strokeWidth="2.5" />
-            : null}
+        {type === "bar" ? (
+          geometry.points.map((point) => {
+            const barWidth = Math.min(10, Math.max(2, (geometry.plotWidth / Math.max(1, data.length)) * 0.6))
+            return (
+              <rect
+                key={point.iso}
+                x={point.x - barWidth / 2}
+                y={point.y}
+                width={barWidth}
+                height={Math.max(1, geometry.plotBottom - point.y)}
+                rx={3}
+                fill={palette.stroke}
+              />
+            )
+          })
+        ) : geometry.linePath ? (
+          <path d={geometry.linePath} fill="none" stroke={palette.stroke} strokeWidth="2.5" />
+        ) : null}
 
         {xTickIndexes.map((index, tickIndex) => {
           const point = geometry.points[index]
           if (!point) return null
           const anchor = tickIndex === 0 ? "start" : tickIndex === xTickIndexes.length - 1 ? "end" : "middle"
-          return <text key={point.iso} x={point.x} y={dimensions.height - 8} textAnchor={anchor} fill="hsl(var(--muted-foreground))" fontSize="11">{point.label}</text>
+          return (
+            <text
+              key={point.iso}
+              x={point.x}
+              y={dimensions.height - 8}
+              textAnchor={anchor}
+              fill="hsl(var(--muted-foreground))"
+              fontSize="11"
+            >
+              {point.label}
+            </text>
+          )
         })}
         {yTickValues.map((value) => {
-          const y = 12 + ((geometry.max - value) / Math.max(0.000001, geometry.max - geometry.min)) * (geometry.plotBottom - 12)
-          return <text key={value} x={dimensions.width - 2} y={y + 4} textAnchor="end" fill="hsl(var(--muted-foreground))" fontSize="11">{resolvedFormatValue(value)}</text>
+          const y =
+            12 + ((geometry.max - value) / Math.max(0.000001, geometry.max - geometry.min)) * (geometry.plotBottom - 12)
+          return (
+            <text
+              key={value}
+              x={dimensions.width - 2}
+              y={y + 4}
+              textAnchor="end"
+              fill="hsl(var(--muted-foreground))"
+              fontSize="11"
+            >
+              {resolvedFormatValue(value)}
+            </text>
+          )
         })}
 
         {activePoint ? (
           <>
             <line x1={activePoint.x} x2={activePoint.x} y1="12" y2={geometry.plotBottom} stroke={palette.cursor} />
-            {type !== "bar" ? <circle cx={activePoint.x} cy={activePoint.y} r="5" fill={palette.stroke} stroke="hsl(var(--background))" strokeWidth="2.5" /> : null}
+            {type !== "bar" ? (
+              <circle
+                cx={activePoint.x}
+                cy={activePoint.y}
+                r="5"
+                fill={palette.stroke}
+                stroke="hsl(var(--background))"
+                strokeWidth="2.5"
+              />
+            ) : null}
           </>
         ) : null}
         {type !== "bar" && lastPoint ? (
@@ -239,7 +273,14 @@ export function LightweightChart({
                 <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
               </circle>
             ) : null}
-            <circle cx={lastPoint.x} cy={lastPoint.y} r="5.5" fill={palette.stroke} stroke="hsl(var(--background))" strokeWidth="2.5" />
+            <circle
+              cx={lastPoint.x}
+              cy={lastPoint.y}
+              r="5.5"
+              fill={palette.stroke}
+              stroke="hsl(var(--background))"
+              strokeWidth="2.5"
+            />
           </>
         ) : null}
       </svg>
@@ -247,11 +288,16 @@ export function LightweightChart({
       {activePoint && !onHoverChange ? (
         <div
           className="pointer-events-none absolute top-2 rounded-xs border border-border bg-popover px-2.5 py-1.5 shadow-elev-2"
-          style={{ left: `${Math.min(88, Math.max(2, (activePoint.x / dimensions.width) * 100))}%`, transform: "translateX(-50%)" }}
+          style={{
+            left: `${Math.min(88, Math.max(2, (activePoint.x / dimensions.width) * 100))}%`,
+            transform: "translateX(-50%)",
+          }}
         >
           <div className="flex flex-col gap-0.5">
             <span className="text-[10px] font-medium text-muted-foreground">{resolvedFormatTime(activePoint.iso)}</span>
-            <span className="font-data text-[12.5px] font-medium text-foreground">{resolvedFormatValue(activePoint.value)}</span>
+            <span className="font-data text-[12.5px] font-medium text-foreground">
+              {resolvedFormatValue(activePoint.value)}
+            </span>
           </div>
         </div>
       ) : null}
@@ -322,9 +368,19 @@ function defaultFormatTime(iso: string, locale?: string): string {
 
 function formatCompactCurrencyValue(value: number, currency: string, locale: string): string {
   if (Math.abs(value) >= 1_000) {
-    return new Intl.NumberFormat(locale, { style: "currency", currency, notation: "compact", maximumFractionDigits: 2 }).format(value)
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      notation: "compact",
+      maximumFractionDigits: 2,
+    }).format(value)
   }
-  return new Intl.NumberFormat(locale, { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
 }
 
 function makeTokenChartPalette(theme: ThemeMode) {

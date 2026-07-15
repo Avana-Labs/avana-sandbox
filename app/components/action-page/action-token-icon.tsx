@@ -78,7 +78,11 @@ export function ActionTokenPairIcon({
         size={size}
         className="absolute left-0 top-0 z-10 ring-2 ring-background"
       />
-      <ActionTokenIconBase symbol={borrowSymbol} size={size} className={cn("absolute top-0 ring-2 ring-background", offset)} />
+      <ActionTokenIconBase
+        symbol={borrowSymbol}
+        size={size}
+        className={cn("absolute top-0 ring-2 ring-background", offset)}
+      />
     </span>
   )
 }

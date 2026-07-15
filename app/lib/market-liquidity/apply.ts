@@ -25,7 +25,10 @@ type BorrowableLiquidity = {
  * available → borrowed (repaying does the reverse). Total liquidity (the sum) is
  * conserved, so utilization is recomputed from the moved amounts.
  */
-export function applyBorrowableAssetLiquidity<T extends BorrowableLiquidity>(asset: T, delta?: MarketLiquidityDelta): T {
+export function applyBorrowableAssetLiquidity<T extends BorrowableLiquidity>(
+  asset: T,
+  delta?: MarketLiquidityDelta,
+): T {
   if (!delta || delta.borrowedDeltaUsd === 0) return asset
   const totalLiquidityUsd = asset.totalBorrowedUsd + asset.availableUsd
   const totalBorrowedUsd = Math.max(0, asset.totalBorrowedUsd + delta.borrowedDeltaUsd)
@@ -35,7 +38,10 @@ export function applyBorrowableAssetLiquidity<T extends BorrowableLiquidity>(ass
 }
 
 /** Convenience: look the delta up by the asset's own id, then apply it. */
-export function applyBorrowableAssetDelta<T extends BorrowableLiquidity & { id: string }>(asset: T, deltas: DeltaMap): T {
+export function applyBorrowableAssetDelta<T extends BorrowableLiquidity & { id: string }>(
+  asset: T,
+  deltas: DeltaMap,
+): T {
   return applyBorrowableAssetLiquidity(asset, deltas.get(asset.id))
 }
 

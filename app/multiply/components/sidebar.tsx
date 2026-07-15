@@ -68,9 +68,13 @@ export function PromoCard() {
       <CardContent className="relative z-10 p-6">
         <h3 className="mb-2 font-semibold text-emerald-700 dark:text-emerald-50">Multiply LP-backed positions</h3>
         <p className="mb-4 text-sm text-emerald-700/80 dark:text-emerald-100/70">
-          Use your active LP positions across Uniswap and Aerodrome as collateral to multiply directional exposure without unstaking.
+          Use your active LP positions across Uniswap and Aerodrome as collateral to multiply directional exposure
+          without unstaking.
         </p>
-        <Button variant="secondary" className="w-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:bg-emerald-500/20 dark:text-emerald-100 dark:hover:bg-emerald-500/30">
+        <Button
+          variant="secondary"
+          className="w-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:bg-emerald-500/20 dark:text-emerald-100 dark:hover:bg-emerald-500/30"
+        >
           Learn more
         </Button>
       </CardContent>
@@ -102,18 +106,18 @@ export function TransactionHistoryList() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-foreground">{tx.action}</p>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                    tx.status === 'confirmed'
-                      ? 'bg-muted text-muted-foreground'
-                      : 'bg-amber-500/10 text-amber-500'
-                  }`}>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded ${
+                      tx.status === "confirmed" ? "bg-muted text-muted-foreground" : "bg-amber-500/10 text-amber-500"
+                    }`}
+                  >
                     {tx.status}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{tx.details}</p>
                 <p className="text-xs text-muted-foreground/60 mt-0.5">{`${formatDay(tx.day)} · ${tx.time}`}</p>
               </div>
-              <span className={`font-data text-sm ${positive ? 'text-emerald-500' : 'text-foreground'}`}>
+              <span className={`font-data text-sm ${positive ? "text-emerald-500" : "text-foreground"}`}>
                 {`${sign}${currency.exact(Math.abs(tx.amountUsd))}`}
               </span>
             </li>

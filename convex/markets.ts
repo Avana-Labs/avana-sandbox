@@ -143,8 +143,7 @@ export const getQuickStats = query({
     const latest = rows[rows.length - 1]
     const prev = rows[rows.length - 2]
     if (!latest) return []
-    const pct = (curr: number, old?: number) =>
-      !old ? 0 : Math.round(((curr - old) / old) * 1000) / 10
+    const pct = (curr: number, old?: number) => (!old ? 0 : Math.round(((curr - old) / old) * 1000) / 10)
     return [
       {
         id: "supplied",
@@ -339,7 +338,12 @@ export const rollupDailyStats = internalMutation({
     let written = 0
     let rebased = 0
     for (const market of markets) {
-      if (market.scope !== "pool" && market.scope !== "asset" && market.scope !== "lend" && market.scope !== "multiply") {
+      if (
+        market.scope !== "pool" &&
+        market.scope !== "asset" &&
+        market.scope !== "lend" &&
+        market.scope !== "multiply"
+      ) {
         continue
       }
       const latest = await ctx.db
@@ -514,7 +518,11 @@ export const getMultiplyHeroSeries = query({
  * Returns shape: `TxHistoryRow[]` (app/lib/borrow-detail/types.ts).
  */
 export const getRecentTransactions = query({
-  args: { scope: v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply")), slug: v.string(), limit: v.optional(v.number()) },
+  args: {
+    scope: v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply")),
+    slug: v.string(),
+    limit: v.optional(v.number()),
+  },
   handler: async (ctx, { scope, slug, limit }) => {
     const market = await resolveMarket(ctx, scope, slug)
     if (!market) return []
@@ -526,7 +534,10 @@ export const getRecentTransactions = query({
     return rows.map((r) => ({
       id: String(r._id),
       at: new Date(r.at).toISOString(),
-      kind: r.kind === "rewardsClaim" ? ("rewards" as const) : (r.kind as "supply" | "withdraw" | "borrow" | "repay" | "liquidation"),
+      kind:
+        r.kind === "rewardsClaim"
+          ? ("rewards" as const)
+          : (r.kind as "supply" | "withdraw" | "borrow" | "repay" | "liquidation"),
       amountLabel: formatCompactUsd(r.amountUsd),
       walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
       counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,

@@ -9,8 +9,7 @@ import { OnboardingFlow, type OnboardingGateState } from "@/app/components/sandb
 export function OnboardingPageConnected({ wallet }: { wallet: string }) {
   const router = useRouter()
   const walletState = useQuery(api.sandbox.onboarding.getWalletOnboardingState, { wallet }) as
-    | Omit<OnboardingGateState, "economy">
-    | undefined
+    Omit<OnboardingGateState, "economy"> | undefined
   const isDone = walletState?.onboardingStep === "done"
   const economy = useQuery(
     api.sandbox.onboarding.getEconomyStatus,

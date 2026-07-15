@@ -120,7 +120,13 @@ const DEV_COLLATERAL: DashboardCollateralData = {
 }
 
 const DEV_DEBT: DashboardDebtData = {
-  summary: { borrowedUsd: 0.64, borrowApyPct: 0.25, borrowingPowerUsd: 4.15, interestOwedUsd: 0, collateralSymbols: ["ETH"] },
+  summary: {
+    borrowedUsd: 0.64,
+    borrowApyPct: 0.25,
+    borrowingPowerUsd: 4.15,
+    interestOwedUsd: 0,
+    collateralSymbols: ["ETH"],
+  },
   rows: [
     {
       id: "debt-cbbtc",

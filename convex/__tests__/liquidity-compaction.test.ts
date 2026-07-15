@@ -24,7 +24,8 @@ const WALLET = "0xAbC0000000000000000000000000000000000001"
 /** Sum a folded ledger to a comparable {borrowed, supplied} per market. */
 function bySlug(rows: Array<{ marketSlug: string; borrowedDeltaUsd: number; suppliedDeltaUsd: number }>) {
   const map = new Map<string, { borrowedDeltaUsd: number; suppliedDeltaUsd: number }>()
-  for (const r of rows) map.set(r.marketSlug, { borrowedDeltaUsd: r.borrowedDeltaUsd, suppliedDeltaUsd: r.suppliedDeltaUsd })
+  for (const r of rows)
+    map.set(r.marketSlug, { borrowedDeltaUsd: r.borrowedDeltaUsd, suppliedDeltaUsd: r.suppliedDeltaUsd })
   return map
 }
 

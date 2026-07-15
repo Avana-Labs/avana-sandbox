@@ -16,7 +16,20 @@ type HoverState = {
 
 type FeaturedAsset = LendPageData["featuredAssets"][keyof LendPageData["featuredAssets"]]
 type FeaturedSnapshot = LendPageData["featuredSnapshots"][number]
-const TIME_LABELS = ["12:00 AM", "1:00 AM", "2:00 AM", "3:00 AM", "4:00 AM", "5:00 AM", "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM"]
+const TIME_LABELS = [
+  "12:00 AM",
+  "1:00 AM",
+  "2:00 AM",
+  "3:00 AM",
+  "4:00 AM",
+  "5:00 AM",
+  "6:00 AM",
+  "7:00 AM",
+  "8:00 AM",
+  "9:00 AM",
+  "10:00 AM",
+  "11:00 AM",
+]
 const GRAPH_WIDTH = 396
 const GRAPH_HEIGHT = 72
 const GRAPH_PADDING_Y = 8
@@ -72,15 +85,7 @@ export function AssetIcon({ asset }: { asset: FeaturedAsset }) {
   )
 }
 
-function HoverTooltip({
-  asset,
-  pointIndex,
-  left,
-}: {
-  asset: FeaturedAsset
-  pointIndex: number
-  left: number
-}) {
+function HoverTooltip({ asset, pointIndex, left }: { asset: FeaturedAsset; pointIndex: number; left: number }) {
   const { t } = useTranslation()
   const points = useMemo(() => parsePathPoints(asset.path), [asset.path])
   const point = points[pointIndex] ?? points[0]
@@ -108,13 +113,7 @@ function HoverTooltip({
   )
 }
 
-function ReferenceGraph({
-  asset,
-  activePointIndex,
-}: {
-  asset: FeaturedAsset
-  activePointIndex: number | null
-}) {
+function ReferenceGraph({ asset, activePointIndex }: { asset: FeaturedAsset; activePointIndex: number | null }) {
   const graph = useMemo(() => normalizeGraphPath(asset.path), [asset.path])
   const point = activePointIndex == null ? null : graph.points[activePointIndex]
   const stroke = asset.tone === "blue" ? "#78c9e8" : "#58d89a"
@@ -138,11 +137,7 @@ function ReferenceGraph({
           </span>
         </>
       ) : null}
-      <svg
-        viewBox={`0 0 ${graph.width} ${graph.height}`}
-        preserveAspectRatio="none"
-        className="h-full w-full"
-      >
+      <svg viewBox={`0 0 ${graph.width} ${graph.height}`} preserveAspectRatio="none" className="h-full w-full">
         <path
           d={graph.path}
           fill="transparent"

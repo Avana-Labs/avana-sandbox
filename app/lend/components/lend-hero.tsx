@@ -23,7 +23,6 @@ function parseMarketUsd(value: string) {
   return amount
 }
 
-
 export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["markets"][number]> }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const fc = useCurrency()
@@ -39,17 +38,11 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
     }))
     const totalTvl = marketValues.reduce((sum, market) => sum + market.tvlUsd, 0)
     const weightedApy =
-      totalTvl > 0
-        ? marketValues.reduce((sum, market) => sum + market.apy * market.tvlUsd, 0) / totalTvl
-        : 0
+      totalTvl > 0 ? marketValues.reduce((sum, market) => sum + market.apy * market.tvlUsd, 0) / totalTvl : 0
     const weightedUtilization =
-      totalTvl > 0
-        ? marketValues.reduce((sum, market) => sum + market.utilization * market.tvlUsd, 0) / totalTvl
-        : 0
+      totalTvl > 0 ? marketValues.reduce((sum, market) => sum + market.utilization * market.tvlUsd, 0) / totalTvl : 0
     const weightedChange24h =
-      totalTvl > 0
-        ? marketValues.reduce((sum, market) => sum + market.apyChange24h * market.tvlUsd, 0) / totalTvl
-        : 0
+      totalTvl > 0 ? marketValues.reduce((sum, market) => sum + market.apyChange24h * market.tvlUsd, 0) / totalTvl : 0
 
     return {
       totalTvl,

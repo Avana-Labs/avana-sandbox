@@ -34,8 +34,7 @@ function OfflineGate() {
 export function AuthedSandboxGate({ wallet, children }: { wallet: string; children: ReactNode }) {
   const { t } = useTranslation()
   const walletState = useQuery(api.sandbox.onboarding.getWalletOnboardingState, { wallet }) as
-    | WalletOnlyState
-    | undefined
+    WalletOnlyState | undefined
   const isDone = walletState?.onboardingStep === "done"
   const economy = useQuery(
     api.sandbox.onboarding.getEconomyStatus,

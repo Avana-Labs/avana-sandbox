@@ -6,11 +6,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
-import {
-  walletButtonClasses,
-  walletGradient,
-  type WalletControlSize,
-} from "@/app/components/wallet-control-shared"
+import { walletButtonClasses, walletGradient, type WalletControlSize } from "@/app/components/wallet-control-shared"
 
 /**
  * Full wallet control, dynamically loaded ONLY once the wallet SDK is mounted (see
