@@ -344,6 +344,7 @@ export function mapBorrowRemovePreviewToActionUi(
 ): ActionPreviewUi {
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
   const afterCollateral = fixedToNumber(preview.after.collateralValueUsd6, 6)
+  const removeUsd = Math.max(0, beforeCollateral - afterCollateral)
   const annualBefore = (beforeCollateral * options.positionApyPct) / 100
   const annualAfter = (afterCollateral * options.positionApyPct) / 100
   const healthBefore = hfToNumber(preview.before.healthFactorWad)
@@ -352,22 +353,21 @@ export function mapBorrowRemovePreviewToActionUi(
   return {
     allowed: preview.allowed,
     amountLabel: `${options.percent}%`,
-    amountUsd: options.removeUsd,
-    amountUsdLabel: formatActionApproxUsd(options.removeUsd),
+    amountValue: String(options.percent),
+    amountUnitLabel: "%",
+    assetLabel: "%",
+    assetSymbol: "%",
+    amountUsd: removeUsd,
+    amountUsdLabel: formatActionUsd(removeUsd, { exact: true }),
     rateLabel: "Position APY",
     rateValue: formatActionPercent(options.positionApyPct),
     marketLabel: "Market",
     marketValue: options.marketLabel,
     balanceLabel: "Removing",
-    balanceValue: formatActionUsd(options.removeUsd),
+    balanceValue: formatActionUsd(removeUsd, { exact: true }),
     maxAmount: options.safePercent,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
-      {
-        id: "position-apy",
-        label: "Position APY",
-        value: formatActionPercent(options.positionApyPct),
-      },
       {
         id: "annual-earnings",
         label: "Annual earnings",
@@ -405,7 +405,7 @@ export function mapBorrowRemovePreviewToActionUi(
         tone: hfTone(healthAfter),
       },
     ],
-    networkFeeLabel: formatActionFeeSummary(options.removeUsd, 0.04),
+    networkFeeLabel: formatActionFeeSummary(removeUsd, 0.04),
     risk: riskFromPreview(preview, hfToNumber(preview.after.healthFactorWad)),
     blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
     validationErrors: preview.validationErrors,

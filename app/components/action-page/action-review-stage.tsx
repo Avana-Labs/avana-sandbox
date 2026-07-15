@@ -68,6 +68,7 @@ export function ActionReviewStage({
           assetLabel={amountDisplay.assetLabel}
           assetSymbol={amountDisplay.assetSymbol}
           borrowSymbol={amountDisplay.borrowSymbol}
+          unitLabel={preview.amountUnitLabel}
           readOnly
         />
       )}
