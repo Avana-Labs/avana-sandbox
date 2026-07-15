@@ -120,6 +120,7 @@ export function useBorrowSession({
   const shouldPersistState = persistState ?? adapterMode === "sandbox"
   const seededState = useMemo(() => deserializeBorrowSystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<BorrowSystemState>(seededState)
+  const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
   const [transactionHistory, setTransactionHistory] = useState<TransactionHistoryItem[]>(() =>
     buildLegacyTransactionHistory(seededState, walletId),
   )
@@ -144,6 +145,7 @@ export function useBorrowSession({
       setState(seededState)
       setTransactionHistory([])
       setTransactionReceipts([])
+      setHydratedWalletId(walletId)
       return
     }
     const nextState = readBorrowSessionState(walletId, sessionSeed)
@@ -153,6 +155,7 @@ export function useBorrowSession({
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory.length > 0 ? metadata.transactionHistory : fallbackHistory)
     setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(fallbackHistory))
+    setHydratedWalletId(walletId)
   }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
@@ -410,6 +413,7 @@ export function useBorrowSession({
     transactionReceipts,
     lastReceipt: transactionReceipts[0] ?? null,
     isPending,
+    isHydrated: hydratedWalletId === walletId,
     getBorrowableAssetsForMarket,
     readAdapter,
     createIntent,
