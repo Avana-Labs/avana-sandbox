@@ -190,7 +190,7 @@ and no forced geometry read during sheet pointer movement.
 
 - `npm test`: 258 files / 1,098 tests passed; 2 files / 2 tests intentionally skipped.
 - `npm run build` and `npm run lighthouse:build`: passed, including TypeScript and static-page generation.
-- Playwright route-performance suite: 27/27 routes and action shells passed against the production artifact.
+- Playwright route-performance checks: 26 passed in the final full-route run; the corrected Home contract then passed its focused rerun, verifying all 27 checks against the production artifact.
 - Playwright browser soak: 100/100 navigation, interaction, reload, and cross-route sessions passed.
 - The soak's captured Dashboard and Multiply interactions reported good INP, with observed samples from 48ms to 120ms.
 - Lighthouse: three-run median matrix completed for all 12 routes.
