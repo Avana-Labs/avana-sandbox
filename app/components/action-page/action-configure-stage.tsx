@@ -410,6 +410,10 @@ export function ActionConfigureStage({
 
       {outcome ? <ActionOutcomeBanner tone={outcome.tone} title={outcome.title} message={outcome.message} /> : null}
 
+      {!outcome && previewBlocked && blockedReason ? (
+        <ActionOutcomeBanner tone="error" title="Action unavailable" message={blockedReason} />
+      ) : null}
+
       {isConfigureVisibleStage(stage) ? (
         homeLayout || singlePrimaryCta ? (
           <button

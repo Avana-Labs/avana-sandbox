@@ -887,12 +887,12 @@ export function BorrowActionPageClient({
     }
   }, [activeMarketId, amount, closeHref, debtPosition, descriptor.primaryVerb, isPending, kind, marketId, percent, previewUi, resolvedBorrowAssetId, reviewPreviewUi, router, session, stage, successUi, walletId])
 
-  // Borrow surfaces a Max that fills the safe borrow cap (collateral-factor bound).
-  const showBorrowMax = kind === "borrow"
-  const handleBorrowMax = useCallback(() => {
+  // Borrow fills the safe credit cap; Repay fills the selected debt exactly.
+  const showActionMax = kind === "borrow" || kind === "repay"
+  const handleActionMax = useCallback(() => {
     if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
-    setAmount(String(Number(previewUi.maxAmount.toFixed(2))))
-  }, [previewUi?.maxAmount])
+    setAmount(String(Number(previewUi.maxAmount.toFixed(kind === "repay" ? 6 : 2))))
+  }, [kind, previewUi?.maxAmount])
 
   const shellSubtitle =
     stage === "select"
@@ -975,8 +975,8 @@ export function BorrowActionPageClient({
         assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
         pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
         assetPickerDisabled={borrowNeedsCollateral}
-        showBalance={showBorrowMax}
-        onMax={showBorrowMax ? handleBorrowMax : undefined}
+        showBalance={showActionMax}
+        onMax={showActionMax ? handleActionMax : undefined}
       />
     ) : null
 
@@ -1172,8 +1172,8 @@ export function BorrowActionPageClient({
           hideAmountInput={kind === "claim" || Boolean(useWorkspaceFields)}
           amountVariant="card"
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
-          showBalance={showBorrowMax}
-          onMax={showBorrowMax ? handleBorrowMax : undefined}
+          showBalance={showActionMax}
+          onMax={showActionMax ? handleActionMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}
           homeLayout={isHomeLayout}
           singlePrimaryCta={sidebar}

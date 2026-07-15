@@ -86,7 +86,7 @@ describe("borrow preview mappers", () => {
     })
 
     expect(ui.allowed).toBe(false)
-    expect(ui.blockedReason).toBe("Amount exceeds outstanding debt")
+    expect(ui.blockedReason).toBe("Amount exceeds outstanding debt. Maximum repay is $2,500.00.")
   })
 
   it("allows a repay within the outstanding debt", () => {
