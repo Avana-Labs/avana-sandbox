@@ -124,8 +124,8 @@ produce either measurement.
 
 ## Whole-application final pass
 
-This pass contains 33 isolated implementation and test commits, plus this final
-report commit. It did not modify Diatype, any logo asset,
+This pass contains 33 isolated implementation and test commits, plus three audit
+report commits. It did not modify Diatype, any logo asset,
 visible layout, or animation timing. The main changes were demand-loading Convex
 and authenticated-only code, removing the Recharts runtime, server-rendering
 visible route content, deferring detail analytics, eliminating a forced layout
