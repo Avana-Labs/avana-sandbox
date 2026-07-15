@@ -120,6 +120,12 @@ export function paginateMultiplyRows<T>(rows: readonly T[], page: number, pageSi
   return rows.slice(start, start + safeSize)
 }
 
+export function isNegativeMultiplyApy(apy?: string) {
+  if (!apy) return false
+  const value = Number.parseFloat(apy.replace(/[^0-9.-]/g, ""))
+  return Number.isFinite(value) && value < 0
+}
+
 export function ExploreLoopsMarketsTable({
   initialIsDesktop = true,
   pageSize,
@@ -513,10 +519,14 @@ function LoopTableRow({
   const assetLogo = tokenLogos[row.asset as keyof typeof tokenLogos]
   const supplyApy = tokenSupplyApys[row.protocol as keyof typeof tokenSupplyApys]
   const borrowApy = tokenBorrowApys[row.asset as keyof typeof tokenBorrowApys]
+  const hasNegativeApy = isNegativeMultiplyApy(row.apy)
 
   return (
     <tr
-      className="group asset-swap cursor-pointer transition-colors"
+      className={cn(
+        "group asset-swap cursor-pointer transition-colors",
+        hasNegativeApy && "bg-rose-500/[0.035] dark:bg-rose-500/[0.06]",
+      )}
       onClick={() => router.push(row.href)}
       style={{ animationDelay: `${index * 40}ms` }}
     >
@@ -647,7 +657,7 @@ function LoopTableRow({
             <Button
               type="button"
               size="table"
-              variant="table-primary"
+              variant={hasNegativeApy ? "table-secondary" : "table-primary"}
               className="w-auto"
               onClick={(event) => {
                 event.stopPropagation()
@@ -656,7 +666,8 @@ function LoopTableRow({
                 router.push(actionPagePath("multiply", "multiply", { market: marketId, return: row.href }))
               }}
             >
-              <ActionIcon label="Multiply" />{t("Multiply")}
+              <ActionIcon label={hasNegativeApy ? "Review risk" : "Multiply"} />
+              {t(hasNegativeApy ? "Review risk" : "Multiply")}
             </Button>
             <Button
               type="button"
