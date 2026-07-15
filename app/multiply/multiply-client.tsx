@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine"
@@ -10,14 +9,7 @@ import { getMultiplyMarketById, MULTIPLY_MARKET_CATALOG } from "@/app/lib/multip
 import { buildMultiplyPageData } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { MultiplyHero } from "./components/multiply-hero"
-
-const ExploreLoopsMarketsTable = dynamic(
-  () => import("./components/explore-loops-markets-table").then((mod) => mod.ExploreLoopsMarketsTable),
-  {
-    ssr: false,
-    loading: () => <div className="mt-7 h-[720px] rounded-radius-md border border-border bg-surface-raised/60" />,
-  },
-)
+import { ExploreLoopsMarketsTable } from "./components/explore-loops-markets-table"
 
 function resolveMarketFromRowHref(href: string): MultiplyMarketRecord | null {
   const marketId = href.split("/").pop()
@@ -25,7 +17,13 @@ function resolveMarketFromRowHref(href: string): MultiplyMarketRecord | null {
   return getMultiplyMarketById(marketId.toLowerCase())
 }
 
-export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
+export function MultiplyClient({
+  pageData,
+  initialIsDesktop = true,
+}: {
+  pageData: MultiplyPageData
+  initialIsDesktop?: boolean
+}) {
   const router = useRouter()
   const session = useMultiplySessionContext()
   const [hasMounted, setHasMounted] = React.useState(false)
@@ -58,6 +56,7 @@ export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
       <div className="mx-auto max-w-[1152px]">
         <MultiplyHero metrics={livePageData.heroMetrics} />
         <ExploreLoopsMarketsTable
+          initialIsDesktop={initialIsDesktop}
           rows={livePageData.lendRows}
           trendingSnapshots={livePageData.trendingSnapshots}
           pageSize={livePageData.pageSize}

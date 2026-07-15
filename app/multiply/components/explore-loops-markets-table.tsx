@@ -104,6 +104,7 @@ function resolveMarketIdFromHref(href: string) {
 }
 
 type ExploreLoopsMarketsTableProps = {
+  initialIsDesktop?: boolean
   rows: MultiplyPageData["lendRows"]
   trendingSnapshots: MultiplyPageData["trendingSnapshots"]
   pageSize: MultiplyPageData["pageSize"]
@@ -114,6 +115,7 @@ type ExploreLoopsMarketsTableProps = {
 }
 
 export function ExploreLoopsMarketsTable({
+  initialIsDesktop = true,
   rows,
   trendingSnapshots,
   tokenBorrowApys,
@@ -216,6 +218,7 @@ export function ExploreLoopsMarketsTable({
           groupedSections.map((group) => (
             <div key={group.title} className="space-y-8">
               <LoopMarketsSection
+                initialIsDesktop={initialIsDesktop}
                 title={group.title}
                 rows={group.rows}
                 tokenLogos={tokenLogos}
@@ -240,12 +243,14 @@ export function ExploreLoopsMarketsTable({
 }
 
 function LoopMarketsSection({
+  initialIsDesktop,
   title,
   rows,
   tokenLogos,
   tokenSupplyApys,
   tokenBorrowApys,
 }: {
+  initialIsDesktop: boolean
   title: string
   rows: MultiplyPageData["lendRows"]
   tokenLogos: MultiplyPageData["tokenLogos"]
@@ -254,7 +259,7 @@ function LoopMarketsSection({
 }) {
   const { t } = useTranslation()
   const { compact } = useCurrency()
-  const isDesktop = useMediaQuery("(min-width: 768px)", true)
+  const isDesktop = useMediaQuery("(min-width: 768px)", initialIsDesktop, true)
   const [sortKey, setSortKey] = React.useState<LoopSortKey>("protocol")
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
 
