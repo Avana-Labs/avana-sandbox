@@ -79,7 +79,24 @@ export function ActionLeverageRuler({
 
   const ruler = (
     <div data-testid="action-leverage-ruler">
-      <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
+        <label className="relative block">
+          <span className="sr-only">{t("Custom {label}").replace("{label}", t(label))}</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            aria-label={t("Custom {label}").replace("{label}", t(label))}
+            className="h-9 w-20 rounded-full border border-border bg-background pl-3 pr-7 text-right font-data text-[14px] font-medium tabular-nums text-foreground outline-none focus:border-brand"
+          />
+          <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground">x</span>
+        </label>
+      </div>
 
       <div className={variant === "embedded" ? "relative mt-9 px-2" : "relative mt-10 px-2"}>
         <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-1.5 -translate-y-1/2 rounded-full bg-border/70" aria-hidden />
