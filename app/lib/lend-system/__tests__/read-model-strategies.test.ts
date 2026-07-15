@@ -1,9 +1,24 @@
 import { describe, expect, it } from "vitest"
-import { buildLendStrategyBuckets, buildPortfolioLendData } from "@/app/lib/lend-system/read-model"
+import { buildLendPageData, buildLendStrategyBuckets, buildPortfolioLendData } from "@/app/lib/lend-system/read-model"
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { buildMockLendSystemState } from "@/app/lib/lend-system/mock"
 import { WALLET_STRATEGY_BUCKETS } from "@/app/lib/data/mock/wallet/portfolio/strategies"
 
 describe("buildLendStrategyBuckets", () => {
+  it("uses live market balances in catalog rows and preserves positive dust", () => {
+    const state = buildMockLendSystemState("demo-wallet")
+    const market = Object.values(state.markets)[0]!
+    market.totalSupplied = 123.45
+    market.availableLiquidity = 0.005 / market.assetPriceUsd
+
+    const page = buildLendPageData("demo-wallet", state)
+    const row = page.assetGroups.flatMap((group) => group.rows).find((entry) => entry.symbol === market.asset.symbol)
+
+    expect(row?.totalDepositsLabel).toBe(`123.45 ${market.asset.symbol}`)
+    expect(row?.totalDepositsSecondaryLabel).toBe(formatCompactUsd(123.45 * market.assetPriceUsd))
+    expect(row?.availableLiquidityLabel).toBe(`<0.01 ${market.asset.symbol}`)
+    expect(row?.availableLiquiditySecondaryLabel).toBe("<$0.01")
+  })
   it("derives opportunity buckets from the live markets, not the static catalog", () => {
     const markets = Object.values(buildMockLendSystemState("demo-wallet").markets)
     const buckets = buildLendStrategyBuckets(markets)

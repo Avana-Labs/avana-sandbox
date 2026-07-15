@@ -49,7 +49,7 @@ export function formatExactCurrency(usd: number, ctx: CurrencyContext): string {
 // optional sign, "$", digits (with optional thousands separators / decimals),
 // and an optional B/M/K suffix. Anything else (percentages, plain text, prices
 // with cents) is left untouched.
-const COMPACT_USD_RE = /^(-?)\$([\d,]+(?:\.\d+)?)([BMK]?)$/
+const COMPACT_USD_RE = /^(<?)(-?)\$([\d,]+(?:\.\d+)?)([BMK]?)$/
 
 /**
  * Re-denominate an already-formatted compact USD string (e.g. "$312.4M") into the
@@ -62,7 +62,10 @@ export function redenominateCompactUsd(value: string, ctx: CurrencyContext): str
   if (ctx.currency === "USD") return value
   const match = COMPACT_USD_RE.exec(value.trim())
   if (!match) return value
-  const [, sign, digits, suffix] = match
+  const [, lessThan, sign, digits, suffix] = match
+  if (lessThan) {
+    return `<${ctx.symbol}${ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? "1" : "0.01"}`
+  }
   const multiplier = suffix === "B" ? 1_000_000_000 : suffix === "M" ? 1_000_000 : suffix === "K" ? 1_000 : 1
   const usd = Number(digits.replace(/,/g, "")) * multiplier
   if (!Number.isFinite(usd)) return value

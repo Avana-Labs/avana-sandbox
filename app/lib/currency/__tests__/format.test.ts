@@ -58,6 +58,11 @@ describe("redenominateCompactUsd", () => {
     expect(redenominateCompactUsd("$100.00", currencyContext("EUR"))).toBe("€92.00")
   })
 
+  it("preserves positive dust without mixing currency symbols", () => {
+    expect(redenominateCompactUsd("<$0.01", currencyContext("EUR"))).toBe("<€0.01")
+    expect(redenominateCompactUsd("<$0.01", currencyContext("JPY"))).toBe("<¥1")
+  })
+
   it("re-signs negative magnitudes", () => {
     expect(redenominateCompactUsd("-$2.0M", currencyContext("EUR"))).toBe("-€1.8M")
   })
