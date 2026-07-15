@@ -37,7 +37,7 @@ describe("multiply architecture final gate", () => {
     )
   })
 
-  it("keeps production multiply adapters stubbed behind not-implemented guards", () => {
+  it("keeps production multiply adapters behind explicit source guards", () => {
     const readAdapter = readFileSync(path.join(process.cwd(), "app/lib/multiply-system/production-read-adapter.ts"), "utf8")
     const txAdapter = readFileSync(
       path.join(process.cwd(), "app/lib/multiply-system/production-transaction-adapter.ts"),
@@ -46,5 +46,7 @@ describe("multiply architecture final gate", () => {
 
     expect(readAdapter).toContain("not implemented")
     expect(txAdapter).toContain("not implemented")
+    expect(readAdapter).toContain("ProductionMultiplyReadSource")
+    expect(txAdapter).toContain("ProductionMultiplyTransactionSource")
   })
 })
