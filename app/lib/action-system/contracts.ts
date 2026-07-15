@@ -44,6 +44,8 @@ export type ActionRiskLevel = "safe" | "warning" | "danger"
 
 export type ActionPreviewUi = {
   quoteId?: string
+  loopCount?: number
+  executionSteps?: Array<{ id: string; label: string }>
   allowed: boolean
   amountLabel: string
   amountTitle?: string

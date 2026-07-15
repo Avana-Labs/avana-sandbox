@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { LoaderCircle } from "lucide-react"
+import { Check, LoaderCircle } from "lucide-react"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionCard } from "@/app/components/action-page/action-metrics"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
@@ -50,6 +50,23 @@ export function ActionProcessingStage({
           </div>
 
           <ProcessingNarration verb={verb} />
+
+          {preview?.executionSteps?.length ? (
+            <ol className="mt-5 space-y-2" aria-label={t("Execution steps")}>
+              {preview.executionSteps.map((step, index) => {
+                const completed = stage === "confirmed" || stage === "refreshing_position" || stage === "reconciled"
+                const active = !completed && index === 0
+                return (
+                  <li key={step.id} className="flex items-center gap-3 rounded-radius-md bg-surface-inset px-3 py-2 text-[13px]">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-[11px]">
+                      {completed ? <Check className="size-3 text-success" /> : active ? <LoaderCircle className="size-3 animate-spin" /> : index + 1}
+                    </span>
+                    <span className={completed ? "text-foreground" : "text-muted-foreground"}>{t(step.label)}</span>
+                  </li>
+                )
+              })}
+            </ol>
+          ) : null}
         </div>
       </ActionCard>
 

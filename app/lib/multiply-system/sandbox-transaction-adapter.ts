@@ -108,6 +108,7 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
         liquidationPrice: simulation.after.liquidationPrice,
         priceImpactPct: simulation.economics.priceImpactPct,
         maxLeverageApy: simulation.economics.maxLeverageApy,
+        loopCount: simulation.loopCount,
       },
     }
   }

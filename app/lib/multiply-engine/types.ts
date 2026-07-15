@@ -129,6 +129,7 @@ export type MultiplySimulation = {
     liquidationPrice: number | null
     priceDropToLiquidationPct: number | null
   }
+  loopCount: number
   economics: {
     supplyApy: number
     borrowApy: number

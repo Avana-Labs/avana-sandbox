@@ -182,6 +182,7 @@ export function simulateMultiply(params: {
 
   return {
     action: "multiply",
+    loopCount: loop.loops,
     input: { collateralAmount, selectedMultiplier },
     before,
     after: {

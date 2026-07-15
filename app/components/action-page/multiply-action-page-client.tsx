@@ -577,7 +577,10 @@ export function MultiplyActionPageClient({
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   // The loop mechanics are documented in the market's "About" section — no inline
   // explainer filler in the action widget.
-  const loopHint = null
+  const loopHint =
+    kind === "multiply" && previewUi?.loopCount != null
+      ? `${previewUi.loopCount} loop${previewUi.loopCount === 1 ? "" : "s"} estimated`
+      : null
   const effectiveMultiplierMax =
     isExitKind
       ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)

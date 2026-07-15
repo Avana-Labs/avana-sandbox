@@ -20,6 +20,10 @@ const preview: ActionPreviewUi = {
   blockedReason: null,
   validationErrors: [],
   warnings: [],
+  executionSteps: [
+    { id: "supply", label: "Supply initial collateral" },
+    { id: "borrow", label: "Loop 1: Borrow" },
+  ],
 }
 
 describe("ActionProcessingStage", () => {
@@ -30,6 +34,8 @@ describe("ActionProcessingStage", () => {
     expect(screen.getByText("Pending")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Depositing WETH" })).toBeInTheDocument()
     expect(screen.getByTestId("processing-narration")).toBeInTheDocument()
+    expect(screen.getByRole("list", { name: "Execution steps" })).toBeInTheDocument()
+    expect(screen.getByText("Loop 1: Borrow")).toBeInTheDocument()
     expect(screen.getByText("Connecting to Aave v4")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Close" })).toHaveAttribute("href", "/lend")
   })

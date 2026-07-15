@@ -23,6 +23,16 @@ describe("multiply preview mappers", () => {
     })
 
     expect(ui.quoteId).toBe(preview.intent.id)
+    expect(ui.loopCount).toBe(2)
+    expect(ui.executionSteps?.map((step) => step.label)).toEqual([
+      "Supply initial collateral",
+      "Loop 1: Borrow",
+      "Loop 1: Swap to collateral",
+      "Loop 1: Resupply collateral",
+      "Loop 2: Borrow",
+      "Loop 2: Swap to collateral",
+      "Loop 2: Resupply collateral",
+    ])
 
     expect(ui.marketBreakdown).toEqual({
       collateral: { symbol: "WETH", apy: "3.82%" },
