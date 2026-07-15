@@ -15,6 +15,17 @@ function formatPct(value: number) {
   return `${(value * 100).toFixed(2)}%`
 }
 
+function formatTokenQuantity(value: number, symbol: string) {
+  if (value > 0 && value < 0.01) return `<0.01 ${symbol}`
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M ${symbol}`
+  if (value >= 1_000) return `${(value / 1_000).toFixed(2)}K ${symbol}`
+  return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${symbol}`
+}
+
+function formatPositiveUsd(value: number) {
+  return value > 0 && value < 0.01 ? "<$0.01" : formatCompactUsd(value)
+}
+
 export type LendFeaturedSnapshot = {
   marketId: string
   symbol: string
@@ -119,8 +130,20 @@ export function buildLendPageData(_walletId: string, state?: LendSystemState): L
         totalApyLabel: rowMarket?.totalApyLabel ?? row.apy,
         supplyApyValue: rowMarket?.supplyApy ?? row.apyValue / 100,
         rewardsApyValue: rowMarket?.rewardsApy ?? 0,
+        totalDepositsLabel: market ? formatTokenQuantity(market.totalSupplied, market.asset.symbol) : undefined,
+        totalDepositsSecondaryLabel: market
+          ? formatPositiveUsd(market.totalSupplied * market.assetPriceUsd)
+          : undefined,
+        totalDepositsSortValue: market ? market.totalSupplied * market.assetPriceUsd : undefined,
         utilizationLabel: rowMarket?.utilizationLabel ?? "—",
         utilizationValue: rowMarket?.utilization ?? 0,
+        availableLiquidityLabel: market
+          ? formatTokenQuantity(market.availableLiquidity, market.asset.symbol)
+          : undefined,
+        availableLiquiditySecondaryLabel: market
+          ? formatPositiveUsd(market.availableLiquidity * market.assetPriceUsd)
+          : undefined,
+        availableLiquiditySortValue: market ? market.availableLiquidity * market.assetPriceUsd : undefined,
         reserveFactorLabel: rowMarket?.reserveFactorLabel ?? "—",
         reserveFactorValue: rowMarket?.reserveFactor ?? 0,
         status: rowMarket?.status ?? "active",
