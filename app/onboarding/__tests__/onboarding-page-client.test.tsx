@@ -39,9 +39,6 @@ vi.mock("@/convex/_generated/api", () => ({
   },
 }))
 
-const useSiweAuthMock = vi.fn()
-vi.mock("@/app/lib/siwe/use-siwe-auth", () => ({ useSiweAuth: () => useSiweAuthMock() }))
-
 const routerReplaceMock = vi.fn()
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: routerReplaceMock, push: vi.fn() }) }))
 
@@ -51,7 +48,7 @@ vi.mock("@/app/lib/i18n/use-translation", () => ({
   useTranslation: () => ({ t: (s: string) => s, language: "en" }),
 }))
 
-import { OnboardingPageClient } from "../onboarding-page-client"
+import { OnboardingPageConnected } from "../onboarding-page-connected"
 
 const WALLET = "0xabc0000000000000000000000000000000000001"
 
@@ -66,7 +63,6 @@ function walletState(step: OnboardingGateState["onboardingStep"]): Omit<Onboardi
 const ECONOMY: OnboardingGateState["economy"] = { status: "open", userCount: 1, userCap: 10, perUserTargetUsd: 1_000_000 }
 
 beforeEach(() => {
-  useSiweAuthMock.mockReturnValue({ authedWallet: WALLET, isSignedIn: true })
   economyMock.mockReturnValue(ECONOMY)
 })
 
@@ -78,7 +74,7 @@ afterEach(() => {
 describe("OnboardingPageClient — already-onboarded wallet (issue #140)", () => {
   it("redirects an already-onboarded wallet into the app (never re-shows onboarding)", () => {
     walletStateMock.mockReturnValue(walletState("done"))
-    render(<OnboardingPageClient />)
+    render(<OnboardingPageConnected wallet={WALLET} />)
 
     // A completed wallet is sent straight to the dashboard, not shown any onboarding UI.
     expect(routerReplaceMock).toHaveBeenCalledWith("/dashboard")
@@ -88,7 +84,7 @@ describe("OnboardingPageClient — already-onboarded wallet (issue #140)", () =>
 
   it("still renders the active onboarding flow for a wallet that has NOT onboarded", () => {
     walletStateMock.mockReturnValue(walletState("wallet"))
-    render(<OnboardingPageClient />)
+    render(<OnboardingPageConnected wallet={WALLET} />)
 
     // A fresh wallet now lands on the personalize step first (name/language/currency/theme),
     // ahead of the funding card — not the already-onboarded "completed" state.
