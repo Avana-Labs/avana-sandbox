@@ -1,0 +1,23 @@
+name: Dependency Review
+
+# Blocks a PR that introduces a dependency with a known vulnerability (or an
+# incompatible license) before it reaches main. Only inspects the dependency
+# delta of the PR, so it never fails on pre-existing advisories.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
