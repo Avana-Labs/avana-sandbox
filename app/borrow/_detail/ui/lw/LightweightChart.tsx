@@ -99,6 +99,7 @@ export function LightweightChart({
   const theme: ThemeMode = resolvedTheme === "dark" ? "dark" : "light"
   const [dimensions, setDimensions] = React.useState({ width: 900, height })
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
+  const [isVisible, setIsVisible] = React.useState(true)
   const accentKey = Array.isArray(accentClassName) ? accentClassName.join("|") : accentClassName ?? ""
   void showLastLabel
   void showEndDot
@@ -117,6 +118,14 @@ export function LightweightChart({
         current.width === next.width && current.height === next.height ? current : next,
       )
     })
+    observer.observe(shell)
+    return () => observer.disconnect()
+  }, [])
+
+  React.useEffect(() => {
+    const shell = shellRef.current
+    if (!shell || typeof IntersectionObserver === "undefined") return
+    const observer = new IntersectionObserver(([entry]) => setIsVisible(Boolean(entry?.isIntersecting)))
     observer.observe(shell)
     return () => observer.disconnect()
   }, [])
@@ -224,10 +233,12 @@ export function LightweightChart({
         ) : null}
         {type !== "bar" && lastPoint ? (
           <>
-            <circle cx={lastPoint.x} cy={lastPoint.y} fill={palette.stroke} opacity="0.45">
-              <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
-            </circle>
+            {isVisible ? (
+              <circle cx={lastPoint.x} cy={lastPoint.y} fill={palette.stroke} opacity="0.45">
+                <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
+              </circle>
+            ) : null}
             <circle cx={lastPoint.x} cy={lastPoint.y} r="5.5" fill={palette.stroke} stroke="hsl(var(--background))" strokeWidth="2.5" />
           </>
         ) : null}
