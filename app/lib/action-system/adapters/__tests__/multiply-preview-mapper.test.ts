@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  mapClosePreviewToActionUi,
   mapDeleveragePreviewToActionUi,
   mapMultiplyPreviewToActionUi,
 } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
@@ -85,5 +86,23 @@ describe("multiply preview mappers", () => {
     expect(ui.amountLabel).toBe("1.50x WETH")
     expect(ui.amountValue).toBe("1.50x")
     expect(ui.assetSymbol).toBe("WETH")
+  })
+
+  it("maps a full close into an explicit unwind receipt", () => {
+    const ui = mapClosePreviewToActionUi(preview, {
+      marketLabel: "WETH · USDC",
+      collateralSymbol: "WETH",
+    })
+
+    expect(ui.amountLabel).toBe("Full close WETH")
+    expect(ui.rateLabel).toBe("Final withdrawal")
+    expect(ui.metrics.map((row) => row.label)).toEqual([
+      "Debt repaid",
+      "Collateral unwound",
+      "Estimated swap loss",
+      "Minimum received",
+      "Remaining dust",
+    ])
+    expect(ui.metrics.find((row) => row.id === "remaining-dust")?.value).toBe("$0.00")
   })
 })

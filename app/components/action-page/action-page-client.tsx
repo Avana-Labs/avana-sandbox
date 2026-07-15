@@ -63,7 +63,7 @@ export function ActionPageClient({
   if (product === "multiply") {
     return (
       <MultiplyActionPageClient
-        kind={kind as "multiply" | "deleverage"}
+        kind={kind as "multiply" | "deleverage" | "close"}
         closeHref={closeHref ?? "/multiply"}
         initialMarketId={initialMarketId}
         initialAmount={initialAmount}

@@ -269,3 +269,59 @@ export function mapDeleveragePreviewToActionUi(
     warnings: preview.warnings,
   }
 }
+
+export function mapClosePreviewToActionUi(
+  preview: MultiplyTransactionPreview,
+  options: { marketLabel: string; collateralSymbol: string },
+): ActionPreviewUi {
+  const equityUsd = Math.max(0, preview.before.collateralValueUsd - preview.before.debtValueUsd)
+  const priceImpactPct = Math.max(0, preview.simulationSummary?.priceImpactPct ?? 0)
+  const swapLossUsd = preview.before.debtValueUsd * (priceImpactPct / 100)
+  const minimumReceivedUsd = Math.max(0, equityUsd - swapLossUsd)
+  const base = mapDeleveragePreviewToActionUi(preview, {
+    marketLabel: options.marketLabel,
+    targetMultiplier: 1,
+    collateralSymbol: options.collateralSymbol,
+  })
+  return {
+    ...base,
+    amountLabel: `Full close ${options.collateralSymbol}`,
+    amountValue: "Full close",
+    amountUsd: minimumReceivedUsd,
+    amountUsdLabel: formatActionUsd(minimumReceivedUsd, { exact: true }),
+    rateLabel: "Final withdrawal",
+    rateValue: formatActionUsd(minimumReceivedUsd, { exact: true }),
+    balanceLabel: "Remaining dust",
+    balanceValue: formatActionUsd(0, { exact: true }),
+    metrics: [
+      {
+        id: "debt-repaid",
+        label: "Debt repaid",
+        value: formatActionUsd(preview.before.debtValueUsd, { exact: true }),
+      },
+      {
+        id: "collateral-sold",
+        label: "Collateral unwound",
+        value: formatActionUsd(preview.before.collateralValueUsd, { exact: true }),
+      },
+      {
+        id: "swap-loss",
+        label: "Estimated swap loss",
+        value: formatActionUsd(swapLossUsd, { exact: true }),
+        tone: swapLossUsd > 0 ? "warning" : "default",
+      },
+      {
+        id: "minimum-received",
+        label: "Minimum received",
+        value: formatActionUsd(minimumReceivedUsd, { exact: true }),
+        tone: "positive",
+      },
+      {
+        id: "remaining-dust",
+        label: "Remaining dust",
+        value: formatActionUsd(0, { exact: true }),
+      },
+    ],
+    risk: null,
+  }
+}
