@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import {
@@ -31,10 +32,8 @@ import {
   DashboardLendPerformanceSection,
   DashboardOverviewSection,
 } from "@/app/portfolio/dashboard-metric-section"
-import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
 import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
 import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
-import { RecentActivity } from "@/app/portfolio/recent-activity"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { buildLendSnapshotFromTabData } from "@/app/portfolio/lend-hero-state"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
@@ -45,16 +44,41 @@ import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
 import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/supplies-table"
 import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
-import { CollateralPositionsPanel } from "@/app/dashboard/components/borrow-tab/collateral-positions-panel"
-import { DebtPositionsPanel } from "@/app/dashboard/components/borrow-tab/debt-positions-panel"
-import { TradingFeesPanel } from "@/app/dashboard/components/borrow-tab/trading-fees-panel"
-import { LendLearnSection } from "./components/lend-learn-section"
 import { LendOpportunityCarousel } from "./components/lend-opportunity-carousel"
 import { cn } from "@/lib/utils"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RouteErrorFallback } from "@/app/components/route-error-fallback"
+
+const CollateralPositionsPanel = dynamic(
+  () => import("@/app/dashboard/components/borrow-tab/collateral-positions-panel").then((mod) => mod.CollateralPositionsPanel),
+  { ssr: false, loading: DashboardModulePlaceholder },
+)
+const DebtPositionsPanel = dynamic(
+  () => import("@/app/dashboard/components/borrow-tab/debt-positions-panel").then((mod) => mod.DebtPositionsPanel),
+  { ssr: false, loading: DashboardModulePlaceholder },
+)
+const TradingFeesPanel = dynamic(
+  () => import("@/app/dashboard/components/borrow-tab/trading-fees-panel").then((mod) => mod.TradingFeesPanel),
+  { ssr: false, loading: DashboardModulePlaceholder },
+)
+const MultiplyCollateralTable = dynamic(
+  () => import("@/app/portfolio/multiply-collateral-table").then((mod) => mod.MultiplyCollateralTable),
+  { ssr: false, loading: DashboardModulePlaceholder },
+)
+const LendLearnSection = dynamic(
+  () => import("./components/lend-learn-section").then((mod) => mod.LendLearnSection),
+  { ssr: false, loading: DashboardModulePlaceholder },
+)
+const RecentActivity = dynamic(
+  () => import("@/app/portfolio/recent-activity").then((mod) => mod.RecentActivity),
+  { ssr: false, loading: DashboardModulePlaceholder },
+)
+
+function DashboardModulePlaceholder() {
+  return <Skeleton className="h-64 w-full rounded-radius-md" />
+}
 
 export function mergeLendTabData(
   staticData: PortfolioLendTabData,
