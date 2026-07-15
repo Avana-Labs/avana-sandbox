@@ -11,7 +11,9 @@ export function focusDashboardProduct(tab: DashboardTabKey): boolean {
   if (!sectionId) return false
   const section = document.getElementById(sectionId)
   if (!section) return false
-  section.scrollIntoView({ block: "start" })
+  if (typeof section.scrollIntoView === "function") {
+    section.scrollIntoView({ block: "start" })
+  }
   section.focus({ preventScroll: true })
   return true
 }
