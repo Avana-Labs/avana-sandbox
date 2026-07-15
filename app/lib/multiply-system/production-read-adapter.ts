@@ -5,22 +5,35 @@ import type { MultiplyReadAdapter, MultiplyWalletReadSnapshot } from "./contract
 
 const NOT_IMPLEMENTED = "Production multiply read adapter is not implemented"
 
+export type ProductionMultiplyReadSource = Partial<{
+  readWalletSnapshot: (walletId: string) => Promise<MultiplyWalletReadSnapshot>
+  readMarkets: () => Promise<MultiplyMarketRecord[]>
+  readMultiplyPage: (walletId: string) => Promise<MultiplyPageData>
+  readPortfolioMultiply: (walletId: string) => Promise<PortfolioMultiplyTabData>
+}>
+
 export class ProductionMultiplyReadAdapter implements MultiplyReadAdapter {
   readonly mode = "production" as const
 
-  async readWalletSnapshot(_walletId: string): Promise<MultiplyWalletReadSnapshot> {
-    throw new Error(NOT_IMPLEMENTED)
+  constructor(private readonly source: ProductionMultiplyReadSource = {}) {}
+
+  async readWalletSnapshot(walletId: string): Promise<MultiplyWalletReadSnapshot> {
+    if (!this.source.readWalletSnapshot) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readWalletSnapshot(walletId)
   }
 
   async readMarkets(): Promise<MultiplyMarketRecord[]> {
-    throw new Error(NOT_IMPLEMENTED)
+    if (!this.source.readMarkets) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readMarkets()
   }
 
-  async readMultiplyPage(_walletId: string): Promise<MultiplyPageData> {
-    throw new Error(NOT_IMPLEMENTED)
+  async readMultiplyPage(walletId: string): Promise<MultiplyPageData> {
+    if (!this.source.readMultiplyPage) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readMultiplyPage(walletId)
   }
 
-  async readPortfolioMultiply(_walletId: string): Promise<PortfolioMultiplyTabData> {
-    throw new Error(NOT_IMPLEMENTED)
+  async readPortfolioMultiply(walletId: string): Promise<PortfolioMultiplyTabData> {
+    if (!this.source.readPortfolioMultiply) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readPortfolioMultiply(walletId)
   }
 }
