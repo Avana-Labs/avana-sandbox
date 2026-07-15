@@ -3,6 +3,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
+import { focusDashboardProduct } from "@/app/dashboard/dashboard-product-focus"
 import {
   useAvanaIdentity,
   useBorrowSessionContext,
@@ -485,6 +486,20 @@ export function DashboardClient({
     return () => window.removeEventListener("popstate", onPopState)
   }, [readTabFromLocation])
 
+  useEffect(() => {
+    if (!pageData || activeTab === "activity") return
+    let frame = 0
+    let attempts = 0
+    const focusSection = () => {
+      if (!focusDashboardProduct(activeTab) && attempts < 30) {
+        attempts += 1
+        frame = window.requestAnimationFrame(focusSection)
+      }
+    }
+    frame = window.requestAnimationFrame(focusSection)
+    return () => window.cancelAnimationFrame(frame)
+  }, [activeTab, pageData])
+
   // While the authenticated portfolio is still empty, retry transient client fetch
   // failures directly through the hook instead of refreshing the whole route.
   const portfolioRetriesRef = useRef(0)
@@ -543,7 +558,11 @@ export function DashboardClient({
       {activeTab !== "activity" ? (
         <div className="mt-12 space-y-12">
           {/* Lending Positions + Lend Opportunity sidebar (mirrors the hero grid) */}
-          <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-x-8">
+          <section
+            id="dashboard-lend-account"
+            tabIndex={-1}
+            className="scroll-mt-24 grid gap-6 outline-none lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-x-8"
+          >
             <div className="min-w-0 space-y-5">
               <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
                 {t("Lend Account")}
@@ -567,7 +586,7 @@ export function DashboardClient({
 
           <DeferredDashboardContent>
             {/* Borrow sections (moved from the former Borrow tab) */}
-            <div>
+            <div id="dashboard-borrow-account" tabIndex={-1} className="scroll-mt-24 outline-none">
               <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
                 <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
                   {t("Borrow Account")}
@@ -619,6 +638,7 @@ export function DashboardClient({
             </div>
 
             {/* Multiply sections (moved from the former Multiply tab) */}
+            <div id="dashboard-multiply-account" tabIndex={-1} className="scroll-mt-24 outline-none">
             {multiplyTabData.lpCollaterals.length === 0 ? (
               // Real empty state — no fabricated health/risk metrics computed over $0.
               <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
@@ -665,6 +685,7 @@ export function DashboardClient({
                 </div>
               </div>
             )}
+            </div>
 
           </DeferredDashboardContent>
 
