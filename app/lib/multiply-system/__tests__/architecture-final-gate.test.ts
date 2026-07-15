@@ -27,10 +27,11 @@ describe("multiply architecture final gate", () => {
 
     expect(offenders).toEqual([])
     const dashboardClient = readFileSync(path.join(process.cwd(), "app/dashboard/dashboard-client.tsx"), "utf8")
-    expect(dashboardClient).toContain("useAvanaSessions")
+    expect(dashboardClient).toContain("useMultiplySessionContext")
     // The multiply UI must draw its session from the shared avana context rather
-    // than instantiating its own — the dashboard reads `multiply` off useAvanaSessions().
-    expect(dashboardClient).toContain("multiply: multiplySession")
+    // than instantiating its own. Keep this scoped so unrelated product updates
+    // do not force the complete dashboard to rerender.
+    expect(dashboardClient).toContain("const multiplySession = useMultiplySessionContext()")
     expect(readFileSync(path.join(process.cwd(), "app/components/avana-session-providers.tsx"), "utf8")).toContain(
       "AvanaSessionsProvider",
     )
