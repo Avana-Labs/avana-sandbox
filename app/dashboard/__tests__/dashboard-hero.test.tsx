@@ -11,11 +11,10 @@ vi.mock("next/dynamic", () => ({
 }))
 
 vi.mock("@/app/components/display-preferences", () => ({
-  useDisplayPreferences: () => ({
+  useAmountDisplayPreferences: () => ({
     showDollarAmounts: true,
   }),
-  useOptionalDisplayPreferences: () => ({
-    showDollarAmounts: true,
+  useOptionalLocaleDisplayPreferences: () => ({
     currency: "USD",
     language: "EN",
   }),

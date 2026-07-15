@@ -7,8 +7,7 @@ import type { ChartFeed } from "../types"
 const currencyRef = { current: "USD" as string }
 
 vi.mock("@/app/components/display-preferences", () => ({
-  useDisplayPreferences: () => ({ currency: currencyRef.current }),
-  useOptionalDisplayPreferences: () => ({ currency: currencyRef.current, showDollarAmounts: true, language: "EN" }),
+  useOptionalLocaleDisplayPreferences: () => ({ currency: currencyRef.current, language: "EN" }),
 }))
 
 // The area chart / range selector are SVG-heavy and irrelevant to the headline

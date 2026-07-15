@@ -4,9 +4,9 @@ import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
 import type { PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
 
 vi.mock("@/app/components/display-preferences", () => ({
-  useDisplayPreferences: () => ({ showDollarAmounts: true }),
+  useAmountDisplayPreferences: () => ({ showDollarAmounts: true }),
   // useTranslation() reads this; the component renders in English (t(key) === key).
-  useOptionalDisplayPreferences: () => ({ language: "EN" }),
+  useOptionalLocaleDisplayPreferences: () => ({ language: "EN", currency: "USD" }),
 }))
 
 afterEach(() => cleanup())
