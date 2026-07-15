@@ -1,0 +1,31 @@
+{
+  "primaryRoutes": [
+    { "route": "/", "heroText": "Borrow", "heroRole": "tab", "marker": "Borrow" },
+    { "route": "/borrow", "heroText": "Total TVL", "marker": "Total TVL" },
+    { "route": "/borrow/asset/usdc", "heroText": "Asset data", "marker": "Asset data" },
+    { "route": "/borrow/markets/uni-v3-bluechip-weth-usdc", "heroText": "Market data", "marker": "Total supplied" },
+    { "route": "/borrow/assets/uni-v3-bluechip%3Ausdc", "heroText": "Asset data", "marker": "Asset data" },
+    { "route": "/lend", "heroText": "Total TVL", "marker": "Total TVL" },
+    { "route": "/lend/markets/usdc", "heroText": "Supply APY", "marker": "Supply APY" },
+    { "route": "/multiply", "heroText": "Total Liquidity", "marker": "Total Liquidity" },
+    { "route": "/multiply/markets/aave-gho", "heroText": "Market data", "marker": "Total value locked" },
+    { "route": "/dashboard", "heroText": "Borrow", "heroRole": "tab", "marker": "Borrow" },
+    { "route": "/rewards", "heroText": "AVA balance", "marker": "AVA balance" },
+    { "route": "/support-center", "heroText": "How can we help?", "heroRole": "heading", "marker": "How can we help?" }
+  ],
+  "actionRoutes": [
+    { "name": "borrow-select", "path": "/actions/borrow/borrow", "marker": "Borrow" },
+    { "name": "borrow-configure", "path": "/actions/borrow/borrow?asset=uni-v3-bluechip:usdc&amount=500", "marker": "Borrow" },
+    { "name": "repay-select", "path": "/actions/borrow/repay", "marker": "Repay" },
+    { "name": "repay-configure", "path": "/actions/borrow/repay?amount=500", "marker": "Repay" },
+    { "name": "supply-configure", "path": "/actions/borrow/supply?amount=1000", "marker": "Supply" },
+    { "name": "remove-configure", "path": "/actions/borrow/remove", "marker": "Remove" },
+    { "name": "borrow-claim", "path": "/actions/borrow/claim", "marker": "Claim" },
+    { "name": "lend-deposit", "path": "/actions/lend/deposit?amount=10&market=usdc", "marker": "Deposit" },
+    { "name": "lend-withdraw-select", "path": "/actions/lend/withdraw", "marker": "Withdraw" },
+    { "name": "lend-withdraw-configure", "path": "/actions/lend/withdraw?market=gho&amount=1", "marker": "Withdraw" },
+    { "name": "multiply-configure", "path": "/actions/multiply/multiply?multiplier=2&amount=1", "marker": "Multiply" },
+    { "name": "deleverage-configure", "path": "/actions/multiply/deleverage?multiplier=1.5&amount=1", "marker": "Deleverage" },
+    { "name": "rewards-claim", "path": "/actions/rewards/claim", "marker": "Claim" }
+  ]
+}
