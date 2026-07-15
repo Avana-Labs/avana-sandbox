@@ -8,8 +8,6 @@ const DesktopHelpBubble = dynamic(
   { ssr: false },
 )
 
-const Toaster = dynamic(() => import("sonner").then((mod) => mod.Toaster), { ssr: false })
-
 export function DeferredGlobalChrome() {
   const [mounted, setMounted] = useState(false)
 
@@ -28,10 +26,5 @@ export function DeferredGlobalChrome() {
 
   if (!mounted) return null
 
-  return (
-    <>
-      <DesktopHelpBubble />
-      <Toaster />
-    </>
-  )
+  return <DesktopHelpBubble />
 }
