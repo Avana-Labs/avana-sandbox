@@ -36,6 +36,14 @@ const SMART_SPOKES = new Set<string>([
   "aero-slipstream-bluechip",
 ])
 
+const BORROW_MARKETS_PAGE_SIZE = 12
+
+export function paginateBorrowMarkets<T>(rows: readonly T[], page: number, pageSize = BORROW_MARKETS_PAGE_SIZE) {
+  const safeSize = Math.max(1, pageSize)
+  const start = Math.max(0, page) * safeSize
+  return rows.slice(start, start + safeSize)
+}
+
 // Borrow pools carry multiple token visuals; categorise via the shared taxonomy so
 // filtering stays consistent with Lend / Multiply. A pool matches btc/eth/utility
 // if ANY leg is in that family; forex if EVERY leg is fiat-pegged.
@@ -78,12 +86,14 @@ export type BorrowWorkspaceProps = {
 
 export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true }: BorrowWorkspaceProps) {
   const router = useRouter()
+  const { t } = useTranslation()
   const isDesktop = useMediaQuery("(min-width: 768px)", initialIsDesktop, true)
   const { pendingRows } = pageData
   const session = useBorrowSessionContext()
   const { deltas: liquidityDeltas } = useMarketLiquidity()
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all")
   const [search, setSearch] = useState("")
+  const [page, setPage] = useState(0)
   const marketSpokeById = useMemo(
     () => new Map(session.marketSummaries.map((market) => [market.id, market.spoke])),
     [session.marketSummaries],
@@ -103,7 +113,10 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
     return filteredPools.filter((pool) => poolMatchesTab(pool, currentTab))
   }, [currentTab, filteredPools])
 
-  const poolGroups = useMemo(() => groupByDex(visiblePools), [visiblePools])
+  const pageCount = Math.max(1, Math.ceil(visiblePools.length / BORROW_MARKETS_PAGE_SIZE))
+  const safePage = Math.min(page, pageCount - 1)
+  const pagedPools = useMemo(() => paginateBorrowMarkets(visiblePools, safePage), [safePage, visiblePools])
+  const poolGroups = useMemo(() => groupByDex(pagedPools), [pagedPools])
   // The "Borrowable" tab in the UI (labelled "Assets"→"Borrowable") is fed from here:
   // borrowAssetsBySpoke maps each spoke to its borrowable assets. To change what shows
   // under "Borrowable", start at session.getBorrowableAssetsForMarket + BorrowableAssetsPanel.
@@ -126,6 +139,10 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
   useEffect(() => {
     onTabChange?.(currentTab)
   }, [currentTab, onTabChange])
+
+  useEffect(() => {
+    setPage(0)
+  }, [currentTab, search])
 
   const hasActiveFilters = search.trim().length > 0
   const clearFilters = useCallback(() => {
@@ -224,6 +241,32 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
         ) : null}
         </TokenPricesProvider>
       </div>
+
+      {pageCount > 1 ? (
+        <nav aria-label={t("Borrow market pages")} className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            disabled={safePage === 0}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
+          >
+            {t("Previous")}
+          </button>
+          <span className="text-[13px] text-muted-foreground">
+            {t("Page {page} of {count}")
+              .replace("{page}", String(safePage + 1))
+              .replace("{count}", String(pageCount))}
+          </span>
+          <button
+            type="button"
+            disabled={safePage >= pageCount - 1}
+            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+            className="rounded-full border border-border px-4 py-2 text-[13px] disabled:opacity-40"
+          >
+            {t("Next")}
+          </button>
+        </nav>
+      ) : null}
     </section>
   )
 }
