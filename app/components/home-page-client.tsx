@@ -5,7 +5,7 @@ import type { HomeMode } from "@/app/lib/home-sim"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
 import { HomeWorkspaceSkeleton } from "@/app/components/loading-states"
-import { AvanaSessionsProvider, useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
+import { AvanaSessionsProvider, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
 const HOME_WORKSPACE_WALLET_ID = "home-demo-wallet"
@@ -27,7 +27,7 @@ export function HomePageClient() {
 }
 
 function HomePageWorkspace() {
-  const { borrow: session } = useAvanaSessions()
+  const session = useBorrowSessionContext()
   const [mode, setMode] = useState<HomeMode>("borrow")
 
   // Gate on the full available-pool list (always populated) rather than the
