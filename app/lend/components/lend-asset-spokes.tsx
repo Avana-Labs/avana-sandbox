@@ -24,6 +24,7 @@ import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, matchesCategory, type CategoryChip } from "@/app/lib/markets/category"
+import { useMediaQuery } from "@/app/lib/use-media-query"
 
 /** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
 function AssetSubLabel({ symbol }: { symbol: string }) {
@@ -252,6 +253,7 @@ function AssetSection({
   onDeposit?: (marketId: string) => void
 }) {
   const { t } = useTranslation()
+  const isDesktop = useMediaQuery("(min-width: 768px)", true)
   const [sortKey, setSortKey] = useState<"asset" | "supplyApy" | "totalDeposits" | "utilization" | "availableLiquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
@@ -309,7 +311,7 @@ function AssetSection({
       </div>
 
       <DesktopTableSurface className="rounded-radius-md [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
-        <div className="space-y-4 md:hidden">
+        {!isDesktop ? <div className="space-y-4">
           {sortedRows.length > 0 ? (
             sortedRows.map((row, index) => (
               <AssetCardView key={row.symbol} row={row} index={index} />
@@ -319,8 +321,8 @@ function AssetSection({
               {t("No assets match these filters.")}
             </div>
           )}
-        </div>
-        <div className="hidden overflow-x-auto md:block">
+        </div> : null}
+        {isDesktop ? <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-0 text-[12px]">
             <colgroup>
               <col className="w-[5%]" />
@@ -428,7 +430,7 @@ function AssetSection({
               )}
             </tbody>
           </table>
-        </div>
+        </div> : null}
       </DesktopTableSurface>
     </section>
   )
