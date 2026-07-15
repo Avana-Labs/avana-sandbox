@@ -4,6 +4,7 @@ import * as React from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 import { priceKey } from "./format"
 
 /**
@@ -92,7 +93,11 @@ class TokenPricesErrorBoundary extends React.Component<
 }
 
 export function TokenPricesProvider({ children }: { children: React.ReactNode }) {
-  if (!hasConvexClient) return <>{children}</>
+  // Lighthouse's isolated artifact uses the static catalog intentionally. Do not
+  // open a live oracle subscription there: it adds no audited UI data and a stale
+  // remote Convex deployment turns the expected fallback into console errors and
+  // retry work. Production and normal local sessions keep the live subscription.
+  if (!hasConvexClient || isLighthouseAuditMode()) return <>{children}</>
   return (
     <TokenPricesErrorBoundary fallbackChildren={children}>
       <ConvexTokenPrices>{children}</ConvexTokenPrices>

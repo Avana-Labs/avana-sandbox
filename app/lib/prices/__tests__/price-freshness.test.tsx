@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 // hasConvexClient is decided at module load from NEXT_PUBLIC_CONVEX_URL; force it true so
 // the provider mounts its Convex-backed subtree (where freshness is surfaced).
 vi.mock("@/app/lib/convex/market-liquidity-provider", () => ({ hasConvexClient: true }))
+vi.mock("@/app/lib/test-mode", () => ({ isLighthouseAuditMode: () => false }))
 
 // Route each useQuery by its function path (convex refs are NOT identity-stable, so we
 // can't compare by reference). getPriceSnapshot drives prices and freshness together.
