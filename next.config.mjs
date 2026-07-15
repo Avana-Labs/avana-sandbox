@@ -128,7 +128,6 @@ const nextConfig = {
       "lucide-react",
       "sonner",
       "@fluentui/react-icons",
-      "recharts",
       "framer-motion",
       "@radix-ui/react-icons",
     ],
