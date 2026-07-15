@@ -92,10 +92,13 @@ export function Header() {
       }`}
     >
       <div className="hidden lg:block">
-        <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(220px,320px)_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 lg:px-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] xl:gap-4 xl:px-6 2xl:px-8">
+        <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 lg:px-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] xl:gap-4 xl:px-6 2xl:px-8">
           <div className="flex min-w-0 items-center gap-4 overflow-hidden xl:gap-5">
             <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
-              <BrandLogo className="h-[44px] md:h-[44px]" />
+              <span className="xl:hidden">
+                <BrandIcon />
+              </span>
+              <BrandLogo className="hidden h-[44px] xl:block" />
             </Link>
 
             <nav aria-label={t("Primary")} className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -106,6 +109,8 @@ export function Header() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    aria-label={t(link.label)}
+                    title={t(link.label)}
                     className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
                       isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     }`}
@@ -117,7 +122,7 @@ export function Header() {
             </nav>
           </div>
 
-          <div className="flex min-w-0 justify-center px-1 xl:px-2">
+          <div className="hidden min-w-0 justify-center px-1 xl:flex xl:px-2">
             <div className="w-full max-w-[280px] xl:max-w-[360px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
           </div>
 
@@ -131,16 +136,18 @@ export function Header() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    aria-label={t(link.label)}
+                    title={t(link.label)}
                     className={`group inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
                       isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {Icon ? (
-                      <span className="mr-2 inline-flex h-6 w-6 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
+                      <span className="inline-flex h-6 w-6 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px] xl:mr-2">
                         <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
                       </span>
                     ) : null}
-                    <span>{t(link.label)}</span>
+                    <span className="hidden xl:inline">{t(link.label)}</span>
                   </Link>
                 )
               })}
