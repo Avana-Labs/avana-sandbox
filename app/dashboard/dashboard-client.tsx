@@ -1,7 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import dynamic from "next/dynamic"
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dashboardHrefForTab, parseDashboardTab } from "@/app/lib/action-system/dashboard-routing"
 import {
@@ -51,33 +50,31 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RouteErrorFallback } from "@/app/components/route-error-fallback"
 
-const CollateralPositionsPanel = dynamic(
-  () => import("@/app/dashboard/components/borrow-tab/collateral-positions-panel").then((mod) => mod.CollateralPositionsPanel),
-  { ssr: false, loading: DashboardModulePlaceholder },
+const CollateralPositionsPanel = lazy(
+  async () => ({ default: (await import("@/app/dashboard/components/borrow-tab/collateral-positions-panel")).CollateralPositionsPanel }),
 )
-const DebtPositionsPanel = dynamic(
-  () => import("@/app/dashboard/components/borrow-tab/debt-positions-panel").then((mod) => mod.DebtPositionsPanel),
-  { ssr: false, loading: DashboardModulePlaceholder },
+const DebtPositionsPanel = lazy(
+  async () => ({ default: (await import("@/app/dashboard/components/borrow-tab/debt-positions-panel")).DebtPositionsPanel }),
 )
-const TradingFeesPanel = dynamic(
-  () => import("@/app/dashboard/components/borrow-tab/trading-fees-panel").then((mod) => mod.TradingFeesPanel),
-  { ssr: false, loading: DashboardModulePlaceholder },
+const TradingFeesPanel = lazy(
+  async () => ({ default: (await import("@/app/dashboard/components/borrow-tab/trading-fees-panel")).TradingFeesPanel }),
 )
-const MultiplyCollateralTable = dynamic(
-  () => import("@/app/portfolio/multiply-collateral-table").then((mod) => mod.MultiplyCollateralTable),
-  { ssr: false, loading: DashboardModulePlaceholder },
+const MultiplyCollateralTable = lazy(
+  async () => ({ default: (await import("@/app/portfolio/multiply-collateral-table")).MultiplyCollateralTable }),
 )
-const LendLearnSection = dynamic(
-  () => import("./components/lend-learn-section").then((mod) => mod.LendLearnSection),
-  { ssr: false, loading: DashboardModulePlaceholder },
+const LendLearnSection = lazy(
+  async () => ({ default: (await import("./components/lend-learn-section")).LendLearnSection }),
 )
-const RecentActivity = dynamic(
-  () => import("@/app/portfolio/recent-activity").then((mod) => mod.RecentActivity),
-  { ssr: false, loading: DashboardModulePlaceholder },
+const RecentActivity = lazy(
+  async () => ({ default: (await import("@/app/portfolio/recent-activity")).RecentActivity }),
 )
 
 function DashboardModulePlaceholder() {
   return <Skeleton className="h-64 w-full rounded-radius-md" />
+}
+
+function DashboardModuleBoundary({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<DashboardModulePlaceholder />}>{children}</Suspense>
 }
 
 export function mergeLendTabData(
@@ -606,11 +603,17 @@ export function DashboardClient({
                     </div>
                   </div>
                 ) : creditSubTab === "collateral" ? (
-                  <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+                  <DashboardModuleBoundary>
+                    <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+                  </DashboardModuleBoundary>
                 ) : creditSubTab === "debt" ? (
-                  <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+                  <DashboardModuleBoundary>
+                    <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+                  </DashboardModuleBoundary>
                 ) : (
-                  <TradingFeesPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+                  <DashboardModuleBoundary>
+                    <TradingFeesPanel showBalance={showDollarAmounts} returnHref={dashboardReturnHref} />
+                  </DashboardModuleBoundary>
                 )}
               </div>
             </div>
@@ -655,7 +658,9 @@ export function DashboardClient({
                       </div>
                     </div>
                   ) : (
-                    <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
+                    <DashboardModuleBoundary>
+                      <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
+                    </DashboardModuleBoundary>
                   )}
                 </div>
               </div>
@@ -664,8 +669,12 @@ export function DashboardClient({
           </DeferredDashboardContent>
 
           <DeferredDashboardContent>
-            <LendLearnSection />
-            <RecentActivity rows={activityRows} />
+            <DashboardModuleBoundary>
+              <LendLearnSection />
+            </DashboardModuleBoundary>
+            <DashboardModuleBoundary>
+              <RecentActivity rows={activityRows} />
+            </DashboardModuleBoundary>
           </DeferredDashboardContent>
         </div>
       ) : null}
