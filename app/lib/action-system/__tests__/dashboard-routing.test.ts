@@ -16,12 +16,12 @@ describe("dashboard-routing", () => {
   })
 
   it("builds dashboard hrefs with tab query params", () => {
-    expect(dashboardHrefForProduct("lend")).toBe("/dashboard?tab=lending")
-    expect(dashboardHrefForProduct("borrow")).toBe("/dashboard?tab=overview")
-    expect(dashboardHrefForProduct("multiply")).toBe("/dashboard?tab=looping")
+    expect(dashboardHrefForProduct("lend")).toBe("/dashboard?tab=lending#dashboard-lend-account")
+    expect(dashboardHrefForProduct("borrow")).toBe("/dashboard?tab=overview#dashboard-borrow-account")
+    expect(dashboardHrefForProduct("multiply")).toBe("/dashboard?tab=looping#dashboard-multiply-account")
     expect(dashboardHrefForProduct("rewards")).toBe("/dashboard?tab=activity")
-    expect(dashboardHrefForTab("overview")).toBe("/dashboard?tab=overview")
-    expect(dashboardHrefForTab("lending")).toBe("/dashboard?tab=lending")
+    expect(dashboardHrefForTab("overview")).toBe("/dashboard?tab=overview#dashboard-borrow-account")
+    expect(dashboardHrefForTab("lending")).toBe("/dashboard?tab=lending#dashboard-lend-account")
   })
 
   it("parses valid tab query values", () => {
