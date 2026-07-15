@@ -1,11 +1,11 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { useMutation } from "convex/react"
-import { api } from "@/convex/_generated/api"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
+import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export type SupportSubmitPayload = {
@@ -244,7 +244,7 @@ const SUPPORT_CATEGORIES: SupportCategory[] = [
 
 type SendStatus = "idle" | "sending" | "sent" | "error"
 
-function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
+export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   const { t } = useTranslation()
   const [stage, setStage] = useState<1 | 2 | 3>(1)
   const [categoryValue, setCategoryValue] = useState("")
@@ -551,26 +551,10 @@ function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   )
 }
 
-/**
- * Convex-backed submitter: persists each request to the `supportRequests` table.
- * The wallet is derived server-side from the authenticated session (not sent by
- * the client), so we only forward the browser user-agent.
- */
-function ConvexSupportCenter() {
-  const submitSupportRequest = useMutation(api.support.submitSupportRequest)
-
-  const submit = useCallback<SupportSubmit>(
-    async (payload) => {
-      await submitSupportRequest({
-        ...payload,
-        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
-      })
-    },
-    [submitSupportRequest],
-  )
-
-  return <SupportCenterForm submit={submit} />
-}
+const ConvexSupportCenter = dynamic(
+  () => import("./support-center-connected").then((mod) => mod.ConvexSupportCenter),
+  { ssr: false },
+)
 
 /**
  * Public entry. Uses the Convex-backed submitter when a Convex client is
@@ -578,7 +562,8 @@ function ConvexSupportCenter() {
  * demo never dead-ends if the backend is unavailable.
  */
 export function SupportCenterClient() {
-  if (hasConvexClient) return <ConvexSupportCenter />
+  const { authedWallet, isSignedIn } = useSiweAuth()
+  if (hasConvexClient && isSignedIn && authedWallet) return <ConvexSupportCenter />
   return (
     <SupportCenterForm
       submit={async () => {
