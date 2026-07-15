@@ -22,6 +22,12 @@ const budgets = {
   seo: Number(process.env.LH_SEO_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS.seo),
 }
 const runCount = Math.max(1, Number(process.env.LH_RUNS ?? 3))
+const requestedRoutes = process.env.LH_ROUTES?.split(",").map((route) => route.trim()).filter(Boolean)
+const routes = requestedRoutes?.length ? requestedRoutes : LIGHTHOUSE_ROUTES
+const unknownRoutes = routes.filter((route) => !LIGHTHOUSE_ROUTES.includes(route))
+if (unknownRoutes.length > 0) {
+  throw new Error(`Unknown Lighthouse routes: ${unknownRoutes.join(", ")}`)
+}
 const numericBudgets = {
   firstContentfulPaintMs: Number(process.env.LH_FCP_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.firstContentfulPaintMs),
   largestContentfulPaintMs: Number(process.env.LH_LCP_MAX ?? LIGHTHOUSE_NUMERIC_BUDGETS.largestContentfulPaintMs),
@@ -107,7 +113,7 @@ await fs.mkdir(outputDir, { recursive: true })
 process.stdout.write(`${JSON.stringify({ lighthouseOutputDir: outputDir, gpuEnabled: process.env.LH_ENABLE_GPU === "1" })}\n`)
 const failures = []
 
-for (const route of LIGHTHOUSE_ROUTES) {
+for (const route of routes) {
   await assertRouteContent(route)
   const categoryScores = Object.fromEntries(Object.keys(budgets).map((category) => [category, []]))
   const numericScores = {
