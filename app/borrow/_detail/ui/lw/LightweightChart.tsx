@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, Bar, BarChart, Line, LineChart, ReferenceDot, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts"
 import { useTheme } from "@/app/components/theme-provider"
 import { useLocaleDisplayPreferences } from "@/app/components/display-preferences"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
@@ -27,26 +26,50 @@ export type LightweightChartProps = {
   height?: number
   className?: string
   ariaLabel?: string
-  /** Optional token/pool text class used to derive a themed chart accent. */
   accentClassName?: string | string[]
-  /** Formats the hover value shown inside the floating tooltip. */
   formatValue?: (v: number) => string
-  /** Formats the hover time label shown inside the tooltip. */
   formatTime?: (iso: string) => string
-  /** When true the line/area is tinted with the rose palette (used for bad / debt series). */
   tone?: "neutral" | "positive" | "negative"
-  /** When true, render a persistent "Today" value label at the last datapoint (Uniswap-style). */
   showLastLabel?: boolean
-  /** Minimal grayscale styling used on token-style asset hero charts. */
   variant?: "default" | "token"
-  /** When true, render a dot on the latest datapoint (token pages). */
   showEndDot?: boolean
-  /** When set, hover updates the parent (e.g. hero price) and hides the floating tooltip. */
   onHoverChange?: (hover: TokenChartHover | null) => void
-  /** Active range — used for token chart axis labels. */
   timeRange?: TimeRangeId
-  /** Optional fixed visible price range for token hero charts. */
   priceRange?: { min: number; max: number }
+}
+
+type ChartRow = { idx: number; t: string; iso: string; label: string; value: number }
+type PlotPoint = ChartRow & { x: number; y: number }
+
+export function buildLightweightChartGeometry(
+  data: ChartRow[],
+  width: number,
+  height: number,
+  isMobile: boolean,
+  priceRange?: { min: number; max: number },
+) {
+  const top = 12
+  const bottom = 34
+  const right = isMobile ? 8 : 56
+  const plotWidth = Math.max(1, width - right)
+  const plotBottom = Math.max(top + 1, height - bottom)
+  const values = data.map((point) => point.value)
+  const observedMin = values.length ? Math.min(...values) : 0
+  const observedMax = values.length ? Math.max(...values) : 1
+  const min = priceRange?.min ?? observedMin - 4
+  const max = priceRange?.max ?? observedMax + 4
+  const range = Math.max(0.000001, max - min)
+  const points: PlotPoint[] = data.map((point, index) => ({
+    ...point,
+    x: data.length === 1 ? plotWidth / 2 : (index / Math.max(1, data.length - 1)) * plotWidth,
+    y: top + ((max - point.value) / range) * (plotBottom - top),
+  }))
+  const linePath = monotoneLinePath(points)
+  const areaPath = linePath
+    ? `${linePath} L ${points[points.length - 1].x} ${plotBottom} L ${points[0].x} ${plotBottom} Z`
+    : ""
+
+  return { points, linePath, areaPath, min, max, plotBottom, plotWidth }
 }
 
 export function LightweightChart({
@@ -66,6 +89,7 @@ export function LightweightChart({
   timeRange,
   priceRange,
 }: LightweightChartProps) {
+  const shellRef = React.useRef<HTMLDivElement | null>(null)
   const isMobile = useMediaQuery("(max-width: 639px)")
   const { resolvedTheme } = useTheme()
   const { language } = useLocaleDisplayPreferences()
@@ -73,12 +97,29 @@ export function LightweightChart({
   const { t } = useTranslation()
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const theme: ThemeMode = resolvedTheme === "dark" ? "dark" : "light"
-
+  const [dimensions, setDimensions] = React.useState({ width: 900, height })
+  const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
   const accentKey = Array.isArray(accentClassName) ? accentClassName.join("|") : accentClassName ?? ""
   void showLastLabel
   void showEndDot
   void timeRange
-  void priceRange
+
+  React.useEffect(() => {
+    const shell = shellRef.current
+    if (!shell || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return
+      const next = {
+        width: Math.max(1, Math.round(entry.contentRect.width)),
+        height: Math.max(1, Math.round(entry.contentRect.height)),
+      }
+      setDimensions((current) =>
+        current.width === next.width && current.height === next.height ? current : next,
+      )
+    })
+    observer.observe(shell)
+    return () => observer.disconnect()
+  }, [])
 
   const data = React.useMemo(() => toChartRows(series.points, locale), [locale, series.points])
   const xTickIndexes = React.useMemo(() => pickTickIndexes(data.length, isMobile), [data.length, isMobile])
@@ -95,200 +136,156 @@ export function LightweightChart({
     (iso: string) => (formatTime === defaultFormatTime ? defaultFormatTime(iso, locale) : formatTime(iso)),
     [formatTime, locale],
   )
-
+  const geometry = React.useMemo(
+    () => buildLightweightChartGeometry(data, dimensions.width, dimensions.height, isMobile, priceRange),
+    [data, dimensions, isMobile, priceRange],
+  )
   const yTickValues = React.useMemo(() => {
     if (isMobile || data.length === 0) return []
-
-    const values = data.map((point) => point.value)
-    const min = Math.min(...values)
-    const max = Math.max(...values)
-    if (min === max) return [min]
-
-    const tickCount = 4
-    const step = (max - min) / (tickCount - 1)
-    return Array.from({ length: tickCount }, (_, index) => Math.round((min + step * index) * 100) / 100)
-  }, [data, isMobile])
-
+    if (geometry.min === geometry.max) return [geometry.min]
+    return Array.from({ length: 4 }, (_, index) => geometry.min + ((geometry.max - geometry.min) * index) / 3)
+  }, [data.length, geometry.max, geometry.min, isMobile])
+  const activePoint = activeIndex == null ? null : geometry.points[activeIndex]
+  const lastPoint = geometry.points[geometry.points.length - 1]
+  const id = gradientId(series.id, accentKey)
   const chartShellClassName =
     className ??
     "relative h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.06)_1px,transparent_0)] [background-size:18px_18px] dark:bg-none sm:h-[240px]"
 
-  const ChartComponent = type === "bar" ? BarChart : type === "line" ? LineChart : AreaChart
-  const lastPoint = data[data.length - 1]
+  const updatePointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (data.length === 0) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / Math.max(1, rect.width)))
+    const index = Math.round(ratio * (data.length - 1))
+    setActiveIndex(index)
+    const point = data[index]
+    onHoverChange?.({ value: point.value, time: point.iso, index })
+  }
+  const clearPointer = () => {
+    setActiveIndex(null)
+    onHoverChange?.(null)
+  }
 
   return (
-    <div className={chartShellClassName} style={height !== 220 ? { height } : undefined} role="img" aria-label={ariaLabel ?? t("Price chart")}>
-      <ResponsiveContainer width="100%" height="100%">
-        <ChartComponent
-          data={data}
-          margin={{ top: 12, right: isMobile ? 8 : 4, bottom: 34, left: 0 }}
-          onMouseMove={
-            onHoverChange
-              ? (state: { activeTooltipIndex?: number; isTooltipActive?: boolean }) => {
-                  const index = state?.isTooltipActive ? state.activeTooltipIndex ?? null : null
-                  if (index == null) {
-                    onHoverChange(null)
-                    return
-                  }
-                  const point = data[index]
-                  if (!point) {
-                    onHoverChange(null)
-                    return
-                  }
-                  onHoverChange({ value: point.value, time: point.iso, index })
-                }
-              : undefined
-          }
-          onMouseLeave={() => {
-            onHoverChange?.(null)
-          }}
-        >
-          <defs>
-            <linearGradient id={gradientId(series.id, accentKey)} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={palette.fillTop} stopOpacity={variant === "token" ? 0.18 : 1} />
-              <stop offset="100%" stopColor={palette.fillBottom} stopOpacity={1} />
-            </linearGradient>
-          </defs>
+    <div
+      ref={shellRef}
+      className={chartShellClassName}
+      style={height !== 220 ? { height } : undefined}
+      role="img"
+      aria-label={ariaLabel ?? t("Price chart")}
+      onPointerMove={updatePointer}
+      onPointerLeave={clearPointer}
+      data-testid="lightweight-chart"
+    >
+      <svg className="size-full overflow-visible" viewBox={`0 0 ${dimensions.width} ${dimensions.height}`} aria-hidden="true">
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={palette.fillTop} stopOpacity={variant === "token" ? 0.18 : 1} />
+            <stop offset="100%" stopColor={palette.fillBottom} stopOpacity={1} />
+          </linearGradient>
+        </defs>
 
-          <XAxis
-            dataKey="idx"
-            axisLine={false}
-            tickLine={false}
-            ticks={xTickIndexes}
-            interval={0}
-            tick={(tickProps) => {
-              const { x, y, payload } = tickProps
-              const index = Number(payload.value)
-              const label = data[index]?.label ?? ""
-              const isFirst = index === xTickIndexes[0]
-              const isLast = index === xTickIndexes[xTickIndexes.length - 1]
-              const anchor = isFirst ? "start" : isLast ? "end" : "middle"
+        {type === "area" && geometry.areaPath ? <path d={geometry.areaPath} fill={`url(#${id})`} /> : null}
+        {type === "bar"
+          ? geometry.points.map((point) => {
+              const barWidth = Math.min(10, Math.max(2, geometry.plotWidth / Math.max(1, data.length) * 0.6))
               return (
-                <text x={x} y={y} dy={12} textAnchor={anchor} fill="hsl(var(--muted-foreground))" fontSize={11}>
-                  {label}
-                </text>
+                <rect
+                  key={point.iso}
+                  x={point.x - barWidth / 2}
+                  y={point.y}
+                  width={barWidth}
+                  height={Math.max(1, geometry.plotBottom - point.y)}
+                  rx={3}
+                  fill={palette.stroke}
+                />
               )
-            }}
-          />
-          <YAxis
-            orientation="right"
-            hide={isMobile}
-            axisLine={false}
-            tickLine={false}
-            width={isMobile ? 0 : 52}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-            tickFormatter={resolvedFormatValue}
-            ticks={yTickValues}
-            domain={[(dataMin: number) => dataMin - 4, (dataMax: number) => dataMax + 4]}
-          />
-          <RechartsTooltip
-            cursor={{ stroke: palette.cursor, strokeWidth: 1 }}
-            content={({ active, payload }) => {
-              if (active && payload && payload.length) {
-                const point = payload[0].payload as ChartRow
-                return (
-                  <div className="rounded-xs border border-border bg-popover px-2.5 py-1.5 shadow-elev-2">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-medium text-muted-foreground">{resolvedFormatTime(point.iso)}</span>
-                      <span className="font-data text-[12.5px] font-medium text-foreground">{resolvedFormatValue(point.value)}</span>
-                    </div>
-                  </div>
-                )
-              }
-              return null
-            }}
-          />
+            })
+          : geometry.linePath
+            ? <path d={geometry.linePath} fill="none" stroke={palette.stroke} strokeWidth="2.5" />
+            : null}
 
-          {type === "bar" ? (
-            <Bar
-              dataKey="value"
-              fill={palette.stroke}
-              radius={[3, 3, 0, 0]}
-              barSize={10}
-              isAnimationActive={false}
-            />
-          ) : type === "line" ? (
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke={palette.stroke}
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{ r: 5, fill: palette.stroke, stroke: "hsl(var(--background))", strokeWidth: 2.5 }}
-              isAnimationActive={false}
-            />
-          ) : (
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke={palette.stroke}
-              strokeWidth={2.5}
-              fill={`url(#${gradientId(series.id, accentKey)})`}
-              fillOpacity={1}
-              dot={false}
-              activeDot={{ r: 5, fill: palette.stroke, stroke: "hsl(var(--background))", strokeWidth: 2.5 }}
-              isAnimationActive={false}
-            />
-          )}
-          {type !== "bar" && lastPoint ? (
-            <>
-              <ReferenceDot
-                x={lastPoint.idx}
-                y={lastPoint.value}
-                isFront
-                r={18}
-                fill={palette.stroke}
-                fillOpacity={0.12}
-                stroke="none"
-                shape={({ cx, cy }) => (
-                  <g key="lw-endpoint-pulse">
-                    <circle cx={cx} cy={cy} fill={palette.stroke} opacity={0.45}>
-                      <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
-                    </circle>
-                  </g>
-                )}
-              />
-              <ReferenceDot
-                x={lastPoint.idx}
-                y={lastPoint.value}
-                isFront
-                r={5.5}
-                fill={palette.stroke}
-                stroke="hsl(var(--background))"
-                strokeWidth={2.5}
-              />
-            </>
-          ) : null}
-        </ChartComponent>
-      </ResponsiveContainer>
+        {xTickIndexes.map((index, tickIndex) => {
+          const point = geometry.points[index]
+          if (!point) return null
+          const anchor = tickIndex === 0 ? "start" : tickIndex === xTickIndexes.length - 1 ? "end" : "middle"
+          return <text key={point.iso} x={point.x} y={dimensions.height - 8} textAnchor={anchor} fill="hsl(var(--muted-foreground))" fontSize="11">{point.label}</text>
+        })}
+        {yTickValues.map((value) => {
+          const y = 12 + ((geometry.max - value) / Math.max(0.000001, geometry.max - geometry.min)) * (geometry.plotBottom - 12)
+          return <text key={value} x={dimensions.width - 2} y={y + 4} textAnchor="end" fill="hsl(var(--muted-foreground))" fontSize="11">{resolvedFormatValue(value)}</text>
+        })}
+
+        {activePoint ? (
+          <>
+            <line x1={activePoint.x} x2={activePoint.x} y1="12" y2={geometry.plotBottom} stroke={palette.cursor} />
+            {type !== "bar" ? <circle cx={activePoint.x} cy={activePoint.y} r="5" fill={palette.stroke} stroke="hsl(var(--background))" strokeWidth="2.5" /> : null}
+          </>
+        ) : null}
+        {type !== "bar" && lastPoint ? (
+          <>
+            <circle cx={lastPoint.x} cy={lastPoint.y} fill={palette.stroke} opacity="0.45">
+              <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
+            </circle>
+            <circle cx={lastPoint.x} cy={lastPoint.y} r="5.5" fill={palette.stroke} stroke="hsl(var(--background))" strokeWidth="2.5" />
+          </>
+        ) : null}
+      </svg>
+
+      {activePoint && !onHoverChange ? (
+        <div
+          className="pointer-events-none absolute top-2 rounded-xs border border-border bg-popover px-2.5 py-1.5 shadow-elev-2"
+          style={{ left: `${Math.min(88, Math.max(2, (activePoint.x / dimensions.width) * 100))}%`, transform: "translateX(-50%)" }}
+        >
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-medium text-muted-foreground">{resolvedFormatTime(activePoint.iso)}</span>
+            <span className="font-data text-[12.5px] font-medium text-foreground">{resolvedFormatValue(activePoint.value)}</span>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
 
-type ChartRow = { idx: number; t: string; iso: string; label: string; value: number }
+function monotoneLinePath(points: PlotPoint[]) {
+  if (points.length === 0) return ""
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`
+  const slopes = points.slice(0, -1).map((point, index) => {
+    const next = points[index + 1]
+    return (next.y - point.y) / Math.max(1, next.x - point.x)
+  })
+  const tangents = points.map((_, index) => {
+    if (index === 0) return slopes[0]
+    if (index === points.length - 1) return slopes[slopes.length - 1]
+    const previous = slopes[index - 1]
+    const next = slopes[index]
+    if (previous === 0 || next === 0 || Math.sign(previous) !== Math.sign(next)) return 0
+    return (2 * previous * next) / (previous + next)
+  })
+  let path = `M ${points[0].x} ${points[0].y}`
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const point = points[index]
+    const next = points[index + 1]
+    const third = (next.x - point.x) / 3
+    path += ` C ${point.x + third} ${point.y + tangents[index] * third}, ${next.x - third} ${next.y - tangents[index + 1] * third}, ${next.x} ${next.y}`
+  }
+  return path
+}
 
 function toChartRows(points: Series["points"], locale: string): ChartRow[] {
   return [...points]
     .filter((point) => Number.isFinite(point.v))
     .sort((a, b) => (a.t > b.t ? 1 : a.t < b.t ? -1 : 0))
-    .map((point, idx) => ({
-      idx,
-      t: point.t,
-      iso: point.t,
-      label: formatTick(point.t, locale),
-      value: point.v,
-    }))
+    .map((point, idx) => ({ idx, t: point.t, iso: point.t, label: formatTick(point.t, locale), value: point.v }))
 }
 
 function pickTickIndexes(count: number, isMobile: boolean): number[] {
   if (count <= 0) return []
   const maxTicks = isMobile ? 5 : 7
   if (count <= maxTicks) return Array.from({ length: count }, (_, index) => index)
-
   const step = (count - 1) / (maxTicks - 1)
-  const picked = Array.from({ length: maxTicks }, (_, i) => Math.round(i * step))
-  return Array.from(new Set(picked))
+  return Array.from(new Set(Array.from({ length: maxTicks }, (_, index) => Math.round(index * step))))
 }
 
 function resolveSeriesTone(points: ChartRow[]): "positive" | "negative" {
@@ -297,42 +294,26 @@ function resolveSeriesTone(points: ChartRow[]): "positive" | "negative" {
 }
 
 function formatTick(raw: string, locale: string) {
-  const d = new Date(raw.includes("T") ? raw : `${raw}T12:00:00`)
-  if (Number.isNaN(d.getTime())) return raw
-  return d.toLocaleDateString(locale, { month: "short", day: "numeric" })
+  const date = new Date(raw.includes("T") ? raw : `${raw}T12:00:00`)
+  if (Number.isNaN(date.getTime())) return raw
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric" })
 }
 
-function defaultFormat(v: number): string {
-  // Sentinel default: when a caller doesn't pass `formatValue`, the component's
-  // `resolvedFormatValue` uses the locale-aware active-currency Intl path instead.
-  // Route this fallback through the shared active-currency compact formatter so it
-  // never hardcodes USD if it is ever rendered directly.
-  return formatCompactUsd(v)
+function defaultFormat(value: number): string {
+  return formatCompactUsd(value)
 }
 
 function defaultFormatTime(iso: string, locale?: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" })
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" })
 }
 
 function formatCompactCurrencyValue(value: number, currency: string, locale: string): string {
-  const abs = Math.abs(value)
-  if (abs >= 1_000) {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-      notation: "compact",
-      maximumFractionDigits: 2,
-    }).format(value)
+  if (Math.abs(value) >= 1_000) {
+    return new Intl.NumberFormat(locale, { style: "currency", currency, notation: "compact", maximumFractionDigits: 2 }).format(value)
   }
-
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
+  return new Intl.NumberFormat(locale, { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
 }
 
 function makeTokenChartPalette(theme: ThemeMode) {
