@@ -1,4 +1,5 @@
 // @vitest-environment edge-runtime
+/* eslint-disable @typescript-eslint/no-explicit-any -- convex-test's t.run(ctx) is loosely typed; the ctx casts in this harness test are intentional. */
 import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import schema from "../schema"
@@ -24,12 +25,11 @@ function borrowIntent(intentId: string) {
 }
 
 async function insertSnapshotRow(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any,
   rows: Array<{ marketSlug: string; borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }>,
   updatedAt: number,
 ) {
-  await t.run(async (ctx: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  await t.run(async (ctx: any) => {
     await ctx.db.insert("liquidityDeltasCache", {
       singleton: "deltas",
       rows,
@@ -118,10 +118,9 @@ describe("listDeltaSnapshot decouples the app-wide read from the hot write path 
     const res = await t.mutation(internal.liquidity.rebuildDeltaSnapshot, {})
     expect(res.markets).toBe(1)
 
-    const cacheDocs = await t.run(async (ctx: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+    const cacheDocs = await t.run(async (ctx: any) =>
       ctx.db
         .query("liquidityDeltasCache")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .withIndex("by_singleton", (q: any) => q.eq("singleton", "deltas"))
         .collect(),
     )

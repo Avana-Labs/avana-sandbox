@@ -1,0 +1,24 @@
+# Build output
+.next/
+.next-dev/
+.next-prod/
+.next-lighthouse/
+out/
+dist/
+
+# Dependencies
+node_modules/
+
+# Convex-generated code (owned by `convex codegen`) and local deployment state
+convex/_generated/
+.convex/
+
+# Lockfile (never reformat)
+package-lock.json
+
+# Reports & test artifacts
+.reports/
+.artifacts/
+coverage/
+playwright-report/
+test-results/
