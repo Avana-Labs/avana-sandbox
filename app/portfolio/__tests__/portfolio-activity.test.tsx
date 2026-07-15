@@ -187,7 +187,7 @@ describe("DashboardClient activity", () => {
       history: [],
     })
 
-    render(
+    const { unmount } = render(
       <DisplayPreferencesProvider>
         <DashboardClient walletProfileId="demo-wallet" />
       </DisplayPreferencesProvider>,
@@ -200,5 +200,12 @@ describe("DashboardClient activity", () => {
     expect(screen.getByText("Simulated transaction")).toBeInTheDocument()
     expect(screen.getByText("0xmultiply")).toBeInTheDocument()
     expect(screen.getByText("1250")).toBeInTheDocument()
+
+    // DashboardClient eager-mounts its lazy panels in test mode. There is no
+    // global React Testing Library auto-cleanup configured (vitest `globals` is
+    // off), so unmount explicitly: otherwise a lazy panel import can resolve and
+    // commit after this file's jsdom is torn down, surfacing as a flaky
+    // "ReferenceError: window is not defined" unhandled error in the full run.
+    unmount()
   })
 })
