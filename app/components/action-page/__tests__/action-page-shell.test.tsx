@@ -72,14 +72,14 @@ describe("ActionPageShell", () => {
     expect(screen.getByText("Action page body")).toBeInTheDocument()
   })
 
-  it("does not render a sandbox badge when simulated", () => {
+  it("clearly labels simulated sandbox actions", () => {
     renderShell(
       <ActionPageShell title="Borrow" subtitle="Configure and review your loan." simulated>
         <div>Body</div>
       </ActionPageShell>,
     )
 
-    expect(screen.queryByText("Simulated transaction")).not.toBeInTheDocument()
+    expect(screen.getByText("Sandbox · simulated transaction")).toBeInTheDocument()
   })
 
   it("renders overlay mode on the shell root", async () => {

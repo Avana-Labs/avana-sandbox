@@ -27,6 +27,7 @@ export function ActionPageShell({
   density = "default",
   title,
   subtitle,
+  simulated = false,
   hideTitle = false,
   hideClose = false,
   onClose,
@@ -95,6 +96,14 @@ export function ActionPageShell({
           density === "default" && "max-w-[560px] gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
         )}
       >
+        {simulated ? (
+          <div className={cn("flex", density === "default" ? "justify-start" : "justify-end")}>
+            <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+              {t("Sandbox · simulated transaction")}
+            </span>
+          </div>
+        ) : null}
+
         {showTitleBlock ? (
           <div className="pb-5">
             <h1 className="text-[1.5rem] font-semibold tracking-[-0.03em] text-foreground sm:text-[1.625rem]">{t(title)}</h1>
