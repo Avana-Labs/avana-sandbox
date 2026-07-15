@@ -2,11 +2,10 @@
 
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { useEffect, useRef, useState, type ReactNode } from "react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { DeferredDetailContent, DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import {
   AssetHero,
   AssetHeroIdentity,
@@ -51,31 +50,6 @@ const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections").t
 })
 function DeferredBlock({ className }: { className?: string }) {
   return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
-}
-
-function DeferredDetailContent({ children }: { children: ReactNode }) {
-  const markerRef = useRef<HTMLDivElement | null>(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const marker = markerRef.current
-    if (!marker || typeof IntersectionObserver === "undefined") {
-      setVisible(true)
-      return
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return
-        setVisible(true)
-        observer.disconnect()
-      },
-      { rootMargin: "1200px 0px" },
-    )
-    observer.observe(marker)
-    return () => observer.disconnect()
-  }, [])
-
-  return <div ref={markerRef}>{visible ? children : <DeferredBlock className="h-[1600px]" />}</div>
 }
 
 type Props = { detail: AssetDetail }
