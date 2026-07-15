@@ -73,16 +73,17 @@ jobs:
       # Playwright's webServer (playwright.config.ts) boots `npm run dev` with
       # NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1, which opens the onboarding gate,
       # injects the test wallet, and serves mock data — so this needs neither a
-      # Convex deployment nor a SIWE token. Scoped to dashboard-product-routing:
-      # it boots the app and asserts the dashboard focuses the right account
-      # section for the borrow/lend/multiply routes — real gated UI + routing,
-      # deterministic (no timing/pixel assertions), and JSON-import-free (the
-      # JSON fixture in action-pages/route-performance trips Playwright's
-      # transform hook). onboarding.spec.ts stays out (needs real auth + Convex).
-      # borrow-detail-routes is excluded pending a real runtime error it flags on
-      # the borrow detail sidebar — track that separately before adding it here.
+      # Convex deployment nor a SIWE token. Scoped to the deterministic specs:
+      #   - dashboard-product-routing: dashboard focuses the right account section
+      #     for the borrow/lend/multiply routes.
+      #   - borrow-detail-routes: every borrow detail route family renders without
+      #     a runtime error (guards the hydration regression fixed in
+      #     responsive-detail-action.tsx).
+      # Both are JSON-import-free (the JSON fixture in action-pages/route-performance
+      # trips Playwright's transform hook) and free of timing/pixel assertions.
+      # onboarding.spec.ts stays out (needs real auth + Convex).
       - name: E2E smoke (test-mode routes render)
-        run: npx playwright test --project=chromium tests/e2e/dashboard-product-routing.spec.ts
+        run: npx playwright test --project=chromium tests/e2e/dashboard-product-routing.spec.ts tests/e2e/borrow-detail-routes.spec.ts
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
