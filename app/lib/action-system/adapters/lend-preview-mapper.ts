@@ -141,6 +141,7 @@ export function mapLendWithdrawPreviewToActionUi(
     marketLabel: string
     balanceAmount: number
     assetPriceUsd?: number
+    poolAvailableLiquidity?: number
   },
 ): ActionPreviewUi {
   const beforeSupplied = options.assetPriceUsd
@@ -157,6 +158,7 @@ export function mapLendWithdrawPreviewToActionUi(
   const afterEarned = options.assetPriceUsd
     ? preview.after.interestEarned * options.assetPriceUsd + preview.after.rewardsEarnedUsd
     : preview.after.totalEarnedUsd
+  const maxWithdrawable = preview.maxWithdrawable ?? options.balanceAmount
 
   return {
     ...basePreviewFields(preview, {
@@ -168,7 +170,7 @@ export function mapLendWithdrawPreviewToActionUi(
       rateLabel: "Remaining supply",
       rateValue: formatActionUsd(afterSupplied),
       amountUsd: Math.max(0, beforeSupplied - afterSupplied),
-      maxAmount: preview.maxWithdrawable ?? options.balanceAmount,
+      maxAmount: maxWithdrawable,
     }),
     metrics: [
       {
@@ -187,10 +189,29 @@ export function mapLendWithdrawPreviewToActionUi(
       },
       {
         id: "earnings",
-        label: "Total earned",
+        label: "Accrued earnings",
         value: formatActionUsdBeforeAfter(beforeEarned, afterEarned),
         before: formatActionUsd(beforeEarned),
         after: formatActionUsd(afterEarned),
+      },
+      {
+        id: "withdrawable-balance",
+        label: "Wallet withdrawable",
+        value: formatActionAmount(maxWithdrawable, options.symbol, 4),
+      },
+      ...(options.poolAvailableLiquidity != null
+        ? [
+            {
+              id: "pool-liquidity",
+              label: "Pool liquidity",
+              value: formatActionAmount(options.poolAvailableLiquidity, options.symbol, 4),
+            },
+          ]
+        : []),
+      {
+        id: "interest-inclusion",
+        label: "Accrued interest",
+        value: "Included in supplied balance",
       },
     ],
     risk: null,

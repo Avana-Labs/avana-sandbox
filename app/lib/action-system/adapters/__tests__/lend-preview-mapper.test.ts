@@ -46,9 +46,20 @@ describe("lend preview mappers", () => {
       amount: 25,
       marketLabel: "GHO · Core",
       balanceAmount: 150,
+      poolAvailableLiquidity: 80,
     })
 
-    expect(ui.metrics.map((row) => row.label)).toEqual(["Supplied remaining", "APY impact", "Total earned"])
+    expect(ui.metrics.map((row) => row.label)).toEqual([
+      "Supplied remaining",
+      "APY impact",
+      "Accrued earnings",
+      "Wallet withdrawable",
+      "Pool liquidity",
+      "Accrued interest",
+    ])
+    expect(ui.metrics.find((row) => row.id === "withdrawable-balance")?.value).toBe("10 GHO")
+    expect(ui.metrics.find((row) => row.id === "pool-liquidity")?.value).toBe("80 GHO")
+    expect(ui.metrics.find((row) => row.id === "interest-inclusion")?.value).toBe("Included in supplied balance")
     expect(ui.rateLabel).toBe("Remaining supply")
     expect(ui.amountUsdLabel).toBe("$25.00")
     expect(ui.maxAmount).toBe(10)
