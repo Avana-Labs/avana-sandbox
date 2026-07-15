@@ -25,6 +25,20 @@ export function LendClient({
     () => livePageData ?? pageData,
     [livePageData, pageData],
   );
+  const withdrawableMarketIds = useMemo(
+    () =>
+      new Set(
+        Object.values(lendSession.state.positions)
+          .filter(
+            (position) =>
+              position.walletId === lendSession.walletId &&
+              position.status === "active" &&
+              position.currentSuppliedAmount > 0,
+          )
+          .map((position) => position.marketId),
+      ),
+    [lendSession.state.positions, lendSession.walletId],
+  );
   const {
     markets,
     featuredAssets,
@@ -52,6 +66,7 @@ export function LendClient({
               <LendAssetSpokes
                 groups={assetGroups}
                 initialIsDesktop={initialIsDesktop}
+                withdrawableMarketIds={withdrawableMarketIds}
                 onDeposit={(marketId) =>
                   router.push(
                     actionPagePath("lend", "deposit", { market: marketId }),
