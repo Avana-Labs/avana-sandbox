@@ -117,6 +117,10 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  // Playwright and local mobile-device testing use the loopback host while the
+  // dev server may bind as localhost. Next otherwise blocks the client chunks/HMR
+  // request and leaves client-only session hydration at its server skeleton.
+  allowedDevOrigins: isDev ? ["127.0.0.1"] : undefined,
   experimental: {
     // Inline the route's critical CSS into the initial document. This removes the
     // shared stylesheet from the first-paint dependency chain while retaining

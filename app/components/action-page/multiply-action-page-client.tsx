@@ -18,7 +18,7 @@ import { ActionLeverageRuler } from "@/app/components/action-page/action-leverag
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
+import { ActionSessionLoading, shouldShowActionSessionLoading } from "@/app/components/action-page/action-session-loading"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
@@ -555,7 +555,7 @@ export function MultiplyActionPageClient({
     }
   }, [isPending, market, previewUi, session, walletId])
 
-  if (session.isHydrated === false) {
+  if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (
       <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} closeHref={closeHref} simulated>
         <ActionSessionLoading />
