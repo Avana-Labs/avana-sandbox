@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 
 afterEach(() => cleanup())
@@ -29,5 +29,17 @@ describe("ActionLeverageRuler", () => {
     render(<ActionLeverageRuler value="2" onChange={() => {}} min={1} max={5} label="Target leverage" />)
 
     expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
+  })
+
+  it("accepts a precise custom leverage value", () => {
+    const onChange = vi.fn()
+    render(<ActionLeverageRuler value="2" onChange={onChange} min={1.1} max={5} label="Target leverage" />)
+
+    const input = screen.getByRole("spinbutton", { name: "Custom Target leverage" })
+    fireEvent.change(input, { target: { value: "2.7" } })
+
+    expect(onChange).toHaveBeenCalledWith("2.7")
+    expect(input).toHaveAttribute("min", "1.1")
+    expect(input).toHaveAttribute("max", "5")
   })
 })
