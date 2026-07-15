@@ -1,6 +1,5 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import type { ReactNode } from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -10,6 +9,7 @@ import {
   resolveSeriesTone,
 } from "@/app/components/charts/chart-data"
 import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/types"
+import { HeroChartSection } from "@/app/components/charts/hero-chart-section"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
@@ -18,13 +18,6 @@ import type { PortfolioHeroAction } from "@/app/portfolio/hero/types"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { dashboardHrefForTab } from "@/app/lib/action-system/dashboard-routing"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-
-const HeroChartSection = dynamic(
-  () => import("@/app/components/charts/hero-chart-section").then((mod) => mod.HeroChartSection),
-  {
-    loading: () => <div className="h-[196px] rounded-radius-md bg-card/60" />,
-  },
-)
 
 const DEFAULT_RANGE_DATA = buildRangeData(880, 14)
 

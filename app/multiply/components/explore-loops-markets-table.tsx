@@ -501,7 +501,7 @@ function LoopTableRow({
               {row.protocol}
             </span>
             <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
+              <span className="text-muted-foreground">{t("APY")}</span>
               <span className="font-data tabular-nums text-success">{supplyApy ?? "—"}</span>
             </span>
           </span>
@@ -525,7 +525,7 @@ function LoopTableRow({
               {row.asset}
             </span>
             <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground dark:text-white/38">{t("APY")}</span>
+              <span className="text-muted-foreground">{t("APY")}</span>
               <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">{borrowApy ?? "—"}</span>
             </span>
           </span>
@@ -553,7 +553,7 @@ function LoopTableRow({
               <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                 {row.rewardRows[1].value}
               </span>
-              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
                 {row.rewardRows[1].label}
               </span>
             </span>
@@ -562,7 +562,7 @@ function LoopTableRow({
               <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                 {row.rewardRows[0].value}
               </span>
-              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
                 {row.rewardRows[0].label}
               </span>
             </span>
@@ -571,7 +571,7 @@ function LoopTableRow({
               {row.partnerRewards}
             </span>
           ) : (
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+            <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground">
               —
             </span>
           )}
@@ -672,7 +672,7 @@ function MobileLoopCard({
                 </div>
                 <div className="min-w-0">
                   <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.protocol}</div>
-                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{row.asset}</div>
+                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground">{row.asset}</div>
                 </div>
               </div>
             </div>
