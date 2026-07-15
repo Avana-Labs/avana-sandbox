@@ -29,10 +29,29 @@ function createHarness() {
     adapter,
     seed,
     getState: () => state,
+    replaceState: (nextState: typeof state) => {
+      state = nextState
+    },
   }
 }
 
 describe("sandbox transaction adapter", () => {
+  it("rejects execution when state changed after the quote was created", async () => {
+    const harness = createHarness()
+    const intent = harness.adapter.createIntent({
+      type: "borrow",
+      walletId: "wallet-1",
+      marketId: EXAMPLE_UNI_MARKET_ID,
+      assetId: EXAMPLE_UNI_USDC_ASSET_ID,
+      amountUsd6: parseFixed("100", 6),
+    })
+
+    await harness.adapter.previewTransaction(intent)
+    harness.replaceState({ ...harness.getState(), now: harness.getState().now + 1 })
+
+    await expect(harness.adapter.executeTransaction(intent)).rejects.toThrow("Quote is stale")
+  })
+
   it("deposit LP satisfies the sandbox action contract", async () => {
     const harness = createHarness()
     const action: BorrowAction = {
