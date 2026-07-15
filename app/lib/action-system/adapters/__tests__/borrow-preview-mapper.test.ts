@@ -145,11 +145,11 @@ describe("borrow preview mappers", () => {
       ratePct: 5.2,
       balanceLabel: "Available to Borrow",
       balanceUsd: 5000,
+      maxBorrowUsd: 5000,
+      creditScopeLabel: "Uniswap Bluechip",
     })
 
-    expect(ui.blockedReason).toBe(
-      "You don't have enough borrowing power for this amount. Lower the amount or add collateral.",
-    )
+    expect(ui.blockedReason).toBe("Maximum safe borrow is $5,000.00, limited by borrowing power in Uniswap Bluechip.")
     expect(ui.blockedReason).not.toMatch(/spoke|wallet-1|insolvent/i)
   })
 

@@ -105,6 +105,16 @@ export function mapBorrowTransactionPreviewToActionUi(
   // Max borrow is capped by the COLLATERAL FACTOR (available credit), never the
   // liquidation threshold — mirror the credit engine so Max lands at the safe cap.
   const maxBorrowUsd = options.maxBorrowUsd ?? borrowingPowerUsd(preview, "before")
+  const rawBlockedReason = preview.validationErrors[0] ?? ""
+  const limitingCondition = /liquidity/i.test(rawBlockedReason)
+    ? "available market liquidity"
+    : options.creditScopeLabel
+      ? `borrowing power in ${options.creditScopeLabel}`
+      : "available borrowing power"
+  const blockedReason =
+    !preview.allowed && options.amountUsd > maxBorrowUsd
+      ? `Maximum safe borrow is ${formatActionUsd(maxBorrowUsd, { exact: true })}, limited by ${limitingCondition}.`
+      : humanizeBlockedReason(rawBlockedReason) ?? "Action unavailable"
 
   return {
     allowed: preview.allowed,
@@ -175,7 +185,7 @@ export function mapBorrowTransactionPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, healthAfter),
-    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
+    blockedReason: preview.allowed ? null : blockedReason,
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
