@@ -6,7 +6,9 @@
 - Three Lighthouse mobile samples per route; values below are medians.
 - GPU-enabled Chrome smoke sample on `/`, `/lend`, `/multiply`, and `/rewards`.
 - Full Vitest suite and production TypeScript build run after implementation.
-- Raw reports: `.artifacts/lighthouse-after` and `.artifacts/lighthouse-gpu` (ignored local artifacts).
+- Raw reports: `.artifacts/lighthouse-after`, `.artifacts/lighthouse-gpu`,
+  `.artifacts/lighthouse-remaining-final`, and `.artifacts/lighthouse-borrow-final`
+  (ignored local artifacts).
 
 The route baseline supplied before implementation did not include FCP or total bytes for every route, so those cells remain blank instead of being inferred.
 
@@ -43,6 +45,12 @@ Median LCP improved on every measured route, with a mean reduction of 23.9%. Rou
 - Paused Rewards wait-task clocks in hidden tabs and removed the duplicate state write per tick.
 - Enabled `content-visibility` for offscreen Lend and Multiply table bodies without changing table markup, sticky headers, or visible styling.
 - Added repeatable route, numeric-budget, GPU-enabled, and route-subset audit tooling.
+- Removed the unused global toast runtime and changed the help animation to load only on intent.
+- Changed pill tabs to load Framer Motion's DOM animation features on demand without changing their spring, hover, tap, or reduced-motion behavior.
+- Mounted only one responsive market representation on Borrow, Lend, and Multiply instead of retaining hidden duplicate DOM.
+- Reserved offscreen Borrow spoke height so IntersectionObserver does not treat every deferred section as visible at the same collapsed coordinate.
+- Deferred later Borrow spokes, Multiply markets, and lower Dashboard sections until they approach the viewport.
+- Split Dashboard reads across the Borrow, Lend, and Multiply contexts so an update in one product does not invalidate the others.
 
 ## GPU and render assessment
 
@@ -55,19 +63,36 @@ The deterministic reduction is:
 - Price live subscriptions: two app-wide Convex subscriptions before; one after.
 - Product context fan-out: one combined product context before; isolated product contexts after.
 
+## Remaining-issue remediation
+
+This second pass specifically remeasured the four ceilings called out after the
+first implementation pass. Values are three-run Lighthouse mobile medians from
+the fresh audit build.
+
+| Route | TBT (ms) | DOM nodes | Unused JS (KiB) | Main-thread work (ms) |
+| --- | ---: | ---: | ---: | ---: |
+| `/borrow` | 392 → 159 (-59.4%) | 2,597 → 534 (-79.4%) | 128 → 47.1 (-63.2%) | 1,975 → 1,538 (-22.1%) |
+| `/lend` | 120 → 103.5 (-13.8%) | 1,936 → 905 (-53.3%) | 127 → 46.0 (-63.8%) | 1,848 → 1,816 (-1.7%) |
+| `/multiply` | 109.5 → 91 (-16.9%) | 1,723 → 721 (-58.2%) | 127 → 46.1 (-63.7%) | 1,968 → 1,744 (-11.4%) |
+| `/dashboard` | 232 → 170.5 (-26.5%) | 1,146 → 585 (-49.0%) | 181 → 100.6 (-44.4%) | 3,217 → 2,892 (-10.1%) |
+
+The annotated TBT and responsive duplicate-DOM failures are resolved: all four
+routes are under the 200ms TBT budget and 1,000-node DOM budget. Framer Motion no
+longer appears in Dashboard's initial unused-JavaScript audit; its remaining
+100.6 KiB is Recharts (about 54.9 KiB unused), Convex (about 24.6 KiB), and the
+React runtime (about 21.1 KiB).
+
 ## Remaining measured ceilings
 
-- The 2.5s LCP budget is still missed on 11 of 12 routes; the Borrow market route is closest at 2.72s.
-- Unused JavaScript remains about 127 KiB on primary routes and 181–185 KiB on detail routes.
-- The persistent Framer Motion bundle is approximately 48 KiB transferred and is still loaded because the help bubble and tab indicator retain their exact existing animation behavior. It was intentionally not replaced without visual-parity proof.
-- Recharts is still approximately 100 KiB on routes that actually display a chart, although it no longer blocks chartless initial content.
-- `/borrow` TBT (392ms) and Dashboard TBT (232ms) regressed in the throttled median and remain priority failures.
-- Lend and Multiply still render both responsive DOM representations; `content-visibility` cuts offscreen layout/paint but does not reduce their 1,936 and 1,723-node DOM sizes.
+- LCP remains variable and above the 2.5s budget in the strict throttled run: Borrow 5.76s, Lend 2.79s, Multiply 5.45s, and Dashboard 3.92s. FCP remains 1.11–1.25s.
+- Dashboard main-thread work remains 2.89s because the visible hero chart still loads Recharts. Replacing it without measured visual and interaction parity was intentionally not attempted.
+- Dashboard unused JavaScript is 100.6 KiB, 588 bytes above the 100 KiB budget and down 44.4% from the first-pass 181 KiB result.
 - React commit counts and a numeric GPU-utilization percentage require an interactive Chrome/React Profiler capture on target hardware; Lighthouse alone cannot produce those numbers.
 
 ## Verification
 
-- `npm test`: 255 files passed, 1,094 tests passed, 2 files / 2 tests intentionally skipped.
-- `npm run build`: passed, including TypeScript and static-page generation.
+- `npm test`: 256 files / 1,095 tests passed; 2 files / 2 tests intentionally skipped.
+- `npm run build` and `npm run lighthouse:build`: passed, including TypeScript and static-page generation.
 - Lighthouse: three-run median matrix completed for all 12 routes.
+- Remaining-issue Lighthouse matrix: three-run medians completed for Borrow, Lend, Multiply, and Dashboard, followed by a separate three-run Borrow verification after its mobile-spoke correction.
 - GPU-enabled Lighthouse: one-run smoke matrix completed for `/`, `/lend`, `/multiply`, and `/rewards`.
