@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useSyncExternalStore } from "react"
-import { useOptionalDisplayPreferences, type LanguageCode } from "@/app/components/display-preferences"
+import { useOptionalLocaleDisplayPreferences, type LanguageCode } from "@/app/components/display-preferences"
 import { translateWith } from "@/app/lib/i18n/translate-core"
 import type { TranslationDictionary } from "@/app/lib/i18n/types"
 
@@ -65,7 +65,7 @@ function subscribe(notify: () => void) {
  * English until their dictionary chunk loads, then re-render translated.
  */
 export function useTranslation() {
-  const preferences = useOptionalDisplayPreferences()
+  const preferences = useOptionalLocaleDisplayPreferences()
   const language = preferences?.language ?? "EN"
   // Re-render when the active locale's chunk lands (module-level version bump).
   const loadedVersion = useSyncExternalStore(

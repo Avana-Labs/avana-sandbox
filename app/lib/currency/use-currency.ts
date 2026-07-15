@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { useOptionalDisplayPreferences } from "@/app/components/display-preferences"
+import { useOptionalLocaleDisplayPreferences } from "@/app/components/display-preferences"
 import {
   convertFromUsd,
   currencyContext,
@@ -27,7 +27,7 @@ export type CurrencyFormatter = {
  * say, CNY re-renders amounts in ¥ using the active FX rate.
  */
 export function useCurrency(): CurrencyFormatter {
-  const preferences = useOptionalDisplayPreferences()
+  const preferences = useOptionalLocaleDisplayPreferences()
   const currency = preferences?.currency ?? "USD"
   // Recompute when live FX rates are (re)applied, not just on a currency switch.
   const ratesVersion = preferences?.ratesVersion ?? 0
@@ -40,6 +40,5 @@ export function useCurrency(): CurrencyFormatter {
       convert: (usd: number) => convertFromUsd(usd, ctx),
       isUsd: currency === "USD",
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ratesVersion invalidates the cached ctx
   }, [currency, ratesVersion])
 }
