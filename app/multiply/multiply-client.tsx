@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine"
@@ -8,8 +9,15 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { getMultiplyMarketById, MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 import { buildMultiplyPageData } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { ExploreLoopsMarketsTable } from "./components/explore-loops-markets-table"
 import { MultiplyHero } from "./components/multiply-hero"
+
+const ExploreLoopsMarketsTable = dynamic(
+  () => import("./components/explore-loops-markets-table").then((mod) => mod.ExploreLoopsMarketsTable),
+  {
+    ssr: false,
+    loading: () => <div className="mt-7 h-[720px] rounded-radius-md border border-border bg-surface-raised/60" />,
+  },
+)
 
 function resolveMarketFromRowHref(href: string): MultiplyMarketRecord | null {
   const marketId = href.split("/").pop()
